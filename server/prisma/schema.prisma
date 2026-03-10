@@ -8,9 +8,75 @@ datasource db {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  passwordHash String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id               String            @id @default(cuid())
+  email            String            @unique
+  passwordHash     String
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  workoutTemplates WorkoutTemplate[]
+  workoutSessions  WorkoutSession[]
+}
+
+model WorkoutTemplate {
+  id          Int                @id @default(autoincrement())
+  name        String
+  description String?
+  isPublic    Boolean            @default(false)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  userId      String
+  user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  exercises   TemplateExercise[]
+  sessions    WorkoutSession[]
+
+  @@index([userId])
+  @@index([isPublic])
+}
+
+model TemplateExercise {
+  id                Int               @id @default(autoincrement())
+  order             Int
+  exerciseName      String
+  targetSets        Int?
+  targetReps        String?
+  notes             String?
+  workoutTemplateId Int
+  workoutTemplate   WorkoutTemplate   @relation(fields: [workoutTemplateId], references: [id], onDelete: Cascade)
+  sets              WorkoutSet[]
+
+  @@index([workoutTemplateId])
+  @@unique([workoutTemplateId, order])
+}
+
+model WorkoutSession {
+  id                Int               @id @default(autoincrement())
+  performedAt       DateTime          @default(now())
+  notes             String?
+  createdAt         DateTime          @default(now())
+  userId            String
+  user              User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workoutTemplateId Int?
+  workoutTemplate   WorkoutTemplate?  @relation(fields: [workoutTemplateId], references: [id], onDelete: SetNull)
+  sets              WorkoutSet[]
+
+  @@index([userId])
+  @@index([workoutTemplateId])
+}
+
+model WorkoutSet {
+  id                 Int               @id @default(autoincrement())
+  order              Int
+  reps               Int?
+  weight             Float?
+  rpe                Float?
+  rir                Int?
+  notes              String?
+  workoutSessionId   Int
+  workoutSession     WorkoutSession    @relation(fields: [workoutSessionId], references: [id], onDelete: Cascade)
+  templateExerciseId Int?
+  templateExercise   TemplateExercise? @relation(fields: [templateExerciseId], references: [id], onDelete: SetNull)
+
+  @@index([workoutSessionId])
+  @@index([templateExerciseId])
+  @@unique([workoutSessionId, order])
 }

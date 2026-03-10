@@ -1,0 +1,109 @@
+### Register
+POST http://localhost:3000/auth/register
+Content-Type: application/json
+
+{
+  "email": "test1@example.com",
+  "password": "password123"
+}
+
+###
+
+### Login
+POST http://localhost:3000/auth/login
+Content-Type: application/json
+
+{
+  "email": "test1@example.com",
+  "password": "password123"
+}
+
+###
+
+### Get current user
+GET http://localhost:3000/auth/me
+
+###
+
+### Create template
+POST http://localhost:3000/templates
+Content-Type: application/json
+
+{
+  "name": "Push Day A",
+  "description": "Chest and triceps",
+  "isPublic": true,
+  "exercises": [
+    {
+      "exerciseName": "Bench Press",
+      "targetSets": 4,
+      "targetReps": "6-8"
+    },
+    {
+      "exerciseName": "Incline Dumbbell Press",
+      "targetSets": 3,
+      "targetReps": "8-10"
+    }
+  ]
+}
+
+###
+
+### Get my templates
+GET http://localhost:3000/templates/mine
+
+###
+
+### Get public templates
+GET http://localhost:3000/templates/public
+
+###
+
+### Clone template
+POST http://localhost:3000/templates/1/clone
+
+###
+
+### Start a workout session from a template
+POST http://localhost:3000/sessions/start/1
+Content-Type: application/json
+
+{}
+
+###
+
+### Get my sessions
+GET http://localhost:3000/sessions/mine
+
+###
+
+### Get a specific session by id
+GET http://localhost:3000/sessions/1
+
+###
+
+### Create a set for a session
+POST http://localhost:3000/sessions/1/sets
+Content-Type: application/json
+
+{
+  "templateExerciseId": 1,
+  "order": 1,
+  "reps": 8,
+  "weight": 100,
+  "rpe": 8,
+  "rir": 2,
+  "notes": "Felt good"
+}
+
+###
+
+### Update a set
+PATCH http://localhost:3000/sessions/sets/1
+Content-Type: application/json
+
+{
+  "reps": 9,
+  "weight": 102.5,
+  "notes": "Last set, pushed harder"
+}
