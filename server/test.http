@@ -1,69 +1,3 @@
-### Register
-POST http://localhost:3000/auth/register
-Content-Type: application/json
-
-{
-  "email": "test1@example.com",
-  "password": "password123"
-}
-
-###
-
-### Login
-POST http://localhost:3000/auth/login
-Content-Type: application/json
-
-{
-  "email": "test1@example.com",
-  "password": "password123"
-}
-
-###
-
-### Get current user
-GET http://localhost:3000/auth/me
-
-###
-
-### Create template
-POST http://localhost:3000/templates
-Content-Type: application/json
-
-{
-  "name": "Push Day A",
-  "description": "Chest and triceps",
-  "isPublic": true,
-  "exercises": [
-    {
-      "exerciseName": "Bench Press",
-      "targetSets": 4,
-      "targetReps": "6-8"
-    },
-    {
-      "exerciseName": "Incline Dumbbell Press",
-      "targetSets": 3,
-      "targetReps": "8-10"
-    }
-  ]
-}
-
-###
-
-### Get my templates
-GET http://localhost:3000/templates/mine
-
-###
-
-### Get public templates
-GET http://localhost:3000/templates/public
-
-###
-
-### Clone template
-POST http://localhost:3000/templates/1/clone
-
-###
-
 ### Start a workout session from a template
 POST http://localhost:3000/sessions/start/1
 Content-Type: application/json
@@ -82,12 +16,23 @@ GET http://localhost:3000/sessions/1
 
 ###
 
-### Create a set for a session
+### Update a session
+PATCH http://localhost:3000/sessions/1
+Content-Type: application/json
+
+{
+  "notes": "Updated session notes",
+  "performedAt": "2026-03-11T18:00:00.000Z"
+}
+
+###
+
+### Create a set for an incomplete session
 POST http://localhost:3000/sessions/1/sets
 Content-Type: application/json
 
 {
-  "templateExerciseId": 1,
+  "sessionExerciseId": 1,
   "order": 1,
   "reps": 8,
   "weight": 100,
@@ -95,6 +40,64 @@ Content-Type: application/json
   "rir": 2,
   "notes": "Felt good"
 }
+
+###
+
+### Complete a session
+POST http://localhost:3000/sessions/1/complete
+
+###
+
+### Try completing the same session again
+POST http://localhost:3000/sessions/1/complete
+
+###
+
+### Verify completed session via GET
+GET http://localhost:3000/sessions/1
+
+###
+
+### Try updating a completed session
+PATCH http://localhost:3000/sessions/1
+Content-Type: application/json
+
+{
+  "notes": "This should fail because the session is completed"
+}
+
+###
+
+### Try creating a set for a completed session
+POST http://localhost:3000/sessions/1/sets
+Content-Type: application/json
+
+{
+  "sessionExerciseId": 1,
+  "order": 2,
+  "reps": 10,
+  "weight": 105
+}
+
+###
+
+### Try updating a set on a completed session
+PATCH http://localhost:3000/sessions/sets/1
+Content-Type: application/json
+
+{
+  "reps": 9
+}
+
+###
+
+### Try deleting a set on a completed session
+DELETE http://localhost:3000/sessions/sets/1
+
+###
+
+### Delete a session
+DELETE http://localhost:3000/sessions/1
 
 ###
 
@@ -107,3 +110,20 @@ Content-Type: application/json
   "weight": 102.5,
   "notes": "Last set, pushed harder"
 }
+
+###
+
+### Clear optional set fields
+PATCH http://localhost:3000/sessions/sets/1
+Content-Type: application/json
+
+{
+  "rpe": "",
+  "rir": "",
+  "notes": ""
+}
+
+###
+
+### Delete a set
+DELETE http://localhost:3000/sessions/sets/1

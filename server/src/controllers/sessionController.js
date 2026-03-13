@@ -1,6 +1,27 @@
 const prisma = require("../lib/prisma");
 
-async function startSessionFromTemplate(req, res, next) {
+function parsePositiveInt(value) {
+  if (value == null || value === "") return null;
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed <= 0) return null;
+  return parsed;
+}
+
+function parseNullableInt(value) {
+  if (value == null || value === "") return null;
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed)) return NaN;
+  return parsed;
+}
+
+function parseNullableFloat(value) {
+  if (value == null || value === "") return null;
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return NaN;
+  return parsed;
+}
+
+async function startSession(req, res, next) {
   try {
     const userId = req.session && req.session.userId;
 
@@ -10,87 +31,117 @@ async function startSessionFromTemplate(req, res, next) {
       });
     }
 
-    const idParam = req.params && req.params.templateId;
-    const templateId = Number(idParam);
+    const templateId = parsePositiveInt(req.params && req.params.templateId);
 
-    if (!Number.isInteger(templateId) || templateId <= 0) {
+    if (!templateId) {
       return res.status(400).json({
         error: "Template id must be a positive integer",
       });
     }
 
-    let session;
-
-    try {
-      session = await prisma.$transaction(async (tx) => {
-        const template = await tx.workoutTemplate.findUnique({
-          where: {
-            id: templateId,
-          },
-          include: {
-            exercises: {
-              orderBy: {
-                order: "asc",
-              },
+    const session = await prisma.$transaction(async (tx) => {
+      const template = await tx.workoutTemplate.findUnique({
+        where: {
+          id: templateId,
+        },
+        include: {
+          exercises: {
+            orderBy: {
+              order: "asc",
             },
           },
-        });
-
-        if (!template) {
-          const notFoundError = new Error("Template not found");
-          notFoundError.status = 404;
-          throw notFoundError;
-        }
-
-        const isOwner = template.userId === userId;
-
-        if (!template.isPublic && !isOwner) {
-          const forbiddenError = new Error(
-            "You do not have permission to start a session from this template"
-          );
-          forbiddenError.status = 403;
-          throw forbiddenError;
-        }
-
-        const createdSession = await tx.workoutSession.create({
-          data: {
-            userId,
-            workoutTemplateId: template.id,
-          },
-          include: {
-            workoutTemplate: {
-              include: {
-                exercises: {
-                  orderBy: {
-                    order: "asc",
-                  },
-                },
-              },
-            },
-            sets: {
-              orderBy: {
-                order: "asc",
-              },
-            },
-          },
-        });
-
-        return createdSession;
+        },
       });
-    } catch (txErr) {
-      if (txErr && txErr.status) {
-        return res.status(txErr.status).json({
-          error: txErr.message,
+
+      if (!template) {
+        throw Object.assign(new Error("Template not found"), {
+          statusCode: 404,
+          code: "TEMPLATE_NOT_FOUND",
         });
       }
 
-      throw txErr;
-    }
+      const isOwner = template.userId === userId;
+
+      if (!template.isPublic && !isOwner) {
+        throw Object.assign(
+          new Error("You do not have permission to start a session from this template"),
+          {
+            statusCode: 403,
+            code: "FORBIDDEN_TEMPLATE",
+          }
+        );
+      }
+
+      const createdSession = await tx.workoutSession.create({
+        data: {
+          userId,
+          workoutTemplateId: template.id,
+        },
+      });
+
+      if (template.exercises.length > 0) {
+        await tx.sessionExercise.createMany({
+          data: template.exercises.map((exercise) => ({
+            order: exercise.order,
+            exerciseName: exercise.exerciseName,
+            targetSets: exercise.targetSets,
+            targetReps: exercise.targetReps,
+            notes: exercise.notes,
+            workoutSessionId: createdSession.id,
+            templateExerciseId: exercise.id,
+          })),
+        });
+      }
+
+      const fullSession = await tx.workoutSession.findUnique({
+        where: {
+          id: createdSession.id,
+        },
+        include: {
+          workoutTemplate: {
+            select: {
+              id: true,
+              name: true,
+              description: true,
+              isPublic: true,
+              userId: true,
+            },
+          },
+          sessionExercises: {
+            orderBy: {
+              order: "asc",
+            },
+          },
+          sets: {
+            orderBy: {
+              order: "asc",
+            },
+            include: {
+              sessionExercise: true,
+            },
+          },
+        },
+      });
+
+      return fullSession;
+    });
 
     return res.status(201).json({
       session,
     });
   } catch (err) {
+    if (err && err.statusCode === 404 && err.code === "TEMPLATE_NOT_FOUND") {
+      return res.status(404).json({
+        error: "Template not found",
+      });
+    }
+
+    if (err && err.statusCode === 403 && err.code === "FORBIDDEN_TEMPLATE") {
+      return res.status(403).json({
+        error: "You do not have permission to start a session from this template",
+      });
+    }
+
     return next(err);
   }
 }
@@ -123,6 +174,7 @@ async function getMySessions(req, res, next) {
         _count: {
           select: {
             sets: true,
+            sessionExercises: true,
           },
         },
       },
@@ -146,10 +198,9 @@ async function getSessionById(req, res, next) {
       });
     }
 
-    const idParam = req.params && req.params.id;
-    const sessionId = Number(idParam);
+    const sessionId = parsePositiveInt(req.params && req.params.id);
 
-    if (!Number.isInteger(sessionId) || sessionId <= 0) {
+    if (!sessionId) {
       return res.status(400).json({
         error: "Session id must be a positive integer",
       });
@@ -162,20 +213,27 @@ async function getSessionById(req, res, next) {
       },
       include: {
         workoutTemplate: {
-          include: {
-            exercises: {
-              orderBy: {
-                order: "asc",
-              },
-            },
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            isPublic: true,
+            userId: true,
           },
         },
-        sets: {
+        sessionExercises: {
           orderBy: {
             order: "asc",
           },
+        },
+        sets: {
+          orderBy: [
+            {
+              order: "asc",
+            },
+          ],
           include: {
-            templateExercise: true,
+            sessionExercise: true,
           },
         },
       },
@@ -205,17 +263,16 @@ async function createSetForSession(req, res, next) {
       });
     }
 
-    const idParam = req.params && req.params.id;
-    const sessionId = Number(idParam);
+    const sessionId = parsePositiveInt(req.params && req.params.id);
 
-    if (!Number.isInteger(sessionId) || sessionId <= 0) {
+    if (!sessionId) {
       return res.status(400).json({
         error: "Session id must be a positive integer",
       });
     }
 
     const {
-      templateExerciseId: rawTemplateExerciseId,
+      sessionExerciseId: rawSessionExerciseId,
       order: rawOrder,
       reps: rawReps,
       weight: rawWeight,
@@ -224,169 +281,157 @@ async function createSetForSession(req, res, next) {
       notes: rawNotes,
     } = req.body || {};
 
-    const order = rawOrder == null ? null : Number(rawOrder);
+    const sessionExerciseId = parsePositiveInt(rawSessionExerciseId);
+    if (!sessionExerciseId) {
+      return res.status(400).json({
+        error: "sessionExerciseId must be a positive integer",
+      });
+    }
 
-    if (order == null || !Number.isInteger(order) || order <= 0) {
+    const order = parsePositiveInt(rawOrder);
+    if (!order) {
       return res.status(400).json({
         error: "Set order must be a positive integer",
       });
     }
 
-    const reps =
-      rawReps == null || rawReps === ""
-        ? null
-        : Number.isNaN(Number(rawReps))
-        ? NaN
-        : Number(rawReps);
-    if (reps !== null && (Number.isNaN(reps) || !Number.isInteger(reps))) {
+    const reps = parseNullableInt(rawReps);
+    if (Number.isNaN(reps) || (reps !== null && reps <= 0)) {
       return res.status(400).json({
-        error: "reps must be an integer when provided",
+        error: "reps must be a positive integer when provided",
       });
     }
 
-    const weight =
-      rawWeight == null || rawWeight === ""
-        ? null
-        : Number.isNaN(Number(rawWeight))
-        ? NaN
-        : Number(rawWeight);
-    if (weight !== null && Number.isNaN(weight)) {
+    const weight = parseNullableFloat(rawWeight);
+    if (Number.isNaN(weight) || (weight !== null && weight < 0)) {
       return res.status(400).json({
-        error: "weight must be a number when provided",
+        error: "weight must be a non-negative number when provided",
       });
     }
 
-    const rpe =
-      rawRpe == null || rawRpe === ""
-        ? null
-        : Number.isNaN(Number(rawRpe))
-        ? NaN
-        : Number(rawRpe);
-    if (rpe !== null && Number.isNaN(rpe)) {
+    const rpe = parseNullableFloat(rawRpe);
+    if (Number.isNaN(rpe) || (rpe !== null && rpe < 0)) {
       return res.status(400).json({
-        error: "rpe must be a number when provided",
+        error: "rpe must be a non-negative number when provided",
       });
     }
 
-    const rir =
-      rawRir == null || rawRir === ""
-        ? null
-        : Number.isNaN(Number(rawRir))
-        ? NaN
-        : Number(rawRir);
-    if (rir !== null && (Number.isNaN(rir) || !Number.isInteger(rir))) {
+    const rir = parseNullableInt(rawRir);
+    if (Number.isNaN(rir) || (rir !== null && rir < 0)) {
       return res.status(400).json({
-        error: "rir must be an integer when provided",
+        error: "rir must be a non-negative integer when provided",
       });
     }
 
     const notes =
-      typeof rawNotes === "string" && rawNotes.trim()
-        ? rawNotes.trim()
-        : null;
+      typeof rawNotes === "string" && rawNotes.trim() ? rawNotes.trim() : null;
 
-    const templateExerciseId =
-      rawTemplateExerciseId == null || rawTemplateExerciseId === ""
-        ? null
-        : Number(rawTemplateExerciseId);
-
-    if (
-      templateExerciseId != null &&
-      (!Number.isInteger(templateExerciseId) || templateExerciseId <= 0)
-    ) {
-      return res.status(400).json({
-        error: "templateExerciseId must be a positive integer when provided",
+    const set = await prisma.$transaction(async (tx) => {
+      const session = await tx.workoutSession.findUnique({
+        where: {
+          id: sessionId,
+        },
+        select: {
+          id: true,
+          userId: true,
+          completedAt: true,
+        },
       });
-    }
 
-    let createdSet;
-
-    try {
-      createdSet = await prisma.$transaction(async (tx) => {
-        const session = await tx.workoutSession.findUnique({
-          where: {
-            id: sessionId,
-          },
-        });
-
-        if (!session) {
-          const notFoundError = new Error("Session not found");
-          notFoundError.status = 404;
-          throw notFoundError;
-        }
-
-        if (session.userId !== userId) {
-          const forbiddenError = new Error(
-            "You do not have permission to add sets to this session"
-          );
-          forbiddenError.status = 403;
-          throw forbiddenError;
-        }
-
-        if (templateExerciseId != null) {
-          if (!session.workoutTemplateId) {
-            const badRequestError = new Error(
-              "Session is not associated with a template; templateExerciseId is not allowed"
-            );
-            badRequestError.status = 400;
-            throw badRequestError;
-          }
-
-          const templateExercise = await tx.templateExercise.findUnique({
-            where: {
-              id: templateExerciseId,
-            },
-          });
-
-          if (!templateExercise) {
-            const notFoundError = new Error("Template exercise not found");
-            notFoundError.status = 404;
-            throw notFoundError;
-          }
-
-          if (
-            templateExercise.workoutTemplateId !== session.workoutTemplateId
-          ) {
-            const badRequestError = new Error(
-              "templateExerciseId does not belong to the session's template"
-            );
-            badRequestError.status = 400;
-            throw badRequestError;
-          }
-        }
-
-        const set = await tx.workoutSet.create({
-          data: {
-            workoutSessionId: session.id,
-            order,
-            reps,
-            weight,
-            rpe,
-            rir,
-            notes,
-            templateExerciseId: templateExerciseId || null,
-          },
-          include: {
-            templateExercise: true,
-          },
-        });
-
-        return set;
-      });
-    } catch (txErr) {
-      if (txErr && txErr.status) {
-        return res.status(txErr.status).json({
-          error: txErr.message,
+      if (!session) {
+        throw Object.assign(new Error("Session not found"), {
+          statusCode: 404,
+          code: "SESSION_NOT_FOUND",
         });
       }
 
-      throw txErr;
-    }
+      if (session.userId !== userId) {
+        throw Object.assign(
+          new Error("You do not have permission to add sets to this session"),
+          {
+            statusCode: 403,
+            code: "FORBIDDEN_SESSION",
+          }
+        );
+      }
+
+      if (session.completedAt) {
+        throw Object.assign(new Error("Completed sessions cannot be modified"), {
+          statusCode: 400,
+          code: "SESSION_COMPLETED",
+        });
+      }
+
+      const sessionExercise = await tx.sessionExercise.findFirst({
+        where: {
+          id: sessionExerciseId,
+          workoutSessionId: session.id,
+        },
+        select: {
+          id: true,
+        },
+      });
+
+      if (!sessionExercise) {
+        throw Object.assign(new Error("sessionExerciseId does not belong to this session"), {
+          statusCode: 400,
+          code: "SESSION_EXERCISE_MISMATCH",
+        });
+      }
+
+      const createdSet = await tx.workoutSet.create({
+        data: {
+          workoutSessionId: session.id,
+          sessionExerciseId,
+          order,
+          reps,
+          weight,
+          rpe,
+          rir,
+          notes,
+        },
+        include: {
+          sessionExercise: true,
+        },
+      });
+
+      return createdSet;
+    });
 
     return res.status(201).json({
-      set: createdSet,
+      set,
     });
   } catch (err) {
+    if (err && err.statusCode === 404 && err.code === "SESSION_NOT_FOUND") {
+      return res.status(404).json({
+        error: "Session not found",
+      });
+    }
+
+    if (err && err.statusCode === 403 && err.code === "FORBIDDEN_SESSION") {
+      return res.status(403).json({
+        error: "You do not have permission to add sets to this session",
+      });
+    }
+
+    if (err && err.statusCode === 400 && err.code === "SESSION_COMPLETED") {
+      return res.status(400).json({
+        error: "Completed sessions cannot be modified",
+      });
+    }
+
+    if (err && err.statusCode === 400 && err.code === "SESSION_EXERCISE_MISMATCH") {
+      return res.status(400).json({
+        error: "sessionExerciseId does not belong to this session",
+      });
+    }
+
+    if (err && err.code === "P2002") {
+      return res.status(400).json({
+        error: "Set order must be unique within the session",
+      });
+    }
+
     return next(err);
   }
 }
@@ -401,10 +446,9 @@ async function updateSet(req, res, next) {
       });
     }
 
-    const idParam = req.params && req.params.id;
-    const setId = Number(idParam);
+    const setId = parsePositiveInt(req.params && req.params.id);
 
-    if (!Number.isInteger(setId) || setId <= 0) {
+    if (!setId) {
       return res.status(400).json({
         error: "Set id must be a positive integer",
       });
@@ -421,9 +465,9 @@ async function updateSet(req, res, next) {
 
     const data = {};
 
-    if (rawOrder != null) {
-      const order = Number(rawOrder);
-      if (!Number.isInteger(order) || order <= 0) {
+    if (rawOrder !== undefined) {
+      const order = parsePositiveInt(rawOrder);
+      if (!order) {
         return res.status(400).json({
           error: "order must be a positive integer when provided",
         });
@@ -431,123 +475,477 @@ async function updateSet(req, res, next) {
       data.order = order;
     }
 
-    if (rawReps != null && rawReps !== "") {
-      const reps = Number(rawReps);
-      if (!Number.isInteger(reps)) {
-        return res.status(400).json({
-          error: "reps must be an integer when provided",
-        });
+    if (rawReps !== undefined) {
+      if (rawReps === "" || rawReps === null) {
+        data.reps = null;
+      } else {
+        const reps = parseNullableInt(rawReps);
+        if (Number.isNaN(reps) || reps <= 0) {
+          return res.status(400).json({
+            error: "reps must be a positive integer when provided",
+          });
+        }
+        data.reps = reps;
       }
-      data.reps = reps;
-    } else if (rawReps === null) {
-      data.reps = null;
     }
 
-    if (rawWeight != null && rawWeight !== "") {
-      const weight = Number(rawWeight);
-      if (Number.isNaN(weight)) {
-        return res.status(400).json({
-          error: "weight must be a number when provided",
-        });
+    if (rawWeight !== undefined) {
+      if (rawWeight === "" || rawWeight === null) {
+        data.weight = null;
+      } else {
+        const weight = parseNullableFloat(rawWeight);
+        if (Number.isNaN(weight) || weight < 0) {
+          return res.status(400).json({
+            error: "weight must be a non-negative number when provided",
+          });
+        }
+        data.weight = weight;
       }
-      data.weight = weight;
-    } else if (rawWeight === null) {
-      data.weight = null;
     }
 
-    if (rawRpe != null && rawRpe !== "") {
-      const rpe = Number(rawRpe);
-      if (Number.isNaN(rpe)) {
-        return res.status(400).json({
-          error: "rpe must be a number when provided",
-        });
+    if (rawRpe !== undefined) {
+      if (rawRpe === "" || rawRpe === null) {
+        data.rpe = null;
+      } else {
+        const rpe = parseNullableFloat(rawRpe);
+        if (Number.isNaN(rpe) || rpe < 0) {
+          return res.status(400).json({
+            error: "rpe must be a non-negative number when provided",
+          });
+        }
+        data.rpe = rpe;
       }
-      data.rpe = rpe;
-    } else if (rawRpe === null) {
-      data.rpe = null;
     }
 
-    if (rawRir != null && rawRir !== "") {
-      const rir = Number(rawRir);
-      if (!Number.isInteger(rir)) {
-        return res.status(400).json({
-          error: "rir must be an integer when provided",
-        });
+    if (rawRir !== undefined) {
+      if (rawRir === "" || rawRir === null) {
+        data.rir = null;
+      } else {
+        const rir = parseNullableInt(rawRir);
+        if (Number.isNaN(rir) || rir < 0) {
+          return res.status(400).json({
+            error: "rir must be a non-negative integer when provided",
+          });
+        }
+        data.rir = rir;
       }
-      data.rir = rir;
-    } else if (rawRir === null) {
-      data.rir = null;
     }
 
     if (rawNotes !== undefined) {
       data.notes =
-        typeof rawNotes === "string" && rawNotes.trim()
-          ? rawNotes.trim()
-          : null;
+        typeof rawNotes === "string" && rawNotes.trim() ? rawNotes.trim() : null;
     }
 
-    let updatedSet;
-
-    try {
-      updatedSet = await prisma.$transaction(async (tx) => {
-        const existingSet = await tx.workoutSet.findUnique({
-          where: {
-            id: setId,
-          },
-          include: {
-            workoutSession: true,
-          },
-        });
-
-        if (!existingSet) {
-          const notFoundError = new Error("Set not found");
-          notFoundError.status = 404;
-          throw notFoundError;
-        }
-
-        if (existingSet.workoutSession.userId !== userId) {
-          const forbiddenError = new Error(
-            "You do not have permission to modify this set"
-          );
-          forbiddenError.status = 403;
-          throw forbiddenError;
-        }
-
-        const set = await tx.workoutSet.update({
-          where: {
-            id: setId,
-          },
-          data,
-          include: {
-            templateExercise: true,
-          },
-        });
-
-        return set;
+    if (Object.keys(data).length === 0) {
+      return res.status(400).json({
+        error: "No fields to update",
       });
-    } catch (txErr) {
-      if (txErr && txErr.status) {
-        return res.status(txErr.status).json({
-          error: txErr.message,
+    }
+
+    const set = await prisma.$transaction(async (tx) => {
+      const existingSet = await tx.workoutSet.findUnique({
+        where: {
+          id: setId,
+        },
+        include: {
+          workoutSession: {
+            select: {
+              id: true,
+              userId: true,
+              completedAt: true,
+            },
+          },
+        },
+      });
+
+      if (!existingSet) {
+        throw Object.assign(new Error("Set not found"), {
+          statusCode: 404,
+          code: "SET_NOT_FOUND",
         });
       }
 
-      throw txErr;
-    }
+      if (!existingSet.workoutSession || existingSet.workoutSession.userId !== userId) {
+        throw Object.assign(new Error("You do not have permission to modify this set"), {
+          statusCode: 403,
+          code: "FORBIDDEN_SET",
+        });
+      }
+
+      if (existingSet.workoutSession.completedAt) {
+        throw Object.assign(new Error("Completed sessions cannot be modified"), {
+          statusCode: 400,
+          code: "SESSION_COMPLETED",
+        });
+      }
+
+      const updatedSet = await tx.workoutSet.update({
+        where: {
+          id: setId,
+        },
+        data,
+        include: {
+          sessionExercise: true,
+        },
+      });
+
+      return updatedSet;
+    });
 
     return res.status(200).json({
-      set: updatedSet,
+      set,
+    });
+  } catch (err) {
+    if (err && err.statusCode === 404 && err.code === "SET_NOT_FOUND") {
+      return res.status(404).json({
+        error: "Set not found",
+      });
+    }
+
+    if (err && err.statusCode === 403 && err.code === "FORBIDDEN_SET") {
+      return res.status(403).json({
+        error: "You do not have permission to modify this set",
+      });
+    }
+
+    if (err && err.statusCode === 400 && err.code === "SESSION_COMPLETED") {
+      return res.status(400).json({
+        error: "Completed sessions cannot be modified",
+      });
+    }
+
+    if (err && err.code === "P2002") {
+      return res.status(400).json({
+        error: "Set order must be unique within the session",
+      });
+    }
+
+    return next(err);
+  }
+}
+
+async function updateSession(req, res, next) {
+  try {
+    const userId = req.session && req.session.userId;
+
+    if (!userId) {
+      return res.status(401).json({
+        error: "Authentication required",
+      });
+    }
+
+    const sessionId = parsePositiveInt(req.params && req.params.id);
+
+    if (!sessionId) {
+      return res.status(400).json({
+        error: "Session id must be a positive integer",
+      });
+    }
+
+    const { notes: rawNotes, performedAt: rawPerformedAt } = req.body || {};
+
+    const data = {};
+
+    if (rawNotes !== undefined) {
+      data.notes =
+        typeof rawNotes === "string" && rawNotes.trim() ? rawNotes.trim() : null;
+    }
+
+    if (rawPerformedAt !== undefined) {
+      if (typeof rawPerformedAt !== "string" || !rawPerformedAt.trim()) {
+        return res.status(400).json({
+          error: "performedAt must be a valid ISO 8601 datetime when provided",
+        });
+      }
+
+      const performedAtDate = new Date(rawPerformedAt);
+
+      if (Number.isNaN(performedAtDate.getTime())) {
+        return res.status(400).json({
+          error: "performedAt must be a valid ISO 8601 datetime when provided",
+        });
+      }
+
+      data.performedAt = performedAtDate;
+    }
+
+    if (Object.keys(data).length === 0) {
+      return res.status(400).json({
+        error: "No fields to update",
+      });
+    }
+
+    const existingSession = await prisma.workoutSession.findFirst({
+      where: {
+        id: sessionId,
+        userId,
+      },
+      select: {
+        id: true,
+        completedAt: true,
+      },
+    });
+
+    if (!existingSession) {
+      return res.status(404).json({
+        error: "Session not found",
+      });
+    }
+
+    if (existingSession.completedAt) {
+      return res.status(400).json({
+        error: "Completed sessions cannot be modified",
+      });
+    }
+
+    const session = await prisma.workoutSession.update({
+      where: {
+        id: sessionId,
+      },
+      data,
+      include: {
+        workoutTemplate: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            isPublic: true,
+            userId: true,
+          },
+        },
+        sessionExercises: {
+          orderBy: {
+            order: "asc",
+          },
+        },
+        sets: {
+          orderBy: [
+            {
+              order: "asc",
+            },
+          ],
+          include: {
+            sessionExercise: true,
+          },
+        },
+      },
+    });
+
+    return res.status(200).json({
+      session,
     });
   } catch (err) {
     return next(err);
   }
 }
 
+async function completeSession(req, res, next) {
+  try {
+    const userId = req.session && req.session.userId;
+
+    if (!userId) {
+      return res.status(401).json({
+        error: "Authentication required",
+      });
+    }
+
+    const sessionId = parsePositiveInt(req.params && req.params.id);
+
+    if (!sessionId) {
+      return res.status(400).json({
+        error: "Session id must be a positive integer",
+      });
+    }
+
+    const existingSession = await prisma.workoutSession.findFirst({
+      where: {
+        id: sessionId,
+        userId,
+      },
+    });
+
+    if (!existingSession) {
+      return res.status(404).json({
+        error: "Session not found",
+      });
+    }
+
+    if (existingSession.completedAt) {
+      return res.status(400).json({
+        error: "Session is already completed",
+      });
+    }
+
+    const session = await prisma.workoutSession.update({
+      where: {
+        id: sessionId,
+      },
+      data: {
+        completedAt: new Date(),
+      },
+      include: {
+        workoutTemplate: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            isPublic: true,
+            userId: true,
+          },
+        },
+        sessionExercises: {
+          orderBy: {
+            order: "asc",
+          },
+        },
+        sets: {
+          orderBy: [
+            {
+              order: "asc",
+            },
+          ],
+          include: {
+            sessionExercise: true,
+          },
+        },
+      },
+    });
+
+    return res.status(200).json({
+      session,
+    });
+  } catch (err) {
+    return next(err);
+  }
+}
+
+async function deleteSession(req, res, next) {
+  try {
+    const userId = req.session && req.session.userId;
+
+    if (!userId) {
+      return res.status(401).json({
+        error: "Authentication required",
+      });
+    }
+
+    const sessionId = parsePositiveInt(req.params && req.params.id);
+
+    if (!sessionId) {
+      return res.status(400).json({
+        error: "Session id must be a positive integer",
+      });
+    }
+
+    const result = await prisma.workoutSession.deleteMany({
+      where: {
+        id: sessionId,
+        userId,
+      },
+    });
+
+    if (result.count === 0) {
+      return res.status(404).json({
+        error: "Session not found",
+      });
+    }
+
+    return res.sendStatus(204);
+  } catch (err) {
+    return next(err);
+  }
+}
+
+async function deleteSet(req, res, next) {
+  try {
+    const userId = req.session && req.session.userId;
+
+    if (!userId) {
+      return res.status(401).json({
+        error: "Authentication required",
+      });
+    }
+
+    const setId = parsePositiveInt(req.params && req.params.id);
+
+    if (!setId) {
+      return res.status(400).json({
+        error: "Set id must be a positive integer",
+      });
+    }
+
+    const deleted = await prisma.$transaction(async (tx) => {
+      const existingSet = await tx.workoutSet.findUnique({
+        where: {
+          id: setId,
+        },
+        include: {
+          workoutSession: {
+            select: {
+              id: true,
+              userId: true,
+              completedAt: true,
+            },
+          },
+        },
+      });
+
+      if (!existingSet) {
+        return { status: 404 };
+      }
+
+      if (
+        !existingSet.workoutSession ||
+        existingSet.workoutSession.userId !== userId
+      ) {
+        return { status: 403 };
+      }
+
+      if (existingSet.workoutSession.completedAt) {
+        return { status: 400 };
+      }
+
+      await tx.workoutSet.delete({
+        where: {
+          id: setId,
+        },
+      });
+
+      return { status: 204 };
+    });
+
+    if (deleted.status === 404) {
+      return res.status(404).json({
+        error: "Set not found",
+      });
+    }
+
+    if (deleted.status === 403) {
+      return res.status(403).json({
+        error: "You do not have permission to delete this set",
+      });
+    }
+
+    if (deleted.status === 400) {
+      return res.status(400).json({
+        error: "Completed sessions cannot be modified",
+      });
+    }
+
+    return res.sendStatus(204);
+  } catch (err) {
+    return next(err);
+  }
+}
+
 module.exports = {
-  startSessionFromTemplate,
+  startSession,
   getMySessions,
   getSessionById,
   createSetForSession,
   updateSet,
+  updateSession,
+  completeSession,
+  deleteSession,
+  deleteSet,
 };
-

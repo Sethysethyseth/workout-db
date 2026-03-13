@@ -43,14 +43,17 @@ model TemplateExercise {
   workoutTemplateId Int
   workoutTemplate   WorkoutTemplate   @relation(fields: [workoutTemplateId], references: [id], onDelete: Cascade)
   sets              WorkoutSet[]
+  sessionExercises  SessionExercise[]
 
-  @@index([workoutTemplateId])
   @@unique([workoutTemplateId, order])
+  @@index([workoutTemplateId])
 }
 
 model WorkoutSession {
   id                Int               @id @default(autoincrement())
   performedAt       DateTime          @default(now())
+  startedAt         DateTime          @default(now())
+  completedAt       DateTime?
   notes             String?
   createdAt         DateTime          @default(now())
   userId            String
@@ -58,6 +61,7 @@ model WorkoutSession {
   workoutTemplateId Int?
   workoutTemplate   WorkoutTemplate?  @relation(fields: [workoutTemplateId], references: [id], onDelete: SetNull)
   sets              WorkoutSet[]
+  sessionExercises  SessionExercise[]
 
   @@index([userId])
   @@index([workoutTemplateId])
@@ -75,8 +79,29 @@ model WorkoutSet {
   workoutSession     WorkoutSession    @relation(fields: [workoutSessionId], references: [id], onDelete: Cascade)
   templateExerciseId Int?
   templateExercise   TemplateExercise? @relation(fields: [templateExerciseId], references: [id], onDelete: SetNull)
+  sessionExerciseId  Int?
+  sessionExercise    SessionExercise?  @relation(fields: [sessionExerciseId], references: [id], onDelete: SetNull)
 
+  @@unique([workoutSessionId, order])
   @@index([workoutSessionId])
   @@index([templateExerciseId])
+  @@index([sessionExerciseId])
+}
+
+model SessionExercise {
+  id                 Int               @id @default(autoincrement())
+  order              Int
+  exerciseName       String
+  targetSets         Int?
+  targetReps         String?
+  notes              String?
+  workoutSessionId   Int
+  workoutSession     WorkoutSession    @relation(fields: [workoutSessionId], references: [id], onDelete: Cascade)
+  templateExerciseId Int?
+  templateExercise   TemplateExercise? @relation(fields: [templateExerciseId], references: [id], onDelete: SetNull)
+  sets               WorkoutSet[]
+
   @@unique([workoutSessionId, order])
+  @@index([workoutSessionId])
+  @@index([templateExerciseId])
 }
