@@ -130,7 +130,7 @@ async function me(req, res, next) {
 
     if (!userId) {
       return res.status(401).json({
-        error: "Not authenticated",
+        error: "Authentication required",
       });
     }
 
