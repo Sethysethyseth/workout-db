@@ -7,13 +7,16 @@ export function DashboardPage() {
   return (
     <div className="stack">
       <div className="card">
-        <h1>Dashboard</h1>
+        <h1>WorkoutDB beta</h1>
         <p className="muted">Signed in as {currentUser.email}</p>
       </div>
 
       <div className="grid-2">
         <div className="card stack">
           <h2>Templates</h2>
+          <p className="muted small" style={{ marginTop: 0 }}>
+            Reusable plans — separate from logged sessions.
+          </p>
           <div className="row">
             <Link className="btn btn-secondary" to="/templates">
               My templates
@@ -21,7 +24,7 @@ export function DashboardPage() {
             <Link className="btn btn-secondary" to="/templates/public">
               Public templates
             </Link>
-            <Link className="btn" to="/templates/new">
+            <Link className="btn" to="/create-template">
               Create template
             </Link>
           </div>

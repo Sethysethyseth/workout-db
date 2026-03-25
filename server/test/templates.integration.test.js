@@ -194,5 +194,93 @@ describe("Template integration", () => {
       false
     );
   });
+
+  test("GET /templates/:id returns template with templateSets for owner", async () => {
+    const agent = request.agent(app);
+    await registerAndLogin(agent, {
+      email: uniqueEmail("getter"),
+      password: "password123",
+    });
+
+    const created = await agent.post("/templates").send({
+      name: "With Sets",
+      isPublic: false,
+      exercises: [
+        {
+          order: 1,
+          exerciseName: "Squat",
+          sets: [
+            { order: 1, reps: 5, weight: 100 },
+            { order: 2, reps: 5, weight: 120 },
+          ],
+        },
+      ],
+    });
+    expect(created.status).toBe(201);
+    const id = created.body.template.id;
+
+    const res = await agent.get(`/templates/${id}`).send();
+    expect(res.status).toBe(200);
+    expect(res.body.template.exercises[0].templateSets.length).toBe(2);
+    expect(res.body.template.exercises[0].templateSets[0]).toMatchObject({
+      reps: 5,
+      weight: 100,
+    });
+  });
+
+  test("PATCH /templates/:id toggles isPublic and updates exercises", async () => {
+    const agent = request.agent(app);
+    await registerAndLogin(agent, {
+      email: uniqueEmail("patch"),
+      password: "password123",
+    });
+
+    const created = await createTemplate(agent, {
+      name: "Patch Me",
+      isPublic: false,
+      exerciseName: "Old",
+    });
+    const id = created.id;
+
+    const pub = await agent.patch(`/templates/${id}`).send({ isPublic: true });
+    expect(pub.status).toBe(200);
+    expect(pub.body.template.isPublic).toBe(true);
+
+    const full = await agent.patch(`/templates/${id}`).send({
+      name: "Renamed",
+      exercises: [
+        {
+          order: 1,
+          exerciseName: "New Lift",
+          sets: [{ order: 1, reps: 10 }],
+        },
+      ],
+    });
+    expect(full.status).toBe(200);
+    expect(full.body.template.name).toBe("Renamed");
+    expect(full.body.template.exercises[0].exerciseName).toBe("New Lift");
+    expect(full.body.template.exercises[0].templateSets.length).toBe(1);
+  });
+
+  test("DELETE /templates/:id removes template for owner", async () => {
+    const agent = request.agent(app);
+    await registerAndLogin(agent, {
+      email: uniqueEmail("del"),
+      password: "password123",
+    });
+
+    const created = await createTemplate(agent, {
+      name: "To Delete",
+      isPublic: false,
+      exerciseName: "X",
+    });
+    const id = created.id;
+
+    const del = await agent.delete(`/templates/${id}`).send();
+    expect(del.status).toBe(204);
+
+    const again = await agent.get(`/templates/${id}`).send();
+    expect(again.status).toBe(404);
+  });
 });
 

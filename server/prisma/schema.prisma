@@ -14,6 +14,7 @@ model User {
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
   workoutTemplates WorkoutTemplate[]
+  blockTemplates   BlockTemplate[]
   workoutSessions  WorkoutSession[]
 }
 
@@ -43,10 +44,26 @@ model TemplateExercise {
   workoutTemplateId Int
   workoutTemplate   WorkoutTemplate   @relation(fields: [workoutTemplateId], references: [id], onDelete: Cascade)
   sets              WorkoutSet[]
+  templateSets      TemplateSet[]
   sessionExercises  SessionExercise[]
 
   @@unique([workoutTemplateId, order])
   @@index([workoutTemplateId])
+}
+
+model TemplateSet {
+  id                 Int              @id @default(autoincrement())
+  order              Int
+  reps               Int?
+  weight             Float?
+  rpe                Float?
+  rir                Int?
+  notes              String?
+  templateExerciseId Int
+  templateExercise   TemplateExercise @relation(fields: [templateExerciseId], references: [id], onDelete: Cascade)
+
+  @@unique([templateExerciseId, order])
+  @@index([templateExerciseId])
 }
 
 model WorkoutSession {
@@ -104,4 +121,62 @@ model SessionExercise {
   @@unique([workoutSessionId, order])
   @@index([workoutSessionId])
   @@index([templateExerciseId])
+}
+
+model BlockTemplate {
+  id              Int            @id @default(autoincrement())
+  name            String
+  description     String?
+  isPublic        Boolean        @default(false)
+  durationWeeks   Int?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  userId          String
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workouts        BlockWorkout[]
+
+  @@index([userId])
+  @@index([isPublic])
+}
+
+model BlockWorkout {
+  id              Int                    @id @default(autoincrement())
+  order           Int
+  name            String
+  blockTemplateId Int
+  blockTemplate   BlockTemplate          @relation(fields: [blockTemplateId], references: [id], onDelete: Cascade)
+  exercises       BlockWorkoutExercise[]
+
+  @@unique([blockTemplateId, order])
+  @@index([blockTemplateId])
+}
+
+model BlockWorkoutExercise {
+  id               Int               @id @default(autoincrement())
+  order            Int
+  exerciseName     String
+  targetSets       Int?
+  targetReps       String?
+  notes            String?
+  blockWorkoutId   Int
+  blockWorkout     BlockWorkout      @relation(fields: [blockWorkoutId], references: [id], onDelete: Cascade)
+  blockWorkoutSets BlockWorkoutSet[]
+
+  @@unique([blockWorkoutId, order])
+  @@index([blockWorkoutId])
+}
+
+model BlockWorkoutSet {
+  id                     Int                  @id @default(autoincrement())
+  order                  Int
+  reps                   Int?
+  weight                 Float?
+  rpe                    Float?
+  rir                    Int?
+  notes                  String?
+  blockWorkoutExerciseId Int
+  blockWorkoutExercise   BlockWorkoutExercise @relation(fields: [blockWorkoutExerciseId], references: [id], onDelete: Cascade)
+
+  @@unique([blockWorkoutExerciseId, order])
+  @@index([blockWorkoutExerciseId])
 }

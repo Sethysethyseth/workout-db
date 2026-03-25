@@ -16,3 +16,10 @@ export function me() {
   return http("/auth/me");
 }
 
+export function changePassword({ currentPassword, newPassword }) {
+  return http("/auth/password", {
+    method: "PATCH",
+    body: { currentPassword, newPassword },
+  });
+}
+

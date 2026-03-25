@@ -1,10 +1,10 @@
 import { Outlet } from "react-router-dom";
-import { NavBar } from "./NavBar.jsx";
+import { Navbar } from "./layout/Navbar.jsx";
 
 export function Layout() {
   return (
     <div className="app">
-      <NavBar />
+      <Navbar />
       <main className="container main">
         <Outlet />
       </main>

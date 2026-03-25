@@ -1,15 +1,16 @@
 const prisma = require("../lib/prisma");
 const {
-  normalizeExercisesArray,
+  normalizeBlockWorkoutsArray,
+  parseOptionalDurationWeeks,
   parsePositiveInt,
 } = require("../lib/templateExerciseNormalize");
 
-const exerciseInclude = {
+const blockExerciseInclude = {
   orderBy: {
     order: "asc",
   },
   include: {
-    templateSets: {
+    blockWorkoutSets: {
       orderBy: {
         order: "asc",
       },
@@ -17,7 +18,16 @@ const exerciseInclude = {
   },
 };
 
-async function createTemplate(req, res, next) {
+const blockWorkoutInclude = {
+  orderBy: {
+    order: "asc",
+  },
+  include: {
+    exercises: blockExerciseInclude,
+  },
+};
+
+async function createBlockTemplate(req, res, next) {
   try {
     const userId = req.session && req.session.userId;
 
@@ -27,7 +37,7 @@ async function createTemplate(req, res, next) {
       });
     }
 
-    const { name, description, isPublic, exercises } = req.body || {};
+    const { name, description, isPublic, durationWeeks, workouts } = req.body || {};
 
     const trimmedName = typeof name === "string" ? name.trim() : "";
     const trimmedDescription =
@@ -37,39 +47,50 @@ async function createTemplate(req, res, next) {
 
     if (!trimmedName) {
       return res.status(400).json({
-        error: "Template name is required",
+        error: "Block template name is required",
       });
     }
 
-    const norm = normalizeExercisesArray(exercises);
+    const dur = parseOptionalDurationWeeks(durationWeeks);
+    if (!dur.ok) {
+      return res.status(dur.status).json({ error: dur.error });
+    }
+
+    const norm = normalizeBlockWorkoutsArray(workouts);
     if (!norm.ok) {
       return res.status(norm.status).json({ error: norm.error });
     }
 
-    const template = await prisma.workoutTemplate.create({
-      data: {
-        name: trimmedName,
-        description: trimmedDescription,
-        isPublic: Boolean(isPublic),
-        userId,
-        exercises: {
-          create: norm.value,
-        },
+    const data = {
+      name: trimmedName,
+      description: trimmedDescription,
+      isPublic: Boolean(isPublic),
+      userId,
+      workouts: {
+        create: norm.value,
       },
+    };
+
+    if (dur.value !== undefined) {
+      data.durationWeeks = dur.value;
+    }
+
+    const blockTemplate = await prisma.blockTemplate.create({
+      data,
       include: {
-        exercises: exerciseInclude,
+        workouts: blockWorkoutInclude,
       },
     });
 
     return res.status(201).json({
-      template,
+      blockTemplate,
     });
   } catch (err) {
     return next(err);
   }
 }
 
-async function getMyTemplates(req, res, next) {
+async function getMyBlockTemplates(req, res, next) {
   try {
     const userId = req.session && req.session.userId;
 
@@ -79,7 +100,7 @@ async function getMyTemplates(req, res, next) {
       });
     }
 
-    const templates = await prisma.workoutTemplate.findMany({
+    const blockTemplates = await prisma.blockTemplate.findMany({
       where: {
         userId,
       },
@@ -87,19 +108,19 @@ async function getMyTemplates(req, res, next) {
         createdAt: "desc",
       },
       include: {
-        exercises: exerciseInclude,
+        workouts: blockWorkoutInclude,
       },
     });
 
     return res.status(200).json({
-      templates,
+      blockTemplates,
     });
   } catch (err) {
     return next(err);
   }
 }
 
-async function getPublicTemplates(req, res, next) {
+async function getPublicBlockTemplates(req, res, next) {
   try {
     const userId = req.session && req.session.userId;
 
@@ -113,13 +134,13 @@ async function getPublicTemplates(req, res, next) {
       };
     }
 
-    const templates = await prisma.workoutTemplate.findMany({
+    const blockTemplates = await prisma.blockTemplate.findMany({
       where: whereClause,
       orderBy: {
         createdAt: "desc",
       },
       include: {
-        exercises: exerciseInclude,
+        workouts: blockWorkoutInclude,
         user: {
           select: {
             id: true,
@@ -130,56 +151,56 @@ async function getPublicTemplates(req, res, next) {
     });
 
     return res.status(200).json({
-      templates,
+      blockTemplates,
     });
   } catch (err) {
     return next(err);
   }
 }
 
-async function getTemplateById(req, res, next) {
+async function getBlockTemplateById(req, res, next) {
   try {
     const templateId = parsePositiveInt(req.params && req.params.id);
 
     if (!templateId) {
       return res.status(400).json({
-        error: "Template id must be a positive integer",
+        error: "Block template id must be a positive integer",
       });
     }
 
     const userId = req.session && req.session.userId;
 
-    const template = await prisma.workoutTemplate.findUnique({
+    const blockTemplate = await prisma.blockTemplate.findUnique({
       where: {
         id: templateId,
       },
       include: {
-        exercises: exerciseInclude,
+        workouts: blockWorkoutInclude,
       },
     });
 
-    if (!template) {
+    if (!blockTemplate) {
       return res.status(404).json({
-        error: "Template not found",
+        error: "Block template not found",
       });
     }
 
-    const isOwner = userId && template.userId === userId;
-    if (!template.isPublic && !isOwner) {
+    const isOwner = userId && blockTemplate.userId === userId;
+    if (!blockTemplate.isPublic && !isOwner) {
       return res.status(403).json({
-        error: "You do not have permission to view this template",
+        error: "You do not have permission to view this block template",
       });
     }
 
     return res.status(200).json({
-      template,
+      blockTemplate,
     });
   } catch (err) {
     return next(err);
   }
 }
 
-async function updateTemplate(req, res, next) {
+async function updateBlockTemplate(req, res, next) {
   try {
     const userId = req.session && req.session.userId;
 
@@ -193,11 +214,11 @@ async function updateTemplate(req, res, next) {
 
     if (!templateId) {
       return res.status(400).json({
-        error: "Template id must be a positive integer",
+        error: "Block template id must be a positive integer",
       });
     }
 
-    const existing = await prisma.workoutTemplate.findFirst({
+    const existing = await prisma.blockTemplate.findFirst({
       where: {
         id: templateId,
         userId,
@@ -206,11 +227,11 @@ async function updateTemplate(req, res, next) {
 
     if (!existing) {
       return res.status(404).json({
-        error: "Template not found",
+        error: "Block template not found",
       });
     }
 
-    const { name, description, isPublic, exercises } = req.body || {};
+    const { name, description, isPublic, durationWeeks, workouts } = req.body || {};
 
     const data = {};
 
@@ -218,7 +239,7 @@ async function updateTemplate(req, res, next) {
       const trimmed = typeof name === "string" ? name.trim() : "";
       if (!trimmed) {
         return res.status(400).json({
-          error: "Template name cannot be empty",
+          error: "Block template name cannot be empty",
         });
       }
       data.name = trimmed;
@@ -235,12 +256,20 @@ async function updateTemplate(req, res, next) {
       data.isPublic = Boolean(isPublic);
     }
 
-    if (exercises !== undefined) {
-      const norm = normalizeExercisesArray(exercises);
+    if (durationWeeks !== undefined) {
+      const dur = parseOptionalDurationWeeks(durationWeeks);
+      if (!dur.ok) {
+        return res.status(dur.status).json({ error: dur.error });
+      }
+      data.durationWeeks = dur.value;
+    }
+
+    if (workouts !== undefined) {
+      const norm = normalizeBlockWorkoutsArray(workouts);
       if (!norm.ok) {
         return res.status(norm.status).json({ error: norm.error });
       }
-      data.exercises = {
+      data.workouts = {
         deleteMany: {},
         create: norm.value,
       };
@@ -252,25 +281,25 @@ async function updateTemplate(req, res, next) {
       });
     }
 
-    const template = await prisma.workoutTemplate.update({
+    const blockTemplate = await prisma.blockTemplate.update({
       where: {
         id: templateId,
       },
       data,
       include: {
-        exercises: exerciseInclude,
+        workouts: blockWorkoutInclude,
       },
     });
 
     return res.status(200).json({
-      template,
+      blockTemplate,
     });
   } catch (err) {
     return next(err);
   }
 }
 
-async function deleteTemplate(req, res, next) {
+async function deleteBlockTemplate(req, res, next) {
   try {
     const userId = req.session && req.session.userId;
 
@@ -284,11 +313,11 @@ async function deleteTemplate(req, res, next) {
 
     if (!templateId) {
       return res.status(400).json({
-        error: "Template id must be a positive integer",
+        error: "Block template id must be a positive integer",
       });
     }
 
-    const result = await prisma.workoutTemplate.deleteMany({
+    const result = await prisma.blockTemplate.deleteMany({
       where: {
         id: templateId,
         userId,
@@ -297,7 +326,7 @@ async function deleteTemplate(req, res, next) {
 
     if (result.count === 0) {
       return res.status(404).json({
-        error: "Template not found",
+        error: "Block template not found",
       });
     }
 
@@ -307,7 +336,7 @@ async function deleteTemplate(req, res, next) {
   }
 }
 
-async function cloneTemplate(req, res, next) {
+async function cloneBlockTemplate(req, res, next) {
   try {
     const userId = req.session && req.session.userId;
 
@@ -322,75 +351,82 @@ async function cloneTemplate(req, res, next) {
 
     if (!Number.isInteger(templateId) || templateId <= 0) {
       return res.status(400).json({
-        error: "Template id must be a positive integer",
+        error: "Block template id must be a positive integer",
       });
     }
 
-    const existingTemplate = await prisma.workoutTemplate.findUnique({
+    const existing = await prisma.blockTemplate.findUnique({
       where: {
         id: templateId,
       },
       include: {
-        exercises: exerciseInclude,
+        workouts: blockWorkoutInclude,
       },
     });
 
-    if (!existingTemplate) {
+    if (!existing) {
       return res.status(404).json({
-        error: "Template not found",
+        error: "Block template not found",
       });
     }
 
-    const isOwner = existingTemplate.userId === userId;
+    const isOwner = existing.userId === userId;
 
-    if (!existingTemplate.isPublic && !isOwner) {
+    if (!existing.isPublic && !isOwner) {
       return res.status(403).json({
-        error: "You do not have permission to clone this template",
+        error: "You do not have permission to clone this block template",
       });
     }
 
-    const clonedTemplate = await prisma.workoutTemplate.create({
+    const cloned = await prisma.blockTemplate.create({
       data: {
-        name: `${existingTemplate.name} (Copy)`,
-        description: existingTemplate.description,
+        name: `${existing.name} (Copy)`,
+        description: existing.description,
         isPublic: false,
+        durationWeeks: existing.durationWeeks,
         userId,
-        exercises: {
-          create: existingTemplate.exercises.map((exercise) => {
-            const base = {
-              order: exercise.order,
-              exerciseName: exercise.exerciseName,
-              targetSets: exercise.targetSets,
-              targetReps: exercise.targetReps,
-              notes: exercise.notes,
-            };
-            const templateSets = exercise.templateSets || [];
-            if (templateSets.length > 0) {
-              return {
-                ...base,
-                templateSets: {
-                  create: templateSets.map((s) => ({
-                    order: s.order,
-                    reps: s.reps,
-                    weight: s.weight,
-                    rpe: s.rpe,
-                    rir: s.rir,
-                    notes: s.notes,
-                  })),
-                },
-              };
-            }
-            return base;
-          }),
+        workouts: {
+          create: existing.workouts.map((w) => ({
+            order: w.order,
+            name: w.name,
+            exercises: {
+              create: w.exercises.map((exercise) => {
+                const base = {
+                  order: exercise.order,
+                  exerciseName: exercise.exerciseName,
+                  targetSets: exercise.targetSets,
+                  targetReps: exercise.targetReps,
+                  notes: exercise.notes,
+                };
+                const sets = exercise.blockWorkoutSets || [];
+                if (sets.length > 0) {
+                  return {
+                    ...base,
+                    blockWorkoutSets: {
+                      create: sets.map((s) => ({
+                        order: s.order,
+                        reps: s.reps,
+                        weight: s.weight,
+                        rpe: s.rpe,
+                        rir: s.rir,
+                        notes: s.notes,
+                      })),
+                    },
+                  };
+                }
+                return base;
+              }),
+            },
+          })),
         },
       },
       include: {
-        exercises: exerciseInclude,
+        workouts: blockWorkoutInclude,
       },
     });
 
     return res.status(201).json({
-      template: clonedTemplate,
+      blockTemplate: cloned,
     });
   } catch (err) {
     return next(err);
@@ -398,11 +434,11 @@ async function cloneTemplate(req, res, next) {
 }
 
 module.exports = {
-  createTemplate,
-  getMyTemplates,
-  getPublicTemplates,
-  getTemplateById,
-  updateTemplate,
-  deleteTemplate,
-  cloneTemplate,
+  createBlockTemplate,
+  getMyBlockTemplates,
+  getPublicBlockTemplates,
+  getBlockTemplateById,
+  updateBlockTemplate,
+  deleteBlockTemplate,
+  cloneBlockTemplate,
 };

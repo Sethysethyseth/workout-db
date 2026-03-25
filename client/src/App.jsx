@@ -4,11 +4,14 @@ import { Layout } from "./components/Layout.jsx";
 import { DashboardPage } from "./pages/DashboardPage.jsx";
 import { LoginPage } from "./pages/LoginPage.jsx";
 import { RegisterPage } from "./pages/RegisterPage.jsx";
-import { TemplatesMinePage } from "./pages/TemplatesMinePage.jsx";
-import { TemplatesPublicPage } from "./pages/TemplatesPublicPage.jsx";
-import { TemplateNewPage } from "./pages/TemplateNewPage.jsx";
-import { SessionsListPage } from "./pages/SessionsListPage.jsx";
+import { MyTemplatesPage } from "./pages/MyTemplatesPage.jsx";
+import { PublicTemplatesPage } from "./pages/PublicTemplatesPage.jsx";
+import { CreateTemplatePage } from "./pages/CreateTemplatePage.jsx";
+import { EditTemplatePage } from "./pages/EditTemplatePage.jsx";
+import { EditBlockTemplatePage } from "./pages/EditBlockTemplatePage.jsx";
+import { SessionsPage } from "./pages/SessionsPage.jsx";
 import { SessionDetailPage } from "./pages/SessionDetailPage.jsx";
+import { ProfilePage } from "./pages/ProfilePage.jsx";
 
 export default function App() {
   return (
@@ -29,7 +32,7 @@ export default function App() {
           path="/templates"
           element={
             <ProtectedRoute>
-              <TemplatesMinePage />
+              <MyTemplatesPage />
             </ProtectedRoute>
           }
         />
@@ -37,23 +40,40 @@ export default function App() {
           path="/templates/public"
           element={
             <ProtectedRoute>
-              <TemplatesPublicPage />
+              <PublicTemplatesPage />
             </ProtectedRoute>
           }
         />
         <Route
-          path="/templates/new"
+          path="/create-template"
           element={
             <ProtectedRoute>
-              <TemplateNewPage />
+              <CreateTemplatePage />
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/templates/:id/edit"
+          element={
+            <ProtectedRoute>
+              <EditTemplatePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/blocks/:id/edit"
+          element={
+            <ProtectedRoute>
+              <EditBlockTemplatePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/templates/new" element={<Navigate to="/create-template" replace />} />
         <Route
           path="/sessions"
           element={
             <ProtectedRoute>
-              <SessionsListPage />
+              <SessionsPage />
             </ProtectedRoute>
           }
         />
@@ -62,6 +82,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <SessionDetailPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <ProfilePage />
             </ProtectedRoute>
           }
         />

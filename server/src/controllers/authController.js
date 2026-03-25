@@ -152,9 +152,71 @@ async function me(req, res, next) {
   }
 }
 
+async function changePassword(req, res, next) {
+  try {
+    const userId = req.session && req.session.userId;
+
+    if (!userId) {
+      return res.status(401).json({
+        error: "Authentication required",
+      });
+    }
+
+    const currentPassword = req.body?.currentPassword;
+    const newPassword = req.body?.newPassword;
+
+    if (
+      typeof currentPassword !== "string" ||
+      typeof newPassword !== "string"
+    ) {
+      return res.status(400).json({
+        error: "currentPassword and newPassword are required",
+      });
+    }
+
+    if (newPassword.length < 8) {
+      return res.status(400).json({
+        error: "New password must be at least 8 characters long",
+      });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        error: "User not found",
+      });
+    }
+
+    const currentOk = await bcrypt.compare(currentPassword, user.passwordHash);
+
+    if (!currentOk) {
+      return res.status(400).json({
+        error: "Current password is incorrect",
+      });
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, SALT_ROUNDS);
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash },
+    });
+
+    return res.status(200).json({
+      ok: true,
+    });
+  } catch (err) {
+    return next(err);
+  }
+}
+
 module.exports = {
   register,
   login,
   logout,
   me,
+  changePassword,
 };

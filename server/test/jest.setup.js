@@ -7,6 +7,7 @@ async function resetDb() {
   await prisma.workoutSet.deleteMany();
   await prisma.sessionExercise.deleteMany();
   await prisma.workoutSession.deleteMany();
+  await prisma.templateSet.deleteMany();
   await prisma.templateExercise.deleteMany();
   await prisma.workoutTemplate.deleteMany();
   await prisma.user.deleteMany();

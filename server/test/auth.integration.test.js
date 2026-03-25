@@ -95,5 +95,54 @@ describe("Auth integration", () => {
     expect(res.status).toBe(401);
     expect(res.body).toEqual({ error: "Authentication required" });
   });
+
+  test("PATCH /auth/password updates password when current password is correct", async () => {
+    const agent = request.agent(app);
+    const email = uniqueEmail();
+    const password = "password123";
+
+    const registerRes = await register(agent, { email, password });
+    expect(registerRes.status).toBe(201);
+
+    const patchRes = await agent.patch("/auth/password").send({
+      currentPassword: password,
+      newPassword: "newpassword456",
+    });
+    expect(patchRes.status).toBe(200);
+    expect(patchRes.body).toEqual({ ok: true });
+
+    await agent.post("/auth/logout").send();
+
+    const oldLogin = await login(agent, { email, password: password });
+    expect(oldLogin.status).toBe(401);
+
+    const newLogin = await login(agent, { email, password: "newpassword456" });
+    expect(newLogin.status).toBe(200);
+  });
+
+  test("PATCH /auth/password rejects wrong current password", async () => {
+    const agent = request.agent(app);
+    const email = uniqueEmail();
+    const password = "password123";
+
+    const registerRes = await register(agent, { email, password });
+    expect(registerRes.status).toBe(201);
+
+    const patchRes = await agent.patch("/auth/password").send({
+      currentPassword: "wrong",
+      newPassword: "newpassword456",
+    });
+    expect(patchRes.status).toBe(400);
+    expect(patchRes.body).toEqual({ error: "Current password is incorrect" });
+  });
+
+  test("PATCH /auth/password requires authentication", async () => {
+    const agent = request.agent(app);
+    const patchRes = await agent.patch("/auth/password").send({
+      currentPassword: "x",
+      newPassword: "yyyyyyyy",
+    });
+    expect(patchRes.status).toBe(401);
+  });
 });
 

@@ -185,3 +185,64 @@ textarea {
     grid-template-columns: 1fr 1fr;
   }
 }
+
+.password-field {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.password-field input {
+  flex: 1;
+  min-width: 0;
+}
+
+.password-toggle {
+  flex-shrink: 0;
+  white-space: nowrap;
+  padding-left: 14px;
+  padding-right: 14px;
+}
+
+.template-type-pick {
+  display: grid;
+  gap: 12px;
+}
+
+@media (min-width: 640px) {
+  .template-type-pick {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.template-type-card {
+  text-align: left;
+  cursor: pointer;
+  border: 1px solid #e2e8f0;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.template-type-card:hover {
+  border-color: #a5b4fc;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+}
+
+.grid-set-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+@media (min-width: 720px) {
+  .grid-set-row {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.set-row-head {
+  margin-bottom: 4px;
+}
+
+.exercise-editor .set-row {
+  padding: 10px;
+}

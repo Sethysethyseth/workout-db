@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { ErrorMessage } from "../components/ErrorMessage.jsx";
+import { PasswordInput } from "../components/auth/PasswordInput.jsx";
 
 export function LoginPage() {
   const { login } = useAuth();
@@ -34,7 +35,7 @@ export function LoginPage() {
       <div>
         <h1>Login</h1>
         <p className="muted">
-          Use your WorkoutDB account to continue. Cookies must be enabled.
+          Use your WorkoutDB beta account to continue. Cookies must be enabled.
         </p>
       </div>
 
@@ -51,17 +52,14 @@ export function LoginPage() {
             required
           />
         </label>
-        <label>
-          Password
-          <input
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            type="password"
-            autoComplete="current-password"
-            required
-            minLength={8}
-          />
-        </label>
+        <PasswordInput
+          label="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          autoComplete="current-password"
+          required
+          minLength={8}
+        />
         <div className="row">
           <button className="btn" disabled={submitting}>
             {submitting ? "Logging in…" : "Login"}

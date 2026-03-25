@@ -11,7 +11,7 @@ function formatDate(value) {
   return d.toLocaleString();
 }
 
-export function SessionsListPage() {
+export function SessionsPage() {
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -38,7 +38,7 @@ export function SessionsListPage() {
       <div className="row">
         <div>
           <h1>Sessions</h1>
-          <p className="muted">Your workout history (active + completed).</p>
+          <p className="muted">Completed and in-progress workouts (not templates).</p>
         </div>
         <button className="btn btn-secondary" onClick={load} disabled={loading}>
           Refresh
@@ -60,17 +60,11 @@ export function SessionsListPage() {
                 <h2 style={{ marginBottom: 6 }}>
                   <Link to={`/sessions/${s.id}`}>Session #{s.id}</Link>
                 </h2>
-                <div className="muted small">
-                  Performed: {formatDate(s.performedAt)}
-                </div>
-                <div className="muted small">
-                  Started: {formatDate(s.startedAt)}
-                </div>
+                <div className="muted small">Performed: {formatDate(s.performedAt)}</div>
+                <div className="muted small">Started: {formatDate(s.startedAt)}</div>
               </div>
               <div className="stack" style={{ alignItems: "flex-end" }}>
-                <span className="pill">
-                  {s.completedAt ? "Completed" : "Active"}
-                </span>
+                <span className="pill">{s.completedAt ? "Completed" : "Active"}</span>
                 <span className="pill">
                   Sets: {s._count?.sets ?? "—"} · Exercises:{" "}
                   {s._count?.sessionExercises ?? "—"}
@@ -90,4 +84,3 @@ export function SessionsListPage() {
     </div>
   );
 }
-

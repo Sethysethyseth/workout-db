@@ -1,8 +1,8 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext.jsx";
-import { ApiError } from "../api/http.js";
+import { useAuth } from "../../context/AuthContext.jsx";
+import { ApiError } from "../../api/http.js";
 
-export function NavBar() {
+export function Navbar() {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -22,18 +22,23 @@ export function NavBar() {
     <header className="nav">
       <div className="container nav-inner">
         <div className="brand">
-          <Link to="/">WorkoutDB</Link>
+          <Link to="/">WorkoutDB beta</Link>
         </div>
         <nav className="links">
           {currentUser ? (
             <>
-              <NavLink to="/templates">My Templates</NavLink>
+              <NavLink to="/templates" end>
+                My Templates
+              </NavLink>
               <NavLink to="/templates/public">Public Templates</NavLink>
-              <NavLink to="/sessions">Sessions</NavLink>
-              <button className="btn btn-ghost" onClick={onLogout}>
+              <NavLink to="/create-template">Create Template</NavLink>
+              <NavLink to="/sessions" end>
+                Sessions
+              </NavLink>
+              <NavLink to="/profile">Profile</NavLink>
+              <button className="btn btn-ghost" type="button" onClick={onLogout}>
                 Logout
               </button>
-              <span className="muted small">{currentUser.email}</span>
             </>
           ) : (
             <>
@@ -46,4 +51,3 @@ export function NavBar() {
     </header>
   );
 }
-
