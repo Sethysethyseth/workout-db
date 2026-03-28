@@ -371,6 +371,16 @@ html[data-theme="dark"] .btn-secondary:active:not(:disabled) {
   justify-content: flex-end;
 }
 
+/* Inactive mode uses btn-secondary; in dark theme it matched page cards and looked disabled. */
+.view-mode-toggle-buttons .btn.btn-secondary {
+  font-weight: 600;
+  border-color: var(--color-input-border);
+}
+
+html[data-theme="dark"] .view-mode-toggle-buttons .btn.btn-secondary {
+  background: var(--color-surface-2);
+}
+
 .template-table-view .template-table-section {
   padding: 0;
   overflow: hidden;

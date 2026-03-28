@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import * as blockTemplateApi from "../api/blockTemplateApi.js";
 import { ErrorMessage } from "../components/ErrorMessage.jsx";
@@ -7,9 +7,9 @@ import { BlockTemplateTableView } from "../components/templates/BlockTemplateTab
 import { ViewModeToggle } from "../components/templates/ViewModeToggle.jsx";
 import { WorkoutBuilder } from "../components/templates/WorkoutBuilder.jsx";
 import {
+  applyCopyPreviousWeek,
   blockTemplateToBlockWeeks,
   blockWeeksToApiPayload,
-  cloneBlockWeekWorkoutsFromSource,
   isBlockWeekPristine,
   newBlockWeek,
   newBlockWorkout,
@@ -32,6 +32,8 @@ export function EditBlockTemplatePage() {
   const [blockWeeks, setBlockWeeks] = useState(null);
   const [viewMode, setViewMode] = useState("builder");
   const [submitting, setSubmitting] = useState(false);
+  const blockWeeksRef = useRef(null);
+  blockWeeksRef.current = blockWeeks;
 
   useEffect(() => {
     let cancelled = false;
@@ -112,19 +114,18 @@ export function EditBlockTemplatePage() {
 
   function copyPreviousWeekInto(weekIdx) {
     if (weekIdx < 1) return;
-    setBlockWeeks((prev) => {
-      const source = prev[weekIdx - 1];
-      const target = prev[weekIdx];
-      if (!source || !target) return prev;
-      if (!isBlockWeekPristine(target)) {
-        const ok = window.confirm(
-          "Replace this week’s workouts and exercises with a copy of the previous week? This cannot be undone."
-        );
-        if (!ok) return prev;
-      }
-      const workouts = cloneBlockWeekWorkoutsFromSource(source);
-      return prev.map((wk, i) => (i === weekIdx ? { ...wk, workouts } : wk));
-    });
+    const prev = blockWeeksRef.current;
+    if (!prev) return;
+    const target = prev[weekIdx];
+    const source = prev[weekIdx - 1];
+    if (!target || !source) return;
+    if (!isBlockWeekPristine(target)) {
+      const ok = window.confirm(
+        "Replace this week’s workouts and exercises with a copy of the previous week? This cannot be undone."
+      );
+      if (!ok) return;
+    }
+    setBlockWeeks((p) => applyCopyPreviousWeek(p, weekIdx));
   }
 
   async function onSubmit(e) {

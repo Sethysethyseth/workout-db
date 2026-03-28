@@ -233,6 +233,16 @@ export function cloneBlockWeekWorkoutsFromSource(sourceWeek) {
   return mapped.length ? mapped : [newBlockWorkout()];
 }
 
+/** Replace `blockWeeks[weekIdx].workouts` with a deep clone of the previous week’s workouts. */
+export function applyCopyPreviousWeek(blockWeeks, weekIdx) {
+  if (!Array.isArray(blockWeeks) || weekIdx < 1) return blockWeeks;
+  const source = blockWeeks[weekIdx - 1];
+  const target = blockWeeks[weekIdx];
+  if (!source || !target) return blockWeeks;
+  const workouts = cloneBlockWeekWorkoutsFromSource(source);
+  return blockWeeks.map((wk, i) => (i === weekIdx ? { ...wk, workouts } : wk));
+}
+
 /** Payload workouts[] inside one week for POST/PATCH /block-templates */
 export function blockWorkoutsToApiPayload(blockWorkouts) {
   return blockWorkouts.map((w, i) => ({

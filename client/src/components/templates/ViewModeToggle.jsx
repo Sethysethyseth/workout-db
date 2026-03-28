@@ -9,6 +9,7 @@ export function ViewModeToggle({ value, onChange }) {
         <button
           type="button"
           className={value === "builder" ? "btn" : "btn btn-secondary"}
+          aria-pressed={value === "builder"}
           onClick={() => onChange("builder")}
         >
           Builder View
@@ -16,6 +17,7 @@ export function ViewModeToggle({ value, onChange }) {
         <button
           type="button"
           className={value === "table" ? "btn" : "btn btn-secondary"}
+          aria-pressed={value === "table"}
           onClick={() => onChange("table")}
         >
           Table View

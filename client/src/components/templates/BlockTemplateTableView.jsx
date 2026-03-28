@@ -8,9 +8,14 @@ export function BlockTemplateTableView({
   useDuration,
   durationWeeks,
 }) {
+  const durationStr =
+    durationWeeks != null && String(durationWeeks).trim() !== ""
+      ? String(durationWeeks).trim()
+      : "";
+  const durationNum = Number(durationStr);
   const durationLabel =
-    useDuration && durationWeeks != null && String(durationWeeks).trim() !== ""
-      ? `${String(durationWeeks).trim()} week${Number(durationWeeks) === 1 ? "" : "s"}`
+    useDuration && durationStr !== ""
+      ? `${durationStr} week${Number.isFinite(durationNum) && durationNum === 1 ? "" : "s"}`
       : null;
 
   return (
