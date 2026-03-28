@@ -21,15 +21,20 @@ function sampleBlockPayload(overrides = {}) {
     description: "Block integration",
     isPublic: false,
     durationWeeks: 4,
-    workouts: [
+    weeks: [
       {
         order: 1,
-        name: "Day A",
-        exercises: [
+        workouts: [
           {
             order: 1,
-            exerciseName: "Squat",
-            sets: [{ order: 1, reps: 5, weight: 100, rir: 1, rpe: 8 }],
+            name: "Day A",
+            exercises: [
+              {
+                order: 1,
+                exerciseName: "Squat",
+                sets: [{ order: 1, reps: 5, weight: 100, rir: 1, rpe: 8 }],
+              },
+            ],
           },
         ],
       },
@@ -53,9 +58,10 @@ describe("Block template integration", () => {
     expect(res.body.blockTemplate).toHaveProperty("id");
     expect(res.body.blockTemplate.name).toBe("Test Block");
     expect(res.body.blockTemplate.durationWeeks).toBe(4);
-    expect(Array.isArray(res.body.blockTemplate.workouts)).toBe(true);
-    expect(res.body.blockTemplate.workouts.length).toBe(1);
-    const ex = res.body.blockTemplate.workouts[0].exercises[0];
+    expect(Array.isArray(res.body.blockTemplate.weeks)).toBe(true);
+    expect(res.body.blockTemplate.weeks.length).toBe(1);
+    expect(res.body.blockTemplate.weeks[0].workouts.length).toBe(1);
+    const ex = res.body.blockTemplate.weeks[0].workouts[0].exercises[0];
     expect(ex.exerciseName).toBe("Squat");
     expect(Array.isArray(ex.blockWorkoutSets)).toBe(true);
     expect(ex.blockWorkoutSets.length).toBe(1);

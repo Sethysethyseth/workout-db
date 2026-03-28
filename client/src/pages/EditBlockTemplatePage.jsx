@@ -3,10 +3,15 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import * as blockTemplateApi from "../api/blockTemplateApi.js";
 import { ErrorMessage } from "../components/ErrorMessage.jsx";
 import { LoadingState } from "../components/LoadingState.jsx";
+import { BlockTemplateTableView } from "../components/templates/BlockTemplateTableView.jsx";
+import { ViewModeToggle } from "../components/templates/ViewModeToggle.jsx";
 import { WorkoutBuilder } from "../components/templates/WorkoutBuilder.jsx";
 import {
-  blockTemplateToBlockWorkouts,
-  blockWorkoutsToApiPayload,
+  blockTemplateToBlockWeeks,
+  blockWeeksToApiPayload,
+  cloneBlockWeekWorkoutsFromSource,
+  isBlockWeekPristine,
+  newBlockWeek,
   newBlockWorkout,
 } from "../components/templates/workoutBuilderState.js";
 
@@ -21,7 +26,11 @@ export function EditBlockTemplatePage() {
   const [description, setDescription] = useState("");
   const [isPublic, setIsPublic] = useState(false);
   const [durationWeeks, setDurationWeeks] = useState("");
-  const [blockWorkouts, setBlockWorkouts] = useState(null);
+  const [useRIR, setUseRIR] = useState(false);
+  const [useRPE, setUseRPE] = useState(false);
+  const [useDuration, setUseDuration] = useState(false);
+  const [blockWeeks, setBlockWeeks] = useState(null);
+  const [viewMode, setViewMode] = useState("builder");
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -43,7 +52,10 @@ export function EditBlockTemplatePage() {
         setDescription(t.description || "");
         setIsPublic(Boolean(t.isPublic));
         setDurationWeeks(t.durationWeeks != null ? String(t.durationWeeks) : "");
-        setBlockWorkouts(blockTemplateToBlockWorkouts(t));
+        setUseRIR(Boolean(t.useRIR));
+        setUseRPE(Boolean(t.useRPE));
+        setUseDuration(Boolean(t.useDuration));
+        setBlockWeeks(blockTemplateToBlockWeeks(t));
       } catch (err) {
         if (!cancelled) setError(err);
       } finally {
@@ -57,20 +69,61 @@ export function EditBlockTemplatePage() {
     };
   }, [templateId]);
 
-  function updateBlockWorkout(idx, patch) {
-    setBlockWorkouts((prev) =>
-      prev.map((w, i) => (i === idx ? { ...w, ...patch } : w))
+  function addBlockWeek() {
+    setBlockWeeks((prev) => [...prev, newBlockWeek()]);
+  }
+
+  function removeBlockWeek(weekIdx) {
+    setBlockWeeks((prev) => {
+      const next = prev.filter((_, i) => i !== weekIdx);
+      return next.length ? next : [newBlockWeek()];
+    });
+  }
+
+  function updateBlockWorkout(weekIdx, workoutIdx, patch) {
+    setBlockWeeks((prev) =>
+      prev.map((wk, i) => {
+        if (i !== weekIdx) return wk;
+        return {
+          ...wk,
+          workouts: wk.workouts.map((w, j) => (j === workoutIdx ? { ...w, ...patch } : w)),
+        };
+      })
     );
   }
 
-  function addBlockWorkout() {
-    setBlockWorkouts((prev) => [...prev, newBlockWorkout()]);
+  function addBlockWorkout(weekIdx) {
+    setBlockWeeks((prev) =>
+      prev.map((wk, i) =>
+        i === weekIdx ? { ...wk, workouts: [...wk.workouts, newBlockWorkout()] } : wk
+      )
+    );
   }
 
-  function removeBlockWorkout(idx) {
-    setBlockWorkouts((prev) => {
-      const next = prev.filter((_, i) => i !== idx);
-      return next.length ? next : [newBlockWorkout()];
+  function removeBlockWorkout(weekIdx, workoutIdx) {
+    setBlockWeeks((prev) =>
+      prev.map((wk, i) => {
+        if (i !== weekIdx) return wk;
+        const next = wk.workouts.filter((_, j) => j !== workoutIdx);
+        return { ...wk, workouts: next.length ? next : [newBlockWorkout()] };
+      })
+    );
+  }
+
+  function copyPreviousWeekInto(weekIdx) {
+    if (weekIdx < 1) return;
+    setBlockWeeks((prev) => {
+      const source = prev[weekIdx - 1];
+      const target = prev[weekIdx];
+      if (!source || !target) return prev;
+      if (!isBlockWeekPristine(target)) {
+        const ok = window.confirm(
+          "Replace this week’s workouts and exercises with a copy of the previous week? This cannot be undone."
+        );
+        if (!ok) return prev;
+      }
+      const workouts = cloneBlockWeekWorkoutsFromSource(source);
+      return prev.map((wk, i) => (i === weekIdx ? { ...wk, workouts } : wk));
     });
   }
 
@@ -83,19 +136,23 @@ export function EditBlockTemplatePage() {
         setError(new Error("Block name is required."));
         return;
       }
-      const weeksRaw = durationWeeks.trim();
       let durationField = null;
-      if (weeksRaw !== "") {
-        const weeks = Number(weeksRaw);
-        if (!Number.isInteger(weeks) || weeks <= 0) {
-          setError(new Error("Duration in weeks must be a positive whole number."));
-          return;
+      if (useDuration) {
+        const weeksRaw = durationWeeks.trim();
+        if (weeksRaw !== "") {
+          const weeks = Number(weeksRaw);
+          if (!Number.isInteger(weeks) || weeks <= 0) {
+            setError(new Error("Duration in weeks must be a positive whole number."));
+            return;
+          }
+          durationField = weeks;
         }
-        durationField = weeks;
       }
 
-      const workouts = blockWorkoutsToApiPayload(blockWorkouts);
-      const invalid = workouts.some((w) => w.exercises.some((ex) => !ex.exerciseName));
+      const weeksPayload = blockWeeksToApiPayload(blockWeeks);
+      const invalid = weeksPayload.some((week) =>
+        week.workouts.some((w) => w.exercises.some((ex) => !ex.exerciseName))
+      );
       if (invalid) {
         setError(new Error("Each exercise in every workout needs a name."));
         return;
@@ -105,8 +162,11 @@ export function EditBlockTemplatePage() {
         name: name.trim(),
         description: description.trim() ? description.trim() : null,
         isPublic,
-        durationWeeks: durationField,
-        workouts,
+        useRIR,
+        useRPE,
+        useDuration,
+        durationWeeks: useDuration ? durationField : null,
+        weeks: weeksPayload,
       });
       navigate("/templates");
     } catch (err) {
@@ -120,7 +180,7 @@ export function EditBlockTemplatePage() {
     return <LoadingState />;
   }
 
-  if (!blockWorkouts) {
+  if (!blockWeeks) {
     return (
       <div className="stack">
         <ErrorMessage error={error} />
@@ -136,7 +196,7 @@ export function EditBlockTemplatePage() {
       <div className="row">
         <div>
           <h1>Edit block template</h1>
-          <p className="muted">Update workouts, exercises, and visibility.</p>
+          <p className="muted">Update weeks, workouts, exercises, and visibility.</p>
         </div>
         <Link className="btn btn-secondary" to="/templates">
           Cancel
@@ -173,53 +233,137 @@ export function EditBlockTemplatePage() {
             </div>
           </label>
 
-          <label>
-            Duration (weeks)
-            <input
-              value={durationWeeks}
-              onChange={(e) => setDurationWeeks(e.target.value)}
-              inputMode="numeric"
-              placeholder="Optional"
-            />
-          </label>
+          <div className="template-options-grid">
+            <label className="checkbox-inline">
+              <input
+                type="checkbox"
+                checked={useRIR}
+                onChange={(e) => setUseRIR(e.target.checked)}
+              />
+              <span>Use RIR on sets</span>
+            </label>
+            <label className="checkbox-inline">
+              <input
+                type="checkbox"
+                checked={useRPE}
+                onChange={(e) => setUseRPE(e.target.checked)}
+              />
+              <span>Use RPE on sets</span>
+            </label>
+            <label className="checkbox-inline">
+              <input
+                type="checkbox"
+                checked={useDuration}
+                onChange={(e) => setUseDuration(e.target.checked)}
+              />
+              <span>Use duration (weeks)</span>
+            </label>
+          </div>
+
+          {useDuration ? (
+            <label>
+              Duration (weeks)
+              <input
+                value={durationWeeks}
+                onChange={(e) => setDurationWeeks(e.target.value)}
+                inputMode="numeric"
+                placeholder="Optional"
+              />
+            </label>
+          ) : null}
         </div>
 
         <div className="row">
-          <h2 style={{ margin: 0 }}>Workouts in this block</h2>
-          <button type="button" className="btn btn-secondary" onClick={addBlockWorkout}>
-            Add workout
-          </button>
+          <h2 style={{ margin: 0 }}>Weeks and workouts</h2>
+          <div className="row" style={{ flexWrap: "wrap", justifyContent: "flex-end" }}>
+            <ViewModeToggle value={viewMode} onChange={setViewMode} />
+            {viewMode === "builder" ? (
+              <button type="button" className="btn btn-secondary" onClick={addBlockWeek}>
+                Add week
+              </button>
+            ) : null}
+          </div>
         </div>
 
-        {blockWorkouts.map((w, idx) => (
-          <div key={w.id} className="card stack">
-            <div className="row">
-              <label style={{ flex: 1, margin: 0 }}>
-                Workout label
-                <input
-                  value={w.title}
-                  onChange={(e) => updateBlockWorkout(idx, { title: e.target.value })}
-                  placeholder={`Workout ${idx + 1}`}
-                />
-              </label>
-              {blockWorkouts.length > 1 ? (
-                <button
-                  type="button"
-                  className="btn btn-ghost"
-                  onClick={() => removeBlockWorkout(idx)}
-                >
-                  Remove workout
-                </button>
-              ) : null}
+        {viewMode === "builder" ? (
+          blockWeeks.map((week, weekIdx) => (
+            <div key={week.id} className="card stack">
+              <div className="row" style={{ alignItems: "center" }}>
+                <h3 style={{ margin: 0, flex: 1 }}>Week {weekIdx + 1}</h3>
+                <div className="row" style={{ flexWrap: "wrap", justifyContent: "flex-end" }}>
+                  {weekIdx > 0 ? (
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={() => copyPreviousWeekInto(weekIdx)}
+                    >
+                      Copy previous week
+                    </button>
+                  ) : null}
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => addBlockWorkout(weekIdx)}
+                  >
+                    Add workout
+                  </button>
+                  {blockWeeks.length > 1 ? (
+                    <button
+                      type="button"
+                      className="btn btn-ghost"
+                      onClick={() => removeBlockWeek(weekIdx)}
+                    >
+                      Remove week
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+              <div className="stack">
+                {week.workouts.map((w, workoutIdx) => (
+                  <div key={w.id} className="card stack" style={{ margin: 0 }}>
+                    <div className="row">
+                      <label style={{ flex: 1, margin: 0 }}>
+                        Workout label
+                        <input
+                          value={w.title}
+                          onChange={(e) =>
+                            updateBlockWorkout(weekIdx, workoutIdx, { title: e.target.value })
+                          }
+                          placeholder={`Workout ${workoutIdx + 1}`}
+                        />
+                      </label>
+                      {week.workouts.length > 1 ? (
+                        <button
+                          type="button"
+                          className="btn btn-ghost"
+                          onClick={() => removeBlockWorkout(weekIdx, workoutIdx)}
+                        >
+                          Remove workout
+                        </button>
+                      ) : null}
+                    </div>
+                    <WorkoutBuilder
+                      exercises={w.exercises}
+                      onExercisesChange={(next) => {
+                        updateBlockWorkout(weekIdx, workoutIdx, { exercises: next });
+                      }}
+                      useRIR={useRIR}
+                      useRPE={useRPE}
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
-            <WorkoutBuilder
-              exercises={w.exercises}
-              onExercisesChange={(next) => {
-                updateBlockWorkout(idx, { exercises: next });
-              }}
-            />
-          </div>
-        ))}
+          ))
+        ) : (
+          <BlockTemplateTableView
+            blockWeeks={blockWeeks}
+            useRIR={useRIR}
+            useRPE={useRPE}
+            useDuration={useDuration}
+            durationWeeks={durationWeeks}
+          />
+        )}
 
         <div className="row">
           <button className="btn" disabled={submitting}>

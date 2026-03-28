@@ -295,6 +295,61 @@ function normalizeBlockWorkoutsArray(workouts) {
 }
 
 /**
+ * @param {unknown[]} weeks — each: { order?, workouts[] } where workouts matches normalizeBlockWorkoutsArray
+ * @returns {{ ok: true, value: object[] } | { ok: false, status: number, error: string }}
+ */
+function normalizeBlockWeeksArray(weeks) {
+  if (!Array.isArray(weeks) || weeks.length === 0) {
+    return {
+      ok: false,
+      status: 400,
+      error: "Block must include at least one week",
+    };
+  }
+
+  const normalized = [];
+  const seenOrders = new Set();
+
+  for (let index = 0; index < weeks.length; index += 1) {
+    const raw = weeks[index] || {};
+
+    let order = raw.order;
+    if (order == null) {
+      order = index + 1;
+    }
+    if (!Number.isInteger(order) || order <= 0) {
+      return {
+        ok: false,
+        status: 400,
+        error: "Week order must be a positive integer",
+      };
+    }
+    if (seenOrders.has(order)) {
+      return {
+        ok: false,
+        status: 400,
+        error: "Week order values must be unique within the block",
+      };
+    }
+    seenOrders.add(order);
+
+    const normW = normalizeBlockWorkoutsArray(raw.workouts);
+    if (!normW.ok) {
+      return normW;
+    }
+
+    normalized.push({
+      order,
+      workouts: {
+        create: normW.value,
+      },
+    });
+  }
+
+  return { ok: true, value: normalized };
+}
+
+/**
  * Optional positive integer or null (omit / empty string).
  */
 function parseOptionalDurationWeeks(value) {
@@ -315,9 +370,25 @@ function parseOptionalDurationWeeks(value) {
   return { ok: true, value: n };
 }
 
+function parseOptionalBoolean(value) {
+  if (value === undefined) {
+    return { ok: true, value: undefined };
+  }
+  if (typeof value === "boolean") {
+    return { ok: true, value };
+  }
+  return {
+    ok: false,
+    status: 400,
+    error: "Expected a boolean value",
+  };
+}
+
 module.exports = {
   normalizeExercisesArray,
   normalizeBlockWorkoutsArray,
+  normalizeBlockWeeksArray,
   parseOptionalDurationWeeks,
+  parseOptionalBoolean,
   parsePositiveInt,
 };

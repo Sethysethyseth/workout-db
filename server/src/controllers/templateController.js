@@ -1,6 +1,7 @@
 const prisma = require("../lib/prisma");
 const {
   normalizeExercisesArray,
+  parseOptionalBoolean,
   parsePositiveInt,
 } = require("../lib/templateExerciseNormalize");
 
@@ -27,7 +28,7 @@ async function createTemplate(req, res, next) {
       });
     }
 
-    const { name, description, isPublic, exercises } = req.body || {};
+    const { name, description, isPublic, exercises, useRIR, useRPE } = req.body || {};
 
     const trimmedName = typeof name === "string" ? name.trim() : "";
     const trimmedDescription =
@@ -46,16 +47,33 @@ async function createTemplate(req, res, next) {
       return res.status(norm.status).json({ error: norm.error });
     }
 
-    const template = await prisma.workoutTemplate.create({
-      data: {
-        name: trimmedName,
-        description: trimmedDescription,
-        isPublic: Boolean(isPublic),
-        userId,
-        exercises: {
-          create: norm.value,
-        },
+    const createData = {
+      name: trimmedName,
+      description: trimmedDescription,
+      isPublic: Boolean(isPublic),
+      userId,
+      exercises: {
+        create: norm.value,
       },
+    };
+
+    if (useRIR !== undefined) {
+      const b = parseOptionalBoolean(useRIR);
+      if (!b.ok) {
+        return res.status(b.status).json({ error: b.error });
+      }
+      createData.useRIR = b.value;
+    }
+    if (useRPE !== undefined) {
+      const b = parseOptionalBoolean(useRPE);
+      if (!b.ok) {
+        return res.status(b.status).json({ error: b.error });
+      }
+      createData.useRPE = b.value;
+    }
+
+    const template = await prisma.workoutTemplate.create({
+      data: createData,
       include: {
         exercises: exerciseInclude,
       },
@@ -210,7 +228,7 @@ async function updateTemplate(req, res, next) {
       });
     }
 
-    const { name, description, isPublic, exercises } = req.body || {};
+    const { name, description, isPublic, exercises, useRIR, useRPE } = req.body || {};
 
     const data = {};
 
@@ -233,6 +251,21 @@ async function updateTemplate(req, res, next) {
 
     if (isPublic !== undefined) {
       data.isPublic = Boolean(isPublic);
+    }
+
+    if (useRIR !== undefined) {
+      const b = parseOptionalBoolean(useRIR);
+      if (!b.ok) {
+        return res.status(b.status).json({ error: b.error });
+      }
+      data.useRIR = b.value;
+    }
+    if (useRPE !== undefined) {
+      const b = parseOptionalBoolean(useRPE);
+      if (!b.ok) {
+        return res.status(b.status).json({ error: b.error });
+      }
+      data.useRPE = b.value;
     }
 
     if (exercises !== undefined) {
@@ -354,6 +387,8 @@ async function cloneTemplate(req, res, next) {
         name: `${existingTemplate.name} (Copy)`,
         description: existingTemplate.description,
         isPublic: false,
+        useRIR: Boolean(existingTemplate.useRIR),
+        useRPE: Boolean(existingTemplate.useRPE),
         userId,
         exercises: {
           create: existingTemplate.exercises.map((exercise) => {

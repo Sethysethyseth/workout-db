@@ -7,6 +7,8 @@ export function ExerciseEditor({
   onChange,
   onRemove,
   canRemove,
+  useRIR = false,
+  useRPE = false,
 }) {
   function updateSet(setIdx, patch) {
     const nextSets = exercise.sets.map((s, i) =>
@@ -72,6 +74,8 @@ export function ExerciseEditor({
             onChange={(patch) => updateSet(i, patch)}
             onRemove={() => removeSet(i)}
             canRemove={exercise.sets.length > 1}
+            useRIR={useRIR}
+            useRPE={useRPE}
           />
         ))}
       </div>

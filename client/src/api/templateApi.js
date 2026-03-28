@@ -1,9 +1,9 @@
 import { http } from "./http.js";
 
-export function createTemplate({ name, description, isPublic, exercises }) {
+export function createTemplate({ name, description, isPublic, exercises, useRIR, useRPE }) {
   return http("/templates", {
     method: "POST",
-    body: { name, description, isPublic, exercises },
+    body: { name, description, isPublic, exercises, useRIR, useRPE },
   });
 }
 

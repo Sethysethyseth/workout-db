@@ -297,21 +297,33 @@ export function MyTemplatesPage() {
                 </div>
               ) : null}
 
-              {isBlock && Array.isArray(t.workouts) && t.workouts.length > 0 ? (
+              {isBlock && Array.isArray(t.weeks) && t.weeks.length > 0 ? (
                 <div className="card">
-                  <strong>Workouts</strong>
+                  <strong>Structure</strong>
                   <div className="mt-2 stack">
-                    {[...t.workouts]
+                    {[...t.weeks]
                       .sort((a, b) => a.order - b.order)
-                      .map((w) => (
-                        <div key={w.id} className="row">
-                          <div>
-                            <div>
-                              {w.order}. {w.name}
-                            </div>
-                            <div className="muted small">
-                              {Array.isArray(w.exercises) ? w.exercises.length : 0} exercises
-                            </div>
+                      .map((week) => (
+                        <div key={week.id} className="stack">
+                          <div className="muted small" style={{ fontWeight: 600 }}>
+                            Week {week.order}
+                          </div>
+                          <div className="stack" style={{ paddingLeft: "0.5rem" }}>
+                            {[...(week.workouts || [])]
+                              .sort((a, b) => a.order - b.order)
+                              .map((w) => (
+                                <div key={w.id} className="row">
+                                  <div>
+                                    <div>
+                                      {w.order}. {w.name}
+                                    </div>
+                                    <div className="muted small">
+                                      {Array.isArray(w.exercises) ? w.exercises.length : 0}{" "}
+                                      exercises
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
                           </div>
                         </div>
                       ))}

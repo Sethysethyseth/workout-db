@@ -2,7 +2,7 @@ import { ExerciseEditor } from "./ExerciseEditor.jsx";
 import { createEmptyExercise } from "./workoutBuilderState.js";
 
 /** Controlled list of exercises with per-exercise sets (reps, weight, optional RIR/RPE). */
-export function WorkoutBuilder({ exercises, onExercisesChange }) {
+export function WorkoutBuilder({ exercises, onExercisesChange, useRIR = false, useRPE = false }) {
   function updateExercise(idx, patch) {
     onExercisesChange(
       exercises.map((ex, i) => (i === idx ? { ...ex, ...patch } : ex))
@@ -35,6 +35,8 @@ export function WorkoutBuilder({ exercises, onExercisesChange }) {
           onChange={(patch) => updateExercise(idx, patch)}
           onRemove={() => removeExercise(idx)}
           canRemove={exercises.length > 1}
+          useRIR={useRIR}
+          useRPE={useRPE}
         />
       ))}
     </div>

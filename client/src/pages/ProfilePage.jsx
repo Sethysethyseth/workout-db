@@ -1,10 +1,13 @@
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext.jsx";
+import { useTheme } from "../context/ThemeContext.jsx";
 import * as authApi from "../api/authApi.js";
 import { PasswordInput } from "../components/auth/PasswordInput.jsx";
 import { ErrorMessage } from "../components/ErrorMessage.jsx";
+
 export function ProfilePage() {
   const { currentUser } = useAuth();
+  const { theme, setTheme } = useTheme();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -53,6 +56,48 @@ export function ProfilePage() {
           </p>
         </div>
       ) : null}
+
+      <div className="card stack">
+        <h2 style={{ margin: 0 }}>Appearance</h2>
+        <p className="muted small" style={{ margin: 0 }}>
+          Applies across the app. Stored on this device only.
+        </p>
+        <fieldset className="theme-setting-fieldset">
+          <legend className="small muted">Theme</legend>
+          <div className="stack" style={{ gap: 10 }}>
+            <label className="theme-option">
+              <input
+                type="radio"
+                name="theme"
+                value="light"
+                checked={theme === "light"}
+                onChange={() => setTheme("light")}
+              />
+              Light
+            </label>
+            <label className="theme-option">
+              <input
+                type="radio"
+                name="theme"
+                value="dark"
+                checked={theme === "dark"}
+                onChange={() => setTheme("dark")}
+              />
+              Dark
+            </label>
+            <label className="theme-option">
+              <input
+                type="radio"
+                name="theme"
+                value="system"
+                checked={theme === "system"}
+                onChange={() => setTheme("system")}
+              />
+              System
+            </label>
+          </div>
+        </fieldset>
+      </div>
 
       <form className="card stack" onSubmit={onSubmit}>
         <h2 style={{ margin: 0 }}>Change password</h2>

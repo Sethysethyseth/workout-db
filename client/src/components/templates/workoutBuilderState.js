@@ -169,7 +169,71 @@ export function newBlockWorkout() {
   };
 }
 
-/** Payload workouts[] for POST/PATCH /block-templates */
+export function newBlockWeek() {
+  return {
+    id: crypto.randomUUID(),
+    workouts: [newBlockWorkout()],
+  };
+}
+
+function setRowIsBlank(set) {
+  if (!set || typeof set !== "object") return true;
+  const keys = Object.keys(set).filter((k) => k !== "id");
+  return keys.every((k) => !String(set[k] ?? "").trim());
+}
+
+/** True when the week matches a freshly created week (single default workout / exercise / set, no user text). */
+export function isBlockWeekPristine(week) {
+  if (!week || typeof week !== "object") return false;
+  const workouts = Array.isArray(week.workouts) ? week.workouts : [];
+  if (workouts.length !== 1) return false;
+  const w = workouts[0];
+  if (String(w.title ?? "").trim()) return false;
+  const exercises = Array.isArray(w.exercises) ? w.exercises : [];
+  if (exercises.length !== 1) return false;
+  const ex = exercises[0];
+  if (String(ex.exerciseName ?? "").trim() || String(ex.notes ?? "").trim()) return false;
+  const sets = Array.isArray(ex.sets) ? ex.sets : [];
+  if (sets.length !== 1) return false;
+  return setRowIsBlank(sets[0]);
+}
+
+function cloneSetDeep(set) {
+  const { id: _omit, ...rest } = set && typeof set === "object" ? set : {};
+  return { id: crypto.randomUUID(), ...rest };
+}
+
+function cloneExerciseDeep(ex) {
+  const sets = Array.isArray(ex?.sets) ? ex.sets.map(cloneSetDeep) : [];
+  return {
+    id: crypto.randomUUID(),
+    exerciseName: ex.exerciseName != null ? String(ex.exerciseName) : "",
+    notes: ex.notes != null ? String(ex.notes) : "",
+    sets: sets.length ? sets : [createEmptySet()],
+  };
+}
+
+function cloneBlockWorkoutDeep(w) {
+  const exercises = Array.isArray(w?.exercises) ? w.exercises.map(cloneExerciseDeep) : [];
+  return {
+    id: crypto.randomUUID(),
+    title: w.title != null ? String(w.title) : "",
+    exercises: exercises.length ? exercises : createInitialExercises(),
+  };
+}
+
+/**
+ * Deep-clone all workouts from a source week: new ids for every workout, exercise, and set.
+ * Preserves string and primitive set fields (reps, weight, RIR, RPE, and any future columns).
+ * Returns a non-empty workouts array (one empty workout if the source list is empty).
+ */
+export function cloneBlockWeekWorkoutsFromSource(sourceWeek) {
+  const list = Array.isArray(sourceWeek?.workouts) ? sourceWeek.workouts : [];
+  const mapped = list.map(cloneBlockWorkoutDeep);
+  return mapped.length ? mapped : [newBlockWorkout()];
+}
+
+/** Payload workouts[] inside one week for POST/PATCH /block-templates */
 export function blockWorkoutsToApiPayload(blockWorkouts) {
   return blockWorkouts.map((w, i) => ({
     order: i + 1,
@@ -178,31 +242,60 @@ export function blockWorkoutsToApiPayload(blockWorkouts) {
   }));
 }
 
-/** Hydrate block editor state from GET /block-templates/:id */
-export function blockTemplateToBlockWorkouts(blockTemplate) {
-  if (!blockTemplate || !Array.isArray(blockTemplate.workouts) || blockTemplate.workouts.length === 0) {
-    return [newBlockWorkout()];
-  }
-  const sorted = [...blockTemplate.workouts].sort((a, b) => a.order - b.order);
-  return sorted.map((w) => ({
-    id: crypto.randomUUID(),
-    title: w.name || "",
-    exercises: templateToBuilderExercises({ exercises: w.exercises }),
+/** Payload weeks[] for POST/PATCH /block-templates */
+export function blockWeeksToApiPayload(blockWeeks) {
+  return blockWeeks.map((week, wi) => ({
+    order: wi + 1,
+    workouts: blockWorkoutsToApiPayload(week.workouts),
   }));
 }
 
-/** One-line summary for list cards, e.g. "4 weeks • 4 workouts" */
+/** Hydrate block editor state from GET /block-templates/:id */
+export function blockTemplateToBlockWeeks(blockTemplate) {
+  if (!blockTemplate || !Array.isArray(blockTemplate.weeks) || blockTemplate.weeks.length === 0) {
+    return [newBlockWeek()];
+  }
+  const sortedWeeks = [...blockTemplate.weeks].sort((a, b) => a.order - b.order);
+  return sortedWeeks.map((week) => ({
+    id: crypto.randomUUID(),
+    workouts:
+      !Array.isArray(week.workouts) || week.workouts.length === 0
+        ? [newBlockWorkout()]
+        : [...week.workouts]
+            .sort((a, b) => a.order - b.order)
+            .map((w) => ({
+              id: crypto.randomUUID(),
+              title: w.name || "",
+              exercises: templateToBuilderExercises({ exercises: w.exercises }),
+            })),
+  }));
+}
+
+/** One-line summary for list cards */
 export function formatBlockTemplateSummary(blockTemplate) {
-  const n = Array.isArray(blockTemplate.workouts) ? blockTemplate.workouts.length : 0;
+  const weeks = Array.isArray(blockTemplate.weeks) ? blockTemplate.weeks : [];
+  const weekCount = weeks.length;
+  const workoutCount = weeks.reduce(
+    (acc, wk) => acc + (Array.isArray(wk.workouts) ? wk.workouts.length : 0),
+    0
+  );
   const w = blockTemplate.durationWeeks;
   const weekPart =
     w != null && Number.isFinite(Number(w))
       ? `${w} week${Number(w) === 1 ? "" : "s"}`
       : null;
-  if (weekPart) {
-    return `${weekPart} • ${n} workout${n === 1 ? "" : "s"}`;
+
+  let structureLabel;
+  if (weekCount <= 1) {
+    structureLabel = `${workoutCount} workout${workoutCount === 1 ? "" : "s"}`;
+  } else {
+    structureLabel = `${weekCount} training weeks · ${workoutCount} workout${workoutCount === 1 ? "" : "s"}`;
   }
-  return `${n} workout${n === 1 ? "" : "s"}`;
+
+  if (weekPart) {
+    return `${weekPart} • ${structureLabel}`;
+  }
+  return structureLabel;
 }
 
 export function summarizeExerciseTargets(ex) {

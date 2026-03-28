@@ -23,6 +23,8 @@ model WorkoutTemplate {
   name        String
   description String?
   isPublic    Boolean            @default(false)
+  useRIR      Boolean            @default(false)
+  useRPE      Boolean            @default(false)
   createdAt   DateTime           @default(now())
   updatedAt   DateTime           @updatedAt
   userId      String
@@ -124,31 +126,45 @@ model SessionExercise {
 }
 
 model BlockTemplate {
-  id              Int            @id @default(autoincrement())
+  id              Int         @id @default(autoincrement())
   name            String
   description     String?
-  isPublic        Boolean        @default(false)
+  isPublic        Boolean     @default(false)
   durationWeeks   Int?
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
+  useRIR          Boolean     @default(false)
+  useRPE          Boolean     @default(false)
+  useDuration     Boolean     @default(false)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
   userId          String
-  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  workouts        BlockWorkout[]
+  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  weeks           BlockWeek[]
 
   @@index([userId])
   @@index([isPublic])
 }
 
-model BlockWorkout {
-  id              Int                    @id @default(autoincrement())
+model BlockWeek {
+  id              Int            @id @default(autoincrement())
   order           Int
-  name            String
   blockTemplateId Int
-  blockTemplate   BlockTemplate          @relation(fields: [blockTemplateId], references: [id], onDelete: Cascade)
-  exercises       BlockWorkoutExercise[]
+  blockTemplate   BlockTemplate  @relation(fields: [blockTemplateId], references: [id], onDelete: Cascade)
+  workouts        BlockWorkout[]
 
   @@unique([blockTemplateId, order])
   @@index([blockTemplateId])
+}
+
+model BlockWorkout {
+  id            Int                    @id @default(autoincrement())
+  order         Int
+  name          String
+  blockWeekId   Int
+  blockWeek     BlockWeek              @relation(fields: [blockWeekId], references: [id], onDelete: Cascade)
+  exercises     BlockWorkoutExercise[]
+
+  @@unique([blockWeekId, order])
+  @@index([blockWeekId])
 }
 
 model BlockWorkoutExercise {

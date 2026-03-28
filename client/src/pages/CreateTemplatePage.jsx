@@ -3,11 +3,17 @@ import { useNavigate } from "react-router-dom";
 import * as templateApi from "../api/templateApi.js";
 import * as blockTemplateApi from "../api/blockTemplateApi.js";
 import { ErrorMessage } from "../components/ErrorMessage.jsx";
+import { BlockTemplateTableView } from "../components/templates/BlockTemplateTableView.jsx";
+import { ViewModeToggle } from "../components/templates/ViewModeToggle.jsx";
 import { WorkoutBuilder } from "../components/templates/WorkoutBuilder.jsx";
+import { WorkoutTemplateTableView } from "../components/templates/WorkoutTemplateTableView.jsx";
 import {
-  blockWorkoutsToApiPayload,
+  blockWeeksToApiPayload,
+  cloneBlockWeekWorkoutsFromSource,
   createInitialExercises,
   exercisesToTemplateApi,
+  isBlockWeekPristine,
+  newBlockWeek,
   newBlockWorkout,
 } from "../components/templates/workoutBuilderState.js";
 
@@ -21,6 +27,9 @@ export function CreateTemplatePage() {
   const [description, setDescription] = useState("");
   const [isPublic, setIsPublic] = useState(false);
   const [workoutExercises, setWorkoutExercises] = useState(createInitialExercises());
+  const [useRIR, setUseRIR] = useState(false);
+  const [useRPE, setUseRPE] = useState(false);
+  const [workoutViewMode, setWorkoutViewMode] = useState("builder");
   const [workoutSubmitting, setWorkoutSubmitting] = useState(false);
 
   /* Block template */
@@ -28,7 +37,11 @@ export function CreateTemplatePage() {
   const [blockDescription, setBlockDescription] = useState("");
   const [blockIsPublic, setBlockIsPublic] = useState(false);
   const [durationWeeks, setDurationWeeks] = useState("");
-  const [blockWorkouts, setBlockWorkouts] = useState(() => [newBlockWorkout()]);
+  const [blockUseRIR, setBlockUseRIR] = useState(false);
+  const [blockUseRPE, setBlockUseRPE] = useState(false);
+  const [blockUseDuration, setBlockUseDuration] = useState(false);
+  const [blockWeeks, setBlockWeeks] = useState(() => [newBlockWeek()]);
+  const [blockViewMode, setBlockViewMode] = useState("builder");
   const [blockSubmitting, setBlockSubmitting] = useState(false);
 
   function resetFlow() {
@@ -38,11 +51,18 @@ export function CreateTemplatePage() {
     setDescription("");
     setIsPublic(false);
     setWorkoutExercises(createInitialExercises());
+    setUseRIR(false);
+    setUseRPE(false);
+    setWorkoutViewMode("builder");
     setBlockName("");
     setBlockDescription("");
     setBlockIsPublic(false);
     setDurationWeeks("");
-    setBlockWorkouts([newBlockWorkout()]);
+    setBlockUseRIR(false);
+    setBlockUseRPE(false);
+    setBlockUseDuration(false);
+    setBlockWeeks([newBlockWeek()]);
+    setBlockViewMode("builder");
   }
 
   async function onSubmitWorkout(e) {
@@ -64,6 +84,8 @@ export function CreateTemplatePage() {
         name: name.trim(),
         description: description.trim() ? description.trim() : null,
         isPublic,
+        useRIR,
+        useRPE,
         exercises,
       });
       navigate("/templates");
@@ -83,19 +105,23 @@ export function CreateTemplatePage() {
         setError(new Error("Block name is required."));
         return;
       }
-      const weeksRaw = durationWeeks.trim();
       let durationField = null;
-      if (weeksRaw !== "") {
-        const weeks = Number(weeksRaw);
-        if (!Number.isInteger(weeks) || weeks <= 0) {
-          setError(new Error("Duration in weeks must be a positive whole number."));
-          return;
+      if (blockUseDuration) {
+        const weeksRaw = durationWeeks.trim();
+        if (weeksRaw !== "") {
+          const weeks = Number(weeksRaw);
+          if (!Number.isInteger(weeks) || weeks <= 0) {
+            setError(new Error("Duration in weeks must be a positive whole number."));
+            return;
+          }
+          durationField = weeks;
         }
-        durationField = weeks;
       }
 
-      const workouts = blockWorkoutsToApiPayload(blockWorkouts);
-      const invalid = workouts.some((w) => w.exercises.some((ex) => !ex.exerciseName));
+      const weeksPayload = blockWeeksToApiPayload(blockWeeks);
+      const invalid = weeksPayload.some((week) =>
+        week.workouts.some((w) => w.exercises.some((ex) => !ex.exerciseName))
+      );
       if (invalid) {
         setError(new Error("Each exercise in every workout needs a name."));
         return;
@@ -105,8 +131,11 @@ export function CreateTemplatePage() {
         name: blockName.trim(),
         description: blockDescription.trim() ? blockDescription.trim() : null,
         isPublic: blockIsPublic,
-        durationWeeks: durationField,
-        workouts,
+        useRIR: blockUseRIR,
+        useRPE: blockUseRPE,
+        useDuration: blockUseDuration,
+        durationWeeks: blockUseDuration ? durationField : null,
+        weeks: weeksPayload,
       });
       navigate("/templates");
     } catch (err) {
@@ -116,20 +145,61 @@ export function CreateTemplatePage() {
     }
   }
 
-  function updateBlockWorkout(idx, patch) {
-    setBlockWorkouts((prev) =>
-      prev.map((w, i) => (i === idx ? { ...w, ...patch } : w))
+  function addBlockWeek() {
+    setBlockWeeks((prev) => [...prev, newBlockWeek()]);
+  }
+
+  function removeBlockWeek(weekIdx) {
+    setBlockWeeks((prev) => {
+      const next = prev.filter((_, i) => i !== weekIdx);
+      return next.length ? next : [newBlockWeek()];
+    });
+  }
+
+  function updateBlockWorkout(weekIdx, workoutIdx, patch) {
+    setBlockWeeks((prev) =>
+      prev.map((wk, i) => {
+        if (i !== weekIdx) return wk;
+        return {
+          ...wk,
+          workouts: wk.workouts.map((w, j) => (j === workoutIdx ? { ...w, ...patch } : w)),
+        };
+      })
     );
   }
 
-  function addBlockWorkout() {
-    setBlockWorkouts((prev) => [...prev, newBlockWorkout()]);
+  function addBlockWorkout(weekIdx) {
+    setBlockWeeks((prev) =>
+      prev.map((wk, i) =>
+        i === weekIdx ? { ...wk, workouts: [...wk.workouts, newBlockWorkout()] } : wk
+      )
+    );
   }
 
-  function removeBlockWorkout(idx) {
-    setBlockWorkouts((prev) => {
-      const next = prev.filter((_, i) => i !== idx);
-      return next.length ? next : [newBlockWorkout()];
+  function removeBlockWorkout(weekIdx, workoutIdx) {
+    setBlockWeeks((prev) =>
+      prev.map((wk, i) => {
+        if (i !== weekIdx) return wk;
+        const next = wk.workouts.filter((_, j) => j !== workoutIdx);
+        return { ...wk, workouts: next.length ? next : [newBlockWorkout()] };
+      })
+    );
+  }
+
+  function copyPreviousWeekInto(weekIdx) {
+    if (weekIdx < 1) return;
+    setBlockWeeks((prev) => {
+      const source = prev[weekIdx - 1];
+      const target = prev[weekIdx];
+      if (!source || !target) return prev;
+      if (!isBlockWeekPristine(target)) {
+        const ok = window.confirm(
+          "Replace this week’s workouts and exercises with a copy of the previous week? This cannot be undone."
+        );
+        if (!ok) return prev;
+      }
+      const workouts = cloneBlockWeekWorkoutsFromSource(source);
+      return prev.map((wk, i) => (i === weekIdx ? { ...wk, workouts } : wk));
     });
   }
 
@@ -220,7 +290,41 @@ export function CreateTemplatePage() {
             </div>
           </label>
 
-          <WorkoutBuilder exercises={workoutExercises} onExercisesChange={setWorkoutExercises} />
+          <div className="template-options-grid">
+            <label className="checkbox-inline">
+              <input
+                type="checkbox"
+                checked={useRIR}
+                onChange={(e) => setUseRIR(e.target.checked)}
+              />
+              <span>Use RIR on sets</span>
+            </label>
+            <label className="checkbox-inline">
+              <input
+                type="checkbox"
+                checked={useRPE}
+                onChange={(e) => setUseRPE(e.target.checked)}
+              />
+              <span>Use RPE on sets</span>
+            </label>
+          </div>
+
+          <ViewModeToggle value={workoutViewMode} onChange={setWorkoutViewMode} />
+
+          {workoutViewMode === "builder" ? (
+            <WorkoutBuilder
+              exercises={workoutExercises}
+              onExercisesChange={setWorkoutExercises}
+              useRIR={useRIR}
+              useRPE={useRPE}
+            />
+          ) : (
+            <WorkoutTemplateTableView
+              exercises={workoutExercises}
+              useRIR={useRIR}
+              useRPE={useRPE}
+            />
+          )}
 
           <div className="row">
             <button className="btn" disabled={workoutSubmitting}>
@@ -287,53 +391,137 @@ export function CreateTemplatePage() {
             </div>
           </label>
 
-          <label>
-            Duration (weeks)
-            <input
-              value={durationWeeks}
-              onChange={(e) => setDurationWeeks(e.target.value)}
-              inputMode="numeric"
-              placeholder="e.g. 4 (optional)"
-            />
-          </label>
+          <div className="template-options-grid">
+            <label className="checkbox-inline">
+              <input
+                type="checkbox"
+                checked={blockUseRIR}
+                onChange={(e) => setBlockUseRIR(e.target.checked)}
+              />
+              <span>Use RIR on sets</span>
+            </label>
+            <label className="checkbox-inline">
+              <input
+                type="checkbox"
+                checked={blockUseRPE}
+                onChange={(e) => setBlockUseRPE(e.target.checked)}
+              />
+              <span>Use RPE on sets</span>
+            </label>
+            <label className="checkbox-inline">
+              <input
+                type="checkbox"
+                checked={blockUseDuration}
+                onChange={(e) => setBlockUseDuration(e.target.checked)}
+              />
+              <span>Use duration (weeks)</span>
+            </label>
+          </div>
+
+          {blockUseDuration ? (
+            <label>
+              Duration (weeks)
+              <input
+                value={durationWeeks}
+                onChange={(e) => setDurationWeeks(e.target.value)}
+                inputMode="numeric"
+                placeholder="e.g. 4 (optional)"
+              />
+            </label>
+          ) : null}
         </div>
 
         <div className="row">
-          <h2 style={{ margin: 0 }}>Workouts in this block</h2>
-          <button type="button" className="btn btn-secondary" onClick={addBlockWorkout}>
-            Add workout
-          </button>
+          <h2 style={{ margin: 0 }}>Weeks and workouts</h2>
+          <div className="row" style={{ flexWrap: "wrap", justifyContent: "flex-end" }}>
+            <ViewModeToggle value={blockViewMode} onChange={setBlockViewMode} />
+            {blockViewMode === "builder" ? (
+              <button type="button" className="btn btn-secondary" onClick={addBlockWeek}>
+                Add week
+              </button>
+            ) : null}
+          </div>
         </div>
 
-        {blockWorkouts.map((w, idx) => (
-          <div key={w.id} className="card stack">
-            <div className="row">
-              <label style={{ flex: 1, margin: 0 }}>
-                Workout label
-                <input
-                  value={w.title}
-                  onChange={(e) => updateBlockWorkout(idx, { title: e.target.value })}
-                  placeholder={`Workout ${idx + 1}`}
-                />
-              </label>
-              {blockWorkouts.length > 1 ? (
-                <button
-                  type="button"
-                  className="btn btn-ghost"
-                  onClick={() => removeBlockWorkout(idx)}
-                >
-                  Remove workout
-                </button>
-              ) : null}
+        {blockViewMode === "builder" ? (
+          blockWeeks.map((week, weekIdx) => (
+            <div key={week.id} className="card stack">
+              <div className="row" style={{ alignItems: "center" }}>
+                <h3 style={{ margin: 0, flex: 1 }}>Week {weekIdx + 1}</h3>
+                <div className="row" style={{ flexWrap: "wrap", justifyContent: "flex-end" }}>
+                  {weekIdx > 0 ? (
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={() => copyPreviousWeekInto(weekIdx)}
+                    >
+                      Copy previous week
+                    </button>
+                  ) : null}
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => addBlockWorkout(weekIdx)}
+                  >
+                    Add workout
+                  </button>
+                  {blockWeeks.length > 1 ? (
+                    <button
+                      type="button"
+                      className="btn btn-ghost"
+                      onClick={() => removeBlockWeek(weekIdx)}
+                    >
+                      Remove week
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+              <div className="stack">
+                {week.workouts.map((w, workoutIdx) => (
+                  <div key={w.id} className="card stack" style={{ margin: 0 }}>
+                    <div className="row">
+                      <label style={{ flex: 1, margin: 0 }}>
+                        Workout label
+                        <input
+                          value={w.title}
+                          onChange={(e) =>
+                            updateBlockWorkout(weekIdx, workoutIdx, { title: e.target.value })
+                          }
+                          placeholder={`Workout ${workoutIdx + 1}`}
+                        />
+                      </label>
+                      {week.workouts.length > 1 ? (
+                        <button
+                          type="button"
+                          className="btn btn-ghost"
+                          onClick={() => removeBlockWorkout(weekIdx, workoutIdx)}
+                        >
+                          Remove workout
+                        </button>
+                      ) : null}
+                    </div>
+                    <WorkoutBuilder
+                      exercises={w.exercises}
+                      onExercisesChange={(next) => {
+                        updateBlockWorkout(weekIdx, workoutIdx, { exercises: next });
+                      }}
+                      useRIR={blockUseRIR}
+                      useRPE={blockUseRPE}
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
-            <WorkoutBuilder
-              exercises={w.exercises}
-              onExercisesChange={(next) => {
-                updateBlockWorkout(idx, { exercises: next });
-              }}
-            />
-          </div>
-        ))}
+          ))
+        ) : (
+          <BlockTemplateTableView
+            blockWeeks={blockWeeks}
+            useRIR={blockUseRIR}
+            useRPE={blockUseRPE}
+            useDuration={blockUseDuration}
+            durationWeeks={durationWeeks}
+          />
+        )}
 
         <div className="row">
           <button className="btn" type="submit" disabled={blockSubmitting}>

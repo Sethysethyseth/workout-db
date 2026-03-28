@@ -1,6 +1,7 @@
 const prisma = require("../lib/prisma");
 const {
-  normalizeBlockWorkoutsArray,
+  normalizeBlockWeeksArray,
+  parseOptionalBoolean,
   parseOptionalDurationWeeks,
   parsePositiveInt,
 } = require("../lib/templateExerciseNormalize");
@@ -27,6 +28,15 @@ const blockWorkoutInclude = {
   },
 };
 
+const blockWeekInclude = {
+  orderBy: {
+    order: "asc",
+  },
+  include: {
+    workouts: blockWorkoutInclude,
+  },
+};
+
 async function createBlockTemplate(req, res, next) {
   try {
     const userId = req.session && req.session.userId;
@@ -37,7 +47,16 @@ async function createBlockTemplate(req, res, next) {
       });
     }
 
-    const { name, description, isPublic, durationWeeks, workouts } = req.body || {};
+    const {
+      name,
+      description,
+      isPublic,
+      durationWeeks,
+      weeks,
+      useRIR,
+      useRPE,
+      useDuration,
+    } = req.body || {};
 
     const trimmedName = typeof name === "string" ? name.trim() : "";
     const trimmedDescription =
@@ -51,12 +70,29 @@ async function createBlockTemplate(req, res, next) {
       });
     }
 
-    const dur = parseOptionalDurationWeeks(durationWeeks);
-    if (!dur.ok) {
-      return res.status(dur.status).json({ error: dur.error });
+    const useDurParsed = parseOptionalBoolean(useDuration);
+    if (!useDurParsed.ok) {
+      return res.status(useDurParsed.status).json({ error: useDurParsed.error });
     }
 
-    const norm = normalizeBlockWorkoutsArray(workouts);
+    const hasWeeksPayload =
+      durationWeeks !== undefined &&
+      durationWeeks !== null &&
+      !(typeof durationWeeks === "string" && durationWeeks.trim() === "");
+
+    const durationEnabled =
+      useDurParsed.value !== undefined ? useDurParsed.value : hasWeeksPayload;
+
+    let weeksValue = null;
+    if (durationEnabled) {
+      const dur = parseOptionalDurationWeeks(durationWeeks);
+      if (!dur.ok) {
+        return res.status(dur.status).json({ error: dur.error });
+      }
+      weeksValue = dur.value !== undefined ? dur.value : null;
+    }
+
+    const norm = normalizeBlockWeeksArray(weeks);
     if (!norm.ok) {
       return res.status(norm.status).json({ error: norm.error });
     }
@@ -66,19 +102,32 @@ async function createBlockTemplate(req, res, next) {
       description: trimmedDescription,
       isPublic: Boolean(isPublic),
       userId,
-      workouts: {
+      weeks: {
         create: norm.value,
       },
+      useDuration: durationEnabled,
+      durationWeeks: durationEnabled ? weeksValue : null,
     };
 
-    if (dur.value !== undefined) {
-      data.durationWeeks = dur.value;
+    if (useRIR !== undefined) {
+      const b = parseOptionalBoolean(useRIR);
+      if (!b.ok) {
+        return res.status(b.status).json({ error: b.error });
+      }
+      data.useRIR = b.value;
+    }
+    if (useRPE !== undefined) {
+      const b = parseOptionalBoolean(useRPE);
+      if (!b.ok) {
+        return res.status(b.status).json({ error: b.error });
+      }
+      data.useRPE = b.value;
     }
 
     const blockTemplate = await prisma.blockTemplate.create({
       data,
       include: {
-        workouts: blockWorkoutInclude,
+        weeks: blockWeekInclude,
       },
     });
 
@@ -108,7 +157,7 @@ async function getMyBlockTemplates(req, res, next) {
         createdAt: "desc",
       },
       include: {
-        workouts: blockWorkoutInclude,
+        weeks: blockWeekInclude,
       },
     });
 
@@ -140,7 +189,7 @@ async function getPublicBlockTemplates(req, res, next) {
         createdAt: "desc",
       },
       include: {
-        workouts: blockWorkoutInclude,
+        weeks: blockWeekInclude,
         user: {
           select: {
             id: true,
@@ -175,7 +224,7 @@ async function getBlockTemplateById(req, res, next) {
         id: templateId,
       },
       include: {
-        workouts: blockWorkoutInclude,
+        weeks: blockWeekInclude,
       },
     });
 
@@ -231,7 +280,16 @@ async function updateBlockTemplate(req, res, next) {
       });
     }
 
-    const { name, description, isPublic, durationWeeks, workouts } = req.body || {};
+    const {
+      name,
+      description,
+      isPublic,
+      durationWeeks,
+      weeks,
+      useRIR,
+      useRPE,
+      useDuration,
+    } = req.body || {};
 
     const data = {};
 
@@ -256,20 +314,51 @@ async function updateBlockTemplate(req, res, next) {
       data.isPublic = Boolean(isPublic);
     }
 
+    if (useRIR !== undefined) {
+      const b = parseOptionalBoolean(useRIR);
+      if (!b.ok) {
+        return res.status(b.status).json({ error: b.error });
+      }
+      data.useRIR = b.value;
+    }
+    if (useRPE !== undefined) {
+      const b = parseOptionalBoolean(useRPE);
+      if (!b.ok) {
+        return res.status(b.status).json({ error: b.error });
+      }
+      data.useRPE = b.value;
+    }
+
+    if (useDuration !== undefined) {
+      const b = parseOptionalBoolean(useDuration);
+      if (!b.ok) {
+        return res.status(b.status).json({ error: b.error });
+      }
+      data.useDuration = b.value;
+      if (b.value === false) {
+        data.durationWeeks = null;
+      }
+    }
+
     if (durationWeeks !== undefined) {
       const dur = parseOptionalDurationWeeks(durationWeeks);
       if (!dur.ok) {
         return res.status(dur.status).json({ error: dur.error });
       }
-      data.durationWeeks = dur.value;
+      if (data.useDuration !== false) {
+        data.durationWeeks = dur.value;
+        if (dur.value != null && useDuration === undefined) {
+          data.useDuration = true;
+        }
+      }
     }
 
-    if (workouts !== undefined) {
-      const norm = normalizeBlockWorkoutsArray(workouts);
+    if (weeks !== undefined) {
+      const norm = normalizeBlockWeeksArray(weeks);
       if (!norm.ok) {
         return res.status(norm.status).json({ error: norm.error });
       }
-      data.workouts = {
+      data.weeks = {
         deleteMany: {},
         create: norm.value,
       };
@@ -287,7 +376,7 @@ async function updateBlockTemplate(req, res, next) {
       },
       data,
       include: {
-        workouts: blockWorkoutInclude,
+        weeks: blockWeekInclude,
       },
     });
 
@@ -360,7 +449,7 @@ async function cloneBlockTemplate(req, res, next) {
         id: templateId,
       },
       include: {
-        workouts: blockWorkoutInclude,
+        weeks: blockWeekInclude,
       },
     });
 
@@ -384,44 +473,52 @@ async function cloneBlockTemplate(req, res, next) {
         description: existing.description,
         isPublic: false,
         durationWeeks: existing.durationWeeks,
+        useRIR: Boolean(existing.useRIR),
+        useRPE: Boolean(existing.useRPE),
+        useDuration: Boolean(existing.useDuration),
         userId,
-        workouts: {
-          create: existing.workouts.map((w) => ({
-            order: w.order,
-            name: w.name,
-            exercises: {
-              create: w.exercises.map((exercise) => {
-                const base = {
-                  order: exercise.order,
-                  exerciseName: exercise.exerciseName,
-                  targetSets: exercise.targetSets,
-                  targetReps: exercise.targetReps,
-                  notes: exercise.notes,
-                };
-                const sets = exercise.blockWorkoutSets || [];
-                if (sets.length > 0) {
-                  return {
-                    ...base,
-                    blockWorkoutSets: {
-                      create: sets.map((s) => ({
-                        order: s.order,
-                        reps: s.reps,
-                        weight: s.weight,
-                        rpe: s.rpe,
-                        rir: s.rir,
-                        notes: s.notes,
-                      })),
-                    },
-                  };
-                }
-                return base;
-              }),
+        weeks: {
+          create: existing.weeks.map((week) => ({
+            order: week.order,
+            workouts: {
+              create: week.workouts.map((w) => ({
+                order: w.order,
+                name: w.name,
+                exercises: {
+                  create: w.exercises.map((exercise) => {
+                    const base = {
+                      order: exercise.order,
+                      exerciseName: exercise.exerciseName,
+                      targetSets: exercise.targetSets,
+                      targetReps: exercise.targetReps,
+                      notes: exercise.notes,
+                    };
+                    const sets = exercise.blockWorkoutSets || [];
+                    if (sets.length > 0) {
+                      return {
+                        ...base,
+                        blockWorkoutSets: {
+                          create: sets.map((s) => ({
+                            order: s.order,
+                            reps: s.reps,
+                            weight: s.weight,
+                            rpe: s.rpe,
+                            rir: s.rir,
+                            notes: s.notes,
+                          })),
+                        },
+                      };
+                    }
+                    return base;
+                  }),
+                },
+              })),
             },
           })),
         },
       },
       include: {
-        workouts: blockWorkoutInclude,
+        weeks: blockWeekInclude,
       },
     });
 

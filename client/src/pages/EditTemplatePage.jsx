@@ -7,7 +7,9 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import * as templateApi from "../api/templateApi.js";
 import { ErrorMessage } from "../components/ErrorMessage.jsx";
 import { LoadingState } from "../components/LoadingState.jsx";
+import { ViewModeToggle } from "../components/templates/ViewModeToggle.jsx";
 import { WorkoutBuilder } from "../components/templates/WorkoutBuilder.jsx";
+import { WorkoutTemplateTableView } from "../components/templates/WorkoutTemplateTableView.jsx";
 import {
   exercisesToTemplateApi,
   templateToBuilderExercises,
@@ -24,6 +26,9 @@ export function EditTemplatePage() {
   const [description, setDescription] = useState("");
   const [isPublic, setIsPublic] = useState(false);
   const [workoutExercises, setWorkoutExercises] = useState(null);
+  const [useRIR, setUseRIR] = useState(false);
+  const [useRPE, setUseRPE] = useState(false);
+  const [viewMode, setViewMode] = useState("builder");
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -44,6 +49,8 @@ export function EditTemplatePage() {
         setName(t.name || "");
         setDescription(t.description || "");
         setIsPublic(Boolean(t.isPublic));
+        setUseRIR(Boolean(t.useRIR));
+        setUseRPE(Boolean(t.useRPE));
         setWorkoutExercises(templateToBuilderExercises(t));
       } catch (err) {
         if (!cancelled) setError(err);
@@ -77,6 +84,8 @@ export function EditTemplatePage() {
         name: name.trim(),
         description: description.trim() ? description.trim() : null,
         isPublic,
+        useRIR,
+        useRPE,
         exercises,
       });
       navigate("/templates");
@@ -143,7 +152,41 @@ export function EditTemplatePage() {
           </div>
         </label>
 
-        <WorkoutBuilder exercises={workoutExercises} onExercisesChange={setWorkoutExercises} />
+        <div className="template-options-grid">
+          <label className="checkbox-inline">
+            <input
+              type="checkbox"
+              checked={useRIR}
+              onChange={(e) => setUseRIR(e.target.checked)}
+            />
+            <span>Use RIR on sets</span>
+          </label>
+          <label className="checkbox-inline">
+            <input
+              type="checkbox"
+              checked={useRPE}
+              onChange={(e) => setUseRPE(e.target.checked)}
+            />
+            <span>Use RPE on sets</span>
+          </label>
+        </div>
+
+        <ViewModeToggle value={viewMode} onChange={setViewMode} />
+
+        {viewMode === "builder" ? (
+          <WorkoutBuilder
+            exercises={workoutExercises}
+            onExercisesChange={setWorkoutExercises}
+            useRIR={useRIR}
+            useRPE={useRPE}
+          />
+        ) : (
+          <WorkoutTemplateTableView
+            exercises={workoutExercises}
+            useRIR={useRIR}
+            useRPE={useRPE}
+          />
+        )}
 
         <div className="row">
           <button className="btn" disabled={submitting}>
