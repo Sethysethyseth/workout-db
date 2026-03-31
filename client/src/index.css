@@ -494,6 +494,81 @@ html[data-theme="dark"] .view-mode-toggle-buttons .btn.btn-secondary {
   gap: 16px;
 }
 
+.field-hint-warn {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #b45309;
+}
+
+html[data-theme="dark"] .field-hint-warn {
+  color: #fbbf24;
+}
+
+.block-weeks-builder {
+  gap: 10px;
+}
+
+.block-week-nav-btn.is-active {
+  border-color: var(--color-interactive);
+  background: var(--color-nav-active-bg);
+  color: var(--color-text);
+}
+
+.block-week-panel--open {
+  border-color: var(--color-interactive);
+  box-shadow: 0 0 0 1px var(--color-interactive);
+}
+
+.block-week-header-row {
+  flex-wrap: wrap;
+}
+
+.block-week-header-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  font-size: 1.1rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+.block-week-header-toggle:hover {
+  background: var(--color-surface-2);
+}
+
+.block-week-header-toggle:focus-visible {
+  outline: 2px solid var(--color-interactive);
+  outline-offset: 2px;
+}
+
+.block-week-chevron {
+  font-size: 0.65rem;
+  color: var(--color-muted);
+  width: 1.1em;
+  flex-shrink: 0;
+}
+
+.block-week-header-title {
+  flex-shrink: 0;
+}
+
+.block-week-body {
+  padding-top: 4px;
+}
+
 .template-options-grid {
   display: grid;
   gap: 10px;

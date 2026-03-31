@@ -4,6 +4,7 @@ import * as templateApi from "../api/templateApi.js";
 import * as blockTemplateApi from "../api/blockTemplateApi.js";
 import { ErrorMessage } from "../components/ErrorMessage.jsx";
 import { BlockTemplateTableView } from "../components/templates/BlockTemplateTableView.jsx";
+import { BlockWeeksBuilder } from "../components/templates/BlockWeeksBuilder.jsx";
 import { ViewModeToggle } from "../components/templates/ViewModeToggle.jsx";
 import { WorkoutBuilder } from "../components/templates/WorkoutBuilder.jsx";
 import { WorkoutTemplateTableView } from "../components/templates/WorkoutTemplateTableView.jsx";
@@ -15,6 +16,7 @@ import {
   isBlockWeekPristine,
   newBlockWeek,
   newBlockWorkout,
+  parseBlockDurationWeekCap,
 } from "../components/templates/workoutBuilderState.js";
 
 function stepFromTypeParam(searchParams) {
@@ -142,6 +144,16 @@ export function CreateTemplatePage() {
         return;
       }
 
+      const durationCap = parseBlockDurationWeekCap(blockUseDuration, durationWeeks);
+      if (durationCap != null && blockWeeks.length > durationCap) {
+        setError(
+          new Error(
+            `This block has ${blockWeeks.length} weeks but duration is set to ${durationCap}. Remove weeks or increase duration before saving.`
+          )
+        );
+        return;
+      }
+
       await blockTemplateApi.createBlockTemplate({
         name: blockName.trim(),
         description: blockDescription.trim() ? blockDescription.trim() : null,
@@ -161,6 +173,8 @@ export function CreateTemplatePage() {
   }
 
   function addBlockWeek() {
+    const cap = parseBlockDurationWeekCap(blockUseDuration, durationWeeks);
+    if (cap != null && blockWeeks.length >= cap) return;
     setBlockWeeks((prev) => [...prev, newBlockWeek()]);
   }
 
@@ -213,8 +227,13 @@ export function CreateTemplatePage() {
       );
       if (!ok) return;
     }
-    setBlockWeeks((p) => applyCopyPreviousWeek(p, weekIdx));
+    setBlockWeeks((p) => applyCopyPreviousWeek(p, weekIdx)    );
   }
+
+  const blockDurationCap = parseBlockDurationWeekCap(blockUseDuration, durationWeeks);
+  const blockAtMaxWeeks = blockDurationCap != null && blockWeeks.length >= blockDurationCap;
+  const blockDurationTooSmall =
+    blockDurationCap != null && blockWeeks.length > blockDurationCap;
 
   if (step === "choose") {
     return (
@@ -431,7 +450,14 @@ export function CreateTemplatePage() {
                 onChange={(e) => setDurationWeeks(e.target.value)}
                 inputMode="numeric"
                 placeholder="e.g. 4 (optional)"
+                aria-invalid={blockDurationTooSmall || undefined}
               />
+              {blockDurationTooSmall ? (
+                <span className="field-hint-warn">
+                  Duration ({blockDurationCap} weeks) is below this block’s {blockWeeks.length} weeks.
+                  Remove weeks or raise duration before saving.
+                </span>
+              ) : null}
             </label>
           ) : null}
         </div>
@@ -441,83 +467,35 @@ export function CreateTemplatePage() {
           <div className="row" style={{ flexWrap: "wrap", justifyContent: "flex-end" }}>
             <ViewModeToggle value={blockViewMode} onChange={setBlockViewMode} />
             {blockViewMode === "builder" ? (
-              <button type="button" className="btn btn-secondary" onClick={addBlockWeek}>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={addBlockWeek}
+                disabled={blockAtMaxWeeks}
+                title={blockAtMaxWeeks ? `Max weeks reached (${blockDurationCap})` : undefined}
+              >
                 Add week
               </button>
             ) : null}
           </div>
         </div>
+        {blockViewMode === "builder" && blockAtMaxWeeks ? (
+          <p className="muted small" style={{ margin: "-4px 0 0" }}>
+            Max weeks reached ({blockDurationCap})
+          </p>
+        ) : null}
 
         {blockViewMode === "builder" ? (
-          blockWeeks.map((week, weekIdx) => (
-            <div key={week.id} className="card stack">
-              <div className="row" style={{ alignItems: "center" }}>
-                <h3 style={{ margin: 0, flex: 1 }}>Week {weekIdx + 1}</h3>
-                <div className="row" style={{ flexWrap: "wrap", justifyContent: "flex-end" }}>
-                  {weekIdx > 0 ? (
-                    <button
-                      type="button"
-                      className="btn btn-secondary"
-                      onClick={() => copyPreviousWeekInto(weekIdx)}
-                    >
-                      Copy previous week
-                    </button>
-                  ) : null}
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    onClick={() => addBlockWorkout(weekIdx)}
-                  >
-                    Add workout
-                  </button>
-                  {blockWeeks.length > 1 ? (
-                    <button
-                      type="button"
-                      className="btn btn-ghost"
-                      onClick={() => removeBlockWeek(weekIdx)}
-                    >
-                      Remove week
-                    </button>
-                  ) : null}
-                </div>
-              </div>
-              <div className="stack">
-                {week.workouts.map((w, workoutIdx) => (
-                  <div key={w.id} className="card stack" style={{ margin: 0 }}>
-                    <div className="row">
-                      <label style={{ flex: 1, margin: 0 }}>
-                        Workout label
-                        <input
-                          value={w.title}
-                          onChange={(e) =>
-                            updateBlockWorkout(weekIdx, workoutIdx, { title: e.target.value })
-                          }
-                          placeholder={`Workout ${workoutIdx + 1}`}
-                        />
-                      </label>
-                      {week.workouts.length > 1 ? (
-                        <button
-                          type="button"
-                          className="btn btn-ghost"
-                          onClick={() => removeBlockWorkout(weekIdx, workoutIdx)}
-                        >
-                          Remove workout
-                        </button>
-                      ) : null}
-                    </div>
-                    <WorkoutBuilder
-                      exercises={w.exercises}
-                      onExercisesChange={(next) => {
-                        updateBlockWorkout(weekIdx, workoutIdx, { exercises: next });
-                      }}
-                      useRIR={blockUseRIR}
-                      useRPE={blockUseRPE}
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))
+          <BlockWeeksBuilder
+            blockWeeks={blockWeeks}
+            useRIR={blockUseRIR}
+            useRPE={blockUseRPE}
+            onRemoveWeek={removeBlockWeek}
+            onUpdateBlockWorkout={updateBlockWorkout}
+            onAddBlockWorkout={addBlockWorkout}
+            onRemoveBlockWorkout={removeBlockWorkout}
+            onCopyPreviousWeek={copyPreviousWeekInto}
+          />
         ) : (
           <BlockTemplateTableView
             blockWeeks={blockWeeks}
@@ -529,7 +507,11 @@ export function CreateTemplatePage() {
         )}
 
         <div className="row">
-          <button className="btn" type="submit" disabled={blockSubmitting}>
+          <button
+            className="btn"
+            type="submit"
+            disabled={blockSubmitting || blockDurationTooSmall}
+          >
             {blockSubmitting ? "Saving…" : "Save block"}
           </button>
           <button

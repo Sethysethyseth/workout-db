@@ -140,4 +140,27 @@ describe("Block template integration", () => {
     const again = await agent.get(`/block-templates/${id}`).send();
     expect(again.status).toBe(404);
   });
+
+  test("create rejects when week count exceeds durationWeeks", async () => {
+    const agent = request.agent(app);
+    await registerAndLogin(agent, {
+      email: uniqueEmail("dur"),
+      password: "password123",
+    });
+
+    const week = sampleBlockPayload().weeks[0];
+    const res = await agent.post("/block-templates").send(
+      sampleBlockPayload({
+        useDuration: true,
+        durationWeeks: 1,
+        weeks: [
+          { ...week, order: 1 },
+          { ...week, order: 2 },
+        ],
+      })
+    );
+
+    expect(res.status).toBe(400);
+    expect(String(res.body.error || "")).toMatch(/2 weeks/);
+  });
 });

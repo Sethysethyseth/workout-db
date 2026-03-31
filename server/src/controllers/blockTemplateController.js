@@ -6,6 +6,14 @@ const {
   parsePositiveInt,
 } = require("../lib/templateExerciseNormalize");
 
+function blockWeeksDurationConflictMessage(weekCount, durationEnabled, durationWeeksValue) {
+  if (!durationEnabled || durationWeeksValue == null) return null;
+  if (weekCount > durationWeeksValue) {
+    return `This block has ${weekCount} weeks but duration is set to ${durationWeeksValue}. Remove weeks or increase duration before saving.`;
+  }
+  return null;
+}
+
 const blockExerciseInclude = {
   orderBy: {
     order: "asc",
@@ -95,6 +103,15 @@ async function createBlockTemplate(req, res, next) {
     const norm = normalizeBlockWeeksArray(weeks);
     if (!norm.ok) {
       return res.status(norm.status).json({ error: norm.error });
+    }
+
+    const durationConflict = blockWeeksDurationConflictMessage(
+      norm.value.length,
+      durationEnabled,
+      weeksValue
+    );
+    if (durationConflict) {
+      return res.status(400).json({ error: durationConflict });
     }
 
     const data = {
@@ -272,6 +289,11 @@ async function updateBlockTemplate(req, res, next) {
         id: templateId,
         userId,
       },
+      include: {
+        _count: {
+          select: { weeks: true },
+        },
+      },
     });
 
     if (!existing) {
@@ -353,11 +375,13 @@ async function updateBlockTemplate(req, res, next) {
       }
     }
 
+    let normalizedWeeksForCount = null;
     if (weeks !== undefined) {
       const norm = normalizeBlockWeeksArray(weeks);
       if (!norm.ok) {
         return res.status(norm.status).json({ error: norm.error });
       }
+      normalizedWeeksForCount = norm.value;
       data.weeks = {
         deleteMany: {},
         create: norm.value,
@@ -368,6 +392,29 @@ async function updateBlockTemplate(req, res, next) {
       return res.status(400).json({
         error: "No fields to update",
       });
+    }
+
+    const weekCountForValidation =
+      normalizedWeeksForCount !== null
+        ? normalizedWeeksForCount.length
+        : existing._count.weeks;
+
+    const mergedUseDuration =
+      data.useDuration !== undefined ? data.useDuration : existing.useDuration;
+    let mergedDurationWeeks = existing.durationWeeks;
+    if (mergedUseDuration === false) {
+      mergedDurationWeeks = null;
+    } else if (data.durationWeeks !== undefined) {
+      mergedDurationWeeks = data.durationWeeks;
+    }
+
+    const updateDurationConflict = blockWeeksDurationConflictMessage(
+      weekCountForValidation,
+      mergedUseDuration,
+      mergedDurationWeeks
+    );
+    if (updateDurationConflict) {
+      return res.status(400).json({ error: updateDurationConflict });
     }
 
     const blockTemplate = await prisma.blockTemplate.update({

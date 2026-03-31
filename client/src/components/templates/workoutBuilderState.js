@@ -176,6 +176,19 @@ export function newBlockWeek() {
   };
 }
 
+/**
+ * When duration is enabled and the field holds a positive integer, returns that cap for week count.
+ * Otherwise null (no cap from duration).
+ */
+export function parseBlockDurationWeekCap(useDuration, durationWeeksRaw) {
+  if (!useDuration) return null;
+  const s = String(durationWeeksRaw ?? "").trim();
+  if (s === "") return null;
+  const n = Number(s);
+  if (!Number.isInteger(n) || n <= 0) return null;
+  return n;
+}
+
 function setRowIsBlank(set) {
   if (!set || typeof set !== "object") return true;
   const keys = Object.keys(set).filter((k) => k !== "id");
