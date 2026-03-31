@@ -27,13 +27,15 @@ export function Navbar() {
         <nav className="links">
           {currentUser ? (
             <>
-              <NavLink to="/templates" end>
-                My Templates
+              <NavLink to="/" end>
+                Home
               </NavLink>
-              <NavLink to="/templates/public">Public Templates</NavLink>
-              <NavLink to="/create-template">Create Template</NavLink>
+              <NavLink to="/templates" end>
+                My programs
+              </NavLink>
+              <NavLink to="/templates/public">Public programs</NavLink>
               <NavLink to="/sessions" end>
-                Sessions
+                History
               </NavLink>
               <NavLink to="/profile">Profile</NavLink>
               <button className="btn btn-ghost" type="button" onClick={onLogout}>

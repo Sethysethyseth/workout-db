@@ -362,6 +362,71 @@ html[data-theme="dark"] .btn-secondary:active:not(:disabled) {
   padding: 10px;
 }
 
+.session-finish-cta {
+  border-color: var(--color-interactive);
+}
+
+.home-primary-actions {
+  border-color: var(--color-interactive);
+}
+
+.home-primary-actions__title {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.home-primary-actions__start {
+  width: 100%;
+  max-width: 22rem;
+  padding: 0.75rem 1.25rem;
+  font-weight: 600;
+}
+
+.home-primary-actions__secondary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: 4px;
+}
+
+.home-primary-actions__secondary-btn {
+  flex: 1 1 10rem;
+  min-width: 0;
+  justify-content: center;
+  text-align: center;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.session-set-order {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.session-set-order input {
+  width: 4.5rem;
+}
+
+.recent-workouts-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+}
+
+.recent-workout-card {
+  text-decoration: none;
+  color: inherit;
+  outline-offset: 2px;
+  padding: 12px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.recent-workout-card:hover {
+  border-color: var(--color-interactive);
+  box-shadow: var(--shadow-card-hover);
+}
+
 .view-mode-toggle {
   justify-content: flex-end;
 }

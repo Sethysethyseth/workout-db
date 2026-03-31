@@ -11,6 +11,7 @@ import { EditTemplatePage } from "./pages/EditTemplatePage.jsx";
 import { EditBlockTemplatePage } from "./pages/EditBlockTemplatePage.jsx";
 import { SessionsPage } from "./pages/SessionsPage.jsx";
 import { SessionDetailPage } from "./pages/SessionDetailPage.jsx";
+import { StartLogWorkoutPage } from "./pages/StartLogWorkoutPage.jsx";
 import { ProfilePage } from "./pages/ProfilePage.jsx";
 
 export default function App() {
@@ -69,6 +70,14 @@ export default function App() {
           }
         />
         <Route path="/templates/new" element={<Navigate to="/create-template" replace />} />
+        <Route
+          path="/log-workout"
+          element={
+            <ProtectedRoute>
+              <StartLogWorkoutPage />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/sessions"
           element={

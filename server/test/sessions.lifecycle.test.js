@@ -258,3 +258,63 @@ describe("Session lifecycle + completed-session locking", () => {
   });
 });
 
+describe("Ad-hoc sessions and session exercises", () => {
+  test("POST /sessions creates an empty workout without a template", async () => {
+    const agent = request.agent(app);
+    await registerAndLogin(agent, {
+      email: "adhoc1@example.com",
+      password: "password123",
+    });
+
+    const res = await agent.post("/sessions").send({});
+    expect(res.status).toBe(201);
+    expect(res.body).toHaveProperty("session");
+    expect(res.body.session.workoutTemplateId).toBeNull();
+    expect(res.body.session.sessionExercises).toEqual([]);
+  });
+
+  test("POST /sessions/:id/exercises then set then complete", async () => {
+    const agent = request.agent(app);
+    await registerAndLogin(agent, {
+      email: "adhoc2@example.com",
+      password: "password123",
+    });
+
+    const created = await agent.post("/sessions").send({});
+    expect(created.status).toBe(201);
+    const sessionId = created.body.session.id;
+
+    const addEx = await agent.post(`/sessions/${sessionId}/exercises`).send({
+      exerciseName: "Squat",
+    });
+    expect(addEx.status).toBe(201);
+    expect(addEx.body.sessionExercise.exerciseName).toBe("Squat");
+
+    const sessionExerciseId = addEx.body.sessionExercise.id;
+
+    const rename = await agent
+      .patch(`/sessions/${sessionId}/exercises/${sessionExerciseId}`)
+      .send({ exerciseName: "Back squat" });
+    expect(rename.status).toBe(200);
+    expect(rename.body.sessionExercise.exerciseName).toBe("Back squat");
+
+    const setRes = await agent.post(`/sessions/${sessionId}/sets`).send({
+      sessionExerciseId,
+      order: 1,
+      reps: 5,
+      weight: 100,
+    });
+    expect(setRes.status).toBe(201);
+
+    const done = await agent.post(`/sessions/${sessionId}/complete`).send();
+    expect(done.status).toBe(200);
+    expect(done.body.session.completedAt).toBeTruthy();
+
+    const blocked = await agent.post(`/sessions/${sessionId}/exercises`).send({
+      exerciseName: "Too late",
+    });
+    expect(blocked.status).toBe(400);
+    expect(blocked.body.error).toBe("Completed sessions cannot be modified");
+  });
+});
+

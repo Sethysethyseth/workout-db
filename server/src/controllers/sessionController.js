@@ -1,5 +1,30 @@
 const prisma = require("../lib/prisma");
 
+const FULL_SESSION_RELATIONS = {
+  workoutTemplate: {
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      isPublic: true,
+      userId: true,
+    },
+  },
+  sessionExercises: {
+    orderBy: {
+      order: "asc",
+    },
+  },
+  sets: {
+    orderBy: {
+      order: "asc",
+    },
+    include: {
+      sessionExercise: true,
+    },
+  },
+};
+
 function parsePositiveInt(value) {
   if (value == null || value === "") return null;
   const parsed = Number(value);
@@ -139,6 +164,298 @@ async function startSession(req, res, next) {
     if (err && err.statusCode === 403 && err.code === "FORBIDDEN_TEMPLATE") {
       return res.status(403).json({
         error: "You do not have permission to start a session from this template",
+      });
+    }
+
+    return next(err);
+  }
+}
+
+async function createAdHocSession(req, res, next) {
+  try {
+    const userId = req.session && req.session.userId;
+
+    if (!userId) {
+      return res.status(401).json({
+        error: "Authentication required",
+      });
+    }
+
+    const createdSession = await prisma.workoutSession.create({
+      data: {
+        userId,
+      },
+    });
+
+    const session = await prisma.workoutSession.findUnique({
+      where: {
+        id: createdSession.id,
+      },
+      include: FULL_SESSION_RELATIONS,
+    });
+
+    return res.status(201).json({
+      session,
+    });
+  } catch (err) {
+    return next(err);
+  }
+}
+
+async function addSessionExercise(req, res, next) {
+  try {
+    const userId = req.session && req.session.userId;
+
+    if (!userId) {
+      return res.status(401).json({
+        error: "Authentication required",
+      });
+    }
+
+    const sessionId = parsePositiveInt(req.params && req.params.id);
+
+    if (!sessionId) {
+      return res.status(400).json({
+        error: "Session id must be a positive integer",
+      });
+    }
+
+    const {
+      exerciseName: rawName,
+      notes: rawNotes,
+      targetSets: rawTargetSets,
+      targetReps: rawTargetReps,
+    } = req.body || {};
+
+    const exerciseName =
+      typeof rawName === "string" && rawName.trim() ? rawName.trim() : null;
+
+    if (!exerciseName) {
+      return res.status(400).json({
+        error: "exerciseName is required",
+      });
+    }
+
+    const notes =
+      typeof rawNotes === "string" && rawNotes.trim() ? rawNotes.trim() : null;
+
+    let targetSets = null;
+    if (rawTargetSets !== undefined && rawTargetSets !== null && rawTargetSets !== "") {
+      const ts = parsePositiveInt(rawTargetSets);
+      if (!ts) {
+        return res.status(400).json({
+          error: "targetSets must be a positive integer when provided",
+        });
+      }
+      targetSets = ts;
+    }
+
+    let targetReps = null;
+    if (rawTargetReps !== undefined && rawTargetReps !== null) {
+      if (typeof rawTargetReps !== "string" || !rawTargetReps.trim()) {
+        return res.status(400).json({
+          error: "targetReps must be a non-empty string when provided",
+        });
+      }
+      targetReps = rawTargetReps.trim();
+    }
+
+    const sessionExercise = await prisma.$transaction(async (tx) => {
+      const session = await tx.workoutSession.findUnique({
+        where: {
+          id: sessionId,
+        },
+        select: {
+          id: true,
+          userId: true,
+          completedAt: true,
+        },
+      });
+
+      if (!session) {
+        throw Object.assign(new Error("Session not found"), {
+          statusCode: 404,
+          code: "SESSION_NOT_FOUND",
+        });
+      }
+
+      if (session.userId !== userId) {
+        throw Object.assign(
+          new Error("You do not have permission to modify this session"),
+          {
+            statusCode: 403,
+            code: "FORBIDDEN_SESSION",
+          }
+        );
+      }
+
+      if (session.completedAt) {
+        throw Object.assign(new Error("Completed sessions cannot be modified"), {
+          statusCode: 400,
+          code: "SESSION_COMPLETED",
+        });
+      }
+
+      const agg = await tx.sessionExercise.aggregate({
+        where: {
+          workoutSessionId: sessionId,
+        },
+        _max: {
+          order: true,
+        },
+      });
+
+      const nextOrder = (agg._max.order ?? 0) + 1;
+
+      return tx.sessionExercise.create({
+        data: {
+          workoutSessionId: sessionId,
+          order: nextOrder,
+          exerciseName,
+          notes,
+          targetSets,
+          targetReps,
+        },
+      });
+    });
+
+    return res.status(201).json({
+      sessionExercise,
+    });
+  } catch (err) {
+    if (err && err.statusCode === 404 && err.code === "SESSION_NOT_FOUND") {
+      return res.status(404).json({
+        error: "Session not found",
+      });
+    }
+
+    if (err && err.statusCode === 403 && err.code === "FORBIDDEN_SESSION") {
+      return res.status(403).json({
+        error: "You do not have permission to modify this session",
+      });
+    }
+
+    if (err && err.statusCode === 400 && err.code === "SESSION_COMPLETED") {
+      return res.status(400).json({
+        error: "Completed sessions cannot be modified",
+      });
+    }
+
+    return next(err);
+  }
+}
+
+async function updateSessionExercise(req, res, next) {
+  try {
+    const userId = req.session && req.session.userId;
+
+    if (!userId) {
+      return res.status(401).json({
+        error: "Authentication required",
+      });
+    }
+
+    const sessionId = parsePositiveInt(req.params && req.params.id);
+    const exerciseId = parsePositiveInt(req.params && req.params.exerciseId);
+
+    if (!sessionId || !exerciseId) {
+      return res.status(400).json({
+        error: "Session id and exercise id must be positive integers",
+      });
+    }
+
+    const { exerciseName: rawName, notes: rawNotes } = req.body || {};
+
+    const data = {};
+
+    if (rawName !== undefined) {
+      const name = typeof rawName === "string" && rawName.trim() ? rawName.trim() : null;
+      if (!name) {
+        return res.status(400).json({
+          error: "exerciseName cannot be empty",
+        });
+      }
+      data.exerciseName = name;
+    }
+
+    if (rawNotes !== undefined) {
+      data.notes =
+        typeof rawNotes === "string" && rawNotes.trim() ? rawNotes.trim() : null;
+    }
+
+    if (Object.keys(data).length === 0) {
+      return res.status(400).json({
+        error: "No fields to update",
+      });
+    }
+
+    const sessionExercise = await prisma.$transaction(async (tx) => {
+      const existing = await tx.sessionExercise.findUnique({
+        where: {
+          id: exerciseId,
+        },
+        include: {
+          workoutSession: {
+            select: {
+              id: true,
+              userId: true,
+              completedAt: true,
+            },
+          },
+        },
+      });
+
+      if (!existing || existing.workoutSessionId !== sessionId) {
+        throw Object.assign(new Error("Session exercise not found"), {
+          statusCode: 404,
+          code: "SESSION_EXERCISE_NOT_FOUND",
+        });
+      }
+
+      if (!existing.workoutSession || existing.workoutSession.userId !== userId) {
+        throw Object.assign(
+          new Error("You do not have permission to modify this session exercise"),
+          {
+            statusCode: 403,
+            code: "FORBIDDEN_SESSION",
+          }
+        );
+      }
+
+      if (existing.workoutSession.completedAt) {
+        throw Object.assign(new Error("Completed sessions cannot be modified"), {
+          statusCode: 400,
+          code: "SESSION_COMPLETED",
+        });
+      }
+
+      return tx.sessionExercise.update({
+        where: {
+          id: exerciseId,
+        },
+        data,
+      });
+    });
+
+    return res.status(200).json({
+      sessionExercise,
+    });
+  } catch (err) {
+    if (err && err.statusCode === 404 && err.code === "SESSION_EXERCISE_NOT_FOUND") {
+      return res.status(404).json({
+        error: "Session exercise not found",
+      });
+    }
+
+    if (err && err.statusCode === 403 && err.code === "FORBIDDEN_SESSION") {
+      return res.status(403).json({
+        error: "You do not have permission to modify this session exercise",
+      });
+    }
+
+    if (err && err.statusCode === 400 && err.code === "SESSION_COMPLETED") {
+      return res.status(400).json({
+        error: "Completed sessions cannot be modified",
       });
     }
 
@@ -940,6 +1257,9 @@ async function deleteSet(req, res, next) {
 
 module.exports = {
   startSession,
+  createAdHocSession,
+  addSessionExercise,
+  updateSessionExercise,
   getMySessions,
   getSessionById,
   createSetForSession,

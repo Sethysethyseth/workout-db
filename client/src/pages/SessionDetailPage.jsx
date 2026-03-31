@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import * as sessionApi from "../api/sessionApi.js";
 import { ErrorMessage } from "../components/ErrorMessage.jsx";
 import { LoadingState } from "../components/LoadingState.jsx";
+import { WorkoutSetRowShell } from "../components/workout/WorkoutSetRowShell.jsx";
 
 function formatDate(value) {
   if (!value) return "—";
@@ -17,6 +18,111 @@ function nextSetOrder(session) {
   return max + 1;
 }
 
+/** Matches template ExerciseEditor: name + optional notes in a two-column grid. */
+function SessionExerciseFields({
+  sessionExercise,
+  sessionId,
+  disabled,
+  onSaved,
+}) {
+  const [name, setName] = useState(sessionExercise.exerciseName);
+  const [notes, setNotes] = useState(sessionExercise.notes ?? "");
+  const [fieldError, setFieldError] = useState(null);
+
+  useEffect(() => {
+    setName(sessionExercise.exerciseName);
+    setNotes(sessionExercise.notes ?? "");
+  }, [sessionExercise.id, sessionExercise.exerciseName, sessionExercise.notes]);
+
+  async function commitExercise(patch) {
+    if (disabled) return;
+    setFieldError(null);
+    try {
+      await sessionApi.updateSessionExercise(sessionId, sessionExercise.id, patch);
+      await onSaved();
+    } catch (err) {
+      setName(sessionExercise.exerciseName);
+      setNotes(sessionExercise.notes ?? "");
+      setFieldError(err);
+    }
+  }
+
+  async function commitName() {
+    const trimmed = name.trim();
+    if (!trimmed) {
+      setName(sessionExercise.exerciseName);
+      return;
+    }
+    if (trimmed === sessionExercise.exerciseName) return;
+    await commitExercise({ exerciseName: trimmed });
+  }
+
+  async function commitNotes() {
+    const n = notes.trim();
+    const prev = (sessionExercise.notes ?? "").trim();
+    if (n === prev) return;
+    await commitExercise({ notes: n ? n : null });
+  }
+
+  if (disabled) {
+    return (
+      <div className="grid-2">
+        <div>
+          <div className="muted small" style={{ fontWeight: 600 }}>
+            Exercise name
+          </div>
+          <div style={{ marginTop: 6 }}>{sessionExercise.exerciseName}</div>
+        </div>
+        <div>
+          <div className="muted small" style={{ fontWeight: 600 }}>
+            Notes <span className="muted small">(optional)</span>
+          </div>
+          <div className="muted" style={{ marginTop: 6 }}>
+            {sessionExercise.notes?.trim() ? sessionExercise.notes : "—"}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="stack" style={{ gap: 8 }}>
+      <div className="grid-2">
+        <label style={{ margin: 0 }}>
+          <span className="muted small" style={{ fontWeight: 600 }}>
+            Exercise name
+          </span>
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            onBlur={() => {
+              void commitName();
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") e.currentTarget.blur();
+            }}
+            placeholder="e.g. Bench press"
+          />
+        </label>
+        <label style={{ margin: 0 }}>
+          <span className="muted small" style={{ fontWeight: 600 }}>
+            Notes <span className="muted small">(optional)</span>
+          </span>
+          <input
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            onBlur={() => {
+              void commitNotes();
+            }}
+            placeholder="e.g. tempo, substitutions"
+          />
+        </label>
+      </div>
+      {fieldError ? <ErrorMessage error={fieldError} /> : null}
+    </div>
+  );
+}
+
 export function SessionDetailPage() {
   const { id } = useParams();
   const sessionId = Number(id);
@@ -25,16 +131,8 @@ export function SessionDetailPage() {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  const [newSet, setNewSet] = useState({
-    sessionExerciseId: "",
-    order: "",
-    reps: "",
-    weight: "",
-    rpe: "",
-    rir: "",
-    notes: "",
-  });
+  const [newExerciseName, setNewExerciseName] = useState("");
+  const [addingExercise, setAddingExercise] = useState(false);
 
   const isCompleted = Boolean(session?.completedAt);
 
@@ -58,7 +156,6 @@ export function SessionDetailPage() {
     try {
       const data = await sessionApi.getSessionById(sessionId);
       setSession(data.session);
-      setNewSet((prev) => ({ ...prev, order: String(nextSetOrder(data.session)) }));
     } catch (err) {
       setError(err);
     } finally {
@@ -86,7 +183,7 @@ export function SessionDetailPage() {
   }
 
   async function onDeleteSession() {
-    if (!confirm("Delete this session? This cannot be undone.")) return;
+    if (!confirm("Delete this workout? This cannot be undone.")) return;
     setError(null);
     try {
       await sessionApi.deleteSession(sessionId);
@@ -96,30 +193,15 @@ export function SessionDetailPage() {
     }
   }
 
-  async function onCreateSet(e) {
-    e.preventDefault();
+  async function onCreateSetForExercise(sessionExerciseId) {
     setError(null);
     try {
-      const payload = {
-        sessionExerciseId: Number(newSet.sessionExerciseId),
-        order: Number(newSet.order),
-      };
-      if (newSet.reps !== "") payload.reps = Number(newSet.reps);
-      if (newSet.weight !== "") payload.weight = Number(newSet.weight);
-      if (newSet.rpe !== "") payload.rpe = Number(newSet.rpe);
-      if (newSet.rir !== "") payload.rir = Number(newSet.rir);
-      if (newSet.notes !== "") payload.notes = newSet.notes;
-
-      await sessionApi.createSet(sessionId, payload);
+      const order = nextSetOrder(session);
+      await sessionApi.createSet(sessionId, {
+        sessionExerciseId,
+        order,
+      });
       await load();
-      setNewSet((prev) => ({
-        ...prev,
-        reps: "",
-        weight: "",
-        rpe: "",
-        rir: "",
-        notes: "",
-      }));
     } catch (err) {
       setError(err);
     }
@@ -146,30 +228,51 @@ export function SessionDetailPage() {
     }
   }
 
-  if (loading) return <LoadingState label="Loading session…" />;
+  async function onAddExercise(e) {
+    e.preventDefault();
+    const name = newExerciseName.trim();
+    if (!name) return;
+    setError(null);
+    setAddingExercise(true);
+    try {
+      await sessionApi.addSessionExercise(sessionId, { exerciseName: name });
+      setNewExerciseName("");
+      await load();
+    } catch (err) {
+      setError(err);
+    } finally {
+      setAddingExercise(false);
+    }
+  }
+
+  if (loading) return <LoadingState label="Loading workout…" />;
+
+  const programLine = session?.workoutTemplate
+    ? `From template: ${session.workoutTemplate.name}`
+    : "Not from a saved template";
 
   return (
     <div className="stack">
       <div className="row">
         <div>
-          <h1>Session #{sessionId}</h1>
+          <h1 style={{ marginBottom: 6 }}>{isCompleted ? "Workout summary" : "Workout"}</h1>
           <div className="muted small">
             Performed: {formatDate(session?.performedAt)} · Started:{" "}
             {formatDate(session?.startedAt)}
           </div>
         </div>
         <div className="row">
-          <Link className="btn btn-secondary" to="/sessions">
-            Back
+          <Link className="btn btn-secondary" to="/">
+            Home
           </Link>
-          <button className="btn btn-secondary" onClick={load}>
+          <Link className="btn btn-secondary" to="/sessions">
+            History
+          </Link>
+          <button type="button" className="btn btn-secondary" onClick={load}>
             Refresh
           </button>
-          <button className="btn btn-secondary" onClick={onDeleteSession}>
-            Delete session
-          </button>
-          <button className="btn" onClick={onComplete} disabled={isCompleted}>
-            {isCompleted ? "Completed" : "Complete session"}
+          <button type="button" className="btn btn-secondary" onClick={onDeleteSession}>
+            Delete workout
           </button>
         </div>
       </div>
@@ -179,179 +282,136 @@ export function SessionDetailPage() {
       <div className="card stack">
         <div className="row">
           <div>
-            <strong>Template</strong>
-            <div className="muted small">
-              {session?.workoutTemplate
-                ? `${session.workoutTemplate.name} (#${session.workoutTemplate.id})`
-                : "—"}
-            </div>
+            <strong>Source</strong>
+            <div className="muted small">{programLine}</div>
           </div>
-          <span className="pill">{isCompleted ? "Completed" : "Active"}</span>
+          <span className="pill">{isCompleted ? "Completed" : "In progress"}</span>
         </div>
 
         {isCompleted ? (
           <div className="muted small">
-            Completed at: {formatDate(session?.completedAt)}. Mutations are locked by
-            the backend.
+            Finished {formatDate(session?.completedAt)}. This workout is saved in your history and
+            is read-only.
           </div>
         ) : null}
       </div>
 
-      <div className="card stack">
-        <div className="row">
-          <h2 style={{ margin: 0 }}>Add set</h2>
-          <span className="muted small">
-            Set order must be unique within the session.
-          </span>
+      {!isCompleted ? (
+        <div className="card stack session-finish-cta">
+          <div className="row" style={{ alignItems: "center" }}>
+            <div style={{ flex: "1 1 220px", minWidth: 0 }}>
+              <strong>Finish workout</strong>
+              <p className="muted small" style={{ margin: "6px 0 0" }}>
+                When you are done training, finish to mark this session complete. You can open it
+                anytime from Home or History.
+              </p>
+            </div>
+            <button type="button" className="btn" onClick={onComplete}>
+              Finish workout
+            </button>
+          </div>
         </div>
+      ) : null}
 
-        <form className="stack" onSubmit={onCreateSet}>
-          <div className="grid-2">
-            <label>
-              Session exercise
-              <select
-                value={newSet.sessionExerciseId}
-                onChange={(e) =>
-                  setNewSet((s) => ({ ...s, sessionExerciseId: e.target.value }))
-                }
-                required
-                disabled={isCompleted}
-              >
-                <option value="" disabled>
-                  Select…
-                </option>
-                {(session?.sessionExercises || []).map((se) => (
-                  <option key={se.id} value={se.id}>
-                    {se.order}. {se.exerciseName}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Order
-              <input
-                value={newSet.order}
-                onChange={(e) => setNewSet((s) => ({ ...s, order: e.target.value }))}
-                inputMode="numeric"
-                required
-                disabled={isCompleted}
-              />
-            </label>
-          </div>
+      {!isCompleted && (session?.sessionExercises || []).length === 0 ? (
+        <div className="card muted">
+          Add your first exercise below. You can log sets for each movement as you go.
+        </div>
+      ) : null}
 
-          <div className="grid-2">
-            <label>
-              Reps (optional)
-              <input
-                value={newSet.reps}
-                onChange={(e) => setNewSet((s) => ({ ...s, reps: e.target.value }))}
-                inputMode="numeric"
-                disabled={isCompleted}
-              />
-            </label>
-            <label>
-              Weight (optional)
-              <input
-                value={newSet.weight}
-                onChange={(e) =>
-                  setNewSet((s) => ({ ...s, weight: e.target.value }))
-                }
-                inputMode="decimal"
-                disabled={isCompleted}
-              />
-            </label>
-          </div>
-
-          <div className="grid-2">
-            <label>
-              RPE (optional)
-              <input
-                value={newSet.rpe}
-                onChange={(e) => setNewSet((s) => ({ ...s, rpe: e.target.value }))}
-                inputMode="decimal"
-                disabled={isCompleted}
-              />
-            </label>
-            <label>
-              RIR (optional)
-              <input
-                value={newSet.rir}
-                onChange={(e) => setNewSet((s) => ({ ...s, rir: e.target.value }))}
-                inputMode="numeric"
-                disabled={isCompleted}
-              />
-            </label>
-          </div>
-
-          <label>
-            Notes (optional)
-            <input
-              value={newSet.notes}
-              onChange={(e) => setNewSet((s) => ({ ...s, notes: e.target.value }))}
-              disabled={isCompleted}
-            />
-          </label>
-
-          <div className="row">
-            <button className="btn" disabled={isCompleted}>
-              Add set
-            </button>
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={() =>
-                setNewSet((s) => ({ ...s, order: String(nextSetOrder(session)) }))
-              }
-              disabled={isCompleted}
-            >
-              Suggest next order
-            </button>
-          </div>
-        </form>
-      </div>
+      {(session?.sessionExercises || []).length > 0 ? (
+        <div className="row">
+          <h2 style={{ margin: 0 }}>Workout</h2>
+        </div>
+      ) : null}
 
       <div className="stack">
         {(session?.sessionExercises || []).map((se) => {
           const sets = setsByExercise.get(se.id) || [];
           return (
-            <div key={se.id} className="card stack">
+            <div key={se.id} className="card stack exercise-editor">
               <div className="row">
-                <div>
-                  <h2 style={{ marginBottom: 6 }}>
-                    {se.order}. {se.exerciseName}
-                  </h2>
-                  <div className="muted small">
-                    Target: {se.targetSets != null ? `${se.targetSets} sets` : "—"} ·{" "}
-                    {se.targetReps ? `${se.targetReps} reps` : "—"}
-                  </div>
-                </div>
+                <strong>Exercise #{se.order}</strong>
                 <span className="pill">Sets: {sets.length}</span>
               </div>
 
-              {sets.length === 0 ? (
-                <div className="muted">No sets yet.</div>
-              ) : (
-                <div className="stack">
-                  {sets.map((s) => (
-                    <SetRow
-                      key={s.id}
-                      set={s}
-                      disabled={isCompleted}
-                      onUpdate={(patch) => onUpdateSet(s.id, patch)}
-                      onDelete={() => onDeleteSet(s.id)}
-                    />
-                  ))}
+              <SessionExerciseFields
+                sessionExercise={se}
+                sessionId={sessionId}
+                disabled={isCompleted}
+                onSaved={load}
+              />
+
+              <div className="muted small">
+                Planned: {se.targetSets != null ? `${se.targetSets} sets` : "—"} ·{" "}
+                {se.targetReps ? `${se.targetReps} reps` : "—"}
+              </div>
+
+              <div className="stack">
+                <div className="row">
+                  <span className="muted small" style={{ fontWeight: 600 }}>
+                    Sets
+                  </span>
+                  {!isCompleted ? (
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={() => onCreateSetForExercise(se.id)}
+                    >
+                      Add set
+                    </button>
+                  ) : null}
                 </div>
-              )}
+
+                {sets.length === 0 ? (
+                  <div className="muted">No sets logged yet.</div>
+                ) : (
+                  <div className="stack">
+                    {sets.map((s) => (
+                      <SessionSetRow
+                        key={s.id}
+                        set={s}
+                        disabled={isCompleted}
+                        onUpdate={(patch) => onUpdateSet(s.id, patch)}
+                        onDelete={() => onDeleteSet(s.id)}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           );
         })}
       </div>
+
+      {!isCompleted ? (
+        <div className="card stack">
+          <form className="stack" onSubmit={onAddExercise}>
+            <label style={{ margin: 0 }}>
+              <span className="muted small" style={{ fontWeight: 600 }}>
+                Add exercise
+              </span>
+              <input
+                value={newExerciseName}
+                onChange={(e) => setNewExerciseName(e.target.value)}
+                placeholder="e.g. Bench press"
+                disabled={addingExercise}
+              />
+            </label>
+            <div className="row" style={{ justifyContent: "flex-end" }}>
+              <button type="submit" className="btn btn-secondary" disabled={addingExercise}>
+                {addingExercise ? "Adding…" : "+ Add exercise"}
+              </button>
+            </div>
+          </form>
+        </div>
+      ) : null}
     </div>
   );
 }
 
-function SetRow({ set, disabled, onUpdate, onDelete }) {
+/** Same set-row layout as template SetRow (grid-set-row + optional notes); saves via API. */
+function SessionSetRow({ set, disabled, onUpdate, onDelete }) {
   const [draft, setDraft] = useState(() => ({
     order: String(set.order ?? ""),
     reps: set.reps ?? "",
@@ -386,24 +446,40 @@ function SetRow({ set, disabled, onUpdate, onDelete }) {
     return payload;
   }
 
-  return (
-    <div className="card stack">
-      <div className="row">
-        <strong>Set #{set.id}</strong>
-        <span className="muted small">
-          Order {set.order} · Exercise{" "}
-          {set.sessionExercise ? set.sessionExercise.exerciseName : "—"}
-        </span>
-      </div>
+  const colCount = 4;
 
-      <div className="grid-2">
-        <label>
+  const orderField =
+    !disabled ? (
+      <label className="session-set-order" style={{ margin: 0 }}>
+        <span className="muted small" style={{ fontWeight: 600 }}>
           Order
+        </span>
+        <input
+          value={draft.order}
+          onChange={(e) => setDraft((d) => ({ ...d, order: e.target.value }))}
+          inputMode="numeric"
+          disabled={disabled}
+        />
+      </label>
+    ) : null;
+
+  return (
+    <WorkoutSetRowShell
+      label={`Set ${draft.order || "—"}`}
+      headerExtra={orderField}
+      canRemove
+      onRemove={onDelete}
+      disabled={disabled}
+    >
+      <div className="grid-set-row" style={{ "--set-cols": colCount }}>
+        <label>
+          Weight
           <input
-            value={draft.order}
-            onChange={(e) => setDraft((d) => ({ ...d, order: e.target.value }))}
-            inputMode="numeric"
+            value={draft.weight}
+            onChange={(e) => setDraft((d) => ({ ...d, weight: e.target.value }))}
+            inputMode="decimal"
             disabled={disabled}
+            placeholder="e.g. 185"
           />
         </label>
         <label>
@@ -413,66 +489,52 @@ function SetRow({ set, disabled, onUpdate, onDelete }) {
             onChange={(e) => setDraft((d) => ({ ...d, reps: e.target.value }))}
             inputMode="numeric"
             disabled={disabled}
-          />
-        </label>
-      </div>
-
-      <div className="grid-2">
-        <label>
-          Weight
-          <input
-            value={draft.weight}
-            onChange={(e) => setDraft((d) => ({ ...d, weight: e.target.value }))}
-            inputMode="decimal"
-            disabled={disabled}
+            placeholder="e.g. 8"
           />
         </label>
         <label>
-          RPE
-          <input
-            value={draft.rpe}
-            onChange={(e) => setDraft((d) => ({ ...d, rpe: e.target.value }))}
-            inputMode="decimal"
-            disabled={disabled}
-          />
-        </label>
-      </div>
-
-      <div className="grid-2">
-        <label>
-          RIR
+          RIR <span className="muted small">(optional)</span>
           <input
             value={draft.rir}
             onChange={(e) => setDraft((d) => ({ ...d, rir: e.target.value }))}
             inputMode="numeric"
             disabled={disabled}
+            placeholder="—"
           />
         </label>
         <label>
-          Notes
+          RPE <span className="muted small">(optional)</span>
           <input
-            value={draft.notes}
-            onChange={(e) => setDraft((d) => ({ ...d, notes: e.target.value }))}
+            value={draft.rpe}
+            onChange={(e) => setDraft((d) => ({ ...d, rpe: e.target.value }))}
+            inputMode="decimal"
             disabled={disabled}
+            placeholder="—"
           />
         </label>
       </div>
 
-      <div className="row">
-        <button className="btn btn-secondary" onClick={() => onUpdate(toPayload())} disabled={disabled}>
-          Save
-        </button>
-        <button className="btn btn-secondary" onClick={onDelete} disabled={disabled}>
-          Delete
-        </button>
-        <Link className="muted small" to={`/sessions/${set.workoutSessionId}`}>
-          View session
-        </Link>
-      </div>
-      <div className="muted small">
-        Tip: clear optional fields by emptying the input and saving.
-      </div>
-    </div>
+      <label className="mt-2" style={{ display: "grid", gap: 6, fontWeight: 600 }}>
+        Notes <span className="muted small">(optional)</span>
+        <input
+          value={draft.notes}
+          onChange={(e) => setDraft((d) => ({ ...d, notes: e.target.value }))}
+          disabled={disabled}
+        />
+      </label>
+
+      {!disabled ? (
+        <div className="row" style={{ justifyContent: "flex-end", marginTop: 8 }}>
+          <button type="button" className="btn btn-secondary" onClick={() => onUpdate(toPayload())}>
+            Save set
+          </button>
+        </div>
+      ) : null}
+      {!disabled ? (
+        <div className="muted small">
+          Tip: clear optional fields by emptying the input and saving.
+        </div>
+      ) : null}
+    </WorkoutSetRowShell>
   );
 }
-

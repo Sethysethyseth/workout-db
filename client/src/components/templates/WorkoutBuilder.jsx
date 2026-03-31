@@ -22,9 +22,6 @@ export function WorkoutBuilder({ exercises, onExercisesChange, useRIR = false, u
     <div className="stack">
       <div className="row">
         <h2 style={{ margin: 0 }}>Workout</h2>
-        <button type="button" className="btn btn-secondary" onClick={addExercise}>
-          Add exercise
-        </button>
       </div>
 
       {exercises.map((ex, idx) => (
@@ -39,6 +36,12 @@ export function WorkoutBuilder({ exercises, onExercisesChange, useRIR = false, u
           useRPE={useRPE}
         />
       ))}
+
+      <div className="row" style={{ justifyContent: "flex-end" }}>
+        <button type="button" className="btn btn-secondary" onClick={addExercise}>
+          + Add exercise
+        </button>
+      </div>
     </div>
   );
 }

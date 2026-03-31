@@ -1,7 +1,22 @@
 import { http } from "./http.js";
 
+export function createAdHocSession() {
+  return http("/sessions", { method: "POST", body: {} });
+}
+
 export function startSession(templateId) {
   return http(`/sessions/start/${templateId}`, { method: "POST", body: {} });
+}
+
+export function addSessionExercise(sessionId, payload) {
+  return http(`/sessions/${sessionId}/exercises`, { method: "POST", body: payload });
+}
+
+export function updateSessionExercise(sessionId, exerciseId, payload) {
+  return http(`/sessions/${sessionId}/exercises/${exerciseId}`, {
+    method: "PATCH",
+    body: payload,
+  });
 }
 
 export function getMySessions() {

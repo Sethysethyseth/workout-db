@@ -161,18 +161,21 @@ export function MyTemplatesPage() {
     <div className="stack">
       <div className="row">
         <div>
-          <h1>My Templates</h1>
+          <h1>My programs</h1>
           <p className="muted">
-            Workout templates start a single session. Block templates are multi-workout plans (clone or
-            edit — no session start yet).
+            Workouts are single templates you can start a session from. Blocks are multi-week plans
+            (clone or edit — session start from a workout only).
           </p>
         </div>
-        <div className="row">
+        <div className="row" style={{ flexWrap: "wrap" }}>
           <button className="btn btn-secondary" onClick={load} disabled={loading || busy}>
             Refresh
           </button>
-          <Link className="btn" to="/create-template">
-            New template
+          <Link className="btn btn-secondary" to="/create-template?type=workout">
+            Create Workout
+          </Link>
+          <Link className="btn btn-secondary" to="/create-template?type=block">
+            Create Block
           </Link>
         </div>
       </div>
@@ -192,11 +195,16 @@ export function MyTemplatesPage() {
       {empty ? (
         <div className="card stack">
           <p className="muted" style={{ margin: 0 }}>
-            No templates yet. Create a workout template or a multi-workout block.
+            Nothing saved yet. Create a workout or a block to add to your library.
           </p>
-          <Link className="btn" to="/create-template">
-            Create your first template
-          </Link>
+          <div className="row" style={{ flexWrap: "wrap" }}>
+            <Link className="btn" to="/create-template?type=workout">
+              Create Workout
+            </Link>
+            <Link className="btn btn-secondary" to="/create-template?type=block">
+              Create Block
+            </Link>
+          </div>
         </div>
       ) : null}
 

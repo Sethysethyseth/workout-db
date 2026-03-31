@@ -1,3 +1,5 @@
+import { WorkoutSetRowShell } from "../workout/WorkoutSetRowShell.jsx";
+
 export function SetRow({
   setIndex,
   set: setData,
@@ -9,15 +11,12 @@ export function SetRow({
 }) {
   const colCount = 2 + (useRIR ? 1 : 0) + (useRPE ? 1 : 0);
   return (
-    <div className="card set-row">
-      <div className="row set-row-head">
-        <strong className="muted small">Set {setIndex + 1}</strong>
-        {canRemove ? (
-          <button type="button" className="btn btn-ghost" onClick={onRemove}>
-            Remove set
-          </button>
-        ) : null}
-      </div>
+    <WorkoutSetRowShell
+      label={`Set ${setIndex + 1}`}
+      canRemove={canRemove}
+      onRemove={onRemove}
+      disabled={false}
+    >
       <div className="grid-set-row" style={{ "--set-cols": colCount }}>
         <label>
           Weight
@@ -60,6 +59,6 @@ export function SetRow({
           </label>
         ) : null}
       </div>
-    </div>
+    </WorkoutSetRowShell>
   );
 }

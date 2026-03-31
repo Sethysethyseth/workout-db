@@ -37,8 +37,8 @@ export function SessionsPage() {
     <div className="stack">
       <div className="row">
         <div>
-          <h1>Sessions</h1>
-          <p className="muted">Completed and in-progress workouts (not templates).</p>
+          <h1>Past workouts</h1>
+          <p className="muted">Completed and in-progress training — separate from saved workouts and blocks.</p>
         </div>
         <button className="btn btn-secondary" onClick={load} disabled={loading}>
           Refresh
@@ -49,7 +49,12 @@ export function SessionsPage() {
       {loading ? <LoadingState /> : null}
 
       {!loading && sessions.length === 0 ? (
-        <div className="card">No sessions yet. Start one from a template.</div>
+        <div className="card stack">
+          <p className="muted" style={{ margin: 0 }}>
+            Nothing here yet. On <Link to="/">Home</Link>, use <strong>Start Workout</strong> to begin,
+            or start from a saved template under <Link to="/templates">My programs</Link>.
+          </p>
+        </div>
       ) : null}
 
       <div className="stack">
@@ -58,7 +63,7 @@ export function SessionsPage() {
             <div className="row">
               <div>
                 <h2 style={{ marginBottom: 6 }}>
-                  <Link to={`/sessions/${s.id}`}>Session #{s.id}</Link>
+                  <Link to={`/sessions/${s.id}`}>Workout #{s.id}</Link>
                 </h2>
                 <div className="muted small">Performed: {formatDate(s.performedAt)}</div>
                 <div className="muted small">Started: {formatDate(s.startedAt)}</div>
@@ -73,10 +78,10 @@ export function SessionsPage() {
             </div>
 
             <div className="muted small">
-              Template:{" "}
+              Program:{" "}
               {s.workoutTemplate
                 ? `${s.workoutTemplate.name} (#${s.workoutTemplate.id})`
-                : "—"}
+                : "Custom (not from a saved template)"}
             </div>
           </div>
         ))}

@@ -100,10 +100,10 @@ export function PublicTemplatesPage() {
     <div className="stack">
       <div className="row">
         <div>
-          <h1>Public Templates</h1>
+          <h1>Public programs</h1>
           <p className="muted">
-            Clone any template to your library. Start session is only available for single workout
-            templates.
+            Clone workouts or blocks to your library. Starting a live session is only available from
+            single workouts.
           </p>
         </div>
         <button className="btn btn-secondary" onClick={load} disabled={loading || busy}>
@@ -115,7 +115,7 @@ export function PublicTemplatesPage() {
       {loading ? <LoadingState /> : null}
 
       {empty ? (
-        <div className="card">No public templates found.</div>
+        <div className="card">No public programs found.</div>
       ) : null}
 
       <div className="stack">

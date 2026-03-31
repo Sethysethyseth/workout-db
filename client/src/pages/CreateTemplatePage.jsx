@@ -1,5 +1,5 @@
-import { useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import * as templateApi from "../api/templateApi.js";
 import * as blockTemplateApi from "../api/blockTemplateApi.js";
 import { ErrorMessage } from "../components/ErrorMessage.jsx";
@@ -17,10 +17,23 @@ import {
   newBlockWorkout,
 } from "../components/templates/workoutBuilderState.js";
 
+function stepFromTypeParam(searchParams) {
+  const t = searchParams.get("type");
+  if (t === "workout") return "workout";
+  if (t === "block") return "block";
+  return "choose";
+}
+
 export function CreateTemplatePage() {
   const navigate = useNavigate();
-  const [step, setStep] = useState("choose");
+  const [searchParams] = useSearchParams();
+  const [step, setStep] = useState(() => stepFromTypeParam(searchParams));
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    setError(null);
+    setStep(stepFromTypeParam(searchParams));
+  }, [searchParams]);
 
   /* Workout template */
   const [name, setName] = useState("");
@@ -47,7 +60,7 @@ export function CreateTemplatePage() {
   blockWeeksRef.current = blockWeeks;
 
   function resetFlow() {
-    setStep("choose");
+    navigate("/create-template", { replace: true });
     setError(null);
     setName("");
     setDescription("");
@@ -73,7 +86,7 @@ export function CreateTemplatePage() {
     setError(null);
     try {
       if (!name.trim()) {
-        setError(new Error("Template name is required."));
+        setError(new Error("Workout name is required."));
         return;
       }
       const exercises = exercisesToTemplateApi(workoutExercises);
@@ -207,11 +220,10 @@ export function CreateTemplatePage() {
     return (
       <div className="stack">
         <div>
-          <h1>Create template</h1>
+          <h1>Create</h1>
           <p className="muted">
-            Workout templates are single reusable workouts. Block templates group several
-            workouts (e.g. a training week or mesocycle). Sessions stay separate — you log
-            completed workouts under Sessions.
+            A workout is one reusable template. A block is a multi-week plan with several workouts.
+            Training sessions are separate — you record completed workouts under History.
           </p>
         </div>
 
@@ -219,12 +231,9 @@ export function CreateTemplatePage() {
           <button
             type="button"
             className="card template-type-card"
-            onClick={() => {
-              setStep("workout");
-              setError(null);
-            }}
+            onClick={() => navigate("/create-template?type=workout", { replace: true })}
           >
-            <strong>Workout Template</strong>
+            <strong>Create Workout</strong>
             <p className="muted small" style={{ margin: 0 }}>
               One workout with exercises and sets. Saved to your library.
             </p>
@@ -232,15 +241,11 @@ export function CreateTemplatePage() {
           <button
             type="button"
             className="card template-type-card"
-            onClick={() => {
-              setStep("block");
-              setError(null);
-            }}
+            onClick={() => navigate("/create-template?type=block", { replace: true })}
           >
-            <strong>Block Template</strong>
+            <strong>Create Block</strong>
             <p className="muted small" style={{ margin: 0 }}>
-              Duration in weeks and multiple workouts, each with its own builder. Saved to your
-              library.
+              Multiple weeks and workouts, each with its own builder. Saved to your library.
             </p>
           </button>
         </div>
@@ -253,7 +258,7 @@ export function CreateTemplatePage() {
       <div className="stack">
         <div className="row">
           <div>
-            <h1>New workout template</h1>
+            <h1>New workout</h1>
             <p className="muted">Build exercises and target sets; then save.</p>
           </div>
           <button type="button" className="btn btn-secondary" onClick={resetFlow}>
@@ -328,7 +333,7 @@ export function CreateTemplatePage() {
 
           <div className="row">
             <button className="btn" disabled={workoutSubmitting}>
-              {workoutSubmitting ? "Saving…" : "Create template"}
+              {workoutSubmitting ? "Saving…" : "Save workout"}
             </button>
             <button
               type="button"
@@ -348,7 +353,7 @@ export function CreateTemplatePage() {
     <div className="stack">
       <div className="row">
         <div>
-          <h1>New block template</h1>
+          <h1>New block</h1>
           <p className="muted">Plan multiple workouts and save to your library.</p>
         </div>
         <button type="button" className="btn btn-secondary" onClick={resetFlow}>
@@ -525,7 +530,7 @@ export function CreateTemplatePage() {
 
         <div className="row">
           <button className="btn" type="submit" disabled={blockSubmitting}>
-            {blockSubmitting ? "Saving…" : "Create block template"}
+            {blockSubmitting ? "Saving…" : "Save block"}
           </button>
           <button
             type="button"
