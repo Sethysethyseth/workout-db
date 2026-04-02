@@ -368,34 +368,55 @@ html[data-theme="dark"] .btn-secondary:active:not(:disabled) {
 
 .home-primary-actions {
   border-color: var(--color-interactive);
+  box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.12);
 }
 
 .home-primary-actions__title {
   margin-top: 0;
   margin-bottom: 0;
+  font-size: 1.35rem;
+}
+
+.home-primary-actions__lead {
+  margin-top: 0;
+  margin-bottom: 0;
+  max-width: 36rem;
+  line-height: 1.45;
 }
 
 .home-primary-actions__start {
   width: 100%;
-  max-width: 22rem;
-  padding: 0.75rem 1.25rem;
+  max-width: min(100%, 24rem);
+  padding: 0.95rem 1.35rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.home-planning-actions {
+  margin-top: 8px;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-border);
+  gap: 8px;
+}
+
+.home-planning-actions__label {
   font-weight: 600;
 }
 
-.home-primary-actions__secondary {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.65rem;
-  margin-top: 4px;
+.home-planning-actions__buttons {
+  margin: 0;
+  justify-content: flex-start;
+  gap: 10px;
 }
 
-.home-primary-actions__secondary-btn {
-  flex: 1 1 10rem;
-  min-width: 0;
+.home-planning-actions__btn {
+  flex: 0 1 auto;
+  min-width: min(100%, 11rem);
   justify-content: center;
   text-align: center;
   text-decoration: none;
   font-weight: 600;
+  font-size: 0.9rem;
 }
 
 .session-set-order {
@@ -425,6 +446,61 @@ html[data-theme="dark"] .btn-secondary:active:not(:disabled) {
 .recent-workout-card:hover {
   border-color: var(--color-interactive);
   box-shadow: var(--shadow-card-hover);
+}
+
+.recent-activity-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.recent-activity-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface-2);
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.recent-activity-row:hover {
+  border-color: var(--color-interactive);
+  box-shadow: var(--shadow-card-hover);
+}
+
+.recent-activity-row__main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1 1 12rem;
+}
+
+.recent-activity-row__title {
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.recent-activity-row__when {
+  margin: 0;
+}
+
+.programs-tablist .programs-tab {
+  font-weight: 600;
+}
+
+.programs-tablist .programs-tab--active {
+  border-color: var(--color-interactive);
+  background: var(--color-nav-active-bg);
+  color: var(--color-text);
 }
 
 .view-mode-toggle {

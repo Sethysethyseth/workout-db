@@ -10,24 +10,23 @@ import {
   summarizeExerciseTargets,
 } from "../components/templates/workoutBuilderState.js";
 
-function mergeByCreatedAt(workouts, blocks) {
-  const w = (workouts || []).map((t) => ({ kind: "workout", item: t }));
-  const b = (blocks || []).map((t) => ({ kind: "block", item: t }));
-  return [...w, ...b].sort(
-    (a, b) => new Date(b.item.createdAt) - new Date(a.item.createdAt)
-  );
-}
-
 export function MyTemplatesPage() {
   const navigate = useNavigate();
-  const [items, setItems] = useState([]);
+  const [workouts, setWorkouts] = useState([]);
+  const [blocks, setBlocks] = useState([]);
+  const [tab, setTab] = useState("workouts");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [actingKey, setActingKey] = useState(null);
   const [actingAction, setActingAction] = useState(null);
 
-  const empty = useMemo(() => !loading && items.length === 0, [loading, items.length]);
+  const items = tab === "workouts" ? workouts : blocks;
+  const emptyAll = useMemo(
+    () => !loading && workouts.length === 0 && blocks.length === 0,
+    [loading, workouts.length, blocks.length]
+  );
+  const emptyTab = useMemo(() => !loading && items.length === 0, [loading, items.length]);
 
   async function load() {
     setLoading(true);
@@ -37,7 +36,8 @@ export function MyTemplatesPage() {
         templateApi.getMyTemplates(),
         blockTemplateApi.getMyBlockTemplates(),
       ]);
-      setItems(mergeByCreatedAt(wData.templates, bData.blockTemplates));
+      setWorkouts(Array.isArray(wData.templates) ? wData.templates : []);
+      setBlocks(Array.isArray(bData.blockTemplates) ? bData.blockTemplates : []);
     } catch (err) {
       setError(err);
     } finally {
@@ -163,8 +163,9 @@ export function MyTemplatesPage() {
         <div>
           <h1>My programs</h1>
           <p className="muted">
-            Workouts are single templates you can start a session from. Blocks are multi-week plans
-            (clone or edit — session start from a workout only).
+            Saved plans you can reuse—workout templates and multi-week blocks. To log training now,
+            use <strong>Start Workout</strong> on Home or <strong>Start session</strong> on a workout
+            below. Nothing here is a past session; those are in History.
           </p>
         </div>
         <div className="row" style={{ flexWrap: "wrap" }}>
@@ -180,6 +181,32 @@ export function MyTemplatesPage() {
         </div>
       </div>
 
+      <div
+        className="programs-tablist row"
+        role="tablist"
+        aria-label="Program type"
+        style={{ flexWrap: "wrap", gap: "8px" }}
+      >
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === "workouts"}
+          className={`btn btn-secondary programs-tab${tab === "workouts" ? " programs-tab--active" : ""}`}
+          onClick={() => setTab("workouts")}
+        >
+          Workouts ({workouts.length})
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === "blocks"}
+          className={`btn btn-secondary programs-tab${tab === "blocks" ? " programs-tab--active" : ""}`}
+          onClick={() => setTab("blocks")}
+        >
+          Blocks ({blocks.length})
+        </button>
+      </div>
+
       <ErrorMessage error={error} />
       {success ? (
         <div className="card">
@@ -192,7 +219,7 @@ export function MyTemplatesPage() {
 
       {loading ? <LoadingState /> : null}
 
-      {empty ? (
+      {emptyAll ? (
         <div className="card stack">
           <p className="muted" style={{ margin: 0 }}>
             Nothing saved yet. Create a workout or a block to add to your library.
@@ -208,139 +235,195 @@ export function MyTemplatesPage() {
         </div>
       ) : null}
 
-      <div className="stack">
-        {items.map(({ kind, item: t }) => {
-          const k = keyFor(kind, t.id);
-          const isActing = actingKey === k;
-          const isBlock = kind === "block";
-
-          return (
-            <div
-              key={k}
-              className="card stack"
-              style={
-                isBlock
-                  ? { borderLeft: "4px solid var(--accent, #6366f1)" }
-                  : undefined
-              }
+      {!loading && !emptyAll && emptyTab ? (
+        <div className="card stack">
+          <p className="muted" style={{ margin: 0 }}>
+            {tab === "workouts"
+              ? "No saved workouts yet. Create one or switch to Blocks."
+              : "No saved blocks yet. Create one or switch to Workouts."}
+          </p>
+          <div className="row" style={{ flexWrap: "wrap" }}>
+            <Link
+              className="btn btn-secondary"
+              to={tab === "workouts" ? "/create-template?type=workout" : "/create-template?type=block"}
             >
-              <div className="row">
-                <div>
-                  <h2 style={{ marginBottom: "0.35rem" }}>{t.name}</h2>
-                  {t.description ? <p className="muted">{t.description}</p> : null}
+              {tab === "workouts" ? "Create Workout" : "Create Block"}
+            </Link>
+            <button type="button" className="btn btn-ghost" onClick={() => setTab(tab === "workouts" ? "blocks" : "workouts")}>
+              View {tab === "workouts" ? "Blocks" : "Workouts"}
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      <div className="stack" role="tabpanel" aria-label={tab === "workouts" ? "Workouts" : "Blocks"}>
+        {tab === "workouts"
+          ? workouts.map((t) => {
+              const k = keyFor("workout", t.id);
+              const isActing = actingKey === k;
+              return (
+                <div key={k} className="card stack">
                   <div className="row">
-                    <span className="pill">{isBlock ? "Block" : "Workout"}</span>
-                    <span className="pill">{t.isPublic ? "Public" : "Private"}</span>
-                    {isBlock ? (
-                      <span className="pill muted">{formatBlockTemplateSummary(t)}</span>
-                    ) : (
-                      <span className="pill">
-                        Exercises: {Array.isArray(t.exercises) ? t.exercises.length : 0}
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <div className="row" style={{ flexWrap: "wrap", gap: "0.5rem" }}>
-                  {!isBlock ? (
-                    <button
-                      className="btn"
-                      type="button"
-                      onClick={() => onStartWorkout(t.id)}
-                      disabled={busy}
-                    >
-                      {isActing && actingAction === "start" ? "Starting…" : "Start session"}
-                    </button>
-                  ) : null}
-                  <Link
-                    className="btn btn-secondary"
-                    to={isBlock ? `/blocks/${t.id}/edit` : `/templates/${t.id}/edit`}
-                    tabIndex={busy ? -1 : undefined}
-                    aria-disabled={busy}
-                    style={busy ? { pointerEvents: "none", opacity: 0.65 } : undefined}
-                  >
-                    Edit
-                  </Link>
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    onClick={() =>
-                      isBlock ? onTogglePublicBlock(t) : onTogglePublicWorkout(t)
-                    }
-                    disabled={busy}
-                  >
-                    {isActing && actingAction === "toggle"
-                      ? "Updating…"
-                      : t.isPublic
-                        ? "Make private"
-                        : "Make public"}
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-ghost"
-                    onClick={() => (isBlock ? onDeleteBlock(t) : onDeleteWorkout(t))}
-                    disabled={busy}
-                  >
-                    {isActing && actingAction === "delete" ? "Deleting…" : "Delete"}
-                  </button>
-                </div>
-              </div>
-
-              {!isBlock &&
-              Array.isArray(t.exercises) &&
-              t.exercises.length > 0 ? (
-                <div className="card">
-                  <strong>Exercises</strong>
-                  <div className="mt-2 stack">
-                    {t.exercises.map((e) => (
-                      <div key={e.id} className="row">
-                        <div>
-                          <div>
-                            {e.order}. {e.exerciseName}
-                          </div>
-                          <div className="muted small">{summarizeExerciseTargets(e)}</div>
-                        </div>
+                    <div>
+                      <h2 style={{ marginBottom: "0.35rem" }}>{t.name}</h2>
+                      {t.description ? <p className="muted">{t.description}</p> : null}
+                      <div className="row">
+                        <span className="pill">Workout</span>
+                        <span className="pill">{t.isPublic ? "Public" : "Private"}</span>
+                        <span className="pill">
+                          Exercises: {Array.isArray(t.exercises) ? t.exercises.length : 0}
+                        </span>
                       </div>
-                    ))}
+                    </div>
+                    <div className="row" style={{ flexWrap: "wrap", gap: "0.5rem" }}>
+                      <button
+                        className="btn"
+                        type="button"
+                        onClick={() => onStartWorkout(t.id)}
+                        disabled={busy}
+                      >
+                        {isActing && actingAction === "start" ? "Starting…" : "Start session"}
+                      </button>
+                      <Link
+                        className="btn btn-secondary"
+                        to={`/templates/${t.id}/edit`}
+                        tabIndex={busy ? -1 : undefined}
+                        aria-disabled={busy}
+                        style={busy ? { pointerEvents: "none", opacity: 0.65 } : undefined}
+                      >
+                        Edit
+                      </Link>
+                      <button
+                        type="button"
+                        className="btn btn-secondary"
+                        onClick={() => onTogglePublicWorkout(t)}
+                        disabled={busy}
+                      >
+                        {isActing && actingAction === "toggle"
+                          ? "Updating…"
+                          : t.isPublic
+                            ? "Make private"
+                            : "Make public"}
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-ghost"
+                        onClick={() => onDeleteWorkout(t)}
+                        disabled={busy}
+                      >
+                        {isActing && actingAction === "delete" ? "Deleting…" : "Delete"}
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ) : null}
 
-              {isBlock && Array.isArray(t.weeks) && t.weeks.length > 0 ? (
-                <div className="card">
-                  <strong>Structure</strong>
-                  <div className="mt-2 stack">
-                    {[...t.weeks]
-                      .sort((a, b) => a.order - b.order)
-                      .map((week) => (
-                        <div key={week.id} className="stack">
-                          <div className="muted small" style={{ fontWeight: 600 }}>
-                            Week {week.order}
+                  {Array.isArray(t.exercises) && t.exercises.length > 0 ? (
+                    <div className="card">
+                      <strong>Exercises</strong>
+                      <div className="mt-2 stack">
+                        {t.exercises.map((e) => (
+                          <div key={e.id} className="row">
+                            <div>
+                              <div>
+                                {e.order}. {e.exerciseName}
+                              </div>
+                              <div className="muted small">{summarizeExerciseTargets(e)}</div>
+                            </div>
                           </div>
-                          <div className="stack" style={{ paddingLeft: "0.5rem" }}>
-                            {[...(week.workouts || [])]
-                              .sort((a, b) => a.order - b.order)
-                              .map((w) => (
-                                <div key={w.id} className="row">
-                                  <div>
-                                    <div>
-                                      {w.order}. {w.name}
-                                    </div>
-                                    <div className="muted small">
-                                      {Array.isArray(w.exercises) ? w.exercises.length : 0}{" "}
-                                      exercises
-                                    </div>
-                                  </div>
-                                </div>
-                              ))}
-                          </div>
-                        </div>
-                      ))}
-                  </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
-              ) : null}
-            </div>
-          );
-        })}
+              );
+            })
+          : blocks.map((t) => {
+              const k = keyFor("block", t.id);
+              const isActing = actingKey === k;
+              return (
+                <div
+                  key={k}
+                  className="card stack"
+                  style={{ borderLeft: "4px solid var(--accent, #6366f1)" }}
+                >
+                  <div className="row">
+                    <div>
+                      <h2 style={{ marginBottom: "0.35rem" }}>{t.name}</h2>
+                      {t.description ? <p className="muted">{t.description}</p> : null}
+                      <div className="row">
+                        <span className="pill">Block</span>
+                        <span className="pill">{t.isPublic ? "Public" : "Private"}</span>
+                        <span className="pill muted">{formatBlockTemplateSummary(t)}</span>
+                      </div>
+                    </div>
+                    <div className="row" style={{ flexWrap: "wrap", gap: "0.5rem" }}>
+                      <Link
+                        className="btn btn-secondary"
+                        to={`/blocks/${t.id}/edit`}
+                        tabIndex={busy ? -1 : undefined}
+                        aria-disabled={busy}
+                        style={busy ? { pointerEvents: "none", opacity: 0.65 } : undefined}
+                      >
+                        Edit
+                      </Link>
+                      <button
+                        type="button"
+                        className="btn btn-secondary"
+                        onClick={() => onTogglePublicBlock(t)}
+                        disabled={busy}
+                      >
+                        {isActing && actingAction === "toggle"
+                          ? "Updating…"
+                          : t.isPublic
+                            ? "Make private"
+                            : "Make public"}
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-ghost"
+                        onClick={() => onDeleteBlock(t)}
+                        disabled={busy}
+                      >
+                        {isActing && actingAction === "delete" ? "Deleting…" : "Delete"}
+                      </button>
+                    </div>
+                  </div>
+
+                  {Array.isArray(t.weeks) && t.weeks.length > 0 ? (
+                    <div className="card">
+                      <strong>Structure</strong>
+                      <div className="mt-2 stack">
+                        {[...t.weeks]
+                          .sort((a, b) => a.order - b.order)
+                          .map((week) => (
+                            <div key={week.id} className="stack">
+                              <div className="muted small" style={{ fontWeight: 600 }}>
+                                Week {week.order}
+                              </div>
+                              <div className="stack" style={{ paddingLeft: "0.5rem" }}>
+                                {[...(week.workouts || [])]
+                                  .sort((a, b) => a.order - b.order)
+                                  .map((w) => (
+                                    <div key={w.id} className="row">
+                                      <div>
+                                        <div>
+                                          {w.order}. {w.name}
+                                        </div>
+                                        <div className="muted small">
+                                          {Array.isArray(w.exercises) ? w.exercises.length : 0}{" "}
+                                          exercises
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ))}
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+              );
+            })}
       </div>
     </div>
   );

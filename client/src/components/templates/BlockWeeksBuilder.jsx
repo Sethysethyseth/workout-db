@@ -146,7 +146,7 @@ export function BlockWeeksBuilder({
                   <div key={w.id} className="card stack" style={{ margin: 0 }}>
                     <div className="row">
                       <label style={{ flex: 1, margin: 0 }}>
-                        Workout label
+                        Workout name
                         <input
                           value={w.title}
                           onChange={(e) =>
@@ -175,6 +175,15 @@ export function BlockWeeksBuilder({
                     />
                   </div>
                 ))}
+                <div className="row" style={{ justifyContent: "flex-start", marginTop: 4 }}>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => onAddBlockWorkout(weekIdx)}
+                  >
+                    Add workout
+                  </button>
+                </div>
               </div>
             ) : null}
           </div>

@@ -6,8 +6,14 @@ const errorHandler = require("./middleware/errorHandler");
 
 const app = express();
 
+app.use((req, res, next) => {
+  console.log("[REQ]", req.method, req.headers.origin || "no-origin", req.url);
+  next();
+});
+
 const allowedOrigins = [
   process.env.CLIENT_ORIGIN,
+  process.env.CLIENT_ORIGIN_MOBILE,
   "http://localhost:5173",
   "http://127.0.0.1:5173",
 ].filter(Boolean);

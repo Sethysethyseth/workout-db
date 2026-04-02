@@ -1,3 +1,5 @@
+import { makeId } from "../../lib/makeId.js";
+
 /**
  * Workout template ↔ API mapping for WorkoutBuilder.
  *
@@ -10,7 +12,7 @@
 
 export function createEmptySet() {
   return {
-    id: crypto.randomUUID(),
+    id: makeId(),
     reps: "",
     weight: "",
     rir: "",
@@ -20,7 +22,7 @@ export function createEmptySet() {
 
 export function createEmptyExercise() {
   return {
-    id: crypto.randomUUID(),
+    id: makeId(),
     exerciseName: "",
     notes: "",
     sets: [createEmptySet()],
@@ -120,7 +122,7 @@ export function templateToBuilderExercises(template) {
     let sets;
     if (templateSets.length > 0) {
       sets = templateSets.map((s) => ({
-        id: crypto.randomUUID(),
+        id: makeId(),
         reps: s.reps != null ? String(s.reps) : "",
         weight: s.weight != null ? String(s.weight) : "",
         rir: s.rir != null ? String(s.rir) : "",
@@ -140,7 +142,7 @@ export function templateToBuilderExercises(template) {
               ? repsParts[i]
               : "";
         sets.push({
-          id: crypto.randomUUID(),
+          id: makeId(),
           reps: r || "",
           weight: "",
           rir: "",
@@ -150,7 +152,7 @@ export function templateToBuilderExercises(template) {
     }
 
     return {
-      id: crypto.randomUUID(),
+      id: makeId(),
       exerciseName: ex.exerciseName || "",
       notes: ex.notes || "",
       sets,
@@ -163,7 +165,7 @@ export function templateToBuilderExercises(template) {
  */
 export function newBlockWorkout() {
   return {
-    id: crypto.randomUUID(),
+    id: makeId(),
     title: "",
     exercises: createInitialExercises(),
   };
@@ -171,7 +173,7 @@ export function newBlockWorkout() {
 
 export function newBlockWeek() {
   return {
-    id: crypto.randomUUID(),
+    id: makeId(),
     workouts: [newBlockWorkout()],
   };
 }
@@ -213,13 +215,13 @@ export function isBlockWeekPristine(week) {
 
 function cloneSetDeep(set) {
   const { id: _omit, ...rest } = set && typeof set === "object" ? set : {};
-  return { id: crypto.randomUUID(), ...rest };
+  return { id: makeId(), ...rest };
 }
 
 function cloneExerciseDeep(ex) {
   const sets = Array.isArray(ex?.sets) ? ex.sets.map(cloneSetDeep) : [];
   return {
-    id: crypto.randomUUID(),
+    id: makeId(),
     exerciseName: ex.exerciseName != null ? String(ex.exerciseName) : "",
     notes: ex.notes != null ? String(ex.notes) : "",
     sets: sets.length ? sets : [createEmptySet()],
@@ -229,7 +231,7 @@ function cloneExerciseDeep(ex) {
 function cloneBlockWorkoutDeep(w) {
   const exercises = Array.isArray(w?.exercises) ? w.exercises.map(cloneExerciseDeep) : [];
   return {
-    id: crypto.randomUUID(),
+    id: makeId(),
     title: w.title != null ? String(w.title) : "",
     exercises: exercises.length ? exercises : createInitialExercises(),
   };
@@ -280,14 +282,14 @@ export function blockTemplateToBlockWeeks(blockTemplate) {
   }
   const sortedWeeks = [...blockTemplate.weeks].sort((a, b) => a.order - b.order);
   return sortedWeeks.map((week) => ({
-    id: crypto.randomUUID(),
+    id: makeId(),
     workouts:
       !Array.isArray(week.workouts) || week.workouts.length === 0
         ? [newBlockWorkout()]
         : [...week.workouts]
             .sort((a, b) => a.order - b.order)
             .map((w) => ({
-              id: crypto.randomUUID(),
+              id: makeId(),
               title: w.name || "",
               exercises: templateToBuilderExercises({ exercises: w.exercises }),
             })),

@@ -1,4 +1,9 @@
-const BASE_URL = "http://localhost:3000";
+const BASE_URL =
+  import.meta.env.VITE_API_URL?.trim() || "http://localhost:3000";
+
+if (import.meta.env.DEV) {
+  console.log("[API] BASE_URL =", BASE_URL);
+}
 
 async function readJsonSafely(res) {
   const text = await res.text();
@@ -20,7 +25,9 @@ export class ApiError extends Error {
 }
 
 export async function http(path, { method = "GET", body, headers } = {}) {
-  const res = await fetch(`${BASE_URL}${path}`, {
+  const url = `${BASE_URL}${path}`;
+
+  const res = await fetch(url, {
     method,
     credentials: "include",
     headers: {
@@ -33,7 +40,13 @@ export async function http(path, { method = "GET", body, headers } = {}) {
   const data = await readJsonSafely(res);
 
   if (!res.ok) {
-    if (res.status === 401 && typeof window !== "undefined") {
+    const skipGlobalUnauthorized =
+      res.status === 401 && method === "GET" && path === "/auth/me";
+    if (
+      res.status === 401 &&
+      typeof window !== "undefined" &&
+      !skipGlobalUnauthorized
+    ) {
       window.dispatchEvent(new Event("auth:unauthorized"));
     }
     const message =

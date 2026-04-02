@@ -1,9 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import * as sessionApi from "../api/sessionApi.js";
 import { ErrorMessage } from "../components/ErrorMessage.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { startAdHocWorkoutAndNavigate } from "../lib/startAdHocWorkoutFlow.js";
+import {
+  compareSessionsByRecentActivity,
+  sessionActivityTimestamp,
+  sessionDisplayTitle,
+} from "../lib/sessionDisplay.js";
 
 function formatSessionWhen(value) {
   if (!value) return "—";
@@ -12,8 +17,7 @@ function formatSessionWhen(value) {
   return d.toLocaleString(undefined, {
     month: "short",
     day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
+    year: "numeric",
   });
 }
 
@@ -37,13 +41,19 @@ export function DashboardPage() {
     }
   }
 
+  const topRecent = useMemo(() => {
+    const list = Array.isArray(recentSessions) ? [...recentSessions] : [];
+    list.sort(compareSessionsByRecentActivity);
+    return list.slice(0, 3);
+  }, [recentSessions]);
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
         const data = await sessionApi.getMySessions();
         const list = Array.isArray(data.sessions) ? data.sessions : [];
-        if (!cancelled) setRecentSessions(list.slice(0, 6));
+        if (!cancelled) setRecentSessions(list);
       } catch {
         if (!cancelled) setRecentSessions([]);
       } finally {
@@ -60,15 +70,16 @@ export function DashboardPage() {
       <div className="card">
         <h1>Home</h1>
         <p className="muted" style={{ marginBottom: 0 }}>
-          Signed in as {currentUser.email}. Start training, build workouts or blocks, or jump to
-          recent sessions and your library.
+          Signed in as {currentUser.email}. Start a live session to log sets now, or build saved
+          workouts and blocks under My programs.
         </p>
       </div>
 
       <div className="card stack home-primary-actions">
-        <h2 className="home-primary-actions__title">Start here</h2>
-        <p className="muted small" style={{ marginTop: 0 }}>
-          Pick what you want to do — no extra steps.
+        <h2 className="home-primary-actions__title">Log a workout</h2>
+        <p className="muted home-primary-actions__lead">
+          Starts an empty session right away so you can add exercises and sets—fastest way to train
+          without a saved program.
         </p>
         <button
           type="button"
@@ -79,65 +90,70 @@ export function DashboardPage() {
           {startingWorkout ? "Starting…" : "Start Workout"}
         </button>
         <ErrorMessage error={startWorkoutError} />
-        <div className="home-primary-actions__secondary">
-          <Link className="btn btn-secondary home-primary-actions__secondary-btn" to="/create-template?type=workout">
-            Create Workout
-          </Link>
-          <Link className="btn btn-secondary home-primary-actions__secondary-btn" to="/create-template?type=block">
-            Create Block
-          </Link>
+
+        <div className="home-planning-actions stack">
+          <p className="home-planning-actions__label muted small" style={{ margin: 0 }}>
+            Plan reusable templates (not a live session)
+          </p>
+          <div className="home-planning-actions__buttons row">
+            <Link className="btn btn-secondary home-planning-actions__btn" to="/create-template?type=workout">
+              Create Workout
+            </Link>
+            <Link className="btn btn-secondary home-planning-actions__btn" to="/create-template?type=block">
+              Create Block
+            </Link>
+          </div>
         </div>
       </div>
 
       <div className="card stack">
         <div className="row">
-          <h2 style={{ margin: 0 }}>Recent workouts</h2>
+          <h2 style={{ margin: 0 }}>Recent activity</h2>
           <Link className="btn btn-secondary" to="/sessions">
-            View all
+            Full history
           </Link>
         </div>
         <p className="muted small" style={{ marginTop: 0 }}>
-          Last few sessions (completed and in progress). Open one to review or keep logging.
+          Your latest sessions—open one to keep logging or review what you did.
         </p>
         {recentLoading ? (
           <p className="muted small" style={{ margin: 0 }}>
             Loading…
           </p>
-        ) : recentSessions.length === 0 ? (
+        ) : topRecent.length === 0 ? (
           <p className="muted small" style={{ margin: 0 }}>
-            No workouts yet. Tap <strong>Start Workout</strong> above to begin.
+            No sessions yet. Use <strong>Start Workout</strong> above to log your first one.
           </p>
         ) : (
-          <div className="recent-workouts-grid">
-            {recentSessions.map((s) => (
-              <Link key={s.id} to={`/sessions/${s.id}`} className="card recent-workout-card">
-                <div className="row" style={{ alignItems: "flex-start", marginBottom: 6 }}>
-                  <strong style={{ fontSize: 14 }}>Workout #{s.id}</strong>
-                  <span className="pill">{s.completedAt ? "Done" : "Active"}</span>
-                </div>
-                <div className="muted small" style={{ margin: 0 }}>
-                  {formatSessionWhen(s.performedAt || s.startedAt)}
-                </div>
-                <div className="muted small" style={{ marginTop: 4, marginBottom: 0 }}>
-                  {s.workoutTemplate?.name
-                    ? s.workoutTemplate.name
-                    : "Custom session"}
-                </div>
-              </Link>
-            ))}
-          </div>
+          <ul className="recent-activity-list">
+            {topRecent.map((s) => {
+              const when = formatSessionWhen(sessionActivityTimestamp(s));
+              const title = sessionDisplayTitle(s);
+              return (
+                <li key={s.id}>
+                  <Link to={`/sessions/${s.id}`} className="recent-activity-row">
+                    <div className="recent-activity-row__main">
+                      <span className="recent-activity-row__title">{title}</span>
+                      <span className="muted small recent-activity-row__when">{when}</span>
+                    </div>
+                    <span className="pill">{s.completedAt ? "Completed" : "In progress"}</span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
         )}
       </div>
 
       <div className="grid-2">
         <div className="card stack">
-          <h2>Your library</h2>
+          <h2>My programs</h2>
           <p className="muted small" style={{ marginTop: 0 }}>
-            Workouts and blocks you have saved.
+            Saved workout templates and multi-week blocks—plans you reuse, not past sessions.
           </p>
           <div className="row">
             <Link className="btn btn-secondary" to="/templates">
-              My programs
+              Open My programs
             </Link>
             <Link className="btn btn-secondary" to="/templates/public">
               Public programs
@@ -147,14 +163,12 @@ export function DashboardPage() {
 
         <div className="card stack">
           <h2>History</h2>
-          <div className="row">
-            <Link className="btn btn-secondary" to="/sessions">
-              Past workouts
-            </Link>
-          </div>
-          <p className="muted small">
-            Review workouts you have already finished.
+          <p className="muted small" style={{ marginTop: 0 }}>
+            Logbook of workouts you have performed—every logged session in one place.
           </p>
+          <Link className="btn btn-secondary" to="/sessions">
+            Open History
+          </Link>
         </div>
       </div>
     </div>

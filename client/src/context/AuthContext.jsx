@@ -1,5 +1,13 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import * as authApi from "../api/authApi.js";
 import { ApiError } from "../api/http.js";
 
@@ -8,28 +16,33 @@ const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
+  /** Bumped when a newer auth operation should win over in-flight /auth/me. */
+  const authEpochRef = useRef(0);
 
   const refreshSession = useCallback(async () => {
+    const epoch = ++authEpochRef.current;
     try {
       const data = await authApi.me();
+      if (authEpochRef.current !== epoch) return data.user;
       setCurrentUser(data.user);
       return data.user;
     } catch (err) {
+      if (authEpochRef.current !== epoch) {
+        return null;
+      }
       if (err instanceof ApiError && err.status === 401) {
         setCurrentUser(null);
         return null;
       }
-      throw err;
+      setCurrentUser(null);
+      return null;
     } finally {
       setAuthLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    refreshSession().catch(() => {
-      setAuthLoading(false);
-      setCurrentUser(null);
-    });
+    void refreshSession();
   }, [refreshSession]);
 
   useEffect(() => {
@@ -43,17 +56,20 @@ export function AuthProvider({ children }) {
 
   const login = useCallback(async ({ email, password }) => {
     const data = await authApi.login({ email, password });
+    authEpochRef.current += 1;
     setCurrentUser(data.user);
     return data.user;
   }, []);
 
   const register = useCallback(async ({ email, password }) => {
     const data = await authApi.register({ email, password });
+    authEpochRef.current += 1;
     setCurrentUser(data.user);
     return data.user;
   }, []);
 
   const logout = useCallback(async () => {
+    authEpochRef.current += 1;
     await authApi.logout();
     setCurrentUser(null);
   }, []);
