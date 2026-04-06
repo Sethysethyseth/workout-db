@@ -2,15 +2,24 @@ import { ExerciseEditor } from "./ExerciseEditor.jsx";
 import { createEmptyExercise } from "./workoutBuilderState.js";
 
 /** Controlled list of exercises with per-exercise sets (reps, weight, optional RIR/RPE). */
-export function WorkoutBuilder({ exercises, onExercisesChange, useRIR = false, useRPE = false }) {
+export function WorkoutBuilder({
+  exercises,
+  onExercisesChange,
+  useRIR = false,
+  useRPE = false,
+  showSetCountSelect = false,
+}) {
   function updateExercise(idx, patch) {
     onExercisesChange(
       exercises.map((ex, i) => (i === idx ? { ...ex, ...patch } : ex))
     );
   }
 
-  function addExercise() {
-    onExercisesChange([...exercises, createEmptyExercise()]);
+  function insertExerciseAt(insertIndex) {
+    const i = Math.max(0, Math.min(insertIndex, exercises.length));
+    const next = [...exercises];
+    next.splice(i, 0, createEmptyExercise());
+    onExercisesChange(next);
   }
 
   function removeExercise(idx) {
@@ -19,26 +28,32 @@ export function WorkoutBuilder({ exercises, onExercisesChange, useRIR = false, u
   }
 
   return (
-    <div className="stack">
+    <div className="stack workout-builder">
       <div className="row">
         <h2 style={{ margin: 0 }}>Workout</h2>
       </div>
 
       {exercises.map((ex, idx) => (
-        <ExerciseEditor
-          key={ex.id}
-          exercise={ex}
-          exerciseIndex={idx}
-          onChange={(patch) => updateExercise(idx, patch)}
-          onRemove={() => removeExercise(idx)}
-          canRemove={exercises.length > 1}
-          useRIR={useRIR}
-          useRPE={useRPE}
-        />
+        <div key={ex.id} className="workout-builder-exercise-block stack">
+          <ExerciseEditor
+            exercise={ex}
+            exerciseIndex={idx}
+            onChange={(patch) => updateExercise(idx, patch)}
+            onRemove={() => removeExercise(idx)}
+            canRemove={exercises.length > 1}
+            useRIR={useRIR}
+            useRPE={useRPE}
+            showSetCountSelect={showSetCountSelect}
+          />
+        </div>
       ))}
 
-      <div className="row" style={{ justifyContent: "flex-end" }}>
-        <button type="button" className="btn btn-secondary" onClick={addExercise}>
+      <div className="workout-builder-append">
+        <button
+          type="button"
+          className="btn btn-secondary"
+          onClick={() => insertExerciseAt(exercises.length)}
+        >
           + Add exercise
         </button>
       </div>

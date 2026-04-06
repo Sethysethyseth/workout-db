@@ -172,6 +172,7 @@ export function BlockWeeksBuilder({
                       }}
                       useRIR={useRIR}
                       useRPE={useRPE}
+                      showSetCountSelect
                     />
                   </div>
                 ))}

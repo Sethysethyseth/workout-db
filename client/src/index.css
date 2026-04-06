@@ -362,8 +362,160 @@ html[data-theme="dark"] .btn-secondary:active:not(:disabled) {
   padding: 10px;
 }
 
+/* Template / block workout builder: full-width insert affordances, lighter than nested cards */
+.workout-builder .workout-builder-insert {
+  margin: 0;
+}
+
+.workout-builder .workout-builder-insert .btn.btn-secondary {
+  width: 100%;
+  font-weight: 600;
+  border-style: dashed;
+  border-color: var(--color-input-border);
+  background: var(--color-surface-1);
+}
+
+.workout-builder .workout-builder-insert .btn.btn-secondary:hover:not(:disabled) {
+  border-color: var(--color-interactive);
+  background: var(--color-surface-2);
+}
+
+html[data-theme="dark"] .workout-builder .workout-builder-insert .btn.btn-secondary {
+  background: var(--color-surface-1);
+}
+
+.workout-builder-exercise-block {
+  gap: 0;
+}
+
+.workout-builder-exercise-block .exercise-editor {
+  margin-bottom: 0;
+}
+
+/* Planning flows: set count + add-one on one row, wrap on narrow screens */
+.exercise-editor-set-toolbar {
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px 12px;
+}
+
+.exercise-editor-set-count-label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  min-width: 0;
+  font-weight: 600;
+}
+
+.exercise-editor-set-count-label select {
+  min-width: 4.5rem;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+.exercise-editor-add-set-btn {
+  flex: 0 0 auto;
+  font-weight: 600;
+}
+
+@media (max-width: 719px) {
+  .exercise-editor-add-set-btn {
+    flex: 1 1 auto;
+    min-width: min(100%, 9rem);
+  }
+}
+
 .session-finish-cta {
   border-color: var(--color-interactive);
+}
+
+.home-resume-card {
+  text-decoration: none;
+  color: inherit;
+  border-color: var(--color-interactive);
+  box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.12);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.home-resume-card:hover {
+  border-color: var(--color-interactive-hover);
+  box-shadow: var(--shadow-card-hover);
+}
+
+.home-resume-card__eyebrow {
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.home-resume-card__title {
+  font-size: 1.35rem;
+  font-weight: 800;
+  margin: 0;
+}
+
+.home-resume-card__name {
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.home-resume-card__meta {
+  margin: 0;
+}
+
+.home-resume-card__cta {
+  margin-top: 4px;
+  font-weight: 700;
+  color: var(--color-interactive);
+}
+
+.workout-builder-append {
+  margin-top: 12px;
+  padding-top: 4px;
+}
+
+.home-saved-workout-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.home-saved-workout-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface-2);
+}
+
+.home-saved-workout-row__main {
+  min-width: 0;
+  flex: 1 1 10rem;
+}
+
+.home-saved-workout-row__name {
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.home-saved-workout-row__start {
+  flex: 0 0 auto;
+  font-weight: 600;
+}
+
+.home-planning-card h2 {
+  font-size: 1.15rem;
+}
+
+.home-secondary-links .home-quick-workout-btn {
+  align-self: flex-start;
 }
 
 .home-primary-actions {

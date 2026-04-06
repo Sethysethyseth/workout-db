@@ -9,6 +9,8 @@ import {
   formatBlockTemplateSummary,
   summarizeExerciseTargets,
 } from "../components/templates/workoutBuilderState.js";
+import { pickLatestActiveSession } from "../lib/activeSession.js";
+import { sessionDisplayTitle } from "../lib/sessionDisplay.js";
 
 export function MyTemplatesPage() {
   const navigate = useNavigate();
@@ -63,6 +65,15 @@ export function MyTemplatesPage() {
     setActingKey(keyFor("workout", templateId));
     setActingAction("start");
     try {
+      const mine = await sessionApi.getMySessions();
+      const sessions = Array.isArray(mine.sessions) ? mine.sessions : [];
+      const active = pickLatestActiveSession(sessions);
+      if (active) {
+        setError(
+          `You already have “${sessionDisplayTitle(active)}” in progress. Open it from Home or History and finish or delete it before starting another workout.`
+        );
+        return;
+      }
       const data = await sessionApi.startSession(templateId);
       navigate(`/sessions/${data.session.id}`);
     } catch (err) {

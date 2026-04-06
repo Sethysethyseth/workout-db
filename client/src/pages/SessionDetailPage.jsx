@@ -197,10 +197,18 @@ export function SessionDetailPage() {
     setError(null);
     try {
       const order = nextSetOrder(session);
-      await sessionApi.createSet(sessionId, {
-        sessionExerciseId,
-        order,
-      });
+      const setsList = setsByExercise.get(sessionExerciseId) || [];
+      const last = setsList.length ? setsList[setsList.length - 1] : null;
+      const body = { sessionExerciseId, order };
+      if (last) {
+        if (last.reps != null) body.reps = last.reps;
+        if (last.weight != null) body.weight = last.weight;
+        if (last.rpe != null) body.rpe = last.rpe;
+        if (last.rir != null) body.rir = last.rir;
+        const note = last.notes != null ? String(last.notes).trim() : "";
+        if (note) body.notes = note;
+      }
+      await sessionApi.createSet(sessionId, body);
       await load();
     } catch (err) {
       setError(err);
