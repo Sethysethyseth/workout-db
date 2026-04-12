@@ -249,22 +249,22 @@ export function CreateTemplatePage() {
         <div className="template-type-pick">
           <button
             type="button"
-            className="card template-type-card"
-            onClick={() => navigate("/create-template?type=workout", { replace: true })}
+            className="card template-type-card template-type-card--featured"
+            onClick={() => navigate("/create-template?type=block", { replace: true })}
           >
-            <strong>Create Workout</strong>
+            <strong>Create block</strong>
             <p className="muted small" style={{ margin: 0 }}>
-              One workout with exercises and sets. Saved to your library.
+              Multi-week plan: several workouts across weeks. Saved to Programs.
             </p>
           </button>
           <button
             type="button"
-            className="card template-type-card"
-            onClick={() => navigate("/create-template?type=block", { replace: true })}
+            className="card template-type-card template-type-card--secondary"
+            onClick={() => navigate("/create-template?type=workout", { replace: true })}
           >
-            <strong>Create Block</strong>
+            <strong>Create workout</strong>
             <p className="muted small" style={{ margin: 0 }}>
-              Multiple weeks and workouts, each with its own builder. Saved to your library.
+              One reusable workout with exercises and sets. Saved to Programs.
             </p>
           </button>
         </div>
@@ -278,7 +278,9 @@ export function CreateTemplatePage() {
         <div className="row">
           <div>
             <h1>New workout</h1>
-            <p className="muted">Build exercises and target sets; then save.</p>
+            <p className="muted">
+              Build exercises and sets, then save a reusable workout to your library.               For a one-time session only, use <strong>Log workout</strong> on Home.
+            </p>
           </div>
           <button type="button" className="btn btn-secondary" onClick={resetFlow}>
             Back

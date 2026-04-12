@@ -50,8 +50,8 @@ export function SessionsPage() {
         <div>
           <h1>History</h1>
           <p className="muted">
-            Your logbook: every workout session you have started or completed. This is not your
-            saved programs—those live under My programs.
+            Your logbook: every session you have started or completed. Reusable plans live under{" "}
+            <Link to="/templates">Programs</Link>.
           </p>
         </div>
         <button className="btn btn-secondary" onClick={load} disabled={loading}>
@@ -65,8 +65,8 @@ export function SessionsPage() {
       {!loading && sessions.length === 0 ? (
         <div className="card stack">
           <p className="muted" style={{ margin: 0 }}>
-            Nothing logged yet. On <Link to="/">Home</Link>, use <strong>Start Workout</strong> to log
-            right away, or start from a saved template on <Link to="/templates">My programs</Link>.
+            Nothing logged yet. On <Link to="/">Home</Link>, use <strong>Log workout</strong> to start
+            right away, or start from a saved workout for a structured session.
           </p>
         </div>
       ) : null}
@@ -98,9 +98,9 @@ export function SessionsPage() {
 
               <div className="muted small">
                 {s.workoutTemplate ? (
-                  <>Logged from a saved workout template in My programs.</>
+                  <>From Saved Workout (started from a saved workout template).</>
                 ) : (
-                  <>Quick session—not started from a saved template.</>
+                  <>One-time session (not started from a saved workout).</>
                 )}
               </div>
             </div>

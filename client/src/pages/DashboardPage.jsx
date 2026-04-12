@@ -117,15 +117,7 @@ export function DashboardPage() {
     : null;
 
   return (
-    <div className="stack">
-      <div className="card">
-        <h1>Home</h1>
-        <p className="muted" style={{ marginBottom: 0 }}>
-          Signed in as {currentUser.email}. Pick up a saved workout to log training, or review what you
-          recently finished.
-        </p>
-      </div>
-
+    <div className="stack home-dashboard">
       {activeSession ? (
         <Link
           to={`/sessions/${activeSession.id}`}
@@ -142,64 +134,130 @@ export function DashboardPage() {
         </Link>
       ) : null}
 
-      <div className="card stack home-primary-actions">
-        <h2 className="home-primary-actions__title">
-          {activeSession ? "Saved workouts" : "Start a saved workout"}
-        </h2>
-        <p className="muted home-primary-actions__lead">
-          {activeSession
-            ? "Finish your current session before starting another from here. You can still edit templates under My programs."
-            : "Use a template you have saved—exercises and targets load so you can log sets quickly."}
+      <div className="card stack home-welcome-card">
+        <h1 style={{ marginBottom: 6 }}>Home</h1>
+        <p className="muted small" style={{ marginBottom: 0 }}>
+          Signed in as {currentUser.email}
         </p>
-        {startError ? <ErrorMessage error={startError} /> : null}
-        {loading ? (
-          <p className="muted small" style={{ margin: 0 }}>
-            Loading saved workouts…
-          </p>
-        ) : homeTemplates.length === 0 ? (
-          <p className="muted small" style={{ margin: 0 }}>
-            No saved workouts yet. Create one below, then come back here to log it.
-          </p>
-        ) : (
-          <ul className="home-saved-workout-list">
-            {homeTemplates.map((t) => (
-              <li key={t.id} className="home-saved-workout-row">
-                <div className="home-saved-workout-row__main">
-                  <span className="home-saved-workout-row__name">{t.name}</span>
-                </div>
-                <button
-                  type="button"
-                  className="btn btn-secondary home-saved-workout-row__start"
-                  disabled={Boolean(activeSession) || startingTemplateId === t.id}
-                  onClick={() => void onStartFromTemplate(t.id)}
-                >
-                  {startingTemplateId === t.id ? "Starting…" : "Start"}
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-        <div className="row" style={{ justifyContent: "flex-start", flexWrap: "wrap", gap: "10px" }}>
-          <Link className="btn btn-secondary" to="/templates">
-            All saved workouts
-          </Link>
-          <Link className="btn btn-secondary" to="/templates/public">
-            Public programs
-          </Link>
+      </div>
+
+      <div className="card stack home-start-workout">
+        <h2 className="home-start-workout__title">
+          {activeSession ? "Log another workout" : "Log a workout"}
+        </h2>
+        <p className="muted small home-start-workout__lead">
+          {activeSession
+            ? "Finish or delete your in-progress session first—only one live workout at a time."
+            : "Start a live session now. Everything you finish shows up in History."}
+        </p>
+
+        {quickStartError ? (
+          <div className="card error">
+            <strong>Cannot start workout</strong>
+            <div className="mt-2">
+              {quickStartError.code === ACTIVE_WORKOUT_ERROR && quickStartError.activeSessionId ? (
+                <>
+                  {quickStartError.message}{" "}
+                  <Link to={`/sessions/${quickStartError.activeSessionId}`}>Resume your workout</Link>
+                </>
+              ) : (
+                quickStartError.message || String(quickStartError)
+              )}
+            </div>
+          </div>
+        ) : null}
+
+        <div className="home-start-workout__actions">
+          <div className="home-action-block">
+            <button
+              type="button"
+              className="btn home-start-workout__quick"
+              onClick={() => void onQuickWorkout()}
+              disabled={quickStarting || Boolean(activeSession)}
+              title={
+                activeSession
+                  ? "Finish or leave your current workout before starting a new one."
+                  : undefined
+              }
+            >
+              {quickStarting ? "Starting…" : "Log workout"}
+            </button>
+            <p className="home-action-hint muted small">
+              Blank session, starts now. One-time—won't appear in your Programs library.
+            </p>
+          </div>
+
+          <div className="home-start-workout__from-saved home-action-block">
+            <div className="row home-start-workout__from-saved-head">
+              <div className="home-start-workout__from-saved-title">From saved workout</div>
+              <Link className="btn btn-secondary home-start-workout__from-saved-all" to="/templates">
+                All saved
+              </Link>
+            </div>
+            <p className="home-action-hint muted small">
+              Starts a live session from a reusable workout you already built.
+            </p>
+
+            {startError ? <ErrorMessage error={startError} /> : null}
+            {loading ? (
+              <p className="muted small" style={{ margin: 0 }}>
+                Loading saved workouts…
+              </p>
+            ) : homeTemplates.length === 0 ? (
+              <p className="muted small" style={{ margin: 0 }}>
+                No saved workouts yet. Use Build for later below, then start one from here.
+              </p>
+            ) : (
+              <ul className="home-saved-workout-list">
+                {homeTemplates.map((t) => (
+                  <li key={t.id} className="home-saved-workout-row">
+                    <div className="home-saved-workout-row__main">
+                      <span className="home-saved-workout-row__name">{t.name}</span>
+                    </div>
+                    <button
+                      type="button"
+                      className="btn btn-secondary home-saved-workout-row__start"
+                      disabled={Boolean(activeSession) || startingTemplateId === t.id}
+                      onClick={() => void onStartFromTemplate(t.id)}
+                      title={
+                        activeSession
+                          ? "Finish your current workout before starting another."
+                          : undefined
+                      }
+                    >
+                      {startingTemplateId === t.id ? "Starting…" : "Start"}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            <div className="row home-from-saved-extras">
+              <Link className="btn btn-secondary" to="/templates?area=community">
+                Browse community programs
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="card stack home-planning-card">
-        <h2 style={{ marginTop: 0 }}>Create</h2>
-        <p className="muted small" style={{ marginTop: 0 }}>
-          Plan reusable workouts and multi-week blocks—not a live logging session.
+      <div className="card stack home-build-later home-planning-card">
+        <h2 className="home-build-later__title">Create programs</h2>
+        <p className="muted small home-build-later__lead">
+          Reusable plans only—no live session until you log a workout from above.
         </p>
-        <div className="row" style={{ flexWrap: "wrap", gap: "10px", justifyContent: "flex-start" }}>
-          <Link className="btn btn-secondary" to="/create-template?type=workout">
-            New workout template
+        <div className="home-build-later__grid">
+          <Link className="home-build-card home-build-card--featured" to="/create-template?type=block">
+            <span className="home-build-card__label">Create block</span>
+            <span className="home-build-card__hint muted small">
+              Multi-week plan with week-by-week structure—primary way to build periodized work.
+            </span>
           </Link>
-          <Link className="btn btn-secondary" to="/create-template?type=block">
-            New block
+          <Link className="home-build-card home-build-card--secondary" to="/create-template?type=workout">
+            <span className="home-build-card__label">Create workout</span>
+            <span className="home-build-card__hint muted small">
+              Single reusable workout—start it from Home when you train.
+            </span>
           </Link>
         </div>
       </div>
@@ -220,7 +278,7 @@ export function DashboardPage() {
           </p>
         ) : completedRecent.length === 0 ? (
           <p className="muted small" style={{ margin: 0 }}>
-            No completed workouts yet. Start a saved workout above when you are ready to log.
+            No completed workouts yet. Use Log workout when you train.
           </p>
         ) : (
           <ul className="recent-activity-list">
@@ -240,41 +298,6 @@ export function DashboardPage() {
             })}
           </ul>
         )}
-      </div>
-
-      <div className="card stack home-secondary-links">
-        <h2 style={{ marginTop: 0 }}>More</h2>
-        <p className="muted small" style={{ marginTop: 0 }}>
-          Blank session if you are not using a template (one in-progress workout at a time).
-        </p>
-        {quickStartError ? (
-          <div className="card error">
-            <strong>Cannot start blank workout</strong>
-            <div className="mt-2">
-              {quickStartError.code === ACTIVE_WORKOUT_ERROR && quickStartError.activeSessionId ? (
-                <>
-                  {quickStartError.message}{" "}
-                  <Link to={`/sessions/${quickStartError.activeSessionId}`}>Resume your workout</Link>
-                </>
-              ) : (
-                quickStartError.message || String(quickStartError)
-              )}
-            </div>
-          </div>
-        ) : null}
-        <button
-          type="button"
-          className="btn btn-ghost home-quick-workout-btn"
-          onClick={() => void onQuickWorkout()}
-          disabled={quickStarting || Boolean(activeSession)}
-          title={
-            activeSession
-              ? "Finish or leave your current workout before starting a blank one."
-              : undefined
-          }
-        >
-          {quickStarting ? "Starting…" : "Log without a template"}
-        </button>
       </div>
     </div>
   );

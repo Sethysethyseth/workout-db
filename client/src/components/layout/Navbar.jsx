@@ -30,10 +30,7 @@ export function Navbar() {
               <NavLink to="/" end>
                 Home
               </NavLink>
-              <NavLink to="/templates" end>
-                My programs
-              </NavLink>
-              <NavLink to="/templates/public">Public programs</NavLink>
+              <NavLink to="/templates">Programs</NavLink>
               <NavLink to="/sessions" end>
                 History
               </NavLink>

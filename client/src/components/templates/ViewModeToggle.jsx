@@ -1,7 +1,7 @@
 /** Labels must match product copy: "Builder View" | "Table View". */
-export function ViewModeToggle({ value, onChange }) {
+export function ViewModeToggle({ value, onChange, ariaGroupLabel = "Template view mode" }) {
   return (
-    <div className="view-mode-toggle row" role="group" aria-label="Template view mode">
+    <div className="view-mode-toggle row" role="group" aria-label={ariaGroupLabel}>
       <span className="muted small" style={{ fontWeight: 600 }}>
         View
       </span>

@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import * as templateApi from "../api/templateApi.js";
 import * as blockTemplateApi from "../api/blockTemplateApi.js";
 import * as sessionApi from "../api/sessionApi.js";
+import { CommunityProgramsSection } from "../components/programs/CommunityProgramsSection.jsx";
 import { ErrorMessage } from "../components/ErrorMessage.jsx";
 import { LoadingState } from "../components/LoadingState.jsx";
 import {
@@ -14,21 +15,43 @@ import { sessionDisplayTitle } from "../lib/sessionDisplay.js";
 
 export function MyTemplatesPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const area = searchParams.get("area") === "community" ? "community" : "yours";
+
   const [workouts, setWorkouts] = useState([]);
   const [blocks, setBlocks] = useState([]);
   const [tab, setTab] = useState("workouts");
+  const [visibility, setVisibility] = useState("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [actingKey, setActingKey] = useState(null);
   const [actingAction, setActingAction] = useState(null);
 
-  const items = tab === "workouts" ? workouts : blocks;
+  const rawItems = tab === "workouts" ? workouts : blocks;
+  const items = useMemo(() => {
+    if (visibility === "all") return rawItems;
+    if (visibility === "private") return rawItems.filter((t) => !t.isPublic);
+    return rawItems.filter((t) => t.isPublic);
+  }, [rawItems, visibility]);
   const emptyAll = useMemo(
     () => !loading && workouts.length === 0 && blocks.length === 0,
     [loading, workouts.length, blocks.length]
   );
   const emptyTab = useMemo(() => !loading && items.length === 0, [loading, items.length]);
+  const emptyRawTab = useMemo(() => !loading && rawItems.length === 0, [loading, rawItems.length]);
+
+  function setArea(next) {
+    setSearchParams(
+      (prev) => {
+        const nextParams = new URLSearchParams(prev);
+        if (next === "community") nextParams.set("area", "community");
+        else nextParams.delete("area");
+        return nextParams;
+      },
+      { replace: true }
+    );
+  }
 
   async function load() {
     setLoading(true);
@@ -172,104 +195,196 @@ export function MyTemplatesPage() {
     <div className="stack">
       <div className="row">
         <div>
-          <h1>My programs</h1>
+          <h1>Programs</h1>
           <p className="muted">
-            Saved plans you can reuse—workout templates and multi-week blocks. To log training now,
-            use <strong>Start Workout</strong> on Home or <strong>Start session</strong> on a workout
-            below. Nothing here is a past session; those are in History.
+            Reusable workouts and blocks you own, plus community programs to clone. Logging a live
+            session happens from <Link to="/">Home</Link> (Log workout); completed sessions stay in{" "}
+            <Link to="/sessions">History</Link>.
           </p>
         </div>
-        <div className="row" style={{ flexWrap: "wrap" }}>
-          <button className="btn btn-secondary" onClick={load} disabled={loading || busy}>
-            Refresh
-          </button>
-          <Link className="btn btn-secondary" to="/create-template?type=workout">
-            Create Workout
-          </Link>
-          <Link className="btn btn-secondary" to="/create-template?type=block">
-            Create Block
-          </Link>
-        </div>
+        <button className="btn btn-secondary" type="button" onClick={load} disabled={loading || busy}>
+          Refresh
+        </button>
       </div>
 
       <div
         className="programs-tablist row"
         role="tablist"
-        aria-label="Program type"
+        aria-label="Programs scope"
         style={{ flexWrap: "wrap", gap: "8px" }}
       >
         <button
           type="button"
           role="tab"
-          aria-selected={tab === "workouts"}
-          className={`btn btn-secondary programs-tab${tab === "workouts" ? " programs-tab--active" : ""}`}
-          onClick={() => setTab("workouts")}
+          aria-selected={area === "yours"}
+          className={`btn btn-secondary programs-tab${area === "yours" ? " programs-tab--active" : ""}`}
+          onClick={() => setArea("yours")}
         >
-          Workouts ({workouts.length})
+          Your library
         </button>
         <button
           type="button"
           role="tab"
-          aria-selected={tab === "blocks"}
-          className={`btn btn-secondary programs-tab${tab === "blocks" ? " programs-tab--active" : ""}`}
-          onClick={() => setTab("blocks")}
+          aria-selected={area === "community"}
+          className={`btn btn-secondary programs-tab${area === "community" ? " programs-tab--active" : ""}`}
+          onClick={() => setArea("community")}
         >
-          Blocks ({blocks.length})
+          Community
         </button>
       </div>
 
-      <ErrorMessage error={error} />
-      {success ? (
-        <div className="card">
-          <strong>Done</strong>
-          <p className="muted" style={{ marginBottom: 0 }}>
-            {success}
-          </p>
-        </div>
-      ) : null}
-
-      {loading ? <LoadingState /> : null}
-
-      {emptyAll ? (
-        <div className="card stack">
-          <p className="muted" style={{ margin: 0 }}>
-            Nothing saved yet. Create a workout or a block to add to your library.
-          </p>
-          <div className="row" style={{ flexWrap: "wrap" }}>
-            <Link className="btn" to="/create-template?type=workout">
-              Create Workout
-            </Link>
-            <Link className="btn btn-secondary" to="/create-template?type=block">
-              Create Block
-            </Link>
+      {area === "community" ? (
+        <CommunityProgramsSection />
+      ) : (
+        <>
+          <div className="card stack programs-create-card">
+            <h2 className="programs-create-card__title" style={{ margin: 0 }}>
+              Create programs
+            </h2>
+            <p className="muted small" style={{ margin: 0 }}>
+              Drafts are separated by type: multi-week blocks vs single reusable workouts. Nothing here
+              is a performed session until you log one from Home.
+            </p>
+            <div className="row programs-create-card__actions" style={{ flexWrap: "wrap", gap: "10px" }}>
+              <Link className="btn programs-create-primary" to="/create-template?type=block">
+                Create block
+              </Link>
+              <Link className="btn btn-secondary" to="/create-template?type=workout">
+                Create workout
+              </Link>
+            </div>
           </div>
-        </div>
-      ) : null}
 
-      {!loading && !emptyAll && emptyTab ? (
-        <div className="card stack">
-          <p className="muted" style={{ margin: 0 }}>
-            {tab === "workouts"
-              ? "No saved workouts yet. Create one or switch to Blocks."
-              : "No saved blocks yet. Create one or switch to Workouts."}
-          </p>
-          <div className="row" style={{ flexWrap: "wrap" }}>
-            <Link
-              className="btn btn-secondary"
-              to={tab === "workouts" ? "/create-template?type=workout" : "/create-template?type=block"}
+          <div
+            className="programs-tablist row"
+            role="tablist"
+            aria-label="Your program type"
+            style={{ flexWrap: "wrap", gap: "8px" }}
+          >
+            <button
+              type="button"
+              role="tab"
+              aria-selected={tab === "workouts"}
+              className={`btn btn-secondary programs-tab${tab === "workouts" ? " programs-tab--active" : ""}`}
+              onClick={() => setTab("workouts")}
             >
-              {tab === "workouts" ? "Create Workout" : "Create Block"}
-            </Link>
-            <button type="button" className="btn btn-ghost" onClick={() => setTab(tab === "workouts" ? "blocks" : "workouts")}>
-              View {tab === "workouts" ? "Blocks" : "Workouts"}
+              In-progress & saved workouts ({workouts.length})
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={tab === "blocks"}
+              className={`btn btn-secondary programs-tab${tab === "blocks" ? " programs-tab--active" : ""}`}
+              onClick={() => setTab("blocks")}
+            >
+              In-progress & saved blocks ({blocks.length})
             </button>
           </div>
-        </div>
-      ) : null}
 
-      <div className="stack" role="tabpanel" aria-label={tab === "workouts" ? "Workouts" : "Blocks"}>
-        {tab === "workouts"
-          ? workouts.map((t) => {
+          <div
+            className="programs-tablist row"
+            role="group"
+            aria-label="Filter by visibility"
+            style={{ flexWrap: "wrap", gap: "8px" }}
+          >
+            <span className="muted small" style={{ alignSelf: "center" }}>
+              Show:
+            </span>
+            <button
+              type="button"
+              className={`btn btn-secondary programs-tab${visibility === "all" ? " programs-tab--active" : ""}`}
+              onClick={() => setVisibility("all")}
+            >
+              All
+            </button>
+            <button
+              type="button"
+              className={`btn btn-secondary programs-tab${visibility === "private" ? " programs-tab--active" : ""}`}
+              onClick={() => setVisibility("private")}
+            >
+              Private
+            </button>
+            <button
+              type="button"
+              className={`btn btn-secondary programs-tab${visibility === "public" ? " programs-tab--active" : ""}`}
+              onClick={() => setVisibility("public")}
+            >
+              Public
+            </button>
+          </div>
+        </>
+      )}
+
+      {area === "yours" ? (
+        <>
+          <ErrorMessage error={error} />
+          {success ? (
+            <div className="card">
+              <strong>Done</strong>
+              <p className="muted" style={{ marginBottom: 0 }}>
+                {success}
+              </p>
+            </div>
+          ) : null}
+
+          {loading ? <LoadingState /> : null}
+
+          {emptyAll ? (
+            <div className="card stack">
+              <p className="muted" style={{ margin: 0 }}>
+                Nothing saved yet. Create a block or a workout to add to your library.
+              </p>
+              <div className="row" style={{ flexWrap: "wrap" }}>
+                <Link className="btn programs-create-primary" to="/create-template?type=block">
+                  Create block
+                </Link>
+                <Link className="btn btn-secondary" to="/create-template?type=workout">
+                  Create workout
+                </Link>
+              </div>
+            </div>
+          ) : null}
+
+          {!loading && !emptyAll && !emptyRawTab && emptyTab ? (
+            <div className="card stack">
+              <p className="muted" style={{ margin: 0 }}>
+                No {tab === "workouts" ? "workouts" : "blocks"} match this filter. Try{" "}
+                <button type="button" className="btn btn-ghost" onClick={() => setVisibility("all")}>
+                  Show all
+                </button>
+                .
+              </p>
+            </div>
+          ) : null}
+
+          {!loading && !emptyAll && emptyRawTab ? (
+            <div className="card stack">
+              <p className="muted" style={{ margin: 0 }}>
+                {tab === "workouts"
+                  ? "No saved workouts yet. Create one or switch to blocks."
+                  : "No saved blocks yet. Create one or switch to workouts."}
+              </p>
+              <div className="row" style={{ flexWrap: "wrap" }}>
+                <Link className="btn programs-create-primary" to="/create-template?type=block">
+                  Create block
+                </Link>
+                <Link className="btn btn-secondary" to="/create-template?type=workout">
+                  Create workout
+                </Link>
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  onClick={() => setTab(tab === "workouts" ? "blocks" : "workouts")}
+                >
+                  View {tab === "workouts" ? "blocks" : "workouts"}
+                </button>
+              </div>
+            </div>
+          ) : null}
+
+          <div className="stack" role="tabpanel" aria-label={tab === "workouts" ? "Workouts" : "Blocks"}>
+            {tab === "workouts"
+              ? items.map((t) => {
               const k = keyFor("workout", t.id);
               const isActing = actingKey === k;
               return (
@@ -347,7 +462,7 @@ export function MyTemplatesPage() {
                 </div>
               );
             })
-          : blocks.map((t) => {
+              : items.map((t) => {
               const k = keyFor("block", t.id);
               const isActing = actingKey === k;
               return (
@@ -435,7 +550,9 @@ export function MyTemplatesPage() {
                 </div>
               );
             })}
-      </div>
+          </div>
+        </>
+      ) : null}
     </div>
   );
 }

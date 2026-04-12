@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import * as sessionApi from "../api/sessionApi.js";
 import { ErrorMessage } from "../components/ErrorMessage.jsx";
 import { LoadingState } from "../components/LoadingState.jsx";
+import { ViewModeToggle } from "../components/templates/ViewModeToggle.jsx";
+import { WorkoutTemplateTableView } from "../components/templates/WorkoutTemplateTableView.jsx";
 import { WorkoutSetRowShell } from "../components/workout/WorkoutSetRowShell.jsx";
+import { sessionDisplayTitle } from "../lib/sessionDisplay.js";
 
 function formatDate(value) {
   if (!value) return "—";
@@ -18,7 +21,7 @@ function nextSetOrder(session) {
   return max + 1;
 }
 
-/** Matches template ExerciseEditor: name + optional notes in a two-column grid. */
+/** Same field layout as `ExerciseEditor` (Create Workout); persists via session exercise API. */
 function SessionExerciseFields({
   sessionExercise,
   sessionId,
@@ -88,10 +91,8 @@ function SessionExerciseFields({
   return (
     <div className="stack" style={{ gap: 8 }}>
       <div className="grid-2">
-        <label style={{ margin: 0 }}>
-          <span className="muted small" style={{ fontWeight: 600 }}>
-            Exercise name
-          </span>
+        <label>
+          Exercise name
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -101,13 +102,12 @@ function SessionExerciseFields({
             onKeyDown={(e) => {
               if (e.key === "Enter") e.currentTarget.blur();
             }}
-            placeholder="e.g. Bench press"
+            placeholder="Search / name (picker TBD)"
+            required
           />
         </label>
-        <label style={{ margin: 0 }}>
-          <span className="muted small" style={{ fontWeight: 600 }}>
-            Notes <span className="muted small">(optional)</span>
-          </span>
+        <label>
+          Notes <span className="muted small">(optional)</span>
           <input
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
@@ -123,6 +123,88 @@ function SessionExerciseFields({
   );
 }
 
+/**
+ * One exercise + sets — mirrors `ExerciseEditor` + `WorkoutBuilder` exercise block structure.
+ * Heading shows live set count (e.g. Bench · 3 sets). Session has no “remove exercise” API.
+ */
+function SessionExerciseBlock({
+  se,
+  sets,
+  sessionId,
+  isCompleted,
+  showPlannedTargets,
+  useRIR,
+  useRPE,
+  onSaved,
+  onCreateSet,
+  onUpdateSet,
+  onDeleteSet,
+}) {
+  const namePart = se.exerciseName?.trim() ? se.exerciseName.trim() : `Exercise ${se.order}`;
+  const setCountLabel = `${sets.length} ${sets.length === 1 ? "set" : "sets"}`;
+
+  return (
+    <div className="card stack exercise-editor">
+      <div className="row session-exercise-heading-row">
+        <strong className="session-exercise-heading">
+          {namePart} · {setCountLabel}
+        </strong>
+      </div>
+
+      <SessionExerciseFields
+        sessionExercise={se}
+        sessionId={sessionId}
+        disabled={isCompleted}
+        onSaved={onSaved}
+      />
+
+      {showPlannedTargets ? (
+        <div className="muted small">
+          Planned: {se.targetSets != null ? `${se.targetSets} sets` : "—"} ·{" "}
+          {se.targetReps ? `${se.targetReps} reps` : "—"}
+        </div>
+      ) : null}
+
+      <div className="stack">
+        <div className="exercise-editor-set-toolbar row">
+          <span className="muted small" style={{ fontWeight: 600 }}>
+            Sets
+          </span>
+          {!isCompleted ? (
+            <button
+              type="button"
+              className="btn btn-secondary exercise-editor-add-set-btn"
+              onClick={() => onCreateSet(se.id)}
+            >
+              + Add set
+            </button>
+          ) : null}
+        </div>
+
+        {sets.length === 0 ? (
+          <div className="muted small session-empty-sets">No sets yet—tap + Add set.</div>
+        ) : (
+          <div className="stack">
+            {sets.map((s, setIdx) => (
+              <SessionSetRow
+                key={s.id}
+                set={s}
+                setOrdinal={setIdx + 1}
+                lockSetOrder
+                disabled={isCompleted}
+                useRIR={useRIR}
+                useRPE={useRPE}
+                onUpdate={(patch) => onUpdateSet(s.id, patch)}
+                onDelete={() => onDeleteSet(s.id)}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function SessionDetailPage() {
   const { id } = useParams();
   const sessionId = Number(id);
@@ -131,8 +213,11 @@ export function SessionDetailPage() {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [newExerciseName, setNewExerciseName] = useState("");
   const [addingExercise, setAddingExercise] = useState(false);
+  const [sessionNotesDraft, setSessionNotesDraft] = useState("");
+  const [liveViewMode, setLiveViewMode] = useState("builder");
+  const [liveUseRIR, setLiveUseRIR] = useState(false);
+  const [liveUseRPE, setLiveUseRPE] = useState(false);
 
   const isCompleted = Boolean(session?.completedAt);
 
@@ -149,6 +234,27 @@ export function SessionDetailPage() {
     }
     return map;
   }, [session]);
+
+  const tableExercises = useMemo(() => {
+    const ex = session?.sessionExercises;
+    if (!Array.isArray(ex)) return [];
+    const sorted = [...ex].sort((a, b) => a.order - b.order);
+    return sorted.map((se) => {
+      const sets = setsByExercise.get(se.id) || [];
+      return {
+        id: se.id,
+        exerciseName: se.exerciseName,
+        notes: se.notes ?? "",
+        sets: sets.map((s) => ({
+          id: s.id,
+          weight: s.weight ?? "",
+          reps: s.reps ?? "",
+          rir: s.rir ?? "",
+          rpe: s.rpe ?? "",
+        })),
+      };
+    });
+  }, [session?.sessionExercises, setsByExercise]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -172,22 +278,15 @@ export function SessionDetailPage() {
     load();
   }, [sessionId, load]);
 
+  useEffect(() => {
+    if (session) setSessionNotesDraft(session.notes ?? "");
+  }, [session?.id, session?.notes]);
+
   async function onComplete() {
     setError(null);
     try {
       const data = await sessionApi.completeSession(sessionId);
       setSession(data.session);
-    } catch (err) {
-      setError(err);
-    }
-  }
-
-  async function onDeleteSession() {
-    if (!confirm("Delete this workout? This cannot be undone.")) return;
-    setError(null);
-    try {
-      await sessionApi.deleteSession(sessionId);
-      navigate("/sessions");
     } catch (err) {
       setError(err);
     }
@@ -236,15 +335,11 @@ export function SessionDetailPage() {
     }
   }
 
-  async function onAddExercise(e) {
-    e.preventDefault();
-    const name = newExerciseName.trim();
-    if (!name) return;
+  async function onAppendExercise() {
     setError(null);
     setAddingExercise(true);
     try {
-      await sessionApi.addSessionExercise(sessionId, { exerciseName: name });
-      setNewExerciseName("");
+      await sessionApi.addSessionExercise(sessionId, { exerciseName: "New exercise" });
       await load();
     } catch (err) {
       setError(err);
@@ -253,173 +348,249 @@ export function SessionDetailPage() {
     }
   }
 
+  async function commitSessionNotes() {
+    if (!session || session.completedAt) return;
+    const n = sessionNotesDraft.trim();
+    const prev = (session.notes ?? "").trim();
+    if (n === prev) return;
+    setError(null);
+    try {
+      await sessionApi.updateSession(sessionId, { notes: n ? n : null });
+      await load();
+    } catch (err) {
+      setError(err);
+      setSessionNotesDraft(session.notes ?? "");
+    }
+  }
+
   if (loading) return <LoadingState label="Loading workout…" />;
 
-  const programLine = session?.workoutTemplate
-    ? `From template: ${session.workoutTemplate.name}`
-    : "Not from a saved template";
+  const isFromTemplate = Boolean(session?.workoutTemplate);
+  const isQuickLog = !isFromTemplate;
+  const useLiveBuilderUX = !isCompleted;
+  const inLiveBuilder = useLiveBuilderUX && liveViewMode === "builder";
+  const inLiveTable = useLiveBuilderUX && liveViewMode === "table";
+
+  const sourceSummary = isFromTemplate
+    ? `Saved workout: ${session.workoutTemplate.name}`
+    : "Quick log (one-time)";
+
+  const pageTitle = isCompleted ? "Workout summary" : "Log workout";
+
+  const sessionExercises = session?.sessionExercises || [];
+  const totalSetsLogged = Array.isArray(session?.sets) ? session.sets.length : 0;
+  const canFinishWorkout = totalSetsLogged >= 1;
+  const workoutTitle = session ? sessionDisplayTitle(session) : "Workout";
+  const readonlyWorkoutName = isFromTemplate ? session.workoutTemplate.name : "Quick workout";
+
+  function goBackFromSession() {
+    if (typeof window !== "undefined" && window.history.length > 1) navigate(-1);
+    else navigate("/");
+  }
 
   return (
-    <div className="stack">
+    <div className="stack session-detail-page">
       <div className="row">
         <div>
-          <h1 style={{ marginBottom: 6 }}>{isCompleted ? "Workout summary" : "Workout"}</h1>
-          <div className="muted small">
-            Performed: {formatDate(session?.performedAt)} · Started:{" "}
-            {formatDate(session?.startedAt)}
-          </div>
+          <h1 style={{ marginBottom: 6 }}>{pageTitle}</h1>
+          <p className="muted small" style={{ margin: 0 }}>
+            {isCompleted ? (
+              <>
+                Read-only · {sourceSummary} · finished {formatDate(session?.completedAt)}
+              </>
+            ) : (
+              <>
+                Live session — updates save as you go.{" "}
+                {isFromTemplate ? `Started from ${session.workoutTemplate.name}.` : "One-time session."}
+              </>
+            )}
+          </p>
         </div>
-        <div className="row">
-          <Link className="btn btn-secondary" to="/">
-            Home
-          </Link>
-          <Link className="btn btn-secondary" to="/sessions">
-            History
-          </Link>
-          <button type="button" className="btn btn-secondary" onClick={load}>
-            Refresh
-          </button>
-          <button type="button" className="btn btn-secondary" onClick={onDeleteSession}>
-            Delete workout
-          </button>
-        </div>
+        <button type="button" className="btn btn-secondary" onClick={goBackFromSession}>
+          Back
+        </button>
       </div>
+
+      {isCompleted && isQuickLog ? (
+        <p className="muted small session-summary-footnote" style={{ margin: 0 }}>
+          One-time session—saved in History only, not as a reusable workout.
+        </p>
+      ) : null}
 
       <ErrorMessage error={error} />
 
-      <div className="card stack">
-        <div className="row">
-          <div>
-            <strong>Source</strong>
-            <div className="muted small">{programLine}</div>
-          </div>
-          <span className="pill">{isCompleted ? "Completed" : "In progress"}</span>
-        </div>
-
-        {isCompleted ? (
-          <div className="muted small">
-            Finished {formatDate(session?.completedAt)}. This workout is saved in your history and
-            is read-only.
-          </div>
-        ) : null}
-      </div>
-
       {!isCompleted ? (
-        <div className="card stack session-finish-cta">
-          <div className="row" style={{ alignItems: "center" }}>
-            <div style={{ flex: "1 1 220px", minWidth: 0 }}>
-              <strong>Finish workout</strong>
-              <p className="muted small" style={{ margin: "6px 0 0" }}>
-                When you are done training, finish to mark this session complete. You can open it
-                anytime from Home or History.
-              </p>
-            </div>
-            <button type="button" className="btn" onClick={onComplete}>
-              Finish workout
-            </button>
-          </div>
-        </div>
-      ) : null}
+        <div className="card stack session-log-workout-form">
+          <label>
+            Name
+            <input readOnly value={readonlyWorkoutName} className="session-readonly-input" />
+          </label>
+          {!isFromTemplate ? (
+            <p className="muted small" style={{ margin: "-4px 0 0" }}>
+              Ad-hoc sessions use this label in History. Saved workouts keep the template name.
+            </p>
+          ) : null}
 
-      {!isCompleted && (session?.sessionExercises || []).length === 0 ? (
-        <div className="card muted">
-          Add your first exercise below. You can log sets for each movement as you go.
-        </div>
-      ) : null}
+          <label>
+            Description (optional)
+            <textarea
+              value={sessionNotesDraft}
+              onChange={(e) => setSessionNotesDraft(e.target.value)}
+              onBlur={() => void commitSessionNotes()}
+              placeholder="e.g. upper day, how you felt, equipment notes"
+            />
+          </label>
 
-      {(session?.sessionExercises || []).length > 0 ? (
-        <div className="row">
-          <h2 style={{ margin: 0 }}>Workout</h2>
-        </div>
-      ) : null}
-
-      <div className="stack">
-        {(session?.sessionExercises || []).map((se) => {
-          const sets = setsByExercise.get(se.id) || [];
-          return (
-            <div key={se.id} className="card stack exercise-editor">
-              <div className="row">
-                <strong>Exercise #{se.order}</strong>
-                <span className="pill">Sets: {sets.length}</span>
-              </div>
-
-              <SessionExerciseFields
-                sessionExercise={se}
-                sessionId={sessionId}
-                disabled={isCompleted}
-                onSaved={load}
-              />
-
-              <div className="muted small">
-                Planned: {se.targetSets != null ? `${se.targetSets} sets` : "—"} ·{" "}
-                {se.targetReps ? `${se.targetReps} reps` : "—"}
-              </div>
-
-              <div className="stack">
-                <div className="row">
-                  <span className="muted small" style={{ fontWeight: 600 }}>
-                    Sets
-                  </span>
-                  {!isCompleted ? (
-                    <button
-                      type="button"
-                      className="btn btn-secondary"
-                      onClick={() => onCreateSetForExercise(se.id)}
-                    >
-                      Add set
-                    </button>
-                  ) : null}
-                </div>
-
-                {sets.length === 0 ? (
-                  <div className="muted">No sets logged yet.</div>
-                ) : (
-                  <div className="stack">
-                    {sets.map((s) => (
-                      <SessionSetRow
-                        key={s.id}
-                        set={s}
-                        disabled={isCompleted}
-                        onUpdate={(patch) => onUpdateSet(s.id, patch)}
-                        onDelete={() => onDeleteSet(s.id)}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {!isCompleted ? (
-        <div className="card stack">
-          <form className="stack" onSubmit={onAddExercise}>
-            <label style={{ margin: 0 }}>
-              <span className="muted small" style={{ fontWeight: 600 }}>
-                Add exercise
-              </span>
+          <div className="template-options-grid">
+            <label className="checkbox-inline">
               <input
-                value={newExerciseName}
-                onChange={(e) => setNewExerciseName(e.target.value)}
-                placeholder="e.g. Bench press"
-                disabled={addingExercise}
+                type="checkbox"
+                checked={liveUseRIR}
+                onChange={(e) => setLiveUseRIR(e.target.checked)}
               />
+              <span>Use RIR on sets</span>
             </label>
-            <div className="row" style={{ justifyContent: "flex-end" }}>
-              <button type="submit" className="btn btn-secondary" disabled={addingExercise}>
-                {addingExercise ? "Adding…" : "+ Add exercise"}
+            <label className="checkbox-inline">
+              <input
+                type="checkbox"
+                checked={liveUseRPE}
+                onChange={(e) => setLiveUseRPE(e.target.checked)}
+              />
+              <span>Use RPE on sets</span>
+            </label>
+          </div>
+
+          <ViewModeToggle
+            value={liveViewMode}
+            onChange={setLiveViewMode}
+            ariaGroupLabel="Workout view mode"
+          />
+
+          {inLiveTable ? (
+            tableExercises.length === 0 ? (
+              <div className="muted small session-empty-card" style={{ margin: 0 }}>
+                No exercises yet—switch to Builder view and use + Add exercise.
+              </div>
+            ) : (
+              <WorkoutTemplateTableView
+                exercises={tableExercises}
+                useRIR={liveUseRIR}
+                useRPE={liveUseRPE}
+              />
+            )
+          ) : null}
+
+          {inLiveBuilder && sessionExercises.length === 0 ? (
+            <div className="muted small session-empty-card" style={{ margin: 0 }}>
+              Add an exercise below, then use + Add set on each lift.
+            </div>
+          ) : null}
+
+          {inLiveBuilder ? (
+            <div className="stack workout-builder session-live-builder">
+              {sessionExercises.map((se) => {
+                const sets = setsByExercise.get(se.id) || [];
+                return (
+                  <div key={se.id} className="workout-builder-exercise-block stack">
+                    <SessionExerciseBlock
+                      se={se}
+                      sets={sets}
+                      sessionId={sessionId}
+                      isCompleted={false}
+                      showPlannedTargets={isFromTemplate}
+                      useRIR={liveUseRIR}
+                      useRPE={liveUseRPE}
+                      onSaved={load}
+                      onCreateSet={onCreateSetForExercise}
+                      onUpdateSet={onUpdateSet}
+                      onDeleteSet={onDeleteSet}
+                    />
+                  </div>
+                );
+              })}
+              <div className="workout-builder-append session-append-exercise">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => void onAppendExercise()}
+                  disabled={addingExercise}
+                >
+                  {addingExercise ? "Adding…" : "+ Add exercise"}
+                </button>
+              </div>
+            </div>
+          ) : null}
+
+          {!canFinishWorkout ? (
+            <p className="muted small session-finish-hint" style={{ margin: 0 }}>
+              Log at least one set anywhere to enable <strong>Finish workout</strong>.
+            </p>
+          ) : null}
+
+          {canFinishWorkout ? (
+            <div className="row session-finish-row" style={{ alignItems: "center", marginTop: 4 }}>
+              <div className="session-finish-copy" style={{ flex: "1 1 200px", minWidth: 0 }}>
+                <strong>Finish workout</strong>
+                <p className="muted small" style={{ margin: "4px 0 0" }}>
+                  Saves to History and locks this session.
+                </p>
+              </div>
+              <button type="button" className="btn session-finish-btn" onClick={onComplete}>
+                Finish workout
               </button>
             </div>
-          </form>
+          ) : null}
         </div>
-      ) : null}
+      ) : (
+        <div className="card stack session-log-workout-form">
+          <label>
+            Name
+            <input readOnly value={workoutTitle} className="session-readonly-input" />
+          </label>
+
+          <label>
+            Description (optional)
+            <textarea readOnly value={session.notes ?? ""} placeholder="—" />
+          </label>
+
+          <div className="stack session-completed-blocks">
+            {sessionExercises.map((se) => {
+              const sets = setsByExercise.get(se.id) || [];
+              return (
+                <SessionExerciseBlock
+                  key={se.id}
+                  se={se}
+                  sets={sets}
+                  sessionId={sessionId}
+                  isCompleted
+                  showPlannedTargets={isFromTemplate}
+                  useRIR
+                  useRPE
+                  onSaved={load}
+                  onCreateSet={onCreateSetForExercise}
+                  onUpdateSet={onUpdateSet}
+                  onDeleteSet={onDeleteSet}
+                />
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
 /** Same set-row layout as template SetRow (grid-set-row + optional notes); saves via API. */
-function SessionSetRow({ set, disabled, onUpdate, onDelete }) {
+function SessionSetRow({
+  set,
+  setOrdinal,
+  lockSetOrder = false,
+  disabled,
+  onUpdate,
+  onDelete,
+  useRIR = true,
+  useRPE = true,
+}) {
   const [draft, setDraft] = useState(() => ({
     order: String(set.order ?? ""),
     reps: set.reps ?? "",
@@ -443,7 +614,7 @@ function SessionSetRow({ set, disabled, onUpdate, onDelete }) {
 
   function toPayload() {
     const payload = {};
-    payload.order = Number(draft.order);
+    payload.order = lockSetOrder ? Number(set.order) : Number(draft.order);
 
     payload.reps = draft.reps === "" ? "" : Number(draft.reps);
     payload.weight = draft.weight === "" ? "" : Number(draft.weight);
@@ -454,10 +625,10 @@ function SessionSetRow({ set, disabled, onUpdate, onDelete }) {
     return payload;
   }
 
-  const colCount = 4;
+  const colCount = 2 + (useRIR ? 1 : 0) + (useRPE ? 1 : 0);
 
   const orderField =
-    !disabled ? (
+    !disabled && !lockSetOrder ? (
       <label className="session-set-order" style={{ margin: 0 }}>
         <span className="muted small" style={{ fontWeight: 600 }}>
           Order
@@ -471,9 +642,11 @@ function SessionSetRow({ set, disabled, onUpdate, onDelete }) {
       </label>
     ) : null;
 
+  const setLabel = lockSetOrder ? `Set ${setOrdinal ?? "—"}` : `Set ${draft.order || "—"}`;
+
   return (
     <WorkoutSetRowShell
-      label={`Set ${draft.order || "—"}`}
+      label={setLabel}
       headerExtra={orderField}
       canRemove
       onRemove={onDelete}
@@ -500,26 +673,30 @@ function SessionSetRow({ set, disabled, onUpdate, onDelete }) {
             placeholder="e.g. 8"
           />
         </label>
-        <label>
-          RIR <span className="muted small">(optional)</span>
-          <input
-            value={draft.rir}
-            onChange={(e) => setDraft((d) => ({ ...d, rir: e.target.value }))}
-            inputMode="numeric"
-            disabled={disabled}
-            placeholder="—"
-          />
-        </label>
-        <label>
-          RPE <span className="muted small">(optional)</span>
-          <input
-            value={draft.rpe}
-            onChange={(e) => setDraft((d) => ({ ...d, rpe: e.target.value }))}
-            inputMode="decimal"
-            disabled={disabled}
-            placeholder="—"
-          />
-        </label>
+        {useRIR ? (
+          <label>
+            RIR <span className="muted small">(optional)</span>
+            <input
+              value={draft.rir}
+              onChange={(e) => setDraft((d) => ({ ...d, rir: e.target.value }))}
+              inputMode="numeric"
+              disabled={disabled}
+              placeholder="—"
+            />
+          </label>
+        ) : null}
+        {useRPE ? (
+          <label>
+            RPE <span className="muted small">(optional)</span>
+            <input
+              value={draft.rpe}
+              onChange={(e) => setDraft((d) => ({ ...d, rpe: e.target.value }))}
+              inputMode="decimal"
+              disabled={disabled}
+              placeholder="—"
+            />
+          </label>
+        ) : null}
       </div>
 
       <label className="mt-2" style={{ display: "grid", gap: 6, fontWeight: 600 }}>
@@ -536,11 +713,6 @@ function SessionSetRow({ set, disabled, onUpdate, onDelete }) {
           <button type="button" className="btn btn-secondary" onClick={() => onUpdate(toPayload())}>
             Save set
           </button>
-        </div>
-      ) : null}
-      {!disabled ? (
-        <div className="muted small">
-          Tip: clear optional fields by emptying the input and saving.
         </div>
       ) : null}
     </WorkoutSetRowShell>
