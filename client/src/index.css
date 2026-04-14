@@ -417,8 +417,12 @@ html[data-theme="dark"] .workout-builder .workout-builder-insert .btn.btn-second
   font-weight: 600;
 }
 
-.exercise-editor-set-count-label select {
+.exercise-editor-set-count-label select,
+.exercise-editor-set-count-select {
   min-width: 4.5rem;
+  max-width: min(5.75rem, 100%);
+  width: auto;
+  min-height: 44px;
   padding-top: 8px;
   padding-bottom: 8px;
 }
@@ -734,7 +738,7 @@ html[data-theme="dark"] .view-mode-toggle-buttons .btn.btn-secondary {
 
 .template-table-view .template-table-section {
   padding: 0;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .template-table-section-head {
@@ -1279,4 +1283,170 @@ html[data-theme="dark"] .field-hint-warn {
   cursor: default;
   min-height: 4rem;
   opacity: 0.95;
+}
+
+/* Exercise name autofill (compact dropdown, not full-screen) */
+.exercise-name-input-wrap {
+  position: relative;
+}
+
+.exercise-name-input-wrap > input {
+  width: 100%;
+}
+
+.exercise-name-suggestions {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 25;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  max-height: min(42vh, 220px);
+  overflow-y: auto;
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-1);
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+}
+
+html[data-theme="dark"] .exercise-name-suggestions {
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45);
+}
+
+.exercise-name-suggestion-btn {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.exercise-name-suggestion-btn:hover {
+  background: var(--color-surface-2);
+}
+
+.template-table-exercise-notes {
+  font-weight: 500;
+  line-height: 1.45;
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.template-table-notes-col {
+  min-width: 7rem;
+  max-width: none;
+  font-weight: 500;
+  white-space: normal;
+  word-break: break-word;
+  vertical-align: top;
+}
+
+.template-table-set-note {
+  display: block;
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+/* Quick log: saved display toggles (device prefs) */
+.quick-log-display-prefs {
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: var(--radius-card, 12px);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-1);
+}
+
+.quick-log-display-prefs__intro {
+  line-height: 1.45;
+}
+
+.quick-log-display-prefs__group {
+  gap: 8px;
+}
+
+.quick-log-display-prefs__label {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 11px;
+}
+
+.quick-log-toggle-row {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.quick-log-toggle {
+  flex: 1 1 auto;
+  min-width: min(100%, 7rem);
+  min-height: 44px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--color-input-border);
+  background: var(--color-surface-2);
+  color: var(--color-text);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    border-color 0.12s ease,
+    background 0.12s ease,
+    color 0.12s ease;
+}
+
+.quick-log-toggle:hover:not(:disabled) {
+  border-color: var(--color-interactive);
+}
+
+.quick-log-toggle--on {
+  border-color: var(--color-interactive);
+  background: var(--color-nav-active-bg);
+  color: var(--color-interactive);
+  box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.35);
+}
+
+.quick-log-display-prefs__footnote {
+  line-height: 1.4;
+}
+
+.session-exercise-notes-field textarea {
+  width: 100%;
+  min-height: 4.5rem;
+  resize: vertical;
+}
+
+.session-exercise-notes-readonly {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.programs-current-pill {
+  border-color: var(--color-interactive);
+  color: var(--color-interactive);
+  background: var(--color-nav-active-bg);
+}
+
+.home-current-program-pill {
+  margin-left: 8px;
+  font-size: 11px;
+  padding: 2px 8px;
+}
+
+.home-current-block-card__link {
+  display: inline-block;
+  margin-top: 4px;
+  font-weight: 700;
+  color: var(--color-interactive);
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }

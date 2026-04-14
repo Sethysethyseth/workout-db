@@ -1,6 +1,5 @@
 /**
  * Edit persisted workout templates. Block templates use EditBlockTemplatePage.
- * Set-level fields round-trip via templateSets; per-set notes on the server are not in the builder UI (see workoutBuilderState.js).
  */
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
@@ -28,6 +27,9 @@ export function EditTemplatePage() {
   const [workoutExercises, setWorkoutExercises] = useState(null);
   const [useRIR, setUseRIR] = useState(false);
   const [useRPE, setUseRPE] = useState(false);
+  const [useTemplateDescription, setUseTemplateDescription] = useState(false);
+  const [useExerciseNotes, setUseExerciseNotes] = useState(false);
+  const [useSetNotes, setUseSetNotes] = useState(false);
   const [viewMode, setViewMode] = useState("builder");
   const [submitting, setSubmitting] = useState(false);
 
@@ -51,7 +53,15 @@ export function EditTemplatePage() {
         setIsPublic(Boolean(t.isPublic));
         setUseRIR(Boolean(t.useRIR));
         setUseRPE(Boolean(t.useRPE));
-        setWorkoutExercises(templateToBuilderExercises(t));
+        setUseTemplateDescription(Boolean(String(t.description ?? "").trim()));
+        const exercises = templateToBuilderExercises(t);
+        setWorkoutExercises(exercises);
+        setUseExerciseNotes(exercises.some((e) => String(e.notes ?? "").trim() !== ""));
+        setUseSetNotes(
+          exercises.some((e) =>
+            (e.sets || []).some((s) => String(s.notes ?? "").trim() !== "")
+          )
+        );
       } catch (err) {
         if (!cancelled) setError(err);
       } finally {
@@ -131,14 +141,16 @@ export function EditTemplatePage() {
           <input value={name} onChange={(e) => setName(e.target.value)} required />
         </label>
 
-        <label>
-          Description (optional)
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="e.g. upper day"
-          />
-        </label>
+        {useTemplateDescription ? (
+          <label>
+            Description (optional)
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="e.g. upper day"
+            />
+          </label>
+        ) : null}
 
         <label style={{ fontWeight: 600 }}>
           <span>Public</span>
@@ -153,6 +165,30 @@ export function EditTemplatePage() {
         </label>
 
         <div className="template-options-grid">
+          <label className="checkbox-inline">
+            <input
+              type="checkbox"
+              checked={useTemplateDescription}
+              onChange={(e) => setUseTemplateDescription(e.target.checked)}
+            />
+            <span>Workout description</span>
+          </label>
+          <label className="checkbox-inline">
+            <input
+              type="checkbox"
+              checked={useExerciseNotes}
+              onChange={(e) => setUseExerciseNotes(e.target.checked)}
+            />
+            <span>Exercise notes</span>
+          </label>
+          <label className="checkbox-inline">
+            <input
+              type="checkbox"
+              checked={useSetNotes}
+              onChange={(e) => setUseSetNotes(e.target.checked)}
+            />
+            <span>Set notes</span>
+          </label>
           <label className="checkbox-inline">
             <input
               type="checkbox"
@@ -179,12 +215,17 @@ export function EditTemplatePage() {
             onExercisesChange={setWorkoutExercises}
             useRIR={useRIR}
             useRPE={useRPE}
+            useExerciseNotes={useExerciseNotes}
+            useSetNotes={useSetNotes}
+            showSetCountSelect
           />
         ) : (
           <WorkoutTemplateTableView
             exercises={workoutExercises}
             useRIR={useRIR}
             useRPE={useRPE}
+            useExerciseNotes={useExerciseNotes}
+            useSetNotes={useSetNotes}
           />
         )}
 

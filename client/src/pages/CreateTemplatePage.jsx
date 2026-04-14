@@ -44,6 +44,9 @@ export function CreateTemplatePage() {
   const [workoutExercises, setWorkoutExercises] = useState(createInitialExercises());
   const [useRIR, setUseRIR] = useState(false);
   const [useRPE, setUseRPE] = useState(false);
+  const [useWorkoutDescription, setUseWorkoutDescription] = useState(false);
+  const [useExerciseNotes, setUseExerciseNotes] = useState(false);
+  const [useSetNotes, setUseSetNotes] = useState(false);
   const [workoutViewMode, setWorkoutViewMode] = useState("builder");
   const [workoutSubmitting, setWorkoutSubmitting] = useState(false);
 
@@ -54,6 +57,9 @@ export function CreateTemplatePage() {
   const [durationWeeks, setDurationWeeks] = useState("");
   const [blockUseRIR, setBlockUseRIR] = useState(false);
   const [blockUseRPE, setBlockUseRPE] = useState(false);
+  const [blockUseDescription, setBlockUseDescription] = useState(false);
+  const [blockUseExerciseNotes, setBlockUseExerciseNotes] = useState(false);
+  const [blockUseSetNotes, setBlockUseSetNotes] = useState(false);
   const [blockUseDuration, setBlockUseDuration] = useState(false);
   const [blockWeeks, setBlockWeeks] = useState(() => [newBlockWeek()]);
   const [blockViewMode, setBlockViewMode] = useState("builder");
@@ -70,6 +76,9 @@ export function CreateTemplatePage() {
     setWorkoutExercises(createInitialExercises());
     setUseRIR(false);
     setUseRPE(false);
+    setUseWorkoutDescription(false);
+    setUseExerciseNotes(false);
+    setUseSetNotes(false);
     setWorkoutViewMode("builder");
     setBlockName("");
     setBlockDescription("");
@@ -77,6 +86,9 @@ export function CreateTemplatePage() {
     setDurationWeeks("");
     setBlockUseRIR(false);
     setBlockUseRPE(false);
+    setBlockUseDescription(false);
+    setBlockUseExerciseNotes(false);
+    setBlockUseSetNotes(false);
     setBlockUseDuration(false);
     setBlockWeeks([newBlockWeek()]);
     setBlockViewMode("builder");
@@ -295,14 +307,16 @@ export function CreateTemplatePage() {
             <input value={name} onChange={(e) => setName(e.target.value)} required />
           </label>
 
-          <label>
-            Description (optional)
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="e.g. upper day"
-            />
-          </label>
+          {useWorkoutDescription ? (
+            <label>
+              Description (optional)
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="e.g. upper day"
+              />
+            </label>
+          ) : null}
 
           <label style={{ fontWeight: 600 }}>
             <span>Public</span>
@@ -317,6 +331,30 @@ export function CreateTemplatePage() {
           </label>
 
           <div className="template-options-grid">
+            <label className="checkbox-inline">
+              <input
+                type="checkbox"
+                checked={useWorkoutDescription}
+                onChange={(e) => setUseWorkoutDescription(e.target.checked)}
+              />
+              <span>Workout description</span>
+            </label>
+            <label className="checkbox-inline">
+              <input
+                type="checkbox"
+                checked={useExerciseNotes}
+                onChange={(e) => setUseExerciseNotes(e.target.checked)}
+              />
+              <span>Exercise notes</span>
+            </label>
+            <label className="checkbox-inline">
+              <input
+                type="checkbox"
+                checked={useSetNotes}
+                onChange={(e) => setUseSetNotes(e.target.checked)}
+              />
+              <span>Set notes</span>
+            </label>
             <label className="checkbox-inline">
               <input
                 type="checkbox"
@@ -343,12 +381,17 @@ export function CreateTemplatePage() {
               onExercisesChange={setWorkoutExercises}
               useRIR={useRIR}
               useRPE={useRPE}
+              useExerciseNotes={useExerciseNotes}
+              useSetNotes={useSetNotes}
+              showSetCountSelect
             />
           ) : (
             <WorkoutTemplateTableView
               exercises={workoutExercises}
               useRIR={useRIR}
               useRPE={useRPE}
+              useExerciseNotes={useExerciseNotes}
+              useSetNotes={useSetNotes}
             />
           )}
 
@@ -396,14 +439,16 @@ export function CreateTemplatePage() {
             />
           </label>
 
-          <label>
-            Description (optional)
-            <textarea
-              value={blockDescription}
-              onChange={(e) => setBlockDescription(e.target.value)}
-              placeholder="Goals, progression, notes"
-            />
-          </label>
+          {blockUseDescription ? (
+            <label>
+              Description (optional)
+              <textarea
+                value={blockDescription}
+                onChange={(e) => setBlockDescription(e.target.value)}
+                placeholder="Goals, progression, notes"
+              />
+            </label>
+          ) : null}
 
           <label style={{ fontWeight: 600 }}>
             <span>Public</span>
@@ -418,6 +463,30 @@ export function CreateTemplatePage() {
           </label>
 
           <div className="template-options-grid">
+            <label className="checkbox-inline">
+              <input
+                type="checkbox"
+                checked={blockUseDescription}
+                onChange={(e) => setBlockUseDescription(e.target.checked)}
+              />
+              <span>Block description</span>
+            </label>
+            <label className="checkbox-inline">
+              <input
+                type="checkbox"
+                checked={blockUseExerciseNotes}
+                onChange={(e) => setBlockUseExerciseNotes(e.target.checked)}
+              />
+              <span>Exercise notes</span>
+            </label>
+            <label className="checkbox-inline">
+              <input
+                type="checkbox"
+                checked={blockUseSetNotes}
+                onChange={(e) => setBlockUseSetNotes(e.target.checked)}
+              />
+              <span>Set notes</span>
+            </label>
             <label className="checkbox-inline">
               <input
                 type="checkbox"
@@ -492,6 +561,8 @@ export function CreateTemplatePage() {
             blockWeeks={blockWeeks}
             useRIR={blockUseRIR}
             useRPE={blockUseRPE}
+            useExerciseNotes={blockUseExerciseNotes}
+            useSetNotes={blockUseSetNotes}
             onRemoveWeek={removeBlockWeek}
             onUpdateBlockWorkout={updateBlockWorkout}
             onAddBlockWorkout={addBlockWorkout}
@@ -503,6 +574,8 @@ export function CreateTemplatePage() {
             blockWeeks={blockWeeks}
             useRIR={blockUseRIR}
             useRPE={blockUseRPE}
+            useExerciseNotes={blockUseExerciseNotes}
+            useSetNotes={blockUseSetNotes}
             useDuration={blockUseDuration}
             durationWeeks={durationWeeks}
           />

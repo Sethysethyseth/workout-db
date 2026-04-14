@@ -46,6 +46,23 @@ export function AuthProvider({ children }) {
   }, [refreshSession]);
 
   useEffect(() => {
+    let lastVisibleRefresh = 0;
+    function onBecameVisible() {
+      if (typeof document === "undefined" || document.visibilityState !== "visible") return;
+      const now = Date.now();
+      if (now - lastVisibleRefresh < 2500) return;
+      lastVisibleRefresh = now;
+      void refreshSession();
+    }
+    document.addEventListener("visibilitychange", onBecameVisible);
+    window.addEventListener("pageshow", onBecameVisible);
+    return () => {
+      document.removeEventListener("visibilitychange", onBecameVisible);
+      window.removeEventListener("pageshow", onBecameVisible);
+    };
+  }, [refreshSession]);
+
+  useEffect(() => {
     function onUnauthorized() {
       setCurrentUser(null);
       setAuthLoading(false);

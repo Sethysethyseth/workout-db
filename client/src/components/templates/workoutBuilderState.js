@@ -6,8 +6,7 @@ import { makeId } from "../../lib/makeId.js";
  * - exercisesToTemplateApi: sends `sets[]` so the server persists TemplateSet (reps, weight, RIR, RPE).
  * - templateToBuilderExercises: rebuilds builder state from GET responses; prefers `templateSets`, else targetSets/targetReps.
  *
- * Limitations: TemplateSet.notes are not edited in the UI yet — if present on the server, they are not round-tripped
- * through the builder. Exercise-level `notes` are preserved.
+ * TemplateSet.notes round-trip when present on the server.
  */
 
 export function createEmptySet() {
@@ -17,6 +16,7 @@ export function createEmptySet() {
     weight: "",
     rir: "",
     rpe: "",
+    notes: "",
   };
 }
 
@@ -85,6 +85,8 @@ export function exercisesToTemplateApi(exercises) {
       if (rpe !== undefined) row.rpe = rpe;
       const rir = toOptionalNonNegInt(s.rir);
       if (rir !== undefined) row.rir = rir;
+      const setNotes = String(s.notes ?? "").trim();
+      if (setNotes) row.notes = setNotes;
       return row;
     });
 
@@ -127,6 +129,7 @@ export function templateToBuilderExercises(template) {
         weight: s.weight != null ? String(s.weight) : "",
         rir: s.rir != null ? String(s.rir) : "",
         rpe: s.rpe != null ? String(s.rpe) : "",
+        notes: s.notes != null ? String(s.notes) : "",
       }));
     } else {
       const count =
@@ -147,6 +150,7 @@ export function templateToBuilderExercises(template) {
           weight: "",
           rir: "",
           rpe: "",
+          notes: "",
         });
       }
     }

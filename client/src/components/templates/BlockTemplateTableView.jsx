@@ -5,6 +5,8 @@ export function BlockTemplateTableView({
   blockWeeks,
   useRIR,
   useRPE,
+  useExerciseNotes = false,
+  useSetNotes = false,
   useDuration,
   durationWeeks,
 }) {
@@ -36,7 +38,13 @@ export function BlockTemplateTableView({
                 <h4 className="block-table-workout-title" style={{ margin: 0, fontSize: "1.05rem" }}>
                   {w.title?.trim() || `Workout ${wj + 1}`}
                 </h4>
-                <WorkoutTemplateTableView exercises={w.exercises} useRIR={useRIR} useRPE={useRPE} />
+                <WorkoutTemplateTableView
+                  exercises={w.exercises}
+                  useRIR={useRIR}
+                  useRPE={useRPE}
+                  useExerciseNotes={useExerciseNotes}
+                  useSetNotes={useSetNotes}
+                />
               </section>
             ))}
           </div>

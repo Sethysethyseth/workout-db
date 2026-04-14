@@ -18,7 +18,12 @@ export function WorkoutSetRowShell({
           {headerExtra}
         </div>
         {canRemove && !disabled ? (
-          <button type="button" className="btn btn-ghost" onClick={onRemove}>
+          <button
+            type="button"
+            className="btn btn-ghost"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={onRemove}
+          >
             Remove set
           </button>
         ) : null}

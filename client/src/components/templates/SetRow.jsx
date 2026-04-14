@@ -8,6 +8,7 @@ export function SetRow({
   canRemove,
   useRIR = false,
   useRPE = false,
+  useSetNotes = false,
 }) {
   const colCount = 2 + (useRIR ? 1 : 0) + (useRPE ? 1 : 0);
   return (
@@ -59,6 +60,16 @@ export function SetRow({
           </label>
         ) : null}
       </div>
+      {useSetNotes ? (
+        <label className="mt-2" style={{ display: "grid", gap: 6, fontWeight: 600 }}>
+          Notes <span className="muted small">(optional)</span>
+          <input
+            value={setData.notes ?? ""}
+            onChange={(e) => onChange({ notes: e.target.value })}
+            placeholder="—"
+          />
+        </label>
+      ) : null}
     </WorkoutSetRowShell>
   );
 }

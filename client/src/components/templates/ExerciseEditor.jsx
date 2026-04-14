@@ -1,11 +1,7 @@
+import { ExerciseNameInput } from "./ExerciseNameInput.jsx";
+import { PlanningSetCountControl } from "./PlanningSetCountControl.jsx";
 import { SetRow } from "./SetRow.jsx";
 import { createEmptySet } from "./workoutBuilderState.js";
-
-/** Upper range for the set-count select: always includes current length; headroom up to a soft cap. */
-function maxSetCountOption(currentLen) {
-  const bumped = Math.max(20, currentLen + 10);
-  return Math.max(currentLen, Math.min(150, bumped));
-}
 
 export function ExerciseEditor({
   exercise,
@@ -15,7 +11,9 @@ export function ExerciseEditor({
   canRemove,
   useRIR = false,
   useRPE = false,
-  /** Block builder keeps bulk set count; saved workout templates use Add set only. */
+  useExerciseNotes = false,
+  useSetNotes = false,
+  /** Block / template builders use bulk set count; turn off for flows that should not show it. */
   showSetCountSelect = false,
 }) {
   function updateSet(setIdx, patch) {
@@ -60,48 +58,35 @@ export function ExerciseEditor({
         ) : null}
       </div>
 
-      <div className="grid-2">
+      <div className={useExerciseNotes ? "grid-2" : "stack"} style={{ gap: useExerciseNotes ? undefined : 8 }}>
         <label>
           Exercise name
-          <input
+          <ExerciseNameInput
+            id={`exercise-name-${exercise.id}`}
             value={exercise.exerciseName}
             onChange={(e) => onChange({ exerciseName: e.target.value })}
-            placeholder="Search / name (picker TBD)"
-            required
+            placeholder="Type or pick a suggestion"
           />
         </label>
-        <label>
-          Notes <span className="muted small">(optional)</span>
-          <input
-            value={exercise.notes}
-            onChange={(e) => onChange({ notes: e.target.value })}
-            placeholder="e.g. tempo, substitutions"
-          />
-        </label>
+        {useExerciseNotes ? (
+          <label>
+            Notes <span className="muted small">(optional)</span>
+            <input
+              value={exercise.notes}
+              onChange={(e) => onChange({ notes: e.target.value })}
+              placeholder="—"
+            />
+          </label>
+        ) : null}
       </div>
 
       <div className="stack">
         <div className="exercise-editor-set-toolbar row">
           {showSetCountSelect ? (
-            <label className="exercise-editor-set-count-label">
-              <span className="muted small" style={{ fontWeight: 600 }}>
-                Sets
-              </span>
-              <select
-                aria-label="Number of sets"
-                value={exercise.sets.length}
-                onChange={(e) => changeSetCount(Number(e.target.value))}
-              >
-                {Array.from(
-                  { length: maxSetCountOption(exercise.sets.length) },
-                  (_, i) => i + 1
-                ).map((num) => (
-                  <option key={num} value={num}>
-                    {num}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <PlanningSetCountControl
+              value={exercise.sets.length}
+              onChange={changeSetCount}
+            />
           ) : null}
           <button type="button" className="btn btn-secondary exercise-editor-add-set-btn" onClick={addSet}>
             + Add set
@@ -117,6 +102,7 @@ export function ExerciseEditor({
             canRemove={exercise.sets.length > 1}
             useRIR={useRIR}
             useRPE={useRPE}
+            useSetNotes={useSetNotes}
           />
         ))}
       </div>

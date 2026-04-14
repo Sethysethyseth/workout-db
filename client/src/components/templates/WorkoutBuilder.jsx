@@ -7,6 +7,8 @@ export function WorkoutBuilder({
   onExercisesChange,
   useRIR = false,
   useRPE = false,
+  useExerciseNotes = false,
+  useSetNotes = false,
   showSetCountSelect = false,
 }) {
   function updateExercise(idx, patch) {
@@ -43,6 +45,8 @@ export function WorkoutBuilder({
             canRemove={exercises.length > 1}
             useRIR={useRIR}
             useRPE={useRPE}
+            useExerciseNotes={useExerciseNotes}
+            useSetNotes={useSetNotes}
             showSetCountSelect={showSetCountSelect}
           />
         </div>

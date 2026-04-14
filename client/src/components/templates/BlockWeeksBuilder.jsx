@@ -7,6 +7,8 @@ export function BlockWeeksBuilder({
   blockWeeks,
   useRIR,
   useRPE,
+  useExerciseNotes = false,
+  useSetNotes = false,
   onRemoveWeek,
   onUpdateBlockWorkout,
   onAddBlockWorkout,
@@ -172,6 +174,8 @@ export function BlockWeeksBuilder({
                       }}
                       useRIR={useRIR}
                       useRPE={useRPE}
+                      useExerciseNotes={useExerciseNotes}
+                      useSetNotes={useSetNotes}
                       showSetCountSelect
                     />
                   </div>

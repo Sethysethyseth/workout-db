@@ -1,7 +1,11 @@
+import { getAdHocSessionTitle } from "./adHocSessionTitle.js";
+
 /** User-facing title for a session row (template-based or ad hoc). */
 export function sessionDisplayTitle(session) {
   const name = session?.workoutTemplate?.name?.trim();
   if (name) return name;
+  const custom = session?.id != null ? getAdHocSessionTitle(session.id) : null;
+  if (custom) return custom;
   return "Quick workout";
 }
 

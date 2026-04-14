@@ -16,6 +16,22 @@ import {
   parseBlockDurationWeekCap,
 } from "../components/templates/workoutBuilderState.js";
 
+function blockWeeksNoteFlags(weeks) {
+  let exerciseNotes = false;
+  let setNotes = false;
+  for (const wk of weeks || []) {
+    for (const wo of wk.workouts || []) {
+      for (const ex of wo.exercises || []) {
+        if (String(ex.notes ?? "").trim()) exerciseNotes = true;
+        for (const s of ex.sets || []) {
+          if (String(s.notes ?? "").trim()) setNotes = true;
+        }
+      }
+    }
+  }
+  return { exerciseNotes, setNotes };
+}
+
 export function EditBlockTemplatePage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -29,6 +45,9 @@ export function EditBlockTemplatePage() {
   const [durationWeeks, setDurationWeeks] = useState("");
   const [useRIR, setUseRIR] = useState(false);
   const [useRPE, setUseRPE] = useState(false);
+  const [useBlockDescription, setUseBlockDescription] = useState(false);
+  const [useExerciseNotes, setUseExerciseNotes] = useState(false);
+  const [useSetNotes, setUseSetNotes] = useState(false);
   const [useDuration, setUseDuration] = useState(false);
   const [blockWeeks, setBlockWeeks] = useState(null);
   const [viewMode, setViewMode] = useState("builder");
@@ -58,7 +77,12 @@ export function EditBlockTemplatePage() {
         setUseRIR(Boolean(t.useRIR));
         setUseRPE(Boolean(t.useRPE));
         setUseDuration(Boolean(t.useDuration));
-        setBlockWeeks(blockTemplateToBlockWeeks(t));
+        setUseBlockDescription(Boolean(String(t.description ?? "").trim()));
+        const weeks = blockTemplateToBlockWeeks(t);
+        setBlockWeeks(weeks);
+        const noteFlags = blockWeeksNoteFlags(weeks);
+        setUseExerciseNotes(noteFlags.exerciseNotes);
+        setUseSetNotes(noteFlags.setNotes);
       } catch (err) {
         if (!cancelled) setError(err);
       } finally {
@@ -232,14 +256,16 @@ export function EditBlockTemplatePage() {
             <input value={name} onChange={(e) => setName(e.target.value)} required />
           </label>
 
-          <label>
-            Description (optional)
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Goals, progression, notes"
-            />
-          </label>
+          {useBlockDescription ? (
+            <label>
+              Description (optional)
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Goals, progression, notes"
+              />
+            </label>
+          ) : null}
 
           <label style={{ fontWeight: 600 }}>
             <span>Public</span>
@@ -254,6 +280,30 @@ export function EditBlockTemplatePage() {
           </label>
 
           <div className="template-options-grid">
+            <label className="checkbox-inline">
+              <input
+                type="checkbox"
+                checked={useBlockDescription}
+                onChange={(e) => setUseBlockDescription(e.target.checked)}
+              />
+              <span>Block description</span>
+            </label>
+            <label className="checkbox-inline">
+              <input
+                type="checkbox"
+                checked={useExerciseNotes}
+                onChange={(e) => setUseExerciseNotes(e.target.checked)}
+              />
+              <span>Exercise notes</span>
+            </label>
+            <label className="checkbox-inline">
+              <input
+                type="checkbox"
+                checked={useSetNotes}
+                onChange={(e) => setUseSetNotes(e.target.checked)}
+              />
+              <span>Set notes</span>
+            </label>
             <label className="checkbox-inline">
               <input
                 type="checkbox"
@@ -328,6 +378,8 @@ export function EditBlockTemplatePage() {
             blockWeeks={blockWeeks}
             useRIR={useRIR}
             useRPE={useRPE}
+            useExerciseNotes={useExerciseNotes}
+            useSetNotes={useSetNotes}
             onRemoveWeek={removeBlockWeek}
             onUpdateBlockWorkout={updateBlockWorkout}
             onAddBlockWorkout={addBlockWorkout}
@@ -339,6 +391,8 @@ export function EditBlockTemplatePage() {
             blockWeeks={blockWeeks}
             useRIR={useRIR}
             useRPE={useRPE}
+            useExerciseNotes={useExerciseNotes}
+            useSetNotes={useSetNotes}
             useDuration={useDuration}
             durationWeeks={durationWeeks}
           />

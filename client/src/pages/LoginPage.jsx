@@ -9,7 +9,14 @@ export function LoginPage() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
 
-  const nextUrl = useMemo(() => params.get("next") || "/", [params]);
+  const nextUrl = useMemo(() => {
+    const raw = params.get("next") || "/";
+    try {
+      return decodeURIComponent(raw);
+    } catch {
+      return raw;
+    }
+  }, [params]);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

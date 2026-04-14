@@ -6,6 +6,7 @@ import { ErrorMessage } from "../components/ErrorMessage.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { pickLatestActiveSession } from "../lib/activeSession.js";
 import { ACTIVE_WORKOUT_ERROR, startAdHocWorkoutAndNavigate } from "../lib/startAdHocWorkoutFlow.js";
+import { readCurrentProgram } from "../lib/currentProgramStorage.js";
 import { sessionDisplayTitle } from "../lib/sessionDisplay.js";
 
 function formatStartedWhen(value) {
@@ -52,8 +53,18 @@ export function DashboardPage() {
     return list.slice(0, 5);
   }, [sessions]);
 
+  const currentProgramRef = readCurrentProgram();
+
   const homeTemplates = useMemo(() => {
     const list = Array.isArray(templates) ? [...templates] : [];
+    const cur = readCurrentProgram();
+    if (cur?.kind === "workout") {
+      const idx = list.findIndex((t) => t.id === cur.id);
+      if (idx > 0) {
+        const [picked] = list.splice(idx, 1);
+        list.unshift(picked);
+      }
+    }
     return list.slice(0, 5);
   }, [templates]);
 
@@ -183,7 +194,8 @@ export function DashboardPage() {
               {quickStarting ? "Starting…" : "Log workout"}
             </button>
             <p className="home-action-hint muted small">
-              Blank session, starts now. One-time—won't appear in your Programs library.
+              Starts with one empty exercise ready to name. One-time—won't appear in your Programs
+              library.
             </p>
           </div>
 
@@ -194,6 +206,19 @@ export function DashboardPage() {
                 All saved
               </Link>
             </div>
+            {currentProgramRef?.kind === "block" ? (
+              <div className="card stack home-current-block-card" style={{ marginBottom: 12 }}>
+                <span className="muted small" style={{ fontWeight: 600 }}>
+                  Current program (block)
+                </span>
+                <Link className="home-current-block-card__link" to={`/blocks/${currentProgramRef.id}/edit`}>
+                  {currentProgramRef.name?.trim() || `Block #${currentProgramRef.id}`}
+                </Link>
+                <span className="muted small">
+                  Set this in <Link to="/templates">Programs</Link> → Your library → blocks.
+                </span>
+              </div>
+            ) : null}
             <p className="home-action-hint muted small">
               Starts a live session from a reusable workout you already built.
             </p>
@@ -213,6 +238,9 @@ export function DashboardPage() {
                   <li key={t.id} className="home-saved-workout-row">
                     <div className="home-saved-workout-row__main">
                       <span className="home-saved-workout-row__name">{t.name}</span>
+                      {currentProgramRef?.kind === "workout" && currentProgramRef.id === t.id ? (
+                        <span className="pill home-current-program-pill">Current</span>
+                      ) : null}
                     </div>
                     <button
                       type="button"

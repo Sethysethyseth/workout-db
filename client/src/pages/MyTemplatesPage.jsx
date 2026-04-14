@@ -11,6 +11,7 @@ import {
   summarizeExerciseTargets,
 } from "../components/templates/workoutBuilderState.js";
 import { pickLatestActiveSession } from "../lib/activeSession.js";
+import { readCurrentProgram, writeCurrentProgram } from "../lib/currentProgramStorage.js";
 import { sessionDisplayTitle } from "../lib/sessionDisplay.js";
 
 export function MyTemplatesPage() {
@@ -155,6 +156,8 @@ export function MyTemplatesPage() {
     setActingAction("delete");
     try {
       await templateApi.deleteTemplate(t.id);
+      const cur = readCurrentProgram();
+      if (cur?.kind === "workout" && cur.id === t.id) writeCurrentProgram(null);
       setSuccess("Template deleted.");
       clearFeedbackSoon();
       await load();
@@ -178,6 +181,8 @@ export function MyTemplatesPage() {
     setActingAction("delete");
     try {
       await blockTemplateApi.deleteBlockTemplate(t.id);
+      const cur = readCurrentProgram();
+      if (cur?.kind === "block" && cur.id === t.id) writeCurrentProgram(null);
       setSuccess("Block template deleted.");
       clearFeedbackSoon();
       await load();
@@ -190,6 +195,21 @@ export function MyTemplatesPage() {
   }
 
   const busy = Boolean(actingKey);
+  const currentProgram = readCurrentProgram();
+
+  function onSetCurrentWorkout(t) {
+    writeCurrentProgram({ kind: "workout", id: t.id, name: t.name || "" });
+    setError(null);
+    setSuccess("This workout is now your current program on Home.");
+    clearFeedbackSoon();
+  }
+
+  function onSetCurrentBlock(t) {
+    writeCurrentProgram({ kind: "block", id: t.id, name: t.name || "" });
+    setError(null);
+    setSuccess("This block is now your current program on Home.");
+    clearFeedbackSoon();
+  }
 
   return (
     <div className="stack">
@@ -399,6 +419,9 @@ export function MyTemplatesPage() {
                         <span className="pill">
                           Exercises: {Array.isArray(t.exercises) ? t.exercises.length : 0}
                         </span>
+                        {currentProgram?.kind === "workout" && currentProgram.id === t.id ? (
+                          <span className="pill programs-current-pill">Current on Home</span>
+                        ) : null}
                       </div>
                     </div>
                     <div className="row" style={{ flexWrap: "wrap", gap: "0.5rem" }}>
@@ -409,6 +432,14 @@ export function MyTemplatesPage() {
                         disabled={busy}
                       >
                         {isActing && actingAction === "start" ? "Starting…" : "Start session"}
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-secondary"
+                        disabled={busy}
+                        onClick={() => onSetCurrentWorkout(t)}
+                      >
+                        Set as current
                       </button>
                       <Link
                         className="btn btn-secondary"
@@ -479,9 +510,20 @@ export function MyTemplatesPage() {
                         <span className="pill">Block</span>
                         <span className="pill">{t.isPublic ? "Public" : "Private"}</span>
                         <span className="pill muted">{formatBlockTemplateSummary(t)}</span>
+                        {currentProgram?.kind === "block" && currentProgram.id === t.id ? (
+                          <span className="pill programs-current-pill">Current on Home</span>
+                        ) : null}
                       </div>
                     </div>
                     <div className="row" style={{ flexWrap: "wrap", gap: "0.5rem" }}>
+                      <button
+                        type="button"
+                        className="btn btn-secondary"
+                        disabled={busy}
+                        onClick={() => onSetCurrentBlock(t)}
+                      >
+                        Set as current
+                      </button>
                       <Link
                         className="btn btn-secondary"
                         to={`/blocks/${t.id}/edit`}

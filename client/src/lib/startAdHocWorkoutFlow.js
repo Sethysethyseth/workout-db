@@ -1,5 +1,6 @@
 import * as sessionApi from "../api/sessionApi.js";
 import { pickLatestActiveSession } from "./activeSession.js";
+import { BLANK_SESSION_EXERCISE_NAME } from "./sessionExerciseName.js";
 
 export const ACTIVE_WORKOUT_ERROR = "ACTIVE_WORKOUT";
 
@@ -23,5 +24,9 @@ export async function startAdHocWorkoutAndNavigate(navigate, { replace = true } 
   if (data?.session?.id == null) {
     throw new Error("Could not start workout. Try again.");
   }
-  navigate(`/sessions/${data.session.id}`, { replace });
+  const sessionId = data.session.id;
+  await sessionApi.addSessionExercise(sessionId, {
+    exerciseName: BLANK_SESSION_EXERCISE_NAME,
+  });
+  navigate(`/sessions/${sessionId}`, { replace });
 }
