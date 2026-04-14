@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import * as sessionApi from "../api/sessionApi.js";
 import * as templateApi from "../api/templateApi.js";
 import { ErrorMessage } from "../components/ErrorMessage.jsx";
@@ -28,6 +28,7 @@ function formatLoggedWhen(value) {
 
 export function DashboardPage() {
   const { currentUser } = useAuth();
+  const location = useLocation();
   const navigate = useNavigate();
   const { sessions, activeSession, refresh, loading: sessionsLoading } = useActiveSession();
 
@@ -39,6 +40,7 @@ export function DashboardPage() {
   const [quickStarting, setQuickStarting] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [heroNow, setHeroNow] = useState(() => Date.now());
+  const [workoutSavedFlash, setWorkoutSavedFlash] = useState(false);
 
   const currentProgramRef = readCurrentProgram();
 
@@ -88,6 +90,19 @@ export function DashboardPage() {
     return () => window.clearInterval(id);
   }, [activeSession]);
 
+  useEffect(() => {
+    const st = location.state;
+    if (!st || typeof st !== "object" || !st.workoutSaved) return;
+    setWorkoutSavedFlash(true);
+    navigate("/", { replace: true, state: {} });
+  }, [location.state, navigate]);
+
+  useEffect(() => {
+    if (!workoutSavedFlash) return;
+    const id = window.setTimeout(() => setWorkoutSavedFlash(false), 8000);
+    return () => window.clearTimeout(id);
+  }, [workoutSavedFlash]);
+
   async function onStartFromTemplate(templateId) {
     if (activeSession) return;
     setStartError(null);
@@ -123,6 +138,16 @@ export function DashboardPage() {
 
   return (
     <div className="stack workout-tab">
+      {workoutSavedFlash ? (
+        <div className="workout-tab__saved-flash card" role="status">
+          <strong>Workout saved</strong>
+          <span aria-hidden="true"> </span>✅
+          <p className="muted small" style={{ margin: "6px 0 0" }}>
+            {"You're done. It's in History and Recently logged below."}
+          </p>
+        </div>
+      ) : null}
+
       {(quickStartError || startError) && (
         <div className="workout-tab__errors stack" style={{ gap: 8 }}>
           {quickStartError ? (

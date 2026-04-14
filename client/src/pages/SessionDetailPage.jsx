@@ -22,6 +22,7 @@ import {
   loadQuickWorkoutLogPrefs,
   saveQuickWorkoutLogPrefs,
 } from "../lib/quickWorkoutLogPrefs.js";
+import { useSessionLiveLoggingGuard } from "../context/SessionLiveLoggingGuardContext.jsx";
 import {
   BLANK_SESSION_EXERCISE_NAME,
   inputToSessionExerciseName,
@@ -304,6 +305,8 @@ function SessionExerciseBlock({
   allSetsLogged = false,
   lastLoggedSummary = null,
   onActivateExercise,
+  /** First incomplete set in the whole session (by exercise order, then set order). */
+  nextIncompleteSetId = null,
 }) {
   const exerciseCommitted = isCompleted ? undefined : onExerciseCommitted;
   const rawName = se.exerciseName ?? "";
@@ -312,11 +315,6 @@ function SessionExerciseBlock({
       ? `Exercise ${se.order}`
       : String(rawName).trim();
   const setCountLabel = `${sets.length} ${sets.length === 1 ? "set" : "sets"}`;
-
-  const nextSetOrdinal = useMemo(() => {
-    const idx = sets.findIndex((s) => !sessionSetHasCoreLogged(s));
-    return idx >= 0 ? idx + 1 : null;
-  }, [sets]);
 
   const expanded = isCompleted || !collapsible || !isCollapsed;
   const summaryLine =
@@ -448,7 +446,11 @@ function SessionExerciseBlock({
                       useRIR={useRIR}
                       useRPE={useRPE}
                       useSetNotes={useSetNotes}
-                      isNext={!isCompleted && nextSetOrdinal === setIdx + 1}
+                      isNext={
+                        !isCompleted &&
+                        nextIncompleteSetId != null &&
+                        s.id === nextIncompleteSetId
+                      }
                       onInteractStart={!isCompleted ? onActivateExercise : undefined}
                       onUpdateSet={onUpdateSet}
                       onDeleteSet={onDeleteSet}
@@ -503,6 +505,7 @@ export function SessionDetailPage() {
   const [quickTitleDraft, setQuickTitleDraft] = useState("Quick workout");
   const [scrollToExerciseId, setScrollToExerciseId] = useState(null);
   const [adjustingSetCountExerciseId, setAdjustingSetCountExerciseId] = useState(null);
+  const [completeBusy, setCompleteBusy] = useState(false);
   const exerciseAnchorRefs = useRef(new Map());
   const sessionNoteTogglesInitRef = useRef(null);
 
@@ -528,9 +531,31 @@ export function SessionDetailPage() {
     return [...ex].sort((a, b) => a.order - b.order);
   }, [session?.sessionExercises]);
 
+  const nextIncompleteSetId = useMemo(() => {
+    if (!session || session.completedAt) return null;
+    for (const se of orderedSessionExercises) {
+      const list = setsByExercise.get(se.id) || [];
+      for (const s of list) {
+        if (!sessionSetHasCoreLogged(s)) return s.id;
+      }
+    }
+    return null;
+  }, [session, orderedSessionExercises, setsByExercise]);
+
+  const nextIncompleteOwnerExerciseId = useMemo(() => {
+    if (nextIncompleteSetId == null) return null;
+    for (const se of orderedSessionExercises) {
+      const list = setsByExercise.get(se.id) || [];
+      if (list.some((s) => s.id === nextIncompleteSetId)) return se.id;
+    }
+    return null;
+  }, [nextIncompleteSetId, orderedSessionExercises, setsByExercise]);
+
   const [collapsedExerciseIds, setCollapsedExerciseIds] = useState(() => new Set());
   const [activeExerciseId, setActiveExerciseId] = useState(null);
   const activeExerciseInitRef = useRef(false);
+  const prevFocusedNextSetRef = useRef(null);
+  const { setActive: setLiveLoggingGuard } = useSessionLiveLoggingGuard();
 
   const tableExercises = useMemo(() => {
     const ex = session?.sessionExercises;
@@ -612,7 +637,51 @@ export function SessionDetailPage() {
     activeExerciseInitRef.current = false;
     setActiveExerciseId(null);
     setCollapsedExerciseIds(new Set());
+    prevFocusedNextSetRef.current = null;
   }, [sessionId]);
+
+  useEffect(() => {
+    if (!session || session.completedAt) {
+      setLiveLoggingGuard(false);
+      return;
+    }
+    setLiveLoggingGuard(true);
+    return () => {
+      setLiveLoggingGuard(false);
+    };
+  }, [session, session?.completedAt, setLiveLoggingGuard]);
+
+  useEffect(() => {
+    if (!session || session.completedAt) return;
+    const onBeforeUnload = (e) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [session, session?.completedAt]);
+
+  useEffect(() => {
+    if (nextIncompleteOwnerExerciseId == null) return;
+    if (!session || session.completedAt) return;
+    setCollapsedExerciseIds((prev) => {
+      if (!prev.has(nextIncompleteOwnerExerciseId)) return prev;
+      const next = new Set(prev);
+      next.delete(nextIncompleteOwnerExerciseId);
+      return next;
+    });
+  }, [nextIncompleteOwnerExerciseId, session]);
+
+  useLayoutEffect(() => {
+    if (nextIncompleteSetId == null) return;
+    if (prevFocusedNextSetRef.current === nextIncompleteSetId) return;
+    prevFocusedNextSetRef.current = nextIncompleteSetId;
+    requestAnimationFrame(() => {
+      const el = document.querySelector(`[data-session-set-id="${nextIncompleteSetId}"]`);
+      /* auto: avoid competing with smooth scroll while the user is already focusing inputs */
+      el?.scrollIntoView({ block: "nearest", behavior: "auto" });
+    });
+  }, [nextIncompleteSetId]);
 
   useEffect(() => {
     if (!session || session.completedAt) return;
@@ -688,12 +757,16 @@ export function SessionDetailPage() {
   }, [scrollToExerciseId, session?.sessionExercises]);
 
   async function onComplete() {
+    if (completeBusy) return;
     setError(null);
+    setCompleteBusy(true);
     try {
       await sessionApi.completeSession(sessionId);
-      navigate("/", { replace: true });
+      navigate("/", { replace: true, state: { workoutSaved: true } });
     } catch (err) {
       setError(err);
+    } finally {
+      setCompleteBusy(false);
     }
   }
 
@@ -947,12 +1020,21 @@ export function SessionDetailPage() {
   }
 
   function goBackFromSession() {
+    if (session && !session.completedAt) {
+      if (
+        !window.confirm(
+          "Leave this workout? You can open it again from the home screen."
+        )
+      ) {
+        return;
+      }
+    }
     if (typeof window !== "undefined" && window.history.length > 1) navigate(-1);
     else navigate("/");
   }
 
   return (
-    <div className="stack session-detail-page">
+    <div className={`stack session-detail-page${!isCompleted ? " session-detail-page--live" : ""}`}>
       <div className="row">
         <div>
           <h1 style={{ marginBottom: 6 }}>{pageTitle}</h1>
@@ -1214,6 +1296,7 @@ export function SessionDetailPage() {
                       allSetsLogged={allSetsLogged}
                       lastLoggedSummary={lastLoggedSummary}
                       onActivateExercise={() => activateExercise(se.id)}
+                      nextIncompleteSetId={nextIncompleteSetId}
                     />
                   </div>
                 );
@@ -1228,26 +1311,6 @@ export function SessionDetailPage() {
                   {addingExercise ? "Adding…" : "+ Add exercise"}
                 </button>
               </div>
-            </div>
-          ) : null}
-
-          {!canFinishWorkout ? (
-            <p className="muted small session-finish-hint" style={{ margin: 0 }}>
-              Log at least one set anywhere to enable <strong>Finish workout</strong>.
-            </p>
-          ) : null}
-
-          {canFinishWorkout ? (
-            <div className="row session-finish-row" style={{ alignItems: "center", marginTop: 4 }}>
-              <div className="session-finish-copy" style={{ flex: "1 1 200px", minWidth: 0 }}>
-                <strong>Finish workout</strong>
-                <p className="muted small" style={{ margin: "4px 0 0" }}>
-                  Saves to History and locks this session.
-                </p>
-              </div>
-              <button type="button" className="btn session-finish-btn" onClick={onComplete}>
-                Finish workout
-              </button>
             </div>
           ) : null}
         </div>
@@ -1291,6 +1354,31 @@ export function SessionDetailPage() {
           </div>
         </div>
       )}
+
+      {!isCompleted ? (
+        <div className="session-finish-dock" role="region" aria-label="Finish workout">
+          <div className="session-finish-dock__inner stack">
+            {canFinishWorkout ? (
+              <p className="muted small session-finish-dock__hint" style={{ margin: 0 }}>
+                Saves to History and locks this session.
+              </p>
+            ) : (
+              <p className="muted small session-finish-dock__hint" style={{ margin: 0 }}>
+                Log at least one set anywhere to enable <strong>Finish workout</strong>.
+              </p>
+            )}
+            <button
+              type="button"
+              className="btn session-finish-btn session-finish-dock__btn"
+              onClick={() => void onComplete()}
+              disabled={!canFinishWorkout || completeBusy}
+              aria-busy={completeBusy}
+            >
+              {completeBusy ? "Saving…" : "Finish workout"}
+            </button>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -1439,6 +1527,22 @@ const SessionSetRow = memo(function SessionSetRow({
     return w !== "" && r !== "";
   }, [draft.weight, draft.reps]);
 
+  const corePartial = useMemo(() => {
+    const w = (draft.weight ?? "").toString().trim();
+    const r = (draft.reps ?? "").toString().trim();
+    if (w === "" && r === "") return false;
+    return w === "" || r === "";
+  }, [draft.weight, draft.reps]);
+
+  const wTrim = (draft.weight ?? "").toString().trim();
+  const rTrim = (draft.reps ?? "").toString().trim();
+  const needsWeight = Boolean(!disabled && !coreLogged && !wTrim && (Boolean(rTrim) || isNext));
+  const needsReps = Boolean(!disabled && !coreLogged && !rTrim && (Boolean(wTrim) || isNext));
+  /** Avoid doubling "next" card chrome with amber fields when both are still empty. */
+  const needsWeightHighlight = Boolean(needsWeight && (!isNext || rTrim !== ""));
+  const needsRepsHighlight = Boolean(needsReps && (!isNext || wTrim !== ""));
+  const showNextHint = Boolean(!disabled && isNext && !coreLogged && !wTrim && !rTrim);
+
   const synced = coreLogged && !sessionSetDraftDirty(draft, set);
 
   const [savePulse, setSavePulse] = useState(false);
@@ -1465,6 +1569,7 @@ const SessionSetRow = memo(function SessionSetRow({
     disabled ? "" : "session-set-row-card",
     !disabled && coreLogged ? "session-set-row-card--logged" : "",
     !disabled && showNextCue ? "session-set-row-card--next" : "",
+    !disabled && !coreLogged && corePartial && !isNext ? "session-set-row-card--partial" : "",
     !disabled && savePulse ? "session-set-row-card--save-pulse" : "",
   ]
     .filter(Boolean)
@@ -1481,6 +1586,7 @@ const SessionSetRow = memo(function SessionSetRow({
     <div
       ref={rootRef}
       className="session-set-row-root"
+      data-session-set-id={set.id}
       onFocusCapture={
         !disabled && onInteractStart
           ? () => {
@@ -1503,9 +1609,21 @@ const SessionSetRow = memo(function SessionSetRow({
         className={shellClass}
         removeButtonMode={disabled ? "default" : "icon"}
       >
+        {showNextHint ? (
+          <p className="session-set-next-hint muted small" style={{ margin: "0 0 6px" }}>
+            {"Enter weight & reps for this set."}
+          </p>
+        ) : null}
         <div className="session-set-field-groups">
           <div className="session-set-core-row grid-set-row" style={{ "--set-cols": 2 }}>
-            <label className="session-set-field session-set-field--primary">
+            <label
+              className={[
+                "session-set-field session-set-field--primary",
+                needsWeightHighlight ? "session-set-field--needs-value" : "",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+            >
               <span className="session-set-field-label">Weight</span>
               <input
                 id={fieldIds.weight}
@@ -1517,9 +1635,17 @@ const SessionSetRow = memo(function SessionSetRow({
                 inputMode="decimal"
                 disabled={disabled}
                 placeholder="e.g. 185"
+                aria-invalid={needsWeightHighlight ? true : undefined}
               />
             </label>
-            <label className="session-set-field session-set-field--primary">
+            <label
+              className={[
+                "session-set-field session-set-field--primary",
+                needsRepsHighlight ? "session-set-field--needs-value" : "",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+            >
               <span className="session-set-field-label">Reps</span>
               <input
                 id={fieldIds.reps}
@@ -1531,6 +1657,7 @@ const SessionSetRow = memo(function SessionSetRow({
                 inputMode="numeric"
                 disabled={disabled}
                 placeholder="e.g. 8"
+                aria-invalid={needsRepsHighlight ? true : undefined}
               />
             </label>
           </div>
