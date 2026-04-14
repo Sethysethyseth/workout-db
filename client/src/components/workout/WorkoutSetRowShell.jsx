@@ -9,9 +9,14 @@ export function WorkoutSetRowShell({
   onRemove,
   disabled,
   children,
+  /** Extra classes on the outer card (e.g. session logging variants). */
+  className = "",
+  /** Session logging: compact icon remove to reduce row chrome. */
+  removeButtonMode = "default",
 }) {
+  const rootClass = ["card", "set-row", className].filter(Boolean).join(" ");
   return (
-    <div className="card set-row">
+    <div className={rootClass}>
       <div className="row set-row-head" style={{ alignItems: "center", flexWrap: "wrap", gap: 8 }}>
         <div className="row" style={{ alignItems: "center", gap: 10, flexWrap: "wrap" }}>
           <strong className="muted small">{label}</strong>
@@ -20,11 +25,18 @@ export function WorkoutSetRowShell({
         {canRemove && !disabled ? (
           <button
             type="button"
-            className="btn btn-ghost"
+            className={`btn btn-ghost${removeButtonMode === "icon" ? " set-row-remove--icon" : ""}`}
             onMouseDown={(e) => e.preventDefault()}
             onClick={onRemove}
+            {...(removeButtonMode === "icon" ? { "aria-label": "Remove set" } : {})}
           >
-            Remove set
+            {removeButtonMode === "icon" ? (
+              <span aria-hidden="true" className="set-row-remove-icon">
+                ×
+              </span>
+            ) : (
+              "Remove set"
+            )}
           </button>
         ) : null}
       </div>

@@ -28,7 +28,7 @@ export function Navbar() {
           {currentUser ? (
             <>
               <NavLink to="/" end>
-                Home
+                Workout
               </NavLink>
               <NavLink to="/templates">Programs</NavLink>
               <NavLink to="/sessions" end>

@@ -94,7 +94,7 @@ export function CommunityProgramsSection() {
       const active = pickLatestActiveSession(sessions);
       if (active) {
         setError(
-          `You already have “${sessionDisplayTitle(active)}” in progress. Open it from Home or History and finish or delete it before starting another workout.`
+          `You already have “${sessionDisplayTitle(active)}” in progress. Open it from Workout or History and finish or delete it before starting another workout.`
         );
         return;
       }

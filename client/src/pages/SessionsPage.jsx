@@ -65,7 +65,7 @@ export function SessionsPage() {
       {!loading && sessions.length === 0 ? (
         <div className="card stack">
           <p className="muted" style={{ margin: 0 }}>
-            Nothing logged yet. On <Link to="/">Home</Link>, use <strong>Log workout</strong> to start
+            Nothing logged yet. On <Link to="/">Workout</Link>, start a session to begin
             right away, or start from a saved workout for a structured session.
           </p>
         </div>

@@ -55,6 +55,44 @@ function sessionSetRowIsBlank(set) {
   );
 }
 
+/** Weight + reps present — minimum “this set is logged” signal for UX (optional fields ignored). */
+function sessionSetHasCoreLogged(set) {
+  if (!set || typeof set !== "object") return false;
+  const t = (v) => (v == null ? "" : String(v)).trim();
+  return t(set.weight) !== "" && t(set.reps) !== "";
+}
+
+function sessionSetDraftDirty(draft, set) {
+  const norm = (v) => (v == null ? "" : String(v)).trim();
+  return (
+    norm(draft.weight) !== norm(set.weight) ||
+    norm(draft.reps) !== norm(set.reps) ||
+    norm(draft.rir) !== norm(set.rir) ||
+    norm(draft.rpe) !== norm(set.rpe) ||
+    norm(draft.notes) !== norm(set.notes)
+  );
+}
+
+/** Every set has weight+reps (server row); false if there are zero sets. */
+function sessionExerciseAllSetsCoreLogged(sets) {
+  if (!Array.isArray(sets) || sets.length === 0) return false;
+  return sets.every((s) => sessionSetHasCoreLogged(s));
+}
+
+/** Last set in order with core logged — for collapsed summaries. */
+function sessionExerciseLastLoggedSummary(sets) {
+  if (!Array.isArray(sets)) return null;
+  for (let i = sets.length - 1; i >= 0; i -= 1) {
+    const s = sets[i];
+    if (sessionSetHasCoreLogged(s)) {
+      const w = String(s.weight ?? "").trim();
+      const r = String(s.reps ?? "").trim();
+      return `${w} × ${r}`;
+    }
+  }
+  return null;
+}
+
 /** Same field layout as `ExerciseEditor` (Create Workout); persists via session exercise API. */
 function SessionExerciseFields({
   sessionExercise,
@@ -66,6 +104,8 @@ function SessionExerciseFields({
   /** Merge API row into session state without refetch (live logging). */
   onExerciseCommitted,
   onSaved,
+  /** Live session: mark this exercise active when user focuses name/notes. */
+  onInteractStart,
 }) {
   const [name, setName] = useState(() =>
     sessionExerciseNameForInput(sessionExercise.exerciseName)
@@ -206,7 +246,17 @@ function SessionExerciseFields({
     ) : null;
 
   return (
-    <div className="stack" style={{ gap: 8 }}>
+    <div
+      className="stack session-exercise-fields"
+      style={{ gap: 8 }}
+      onFocusCapture={
+        !disabled && onInteractStart
+          ? () => {
+              onInteractStart();
+            }
+          : undefined
+      }
+    >
       {stackExerciseNotes && useExerciseNotes ? (
         <div className="stack session-exercise-fields-stacked-notes" style={{ gap: 8 }}>
           {nameField}
@@ -246,6 +296,14 @@ function SessionExerciseBlock({
   onDeleteSet,
   onAdjustSetCount,
   setCountBusy,
+  /** Live builder: collapsible blocks + active exercise chrome. */
+  collapsible = false,
+  isCollapsed = false,
+  onToggleCollapsed,
+  isActiveExercise = false,
+  allSetsLogged = false,
+  lastLoggedSummary = null,
+  onActivateExercise,
 }) {
   const exerciseCommitted = isCompleted ? undefined : onExerciseCommitted;
   const rawName = se.exerciseName ?? "";
@@ -255,77 +313,171 @@ function SessionExerciseBlock({
       : String(rawName).trim();
   const setCountLabel = `${sets.length} ${sets.length === 1 ? "set" : "sets"}`;
 
-  return (
-    <div className="card stack exercise-editor">
-      <div className="row session-exercise-heading-row">
-        <strong className="session-exercise-heading">
-          {namePart} · {setCountLabel}
-        </strong>
-      </div>
+  const nextSetOrdinal = useMemo(() => {
+    const idx = sets.findIndex((s) => !sessionSetHasCoreLogged(s));
+    return idx >= 0 ? idx + 1 : null;
+  }, [sets]);
 
-      <SessionExerciseFields
-        sessionExercise={se}
-        sessionId={sessionId}
-        disabled={isCompleted}
-        useExerciseNotes={useExerciseNotes}
-        stackExerciseNotes={Boolean(isQuickLog && useExerciseNotes)}
-        onExerciseCommitted={exerciseCommitted}
-        onSaved={onSaved}
-      />
+  const expanded = isCompleted || !collapsible || !isCollapsed;
+  const summaryLine =
+    collapsible && isCollapsed && !isCompleted
+      ? lastLoggedSummary
+        ? `Last ${lastLoggedSummary}`
+        : sets.length === 0
+          ? "No sets yet"
+          : "No sets logged yet"
+      : null;
 
-      {showPlannedTargets ? (
-        <div className="muted small">
-          Planned: {se.targetSets != null ? `${se.targetSets} sets` : "—"} ·{" "}
-          {se.targetReps ? `${se.targetReps} reps` : "—"}
-        </div>
+  const blockClass = [
+    "card stack exercise-editor session-exercise-block",
+    !isCompleted ? "session-exercise-block--live" : "",
+    collapsible && isActiveExercise && !isCompleted ? "session-exercise-block--active" : "",
+    collapsible && allSetsLogged && sets.length > 0 ? "session-exercise-block--all-logged" : "",
+    collapsible && isCollapsed && !isCompleted ? "session-exercise-block--collapsed" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  const headingInner = (
+    <>
+      {collapsible && !isCompleted ? (
+        <span className="session-exercise-heading-chevron" aria-hidden="true">
+          {isCollapsed ? "▸" : "▾"}
+        </span>
       ) : null}
+      <span className="session-exercise-heading-text">
+        <strong className="session-exercise-heading">{namePart}</strong>
+        <span className="session-exercise-heading-meta muted"> · {setCountLabel}</span>
+        {summaryLine ? (
+          <span className="session-exercise-heading-summary muted small"> · {summaryLine}</span>
+        ) : null}
+      </span>
+    </>
+  );
 
-      <div className="stack">
-        <div className="exercise-editor-set-toolbar row">
-          {!isCompleted ? (
-            <PlanningSetCountControl
-              value={Math.max(1, sets.length)}
-              disabled={setCountBusy}
-              onChange={(n) => onAdjustSetCount(se.id, n)}
-            />
-          ) : (
-            <span className="muted small" style={{ fontWeight: 600 }}>
-              Sets
-            </span>
-          )}
-          {!isCompleted ? (
-            <button
-              type="button"
-              className="btn btn-secondary exercise-editor-add-set-btn"
-              onClick={() => onCreateSet(se.id)}
-              disabled={setCountBusy}
-            >
-              + Add set
-            </button>
-          ) : null}
-        </div>
-
-        {sets.length === 0 ? (
-          <div className="muted small session-empty-sets">No sets yet—tap + Add set.</div>
+  return (
+    <div className={blockClass}>
+      <div
+        className={
+          collapsible && !isCompleted
+            ? "session-exercise-heading-sticky"
+            : "session-exercise-heading-sticky session-exercise-heading-sticky--static"
+        }
+      >
+        {collapsible && !isCompleted ? (
+          <button
+            type="button"
+            className="session-exercise-heading-toggle"
+            onClick={() => onToggleCollapsed?.()}
+            aria-expanded={expanded}
+          >
+            {headingInner}
+          </button>
         ) : (
-          <div className="stack">
-            {sets.map((s, setIdx) => (
-              <SessionSetRow
-                key={s.id}
-                set={s}
-                setOrdinal={setIdx + 1}
-                lockSetOrder
-                disabled={isCompleted}
-                useRIR={useRIR}
-                useRPE={useRPE}
-                useSetNotes={useSetNotes}
-                onUpdateSet={onUpdateSet}
-                onDeleteSet={onDeleteSet}
-              />
-            ))}
+          <div className="row session-exercise-heading-row session-exercise-heading-toggle-static">
+            {headingInner}
           </div>
         )}
       </div>
+
+      {expanded ? (
+        <>
+          <SessionExerciseFields
+            sessionExercise={se}
+            sessionId={sessionId}
+            disabled={isCompleted}
+            useExerciseNotes={useExerciseNotes}
+            stackExerciseNotes={Boolean(isQuickLog && useExerciseNotes)}
+            onExerciseCommitted={exerciseCommitted}
+            onSaved={onSaved}
+            onInteractStart={!isCompleted ? onActivateExercise : undefined}
+          />
+
+          {showPlannedTargets ? (
+            <div className="muted small session-planned-targets">
+              Planned: {se.targetSets != null ? `${se.targetSets} sets` : "—"} ·{" "}
+              {se.targetReps ? `${se.targetReps} reps` : "—"}
+            </div>
+          ) : null}
+
+          <div
+            className="stack session-exercise-sets-stack"
+            onFocusCapture={
+              !isCompleted && onActivateExercise ? () => onActivateExercise() : undefined
+            }
+          >
+            <div className="exercise-editor-set-toolbar row session-set-toolbar">
+              {!isCompleted ? (
+                <PlanningSetCountControl
+                  value={Math.max(1, sets.length)}
+                  disabled={setCountBusy}
+                  onChange={(n) => onAdjustSetCount(se.id, n)}
+                />
+              ) : (
+                <span className="muted small" style={{ fontWeight: 600 }}>
+                  Sets
+                </span>
+              )}
+              {!isCompleted && sets.length === 0 ? (
+                <button
+                  type="button"
+                  className="btn btn-secondary exercise-editor-add-set-btn"
+                  onClick={() => {
+                    onActivateExercise?.();
+                    onCreateSet(se.id);
+                  }}
+                  disabled={setCountBusy}
+                >
+                  + Add set
+                </button>
+              ) : null}
+            </div>
+
+            {sets.length === 0 ? (
+              <div className="muted small session-empty-sets">No sets yet—tap + Add set.</div>
+            ) : (
+              <>
+                <div className="stack session-set-rows">
+                  {sets.map((s, setIdx) => (
+                    <SessionSetRow
+                      key={s.id}
+                      set={s}
+                      setOrdinal={setIdx + 1}
+                      lockSetOrder
+                      disabled={isCompleted}
+                      useRIR={useRIR}
+                      useRPE={useRPE}
+                      useSetNotes={useSetNotes}
+                      isNext={!isCompleted && nextSetOrdinal === setIdx + 1}
+                      onInteractStart={!isCompleted ? onActivateExercise : undefined}
+                      onUpdateSet={onUpdateSet}
+                      onDeleteSet={onDeleteSet}
+                    />
+                  ))}
+                </div>
+                {!isCompleted ? (
+                  <div className="stack session-add-set-footer">
+                    <button
+                      type="button"
+                      className="btn btn-secondary session-add-set-footer-btn"
+                      onClick={() => {
+                        onActivateExercise?.();
+                        onCreateSet(se.id);
+                      }}
+                      disabled={setCountBusy}
+                    >
+                      + Add set
+                    </button>
+                    <p className="muted small session-block-autosave-hint" style={{ margin: 0 }}>
+                      Autosaves when you pause typing or leave a field.
+                    </p>
+                  </div>
+                ) : null}
+              </>
+            )}
+          </div>
+        </>
+      ) : null}
     </div>
   );
 }
@@ -369,6 +521,16 @@ export function SessionDetailPage() {
     }
     return map;
   }, [session]);
+
+  const orderedSessionExercises = useMemo(() => {
+    const ex = session?.sessionExercises;
+    if (!Array.isArray(ex)) return [];
+    return [...ex].sort((a, b) => a.order - b.order);
+  }, [session?.sessionExercises]);
+
+  const [collapsedExerciseIds, setCollapsedExerciseIds] = useState(() => new Set());
+  const [activeExerciseId, setActiveExerciseId] = useState(null);
+  const activeExerciseInitRef = useRef(false);
 
   const tableExercises = useMemo(() => {
     const ex = session?.sessionExercises;
@@ -445,6 +607,25 @@ export function SessionDetailPage() {
     }
     load();
   }, [sessionId, load]);
+
+  useEffect(() => {
+    activeExerciseInitRef.current = false;
+    setActiveExerciseId(null);
+    setCollapsedExerciseIds(new Set());
+  }, [sessionId]);
+
+  useEffect(() => {
+    if (!session || session.completedAt) return;
+    if (activeExerciseInitRef.current) return;
+    const ex = orderedSessionExercises;
+    if (ex.length === 0) return;
+    const firstIncomplete = ex.find((se) => {
+      const st = setsByExercise.get(se.id) || [];
+      return !sessionExerciseAllSetsCoreLogged(st);
+    });
+    setActiveExerciseId(firstIncomplete?.id ?? ex[0].id);
+    activeExerciseInitRef.current = true;
+  }, [session, session?.completedAt, orderedSessionExercises, setsByExercise]);
 
   useEffect(() => {
     if (session) setSessionNotesDraft(session.notes ?? "");
@@ -669,6 +850,32 @@ export function SessionDetailPage() {
     [removeSetRow, load]
   );
 
+  const activateExercise = useCallback((exerciseId) => {
+    if (exerciseId == null) return;
+    setActiveExerciseId(exerciseId);
+    setCollapsedExerciseIds((prev) => {
+      if (!prev.has(exerciseId)) return prev;
+      const next = new Set(prev);
+      next.delete(exerciseId);
+      return next;
+    });
+  }, []);
+
+  const toggleExerciseCollapsed = useCallback((exerciseId) => {
+    let expandedTo = null;
+    setCollapsedExerciseIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(exerciseId)) {
+        next.delete(exerciseId);
+        expandedTo = exerciseId;
+      } else {
+        next.add(exerciseId);
+      }
+      return next;
+    });
+    if (expandedTo != null) setActiveExerciseId(expandedTo);
+  }, []);
+
   const onAppendExercise = useCallback(async () => {
     setError(null);
     setAddingExercise(true);
@@ -679,12 +886,11 @@ export function SessionDetailPage() {
       if (data?.sessionExercise) {
         appendSessionExerciseRow(data.sessionExercise);
         const newId = data.sessionExercise.id;
-        if (
-          newId != null &&
-          typeof window !== "undefined" &&
-          window.matchMedia("(max-width: 719px)").matches
-        ) {
-          setScrollToExerciseId(newId);
+        if (newId != null) {
+          activateExercise(newId);
+          if (typeof window !== "undefined" && window.matchMedia("(max-width: 719px)").matches) {
+            setScrollToExerciseId(newId);
+          }
         }
       } else {
         await load();
@@ -694,7 +900,7 @@ export function SessionDetailPage() {
     } finally {
       setAddingExercise(false);
     }
-  }, [sessionId, appendSessionExerciseRow, load]);
+  }, [sessionId, appendSessionExerciseRow, load, activateExercise]);
 
   async function commitSessionNotes() {
     if (!session || session.completedAt) return;
@@ -729,7 +935,7 @@ export function SessionDetailPage() {
 
   const pageTitle = isCompleted ? "Workout summary" : "Log workout";
 
-  const sessionExercises = session?.sessionExercises || [];
+  const sessionExercises = orderedSessionExercises;
   const totalSetsLogged = Array.isArray(session?.sets) ? session.sets.length : 0;
   const canFinishWorkout = totalSetsLogged >= 1;
   const workoutTitle = session ? sessionDisplayTitle(session) : "Workout";
@@ -975,6 +1181,8 @@ export function SessionDetailPage() {
             <div className="stack workout-builder session-live-builder">
               {sessionExercises.map((se) => {
                 const sets = setsByExercise.get(se.id) || [];
+                const allSetsLogged = sessionExerciseAllSetsCoreLogged(sets);
+                const lastLoggedSummary = sessionExerciseLastLoggedSummary(sets);
                 return (
                   <div
                     key={se.id}
@@ -999,6 +1207,13 @@ export function SessionDetailPage() {
                       onDeleteSet={onDeleteSet}
                       onAdjustSetCount={onAdjustSetCountForExercise}
                       setCountBusy={adjustingSetCountExerciseId === se.id}
+                      collapsible
+                      isCollapsed={collapsedExerciseIds.has(se.id)}
+                      onToggleCollapsed={() => toggleExerciseCollapsed(se.id)}
+                      isActiveExercise={activeExerciseId === se.id}
+                      allSetsLogged={allSetsLogged}
+                      lastLoggedSummary={lastLoggedSummary}
+                      onActivateExercise={() => activateExercise(se.id)}
                     />
                   </div>
                 );
@@ -1091,6 +1306,10 @@ const SessionSetRow = memo(function SessionSetRow({
   useRIR = true,
   useRPE = true,
   useSetNotes = true,
+  /** Live logging: first set in the block that still needs weight + reps (server order). */
+  isNext = false,
+  /** Live logging: mark parent exercise active / expand when user focuses this row. */
+  onInteractStart,
 }) {
   const rootRef = useRef(null);
   const [draft, setDraft] = useState(() => ({
@@ -1194,7 +1413,7 @@ const SessionSetRow = memo(function SessionSetRow({
     focusNextField(from);
   }
 
-  const colCount = 2 + (useRIR ? 1 : 0) + (useRPE ? 1 : 0);
+  const optionalColCount = (useRIR ? 1 : 0) + (useRPE ? 1 : 0);
 
   const orderField =
     !disabled && !lockSetOrder ? (
@@ -1214,81 +1433,151 @@ const SessionSetRow = memo(function SessionSetRow({
 
   const setLabel = lockSetOrder ? `Set ${setOrdinal ?? "—"}` : `Set ${draft.order || "—"}`;
 
+  const coreLogged = useMemo(() => {
+    const w = (draft.weight ?? "").toString().trim();
+    const r = (draft.reps ?? "").toString().trim();
+    return w !== "" && r !== "";
+  }, [draft.weight, draft.reps]);
+
+  const synced = coreLogged && !sessionSetDraftDirty(draft, set);
+
+  const [savePulse, setSavePulse] = useState(false);
+  const mountedRef = useRef(false);
+  const prevSyncedRef = useRef(false);
+
+  useEffect(() => {
+    if (!mountedRef.current) {
+      mountedRef.current = true;
+      prevSyncedRef.current = synced;
+      return;
+    }
+    if (synced && !prevSyncedRef.current) {
+      setSavePulse(true);
+      const t = setTimeout(() => setSavePulse(false), 720);
+      prevSyncedRef.current = synced;
+      return () => clearTimeout(t);
+    }
+    prevSyncedRef.current = synced;
+  }, [synced]);
+
+  const showNextCue = Boolean(!disabled && isNext && !coreLogged);
+  const shellClass = [
+    disabled ? "" : "session-set-row-card",
+    !disabled && coreLogged ? "session-set-row-card--logged" : "",
+    !disabled && showNextCue ? "session-set-row-card--next" : "",
+    !disabled && savePulse ? "session-set-row-card--save-pulse" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  const statusBadge =
+    !disabled && coreLogged && synced ? (
+      <span className="session-set-sync-badge" title="Saved" aria-label="Saved">
+        ✓
+      </span>
+    ) : null;
+
   return (
-    <div ref={rootRef} className="session-set-row-root">
+    <div
+      ref={rootRef}
+      className="session-set-row-root"
+      onFocusCapture={
+        !disabled && onInteractStart
+          ? () => {
+              onInteractStart();
+            }
+          : undefined
+      }
+    >
       <WorkoutSetRowShell
         label={setLabel}
-        headerExtra={orderField}
+        headerExtra={
+          <>
+            {orderField}
+            {statusBadge}
+          </>
+        }
         canRemove
         onRemove={() => onDeleteSet(set.id)}
         disabled={disabled}
+        className={shellClass}
+        removeButtonMode={disabled ? "default" : "icon"}
       >
-        <div className="grid-set-row" style={{ "--set-cols": colCount }}>
-          <label>
-            Weight
-            <input
-              id={fieldIds.weight}
-              value={draft.weight}
-              onChange={(e) => setDraft((d) => ({ ...d, weight: e.target.value }))}
-              onBlur={flushNow}
-              onKeyDown={(e) => onEnterNext(e, "weight")}
-              enterKeyHint="next"
-              inputMode="decimal"
-              disabled={disabled}
-              placeholder="e.g. 185"
-            />
-          </label>
-          <label>
-            Reps
-            <input
-              id={fieldIds.reps}
-              value={draft.reps}
-              onChange={(e) => setDraft((d) => ({ ...d, reps: e.target.value }))}
-              onBlur={flushNow}
-              onKeyDown={(e) => onEnterNext(e, "reps")}
-              enterKeyHint={useRIR || useRPE || useSetNotes ? "next" : "done"}
-              inputMode="numeric"
-              disabled={disabled}
-              placeholder="e.g. 8"
-            />
-          </label>
-          {useRIR ? (
-            <label>
-              RIR <span className="muted small">(optional)</span>
+        <div className="session-set-field-groups">
+          <div className="session-set-core-row grid-set-row" style={{ "--set-cols": 2 }}>
+            <label className="session-set-field session-set-field--primary">
+              <span className="session-set-field-label">Weight</span>
               <input
-                id={fieldIds.rir}
-                value={draft.rir}
-                onChange={(e) => setDraft((d) => ({ ...d, rir: e.target.value }))}
+                id={fieldIds.weight}
+                value={draft.weight}
+                onChange={(e) => setDraft((d) => ({ ...d, weight: e.target.value }))}
                 onBlur={flushNow}
-                onKeyDown={(e) => onEnterNext(e, "rir")}
-                enterKeyHint={useRPE || useSetNotes ? "next" : "done"}
-                inputMode="numeric"
-                disabled={disabled}
-                placeholder="—"
-              />
-            </label>
-          ) : null}
-          {useRPE ? (
-            <label>
-              RPE <span className="muted small">(optional)</span>
-              <input
-                id={fieldIds.rpe}
-                value={draft.rpe}
-                onChange={(e) => setDraft((d) => ({ ...d, rpe: e.target.value }))}
-                onBlur={flushNow}
-                onKeyDown={(e) => onEnterNext(e, "rpe")}
-                enterKeyHint={useSetNotes ? "next" : "done"}
+                onKeyDown={(e) => onEnterNext(e, "weight")}
+                enterKeyHint="next"
                 inputMode="decimal"
                 disabled={disabled}
-                placeholder="—"
+                placeholder="e.g. 185"
               />
             </label>
+            <label className="session-set-field session-set-field--primary">
+              <span className="session-set-field-label">Reps</span>
+              <input
+                id={fieldIds.reps}
+                value={draft.reps}
+                onChange={(e) => setDraft((d) => ({ ...d, reps: e.target.value }))}
+                onBlur={flushNow}
+                onKeyDown={(e) => onEnterNext(e, "reps")}
+                enterKeyHint={useRIR || useRPE || useSetNotes ? "next" : "done"}
+                inputMode="numeric"
+                disabled={disabled}
+                placeholder="e.g. 8"
+              />
+            </label>
+          </div>
+
+          {useRIR || useRPE ? (
+            <div className="session-set-optional-row grid-set-row" style={{ "--set-cols": optionalColCount }}>
+              {useRIR ? (
+                <label className="session-set-field session-set-field--secondary">
+                  <span className="session-set-field-label">RIR</span>
+                  <input
+                    id={fieldIds.rir}
+                    value={draft.rir}
+                    onChange={(e) => setDraft((d) => ({ ...d, rir: e.target.value }))}
+                    onBlur={flushNow}
+                    onKeyDown={(e) => onEnterNext(e, "rir")}
+                    enterKeyHint={useRPE || useSetNotes ? "next" : "done"}
+                    inputMode="numeric"
+                    disabled={disabled}
+                    placeholder="—"
+                    title="Optional"
+                  />
+                </label>
+              ) : null}
+              {useRPE ? (
+                <label className="session-set-field session-set-field--secondary">
+                  <span className="session-set-field-label">RPE</span>
+                  <input
+                    id={fieldIds.rpe}
+                    value={draft.rpe}
+                    onChange={(e) => setDraft((d) => ({ ...d, rpe: e.target.value }))}
+                    onBlur={flushNow}
+                    onKeyDown={(e) => onEnterNext(e, "rpe")}
+                    enterKeyHint={useSetNotes ? "next" : "done"}
+                    inputMode="decimal"
+                    disabled={disabled}
+                    placeholder="—"
+                    title="Optional"
+                  />
+                </label>
+              ) : null}
+            </div>
           ) : null}
         </div>
 
         {useSetNotes ? (
-          <label className="mt-2" style={{ display: "grid", gap: 6, fontWeight: 600 }}>
-            Notes <span className="muted small">(optional)</span>
+          <label className="session-set-notes-field mt-2">
+            <span className="session-set-field-label session-set-field-label--secondary">Notes</span>
             <input
               id={fieldIds.notes}
               value={draft.notes}
@@ -1296,15 +1585,10 @@ const SessionSetRow = memo(function SessionSetRow({
               onBlur={flushNow}
               enterKeyHint="done"
               disabled={disabled}
-              placeholder="—"
+              placeholder="Optional"
+              title="Optional"
             />
           </label>
-        ) : null}
-
-        {!disabled ? (
-          <p className="muted small session-set-autosave-hint" style={{ margin: "8px 0 0" }}>
-            Saves automatically after you pause typing or leave a field.
-          </p>
         ) : null}
       </WorkoutSetRowShell>
     </div>

@@ -94,7 +94,7 @@ export function MyTemplatesPage() {
       const active = pickLatestActiveSession(sessions);
       if (active) {
         setError(
-          `You already have “${sessionDisplayTitle(active)}” in progress. Open it from Home or History and finish or delete it before starting another workout.`
+          `You already have “${sessionDisplayTitle(active)}” in progress. Open it from Workout or History and finish or delete it before starting another workout.`
         );
         return;
       }
@@ -200,14 +200,14 @@ export function MyTemplatesPage() {
   function onSetCurrentWorkout(t) {
     writeCurrentProgram({ kind: "workout", id: t.id, name: t.name || "" });
     setError(null);
-    setSuccess("This workout is now your current program on Home.");
+    setSuccess("This workout is now your current program on Workout.");
     clearFeedbackSoon();
   }
 
   function onSetCurrentBlock(t) {
     writeCurrentProgram({ kind: "block", id: t.id, name: t.name || "" });
     setError(null);
-    setSuccess("This block is now your current program on Home.");
+    setSuccess("This block is now your current program on Workout.");
     clearFeedbackSoon();
   }
 
@@ -218,7 +218,7 @@ export function MyTemplatesPage() {
           <h1>Programs</h1>
           <p className="muted">
             Reusable workouts and blocks you own, plus community programs to clone. Logging a live
-            session happens from <Link to="/">Home</Link> (Log workout); completed sessions stay in{" "}
+            session happens from <Link to="/">Workout</Link>; completed sessions stay in{" "}
             <Link to="/sessions">History</Link>.
           </p>
         </div>
@@ -263,7 +263,7 @@ export function MyTemplatesPage() {
             </h2>
             <p className="muted small" style={{ margin: 0 }}>
               Drafts are separated by type: multi-week blocks vs single reusable workouts. Nothing here
-              is a performed session until you log one from Home.
+              is a performed session until you log one from Workout.
             </p>
             <div className="row programs-create-card__actions" style={{ flexWrap: "wrap", gap: "10px" }}>
               <Link className="btn programs-create-primary" to="/create-template?type=block">
@@ -420,7 +420,7 @@ export function MyTemplatesPage() {
                           Exercises: {Array.isArray(t.exercises) ? t.exercises.length : 0}
                         </span>
                         {currentProgram?.kind === "workout" && currentProgram.id === t.id ? (
-                          <span className="pill programs-current-pill">Current on Home</span>
+                          <span className="pill programs-current-pill">Current</span>
                         ) : null}
                       </div>
                     </div>
@@ -511,7 +511,7 @@ export function MyTemplatesPage() {
                         <span className="pill">{t.isPublic ? "Public" : "Private"}</span>
                         <span className="pill muted">{formatBlockTemplateSummary(t)}</span>
                         {currentProgram?.kind === "block" && currentProgram.id === t.id ? (
-                          <span className="pill programs-current-pill">Current on Home</span>
+                          <span className="pill programs-current-pill">Current</span>
                         ) : null}
                       </div>
                     </div>

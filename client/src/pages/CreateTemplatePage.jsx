@@ -291,7 +291,8 @@ export function CreateTemplatePage() {
           <div>
             <h1>New workout</h1>
             <p className="muted">
-              Build exercises and sets, then save a reusable workout to your library.               For a one-time session only, use <strong>Log workout</strong> on Home.
+              Build exercises and sets, then save a reusable workout to your library. For a one-time
+              session only, use <strong>Start workout</strong> on the Workout tab.
             </p>
           </div>
           <button type="button" className="btn btn-secondary" onClick={resetFlow}>
