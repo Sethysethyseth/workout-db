@@ -116,7 +116,12 @@ function logout(req, res, next) {
         return next(err);
       }
 
-      res.clearCookie("workoutdb.sid");
+      const isProduction = process.env.NODE_ENV === "production";
+      // Must match cookie attributes so browsers actually clear it in production.
+      res.clearCookie("workoutdb.sid", {
+        secure: isProduction,
+        sameSite: isProduction ? "none" : "lax",
+      });
       return res.sendStatus(204);
     });
   } catch (err) {

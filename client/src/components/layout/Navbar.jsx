@@ -105,6 +105,17 @@ export function Navbar() {
               >
                 History
               </NavLink>
+              <NavLink
+                to="/hello"
+                onClick={(e) => {
+                  if (!liveSessionGuard) return;
+                  if (location.pathname.startsWith("/hello")) return;
+                  e.preventDefault();
+                  tryNavigate("/hello");
+                }}
+              >
+                Hello!
+              </NavLink>
               {canReviewFeedback ? (
                 <NavLink
                   to="/dev/feedback"

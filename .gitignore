@@ -1,10 +1,48 @@
-cookies.txt
-node_modules/
+# Environment files
 .env
-server/.env
+.env.*
+!.env.example
 client/.env
-client/.env.local
+client/.env.*
+!client/.env.example
+server/.env
+server/.env.*
+!server/.env.example
+
+# Dependencies
+node_modules/
 client/node_modules/
 server/node_modules/
+
+# Build outputs
 dist/
 build/
+client/dist/
+client/build/
+server/dist/
+
+# Test coverage
+coverage/
+
+# Logs
+*.log
+
+# Local tooling / editor
+.vscode/
+.idea/
+.DS_Store
+
+# Deployment/tool caches
+.vercel/
+.netlify/
+.render/
+.cursor/
+.turbo/
+.cache/
+server/node_modules/.cache/
+
+# Local scratch files
+cookies.txt
+
+# OS noise
+Thumbs.db

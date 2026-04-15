@@ -14,6 +14,7 @@ import { SessionDetailPage } from "./pages/SessionDetailPage.jsx";
 import { StartLogWorkoutPage } from "./pages/StartLogWorkoutPage.jsx";
 import { ProfilePage } from "./pages/ProfilePage.jsx";
 import { DevFeedbackPage } from "./pages/DevFeedbackPage.jsx";
+import { HelloPage } from "./pages/HelloPage.jsx";
 
 export default function App() {
   return (
@@ -100,6 +101,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <ProfilePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/hello"
+          element={
+            <ProtectedRoute>
+              <HelloPage />
             </ProtectedRoute>
           }
         />

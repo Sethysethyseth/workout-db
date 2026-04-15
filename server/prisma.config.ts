@@ -3,6 +3,12 @@
 import "dotenv/config";
 import { defineConfig } from "prisma/config";
 
+// Keep DIRECT_URL optional locally/tests: if not set, fall back to DATABASE_URL.
+// In production on Neon, you can still set DIRECT_URL to the non-pooled connection.
+if (!process.env["DIRECT_URL"] && process.env["DATABASE_URL"]) {
+  process.env["DIRECT_URL"] = process.env["DATABASE_URL"];
+}
+
 export default defineConfig({
   schema: "prisma/schema.prisma",
   migrations: {

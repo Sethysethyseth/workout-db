@@ -12,6 +12,10 @@ router.get("/", (req, res) => {
   res.json({ message: "WorkoutDB API running" });
 });
 
+router.get("/health", (req, res) => {
+  res.json({ status: "ok" });
+});
+
 router.use("/auth", authRoutes);
 router.use("/exercises", exerciseRoutes);
 router.use("/templates", templateRoutes);
