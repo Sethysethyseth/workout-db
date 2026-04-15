@@ -10,7 +10,7 @@ export function QuickPickTemplates({ templates, loading, disabled, startingTempl
         <h2 id="quick-pick-heading" className="quick-pick-templates__title">
           Quick picks
         </h2>
-        <span className="quick-pick-templates__hint muted small">Tap to start</span>
+        <span className="quick-pick-templates__hint muted small">From your library</span>
       </div>
       {loading ? (
         <p className="muted small" style={{ margin: 0 }}>

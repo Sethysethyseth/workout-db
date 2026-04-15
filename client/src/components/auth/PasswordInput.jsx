@@ -26,7 +26,7 @@ export function PasswordInput({
         />
         <button
           type="button"
-          className="btn btn-secondary password-toggle"
+          className="btn-show-password"
           onClick={() => setVisible((v) => !v)}
           aria-label={visible ? "Hide password" : "Show password"}
         >

@@ -13,6 +13,7 @@ import { SessionsPage } from "./pages/SessionsPage.jsx";
 import { SessionDetailPage } from "./pages/SessionDetailPage.jsx";
 import { StartLogWorkoutPage } from "./pages/StartLogWorkoutPage.jsx";
 import { ProfilePage } from "./pages/ProfilePage.jsx";
+import { DevFeedbackPage } from "./pages/DevFeedbackPage.jsx";
 
 export default function App() {
   return (
@@ -99,6 +100,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <ProfilePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dev/feedback"
+          element={
+            <ProtectedRoute>
+              <DevFeedbackPage />
             </ProtectedRoute>
           }
         />

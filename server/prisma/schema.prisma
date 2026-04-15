@@ -16,6 +16,21 @@ model User {
   workoutTemplates WorkoutTemplate[]
   blockTemplates   BlockTemplate[]
   workoutSessions  WorkoutSession[]
+  feedback         Feedback[]
+}
+
+model Feedback {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category  String
+  message   String
+  pagePath  String?
+  theme     String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
 }
 
 model WorkoutTemplate {
@@ -73,6 +88,8 @@ model WorkoutSession {
   performedAt       DateTime          @default(now())
   startedAt         DateTime          @default(now())
   completedAt       DateTime?
+  /** Display name for quick-log sessions; template-based sessions use the template name. */
+  name              String?
   notes             String?
   createdAt         DateTime          @default(now())
   userId            String

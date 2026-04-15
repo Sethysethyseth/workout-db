@@ -24,12 +24,12 @@ export class ApiError extends Error {
   }
 }
 
-export async function http(path, { method = "GET", body, headers } = {}) {
+export async function http(path, { method = "GET", body, headers, credentials = "include" } = {}) {
   const url = `${BASE_URL}${path}`;
 
   const res = await fetch(url, {
     method,
-    credentials: "include",
+    credentials,
     headers: {
       ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
       ...(headers || {}),

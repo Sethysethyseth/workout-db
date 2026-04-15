@@ -18,16 +18,24 @@ export function AuthProvider({ children }) {
   const [authLoading, setAuthLoading] = useState(true);
   /** Bumped when a newer auth operation should win over in-flight /auth/me. */
   const authEpochRef = useRef(0);
+  /** True while tearing down the server session so no /auth/me result re-applies a user. */
+  const loggingOutRef = useRef(false);
 
   const refreshSession = useCallback(async () => {
+    if (loggingOutRef.current) {
+      setAuthLoading(false);
+      return null;
+    }
     const epoch = ++authEpochRef.current;
     try {
       const data = await authApi.me();
-      if (authEpochRef.current !== epoch) return data.user;
+      if (loggingOutRef.current || authEpochRef.current !== epoch) {
+        return data?.user ?? null;
+      }
       setCurrentUser(data.user);
       return data.user;
     } catch (err) {
-      if (authEpochRef.current !== epoch) {
+      if (loggingOutRef.current || authEpochRef.current !== epoch) {
         return null;
       }
       if (err instanceof ApiError && err.status === 401) {
@@ -37,7 +45,9 @@ export function AuthProvider({ children }) {
       setCurrentUser(null);
       return null;
     } finally {
-      setAuthLoading(false);
+      if (!loggingOutRef.current) {
+        setAuthLoading(false);
+      }
     }
   }, []);
 
@@ -86,9 +96,18 @@ export function AuthProvider({ children }) {
   }, []);
 
   const logout = useCallback(async () => {
+    loggingOutRef.current = true;
     authEpochRef.current += 1;
-    await authApi.logout();
     setCurrentUser(null);
+    setAuthLoading(false);
+    try {
+      await authApi.logout();
+    } catch {
+      // Still logged out locally; cookie may already be gone or network failed.
+    } finally {
+      authEpochRef.current += 1;
+      loggingOutRef.current = false;
+    }
   }, []);
 
   const value = useMemo(

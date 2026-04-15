@@ -13,6 +13,7 @@ import { ErrorMessage } from "../components/ErrorMessage.jsx";
 import { LoadingState } from "../components/LoadingState.jsx";
 import { ExerciseNameInput } from "../components/templates/ExerciseNameInput.jsx";
 import { PlanningSetCountControl } from "../components/templates/PlanningSetCountControl.jsx";
+import { RirRpeToggleRow } from "../components/templates/RirRpeToggleRow.jsx";
 import { ViewModeToggle } from "../components/templates/ViewModeToggle.jsx";
 import { WorkoutTemplateTableView } from "../components/templates/WorkoutTemplateTableView.jsx";
 import { WorkoutSetRowShell } from "../components/workout/WorkoutSetRowShell.jsx";
@@ -502,7 +503,7 @@ export function SessionDetailPage() {
   const [liveUseSessionNotes, setLiveUseSessionNotes] = useState(false);
   const [liveUseExerciseNotes, setLiveUseExerciseNotes] = useState(false);
   const [liveUseSetNotes, setLiveUseSetNotes] = useState(false);
-  const [quickTitleDraft, setQuickTitleDraft] = useState("Quick workout");
+  const [quickTitleDraft, setQuickTitleDraft] = useState("");
   const [scrollToExerciseId, setScrollToExerciseId] = useState(null);
   const [adjustingSetCountExerciseId, setAdjustingSetCountExerciseId] = useState(null);
   const [completeBusy, setCompleteBusy] = useState(false);
@@ -556,6 +557,16 @@ export function SessionDetailPage() {
   const activeExerciseInitRef = useRef(false);
   const prevFocusedNextSetRef = useRef(null);
   const { setActive: setLiveLoggingGuard } = useSessionLiveLoggingGuard();
+  const lastUserScrollAtRef = useRef(0);
+  const lastViewportShiftAtRef = useRef(0);
+
+  function isElementInViewport(el, { padTop = 0, padBottom = 0 } = {}) {
+    if (!el) return false;
+    const r = el.getBoundingClientRect();
+    const vh = window.innerHeight || document.documentElement.clientHeight || 0;
+    if (!vh) return false;
+    return r.top >= 0 + padTop && r.bottom <= vh - padBottom;
+  }
 
   const tableExercises = useMemo(() => {
     const ex = session?.sessionExercises;
@@ -662,6 +673,29 @@ export function SessionDetailPage() {
   }, [session, session?.completedAt]);
 
   useEffect(() => {
+    function markScroll() {
+      lastUserScrollAtRef.current = Date.now();
+    }
+    function markViewportShift() {
+      lastViewportShiftAtRef.current = Date.now();
+    }
+    window.addEventListener("wheel", markScroll, { passive: true });
+    window.addEventListener("touchmove", markScroll, { passive: true });
+    window.addEventListener("scroll", markScroll, { passive: true });
+    window.addEventListener("keydown", markScroll, { passive: true });
+    window.visualViewport?.addEventListener("resize", markViewportShift, { passive: true });
+    window.visualViewport?.addEventListener("scroll", markViewportShift, { passive: true });
+    return () => {
+      window.removeEventListener("wheel", markScroll);
+      window.removeEventListener("touchmove", markScroll);
+      window.removeEventListener("scroll", markScroll);
+      window.removeEventListener("keydown", markScroll);
+      window.visualViewport?.removeEventListener("resize", markViewportShift);
+      window.visualViewport?.removeEventListener("scroll", markViewportShift);
+    };
+  }, []);
+
+  useEffect(() => {
     if (nextIncompleteOwnerExerciseId == null) return;
     if (!session || session.completedAt) return;
     setCollapsedExerciseIds((prev) => {
@@ -678,8 +712,20 @@ export function SessionDetailPage() {
     prevFocusedNextSetRef.current = nextIncompleteSetId;
     requestAnimationFrame(() => {
       const el = document.querySelector(`[data-session-set-id="${nextIncompleteSetId}"]`);
+      if (!el) return;
+
+      // Only assist when it clearly helps; avoid fighting active scrolling/viewport shifts (keyboard).
+      const now = Date.now();
+      const msSinceScroll = now - (lastUserScrollAtRef.current || 0);
+      const msSinceViewportShift = now - (lastViewportShiftAtRef.current || 0);
+      if (msSinceScroll < 900) return;
+      if (msSinceViewportShift < 700) return;
+
+      // If already visible, do nothing (prevents "jumping" when the user is on the right spot).
+      if (isElementInViewport(el, { padTop: 72, padBottom: 120 })) return;
+
       /* auto: avoid competing with smooth scroll while the user is already focusing inputs */
-      el?.scrollIntoView({ block: "nearest", behavior: "auto" });
+      el.scrollIntoView({ block: "nearest", behavior: "auto" });
     });
   }, [nextIncompleteSetId]);
 
@@ -702,8 +748,9 @@ export function SessionDetailPage() {
 
   useEffect(() => {
     if (!session || session.workoutTemplate) return;
-    setQuickTitleDraft(getAdHocSessionTitle(session.id) || "Quick workout");
-  }, [session, session?.id, session?.workoutTemplate]);
+    const fromServer = session.name != null ? String(session.name).trim() : "";
+    setQuickTitleDraft(fromServer || getAdHocSessionTitle(session.id) || "");
+  }, [session, session?.id, session?.name, session?.workoutTemplate]);
 
   useEffect(() => {
     if (!session || session.completedAt) {
@@ -724,11 +771,8 @@ export function SessionDetailPage() {
     }
 
     const p = loadQuickWorkoutLogPrefs();
-    setLiveUseSessionNotes(
-      typeof p.useSessionNotes === "boolean"
-        ? p.useSessionNotes
-        : Boolean(String(session.notes ?? "").trim())
-    );
+    setLiveUseSessionNotes(false);
+    saveQuickWorkoutLogPrefs({ useSessionNotes: false });
     setLiveUseExerciseNotes(
       typeof p.useExerciseNotes === "boolean" ? p.useExerciseNotes : true
     );
@@ -761,7 +805,12 @@ export function SessionDetailPage() {
     setError(null);
     setCompleteBusy(true);
     try {
-      await sessionApi.completeSession(sessionId);
+      const payload =
+        session && !session.workoutTemplate ? { name: quickTitleDraft.trim() } : {};
+      await sessionApi.completeSession(sessionId, payload);
+      if (session && !session.workoutTemplate) {
+        setAdHocSessionTitle(sessionId, "");
+      }
       navigate("/", { replace: true, state: { workoutSaved: true } });
     } catch (err) {
       setError(err);
@@ -1012,11 +1061,28 @@ export function SessionDetailPage() {
   const totalSetsLogged = Array.isArray(session?.sets) ? session.sets.length : 0;
   const canFinishWorkout = totalSetsLogged >= 1;
   const workoutTitle = session ? sessionDisplayTitle(session) : "Workout";
-  const readonlyWorkoutName = isFromTemplate ? session.workoutTemplate.name : "Quick workout";
+  const readonlyWorkoutName = isFromTemplate
+    ? session.workoutTemplate.name
+    : sessionDisplayTitle(session);
 
-  function commitQuickTitle() {
+  async function commitQuickTitle() {
     if (!session || session.workoutTemplate || session.completedAt) return;
-    setAdHocSessionTitle(sessionId, quickTitleDraft);
+    const trimmed = quickTitleDraft.trim();
+    const prev = (session.name ?? "").trim();
+    if (trimmed === prev) return;
+    setError(null);
+    try {
+      const data = await sessionApi.updateSession(sessionId, { name: trimmed || null });
+      if (data?.session) {
+        setSession(data.session);
+        setAdHocSessionTitle(sessionId, "");
+      } else {
+        await load();
+      }
+    } catch (err) {
+      setError(err);
+      setQuickTitleDraft(prev || getAdHocSessionTitle(sessionId) || "");
+    }
   }
 
   function goBackFromSession() {
@@ -1074,19 +1140,18 @@ export function SessionDetailPage() {
               <input
                 value={quickTitleDraft}
                 onChange={(e) => setQuickTitleDraft(e.target.value)}
-                onBlur={() => commitQuickTitle()}
-                placeholder="Quick workout"
+                onBlur={() => void commitQuickTitle()}
               />
             )}
           </label>
           {!isFromTemplate ? (
             <p className="muted small" style={{ margin: "-4px 0 0" }}>
-              Shown in History for this session. Saved workouts keep the template name (stored on
-              this device only).
+              Shown in History. Leave blank for an automatic dated name. Template workouts use the
+              template name.
             </p>
           ) : null}
 
-          {liveUseSessionNotes ? (
+          {isFromTemplate && liveUseSessionNotes ? (
             <label>
               Description (optional)
               <textarea
@@ -1143,69 +1208,31 @@ export function SessionDetailPage() {
             </div>
           ) : (
             <div className="quick-log-display-prefs stack">
-              <div className="quick-log-display-prefs__intro muted small">
-                Choose what to show while logging. These choices are saved on this device for your next
-                quick workout.
-              </div>
+              <RirRpeToggleRow
+                useRIR={liveUseRIR}
+                useRPE={liveUseRPE}
+                onUseRIRChange={(next) => {
+                  setLiveUseRIR(next);
+                  saveQuickWorkoutLogPrefs({
+                    useRIR: next,
+                    useRPE: liveUseRPE,
+                    useExerciseNotes: liveUseExerciseNotes,
+                    useSessionNotes: false,
+                  });
+                }}
+                onUseRPEChange={(next) => {
+                  setLiveUseRPE(next);
+                  saveQuickWorkoutLogPrefs({
+                    useRIR: liveUseRIR,
+                    useRPE: next,
+                    useExerciseNotes: liveUseExerciseNotes,
+                    useSessionNotes: false,
+                  });
+                }}
+              />
               <div className="quick-log-display-prefs__group stack">
-                <div className="quick-log-display-prefs__label muted small">Per set</div>
+                <div className="quick-log-display-prefs__label muted small">Exercise</div>
                 <div className="quick-log-toggle-row row">
-                  <button
-                    type="button"
-                    className={`quick-log-toggle ${liveUseRIR ? "quick-log-toggle--on" : ""}`}
-                    aria-pressed={liveUseRIR}
-                    onClick={() => {
-                      const next = !liveUseRIR;
-                      setLiveUseRIR(next);
-                      saveQuickWorkoutLogPrefs({
-                        useRIR: next,
-                        useRPE: liveUseRPE,
-                        useSessionNotes: liveUseSessionNotes,
-                        useExerciseNotes: liveUseExerciseNotes,
-                      });
-                    }}
-                  >
-                    RIR
-                  </button>
-                  <button
-                    type="button"
-                    className={`quick-log-toggle ${liveUseRPE ? "quick-log-toggle--on" : ""}`}
-                    aria-pressed={liveUseRPE}
-                    onClick={() => {
-                      const next = !liveUseRPE;
-                      setLiveUseRPE(next);
-                      saveQuickWorkoutLogPrefs({
-                        useRIR: liveUseRIR,
-                        useRPE: next,
-                        useSessionNotes: liveUseSessionNotes,
-                        useExerciseNotes: liveUseExerciseNotes,
-                      });
-                    }}
-                  >
-                    RPE
-                  </button>
-                </div>
-              </div>
-              <div className="quick-log-display-prefs__group stack">
-                <div className="quick-log-display-prefs__label muted small">Workout & exercise</div>
-                <div className="quick-log-toggle-row row">
-                  <button
-                    type="button"
-                    className={`quick-log-toggle ${liveUseSessionNotes ? "quick-log-toggle--on" : ""}`}
-                    aria-pressed={liveUseSessionNotes}
-                    onClick={() => {
-                      const next = !liveUseSessionNotes;
-                      setLiveUseSessionNotes(next);
-                      saveQuickWorkoutLogPrefs({
-                        useRIR: liveUseRIR,
-                        useRPE: liveUseRPE,
-                        useSessionNotes: next,
-                        useExerciseNotes: liveUseExerciseNotes,
-                      });
-                    }}
-                  >
-                    Description
-                  </button>
                   <button
                     type="button"
                     className={`quick-log-toggle ${liveUseExerciseNotes ? "quick-log-toggle--on" : ""}`}
@@ -1216,8 +1243,8 @@ export function SessionDetailPage() {
                       saveQuickWorkoutLogPrefs({
                         useRIR: liveUseRIR,
                         useRPE: liveUseRPE,
-                        useSessionNotes: liveUseSessionNotes,
                         useExerciseNotes: next,
+                        useSessionNotes: false,
                       });
                     }}
                   >
@@ -1321,10 +1348,12 @@ export function SessionDetailPage() {
             <input readOnly value={workoutTitle} className="session-readonly-input" />
           </label>
 
-          <label>
-            Description (optional)
-            <textarea readOnly value={session.notes ?? ""} placeholder="—" />
-          </label>
+          {isFromTemplate ? (
+            <label>
+              Description (optional)
+              <textarea readOnly value={session.notes ?? ""} placeholder="—" />
+            </label>
+          ) : null}
 
           <div className="stack session-completed-blocks">
             {sessionExercises.map((se) => {

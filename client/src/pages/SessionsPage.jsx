@@ -45,16 +45,13 @@ export function SessionsPage() {
   }, [sessions]);
 
   return (
-    <div className="stack">
+    <div className="stack sessions-page">
       <div className="row">
         <div>
           <h1>History</h1>
-          <p className="muted">
-            Your logbook: every session you have started or completed. Reusable plans live under{" "}
-            <Link to="/templates">Programs</Link>.
-          </p>
+          <p className="muted sessions-intro">Started and completed sessions.</p>
         </div>
-        <button className="btn btn-secondary" onClick={load} disabled={loading}>
+        <button className="btn btn-secondary btn--toolbar" type="button" onClick={load} disabled={loading}>
           Refresh
         </button>
       </div>
@@ -65,8 +62,7 @@ export function SessionsPage() {
       {!loading && sessions.length === 0 ? (
         <div className="card stack">
           <p className="muted" style={{ margin: 0 }}>
-            Nothing logged yet. On <Link to="/">Workout</Link>, start a session to begin
-            right away, or start from a saved workout for a structured session.
+            Nothing yet. Open <Link to="/">Workout</Link> to start, or pick a saved program.
           </p>
         </div>
       ) : null}

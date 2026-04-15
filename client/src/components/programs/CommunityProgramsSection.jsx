@@ -112,12 +112,24 @@ export function CommunityProgramsSection() {
     <div className="stack">
       <div className="row" style={{ flexWrap: "wrap", gap: "8px", alignItems: "center" }}>
         <p className="muted" style={{ margin: 0, flex: "1 1 240px" }}>
-          Shared by other users. Clone a block or workout into your library, or start a live session
-          from a public workout.
+          Public programs from other users—clone to your library or start a workout session.
         </p>
-        <button className="btn btn-secondary" type="button" onClick={load} disabled={loading || busy}>
+        <button
+          className="btn btn-secondary btn--toolbar"
+          type="button"
+          onClick={load}
+          disabled={loading || busy}
+        >
           Refresh
         </button>
+      </div>
+
+      <div className="card" role="note">
+        <strong>Beta</strong>
+        <p className="muted small" style={{ margin: "6px 0 0" }}>
+          Community sharing is still in progress. You may see limited results while we build out public
+          programs and discovery.
+        </p>
       </div>
 
       <ErrorMessage error={error} />

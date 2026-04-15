@@ -27,10 +27,11 @@ export function getSessionById(id) {
   return http(`/sessions/${id}`);
 }
 
-export function updateSession(id, { notes, performedAt }) {
+export function updateSession(id, { notes, performedAt, name }) {
   const body = {};
   if (notes !== undefined) body.notes = notes;
   if (performedAt !== undefined) body.performedAt = performedAt;
+  if (name !== undefined) body.name = name;
   return http(`/sessions/${id}`, { method: "PATCH", body });
 }
 
@@ -38,8 +39,11 @@ export function deleteSession(id) {
   return http(`/sessions/${id}`, { method: "DELETE" });
 }
 
-export function completeSession(id) {
-  return http(`/sessions/${id}/complete`, { method: "POST" });
+export function completeSession(id, body = undefined) {
+  return http(`/sessions/${id}/complete`, {
+    method: "POST",
+    ...(body !== undefined ? { body } : {}),
+  });
 }
 
 export function createSet(sessionId, payload) {

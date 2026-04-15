@@ -1,13 +1,17 @@
+import { defaultWorkoutSessionName } from "./defaultWorkoutSessionName.js";
 import { getAdHocSessionTitle } from "./adHocSessionTitle.js";
 import { isBlankSessionExerciseName } from "./sessionExerciseName.js";
 
 /** User-facing title for a session row (template-based or ad hoc). */
 export function sessionDisplayTitle(session) {
-  const name = session?.workoutTemplate?.name?.trim();
-  if (name) return name;
-  const custom = session?.id != null ? getAdHocSessionTitle(session.id) : null;
-  if (custom) return custom;
-  return "Quick workout";
+  const templateName = session?.workoutTemplate?.name?.trim();
+  if (templateName) return templateName;
+  const stored = session?.name != null ? String(session.name).trim() : "";
+  if (stored) return stored;
+  const legacy = session?.id != null ? getAdHocSessionTitle(session.id) : null;
+  if (legacy) return legacy;
+  const when = session?.startedAt || session?.performedAt || session?.completedAt;
+  return defaultWorkoutSessionName(when);
 }
 
 /** Best timestamp for “when this session mattered” (completed > performed > started). */

@@ -9,7 +9,7 @@ export function login({ email, password }) {
 }
 
 export async function logout() {
-  await http("/auth/logout", { method: "POST" });
+  await http("/auth/logout", { method: "POST", credentials: "include" });
 }
 
 export function me() {

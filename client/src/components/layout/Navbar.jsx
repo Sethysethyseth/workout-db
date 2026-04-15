@@ -1,6 +1,5 @@
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext.jsx";
-import { ApiError } from "../../api/http.js";
 import { useSessionLiveLoggingGuard } from "../../context/SessionLiveLoggingGuardContext.jsx";
 import { confirmLeaveLiveSession } from "../../lib/confirmLeaveLiveSession.js";
 
@@ -8,11 +7,22 @@ function isSessionDetailPath(pathname) {
   return /^\/sessions\/[^/]+$/.test(pathname);
 }
 
+function parseReviewerEmails(raw) {
+  if (!raw || typeof raw !== "string") return [];
+  return raw
+    .split(",")
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean);
+}
+
 export function Navbar() {
-  const { currentUser, logout } = useAuth();
+  const { currentUser } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { isActive: liveSessionGuard } = useSessionLiveLoggingGuard();
+  const reviewerEmails = parseReviewerEmails(import.meta.env.VITE_FEEDBACK_REVIEWER_EMAILS);
+  const canReviewFeedback =
+    !!currentUser?.email && reviewerEmails.includes(String(currentUser.email).toLowerCase());
 
   function tryNavigate(to, { replace = false } = {}) {
     if (liveSessionGuard) {
@@ -26,35 +36,38 @@ export function Navbar() {
     navigate(to, { replace });
   }
 
-  async function onLogout() {
-    if (liveSessionGuard && !confirmLeaveLiveSession()) return;
-    try {
-      await logout();
-    } catch (err) {
-      if (err instanceof ApiError && err.status === 401) {
-        // already logged out
-      }
-    } finally {
-      navigate("/login");
-    }
-  }
-
   return (
     <header className="nav">
       <div className="container nav-inner">
-        <div className="brand">
-          <Link
-            to="/"
-            onClick={(e) => {
-              if (!liveSessionGuard || location.pathname === "/") return;
-              e.preventDefault();
-              tryNavigate("/");
-            }}
-          >
-            WorkoutDB beta
-          </Link>
+        <div className="nav-top">
+          <div className="brand brand--subtle">
+            <Link
+              to="/"
+              onClick={(e) => {
+                if (!liveSessionGuard || location.pathname === "/") return;
+                e.preventDefault();
+                tryNavigate("/");
+              }}
+            >
+              WorkoutDB beta
+            </Link>
+          </div>
+          {currentUser ? (
+            <Link
+              className="nav-profile-link"
+              to="/profile"
+              onClick={(e) => {
+                if (!liveSessionGuard) return;
+                if (location.pathname.startsWith("/profile")) return;
+                e.preventDefault();
+                tryNavigate("/profile");
+              }}
+            >
+              Profile
+            </Link>
+          ) : null}
         </div>
-        <nav className="links">
+        <nav className="links nav-main-links" aria-label="Main">
           {currentUser ? (
             <>
               <NavLink
@@ -92,20 +105,19 @@ export function Navbar() {
               >
                 History
               </NavLink>
-              <NavLink
-                to="/profile"
-                onClick={(e) => {
-                  if (!liveSessionGuard) return;
-                  if (location.pathname.startsWith("/profile")) return;
-                  e.preventDefault();
-                  tryNavigate("/profile");
-                }}
-              >
-                Profile
-              </NavLink>
-              <button className="btn btn-ghost" type="button" onClick={onLogout}>
-                Logout
-              </button>
+              {canReviewFeedback ? (
+                <NavLink
+                  to="/dev/feedback"
+                  onClick={(e) => {
+                    if (!liveSessionGuard) return;
+                    if (location.pathname.startsWith("/dev/feedback")) return;
+                    e.preventDefault();
+                    tryNavigate("/dev/feedback");
+                  }}
+                >
+                  Dev feedback
+                </NavLink>
+              ) : null}
             </>
           ) : (
             <>

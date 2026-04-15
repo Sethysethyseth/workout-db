@@ -1,4 +1,5 @@
 const prisma = require("../lib/prisma");
+const { defaultWorkoutSessionName } = require("../lib/defaultWorkoutSessionName");
 
 const FULL_SESSION_RELATIONS = {
   workoutTemplate: {
@@ -959,13 +960,22 @@ async function updateSession(req, res, next) {
       });
     }
 
-    const { notes: rawNotes, performedAt: rawPerformedAt } = req.body || {};
+    const { notes: rawNotes, performedAt: rawPerformedAt, name: rawName } = req.body || {};
 
     const data = {};
 
     if (rawNotes !== undefined) {
       data.notes =
         typeof rawNotes === "string" && rawNotes.trim() ? rawNotes.trim() : null;
+    }
+
+    if (rawName !== undefined) {
+      if (typeof rawName !== "string") {
+        return res.status(400).json({
+          error: "name must be a string when provided",
+        });
+      }
+      data.name = rawName.trim() ? rawName.trim() : null;
     }
 
     if (rawPerformedAt !== undefined) {
@@ -1000,6 +1010,7 @@ async function updateSession(req, res, next) {
       select: {
         id: true,
         completedAt: true,
+        workoutTemplateId: true,
       },
     });
 
@@ -1012,6 +1023,16 @@ async function updateSession(req, res, next) {
     if (existingSession.completedAt) {
       return res.status(400).json({
         error: "Completed sessions cannot be modified",
+      });
+    }
+
+    if (rawName !== undefined && existingSession.workoutTemplateId != null) {
+      delete data.name;
+    }
+
+    if (Object.keys(data).length === 0) {
+      return res.status(400).json({
+        error: "No fields to update",
       });
     }
 
@@ -1079,6 +1100,14 @@ async function completeSession(req, res, next) {
         id: sessionId,
         userId,
       },
+      select: {
+        id: true,
+        completedAt: true,
+        workoutTemplateId: true,
+        name: true,
+        performedAt: true,
+        startedAt: true,
+      },
     });
 
     if (!existingSession) {
@@ -1093,13 +1122,28 @@ async function completeSession(req, res, next) {
       });
     }
 
+    const body = req.body || {};
+    const updateData = {
+      completedAt: new Date(),
+    };
+
+    if (existingSession.workoutTemplateId == null) {
+      const fromBody =
+        typeof body.name === "string" && body.name.trim() ? body.name.trim() : "";
+      const fromDb =
+        existingSession.name != null && String(existingSession.name).trim()
+          ? String(existingSession.name).trim()
+          : "";
+      const chosen = fromBody || fromDb;
+      const anchor = existingSession.performedAt || existingSession.startedAt;
+      updateData.name = chosen || defaultWorkoutSessionName(anchor);
+    }
+
     const session = await prisma.workoutSession.update({
       where: {
         id: sessionId,
       },
-      data: {
-        completedAt: new Date(),
-      },
+      data: updateData,
       include: {
         workoutTemplate: {
           select: {

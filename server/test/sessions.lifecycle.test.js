@@ -1,5 +1,6 @@
 const request = require("supertest");
 const app = require("../src/app");
+const { defaultWorkoutSessionName } = require("../src/lib/defaultWorkoutSessionName");
 
 async function registerAndLogin(agent, { email, password }) {
   const res = await agent.post("/auth/register").send({ email, password });
@@ -132,6 +133,7 @@ describe("Session lifecycle + completed-session locking", () => {
       expect(res.body).toHaveProperty("session");
       expect(res.body.session).toHaveProperty("id", session.id);
       expect(res.body.session.completedAt).toBeTruthy();
+      expect(res.body.session.name).toBeNull();
     }
 
     // 7. after completion, PATCH /sessions/:id returns 400 with error
@@ -309,12 +311,78 @@ describe("Ad-hoc sessions and session exercises", () => {
     const done = await agent.post(`/sessions/${sessionId}/complete`).send();
     expect(done.status).toBe(200);
     expect(done.body.session.completedAt).toBeTruthy();
+    expect(done.body.session.name).toBe(
+      defaultWorkoutSessionName(created.body.session.startedAt)
+    );
 
     const blocked = await agent.post(`/sessions/${sessionId}/exercises`).send({
       exerciseName: "Too late",
     });
     expect(blocked.status).toBe(400);
     expect(blocked.body.error).toBe("Completed sessions cannot be modified");
+  });
+
+  test("adhoc PATCH name then complete without body keeps stored name", async () => {
+    const agent = request.agent(app);
+    await registerAndLogin(agent, {
+      email: "adhoc3@example.com",
+      password: "password123",
+    });
+
+    const created = await agent.post("/sessions").send({});
+    expect(created.status).toBe(201);
+    const sessionId = created.body.session.id;
+
+    const patch = await agent.patch(`/sessions/${sessionId}`).send({ name: "Push day" });
+    expect(patch.status).toBe(200);
+    expect(patch.body.session.name).toBe("Push day");
+
+    const addEx = await agent.post(`/sessions/${sessionId}/exercises`).send({
+      exerciseName: "Press",
+    });
+    expect(addEx.status).toBe(201);
+    const sessionExerciseId = addEx.body.sessionExercise.id;
+
+    await agent.post(`/sessions/${sessionId}/sets`).send({
+      sessionExerciseId,
+      order: 1,
+      reps: 8,
+      weight: 40,
+    });
+
+    const done = await agent.post(`/sessions/${sessionId}/complete`).send({});
+    expect(done.status).toBe(200);
+    expect(done.body.session.name).toBe("Push day");
+  });
+
+  test("adhoc complete trims name from POST body", async () => {
+    const agent = request.agent(app);
+    await registerAndLogin(agent, {
+      email: "adhoc4@example.com",
+      password: "password123",
+    });
+
+    const created = await agent.post("/sessions").send({});
+    expect(created.status).toBe(201);
+    const sessionId = created.body.session.id;
+
+    const addEx = await agent.post(`/sessions/${sessionId}/exercises`).send({
+      exerciseName: "Curl",
+    });
+    expect(addEx.status).toBe(201);
+    const sessionExerciseId = addEx.body.sessionExercise.id;
+    await agent.post(`/sessions/${sessionId}/sets`).send({
+      sessionExerciseId,
+      order: 1,
+      reps: 12,
+      weight: 15,
+    });
+
+    const done = await agent
+      .post(`/sessions/${sessionId}/complete`)
+      .send({ name: "  Arms finisher  " });
+    expect(done.status).toBe(200);
+    expect(done.body.session.name).toBe("Arms finisher");
   });
 });
 

@@ -8,7 +8,6 @@ import { QuickPickTemplates } from "../components/workout/QuickPickTemplates.jsx
 import { SecondaryActions } from "../components/workout/SecondaryActions.jsx";
 import { StartWorkoutHero } from "../components/workout/StartWorkoutHero.jsx";
 import { StartWorkoutPicker } from "../components/workout/StartWorkoutPicker.jsx";
-import { useAuth } from "../context/AuthContext.jsx";
 import { useActiveSession } from "../context/ActiveSessionContext.jsx";
 import { readCurrentProgram } from "../lib/currentProgramStorage.js";
 import { ACTIVE_WORKOUT_ERROR, startAdHocWorkoutAndNavigate } from "../lib/startAdHocWorkoutFlow.js";
@@ -27,7 +26,6 @@ function formatLoggedWhen(value) {
 }
 
 export function DashboardPage() {
-  const { currentUser } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const { sessions, activeSession, refresh, loading: sessionsLoading } = useActiveSession();
@@ -190,7 +188,9 @@ export function DashboardPage() {
       <SecondaryActions currentBlock={currentProgramRef?.kind === "block" ? currentProgramRef : null} />
 
       <p className="workout-tab__community muted small" style={{ margin: 0 }}>
-        <Link to="/templates?area=community">Community programs</Link>
+        <Link to="/templates?area=community" className="workout-tab__community-link">
+          Community programs (beta)
+        </Link>
       </p>
 
       <section className="card stack workout-tab-history" aria-labelledby="workout-history-heading">
@@ -198,7 +198,7 @@ export function DashboardPage() {
           <h2 id="workout-history-heading" className="workout-tab-history__title">
             Recently logged
           </h2>
-          <Link className="btn btn-secondary btn--compact" to="/sessions">
+          <Link className="btn btn-ghost btn--compact btn--quiet-history" to="/sessions">
             History
           </Link>
         </div>
@@ -229,10 +229,6 @@ export function DashboardPage() {
           </ul>
         )}
       </section>
-
-      <p className="muted small workout-tab__account" style={{ margin: 0 }}>
-        {currentUser?.email}
-      </p>
 
       <StartWorkoutPicker
         open={pickerOpen && !hasActive}

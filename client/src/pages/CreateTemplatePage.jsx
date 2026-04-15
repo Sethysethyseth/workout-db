@@ -5,6 +5,7 @@ import * as blockTemplateApi from "../api/blockTemplateApi.js";
 import { ErrorMessage } from "../components/ErrorMessage.jsx";
 import { BlockTemplateTableView } from "../components/templates/BlockTemplateTableView.jsx";
 import { BlockWeeksBuilder } from "../components/templates/BlockWeeksBuilder.jsx";
+import { RirRpeToggleRow } from "../components/templates/RirRpeToggleRow.jsx";
 import { ViewModeToggle } from "../components/templates/ViewModeToggle.jsx";
 import { WorkoutBuilder } from "../components/templates/WorkoutBuilder.jsx";
 import { WorkoutTemplateTableView } from "../components/templates/WorkoutTemplateTableView.jsx";
@@ -321,14 +322,16 @@ export function CreateTemplatePage() {
 
           <label style={{ fontWeight: 600 }}>
             <span>Public</span>
-            <div className="row">
+            <label className="checkbox-inline" style={{ fontWeight: 600 }}>
               <input
                 type="checkbox"
                 checked={isPublic}
                 onChange={(e) => setIsPublic(e.target.checked)}
               />
-              <span className="muted small">Visible to others for clone/start.</span>
-            </div>
+              <span className="muted small">
+                Visible to others for clone/start. <strong>Beta:</strong> community sharing is still in progress.
+              </span>
+            </label>
           </label>
 
           <div className="template-options-grid">
@@ -356,22 +359,15 @@ export function CreateTemplatePage() {
               />
               <span>Set notes</span>
             </label>
-            <label className="checkbox-inline">
-              <input
-                type="checkbox"
-                checked={useRIR}
-                onChange={(e) => setUseRIR(e.target.checked)}
-              />
-              <span>Use RIR on sets</span>
-            </label>
-            <label className="checkbox-inline">
-              <input
-                type="checkbox"
-                checked={useRPE}
-                onChange={(e) => setUseRPE(e.target.checked)}
-              />
-              <span>Use RPE on sets</span>
-            </label>
+          </div>
+
+          <div className="quick-log-display-prefs stack">
+            <RirRpeToggleRow
+              useRIR={useRIR}
+              useRPE={useRPE}
+              onUseRIRChange={setUseRIR}
+              onUseRPEChange={setUseRPE}
+            />
           </div>
 
           <ViewModeToggle value={workoutViewMode} onChange={setWorkoutViewMode} />
@@ -453,14 +449,16 @@ export function CreateTemplatePage() {
 
           <label style={{ fontWeight: 600 }}>
             <span>Public</span>
-            <div className="row">
+            <label className="checkbox-inline" style={{ fontWeight: 600 }}>
               <input
                 type="checkbox"
                 checked={blockIsPublic}
                 onChange={(e) => setBlockIsPublic(e.target.checked)}
               />
-              <span className="muted small">Visible to others for clone.</span>
-            </div>
+              <span className="muted small">
+                Visible to others for clone. <strong>Beta:</strong> community sharing is still in progress.
+              </span>
+            </label>
           </label>
 
           <div className="template-options-grid">
@@ -488,22 +486,20 @@ export function CreateTemplatePage() {
               />
               <span>Set notes</span>
             </label>
-            <label className="checkbox-inline">
-              <input
-                type="checkbox"
-                checked={blockUseRIR}
-                onChange={(e) => setBlockUseRIR(e.target.checked)}
-              />
-              <span>Use RIR on sets</span>
-            </label>
-            <label className="checkbox-inline">
-              <input
-                type="checkbox"
-                checked={blockUseRPE}
-                onChange={(e) => setBlockUseRPE(e.target.checked)}
-              />
-              <span>Use RPE on sets</span>
-            </label>
+          </div>
+
+          <div className="template-options-grid">
+            <RirRpeToggleRow
+              useRIR={blockUseRIR}
+              useRPE={blockUseRPE}
+              onUseRIRChange={setBlockUseRIR}
+              onUseRPEChange={setBlockUseRPE}
+              sectionLabel="Set intensity"
+              variant="compact"
+            />
+          </div>
+
+          <div className="template-options-grid">
             <label className="checkbox-inline">
               <input
                 type="checkbox"

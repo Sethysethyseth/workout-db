@@ -212,32 +212,28 @@ export function MyTemplatesPage() {
   }
 
   return (
-    <div className="stack">
+    <div className="stack programs-page">
       <div className="row">
         <div>
           <h1>Programs</h1>
-          <p className="muted">
-            Reusable workouts and blocks you own, plus community programs to clone. Logging a live
-            session happens from <Link to="/">Workout</Link>; completed sessions stay in{" "}
-            <Link to="/sessions">History</Link>.
-          </p>
+          <p className="muted programs-intro">Your workouts, blocks, and community programs.</p>
         </div>
-        <button className="btn btn-secondary" type="button" onClick={load} disabled={loading || busy}>
+        <button
+          className="btn btn-secondary btn--toolbar"
+          type="button"
+          onClick={load}
+          disabled={loading || busy}
+        >
           Refresh
         </button>
       </div>
 
-      <div
-        className="programs-tablist row"
-        role="tablist"
-        aria-label="Programs scope"
-        style={{ flexWrap: "wrap", gap: "8px" }}
-      >
+      <div className="programs-scope-switch" role="tablist" aria-label="Programs scope">
         <button
           type="button"
           role="tab"
           aria-selected={area === "yours"}
-          className={`btn btn-secondary programs-tab${area === "yours" ? " programs-tab--active" : ""}`}
+          className={`programs-scope-tab${area === "yours" ? " programs-scope-tab--active" : ""}`}
           onClick={() => setArea("yours")}
         >
           Your library
@@ -246,10 +242,10 @@ export function MyTemplatesPage() {
           type="button"
           role="tab"
           aria-selected={area === "community"}
-          className={`btn btn-secondary programs-tab${area === "community" ? " programs-tab--active" : ""}`}
+          className={`programs-scope-tab${area === "community" ? " programs-scope-tab--active" : ""}`}
           onClick={() => setArea("community")}
         >
-          Community
+          Community <span className="muted small" aria-hidden="true">(beta)</span>
         </button>
       </div>
 
@@ -262,8 +258,7 @@ export function MyTemplatesPage() {
               Create programs
             </h2>
             <p className="muted small" style={{ margin: 0 }}>
-              Drafts are separated by type: multi-week blocks vs single reusable workouts. Nothing here
-              is a performed session until you log one from Workout.
+              Blocks for multi-week plans; workouts for reusable sessions. Log live from Workout.
             </p>
             <div className="row programs-create-card__actions" style={{ flexWrap: "wrap", gap: "10px" }}>
               <Link className="btn programs-create-primary" to="/create-template?type=block">
@@ -275,62 +270,54 @@ export function MyTemplatesPage() {
             </div>
           </div>
 
-          <div
-            className="programs-tablist row"
-            role="tablist"
-            aria-label="Your program type"
-            style={{ flexWrap: "wrap", gap: "8px" }}
-          >
+          <div className="programs-type-tablist" role="tablist" aria-label="Your program type">
             <button
               type="button"
               role="tab"
               aria-selected={tab === "workouts"}
-              className={`btn btn-secondary programs-tab${tab === "workouts" ? " programs-tab--active" : ""}`}
+              className={`programs-type-tab${tab === "workouts" ? " programs-type-tab--active" : ""}`}
               onClick={() => setTab("workouts")}
             >
-              In-progress & saved workouts ({workouts.length})
+              <span className="programs-type-tab__title">Saved workouts</span>
+              <span className="programs-type-tab__meta muted small">{workouts.length}</span>
             </button>
             <button
               type="button"
               role="tab"
               aria-selected={tab === "blocks"}
-              className={`btn btn-secondary programs-tab${tab === "blocks" ? " programs-tab--active" : ""}`}
+              className={`programs-type-tab${tab === "blocks" ? " programs-type-tab--active" : ""}`}
               onClick={() => setTab("blocks")}
             >
-              In-progress & saved blocks ({blocks.length})
+              <span className="programs-type-tab__title">Saved blocks</span>
+              <span className="programs-type-tab__meta muted small">{blocks.length}</span>
             </button>
           </div>
 
-          <div
-            className="programs-tablist row"
-            role="group"
-            aria-label="Filter by visibility"
-            style={{ flexWrap: "wrap", gap: "8px" }}
-          >
-            <span className="muted small" style={{ alignSelf: "center" }}>
-              Show:
-            </span>
-            <button
-              type="button"
-              className={`btn btn-secondary programs-tab${visibility === "all" ? " programs-tab--active" : ""}`}
-              onClick={() => setVisibility("all")}
-            >
-              All
-            </button>
-            <button
-              type="button"
-              className={`btn btn-secondary programs-tab${visibility === "private" ? " programs-tab--active" : ""}`}
-              onClick={() => setVisibility("private")}
-            >
-              Private
-            </button>
-            <button
-              type="button"
-              className={`btn btn-secondary programs-tab${visibility === "public" ? " programs-tab--active" : ""}`}
-              onClick={() => setVisibility("public")}
-            >
-              Public
-            </button>
+          <div className="programs-filter-row" role="group" aria-label="Filter by visibility">
+            <span className="programs-filter-row__label muted small">Show</span>
+            <div className="programs-filter-chips">
+              <button
+                type="button"
+                className={`programs-filter-chip${visibility === "all" ? " programs-filter-chip--active" : ""}`}
+                onClick={() => setVisibility("all")}
+              >
+                All
+              </button>
+              <button
+                type="button"
+                className={`programs-filter-chip${visibility === "private" ? " programs-filter-chip--active" : ""}`}
+                onClick={() => setVisibility("private")}
+              >
+                Private
+              </button>
+              <button
+                type="button"
+                className={`programs-filter-chip${visibility === "public" ? " programs-filter-chip--active" : ""}`}
+                onClick={() => setVisibility("public")}
+              >
+                Public
+              </button>
+            </div>
           </div>
         </>
       )}
