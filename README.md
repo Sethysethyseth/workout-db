@@ -64,6 +64,10 @@ When your LAN IP changes, update `client/.env.local` and `CLIENT_ORIGIN_MOBILE`.
 - **Client**: see `client/.env.example`
 - **Server**: see `server/.env.example`
 
+### Vercel previews + this API (CORS + cookies)
+
+Vite bakes `VITE_API_URL` at **build** time, so set it per Vercel environment (Production vs Preview) as needed. The API only allows browser origins listed in `CLIENT_ORIGIN` / `CLIENT_ORIGIN_MOBILE` (comma-separated). Add each preview hostname you use, or previews will fail CORS before auth runs.
+
 ## Scripts (common)
 
 - `client`: `npm run dev`, `npm run dev:mobile`, `npm run build`

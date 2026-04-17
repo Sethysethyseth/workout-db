@@ -1,5 +1,15 @@
+const rawBaseUrl = import.meta.env.VITE_API_URL?.trim();
 const BASE_URL =
-  import.meta.env.VITE_API_URL?.trim() || "http://localhost:3000";
+  rawBaseUrl ||
+  (import.meta.env.DEV ? "http://localhost:3000" : "");
+
+if (!BASE_URL) {
+  throw new Error(
+    "Missing VITE_API_URL. In production you must set VITE_API_URL (e.g. https://workout-db-l3gc.onrender.com)."
+  );
+}
+
+const normalizedBaseUrl = BASE_URL.replace(/\/+$/, "");
 
 if (import.meta.env.DEV) {
   console.log("[API] BASE_URL =", BASE_URL);
@@ -25,7 +35,8 @@ export class ApiError extends Error {
 }
 
 export async function http(path, { method = "GET", body, headers, credentials = "include" } = {}) {
-  const url = `${BASE_URL}${path}`;
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  const url = `${normalizedBaseUrl}${normalizedPath}`;
 
   const res = await fetch(url, {
     method,

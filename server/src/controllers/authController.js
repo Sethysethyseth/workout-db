@@ -153,7 +153,8 @@ async function me(req, res, next) {
       user: sanitizeUser(user),
     });
   } catch (err) {
-    return next(err);
+    console.error("AUTH ME ERROR:", err);
+    throw err;
   }
 }
 

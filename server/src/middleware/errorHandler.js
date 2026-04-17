@@ -1,7 +1,8 @@
 module.exports = function errorHandler(err, req, res, next) {
-  console.error(err);
+  console.error("🔥 ERROR:", err);
+  console.error("STACK:", err.stack);
 
-  res.status(500).json({
-    error: "Internal server error",
+  res.status(err.status || 500).json({
+    error: err.message || "Internal Server Error",
   });
 };

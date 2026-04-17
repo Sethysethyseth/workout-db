@@ -21,17 +21,32 @@ if (isProduction) {
   app.set("trust proxy", 1);
 }
 
+app.use((req, res, next) => {
+  console.log(`[REQ] ${req.method} ${req.url}`);
+  next();
+});
+
 function normalizeOrigin(origin) {
   if (!origin) return origin;
   return origin.endsWith("/") ? origin.slice(0, -1) : origin;
 }
 
+/** Comma-separated env values allow production + Vercel preview origins without wildcards. */
+function originsFromEnv(value) {
+  if (!value || typeof value !== "string") return [];
+  return value
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map(normalizeOrigin);
+}
+
 const allowedOrigins = [
-  normalizeOrigin(process.env.CLIENT_ORIGIN),
-  normalizeOrigin(process.env.CLIENT_ORIGIN_MOBILE),
+  ...originsFromEnv(process.env.CLIENT_ORIGIN),
+  ...originsFromEnv(process.env.CLIENT_ORIGIN_MOBILE),
   "http://localhost:5173",
   "http://127.0.0.1:5173",
-].filter(Boolean);
+];
 
 app.use(
   cors({
