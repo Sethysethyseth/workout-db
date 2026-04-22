@@ -31,7 +31,7 @@ function normalizeOrigin(origin) {
   return origin.endsWith("/") ? origin.slice(0, -1) : origin;
 }
 
-/** Comma-separated env values allow production + Vercel preview origins without wildcards. */
+/** Comma-separated env values for production (and any other explicit) frontend origins. */
 function originsFromEnv(value) {
   if (!value || typeof value !== "string") return [];
   return value
@@ -39,6 +39,19 @@ function originsFromEnv(value) {
     .map((s) => s.trim())
     .filter(Boolean)
     .map(normalizeOrigin);
+}
+
+function isAllowedVercelPreviewOrigin(origin) {
+  try {
+    const u = new URL(normalizeOrigin(origin));
+    return (
+      u.protocol === "https:" &&
+      u.hostname.endsWith(".vercel.app") &&
+      u.hostname.startsWith("workout-db-")
+    );
+  } catch {
+    return false;
+  }
 }
 
 const allowedOrigins = [
@@ -54,6 +67,7 @@ app.use(
       if (!origin) return callback(null, true);
       if (allowedOrigins.includes(normalizeOrigin(origin)))
         return callback(null, true);
+      if (isAllowedVercelPreviewOrigin(origin)) return callback(null, true);
       return callback(new Error("Not allowed by CORS"));
     },
     credentials: true,
