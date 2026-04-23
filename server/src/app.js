@@ -47,7 +47,7 @@ function isAllowedVercelPreviewOrigin(origin) {
     return (
       u.protocol === "https:" &&
       u.hostname.endsWith(".vercel.app") &&
-      u.hostname.startsWith("workout-db-")
+      u.hostname.startsWith("workout-")
     );
   } catch {
     return false;
