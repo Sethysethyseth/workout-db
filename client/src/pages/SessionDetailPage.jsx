@@ -19,6 +19,7 @@ import { WorkoutTemplateTableView } from "../components/templates/WorkoutTemplat
 import { WorkoutSetRowShell } from "../components/workout/WorkoutSetRowShell.jsx";
 import { getAdHocSessionTitle, setAdHocSessionTitle } from "../lib/adHocSessionTitle.js";
 import { sessionDisplayTitle } from "../lib/sessionDisplay.js";
+import { smartWorkoutNameFromSessionExercises } from "../lib/smartWorkoutName.js";
 import {
   loadQuickWorkoutLogPrefs,
   saveQuickWorkoutLogPrefs,
@@ -805,8 +806,17 @@ export function SessionDetailPage() {
     setError(null);
     setCompleteBusy(true);
     try {
-      const payload =
-        session && !session.workoutTemplate ? { name: quickTitleDraft.trim() } : {};
+      const payload = (() => {
+        if (!session || session.workoutTemplate) return {};
+        const trimmed = quickTitleDraft.trim();
+        if (trimmed) return { name: trimmed };
+        return {
+          name: smartWorkoutNameFromSessionExercises(
+            orderedSessionExercises,
+            session?.startedAt || session?.performedAt || session?.completedAt
+          ),
+        };
+      })();
       await sessionApi.completeSession(sessionId, payload);
       if (session && !session.workoutTemplate) {
         setAdHocSessionTitle(sessionId, "");
@@ -835,10 +845,13 @@ export function SessionDetailPage() {
         const last = setsList.length ? setsList[setsList.length - 1] : null;
         const body = { sessionExerciseId, order };
         if (last) {
-          if (last.reps != null) body.reps = last.reps;
-          if (last.weight != null) body.weight = last.weight;
-          if (last.rpe != null) body.rpe = last.rpe;
-          if (last.rir != null) body.rir = last.rir;
+          const w = last.weight != null ? String(last.weight).trim() : "";
+          if (w !== "") body.weight = last.weight;
+          // Intentionally do NOT copy reps: it can make a new set look completed.
+          const rpe = last.rpe != null ? String(last.rpe).trim() : "";
+          if (rpe !== "") body.rpe = last.rpe;
+          const rir = last.rir != null ? String(last.rir).trim() : "";
+          if (rir !== "") body.rir = last.rir;
           const note = last.notes != null ? String(last.notes).trim() : "";
           if (note) body.notes = note;
         }
@@ -888,10 +901,13 @@ export function SessionDetailPage() {
           const last = setsList.length ? setsList[setsList.length - 1] : null;
           const body = { sessionExerciseId, order };
           if (last) {
-            if (last.reps != null) body.reps = last.reps;
-            if (last.weight != null) body.weight = last.weight;
-            if (last.rpe != null) body.rpe = last.rpe;
-            if (last.rir != null) body.rir = last.rir;
+            const w = last.weight != null ? String(last.weight).trim() : "";
+            if (w !== "") body.weight = last.weight;
+            // Intentionally do NOT copy reps: it can make a new set look completed.
+            const rpe = last.rpe != null ? String(last.rpe).trim() : "";
+            if (rpe !== "") body.rpe = last.rpe;
+            const rir = last.rir != null ? String(last.rir).trim() : "";
+            if (rir !== "") body.rir = last.rir;
             const note = last.notes != null ? String(last.notes).trim() : "";
             if (note) body.notes = note;
           }
