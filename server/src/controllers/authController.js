@@ -119,8 +119,10 @@ function logout(req, res, next) {
       const isProduction = process.env.NODE_ENV === "production";
       // Must match cookie attributes so browsers actually clear it in production.
       res.clearCookie("workoutdb.sid", {
+        path: "/",
         secure: isProduction,
         sameSite: isProduction ? "none" : "lax",
+        partitioned: isProduction ? true : undefined,
       });
       return res.sendStatus(204);
     });

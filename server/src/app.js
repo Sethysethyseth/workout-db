@@ -103,6 +103,7 @@ app.use(
       secure: isProduction,
       // Cross-site cookie required for Vercel (frontend) -> Render (API) over HTTPS.
       sameSite: isProduction ? "none" : "lax",
+      partitioned: isProduction ? true : undefined,
       maxAge: 1000 * 60 * 60 * 24 * 7,
     },
   })
