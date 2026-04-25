@@ -13,6 +13,19 @@ import { ApiError } from "../api/http.js";
 
 const AuthContext = createContext(null);
 
+function setStoredAuthToken(token) {
+  try {
+    if (typeof window === "undefined") return;
+    if (!token) {
+      window.localStorage.removeItem("authToken");
+      return;
+    }
+    window.localStorage.setItem("authToken", token);
+  } catch {
+    // ignore storage failures (private mode, etc.)
+  }
+}
+
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -84,6 +97,7 @@ export function AuthProvider({ children }) {
   const login = useCallback(async ({ email, password }) => {
     const data = await authApi.login({ email, password });
     authEpochRef.current += 1;
+    setStoredAuthToken(data.token);
     setCurrentUser(data.user);
     return data.user;
   }, []);
@@ -91,6 +105,7 @@ export function AuthProvider({ children }) {
   const register = useCallback(async ({ email, password }) => {
     const data = await authApi.register({ email, password });
     authEpochRef.current += 1;
+    setStoredAuthToken(data.token);
     setCurrentUser(data.user);
     return data.user;
   }, []);
@@ -98,6 +113,7 @@ export function AuthProvider({ children }) {
   const logout = useCallback(async () => {
     loggingOutRef.current = true;
     authEpochRef.current += 1;
+    setStoredAuthToken(null);
     setCurrentUser(null);
     setAuthLoading(false);
     try {

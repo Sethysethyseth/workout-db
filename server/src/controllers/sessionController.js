@@ -49,7 +49,7 @@ function parseNullableFloat(value) {
 
 async function startSession(req, res, next) {
   try {
-    const userId = req.session && req.session.userId;
+    const userId = req.authUserId;
 
     if (!userId) {
       return res.status(401).json({
@@ -174,7 +174,7 @@ async function startSession(req, res, next) {
 
 async function createAdHocSession(req, res, next) {
   try {
-    const userId = req.session && req.session.userId;
+    const userId = req.authUserId;
 
     if (!userId) {
       return res.status(401).json({
@@ -205,7 +205,7 @@ async function createAdHocSession(req, res, next) {
 
 async function addSessionExercise(req, res, next) {
   try {
-    const userId = req.session && req.session.userId;
+    const userId = req.authUserId;
 
     if (!userId) {
       return res.status(401).json({
@@ -348,7 +348,7 @@ async function addSessionExercise(req, res, next) {
 
 async function updateSessionExercise(req, res, next) {
   try {
-    const userId = req.session && req.session.userId;
+    const userId = req.authUserId;
 
     if (!userId) {
       return res.status(401).json({
@@ -466,7 +466,7 @@ async function updateSessionExercise(req, res, next) {
 
 async function getMySessions(req, res, next) {
   try {
-    const userId = req.session && req.session.userId;
+    const userId = req.authUserId;
 
     if (!userId) {
       return res.status(401).json({
@@ -508,7 +508,7 @@ async function getMySessions(req, res, next) {
 
 async function getSessionById(req, res, next) {
   try {
-    const userId = req.session && req.session.userId;
+    const userId = req.authUserId;
 
     if (!userId) {
       return res.status(401).json({
@@ -573,7 +573,7 @@ async function getSessionById(req, res, next) {
 
 async function createSetForSession(req, res, next) {
   try {
-    const userId = req.session && req.session.userId;
+    const userId = req.authUserId;
 
     if (!userId) {
       return res.status(401).json({
@@ -756,7 +756,7 @@ async function createSetForSession(req, res, next) {
 
 async function updateSet(req, res, next) {
   try {
-    const userId = req.session && req.session.userId;
+    const userId = req.authUserId;
 
     if (!userId) {
       return res.status(401).json({
@@ -944,7 +944,7 @@ async function updateSet(req, res, next) {
 
 async function updateSession(req, res, next) {
   try {
-    const userId = req.session && req.session.userId;
+    const userId = req.authUserId;
 
     if (!userId) {
       return res.status(401).json({
@@ -1079,7 +1079,7 @@ async function updateSession(req, res, next) {
 
 async function completeSession(req, res, next) {
   try {
-    const userId = req.session && req.session.userId;
+    const userId = req.authUserId;
 
     if (!userId) {
       return res.status(401).json({
@@ -1182,7 +1182,7 @@ async function completeSession(req, res, next) {
 
 async function deleteSession(req, res, next) {
   try {
-    const userId = req.session && req.session.userId;
+    const userId = req.authUserId;
 
     if (!userId) {
       return res.status(401).json({
@@ -1219,7 +1219,7 @@ async function deleteSession(req, res, next) {
 
 async function deleteSet(req, res, next) {
   try {
-    const userId = req.session && req.session.userId;
+    const userId = req.authUserId;
 
     if (!userId) {
       return res.status(401).json({

@@ -1,5 +1,6 @@
 const bcrypt = require("bcrypt");
 const prisma = require("../lib/prisma");
+const { signAuthToken } = require("../lib/jwt");
 
 const SALT_ROUNDS = 10;
 
@@ -44,9 +45,11 @@ async function register(req, res, next) {
       }
 
       req.session.userId = user.id;
+      const token = signAuthToken({ userId: user.id });
 
       return res.status(201).json({
         user: sanitizeUser(user),
+        token,
       });
     });
   } catch (err) {
@@ -95,9 +98,11 @@ async function login(req, res, next) {
       }
 
       req.session.userId = user.id;
+      const token = signAuthToken({ userId: user.id });
 
       return res.status(200).json({
         user: sanitizeUser(user),
+        token,
       });
     });
   } catch (err) {
@@ -131,7 +136,7 @@ function logout(req, res, next) {
 
 async function me(req, res, next) {
   try {
-    const userId = req.session && req.session.userId;
+    const userId = req.authUserId;
 
     if (!userId) {
       return res.status(401).json({
@@ -153,14 +158,13 @@ async function me(req, res, next) {
       user: sanitizeUser(user),
     });
   } catch (err) {
-    console.error("AUTH ME ERROR:", err);
-    throw err;
+    return next(err);
   }
 }
 
 async function changePassword(req, res, next) {
   try {
-    const userId = req.session && req.session.userId;
+    const userId = req.authUserId;
 
     if (!userId) {
       return res.status(401).json({

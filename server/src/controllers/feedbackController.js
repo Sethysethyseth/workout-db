@@ -15,7 +15,7 @@ function normalizeOptionalString(value, maxLen) {
 
 async function createFeedback(req, res, next) {
   try {
-    const userId = req.session && req.session.userId;
+    const userId = req.authUserId;
     if (!userId) {
       return res.status(401).json({ error: "Authentication required" });
     }

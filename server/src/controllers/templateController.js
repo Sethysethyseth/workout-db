@@ -20,7 +20,7 @@ const exerciseInclude = {
 
 async function createTemplate(req, res, next) {
   try {
-    const userId = req.session && req.session.userId;
+    const userId = req.authUserId;
 
     if (!userId) {
       return res.status(401).json({
@@ -89,7 +89,7 @@ async function createTemplate(req, res, next) {
 
 async function getMyTemplates(req, res, next) {
   try {
-    const userId = req.session && req.session.userId;
+    const userId = req.authUserId;
 
     if (!userId) {
       return res.status(401).json({
@@ -119,7 +119,7 @@ async function getMyTemplates(req, res, next) {
 
 async function getPublicTemplates(req, res, next) {
   try {
-    const userId = req.session && req.session.userId;
+    const userId = req.authUserId;
 
     const whereClause = {
       isPublic: true,
@@ -165,7 +165,7 @@ async function getTemplateById(req, res, next) {
       });
     }
 
-    const userId = req.session && req.session.userId;
+    const userId = req.authUserId;
 
     const template = await prisma.workoutTemplate.findUnique({
       where: {
@@ -199,7 +199,7 @@ async function getTemplateById(req, res, next) {
 
 async function updateTemplate(req, res, next) {
   try {
-    const userId = req.session && req.session.userId;
+    const userId = req.authUserId;
 
     if (!userId) {
       return res.status(401).json({
@@ -305,7 +305,7 @@ async function updateTemplate(req, res, next) {
 
 async function deleteTemplate(req, res, next) {
   try {
-    const userId = req.session && req.session.userId;
+    const userId = req.authUserId;
 
     if (!userId) {
       return res.status(401).json({
@@ -342,7 +342,7 @@ async function deleteTemplate(req, res, next) {
 
 async function cloneTemplate(req, res, next) {
   try {
-    const userId = req.session && req.session.userId;
+    const userId = req.authUserId;
 
     if (!userId) {
       return res.status(401).json({
