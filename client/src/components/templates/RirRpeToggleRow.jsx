@@ -13,28 +13,34 @@ export function RirRpeToggleRow({
   const isCompact = variant === "compact";
   if (isCompact) {
     return (
-      <div className="checkbox-inline rir-rpe-inline-row">
-        <span className="rir-rpe-inline-row__label">
-          {showSectionLabel ? sectionLabel : "RIR / RPE"}
-        </span>
-        <div className="rir-rpe-inline-row__segmented" role="group" aria-label={sectionLabel}>
-          <button
-            type="button"
-            className={`rir-rpe-inline-row__option ${useRIR ? "is-on" : ""}`}
-            aria-pressed={useRIR}
-            onClick={() => onUseRIRChange(!useRIR)}
-          >
-            RIR
-          </button>
-          <button
-            type="button"
-            className={`rir-rpe-inline-row__option ${useRPE ? "is-on" : ""}`}
-            aria-pressed={useRPE}
-            onClick={() => onUseRPEChange(!useRPE)}
-          >
-            RPE
-          </button>
+      <div className="stack" style={{ gap: 6 }}>
+        <div className="checkbox-inline rir-rpe-inline-row">
+          <span className="rir-rpe-inline-row__label">
+            {showSectionLabel ? sectionLabel : "RIR / RPE"}
+          </span>
+          <div className="rir-rpe-inline-row__segmented" role="group" aria-label={sectionLabel}>
+            <button
+              type="button"
+              className={`rir-rpe-inline-row__option ${useRIR ? "is-on" : ""}`}
+              aria-pressed={useRIR}
+              onClick={() => onUseRIRChange(!useRIR)}
+            >
+              RIR
+            </button>
+            <button
+              type="button"
+              className={`rir-rpe-inline-row__option ${useRPE ? "is-on" : ""}`}
+              aria-pressed={useRPE}
+              onClick={() => onUseRPEChange(!useRPE)}
+            >
+              RPE
+            </button>
+          </div>
         </div>
+        <p className="muted small rir-rpe-toggle-hint" style={{ margin: 0, lineHeight: 1.35 }}>
+          <span style={{ display: "block" }}>RIR — Reps in Reserve</span>
+          <span style={{ display: "block" }}>RPE — Rating of Perceived Exertion</span>
+        </p>
       </div>
     );
   }
@@ -62,6 +68,10 @@ export function RirRpeToggleRow({
           RPE
         </button>
       </div>
+      <p className="muted small rir-rpe-toggle-hint" style={{ margin: 0, lineHeight: 1.35 }}>
+        <span style={{ display: "block" }}>RIR — Reps in Reserve</span>
+        <span style={{ display: "block" }}>RPE — Rating of Perceived Exertion</span>
+      </p>
     </div>
   );
 }

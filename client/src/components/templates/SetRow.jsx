@@ -40,6 +40,9 @@ export function SetRow({
         {useRIR ? (
           <label>
             RIR <span className="muted small">(optional)</span>
+            <span className="muted small" style={{ display: "block", fontWeight: 400, lineHeight: 1.25 }}>
+              Reps in Reserve
+            </span>
             <input
               value={setData.rir}
               onChange={(e) => onChange({ rir: e.target.value })}
@@ -51,6 +54,9 @@ export function SetRow({
         {useRPE ? (
           <label>
             RPE <span className="muted small">(optional)</span>
+            <span className="muted small" style={{ display: "block", fontWeight: 400, lineHeight: 1.25 }}>
+              Rating of Perceived Exertion
+            </span>
             <input
               value={setData.rpe}
               onChange={(e) => onChange({ rpe: e.target.value })}

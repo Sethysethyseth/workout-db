@@ -1195,7 +1195,12 @@ export function SessionDetailPage() {
                   checked={liveUseRIR}
                   onChange={(e) => setLiveUseRIR(e.target.checked)}
                 />
-                <span>Use RIR on sets</span>
+                <span>
+                  Use RIR on sets
+                  <span className="muted small" style={{ display: "block", fontWeight: 400, marginTop: 2 }}>
+                    Reps in Reserve
+                  </span>
+                </span>
               </label>
               <label className="checkbox-inline">
                 <input
@@ -1203,7 +1208,12 @@ export function SessionDetailPage() {
                   checked={liveUseRPE}
                   onChange={(e) => setLiveUseRPE(e.target.checked)}
                 />
-                <span>Use RPE on sets</span>
+                <span>
+                  Use RPE on sets
+                  <span className="muted small" style={{ display: "block", fontWeight: 400, marginTop: 2 }}>
+                    Rating of Perceived Exertion
+                  </span>
+                </span>
               </label>
             </div>
           ) : (
@@ -1696,6 +1706,9 @@ const SessionSetRow = memo(function SessionSetRow({
               {useRIR ? (
                 <label className="session-set-field session-set-field--secondary">
                   <span className="session-set-field-label">RIR</span>
+                  <span className="muted small" style={{ fontWeight: 500, lineHeight: 1.2, marginTop: -1 }}>
+                    Reps in Reserve
+                  </span>
                   <input
                     id={fieldIds.rir}
                     value={draft.rir}
@@ -1713,6 +1726,9 @@ const SessionSetRow = memo(function SessionSetRow({
               {useRPE ? (
                 <label className="session-set-field session-set-field--secondary">
                   <span className="session-set-field-label">RPE</span>
+                  <span className="muted small" style={{ fontWeight: 500, lineHeight: 1.2, marginTop: -1 }}>
+                    Rating of Perceived Exertion
+                  </span>
                   <input
                     id={fieldIds.rpe}
                     value={draft.rpe}
