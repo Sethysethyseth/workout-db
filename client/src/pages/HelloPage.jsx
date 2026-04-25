@@ -1,5 +1,7 @@
 import { useNavigate } from "react-router-dom";
 
+const TEXT_ME_ALERT = "just text me on my phone, im not actually giving you my number man!!";
+
 export function HelloPage() {
   const navigate = useNavigate();
 
@@ -39,31 +41,50 @@ export function HelloPage() {
         </ul>
       </section>
 
-      <section className="card stack" aria-labelledby="hello-feedback">
-        <h2 id="hello-feedback" style={{ margin: 0 }}>
-          Feedback:
+      <section className="card stack" aria-labelledby="hello-add-homescreen">
+        <h2 id="hello-add-homescreen" style={{ margin: 0 }}>
+          Save this website like an app
         </h2>
+        <p className="muted" style={{ margin: 0 }}>
+          For the best mobile experience, save WorkoutDB to your phone&apos;s home screen.
+        </p>
         <ul className="stack" style={{ margin: 0, paddingLeft: 18 }}>
-          <li>Please let me know anything and everything.</li>
           <li>
-            For this test you all likely know me so you can either send feedback here or throw me a text.
+            <strong>iPhone:</strong> Open in Safari → tap Share → Add to Home Screen
           </li>
           <li>
-            The loading in and switching from different tabs is probably going to be slow due to me using free
-            servers,
-          </li>
-          <li>
-            so please let me know any bugs you find or improvements that you think might be worthwhile!
+            <strong>Android:</strong> Open in Chrome → tap the three dots → Add to Home screen / Install app
           </li>
         </ul>
-        <div className="row" style={{ justifyContent: "flex-start", gap: 10, marginTop: 2 }}>
+        <p className="muted" style={{ margin: 0 }}>
+          <a href="https://www.youtube.com/watch?v=PIpKm9g9vBI" target="_blank" rel="noreferrer">
+            Short tutorial (YouTube)
+          </a>
+        </p>
+      </section>
+
+      <section className="card stack" aria-labelledby="hello-feedback">
+        <h2 id="hello-feedback" style={{ margin: 0 }}>
+          Feedback
+        </h2>
+        <p className="muted" style={{ margin: 0 }}>
+          Please let me know anything and everything. For this test you all likely know me so you can either send
+          feedback here or throw me a text. The loading in and switching from different tabs is probably going to be
+          slow due to me using free servers, so please let me know any bugs you find or improvements that you think
+          might be worthwhile!
+        </p>
+        <div
+          className="row"
+          style={{ flexWrap: "wrap", justifyContent: "flex-start", gap: 10, marginTop: 10, alignItems: "stretch" }}
+        >
           <button className="btn btn-secondary" type="button" onClick={() => navigate("/profile")}>
             Send feedback here
           </button>
-          <span className="muted small">Or throw me a text</span>
+          <button className="btn btn-secondary" type="button" onClick={() => window.alert(TEXT_ME_ALERT)}>
+            Or throw me a text
+          </button>
         </div>
       </section>
     </div>
   );
 }
-

@@ -10,7 +10,7 @@ function parseReviewerEmails(raw) {
 
 module.exports = async function feedbackReviewerRequired(req, res, next) {
   try {
-    const userId = req.session && req.session.userId;
+    const userId = req.authUserId;
     if (!userId) {
       return res.status(401).json({ error: "Authentication required" });
     }

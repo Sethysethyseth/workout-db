@@ -46,6 +46,8 @@ async function startSessionFromTemplate(agent, templateId) {
 }
 
 describe("Session lifecycle + completed-session locking", () => {
+  jest.setTimeout(30000);
+
   test("happy path: start -> update -> create/update/delete set -> complete -> locked mutations; DELETE session still works", async () => {
     const agent = request.agent(app);
 

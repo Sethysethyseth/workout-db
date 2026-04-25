@@ -41,8 +41,42 @@ export function WorkoutTemplateTableView({
                   <th scope="col">Set</th>
                   <th scope="col">Weight</th>
                   <th scope="col">Reps</th>
-                  {useRIR ? <th scope="col">RIR</th> : null}
-                  {useRPE ? <th scope="col">RPE</th> : null}
+                  {useRIR ? (
+                    <th scope="col">
+                      RIR
+                      <div
+                        className="muted small"
+                        style={{
+                          fontWeight: 500,
+                          textTransform: "none",
+                          letterSpacing: "normal",
+                          lineHeight: 1.2,
+                          marginTop: 4,
+                          whiteSpace: "normal",
+                        }}
+                      >
+                        Reps in Reserve
+                      </div>
+                    </th>
+                  ) : null}
+                  {useRPE ? (
+                    <th scope="col">
+                      RPE
+                      <div
+                        className="muted small"
+                        style={{
+                          fontWeight: 500,
+                          textTransform: "none",
+                          letterSpacing: "normal",
+                          lineHeight: 1.2,
+                          marginTop: 4,
+                          whiteSpace: "normal",
+                        }}
+                      >
+                        Rating of Perceived Exertion
+                      </div>
+                    </th>
+                  ) : null}
                   {showSetNotes ? (
                     <th scope="col" className="template-table-notes-col">
                       Notes

@@ -4,6 +4,7 @@ const cors = require("cors");
 const pg = require("pg");
 const PgSession = require("connect-pg-simple")(session);
 const routes = require("./routes");
+const attachAuthUser = require("./middleware/attachAuthUser");
 const errorHandler = require("./middleware/errorHandler");
 
 const app = express();
@@ -108,6 +109,9 @@ app.use(
     },
   })
 );
+
+// Attach req.authUserId from Bearer token (or session fallback).
+app.use(attachAuthUser);
 
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "ok" });

@@ -34,15 +34,28 @@ export class ApiError extends Error {
   }
 }
 
+function readAuthToken() {
+  try {
+    if (typeof window === "undefined") return null;
+    const t = window.localStorage.getItem("authToken");
+    return t && t.trim() ? t.trim() : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function http(path, { method = "GET", body, headers, credentials = "include" } = {}) {
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
   const url = `${normalizedBaseUrl}${normalizedPath}`;
+
+  const token = readAuthToken();
 
   const res = await fetch(url, {
     method,
     credentials,
     headers: {
       ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(headers || {}),
     },
     body: body !== undefined ? JSON.stringify(body) : undefined,

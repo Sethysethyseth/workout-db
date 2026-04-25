@@ -47,7 +47,7 @@ const blockWeekInclude = {
 
 async function createBlockTemplate(req, res, next) {
   try {
-    const userId = req.session && req.session.userId;
+    const userId = req.authUserId;
 
     if (!userId) {
       return res.status(401).json({
@@ -158,7 +158,7 @@ async function createBlockTemplate(req, res, next) {
 
 async function getMyBlockTemplates(req, res, next) {
   try {
-    const userId = req.session && req.session.userId;
+    const userId = req.authUserId;
 
     if (!userId) {
       return res.status(401).json({
@@ -188,7 +188,7 @@ async function getMyBlockTemplates(req, res, next) {
 
 async function getPublicBlockTemplates(req, res, next) {
   try {
-    const userId = req.session && req.session.userId;
+    const userId = req.authUserId;
 
     const whereClause = {
       isPublic: true,
@@ -234,7 +234,7 @@ async function getBlockTemplateById(req, res, next) {
       });
     }
 
-    const userId = req.session && req.session.userId;
+    const userId = req.authUserId;
 
     const blockTemplate = await prisma.blockTemplate.findUnique({
       where: {
@@ -268,7 +268,7 @@ async function getBlockTemplateById(req, res, next) {
 
 async function updateBlockTemplate(req, res, next) {
   try {
-    const userId = req.session && req.session.userId;
+    const userId = req.authUserId;
 
     if (!userId) {
       return res.status(401).json({
@@ -437,7 +437,7 @@ async function updateBlockTemplate(req, res, next) {
 
 async function deleteBlockTemplate(req, res, next) {
   try {
-    const userId = req.session && req.session.userId;
+    const userId = req.authUserId;
 
     if (!userId) {
       return res.status(401).json({
@@ -474,7 +474,7 @@ async function deleteBlockTemplate(req, res, next) {
 
 async function cloneBlockTemplate(req, res, next) {
   try {
-    const userId = req.session && req.session.userId;
+    const userId = req.authUserId;
 
     if (!userId) {
       return res.status(401).json({
