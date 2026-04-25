@@ -1,4 +1,5 @@
 import { KNOWN_EXERCISES } from "../data/knownExercises.js";
+import { exerciseNameSearchKey } from "./smartWorkoutName.js";
 
 /**
  * @param {string} query
@@ -6,15 +7,15 @@ import { KNOWN_EXERCISES } from "../data/knownExercises.js";
  * @returns {string[]}
  */
 export function getExerciseSuggestions(query, limit = 5) {
-  const q = String(query ?? "").trim().toLowerCase();
+  const q = exerciseNameSearchKey(String(query ?? "").trim());
   if (!q) return [];
 
   const starts = [];
   const includes = [];
   for (const name of KNOWN_EXERCISES) {
-    const lower = name.toLowerCase();
-    if (lower.startsWith(q)) starts.push(name);
-    else if (lower.includes(q)) includes.push(name);
+    const key = exerciseNameSearchKey(name);
+    if (key.startsWith(q)) starts.push(name);
+    else if (key.includes(q)) includes.push(name);
   }
   return [...starts, ...includes].slice(0, limit);
 }

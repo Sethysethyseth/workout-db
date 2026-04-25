@@ -42,14 +42,20 @@ export function normalizeExerciseName(raw) {
   return s.trim();
 }
 
-function canonicalizeNameForMatch(s) {
-  return normalizeExerciseName(s)
+/**
+ * Lowercase string with abbreviations expanded and punctuation collapsed to spaces.
+ * Used for autofill substring matching and internal tokenization — not for storage.
+ * @param {string} raw
+ * @returns {string}
+ */
+export function exerciseNameSearchKey(raw) {
+  return normalizeExerciseName(raw)
     .replace(/[^a-z0-9]+/g, " ")
     .trim();
 }
 
 function nameTokens(s) {
-  const c = canonicalizeNameForMatch(s);
+  const c = exerciseNameSearchKey(s);
   return c ? c.split(" ") : [];
 }
 
@@ -89,6 +95,8 @@ function categorizeExercise(normalized) {
   // Shoulders
   if (
     includesAny(joined, [
+      " arnold press ",
+      " upright row ",
       " lateral raise ",
       " rear delt ",
       " face pull ",
@@ -101,7 +109,14 @@ function categorizeExercise(normalized) {
   }
 
   // Arms (biceps/triceps)
-  const isBiceps = includesAny(joined, [" curl ", " bicep ", " biceps "]);
+  const isNonBicepsCurl = includesAny(joined, [
+    " leg curl ",
+    " hamstring curl ",
+    " jefferson curl ",
+  ]);
+  const isBiceps =
+    includesAny(joined, [" bicep ", " biceps "]) ||
+    (joined.includes(" curl ") && !isNonBicepsCurl);
   const isTriceps = includesAny(joined, [
     " tricep ",
     " triceps ",
@@ -110,7 +125,7 @@ function categorizeExercise(normalized) {
     " skull crusher ",
   ]);
   if (isBiceps || isTriceps) {
-    // Avoid classifying "leg extension" as arms.
+    // Avoid classifying leg accessories as arms (curl token is broad).
     if (!joined.includes("leg extension")) return { major: "arms" };
   }
 
