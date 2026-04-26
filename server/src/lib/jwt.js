@@ -20,8 +20,8 @@ function signAuthToken({ userId }) {
 function verifyAuthToken(token) {
   const payload = jwt.verify(token, getJwtSecret());
   const sub = payload && payload.sub;
-  const userId = Number(sub);
-  if (!Number.isInteger(userId) || userId <= 0) {
+  const userId = typeof sub === "string" ? sub : null;
+  if (!userId || typeof userId !== "string") {
     return null;
   }
   return { userId };

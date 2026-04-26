@@ -15,7 +15,7 @@ module.exports = function attachAuthUser(req, res, next) {
   if (token) {
     try {
       const verified = verifyAuthToken(token);
-      if (verified && verified.userId) {
+      if (verified && typeof verified.userId === "string" && verified.userId) {
         req.authUserId = verified.userId;
       }
     } catch {
