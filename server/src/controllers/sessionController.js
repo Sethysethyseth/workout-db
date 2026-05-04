@@ -1,5 +1,6 @@
 const prisma = require("../lib/prisma");
 const { defaultWorkoutSessionName } = require("../lib/defaultWorkoutSessionName");
+const { validateOptionalNonNegDecimal } = require("../lib/numericValidators");
 
 const FULL_SESSION_RELATIONS = {
   workoutTemplate: {
@@ -613,19 +614,23 @@ async function createSetForSession(req, res, next) {
       });
     }
 
-    const reps = parseNullableInt(rawReps);
-    if (Number.isNaN(reps) || (reps !== null && reps <= 0)) {
-      return res.status(400).json({
-        error: "reps must be a positive integer when provided",
-      });
+    const repsResult = validateOptionalNonNegDecimal(rawReps, {
+      maxDecimals: 2,
+      fieldName: "reps",
+    });
+    if (!repsResult.ok) {
+      return res.status(400).json({ error: repsResult.error });
     }
+    const reps = repsResult.value;
 
-    const weight = parseNullableFloat(rawWeight);
-    if (Number.isNaN(weight) || (weight !== null && weight < 0)) {
-      return res.status(400).json({
-        error: "weight must be a non-negative number when provided",
-      });
+    const weightResult = validateOptionalNonNegDecimal(rawWeight, {
+      maxDecimals: 2,
+      fieldName: "weight",
+    });
+    if (!weightResult.ok) {
+      return res.status(400).json({ error: weightResult.error });
     }
+    const weight = weightResult.value;
 
     const rpe = parseNullableFloat(rawRpe);
     if (Number.isNaN(rpe) || (rpe !== null && rpe < 0)) {
@@ -797,13 +802,14 @@ async function updateSet(req, res, next) {
       if (rawReps === "" || rawReps === null) {
         data.reps = null;
       } else {
-        const reps = parseNullableInt(rawReps);
-        if (Number.isNaN(reps) || reps <= 0) {
-          return res.status(400).json({
-            error: "reps must be a positive integer when provided",
-          });
+        const repsResult = validateOptionalNonNegDecimal(rawReps, {
+          maxDecimals: 2,
+          fieldName: "reps",
+        });
+        if (!repsResult.ok) {
+          return res.status(400).json({ error: repsResult.error });
         }
-        data.reps = reps;
+        data.reps = repsResult.value;
       }
     }
 
@@ -811,13 +817,14 @@ async function updateSet(req, res, next) {
       if (rawWeight === "" || rawWeight === null) {
         data.weight = null;
       } else {
-        const weight = parseNullableFloat(rawWeight);
-        if (Number.isNaN(weight) || weight < 0) {
-          return res.status(400).json({
-            error: "weight must be a non-negative number when provided",
-          });
+        const weightResult = validateOptionalNonNegDecimal(rawWeight, {
+          maxDecimals: 2,
+          fieldName: "weight",
+        });
+        if (!weightResult.ok) {
+          return res.status(400).json({ error: weightResult.error });
         }
-        data.weight = weight;
+        data.weight = weightResult.value;
       }
     }
 

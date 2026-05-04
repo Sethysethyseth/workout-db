@@ -1,3 +1,5 @@
+const { validateOptionalNonNegDecimal } = require("./numericValidators");
+
 function parsePositiveInt(value) {
   if (value == null || value === "") return null;
   const parsed = Number(value);
@@ -78,23 +80,23 @@ function normalizeExerciseForCreate(raw, index) {
       }
       seenSetOrders.add(setOrder);
 
-      const reps = parseNullableInt(s.reps);
-      if (Number.isNaN(reps) || (reps !== null && reps <= 0)) {
-        return {
-          ok: false,
-          status: 400,
-          error: "reps must be a positive integer when provided",
-        };
+      const repsResult = validateOptionalNonNegDecimal(s.reps, {
+        maxDecimals: 2,
+        fieldName: "reps",
+      });
+      if (!repsResult.ok) {
+        return { ok: false, status: 400, error: repsResult.error };
       }
+      const reps = repsResult.value;
 
-      const weight = parseNullableFloat(s.weight);
-      if (Number.isNaN(weight) || (weight !== null && weight < 0)) {
-        return {
-          ok: false,
-          status: 400,
-          error: "weight must be a non-negative number when provided",
-        };
+      const weightResult = validateOptionalNonNegDecimal(s.weight, {
+        maxDecimals: 2,
+        fieldName: "weight",
+      });
+      if (!weightResult.ok) {
+        return { ok: false, status: 400, error: weightResult.error };
       }
+      const weight = weightResult.value;
 
       const rpe = parseNullableFloat(s.rpe);
       if (Number.isNaN(rpe) || (rpe !== null && rpe < 0)) {

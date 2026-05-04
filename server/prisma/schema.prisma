@@ -74,7 +74,7 @@ model TemplateExercise {
 model TemplateSet {
   id                 Int              @id @default(autoincrement())
   order              Int
-  reps               Int?
+  reps               Float?
   weight             Float?
   rpe                Float?
   rir                Int?
@@ -109,7 +109,7 @@ model WorkoutSession {
 model WorkoutSet {
   id                 Int               @id @default(autoincrement())
   order              Int
-  reps               Int?
+  reps               Float?
   weight             Float?
   rpe                Float?
   rir                Int?
@@ -205,7 +205,7 @@ model BlockWorkoutExercise {
 model BlockWorkoutSet {
   id                     Int                  @id @default(autoincrement())
   order                  Int
-  reps                   Int?
+  reps                   Float?
   weight                 Float?
   rpe                    Float?
   rir                    Int?

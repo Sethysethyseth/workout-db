@@ -1682,12 +1682,15 @@ const SessionSetRow = memo(function SessionSetRow({
               <span className="session-set-field-label">Weight</span>
               <input
                 id={fieldIds.weight}
+                type="number"
                 value={draft.weight}
                 onChange={(e) => setDraft((d) => ({ ...d, weight: e.target.value }))}
                 onBlur={flushNow}
                 onKeyDown={(e) => onEnterNext(e, "weight")}
                 enterKeyHint="next"
                 inputMode="decimal"
+                min="0"
+                step="0.01"
                 disabled={disabled}
                 placeholder="e.g. 185"
                 aria-invalid={needsWeightHighlight ? true : undefined}
@@ -1704,12 +1707,15 @@ const SessionSetRow = memo(function SessionSetRow({
               <span className="session-set-field-label">Reps</span>
               <input
                 id={fieldIds.reps}
+                type="number"
                 value={draft.reps}
                 onChange={(e) => setDraft((d) => ({ ...d, reps: e.target.value }))}
                 onBlur={flushNow}
                 onKeyDown={(e) => onEnterNext(e, "reps")}
                 enterKeyHint={useRIR || useRPE || useSetNotes ? "next" : "done"}
-                inputMode="numeric"
+                inputMode="decimal"
+                min="0"
+                step="0.01"
                 disabled={disabled}
                 placeholder="e.g. 8"
                 aria-invalid={needsRepsHighlight ? true : undefined}

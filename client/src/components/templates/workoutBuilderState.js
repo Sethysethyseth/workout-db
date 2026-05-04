@@ -1,4 +1,5 @@
 import { makeId } from "../../lib/makeId.js";
+import { validateOptionalNonNegDecimal } from "../../lib/optionalNonNegDecimal.js";
 
 /**
  * Workout template ↔ API mapping for WorkoutBuilder.
@@ -31,14 +32,6 @@ export function createEmptyExercise() {
 
 export function createInitialExercises() {
   return [createEmptyExercise()];
-}
-
-function toOptionalPositiveInt(raw) {
-  const s = String(raw ?? "").trim();
-  if (!s) return undefined;
-  const n = Number(s);
-  if (!Number.isInteger(n) || n <= 0) return undefined;
-  return n;
 }
 
 function toOptionalNonNegFloat(raw) {
@@ -77,10 +70,16 @@ export function exercisesToTemplateApi(exercises) {
 
     const setsPayload = sets.map((s, i) => {
       const row = { order: i + 1 };
-      const reps = toOptionalPositiveInt(s.reps);
-      if (reps !== undefined) row.reps = reps;
-      const weight = toOptionalNonNegFloat(s.weight);
-      if (weight !== undefined) row.weight = weight;
+      const repsV = validateOptionalNonNegDecimal(s.reps, { maxDecimals: 2, fieldName: "reps" });
+      if (!repsV.ok) {
+        throw new Error(repsV.error);
+      }
+      if (repsV.value !== null) row.reps = repsV.value;
+      const weightV = validateOptionalNonNegDecimal(s.weight, { maxDecimals: 2, fieldName: "weight" });
+      if (!weightV.ok) {
+        throw new Error(weightV.error);
+      }
+      if (weightV.value !== null) row.weight = weightV.value;
       const rpe = toOptionalNonNegFloat(s.rpe);
       if (rpe !== undefined) row.rpe = rpe;
       const rir = toOptionalNonNegInt(s.rir);

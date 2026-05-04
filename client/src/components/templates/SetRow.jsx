@@ -22,18 +22,24 @@ export function SetRow({
         <label>
           Weight
           <input
+            type="number"
             value={setData.weight}
             onChange={(e) => onChange({ weight: e.target.value })}
             inputMode="decimal"
+            min="0"
+            step="0.01"
             placeholder="e.g. 185"
           />
         </label>
         <label>
           Reps
           <input
+            type="number"
             value={setData.reps}
             onChange={(e) => onChange({ reps: e.target.value })}
-            inputMode="numeric"
+            inputMode="decimal"
+            min="0"
+            step="0.01"
             placeholder="e.g. 8"
           />
         </label>
