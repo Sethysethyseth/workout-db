@@ -77,6 +77,12 @@ app.use(
 
 app.use(express.json());
 
+if (!process.env.DATABASE_URL) {
+  throw new Error(
+    "DATABASE_URL is required — server cannot start without a persistent session store."
+  );
+}
+
 const sessionStore = process.env.DATABASE_URL
   ? new PgSession({
       pool: new pg.Pool({

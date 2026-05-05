@@ -66,13 +66,57 @@ export async function http(path, { method = "GET", body, headers, credentials = 
   if (!res.ok) {
     const skipGlobalUnauthorized =
       res.status === 401 && method === "GET" && path === "/auth/me";
-    if (
-      res.status === 401 &&
-      typeof window !== "undefined" &&
-      !skipGlobalUnauthorized
-    ) {
-      window.dispatchEvent(new Event("auth:unauthorized"));
+
+    if (res.status === 401 && typeof window !== "undefined") {
+      let retryToken = null;
+      try {
+        const t = window.localStorage.getItem("authToken");
+        retryToken = t && t.trim() ? t.trim() : null;
+      } catch {
+        retryToken = null;
+      }
+
+      if (retryToken) {
+        const resRetry = await fetch(url, {
+          method,
+          credentials,
+          headers: {
+            ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
+            Authorization: `Bearer ${retryToken}`,
+            ...(headers || {}),
+          },
+          body: body !== undefined ? JSON.stringify(body) : undefined,
+        });
+        const dataRetry = await readJsonSafely(resRetry);
+        if (resRetry.ok) {
+          return dataRetry;
+        }
+        if (resRetry.status === 401) {
+          if (!skipGlobalUnauthorized) {
+            window.dispatchEvent(new Event("auth:unauthorized"));
+          }
+          const messageRetry =
+            (dataRetry && dataRetry.error) ||
+            `Request failed (${resRetry.status} ${resRetry.statusText})`;
+          throw new ApiError(messageRetry, {
+            status: resRetry.status,
+            body: dataRetry,
+          });
+        }
+        const messageRetry =
+          (dataRetry && dataRetry.error) ||
+          `Request failed (${resRetry.status} ${resRetry.statusText})`;
+        throw new ApiError(messageRetry, {
+          status: resRetry.status,
+          body: dataRetry,
+        });
+      }
+
+      if (!skipGlobalUnauthorized) {
+        window.dispatchEvent(new Event("auth:unauthorized"));
+      }
     }
+
     const message =
       (data && data.error) || `Request failed (${res.status} ${res.statusText})`;
     throw new ApiError(message, { status: res.status, body: data });
