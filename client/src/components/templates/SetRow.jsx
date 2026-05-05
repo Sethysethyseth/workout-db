@@ -1,3 +1,4 @@
+import { MetricInfoButton } from "../workout/MetricInfoButton.jsx";
 import { WorkoutSetRowShell } from "../workout/WorkoutSetRowShell.jsx";
 
 export function SetRow({
@@ -45,7 +46,10 @@ export function SetRow({
         </label>
         {useRIR ? (
           <label>
-            RIR <span className="muted small">(optional)</span>
+            <span className="template-set-field-label-line">
+              <span>RIR</span> <MetricInfoButton metric="rir" />{" "}
+              <span className="muted small">(optional)</span>
+            </span>
             <span className="muted small" style={{ display: "block", fontWeight: 400, lineHeight: 1.25 }}>
               Reps in Reserve
             </span>
@@ -59,7 +63,10 @@ export function SetRow({
         ) : null}
         {useRPE ? (
           <label>
-            RPE <span className="muted small">(optional)</span>
+            <span className="template-set-field-label-line">
+              <span>RPE</span> <MetricInfoButton metric="rpe" />{" "}
+              <span className="muted small">(optional)</span>
+            </span>
             <span className="muted small" style={{ display: "block", fontWeight: 400, lineHeight: 1.25 }}>
               Rating of Perceived Exertion
             </span>

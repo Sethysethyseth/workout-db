@@ -1267,6 +1267,13 @@ html[data-theme="dark"] .workout-builder .workout-builder-insert .btn.btn-second
   padding-top: 4px;
 }
 
+@media (max-width: 719px) {
+  .session-add-set-footer-btn,
+  .workout-append-row-btn {
+    width: 100%;
+  }
+}
+
 .home-saved-workout-list {
   list-style: none;
   margin: 0;
@@ -2253,6 +2260,126 @@ html[data-theme="dark"] .session-set-field--needs-value input {
   opacity: 0.96;
 }
 
+.session-set-field-label-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.template-set-field-label-line {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-weight: 600;
+}
+
+.template-table-metric-th {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.template-table-metric-th__label-line {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  white-space: normal;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: normal;
+  line-height: 1.2;
+}
+
+.template-table-metric-th__label-line--primary {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.metric-intro-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0 0 12px 0;
+}
+
+.metric-intro-card {
+  padding: 10px 12px;
+  border-radius: var(--radius-card);
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-card);
+}
+
+.metric-intro-card__text {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  color: var(--color-text-secondary);
+}
+
+.metric-intro-card__actions {
+  margin-top: 10px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.metric-intro-card__btn {
+  font-size: 0.82rem;
+  min-height: 36px;
+  padding: 0 12px;
+}
+
+.metric-info-btn-wrap {
+  display: inline-flex;
+  vertical-align: middle;
+}
+
+.metric-info-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.2rem;
+  height: 1.2rem;
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: color-mix(in srgb, var(--color-text-secondary) 20%, transparent);
+  color: var(--color-text-secondary);
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.metric-info-btn:hover {
+  background: color-mix(in srgb, var(--color-text-secondary) 32%, transparent);
+  color: var(--color-text);
+}
+
+.metric-info-btn:focus-visible {
+  outline: 2px solid var(--color-interactive);
+  outline-offset: 2px;
+}
+
+.metric-info-popover {
+  padding: 10px 12px;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  box-shadow: var(--shadow-card-hover);
+}
+
+.metric-info-popover__text {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.38;
+  color: var(--color-text);
+}
+
 .session-set-notes-field {
   display: grid;
   gap: 5px;
@@ -2277,12 +2404,6 @@ html[data-theme="dark"] .session-set-field--needs-value input {
   font-weight: 800;
   font-size: 0.98rem;
   border-style: solid;
-}
-
-.session-block-autosave-hint {
-  text-align: center;
-  line-height: 1.35;
-  font-size: 0.78rem;
 }
 
 .session-add-exercise-form {

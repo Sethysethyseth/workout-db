@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { MetricInfoButton } from "../workout/MetricInfoButton.jsx";
 
 function cell(raw) {
   const s = raw != null && String(raw).trim() !== "" ? String(raw).trim() : "—";
@@ -43,37 +44,25 @@ export function WorkoutTemplateTableView({
                   <th scope="col">Reps</th>
                   {useRIR ? (
                     <th scope="col">
-                      RIR
-                      <div
-                        className="muted small"
-                        style={{
-                          fontWeight: 500,
-                          textTransform: "none",
-                          letterSpacing: "normal",
-                          lineHeight: 1.2,
-                          marginTop: 4,
-                          whiteSpace: "normal",
-                        }}
-                      >
-                        Reps in Reserve
+                      <div className="template-table-metric-th">
+                        <div className="template-table-metric-th__label-line template-table-metric-th__label-line--primary">
+                          <span>RIR</span> <MetricInfoButton metric="rir" />
+                        </div>
+                        <div className="template-table-metric-th__label-line muted small">
+                          Reps in Reserve
+                        </div>
                       </div>
                     </th>
                   ) : null}
                   {useRPE ? (
                     <th scope="col">
-                      RPE
-                      <div
-                        className="muted small"
-                        style={{
-                          fontWeight: 500,
-                          textTransform: "none",
-                          letterSpacing: "normal",
-                          lineHeight: 1.2,
-                          marginTop: 4,
-                          whiteSpace: "normal",
-                        }}
-                      >
-                        Rating of Perceived Exertion
+                      <div className="template-table-metric-th">
+                        <div className="template-table-metric-th__label-line template-table-metric-th__label-line--primary">
+                          <span>RPE</span> <MetricInfoButton metric="rpe" />
+                        </div>
+                        <div className="template-table-metric-th__label-line muted small">
+                          Rating of Perceived Exertion
+                        </div>
                       </div>
                     </th>
                   ) : null}

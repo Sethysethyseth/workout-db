@@ -17,6 +17,8 @@ import { RirRpeToggleRow } from "../components/templates/RirRpeToggleRow.jsx";
 import { ViewModeToggle } from "../components/templates/ViewModeToggle.jsx";
 import { WorkoutTemplateTableView } from "../components/templates/WorkoutTemplateTableView.jsx";
 import { WorkoutSetRowShell } from "../components/workout/WorkoutSetRowShell.jsx";
+import { MetricInfoButton } from "../components/workout/MetricInfoButton.jsx";
+import { MetricIntroCard } from "../components/workout/MetricIntroCard.jsx";
 import { getAdHocSessionTitle, setAdHocSessionTitle } from "../lib/adHocSessionTitle.js";
 import { sessionDisplayTitle } from "../lib/sessionDisplay.js";
 import { smartWorkoutNameFromSessionExercises } from "../lib/smartWorkoutName.js";
@@ -24,6 +26,12 @@ import {
   loadQuickWorkoutLogPrefs,
   saveQuickWorkoutLogPrefs,
 } from "../lib/quickWorkoutLogPrefs.js";
+import {
+  markSeenRirIntro,
+  markSeenRpeIntro,
+  readSeenRirIntro,
+  readSeenRpeIntro,
+} from "../lib/metricIntros.js";
 import { useSessionLiveLoggingGuard } from "../context/SessionLiveLoggingGuardContext.jsx";
 import {
   BLANK_SESSION_EXERCISE_NAME,
@@ -472,9 +480,6 @@ function SessionExerciseBlock({
                     >
                       + Add set
                     </button>
-                    <p className="muted small session-block-autosave-hint" style={{ margin: 0 }}>
-                      Autosaves when you pause typing or leave a field.
-                    </p>
                   </div>
                 ) : null}
               </>
@@ -510,6 +515,8 @@ export function SessionDetailPage() {
   const [completeBusy, setCompleteBusy] = useState(false);
   const exerciseAnchorRefs = useRef(new Map());
   const sessionNoteTogglesInitRef = useRef(null);
+  const [showRpeIntro, setShowRpeIntro] = useState(() => !readSeenRpeIntro());
+  const [showRirIntro, setShowRirIntro] = useState(() => !readSeenRirIntro());
 
   const isCompleted = Boolean(session?.completedAt);
 
@@ -1290,6 +1297,29 @@ export function SessionDetailPage() {
             ariaGroupLabel="Workout view mode"
           />
 
+          {!isCompleted ? (
+            <div className="metric-intro-stack">
+              {liveUseRPE && showRpeIntro ? (
+                <MetricIntroCard
+                  metric="rpe"
+                  onDismiss={() => {
+                    markSeenRpeIntro();
+                    setShowRpeIntro(false);
+                  }}
+                />
+              ) : null}
+              {liveUseRIR && showRirIntro ? (
+                <MetricIntroCard
+                  metric="rir"
+                  onDismiss={() => {
+                    markSeenRirIntro();
+                    setShowRirIntro(false);
+                  }}
+                />
+              ) : null}
+            </div>
+          ) : null}
+
           {inLiveTable ? (
             tableExercises.length === 0 ? (
               <div className="muted small session-empty-card" style={{ margin: 0 }}>
@@ -1357,7 +1387,7 @@ export function SessionDetailPage() {
               <div className="workout-builder-append session-append-exercise">
                 <button
                   type="button"
-                  className="btn btn-secondary"
+                  className="btn btn-secondary workout-append-row-btn"
                   onClick={() => void onAppendExercise()}
                   disabled={addingExercise}
                 >
@@ -1413,15 +1443,14 @@ export function SessionDetailPage() {
       {!isCompleted ? (
         <div className="session-finish-dock" role="region" aria-label="Finish workout">
           <div className="session-finish-dock__inner stack">
-            {canFinishWorkout ? (
-              <p className="muted small session-finish-dock__hint" style={{ margin: 0 }}>
-                Saves to History and locks this session.
-              </p>
-            ) : (
+            <p className="muted small session-finish-dock__hint" style={{ margin: 0 }}>
+              Autosaves as you go. Finishing saves it to your history.
+            </p>
+            {!canFinishWorkout ? (
               <p className="muted small session-finish-dock__hint" style={{ margin: 0 }}>
                 Log at least one set anywhere to enable <strong>Finish workout</strong>.
               </p>
-            )}
+            ) : null}
             <button
               type="button"
               className="btn session-finish-btn session-finish-dock__btn"
@@ -1727,7 +1756,9 @@ const SessionSetRow = memo(function SessionSetRow({
             <div className="session-set-optional-row grid-set-row" style={{ "--set-cols": optionalColCount }}>
               {useRIR ? (
                 <label className="session-set-field session-set-field--secondary">
-                  <span className="session-set-field-label">RIR</span>
+                  <span className="session-set-field-label session-set-field-label-line">
+                    <span>RIR</span> <MetricInfoButton metric="rir" />
+                  </span>
                   <span className="muted small" style={{ fontWeight: 500, lineHeight: 1.2, marginTop: -1 }}>
                     Reps in Reserve
                   </span>
@@ -1747,7 +1778,9 @@ const SessionSetRow = memo(function SessionSetRow({
               ) : null}
               {useRPE ? (
                 <label className="session-set-field session-set-field--secondary">
-                  <span className="session-set-field-label">RPE</span>
+                  <span className="session-set-field-label session-set-field-label-line">
+                    <span>RPE</span> <MetricInfoButton metric="rpe" />
+                  </span>
                   <span className="muted small" style={{ fontWeight: 500, lineHeight: 1.2, marginTop: -1 }}>
                     Rating of Perceived Exertion
                   </span>

@@ -55,7 +55,7 @@ export function WorkoutBuilder({
       <div className="workout-builder-append">
         <button
           type="button"
-          className="btn btn-secondary"
+          className="btn btn-secondary workout-append-row-btn"
           onClick={() => insertExerciseAt(exercises.length)}
         >
           + Add exercise
