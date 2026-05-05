@@ -2298,40 +2298,6 @@ html[data-theme="dark"] .session-set-field--needs-value input {
   letter-spacing: 0.04em;
 }
 
-.metric-intro-stack {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin: 0 0 12px 0;
-}
-
-.metric-intro-card {
-  padding: 10px 12px;
-  border-radius: var(--radius-card);
-  background: var(--color-surface-2);
-  border: 1px solid var(--color-border);
-  box-shadow: var(--shadow-card);
-}
-
-.metric-intro-card__text {
-  margin: 0;
-  font-size: 0.85rem;
-  line-height: 1.4;
-  color: var(--color-text-secondary);
-}
-
-.metric-intro-card__actions {
-  margin-top: 10px;
-  display: flex;
-  justify-content: flex-end;
-}
-
-.metric-intro-card__btn {
-  font-size: 0.82rem;
-  min-height: 36px;
-  padding: 0 12px;
-}
-
 .metric-info-btn-wrap {
   display: inline-flex;
   vertical-align: middle;
@@ -2371,6 +2337,7 @@ html[data-theme="dark"] .session-set-field--needs-value input {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-control);
   box-shadow: var(--shadow-card-hover);
+  z-index: 400;
 }
 
 .metric-info-popover__text {

@@ -18,7 +18,6 @@ import { ViewModeToggle } from "../components/templates/ViewModeToggle.jsx";
 import { WorkoutTemplateTableView } from "../components/templates/WorkoutTemplateTableView.jsx";
 import { WorkoutSetRowShell } from "../components/workout/WorkoutSetRowShell.jsx";
 import { MetricInfoButton } from "../components/workout/MetricInfoButton.jsx";
-import { MetricIntroCard } from "../components/workout/MetricIntroCard.jsx";
 import { getAdHocSessionTitle, setAdHocSessionTitle } from "../lib/adHocSessionTitle.js";
 import { sessionDisplayTitle } from "../lib/sessionDisplay.js";
 import { smartWorkoutNameFromSessionExercises } from "../lib/smartWorkoutName.js";
@@ -26,12 +25,6 @@ import {
   loadQuickWorkoutLogPrefs,
   saveQuickWorkoutLogPrefs,
 } from "../lib/quickWorkoutLogPrefs.js";
-import {
-  markSeenRirIntro,
-  markSeenRpeIntro,
-  readSeenRirIntro,
-  readSeenRpeIntro,
-} from "../lib/metricIntros.js";
 import { useSessionLiveLoggingGuard } from "../context/SessionLiveLoggingGuardContext.jsx";
 import {
   BLANK_SESSION_EXERCISE_NAME,
@@ -284,6 +277,274 @@ function SessionExerciseFields({
   );
 }
 
+/** Local-only first row shown when an exercise has zero persisted sets (promoted via POST sets). */
+const DraftSessionSetRow = memo(function DraftSessionSetRow({
+  resumeVersion,
+  sessionExerciseId,
+  useRIR = true,
+  useRPE = true,
+  useSetNotes = true,
+  onInteractStart,
+  onPromoteDraft,
+}) {
+  const [draft, setDraft] = useState(() => ({
+    reps: "",
+    weight: "",
+    rpe: "",
+    rir: "",
+    notes: "",
+  }));
+  const draftRef = useRef(draft);
+  const promotingRef = useRef(false);
+  const lastSentDraftKeyRef = useRef(null);
+
+  const fieldIds = useMemo(
+    () => ({
+      weight: `log-draft-${sessionExerciseId}-weight`,
+      reps: `log-draft-${sessionExerciseId}-reps`,
+      rir: `log-draft-${sessionExerciseId}-rir`,
+      rpe: `log-draft-${sessionExerciseId}-rpe`,
+      notes: `log-draft-${sessionExerciseId}-notes`,
+    }),
+    [sessionExerciseId]
+  );
+
+  useLayoutEffect(() => {
+    draftRef.current = draft;
+  }, [draft]);
+
+  useEffect(() => {
+    const empty = {
+      reps: "",
+      weight: "",
+      rpe: "",
+      rir: "",
+      notes: "",
+    };
+    setDraft(empty);
+    draftRef.current = empty;
+    lastSentDraftKeyRef.current = null;
+  }, [resumeVersion]);
+
+  function draftRowKey(d) {
+    const norm = (v) => (v == null ? "" : String(v)).trim();
+    return JSON.stringify({
+      w: norm(d.weight),
+      r: norm(d.reps),
+      p: norm(d.rpe),
+      i: norm(d.rir),
+      n: norm(d.notes),
+    });
+  }
+
+  const tryPromote = useCallback(async () => {
+    if (promotingRef.current) return;
+    const cur = draftRef.current;
+    if (sessionSetRowIsBlank(cur)) return;
+    const k = draftRowKey(cur);
+    if (k === lastSentDraftKeyRef.current) return;
+    promotingRef.current = true;
+    try {
+      await onPromoteDraft(cur);
+      lastSentDraftKeyRef.current = k;
+    } catch {
+      lastSentDraftKeyRef.current = null;
+    } finally {
+      promotingRef.current = false;
+    }
+  }, [onPromoteDraft]);
+
+  useEffect(() => {
+    const cur = draftRef.current;
+    if (sessionSetRowIsBlank(cur)) return;
+    const k = draftRowKey(cur);
+    if (k === lastSentDraftKeyRef.current) return;
+    const t = setTimeout(() => {
+      void tryPromote();
+    }, 900);
+    return () => clearTimeout(t);
+  }, [draft, tryPromote]);
+
+  function focusNextField(from) {
+    const chain = ["weight", "reps"];
+    if (useRIR) chain.push("rir");
+    if (useRPE) chain.push("rpe");
+    if (useSetNotes) chain.push("notes");
+    const i = chain.indexOf(from);
+    if (i < 0 || i + 1 >= chain.length) return;
+    const id = fieldIds[chain[i + 1]];
+    document.getElementById(id)?.focus();
+  }
+
+  function onEnterNext(e, from) {
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    focusNextField(from);
+  }
+
+  const optionalColCount = (useRIR ? 1 : 0) + (useRPE ? 1 : 0);
+
+  const corePartial = useMemo(() => {
+    const w = (draft.weight ?? "").toString().trim();
+    const r = (draft.reps ?? "").toString().trim();
+    if (w === "" && r === "") return false;
+    return w === "" || r === "";
+  }, [draft.weight, draft.reps]);
+
+  const wTrim = (draft.weight ?? "").toString().trim();
+  const rTrim = (draft.reps ?? "").toString().trim();
+  const needsWeight = Boolean(!coreLogged && !wTrim && Boolean(rTrim));
+  const needsReps = Boolean(!coreLogged && !rTrim && Boolean(wTrim));
+  const needsWeightHighlight = Boolean(needsWeight && rTrim !== "");
+  const needsRepsHighlight = Boolean(needsReps && wTrim !== "");
+
+  const shellClass = [
+    "session-set-row-card",
+    !coreLogged && corePartial ? "session-set-row-card--partial" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  return (
+    <div
+      className="session-set-row-root"
+      onFocusCapture={
+        onInteractStart
+          ? () => {
+              onInteractStart();
+            }
+          : undefined
+      }
+    >
+      <WorkoutSetRowShell
+        label="Set 1"
+        headerExtra={null}
+        canRemove={false}
+        disabled={false}
+        className={shellClass}
+        removeButtonMode="icon"
+      >
+        <div className="session-set-field-groups">
+          <div className="session-set-core-row grid-set-row" style={{ "--set-cols": 2 }}>
+            <label
+              className={[
+                "session-set-field session-set-field--primary",
+                needsWeightHighlight ? "session-set-field--needs-value" : "",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+            >
+              <span className="session-set-field-label">Weight</span>
+              <input
+                id={fieldIds.weight}
+                type="number"
+                value={draft.weight}
+                onChange={(e) => setDraft((d) => ({ ...d, weight: e.target.value }))}
+                onBlur={() => void tryPromote()}
+                onKeyDown={(e) => onEnterNext(e, "weight")}
+                enterKeyHint="next"
+                inputMode="decimal"
+                min="0"
+                step="0.01"
+                placeholder="e.g. 185"
+                aria-invalid={needsWeightHighlight ? true : undefined}
+              />
+            </label>
+            <label
+              className={[
+                "session-set-field session-set-field--primary",
+                needsRepsHighlight ? "session-set-field--needs-value" : "",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+            >
+              <span className="session-set-field-label">Reps</span>
+              <input
+                id={fieldIds.reps}
+                type="number"
+                value={draft.reps}
+                onChange={(e) => setDraft((d) => ({ ...d, reps: e.target.value }))}
+                onBlur={() => void tryPromote()}
+                onKeyDown={(e) => onEnterNext(e, "reps")}
+                enterKeyHint={useRIR || useRPE || useSetNotes ? "next" : "done"}
+                inputMode="decimal"
+                min="0"
+                step="0.01"
+                placeholder="e.g. 8"
+                aria-invalid={needsRepsHighlight ? true : undefined}
+              />
+            </label>
+          </div>
+
+          {useRIR || useRPE ? (
+            <div className="session-set-optional-row grid-set-row" style={{ "--set-cols": optionalColCount }}>
+              {useRIR ? (
+                <label className="session-set-field session-set-field--secondary">
+                  <span className="session-set-field-label session-set-field-label-line">
+                    <span>RIR</span> <MetricInfoButton metric="rir" />
+                  </span>
+                  <span className="muted small" style={{ fontWeight: 500, lineHeight: 1.2, marginTop: -1 }}>
+                    Reps in Reserve
+                  </span>
+                  <input
+                    id={fieldIds.rir}
+                    value={draft.rir}
+                    onChange={(e) => setDraft((d) => ({ ...d, rir: e.target.value }))}
+                    onBlur={() => void tryPromote()}
+                    onKeyDown={(e) => onEnterNext(e, "rir")}
+                    enterKeyHint={useRPE || useSetNotes ? "next" : "done"}
+                    inputMode="numeric"
+                    placeholder="—"
+                    title="Optional"
+                  />
+                </label>
+              ) : null}
+              {useRPE ? (
+                <label className="session-set-field session-set-field--secondary">
+                  <span className="session-set-field-label session-set-field-label-line">
+                    <span>RPE</span> <MetricInfoButton metric="rpe" />
+                  </span>
+                  <span className="muted small" style={{ fontWeight: 500, lineHeight: 1.2, marginTop: -1 }}>
+                    Rating of Perceived Exertion
+                  </span>
+                  <input
+                    id={fieldIds.rpe}
+                    value={draft.rpe}
+                    onChange={(e) => setDraft((d) => ({ ...d, rpe: e.target.value }))}
+                    onBlur={() => void tryPromote()}
+                    onKeyDown={(e) => onEnterNext(e, "rpe")}
+                    enterKeyHint={useSetNotes ? "next" : "done"}
+                    inputMode="decimal"
+                    placeholder="—"
+                    title="Optional"
+                  />
+                </label>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+
+        {useSetNotes ? (
+          <label className="session-set-notes-field mt-2">
+            <span className="session-set-field-label session-set-field-label--secondary">Notes</span>
+            <input
+              id={fieldIds.notes}
+              value={draft.notes}
+              onChange={(e) => setDraft((d) => ({ ...d, notes: e.target.value }))}
+              onBlur={() => void tryPromote()}
+              enterKeyHint="done"
+              placeholder="Optional"
+              title="Optional"
+            />
+          </label>
+        ) : null}
+      </WorkoutSetRowShell>
+    </div>
+  );
+});
+
+DraftSessionSetRow.displayName = "DraftSessionSetRow";
+
 /**
  * One exercise + sets — mirrors `ExerciseEditor` + `WorkoutBuilder` exercise block structure.
  * Heading shows live set count (e.g. Bench · 3 sets). Session has no “remove exercise” API.
@@ -303,6 +564,7 @@ function SessionExerciseBlock({
   onExerciseCommitted,
   onSaved,
   onCreateSet,
+  onPromoteDraftSet = () => Promise.resolve(),
   onUpdateSet,
   onDeleteSet,
   onAdjustSetCount,
@@ -318,6 +580,21 @@ function SessionExerciseBlock({
   /** First incomplete set in the whole session (by exercise order, then set order). */
   nextIncompleteSetId = null,
 }) {
+  const [draftResumeVersion, setDraftResumeVersion] = useState(0);
+  const prevSetsLenRef = useRef(null);
+
+  useEffect(() => {
+    const prev = prevSetsLenRef.current;
+    if (prevSetsLenRef.current === null) {
+      prevSetsLenRef.current = sets.length;
+      return;
+    }
+    prevSetsLenRef.current = sets.length;
+    if (!isCompleted && sets.length === 0 && prev > 0) {
+      setDraftResumeVersion((v) => v + 1);
+    }
+  }, [sets.length, isCompleted]);
+
   const exerciseCommitted = isCompleted ? undefined : onExerciseCommitted;
   const rawName = se.exerciseName ?? "";
   const namePart =
@@ -442,7 +719,21 @@ function SessionExerciseBlock({
             </div>
 
             {sets.length === 0 ? (
-              <div className="muted small session-empty-sets">No sets yet—tap + Add set.</div>
+              isCompleted ? (
+                <div className="muted small session-empty-sets">No sets logged.</div>
+              ) : (
+                <div className="stack session-set-rows">
+                  <DraftSessionSetRow
+                    resumeVersion={draftResumeVersion}
+                    sessionExerciseId={se.id}
+                    useRIR={useRIR}
+                    useRPE={useRPE}
+                    useSetNotes={useSetNotes}
+                    onInteractStart={onActivateExercise}
+                    onPromoteDraft={(d) => onPromoteDraftSet(se.id, d)}
+                  />
+                </div>
+              )
             ) : (
               <>
                 <div className="stack session-set-rows">
@@ -515,8 +806,6 @@ export function SessionDetailPage() {
   const [completeBusy, setCompleteBusy] = useState(false);
   const exerciseAnchorRefs = useRef(new Map());
   const sessionNoteTogglesInitRef = useRef(null);
-  const [showRpeIntro, setShowRpeIntro] = useState(() => !readSeenRpeIntro());
-  const [showRirIntro, setShowRirIntro] = useState(() => !readSeenRirIntro());
 
   const isCompleted = Boolean(session?.completedAt);
 
@@ -871,6 +1160,40 @@ export function SessionDetailPage() {
       } catch (err) {
         setError(err);
         await load();
+      }
+    },
+    [sessionId, appendSetRow, load]
+  );
+
+  const promoteDraftSet = useCallback(
+    async (sessionExerciseId, draft) => {
+      setError(null);
+      try {
+        const sess = sessionRef.current;
+        if (!sess) {
+          await load();
+          return;
+        }
+        const order = nextSetOrder(sess);
+        const body = { sessionExerciseId, order };
+        const t = (v) => (v == null ? "" : String(v)).trim();
+        if (t(draft.reps) !== "") body.reps = Number(String(draft.reps).trim());
+        if (t(draft.weight) !== "") body.weight = Number(String(draft.weight).trim());
+        if (t(draft.rpe) !== "") body.rpe = Number(String(draft.rpe).trim());
+        if (t(draft.rir) !== "") body.rir = Number(String(draft.rir).trim());
+        const n = t(draft.notes);
+        if (n) body.notes = n;
+
+        const data = await sessionApi.createSet(sessionId, body);
+        if (data?.set) {
+          appendSetRow(data.set);
+        } else {
+          await load();
+        }
+      } catch (err) {
+        setError(err);
+        await load();
+        throw err;
       }
     },
     [sessionId, appendSetRow, load]
@@ -1297,29 +1620,6 @@ export function SessionDetailPage() {
             ariaGroupLabel="Workout view mode"
           />
 
-          {!isCompleted ? (
-            <div className="metric-intro-stack">
-              {liveUseRPE && showRpeIntro ? (
-                <MetricIntroCard
-                  metric="rpe"
-                  onDismiss={() => {
-                    markSeenRpeIntro();
-                    setShowRpeIntro(false);
-                  }}
-                />
-              ) : null}
-              {liveUseRIR && showRirIntro ? (
-                <MetricIntroCard
-                  metric="rir"
-                  onDismiss={() => {
-                    markSeenRirIntro();
-                    setShowRirIntro(false);
-                  }}
-                />
-              ) : null}
-            </div>
-          ) : null}
-
           {inLiveTable ? (
             tableExercises.length === 0 ? (
               <div className="muted small session-empty-card" style={{ margin: 0 }}>
@@ -1368,6 +1668,7 @@ export function SessionDetailPage() {
                       onExerciseCommitted={mergeSessionExerciseRow}
                       onSaved={load}
                       onCreateSet={onCreateSetForExercise}
+                      onPromoteDraftSet={promoteDraftSet}
                       onUpdateSet={onUpdateSet}
                       onDeleteSet={onDeleteSet}
                       onAdjustSetCount={onAdjustSetCountForExercise}

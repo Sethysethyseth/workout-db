@@ -1,6 +1,13 @@
 import { createPortal } from "react-dom";
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
-import { METRIC_INTRO_COPY } from "../../lib/metricIntros.js";
+
+/** Same copy for per-set `(?)` explainers. */
+const METRIC_INTRO_COPY = {
+  rpe:
+    "RPE = Rate of Perceived Exertion. A 1–10 scale of how hard a set felt. 10 = couldn't do another rep, 7 = had 3 in the tank.",
+  rir:
+    "RIR = Reps in Reserve. How many more reps you could've done. 0 = total failure, 3 = three more in the tank.",
+};
 
 /**
  * (?) next to RPE/RIR labels. Opens a fixed-position popover (portal) so parents
@@ -86,7 +93,6 @@ export function MetricInfoButton({ metric }) {
               top: pos.top,
               left: pos.left,
               maxWidth: pos.maxWidth,
-              zIndex: 200,
             }}
           >
             <p className="metric-info-popover__text">{copy}</p>
