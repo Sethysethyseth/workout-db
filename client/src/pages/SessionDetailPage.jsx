@@ -393,14 +393,14 @@ const DraftSessionSetRow = memo(function DraftSessionSetRow({
 
   const wTrim = (draft.weight ?? "").toString().trim();
   const rTrim = (draft.reps ?? "").toString().trim();
-  const needsWeight = Boolean(!coreLogged && !wTrim && Boolean(rTrim));
-  const needsReps = Boolean(!coreLogged && !rTrim && Boolean(wTrim));
+  const needsWeight = Boolean(!false && !wTrim && Boolean(rTrim));
+  const needsReps = Boolean(!false && !rTrim && Boolean(wTrim));
   const needsWeightHighlight = Boolean(needsWeight && rTrim !== "");
   const needsRepsHighlight = Boolean(needsReps && wTrim !== "");
 
   const shellClass = [
     "session-set-row-card",
-    !coreLogged && corePartial ? "session-set-row-card--partial" : "",
+    !false && corePartial ? "session-set-row-card--partial" : "",
   ]
     .filter(Boolean)
     .join(" ");
