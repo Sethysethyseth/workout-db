@@ -1306,6 +1306,90 @@ async function deleteSet(req, res, next) {
   }
 }
 
+async function deleteSessionExercise(req, res, next) {
+  try {
+    const userId = req.authUserId;
+
+    if (!userId) {
+      return res.status(401).json({
+        error: "Authentication required",
+      });
+    }
+
+    const sessionExerciseId = parsePositiveInt(req.params && req.params.id);
+
+    if (!sessionExerciseId) {
+      return res.status(400).json({
+        error: "Session exercise id must be a positive integer",
+      });
+    }
+
+    const deleted = await prisma.$transaction(async (tx) => {
+      const existing = await tx.sessionExercise.findUnique({
+        where: {
+          id: sessionExerciseId,
+        },
+        include: {
+          workoutSession: {
+            select: {
+              userId: true,
+              completedAt: true,
+            },
+          },
+        },
+      });
+
+      if (!existing) {
+        return { status: 404 };
+      }
+
+      if (!existing.workoutSession || existing.workoutSession.userId !== userId) {
+        return { status: 403 };
+      }
+
+      if (existing.workoutSession.completedAt) {
+        return { status: 400 };
+      }
+
+      await tx.workoutSet.deleteMany({
+        where: {
+          sessionExerciseId,
+        },
+      });
+
+      await tx.sessionExercise.delete({
+        where: {
+          id: sessionExerciseId,
+        },
+      });
+
+      return { status: 204 };
+    });
+
+    if (deleted.status === 404) {
+      return res.status(404).json({
+        error: "Session exercise not found",
+      });
+    }
+
+    if (deleted.status === 403) {
+      return res.status(403).json({
+        error: "You do not have permission to delete this session exercise",
+      });
+    }
+
+    if (deleted.status === 400) {
+      return res.status(400).json({
+        error: "Completed sessions cannot be modified",
+      });
+    }
+
+    return res.sendStatus(204);
+  } catch (err) {
+    return next(err);
+  }
+}
+
 module.exports = {
   startSession,
   createAdHocSession,
@@ -1319,4 +1403,5 @@ module.exports = {
   completeSession,
   deleteSession,
   deleteSet,
+  deleteSessionExercise,
 };

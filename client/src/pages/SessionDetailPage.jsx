@@ -567,6 +567,7 @@ function SessionExerciseBlock({
   onPromoteDraftSet = () => Promise.resolve(),
   onUpdateSet,
   onDeleteSet,
+  onDeleteExercise,
   onAdjustSetCount,
   setCountBusy,
   /** Live builder: collapsible blocks + active exercise chrome. */
@@ -582,6 +583,7 @@ function SessionExerciseBlock({
 }) {
   const [draftResumeVersion, setDraftResumeVersion] = useState(0);
   const prevSetsLenRef = useRef(null);
+  const [confirmRemove, setConfirmRemove] = useState(false);
 
   useEffect(() => {
     const prev = prevSetsLenRef.current;
@@ -594,6 +596,12 @@ function SessionExerciseBlock({
       setDraftResumeVersion((v) => v + 1);
     }
   }, [sets.length, isCompleted]);
+
+  useEffect(() => {
+    if (!confirmRemove) return;
+    const t = setTimeout(() => setConfirmRemove(false), 5000);
+    return () => clearTimeout(t);
+  }, [confirmRemove]);
 
   const exerciseCommitted = isCompleted ? undefined : onExerciseCommitted;
   const rawName = se.exerciseName ?? "";
@@ -640,6 +648,45 @@ function SessionExerciseBlock({
     </>
   );
 
+  const removeControl =
+    !isCompleted && onDeleteExercise ? (
+      confirmRemove ? (
+        <div className="row" style={{ gap: 8, alignItems: "center", justifyContent: "flex-end" }}>
+          <span className="muted small" style={{ fontWeight: 600 }}>
+            Remove {namePart}?
+          </span>
+          <button
+            type="button"
+            className="btn"
+            onClick={() => {
+              setConfirmRemove(false);
+              void onDeleteExercise(se.id);
+            }}
+            style={{ padding: "6px 10px" }}
+          >
+            Yes, remove
+          </button>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={() => setConfirmRemove(false)}
+            style={{ padding: "6px 10px" }}
+          >
+            Cancel
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          className="btn btn-secondary"
+          onClick={() => setConfirmRemove(true)}
+          style={{ padding: "6px 10px" }}
+        >
+          Remove exercise
+        </button>
+      )
+    ) : null;
+
   return (
     <div className={blockClass}>
       <div
@@ -650,17 +697,24 @@ function SessionExerciseBlock({
         }
       >
         {collapsible && !isCompleted ? (
-          <button
-            type="button"
-            className="session-exercise-heading-toggle"
-            onClick={() => onToggleCollapsed?.()}
-            aria-expanded={expanded}
-          >
-            {headingInner}
-          </button>
+          <div className="row session-exercise-heading-row" style={{ justifyContent: "space-between" }}>
+            <button
+              type="button"
+              className="session-exercise-heading-toggle"
+              onClick={() => onToggleCollapsed?.()}
+              aria-expanded={expanded}
+            >
+              {headingInner}
+            </button>
+            {removeControl}
+          </div>
         ) : (
-          <div className="row session-exercise-heading-row session-exercise-heading-toggle-static">
-            {headingInner}
+          <div
+            className="row session-exercise-heading-row session-exercise-heading-toggle-static"
+            style={{ justifyContent: "space-between" }}
+          >
+            <div>{headingInner}</div>
+            {removeControl}
           </div>
         )}
       </div>
@@ -1318,6 +1372,19 @@ export function SessionDetailPage() {
     [removeSetRow, load]
   );
 
+  const onDeleteExercise = useCallback(
+    async (sessionExerciseId) => {
+      setError(null);
+      try {
+        await sessionApi.deleteSessionExercise(sessionExerciseId);
+        await load();
+      } catch (err) {
+        setError(err);
+      }
+    },
+    [load]
+  );
+
   const activateExercise = useCallback((exerciseId) => {
     if (exerciseId == null) return;
     setActiveExerciseId(exerciseId);
@@ -1671,6 +1738,7 @@ export function SessionDetailPage() {
                       onPromoteDraftSet={promoteDraftSet}
                       onUpdateSet={onUpdateSet}
                       onDeleteSet={onDeleteSet}
+                      onDeleteExercise={onDeleteExercise}
                       onAdjustSetCount={onAdjustSetCountForExercise}
                       setCountBusy={adjustingSetCountExerciseId === se.id}
                       collapsible

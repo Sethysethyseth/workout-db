@@ -58,3 +58,7 @@ export function deleteSet(setId) {
   return http(`/sessions/sets/${setId}`, { method: "DELETE" });
 }
 
+export function deleteSessionExercise(sessionExerciseId) {
+  return http(`/sessions/exercises/${sessionExerciseId}`, { method: "DELETE" });
+}
+

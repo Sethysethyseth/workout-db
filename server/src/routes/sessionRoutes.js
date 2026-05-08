@@ -13,6 +13,7 @@ const {
   completeSession,
   deleteSession,
   deleteSet,
+  deleteSessionExercise,
 } = require("../controllers/sessionController");
 
 const router = express.Router();
@@ -29,5 +30,6 @@ router.delete("/:id", authRequired, deleteSession);
 router.post("/:id/sets", authRequired, createSetForSession);
 router.patch("/sets/:id", authRequired, updateSet);
 router.delete("/sets/:id", authRequired, deleteSet);
+router.delete("/exercises/:id", authRequired, deleteSessionExercise);
 
 module.exports = router;
