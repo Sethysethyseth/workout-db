@@ -1814,7 +1814,7 @@ const SessionSetRow = memo(function SessionSetRow({
   function payloadFromDraft(d) {
     const payload = {};
     payload.order = lockSetOrder ? Number(set.order) : Number(d.order);
-    payload.reps = d.reps === "" ? "" : Number(d.reps);
+    payload.reps = d.reps === "" ? "" : String(d.reps);
     payload.weight = d.weight === "" ? "" : Number(d.weight);
     payload.rpe = d.rpe === "" ? "" : Number(d.rpe);
     payload.rir = d.rir === "" ? "" : Number(d.rir);
