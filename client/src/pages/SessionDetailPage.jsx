@@ -390,7 +390,7 @@ const SessionSetRow = memo(function SessionSetRow({
     lastSentKeyRef.current = payloadKey(payloadFromDraft(next));
     // payloadFromDraft closes over `set` + lockSetOrder; deps list mirrors those inputs.
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only re-sync when server fields change
-  }, [isDraft, set.id, set.order, set.reps, set.weight, set.rpe, set.rir, set.notes, lockSetOrder]);
+  }, [isDraft, set?.id, set?.order, set?.reps, set?.weight, set?.rpe, set?.rir, set?.notes, lockSetOrder]);
 
   const tryPromote = useCallback(async () => {
     if (!isDraft) return;
