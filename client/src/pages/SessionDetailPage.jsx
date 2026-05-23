@@ -77,6 +77,23 @@ function sessionSetDraftDirty(draft, set) {
   );
 }
 
+/** POST create-set field payload from local draft (promotion path). Omits blank fields. */
+function promotionPayloadFromDraft(d) {
+  const payload = {};
+  const t = (v) => (v == null ? "" : String(v)).trim();
+  if (t(d.reps) !== "") payload.reps = Number(String(d.reps).trim());
+  if (t(d.weight) !== "") payload.weight = Number(String(d.weight).trim());
+  if (t(d.rpe) !== "") payload.rpe = Number(String(d.rpe).trim());
+  if (t(d.rir) !== "") payload.rir = Number(String(d.rir).trim());
+  const n = t(d.notes);
+  if (n) payload.notes = n;
+  return payload;
+}
+
+function payloadKey(p) {
+  return JSON.stringify(p);
+}
+
 /** Every set has weight+reps (server row); false if there are zero sets. */
 function sessionExerciseAllSetsCoreLogged(sets) {
   if (!Array.isArray(sets) || sets.length === 0) return false;
@@ -277,36 +294,59 @@ function SessionExerciseFields({
   );
 }
 
-/** Local-only first row shown when an exercise has zero persisted sets (promoted via POST sets). */
-const DraftSessionSetRow = memo(function DraftSessionSetRow({
-  resumeVersion,
-  sessionExerciseId,
+/** Set row for live session logging; draft (zero sets) or persisted set (PATCH on blur). */
+const SessionSetRow = memo(function SessionSetRow({
+  isDraft = false,
   useRIR = true,
   useRPE = true,
   useSetNotes = true,
   onInteractStart,
+  resumeVersion,
+  sessionExerciseId,
   onPromoteDraft,
+  set,
+  setOrdinal,
+  lockSetOrder = false,
+  disabled = false,
+  onUpdateSet,
+  onDeleteSet,
+  isNext = false,
 }) {
-  const [draft, setDraft] = useState(() => ({
-    reps: "",
-    weight: "",
-    rpe: "",
-    rir: "",
-    notes: "",
-  }));
+  const rootRef = useRef(null);
+  const [draft, setDraft] = useState(() =>
+    isDraft
+      ? { reps: "", weight: "", rpe: "", rir: "", notes: "" }
+      : {
+          order: String(set.order ?? ""),
+          reps: set.reps ?? "",
+          weight: set.weight ?? "",
+          rpe: set.rpe ?? "",
+          rir: set.rir ?? "",
+          notes: set.notes ?? "",
+        }
+  );
   const draftRef = useRef(draft);
   const promotingRef = useRef(false);
-  const lastSentDraftKeyRef = useRef(null);
+  const lastSentKeyRef = useRef(null);
 
   const fieldIds = useMemo(
-    () => ({
-      weight: `log-draft-${sessionExerciseId}-weight`,
-      reps: `log-draft-${sessionExerciseId}-reps`,
-      rir: `log-draft-${sessionExerciseId}-rir`,
-      rpe: `log-draft-${sessionExerciseId}-rpe`,
-      notes: `log-draft-${sessionExerciseId}-notes`,
-    }),
-    [sessionExerciseId]
+    () =>
+      isDraft
+        ? {
+            weight: `log-draft-${sessionExerciseId}-weight`,
+            reps: `log-draft-${sessionExerciseId}-reps`,
+            rir: `log-draft-${sessionExerciseId}-rir`,
+            rpe: `log-draft-${sessionExerciseId}-rpe`,
+            notes: `log-draft-${sessionExerciseId}-notes`,
+          }
+        : {
+            weight: `log-set-${set.id}-weight`,
+            reps: `log-set-${set.id}-reps`,
+            rir: `log-set-${set.id}-rir`,
+            rpe: `log-set-${set.id}-rpe`,
+            notes: `log-set-${set.id}-notes`,
+          },
+    [isDraft, sessionExerciseId, set?.id]
   );
 
   useLayoutEffect(() => {
@@ -314,56 +354,100 @@ const DraftSessionSetRow = memo(function DraftSessionSetRow({
   }, [draft]);
 
   useEffect(() => {
-    const empty = {
-      reps: "",
-      weight: "",
-      rpe: "",
-      rir: "",
-      notes: "",
-    };
+    if (!isDraft) return;
+    const empty = { reps: "", weight: "", rpe: "", rir: "", notes: "" };
     setDraft(empty);
     draftRef.current = empty;
-    lastSentDraftKeyRef.current = null;
-  }, [resumeVersion]);
+    lastSentKeyRef.current = null;
+  }, [isDraft, resumeVersion]);
 
-  function draftRowKey(d) {
-    const norm = (v) => (v == null ? "" : String(v)).trim();
-    return JSON.stringify({
-      w: norm(d.weight),
-      r: norm(d.reps),
-      p: norm(d.rpe),
-      i: norm(d.rir),
-      n: norm(d.notes),
-    });
+  function payloadFromDraft(d) {
+    const payload = {};
+    payload.order = lockSetOrder ? Number(set.order) : Number(d.order);
+    payload.reps = d.reps === "" ? "" : Number(d.reps);
+    payload.weight = d.weight === "" ? "" : Number(d.weight);
+    payload.rpe = d.rpe === "" ? "" : Number(d.rpe);
+    payload.rir = d.rir === "" ? "" : Number(d.rir);
+    payload.notes = d.notes === "" ? "" : d.notes;
+    return payload;
   }
 
+  useEffect(() => {
+    if (isDraft) return;
+    const next = {
+      order: String(set.order ?? ""),
+      reps: set.reps ?? "",
+      weight: set.weight ?? "",
+      rpe: set.rpe ?? "",
+      rir: set.rir ?? "",
+      notes: set.notes ?? "",
+    };
+    if (rootRef.current?.contains(document.activeElement)) {
+      lastSentKeyRef.current = payloadKey(payloadFromDraft(draftRef.current));
+      return;
+    }
+    setDraft(next);
+    lastSentKeyRef.current = payloadKey(payloadFromDraft(next));
+    // payloadFromDraft closes over `set` + lockSetOrder; deps list mirrors those inputs.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only re-sync when server fields change
+  }, [isDraft, set.id, set.order, set.reps, set.weight, set.rpe, set.rir, set.notes, lockSetOrder]);
+
   const tryPromote = useCallback(async () => {
+    if (!isDraft) return;
     if (promotingRef.current) return;
     const cur = draftRef.current;
     if (sessionSetRowIsBlank(cur)) return;
-    const k = draftRowKey(cur);
-    if (k === lastSentDraftKeyRef.current) return;
+    const k = payloadKey(promotionPayloadFromDraft(cur));
+    if (k === lastSentKeyRef.current) return;
     promotingRef.current = true;
     try {
       await onPromoteDraft(cur);
-      lastSentDraftKeyRef.current = k;
+      lastSentKeyRef.current = k;
     } catch {
-      lastSentDraftKeyRef.current = null;
+      lastSentKeyRef.current = null;
     } finally {
       promotingRef.current = false;
     }
-  }, [onPromoteDraft]);
+  }, [isDraft, onPromoteDraft]);
+
+  function flushNow() {
+    if (isDraft || disabled) return;
+    const latest = payloadFromDraft(draftRef.current);
+    const k = payloadKey(latest);
+    if (k === lastSentKeyRef.current) return;
+    lastSentKeyRef.current = k;
+    onUpdateSet(set.id, latest);
+  }
+
+  function onFieldBlur() {
+    if (isDraft) void tryPromote();
+    else flushNow();
+  }
 
   useEffect(() => {
-    const cur = draftRef.current;
-    if (sessionSetRowIsBlank(cur)) return;
-    const k = draftRowKey(cur);
-    if (k === lastSentDraftKeyRef.current) return;
+    if (isDraft) {
+      const cur = draftRef.current;
+      if (sessionSetRowIsBlank(cur)) return;
+      const k = payloadKey(promotionPayloadFromDraft(cur));
+      if (k === lastSentKeyRef.current) return;
+      const t = setTimeout(() => {
+        void tryPromote();
+      }, 900);
+      return () => clearTimeout(t);
+    }
+    if (disabled) return;
+    const latest = payloadFromDraft(draft);
+    if (payloadKey(latest) === lastSentKeyRef.current) return;
     const t = setTimeout(() => {
-      void tryPromote();
+      const cur = payloadFromDraft(draftRef.current);
+      const k = payloadKey(cur);
+      if (k === lastSentKeyRef.current) return;
+      lastSentKeyRef.current = k;
+      onUpdateSet(set.id, cur);
     }, 900);
     return () => clearTimeout(t);
-  }, [draft, tryPromote]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draft, disabled, isDraft, tryPromote]);
 
   function focusNextField(from) {
     const chain = ["weight", "reps"];
@@ -384,6 +468,30 @@ const DraftSessionSetRow = memo(function DraftSessionSetRow({
 
   const optionalColCount = (useRIR ? 1 : 0) + (useRPE ? 1 : 0);
 
+  const orderField =
+    !isDraft && !disabled && !lockSetOrder ? (
+      <label className="session-set-order" style={{ margin: 0 }}>
+        <span className="muted small" style={{ fontWeight: 600 }}>
+          Order
+        </span>
+        <input
+          value={draft.order}
+          onChange={(e) => setDraft((d) => ({ ...d, order: e.target.value }))}
+          onBlur={flushNow}
+          inputMode="numeric"
+          disabled={disabled}
+        />
+      </label>
+    ) : null;
+
+  const setLabel = isDraft ? "Set 1" : lockSetOrder ? `Set ${setOrdinal ?? "—"}` : `Set ${draft.order || "—"}`;
+
+  const coreLogged = useMemo(() => {
+    const w = (draft.weight ?? "").toString().trim();
+    const r = (draft.reps ?? "").toString().trim();
+    return w !== "" && r !== "";
+  }, [draft.weight, draft.reps]);
+
   const corePartial = useMemo(() => {
     const w = (draft.weight ?? "").toString().trim();
     const r = (draft.reps ?? "").toString().trim();
@@ -393,23 +501,61 @@ const DraftSessionSetRow = memo(function DraftSessionSetRow({
 
   const wTrim = (draft.weight ?? "").toString().trim();
   const rTrim = (draft.reps ?? "").toString().trim();
-  const needsWeight = Boolean(!false && !wTrim && Boolean(rTrim));
-  const needsReps = Boolean(!false && !rTrim && Boolean(wTrim));
-  const needsWeightHighlight = Boolean(needsWeight && rTrim !== "");
-  const needsRepsHighlight = Boolean(needsReps && wTrim !== "");
+  const needsWeight = Boolean(!disabled && !coreLogged && !wTrim && (Boolean(rTrim) || isNext));
+  const needsReps = Boolean(!disabled && !coreLogged && !rTrim && (Boolean(wTrim) || isNext));
+  const needsWeightHighlight = Boolean(needsWeight && (!isNext || rTrim !== ""));
+  const needsRepsHighlight = Boolean(needsReps && (!isNext || wTrim !== ""));
+  const showNextHint = Boolean(!disabled && isNext && !coreLogged && !wTrim && !rTrim);
 
-  const shellClass = [
-    "session-set-row-card",
-    !false && corePartial ? "session-set-row-card--partial" : "",
-  ]
-    .filter(Boolean)
-    .join(" ");
+  const synced = !isDraft && coreLogged && !sessionSetDraftDirty(draft, set);
+
+  const [savePulse, setSavePulse] = useState(false);
+  const mountedRef = useRef(false);
+  const prevSyncedRef = useRef(false);
+
+  useEffect(() => {
+    if (isDraft) return;
+    if (!mountedRef.current) {
+      mountedRef.current = true;
+      prevSyncedRef.current = synced;
+      return;
+    }
+    if (synced && !prevSyncedRef.current) {
+      setSavePulse(true);
+      const t = setTimeout(() => setSavePulse(false), 720);
+      prevSyncedRef.current = synced;
+      return () => clearTimeout(t);
+    }
+    prevSyncedRef.current = synced;
+  }, [isDraft, synced]);
+
+  const showNextCue = Boolean(!disabled && isNext && !coreLogged);
+  const shellClass = isDraft
+    ? ["session-set-row-card", corePartial ? "session-set-row-card--partial" : ""].filter(Boolean).join(" ")
+    : [
+        disabled ? "" : "session-set-row-card",
+        !disabled && coreLogged ? "session-set-row-card--logged" : "",
+        !disabled && showNextCue ? "session-set-row-card--next" : "",
+        !disabled && !coreLogged && corePartial && !isNext ? "session-set-row-card--partial" : "",
+        !disabled && savePulse ? "session-set-row-card--save-pulse" : "",
+      ]
+        .filter(Boolean)
+        .join(" ");
+
+  const statusBadge =
+    !isDraft && !disabled && coreLogged && synced ? (
+      <span className="session-set-sync-badge" title="Saved" aria-label="Saved">
+        ✓
+      </span>
+    ) : null;
 
   return (
     <div
+      ref={isDraft ? undefined : rootRef}
       className="session-set-row-root"
+      data-session-set-id={isDraft ? undefined : set.id}
       onFocusCapture={
-        onInteractStart
+        !disabled && onInteractStart
           ? () => {
               onInteractStart();
             }
@@ -417,13 +563,26 @@ const DraftSessionSetRow = memo(function DraftSessionSetRow({
       }
     >
       <WorkoutSetRowShell
-        label="Set 1"
-        headerExtra={null}
-        canRemove={false}
-        disabled={false}
+        label={setLabel}
+        headerExtra={
+          isDraft ? null : (
+            <>
+              {orderField}
+              {statusBadge}
+            </>
+          )
+        }
+        canRemove={!isDraft}
+        onRemove={isDraft ? undefined : () => onDeleteSet(set.id)}
+        disabled={isDraft ? false : disabled}
         className={shellClass}
-        removeButtonMode="icon"
+        removeButtonMode={isDraft || !disabled ? "icon" : "default"}
       >
+        {showNextHint ? (
+          <p className="session-set-next-hint muted small" style={{ margin: "0 0 6px" }}>
+            {"Enter weight & reps for this set."}
+          </p>
+        ) : null}
         <div className="session-set-field-groups">
           <div className="session-set-core-row grid-set-row" style={{ "--set-cols": 2 }}>
             <label
@@ -440,12 +599,13 @@ const DraftSessionSetRow = memo(function DraftSessionSetRow({
                 type="number"
                 value={draft.weight}
                 onChange={(e) => setDraft((d) => ({ ...d, weight: e.target.value }))}
-                onBlur={() => void tryPromote()}
+                onBlur={onFieldBlur}
                 onKeyDown={(e) => onEnterNext(e, "weight")}
                 enterKeyHint="next"
                 inputMode="decimal"
                 min="0"
                 step="0.01"
+                disabled={isDraft ? false : disabled}
                 placeholder="e.g. 185"
                 aria-invalid={needsWeightHighlight ? true : undefined}
               />
@@ -464,12 +624,13 @@ const DraftSessionSetRow = memo(function DraftSessionSetRow({
                 type="number"
                 value={draft.reps}
                 onChange={(e) => setDraft((d) => ({ ...d, reps: e.target.value }))}
-                onBlur={() => void tryPromote()}
+                onBlur={onFieldBlur}
                 onKeyDown={(e) => onEnterNext(e, "reps")}
                 enterKeyHint={useRIR || useRPE || useSetNotes ? "next" : "done"}
                 inputMode="decimal"
                 min="0"
                 step="0.01"
+                disabled={isDraft ? false : disabled}
                 placeholder="e.g. 8"
                 aria-invalid={needsRepsHighlight ? true : undefined}
               />
@@ -490,10 +651,11 @@ const DraftSessionSetRow = memo(function DraftSessionSetRow({
                     id={fieldIds.rir}
                     value={draft.rir}
                     onChange={(e) => setDraft((d) => ({ ...d, rir: e.target.value }))}
-                    onBlur={() => void tryPromote()}
+                    onBlur={onFieldBlur}
                     onKeyDown={(e) => onEnterNext(e, "rir")}
                     enterKeyHint={useRPE || useSetNotes ? "next" : "done"}
                     inputMode="numeric"
+                    disabled={isDraft ? false : disabled}
                     placeholder="—"
                     title="Optional"
                   />
@@ -511,10 +673,11 @@ const DraftSessionSetRow = memo(function DraftSessionSetRow({
                     id={fieldIds.rpe}
                     value={draft.rpe}
                     onChange={(e) => setDraft((d) => ({ ...d, rpe: e.target.value }))}
-                    onBlur={() => void tryPromote()}
+                    onBlur={onFieldBlur}
                     onKeyDown={(e) => onEnterNext(e, "rpe")}
                     enterKeyHint={useSetNotes ? "next" : "done"}
                     inputMode="decimal"
+                    disabled={isDraft ? false : disabled}
                     placeholder="—"
                     title="Optional"
                   />
@@ -531,8 +694,9 @@ const DraftSessionSetRow = memo(function DraftSessionSetRow({
               id={fieldIds.notes}
               value={draft.notes}
               onChange={(e) => setDraft((d) => ({ ...d, notes: e.target.value }))}
-              onBlur={() => void tryPromote()}
+              onBlur={onFieldBlur}
               enterKeyHint="done"
+              disabled={isDraft ? false : disabled}
               placeholder="Optional"
               title="Optional"
             />
@@ -543,7 +707,8 @@ const DraftSessionSetRow = memo(function DraftSessionSetRow({
   );
 });
 
-DraftSessionSetRow.displayName = "DraftSessionSetRow";
+SessionSetRow.displayName = "SessionSetRow";
+
 
 /**
  * One exercise + sets — mirrors `ExerciseEditor` + `WorkoutBuilder` exercise block structure.
@@ -777,7 +942,8 @@ function SessionExerciseBlock({
                 <div className="muted small session-empty-sets">No sets logged.</div>
               ) : (
                 <div className="stack session-set-rows">
-                  <DraftSessionSetRow
+                  <SessionSetRow
+                    isDraft
                     resumeVersion={draftResumeVersion}
                     sessionExerciseId={se.id}
                     useRIR={useRIR}
@@ -1229,14 +1395,7 @@ export function SessionDetailPage() {
           return;
         }
         const order = nextSetOrder(sess);
-        const body = { sessionExerciseId, order };
-        const t = (v) => (v == null ? "" : String(v)).trim();
-        if (t(draft.reps) !== "") body.reps = Number(String(draft.reps).trim());
-        if (t(draft.weight) !== "") body.weight = Number(String(draft.weight).trim());
-        if (t(draft.rpe) !== "") body.rpe = Number(String(draft.rpe).trim());
-        if (t(draft.rir) !== "") body.rir = Number(String(draft.rir).trim());
-        const n = t(draft.notes);
-        if (n) body.notes = n;
+        const body = { sessionExerciseId, order, ...promotionPayloadFromDraft(draft) };
 
         const data = await sessionApi.createSet(sessionId, body);
         if (data?.set) {
@@ -1836,359 +1995,4 @@ export function SessionDetailPage() {
   );
 }
 
-/** Same set-row layout as template SetRow (grid-set-row + optional notes); saves via API. */
-const SessionSetRow = memo(function SessionSetRow({
-  set,
-  setOrdinal,
-  lockSetOrder = false,
-  disabled,
-  onUpdateSet,
-  onDeleteSet,
-  useRIR = true,
-  useRPE = true,
-  useSetNotes = true,
-  /** Live logging: first set in the block that still needs weight + reps (server order). */
-  isNext = false,
-  /** Live logging: mark parent exercise active / expand when user focuses this row. */
-  onInteractStart,
-}) {
-  const rootRef = useRef(null);
-  const [draft, setDraft] = useState(() => ({
-    order: String(set.order ?? ""),
-    reps: set.reps ?? "",
-    weight: set.weight ?? "",
-    rpe: set.rpe ?? "",
-    rir: set.rir ?? "",
-    notes: set.notes ?? "",
-  }));
-  const draftRef = useRef(draft);
-  const lastSentKeyRef = useRef(null);
 
-  const fieldIds = useMemo(
-    () => ({
-      weight: `log-set-${set.id}-weight`,
-      reps: `log-set-${set.id}-reps`,
-      rir: `log-set-${set.id}-rir`,
-      rpe: `log-set-${set.id}-rpe`,
-      notes: `log-set-${set.id}-notes`,
-    }),
-    [set.id]
-  );
-
-  useLayoutEffect(() => {
-    draftRef.current = draft;
-  }, [draft]);
-
-  function payloadFromDraft(d) {
-    const payload = {};
-    payload.order = lockSetOrder ? Number(set.order) : Number(d.order);
-    payload.reps = d.reps === "" ? "" : Number(d.reps);
-    payload.weight = d.weight === "" ? "" : Number(d.weight);
-    payload.rpe = d.rpe === "" ? "" : Number(d.rpe);
-    payload.rir = d.rir === "" ? "" : Number(d.rir);
-    payload.notes = d.notes === "" ? "" : d.notes;
-    return payload;
-  }
-
-  function payloadKey(p) {
-    return JSON.stringify(p);
-  }
-
-  useEffect(() => {
-    const next = {
-      order: String(set.order ?? ""),
-      reps: set.reps ?? "",
-      weight: set.weight ?? "",
-      rpe: set.rpe ?? "",
-      rir: set.rir ?? "",
-      notes: set.notes ?? "",
-    };
-    if (rootRef.current?.contains(document.activeElement)) {
-      lastSentKeyRef.current = payloadKey(payloadFromDraft(draftRef.current));
-      return;
-    }
-    setDraft(next);
-    lastSentKeyRef.current = payloadKey(payloadFromDraft(next));
-    // payloadFromDraft closes over `set` + lockSetOrder; deps list mirrors those inputs.
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- only re-sync when server fields change
-  }, [set.id, set.order, set.reps, set.weight, set.rpe, set.rir, set.notes, lockSetOrder]);
-
-  function flushNow() {
-    if (disabled) return;
-    const latest = payloadFromDraft(draftRef.current);
-    const k = payloadKey(latest);
-    if (k === lastSentKeyRef.current) return;
-    lastSentKeyRef.current = k;
-    onUpdateSet(set.id, latest);
-  }
-
-  useEffect(() => {
-    if (disabled) return;
-    const latest = payloadFromDraft(draft);
-    if (payloadKey(latest) === lastSentKeyRef.current) return;
-    const t = setTimeout(() => {
-      const cur = payloadFromDraft(draftRef.current);
-      const k = payloadKey(cur);
-      if (k === lastSentKeyRef.current) return;
-      lastSentKeyRef.current = k;
-      onUpdateSet(set.id, cur);
-    }, 900);
-    return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [draft, disabled]);
-
-  function focusNextField(from) {
-    const chain = ["weight", "reps"];
-    if (useRIR) chain.push("rir");
-    if (useRPE) chain.push("rpe");
-    if (useSetNotes) chain.push("notes");
-    const i = chain.indexOf(from);
-    if (i < 0 || i + 1 >= chain.length) return;
-    const id = fieldIds[chain[i + 1]];
-    document.getElementById(id)?.focus();
-  }
-
-  function onEnterNext(e, from) {
-    if (e.key !== "Enter") return;
-    e.preventDefault();
-    focusNextField(from);
-  }
-
-  const optionalColCount = (useRIR ? 1 : 0) + (useRPE ? 1 : 0);
-
-  const orderField =
-    !disabled && !lockSetOrder ? (
-      <label className="session-set-order" style={{ margin: 0 }}>
-        <span className="muted small" style={{ fontWeight: 600 }}>
-          Order
-        </span>
-        <input
-          value={draft.order}
-          onChange={(e) => setDraft((d) => ({ ...d, order: e.target.value }))}
-          onBlur={flushNow}
-          inputMode="numeric"
-          disabled={disabled}
-        />
-      </label>
-    ) : null;
-
-  const setLabel = lockSetOrder ? `Set ${setOrdinal ?? "—"}` : `Set ${draft.order || "—"}`;
-
-  const coreLogged = useMemo(() => {
-    const w = (draft.weight ?? "").toString().trim();
-    const r = (draft.reps ?? "").toString().trim();
-    return w !== "" && r !== "";
-  }, [draft.weight, draft.reps]);
-
-  const corePartial = useMemo(() => {
-    const w = (draft.weight ?? "").toString().trim();
-    const r = (draft.reps ?? "").toString().trim();
-    if (w === "" && r === "") return false;
-    return w === "" || r === "";
-  }, [draft.weight, draft.reps]);
-
-  const wTrim = (draft.weight ?? "").toString().trim();
-  const rTrim = (draft.reps ?? "").toString().trim();
-  const needsWeight = Boolean(!disabled && !coreLogged && !wTrim && (Boolean(rTrim) || isNext));
-  const needsReps = Boolean(!disabled && !coreLogged && !rTrim && (Boolean(wTrim) || isNext));
-  /** Avoid doubling "next" card chrome with amber fields when both are still empty. */
-  const needsWeightHighlight = Boolean(needsWeight && (!isNext || rTrim !== ""));
-  const needsRepsHighlight = Boolean(needsReps && (!isNext || wTrim !== ""));
-  const showNextHint = Boolean(!disabled && isNext && !coreLogged && !wTrim && !rTrim);
-
-  const synced = coreLogged && !sessionSetDraftDirty(draft, set);
-
-  const [savePulse, setSavePulse] = useState(false);
-  const mountedRef = useRef(false);
-  const prevSyncedRef = useRef(false);
-
-  useEffect(() => {
-    if (!mountedRef.current) {
-      mountedRef.current = true;
-      prevSyncedRef.current = synced;
-      return;
-    }
-    if (synced && !prevSyncedRef.current) {
-      setSavePulse(true);
-      const t = setTimeout(() => setSavePulse(false), 720);
-      prevSyncedRef.current = synced;
-      return () => clearTimeout(t);
-    }
-    prevSyncedRef.current = synced;
-  }, [synced]);
-
-  const showNextCue = Boolean(!disabled && isNext && !coreLogged);
-  const shellClass = [
-    disabled ? "" : "session-set-row-card",
-    !disabled && coreLogged ? "session-set-row-card--logged" : "",
-    !disabled && showNextCue ? "session-set-row-card--next" : "",
-    !disabled && !coreLogged && corePartial && !isNext ? "session-set-row-card--partial" : "",
-    !disabled && savePulse ? "session-set-row-card--save-pulse" : "",
-  ]
-    .filter(Boolean)
-    .join(" ");
-
-  const statusBadge =
-    !disabled && coreLogged && synced ? (
-      <span className="session-set-sync-badge" title="Saved" aria-label="Saved">
-        ✓
-      </span>
-    ) : null;
-
-  return (
-    <div
-      ref={rootRef}
-      className="session-set-row-root"
-      data-session-set-id={set.id}
-      onFocusCapture={
-        !disabled && onInteractStart
-          ? () => {
-              onInteractStart();
-            }
-          : undefined
-      }
-    >
-      <WorkoutSetRowShell
-        label={setLabel}
-        headerExtra={
-          <>
-            {orderField}
-            {statusBadge}
-          </>
-        }
-        canRemove
-        onRemove={() => onDeleteSet(set.id)}
-        disabled={disabled}
-        className={shellClass}
-        removeButtonMode={disabled ? "default" : "icon"}
-      >
-        {showNextHint ? (
-          <p className="session-set-next-hint muted small" style={{ margin: "0 0 6px" }}>
-            {"Enter weight & reps for this set."}
-          </p>
-        ) : null}
-        <div className="session-set-field-groups">
-          <div className="session-set-core-row grid-set-row" style={{ "--set-cols": 2 }}>
-            <label
-              className={[
-                "session-set-field session-set-field--primary",
-                needsWeightHighlight ? "session-set-field--needs-value" : "",
-              ]
-                .filter(Boolean)
-                .join(" ")}
-            >
-              <span className="session-set-field-label">Weight</span>
-              <input
-                id={fieldIds.weight}
-                type="number"
-                value={draft.weight}
-                onChange={(e) => setDraft((d) => ({ ...d, weight: e.target.value }))}
-                onBlur={flushNow}
-                onKeyDown={(e) => onEnterNext(e, "weight")}
-                enterKeyHint="next"
-                inputMode="decimal"
-                min="0"
-                step="0.01"
-                disabled={disabled}
-                placeholder="e.g. 185"
-                aria-invalid={needsWeightHighlight ? true : undefined}
-              />
-            </label>
-            <label
-              className={[
-                "session-set-field session-set-field--primary",
-                needsRepsHighlight ? "session-set-field--needs-value" : "",
-              ]
-                .filter(Boolean)
-                .join(" ")}
-            >
-              <span className="session-set-field-label">Reps</span>
-              <input
-                id={fieldIds.reps}
-                type="number"
-                value={draft.reps}
-                onChange={(e) => setDraft((d) => ({ ...d, reps: e.target.value }))}
-                onBlur={flushNow}
-                onKeyDown={(e) => onEnterNext(e, "reps")}
-                enterKeyHint={useRIR || useRPE || useSetNotes ? "next" : "done"}
-                inputMode="decimal"
-                min="0"
-                step="0.01"
-                disabled={disabled}
-                placeholder="e.g. 8"
-                aria-invalid={needsRepsHighlight ? true : undefined}
-              />
-            </label>
-          </div>
-
-          {useRIR || useRPE ? (
-            <div className="session-set-optional-row grid-set-row" style={{ "--set-cols": optionalColCount }}>
-              {useRIR ? (
-                <label className="session-set-field session-set-field--secondary">
-                  <span className="session-set-field-label session-set-field-label-line">
-                    <span>RIR</span> <MetricInfoButton metric="rir" />
-                  </span>
-                  <span className="muted small" style={{ fontWeight: 500, lineHeight: 1.2, marginTop: -1 }}>
-                    Reps in Reserve
-                  </span>
-                  <input
-                    id={fieldIds.rir}
-                    value={draft.rir}
-                    onChange={(e) => setDraft((d) => ({ ...d, rir: e.target.value }))}
-                    onBlur={flushNow}
-                    onKeyDown={(e) => onEnterNext(e, "rir")}
-                    enterKeyHint={useRPE || useSetNotes ? "next" : "done"}
-                    inputMode="numeric"
-                    disabled={disabled}
-                    placeholder="—"
-                    title="Optional"
-                  />
-                </label>
-              ) : null}
-              {useRPE ? (
-                <label className="session-set-field session-set-field--secondary">
-                  <span className="session-set-field-label session-set-field-label-line">
-                    <span>RPE</span> <MetricInfoButton metric="rpe" />
-                  </span>
-                  <span className="muted small" style={{ fontWeight: 500, lineHeight: 1.2, marginTop: -1 }}>
-                    Rating of Perceived Exertion
-                  </span>
-                  <input
-                    id={fieldIds.rpe}
-                    value={draft.rpe}
-                    onChange={(e) => setDraft((d) => ({ ...d, rpe: e.target.value }))}
-                    onBlur={flushNow}
-                    onKeyDown={(e) => onEnterNext(e, "rpe")}
-                    enterKeyHint={useSetNotes ? "next" : "done"}
-                    inputMode="decimal"
-                    disabled={disabled}
-                    placeholder="—"
-                    title="Optional"
-                  />
-                </label>
-              ) : null}
-            </div>
-          ) : null}
-        </div>
-
-        {useSetNotes ? (
-          <label className="session-set-notes-field mt-2">
-            <span className="session-set-field-label session-set-field-label--secondary">Notes</span>
-            <input
-              id={fieldIds.notes}
-              value={draft.notes}
-              onChange={(e) => setDraft((d) => ({ ...d, notes: e.target.value }))}
-              onBlur={flushNow}
-              enterKeyHint="done"
-              disabled={disabled}
-              placeholder="Optional"
-              title="Optional"
-            />
-          </label>
-        ) : null}
-      </WorkoutSetRowShell>
-    </div>
-  );
-});
-
-SessionSetRow.displayName = "SessionSetRow";
