@@ -3,6 +3,9 @@ process.env.SESSION_SECRET = process.env.SESSION_SECRET || "test-session-secret"
 const prisma = require("../src/lib/prisma");
 
 async function resetDb() {
+  const { assertSafeForReset } = require("../src/lib/dbHostGuard");
+  assertSafeForReset(process.env.DATABASE_URL);
+
   // Keep ordering explicit to avoid FK issues.
   await prisma.workoutSet.deleteMany();
   await prisma.sessionExercise.deleteMany();
