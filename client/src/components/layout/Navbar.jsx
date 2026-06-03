@@ -49,7 +49,7 @@ export function Navbar() {
                 tryNavigate("/");
               }}
             >
-              WorkoutDB beta
+              LogChamp beta
             </Link>
           </div>
           {currentUser ? (
@@ -91,7 +91,7 @@ export function Navbar() {
                   tryNavigate("/templates");
                 }}
               >
-                Programs
+                Library
               </NavLink>
               <NavLink
                 to="/sessions"

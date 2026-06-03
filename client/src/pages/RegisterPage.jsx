@@ -37,7 +37,7 @@ export function RegisterPage() {
       <div>
         <h1>Register</h1>
         <p className="muted">
-          Create your WorkoutDB beta account. Password must be at least 8 characters.
+          Create your LogChamp beta account. Password must be at least 8 characters.
         </p>
       </div>
 

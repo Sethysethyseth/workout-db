@@ -14,7 +14,7 @@ export function HelloPage() {
             Beta
           </span>
         </div>
-        <p className="settings-page-subtitle muted small">Welcome to WorkoutDB Beta</p>
+        <p className="settings-page-subtitle muted small">Welcome to LogChamp Beta</p>
       </header>
 
       <section className="card stack" aria-labelledby="hello-intro">
@@ -46,7 +46,7 @@ export function HelloPage() {
           Save this website like an app
         </h2>
         <p className="muted" style={{ margin: 0 }}>
-          For the best mobile experience, save WorkoutDB to your phone&apos;s home screen.
+          For the best mobile experience, save LogChamp to your phone&apos;s home screen.
         </p>
         <ul className="stack" style={{ margin: 0, paddingLeft: 18 }}>
           <li>

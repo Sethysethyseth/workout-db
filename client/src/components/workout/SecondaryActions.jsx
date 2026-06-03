@@ -11,9 +11,6 @@ export function SecondaryActions({ currentBlock }) {
         <Link className="secondary-actions__link" to="/create-template?type=workout">
           Create workout
         </Link>
-        <Link className="secondary-actions__link" to="/create-template?type=block">
-          Create block
-        </Link>
       </div>
       {currentBlock?.kind === "block" ? (
         <p className="secondary-actions__footnote muted small" style={{ margin: 0 }}>

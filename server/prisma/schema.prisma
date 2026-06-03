@@ -216,3 +216,22 @@ model BlockWorkoutSet {
   @@unique([blockWorkoutExerciseId, order])
   @@index([blockWorkoutExerciseId])
 }
+
+model Exercise {
+  id                String   @id
+  name              String
+  force             String?
+  level             String?
+  mechanic          String?
+  equipment         String?
+  category          String?
+  primaryMuscles    String[]
+  secondaryMuscles  String[]
+  instructions      String[]
+  images            String[]
+  muscleWeights     Json?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([name])
+}

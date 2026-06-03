@@ -204,7 +204,7 @@ export function ProfilePage() {
         </h2>
         <form className="settings-group settings-feedback-form" onSubmit={onFeedbackSubmit}>
           <p className="settings-group-hint muted small">
-            Help improve WorkoutDB. Report bugs, confusing moments, or small annoyances.
+            Help improve LogChamp. Report bugs, confusing moments, or small annoyances.
           </p>
           {feedbackError ? (
             <p className="settings-feedback-inline-error" role="alert">

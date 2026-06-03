@@ -267,7 +267,7 @@ export function CreateTemplatePage() {
           >
             <strong>Create block</strong>
             <p className="muted small" style={{ margin: 0 }}>
-              Multi-week plan: several workouts across weeks. Saved to Programs.
+              Multi-week plan: several workouts across weeks. Saved to Library.
             </p>
           </button>
           <button
@@ -277,7 +277,7 @@ export function CreateTemplatePage() {
           >
             <strong>Create workout</strong>
             <p className="muted small" style={{ margin: 0 }}>
-              One reusable workout with exercises and sets. Saved to Programs.
+              One reusable workout with exercises and sets. Saved to Library.
             </p>
           </button>
         </div>

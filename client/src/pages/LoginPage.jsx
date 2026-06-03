@@ -4,6 +4,9 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { ErrorMessage } from "../components/ErrorMessage.jsx";
 import { PasswordInput } from "../components/auth/PasswordInput.jsx";
 
+// tagline — swappable
+const LOGIN_TAGLINE = "Log your shit dog";
+
 export function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -39,16 +42,19 @@ export function LoginPage() {
 
   return (
     <div className="stack">
-      <div>
-        <h1>Login</h1>
-        <p className="muted">
-          Use your WorkoutDB beta account to continue. Cookies must be enabled.
+      <div className="stack" style={{ gap: "0.35rem" }}>
+        <div className="brand brand--subtle">
+          <span>LogChamp beta</span>
+        </div>
+        <p className="login-tagline" style={{ margin: 0, fontSize: "1.25rem", fontWeight: 600 }}>
+          {LOGIN_TAGLINE}
         </p>
       </div>
 
       <ErrorMessage error={error} />
 
       <form className="card stack" onSubmit={onSubmit}>
+        <h1 style={{ margin: 0 }}>Login</h1>
         <label>
           Email
           <input
@@ -76,7 +82,10 @@ export function LoginPage() {
           </Link>
         </div>
       </form>
+
+      <p className="muted small" style={{ margin: 0 }}>
+        Use your LogChamp beta account to continue. Cookies must be enabled.
+      </p>
     </div>
   );
 }
-

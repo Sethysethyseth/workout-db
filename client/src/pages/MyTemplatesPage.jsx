@@ -215,7 +215,7 @@ export function MyTemplatesPage() {
     <div className="stack programs-page">
       <div className="row">
         <div>
-          <h1>Programs</h1>
+          <h1>Library</h1>
           <p className="muted programs-intro">Your workouts, blocks, and community programs.</p>
         </div>
         <button
@@ -228,7 +228,7 @@ export function MyTemplatesPage() {
         </button>
       </div>
 
-      <div className="programs-scope-switch" role="tablist" aria-label="Programs scope">
+      <div className="programs-scope-switch" role="tablist" aria-label="Library scope">
         <button
           type="button"
           role="tab"
