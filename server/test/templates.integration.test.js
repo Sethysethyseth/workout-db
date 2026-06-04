@@ -9,14 +9,7 @@ function uniqueEmail(suffix) {
   return `${base}-${suffix}@example.com`;
 }
 
-async function registerAndLogin(agent, { email, password }) {
-  const res = await agent.post("/auth/register").send({ email, password });
-  expect(res.status).toBe(201);
-  expect(res.body).toHaveProperty("user");
-  expect(res.body.user).toHaveProperty("id");
-  expect(res.body.user).toHaveProperty("email", email);
-  return res.body.user;
-}
+const { registerAndLogin } = require("./helpers/authTestHelpers");
 
 async function createTemplate(agent, { name, isPublic, exerciseName }) {
   const res = await agent.post("/templates").send({

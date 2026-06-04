@@ -94,18 +94,25 @@ export function AuthProvider({ children }) {
     return () => window.removeEventListener("auth:unauthorized", onUnauthorized);
   }, []);
 
-  const login = useCallback(async ({ email, password }) => {
-    const data = await authApi.login({ email, password });
+  const login = useCallback(async ({ login, password }) => {
+    const data = await authApi.login({ login, password });
     authEpochRef.current += 1;
     setStoredAuthToken(data.token);
     setCurrentUser(data.user);
     return data.user;
   }, []);
 
-  const register = useCallback(async ({ email, password }) => {
-    const data = await authApi.register({ email, password });
+  const register = useCallback(async ({ email, password, username }) => {
+    const data = await authApi.register({ email, password, username });
     authEpochRef.current += 1;
     setStoredAuthToken(data.token);
+    setCurrentUser(data.user);
+    return data.user;
+  }, []);
+
+  const setUsername = useCallback(async (username) => {
+    const data = await authApi.setUsername({ username });
+    authEpochRef.current += 1;
     setCurrentUser(data.user);
     return data.user;
   }, []);
@@ -127,8 +134,16 @@ export function AuthProvider({ children }) {
   }, []);
 
   const value = useMemo(
-    () => ({ currentUser, authLoading, login, register, logout, refreshSession }),
-    [currentUser, authLoading, login, register, logout, refreshSession]
+    () => ({
+      currentUser,
+      authLoading,
+      login,
+      register,
+      setUsername,
+      logout,
+      refreshSession,
+    }),
+    [currentUser, authLoading, login, register, setUsername, logout, refreshSession]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

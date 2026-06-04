@@ -1,15 +1,7 @@
 const request = require("supertest");
 const app = require("../src/app");
 const { defaultWorkoutSessionName } = require("../src/lib/defaultWorkoutSessionName");
-
-async function registerAndLogin(agent, { email, password }) {
-  const res = await agent.post("/auth/register").send({ email, password });
-  expect(res.status).toBe(201);
-  expect(res.body).toHaveProperty("user");
-  expect(res.body.user).toHaveProperty("id");
-  expect(res.body.user).toHaveProperty("email", email);
-  return res.body.user;
-}
+const { registerAndLogin } = require("./helpers/authTestHelpers");
 
 async function createTemplate(agent) {
   const res = await agent.post("/templates").send({

@@ -5,7 +5,7 @@ import { ErrorMessage } from "../components/ErrorMessage.jsx";
 import { PasswordInput } from "../components/auth/PasswordInput.jsx";
 
 export function LoginPage() {
-  const { login } = useAuth();
+  const { login: signIn } = useAuth();
   const navigate = useNavigate();
   const [params] = useSearchParams();
 
@@ -18,7 +18,7 @@ export function LoginPage() {
     }
   }, [params]);
 
-  const [email, setEmail] = useState("");
+  const [login, setLogin] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
@@ -28,7 +28,7 @@ export function LoginPage() {
     setSubmitting(true);
     setError(null);
     try {
-      await login({ email, password });
+      await signIn({ login, password });
       navigate(nextUrl, { replace: true });
     } catch (err) {
       setError(err);
@@ -50,12 +50,11 @@ export function LoginPage() {
 
       <form className="card stack" onSubmit={onSubmit}>
         <label>
-          Email
+          Email or username
           <input
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            autoComplete="email"
-            inputMode="email"
+            value={login}
+            onChange={(e) => setLogin(e.target.value)}
+            autoComplete="username"
             required
           />
         </label>

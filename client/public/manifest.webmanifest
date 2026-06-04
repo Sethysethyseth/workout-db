@@ -1,0 +1,7 @@
+{
+  "name": "LogChamp",
+  "short_name": "LogChamp",
+  "display": "standalone",
+  "start_url": "/",
+  "icons": []
+}

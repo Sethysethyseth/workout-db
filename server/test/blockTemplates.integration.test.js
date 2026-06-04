@@ -9,11 +9,7 @@ function uniqueEmail(suffix) {
   return `${base}-${suffix}@example.com`;
 }
 
-async function registerAndLogin(agent, { email, password }) {
-  const res = await agent.post("/auth/register").send({ email, password });
-  expect(res.status).toBe(201);
-  return res.body.user;
-}
+const { registerAndLogin } = require("./helpers/authTestHelpers");
 
 function sampleBlockPayload(overrides = {}) {
   return {

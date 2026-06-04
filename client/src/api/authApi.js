@@ -1,11 +1,18 @@
 import { http } from "./http.js";
 
-export function register({ email, password }) {
-  return http("/auth/register", { method: "POST", body: { email, password } });
+export function register({ email, password, username }) {
+  return http("/auth/register", {
+    method: "POST",
+    body: { email, password, username },
+  });
 }
 
-export function login({ email, password }) {
-  return http("/auth/login", { method: "POST", body: { email, password } });
+export function login({ login, password }) {
+  return http("/auth/login", { method: "POST", body: { login, password } });
+}
+
+export function setUsername({ username }) {
+  return http("/auth/username", { method: "POST", body: { username } });
 }
 
 export async function logout() {
@@ -22,4 +29,3 @@ export function changePassword({ currentPassword, newPassword }) {
     body: { currentPassword, newPassword },
   });
 }
-

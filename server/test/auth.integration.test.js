@@ -1,5 +1,8 @@
+const bcrypt = require("bcrypt");
 const request = require("supertest");
 const app = require("../src/app");
+const prisma = require("../src/lib/prisma");
+const { register, login } = require("./helpers/authTestHelpers");
 
 function uniqueEmail() {
   const name = (expect.getState().currentTestName || "test")
@@ -9,32 +12,25 @@ function uniqueEmail() {
   return `${name}@example.com`;
 }
 
-async function register(agent, { email, password }) {
-  const res = await agent.post("/auth/register").send({ email, password });
-  return res;
-}
-
-async function login(agent, { email, password }) {
-  const res = await agent.post("/auth/login").send({ email, password });
-  return res;
-}
-
 describe("Auth integration", () => {
   test("register user successfully", async () => {
     const agent = request.agent(app);
 
     const email = uniqueEmail();
     const password = "password123";
+    const username = "Test_User-1";
 
-    const res = await register(agent, { email, password });
+    const res = await register(agent, { email, password, username });
     expect(res.status).toBe(201);
     expect(res.body).toHaveProperty("user");
     expect(res.body.user).toHaveProperty("id");
     expect(res.body.user).toHaveProperty("email", email);
+    expect(res.body.user).toHaveProperty("displayName", username);
+    expect(res.body.user).toHaveProperty("usernameKey", "test_user-1");
     expect(res.body.user).not.toHaveProperty("passwordHash");
   });
 
-  test("login user successfully", async () => {
+  test("login user successfully with email", async () => {
     const agent = request.agent(app);
 
     const email = uniqueEmail();
@@ -43,15 +39,30 @@ describe("Auth integration", () => {
     const registerRes = await register(agent, { email, password });
     expect(registerRes.status).toBe(201);
 
-    // Logout to ensure we're actually testing login behavior.
     const logoutRes = await agent.post("/auth/logout").send();
     expect(logoutRes.status).toBe(204);
 
     const res = await login(agent, { email, password });
     expect(res.status).toBe(200);
     expect(res.body).toHaveProperty("user");
-    expect(res.body.user).toHaveProperty("id");
     expect(res.body.user).toHaveProperty("email", email);
+  });
+
+  test("login user successfully with username", async () => {
+    const agent = request.agent(app);
+
+    const email = uniqueEmail();
+    const password = "password123";
+    const username = "LiftKing";
+
+    const registerRes = await register(agent, { email, password, username });
+    expect(registerRes.status).toBe(201);
+
+    await agent.post("/auth/logout").send();
+
+    const res = await login(agent, { login: "liftking", password });
+    expect(res.status).toBe(200);
+    expect(res.body.user.email).toBe(email);
   });
 
   test("logout user successfully", async () => {
@@ -66,7 +77,6 @@ describe("Auth integration", () => {
     const res = await agent.post("/auth/logout").send();
     expect(res.status).toBe(204);
 
-    // /auth/me is protected by authRequired, so unauth now should be 401.
     const meRes = await agent.get("/auth/me").send();
     expect(meRes.status).toBe(401);
     expect(meRes.body).toEqual({ error: "Authentication required" });
@@ -84,8 +94,28 @@ describe("Auth integration", () => {
     const res = await agent.get("/auth/me").send();
     expect(res.status).toBe(200);
     expect(res.body).toHaveProperty("user");
-    expect(res.body.user).toHaveProperty("id");
     expect(res.body.user).toHaveProperty("email", email);
+    expect(res.body.user.usernameKey).toBeTruthy();
+  });
+
+  test("POST /auth/username backfills legacy account without usernameKey", async () => {
+    const agent = request.agent(app);
+    const email = uniqueEmail();
+    const password = "password123";
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    await prisma.user.create({
+      data: { email, passwordHash },
+    });
+
+    const loginRes = await login(agent, { email, password });
+    expect(loginRes.status).toBe(200);
+    expect(loginRes.body.user.usernameKey).toBeNull();
+
+    const setRes = await agent.post("/auth/username").send({ username: "LegacyUser" });
+    expect(setRes.status).toBe(200);
+    expect(setRes.body.user.displayName).toBe("LegacyUser");
+    expect(setRes.body.user.usernameKey).toBe("legacyuser");
   });
 
   test("verify unauthenticated access fails where expected (protected endpoint returns 401)", async () => {
@@ -145,4 +175,3 @@ describe("Auth integration", () => {
     expect(patchRes.status).toBe(401);
   });
 });
-

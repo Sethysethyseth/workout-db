@@ -110,7 +110,12 @@ export function ProfilePage() {
           <div className="settings-row settings-row--identity" role="group" aria-label="Signed-in account">
             <div className="settings-row__main">
               <span className="settings-row__label muted small">Signed in as</span>
-              <span className="settings-row__value">{currentUser?.email}</span>
+              <span className="settings-row__value">
+                {currentUser?.displayName || currentUser?.email}
+              </span>
+              {currentUser?.displayName ? (
+                <span className="muted small">{currentUser.email}</span>
+              ) : null}
             </div>
           </div>
         </div>

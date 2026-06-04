@@ -12,6 +12,7 @@ router.post("/register", authController.register);
 router.post("/login", authController.login);
 router.post("/logout", authController.logout);
 router.get("/me", authRequired, authController.me);
+router.post("/username", authRequired, authController.setUsername);
 router.patch("/password", authRequired, authController.changePassword);
 
 module.exports = router;

@@ -1,5 +1,6 @@
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
+import { UsernameRequiredModal } from "./auth/UsernameRequiredModal.jsx";
 import { LoadingState } from "./LoadingState.jsx";
 
 export function ProtectedRoute({ children }) {
@@ -12,6 +13,9 @@ export function ProtectedRoute({ children }) {
     return <Navigate to={`/login?next=${next}`} replace />;
   }
 
+  if (currentUser.usernameKey == null) {
+    return <UsernameRequiredModal />;
+  }
+
   return children;
 }
-
