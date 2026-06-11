@@ -148,7 +148,7 @@ export function CommunityProgramsSection() {
               key={k}
               className="card stack"
               style={
-                isBlock ? { borderLeft: "4px solid var(--accent, #6366f1)" } : undefined
+                isBlock ? { borderLeft: "4px solid var(--accent)" } : undefined
               }
             >
               <div className="row">

@@ -45,7 +45,7 @@ export function UsernameRequiredModal() {
         alignItems: "center",
         justifyContent: "center",
         padding: "1rem",
-        background: "rgba(0, 0, 0, 0.72)",
+        background: "var(--color-overlay)",
       }}
     >
       <form

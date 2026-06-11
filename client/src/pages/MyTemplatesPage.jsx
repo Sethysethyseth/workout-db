@@ -487,7 +487,7 @@ export function MyTemplatesPage() {
                 <div
                   key={k}
                   className="card stack"
-                  style={{ borderLeft: "4px solid var(--accent, #6366f1)" }}
+                  style={{ borderLeft: "4px solid var(--accent)" }}
                 >
                   <div className="row">
                     <div>
