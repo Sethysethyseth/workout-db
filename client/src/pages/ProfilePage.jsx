@@ -2,6 +2,13 @@ import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useTheme } from "../context/ThemeContext.jsx";
+
+const PALETTE_OPTIONS = [
+  { value: "champ", label: "Champ" },
+  { value: "iron", label: "Iron" },
+  { value: "forest", label: "Forest" },
+  { value: "crimson", label: "Crimson" },
+];
 import * as authApi from "../api/authApi.js";
 import * as feedbackApi from "../api/feedbackApi.js";
 import { ApiError } from "../api/http.js";
@@ -12,7 +19,7 @@ export function ProfilePage() {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, palette, setPalette } = useTheme();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -158,6 +165,33 @@ export function ProfilePage() {
                 onChange={() => setTheme("system")}
               />
             </label>
+          </div>
+          <div className="settings-palette-block">
+            <span className="settings-palette-block__label muted small">Accent color</span>
+            <div className="settings-palette-grid" role="radiogroup" aria-label="Accent color">
+              {PALETTE_OPTIONS.map((option) => (
+                <label
+                  key={option.value}
+                  className={
+                    "settings-palette-option" +
+                    (palette === option.value ? " settings-palette-option--selected" : "")
+                  }
+                >
+                  <span
+                    className={`settings-palette-swatch settings-palette-swatch--${option.value}`}
+                    aria-hidden="true"
+                  />
+                  <span className="settings-palette-option__label">{option.label}</span>
+                  <input
+                    type="radio"
+                    name="palette"
+                    value={option.value}
+                    checked={palette === option.value}
+                    onChange={() => setPalette(option.value)}
+                  />
+                </label>
+              ))}
+            </div>
           </div>
         </div>
       </section>

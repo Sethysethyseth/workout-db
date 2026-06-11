@@ -11,9 +11,9 @@
   --color-text: #0f172a;
   --color-text-secondary: #64748b;
 
-  /* Links, focus rings, selected borders */
-  --color-interactive: #6366f1;
-  --color-interactive-hover: #4f46e5;
+  /* Links, focus rings, selected borders (champ palette = default) */
+  --color-interactive: #6d5ef2;
+  --color-interactive-hover: #5a4be0;
 
   /* Primary button (filled CTA) */
   --color-btn-primary-bg: #0f172a;
@@ -26,8 +26,8 @@
   --radius-card: 14px;
   --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.05);
   --shadow-card-hover: 0 6px 18px rgba(15, 23, 42, 0.08);
-  --shadow-ring-accent: 0 0 0 1px rgba(99, 102, 241, 0.12);
-  --shadow-ring-accent-strong: 0 0 0 1px rgba(99, 102, 241, 0.35);
+  --shadow-ring-accent: 0 0 0 1px color-mix(in srgb, var(--color-interactive) 12%, transparent);
+  --shadow-ring-accent-strong: 0 0 0 1px color-mix(in srgb, var(--color-interactive) 35%, transparent);
 
   /* Status colors */
   --color-success-accent: rgb(34 197 94);
@@ -57,8 +57,14 @@
   --accent: var(--color-interactive);
   --color-surface: var(--color-surface-1);
   --color-muted: var(--color-text-secondary);
-  --color-nav-active-bg: #eef2ff;
+  --color-nav-active-bg: color-mix(in srgb, var(--color-interactive) 10%, var(--color-surface-1));
   --color-pill-bg: var(--color-surface-2);
+
+  /* Palette swatches (picker UI only; light-mode accents) */
+  --palette-swatch-champ: #6d5ef2;
+  --palette-swatch-iron: #f59e0b;
+  --palette-swatch-forest: #15803d;
+  --palette-swatch-crimson: #b91c1c;
   --color-error-border: #fecaca;
   --color-error-bg: #fff1f2;
   --font-sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial,
@@ -82,16 +88,22 @@ html[data-theme="dark"] {
   --color-text: #f1f5f9;
   --color-text-secondary: #94a3b8;
 
-  --color-interactive: #818cf8;
-  --color-interactive-hover: #a5b4fc;
+  --color-interactive: #8b7eff;
+  --color-interactive-hover: #a89eff;
 
-  --color-btn-primary-bg: #6366f1;
+  --color-btn-primary-bg: #6d5ef2;
   --color-btn-primary-fg: #ffffff;
-  --color-btn-primary-hover-bg: #7c73f5;
-  --color-btn-primary-active-bg: #4f46e5;
+  --color-btn-primary-hover-bg: #7f72f5;
+  --color-btn-primary-active-bg: #5a4be0;
 
-  --color-nav-active-bg: rgba(99, 102, 241, 0.2);
+  --color-nav-active-bg: color-mix(in srgb, var(--color-interactive) 20%, transparent);
   --color-pill-bg: var(--color-surface-2);
+
+  /* Palette swatches (dark-mode accents) */
+  --palette-swatch-champ: #8b7eff;
+  --palette-swatch-iron: #fbbf24;
+  --palette-swatch-forest: #4ade80;
+  --palette-swatch-crimson: #f87171;
   --color-error-border: #dc2626;
   --color-error-bg: #3f1515;
   --shadow-card: 0 2px 14px rgba(0, 0, 0, 0.28);
@@ -112,6 +124,67 @@ html[data-theme="dark"] {
   --color-backdrop: rgba(0, 0, 0, 0.55);
   --color-skeleton-base: var(--color-surface-2);
   --color-skeleton-highlight: var(--color-surface-3);
+}
+
+/* --- Named palettes (data-palette on <html>) ---
+   Only accent/interactive tokens are overridden; nav-active-bg and the accent
+   rings derive from --color-interactive via color-mix, so they follow each
+   palette automatically. Absent/unknown data-palette = champ (:root defaults). */
+
+html[data-palette="champ"] {
+  --color-interactive: #6d5ef2;
+  --color-interactive-hover: #5a4be0;
+}
+
+html[data-theme="dark"][data-palette="champ"] {
+  --color-interactive: #8b7eff;
+  --color-interactive-hover: #a89eff;
+  --color-btn-primary-bg: #6d5ef2;
+  --color-btn-primary-fg: #ffffff;
+  --color-btn-primary-hover-bg: #7f72f5;
+  --color-btn-primary-active-bg: #5a4be0;
+}
+
+html[data-palette="iron"] {
+  --color-interactive: #f59e0b;
+  --color-interactive-hover: #d97706;
+}
+
+html[data-theme="dark"][data-palette="iron"] {
+  --color-interactive: #fbbf24;
+  --color-interactive-hover: #fcd34d;
+  --color-btn-primary-bg: #f59e0b;
+  --color-btn-primary-fg: #1c1917;
+  --color-btn-primary-hover-bg: #fbbf24;
+  --color-btn-primary-active-bg: #d97706;
+}
+
+html[data-palette="forest"] {
+  --color-interactive: #15803d;
+  --color-interactive-hover: #166534;
+}
+
+html[data-theme="dark"][data-palette="forest"] {
+  --color-interactive: #4ade80;
+  --color-interactive-hover: #86efac;
+  --color-btn-primary-bg: #15803d;
+  --color-btn-primary-fg: #ffffff;
+  --color-btn-primary-hover-bg: #16a34a;
+  --color-btn-primary-active-bg: #166534;
+}
+
+html[data-palette="crimson"] {
+  --color-interactive: #b91c1c;
+  --color-interactive-hover: #991b1b;
+}
+
+html[data-theme="dark"][data-palette="crimson"] {
+  --color-interactive: #f87171;
+  --color-interactive-hover: #fca5a5;
+  --color-btn-primary-bg: #b91c1c;
+  --color-btn-primary-fg: #ffffff;
+  --color-btn-primary-hover-bg: #dc2626;
+  --color-btn-primary-active-bg: #991b1b;
 }
 
 * {
@@ -477,6 +550,95 @@ html[data-theme="dark"] .settings-group {
   width: auto;
   flex-shrink: 0;
   accent-color: var(--color-interactive);
+}
+
+.settings-palette-block {
+  display: grid;
+  gap: 8px;
+  padding: 12px 14px 14px;
+  border-top: 1px solid color-mix(in srgb, var(--color-border) 55%, transparent);
+}
+
+.settings-palette-block__label {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.settings-palette-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+@media (min-width: 520px) {
+  .settings-palette-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.settings-palette-option {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--color-border) 65%, transparent);
+  background: var(--color-surface-2);
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition:
+    border-color var(--motion-fast) var(--ease-standard),
+    background var(--motion-fast) var(--ease-standard),
+    box-shadow var(--motion-fast) var(--ease-standard);
+}
+
+.settings-palette-option:hover {
+  border-color: var(--color-input-border);
+}
+
+.settings-palette-option--selected {
+  border-color: var(--color-interactive);
+  background: var(--color-nav-active-bg);
+  box-shadow: var(--shadow-ring-accent);
+}
+
+.settings-palette-option__label {
+  flex: 1;
+  min-width: 0;
+}
+
+.settings-palette-option input {
+  margin: 0;
+  width: auto;
+  flex-shrink: 0;
+  accent-color: var(--color-interactive);
+}
+
+.settings-palette-swatch {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--color-text) 18%, transparent);
+}
+
+.settings-palette-swatch--champ {
+  background: var(--palette-swatch-champ);
+}
+
+.settings-palette-swatch--iron {
+  background: var(--palette-swatch-iron);
+}
+
+.settings-palette-swatch--forest {
+  background: var(--palette-swatch-forest);
+}
+
+.settings-palette-swatch--crimson {
+  background: var(--palette-swatch-crimson);
 }
 
 .settings-security-form {
