@@ -67,42 +67,44 @@ export function SessionsPage() {
         </div>
       ) : null}
 
-      <div className="stack">
-        {sortedSessions.map((s) => {
-          const title = sessionDisplayTitle(s);
-          return (
-            <div key={s.id} className="card stack">
-              <div className="row">
-                <div>
-                  <h2 style={{ marginBottom: 6 }}>
-                    <Link to={`/sessions/${s.id}`}>{title}</Link>
-                  </h2>
-                  <div className="muted small">Session #{s.id}</div>
-                  <div className="muted small">
-                    Last activity: {formatDate(sessionActivityTimestamp(s))}
+      {sortedSessions.length > 0 ? (
+        <div className="card sub-card-list">
+          {sortedSessions.map((s) => {
+            const title = sessionDisplayTitle(s);
+            return (
+              <div key={s.id} className="sub-card stack">
+                <div className="row">
+                  <div>
+                    <h2 style={{ marginBottom: 6 }}>
+                      <Link to={`/sessions/${s.id}`}>{title}</Link>
+                    </h2>
+                    <div className="muted small">Session #{s.id}</div>
+                    <div className="muted small">
+                      Last activity: {formatDate(sessionActivityTimestamp(s))}
+                    </div>
+                    <div className="muted small">Started: {formatDate(s.startedAt)}</div>
                   </div>
-                  <div className="muted small">Started: {formatDate(s.startedAt)}</div>
+                  <div className="stack" style={{ alignItems: "flex-end" }}>
+                    <span className="pill">{s.completedAt ? "Completed" : "In progress"}</span>
+                    <span className="pill">
+                      Sets: {s._count?.sets ?? "—"} · Exercises:{" "}
+                      {s._count?.sessionExercises ?? "—"}
+                    </span>
+                  </div>
                 </div>
-                <div className="stack" style={{ alignItems: "flex-end" }}>
-                  <span className="pill">{s.completedAt ? "Completed" : "In progress"}</span>
-                  <span className="pill">
-                    Sets: {s._count?.sets ?? "—"} · Exercises:{" "}
-                    {s._count?.sessionExercises ?? "—"}
-                  </span>
-                </div>
-              </div>
 
-              <div className="muted small">
-                {s.workoutTemplate ? (
-                  <>From Saved Workout (started from a saved workout template).</>
-                ) : (
-                  <>One-time session (not started from a saved workout).</>
-                )}
+                <div className="muted small">
+                  {s.workoutTemplate ? (
+                    <>From Saved Workout (started from a saved workout template).</>
+                  ) : (
+                    <>One-time session (not started from a saved workout).</>
+                  )}
+                </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      ) : null}
     </div>
   );
 }

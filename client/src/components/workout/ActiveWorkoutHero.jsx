@@ -35,7 +35,10 @@ export function ActiveWorkoutHero({ session, nowMs, onResume }) {
   const exercise = sessionQuickExerciseLabel(session);
 
   return (
-    <section className="workout-hero workout-hero--active card" aria-labelledby="workout-hero-active-headline">
+    <section
+      className="workout-hero workout-hero--active card card--live"
+      aria-labelledby="workout-hero-active-headline"
+    >
       <p className="workout-hero__eyebrow muted small">In progress</p>
       <h1 id="workout-hero-active-headline" className="workout-hero__headline">
         Resume workout

@@ -45,7 +45,7 @@ export function PersistentWorkoutBar() {
   return (
     <button
       type="button"
-      className="persistent-workout-bar card"
+      className="persistent-workout-bar card card--live"
       aria-label={`Active workout: ${title}. Resume.`}
       onClick={() => navigate(`/sessions/${activeSession.id}`)}
     >

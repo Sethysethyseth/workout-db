@@ -411,61 +411,14 @@ export function MyTemplatesPage() {
                         ) : null}
                       </div>
                     </div>
-                    <div className="row" style={{ flexWrap: "wrap", gap: "0.5rem" }}>
-                      <button
-                        className="btn"
-                        type="button"
-                        onClick={() => onStartWorkout(t.id)}
-                        disabled={busy}
-                      >
-                        {isActing && actingAction === "start" ? "Starting…" : "Start session"}
-                      </button>
-                      <button
-                        type="button"
-                        className="btn btn-secondary"
-                        disabled={busy}
-                        onClick={() => onSetCurrentWorkout(t)}
-                      >
-                        Set as current
-                      </button>
-                      <Link
-                        className="btn btn-secondary"
-                        to={`/templates/${t.id}/edit`}
-                        tabIndex={busy ? -1 : undefined}
-                        aria-disabled={busy}
-                        style={busy ? { pointerEvents: "none", opacity: 0.65 } : undefined}
-                      >
-                        Edit
-                      </Link>
-                      <button
-                        type="button"
-                        className="btn btn-secondary"
-                        onClick={() => onTogglePublicWorkout(t)}
-                        disabled={busy}
-                      >
-                        {isActing && actingAction === "toggle"
-                          ? "Updating…"
-                          : t.isPublic
-                            ? "Make private"
-                            : "Make public"}
-                      </button>
-                      <button
-                        type="button"
-                        className="btn btn-ghost"
-                        onClick={() => onDeleteWorkout(t)}
-                        disabled={busy}
-                      >
-                        {isActing && actingAction === "delete" ? "Deleting…" : "Delete"}
-                      </button>
-                    </div>
                   </div>
 
                   {Array.isArray(t.exercises) && t.exercises.length > 0 ? (
-                    <div className="card">
+                    <div className="stack">
                       <strong>Exercises</strong>
-                      <div className="mt-2 stack">
+                      <div className="mt-2 sub-card-list">
                         {t.exercises.map((e) => (
-                          <div key={e.id} className="row">
+                          <div key={e.id} className="row sub-card">
                             <div>
                               <div>
                                 {e.order}. {e.exerciseName}
@@ -477,6 +430,54 @@ export function MyTemplatesPage() {
                       </div>
                     </div>
                   ) : null}
+
+                  <div className="row" style={{ flexWrap: "wrap", gap: "0.5rem" }}>
+                    <button
+                      className="btn"
+                      type="button"
+                      onClick={() => onStartWorkout(t.id)}
+                      disabled={busy}
+                    >
+                      {isActing && actingAction === "start" ? "Starting…" : "Start session"}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      disabled={busy}
+                      onClick={() => onSetCurrentWorkout(t)}
+                    >
+                      Set as current
+                    </button>
+                    <Link
+                      className="btn btn-secondary"
+                      to={`/templates/${t.id}/edit`}
+                      tabIndex={busy ? -1 : undefined}
+                      aria-disabled={busy}
+                      style={busy ? { pointerEvents: "none", opacity: 0.65 } : undefined}
+                    >
+                      Edit
+                    </Link>
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={() => onTogglePublicWorkout(t)}
+                      disabled={busy}
+                    >
+                      {isActing && actingAction === "toggle"
+                        ? "Updating…"
+                        : t.isPublic
+                          ? "Make private"
+                          : "Make public"}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-ghost"
+                      onClick={() => onDeleteWorkout(t)}
+                      disabled={busy}
+                    >
+                      {isActing && actingAction === "delete" ? "Deleting…" : "Delete"}
+                    </button>
+                  </div>
                 </div>
               );
             })
@@ -484,11 +485,7 @@ export function MyTemplatesPage() {
               const k = keyFor("block", t.id);
               const isActing = actingKey === k;
               return (
-                <div
-                  key={k}
-                  className="card stack"
-                  style={{ borderLeft: "4px solid var(--accent)" }}
-                >
+                <div key={k} className="card stack">
                   <div className="row">
                     <div>
                       <h2 style={{ marginBottom: "0.35rem" }}>{t.name}</h2>
@@ -502,49 +499,10 @@ export function MyTemplatesPage() {
                         ) : null}
                       </div>
                     </div>
-                    <div className="row" style={{ flexWrap: "wrap", gap: "0.5rem" }}>
-                      <button
-                        type="button"
-                        className="btn btn-secondary"
-                        disabled={busy}
-                        onClick={() => onSetCurrentBlock(t)}
-                      >
-                        Set as current
-                      </button>
-                      <Link
-                        className="btn btn-secondary"
-                        to={`/blocks/${t.id}/edit`}
-                        tabIndex={busy ? -1 : undefined}
-                        aria-disabled={busy}
-                        style={busy ? { pointerEvents: "none", opacity: 0.65 } : undefined}
-                      >
-                        Edit
-                      </Link>
-                      <button
-                        type="button"
-                        className="btn btn-secondary"
-                        onClick={() => onTogglePublicBlock(t)}
-                        disabled={busy}
-                      >
-                        {isActing && actingAction === "toggle"
-                          ? "Updating…"
-                          : t.isPublic
-                            ? "Make private"
-                            : "Make public"}
-                      </button>
-                      <button
-                        type="button"
-                        className="btn btn-ghost"
-                        onClick={() => onDeleteBlock(t)}
-                        disabled={busy}
-                      >
-                        {isActing && actingAction === "delete" ? "Deleting…" : "Delete"}
-                      </button>
-                    </div>
                   </div>
 
                   {Array.isArray(t.weeks) && t.weeks.length > 0 ? (
-                    <div className="card">
+                    <div className="stack">
                       <strong>Structure</strong>
                       <div className="mt-2 stack">
                         {[...t.weeks]
@@ -554,11 +512,11 @@ export function MyTemplatesPage() {
                               <div className="muted small" style={{ fontWeight: 600 }}>
                                 Week {week.order}
                               </div>
-                              <div className="stack" style={{ paddingLeft: "0.5rem" }}>
+                              <div className="sub-card-list">
                                 {[...(week.workouts || [])]
                                   .sort((a, b) => a.order - b.order)
                                   .map((w) => (
-                                    <div key={w.id} className="row">
+                                    <div key={w.id} className="row sub-card">
                                       <div>
                                         <div>
                                           {w.order}. {w.name}
@@ -576,6 +534,46 @@ export function MyTemplatesPage() {
                       </div>
                     </div>
                   ) : null}
+
+                  <div className="row" style={{ flexWrap: "wrap", gap: "0.5rem" }}>
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      disabled={busy}
+                      onClick={() => onSetCurrentBlock(t)}
+                    >
+                      Set as current
+                    </button>
+                    <Link
+                      className="btn btn-secondary"
+                      to={`/blocks/${t.id}/edit`}
+                      tabIndex={busy ? -1 : undefined}
+                      aria-disabled={busy}
+                      style={busy ? { pointerEvents: "none", opacity: 0.65 } : undefined}
+                    >
+                      Edit
+                    </Link>
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={() => onTogglePublicBlock(t)}
+                      disabled={busy}
+                    >
+                      {isActing && actingAction === "toggle"
+                        ? "Updating…"
+                        : t.isPublic
+                          ? "Make private"
+                          : "Make public"}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-ghost"
+                      onClick={() => onDeleteBlock(t)}
+                      disabled={busy}
+                    >
+                      {isActing && actingAction === "delete" ? "Deleting…" : "Delete"}
+                    </button>
+                  </div>
                 </div>
               );
             })}

@@ -3531,3 +3531,39 @@ html[data-theme="dark"] .start-workout-picker__sheet {
   color: var(--color-interactive);
   padding-left: 8px;
 }
+
+/* --- Grouped blocks: sub-card rows (display surfaces only — never set-entry UI) --- */
+
+.sub-card {
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  padding: 10px 12px;
+}
+
+.sub-card-list {
+  display: grid;
+  gap: 8px;
+}
+
+/* --- Status L-bar: live-workout marker (single mechanism: inset box-shadow) --- */
+
+.card--live {
+  box-shadow:
+    inset 3px 0 0 0 var(--color-interactive),
+    var(--shadow-card);
+}
+
+/* Hero in-progress card: keep its accent ring alongside the bar */
+.workout-hero--active.card--live {
+  box-shadow:
+    inset 3px 0 0 0 var(--color-interactive),
+    0 0 0 1px color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
+/* Compact banner: keep the bar through the hover elevation */
+.persistent-workout-bar.card--live:hover {
+  box-shadow:
+    inset 3px 0 0 0 var(--color-interactive),
+    var(--shadow-card-hover);
+}

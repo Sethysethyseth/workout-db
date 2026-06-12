@@ -144,13 +144,7 @@ export function CommunityProgramsSection() {
           const isBlock = kind === "block";
 
           return (
-            <div
-              key={k}
-              className="card stack"
-              style={
-                isBlock ? { borderLeft: "4px solid var(--accent)" } : undefined
-              }
-            >
+            <div key={k} className="card stack">
               <div className="row">
                 <div>
                   <h2>{t.name}</h2>
