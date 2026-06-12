@@ -60,6 +60,9 @@
   --color-nav-active-bg: color-mix(in srgb, var(--color-interactive) 10%, var(--color-surface-1));
   --color-pill-bg: var(--color-surface-2);
 
+  /* Palette atmosphere hue source (champ = current navy; per-palette override) */
+  --palette-tint: #0f172a;
+
   /* Palette swatches (picker UI only; light-mode accents) */
   --palette-swatch-champ: #6d5ef2;
   --palette-swatch-iron: #f59e0b;
@@ -127,9 +130,15 @@ html[data-theme="dark"] {
 }
 
 /* --- Named palettes (data-palette on <html>) ---
-   Only accent/interactive tokens are overridden; nav-active-bg and the accent
-   rings derive from --color-interactive via color-mix, so they follow each
-   palette automatically. Absent/unknown data-palette = champ (:root defaults). */
+   Accent/interactive tokens plus an atmosphere tint: backgrounds, surfaces and
+   borders are mixed toward --palette-tint (uniform per tier: bg 6%/55%,
+   surfaces 4%/45%, borders 8%/30% light/dark). nav-active-bg, pill, skeleton
+   and the accent rings derive from these tokens, so they follow automatically.
+   Text tokens are never tinted (light surface tier capped at 4% to keep
+   --color-text-secondary at AA contrast). Cascade safety: every token a light
+   palette block sets is re-set in its [data-theme="dark"][data-palette] variant,
+   which out-specifies it. Absent/unknown data-palette = champ (:root defaults,
+   so champ blocks carry no surface overrides). */
 
 html[data-palette="champ"] {
   --color-interactive: #6d5ef2;
@@ -146,8 +155,16 @@ html[data-theme="dark"][data-palette="champ"] {
 }
 
 html[data-palette="iron"] {
+  --palette-tint: #1c1917;
   --color-interactive: #f59e0b;
   --color-interactive-hover: #d97706;
+
+  --color-bg: color-mix(in oklab, #f1f5f9, var(--palette-tint) 6%);
+  --color-surface-1: color-mix(in oklab, #ffffff, var(--palette-tint) 4%);
+  --color-surface-2: color-mix(in oklab, #f8fafc, var(--palette-tint) 4%);
+  --color-surface-3: color-mix(in oklab, #eef2f7, var(--palette-tint) 4%);
+  --color-border: color-mix(in oklab, #e2e8f0, var(--palette-tint) 8%);
+  --color-input-border: color-mix(in oklab, #cbd5e1, var(--palette-tint) 8%);
 }
 
 html[data-theme="dark"][data-palette="iron"] {
@@ -157,11 +174,26 @@ html[data-theme="dark"][data-palette="iron"] {
   --color-btn-primary-fg: #1c1917;
   --color-btn-primary-hover-bg: #fbbf24;
   --color-btn-primary-active-bg: #d97706;
+
+  --color-bg: color-mix(in oklab, #060913, var(--palette-tint) 55%);
+  --color-surface-1: color-mix(in oklab, #0f1628, var(--palette-tint) 45%);
+  --color-surface-2: color-mix(in oklab, #141f35, var(--palette-tint) 45%);
+  --color-surface-3: color-mix(in oklab, #192744, var(--palette-tint) 45%);
+  --color-border: color-mix(in oklab, #34465f, var(--palette-tint) 30%);
+  --color-input-border: color-mix(in oklab, #4a6282, var(--palette-tint) 30%);
 }
 
 html[data-palette="forest"] {
+  --palette-tint: #052e16;
   --color-interactive: #15803d;
   --color-interactive-hover: #166534;
+
+  --color-bg: color-mix(in oklab, #f1f5f9, var(--palette-tint) 6%);
+  --color-surface-1: color-mix(in oklab, #ffffff, var(--palette-tint) 4%);
+  --color-surface-2: color-mix(in oklab, #f8fafc, var(--palette-tint) 4%);
+  --color-surface-3: color-mix(in oklab, #eef2f7, var(--palette-tint) 4%);
+  --color-border: color-mix(in oklab, #e2e8f0, var(--palette-tint) 8%);
+  --color-input-border: color-mix(in oklab, #cbd5e1, var(--palette-tint) 8%);
 }
 
 html[data-theme="dark"][data-palette="forest"] {
@@ -171,11 +203,26 @@ html[data-theme="dark"][data-palette="forest"] {
   --color-btn-primary-fg: #ffffff;
   --color-btn-primary-hover-bg: #16a34a;
   --color-btn-primary-active-bg: #166534;
+
+  --color-bg: color-mix(in oklab, #060913, var(--palette-tint) 55%);
+  --color-surface-1: color-mix(in oklab, #0f1628, var(--palette-tint) 45%);
+  --color-surface-2: color-mix(in oklab, #141f35, var(--palette-tint) 45%);
+  --color-surface-3: color-mix(in oklab, #192744, var(--palette-tint) 45%);
+  --color-border: color-mix(in oklab, #34465f, var(--palette-tint) 30%);
+  --color-input-border: color-mix(in oklab, #4a6282, var(--palette-tint) 30%);
 }
 
 html[data-palette="crimson"] {
+  --palette-tint: #450a0a;
   --color-interactive: #b91c1c;
   --color-interactive-hover: #991b1b;
+
+  --color-bg: color-mix(in oklab, #f1f5f9, var(--palette-tint) 6%);
+  --color-surface-1: color-mix(in oklab, #ffffff, var(--palette-tint) 4%);
+  --color-surface-2: color-mix(in oklab, #f8fafc, var(--palette-tint) 4%);
+  --color-surface-3: color-mix(in oklab, #eef2f7, var(--palette-tint) 4%);
+  --color-border: color-mix(in oklab, #e2e8f0, var(--palette-tint) 8%);
+  --color-input-border: color-mix(in oklab, #cbd5e1, var(--palette-tint) 8%);
 }
 
 html[data-theme="dark"][data-palette="crimson"] {
@@ -185,6 +232,13 @@ html[data-theme="dark"][data-palette="crimson"] {
   --color-btn-primary-fg: #ffffff;
   --color-btn-primary-hover-bg: #dc2626;
   --color-btn-primary-active-bg: #991b1b;
+
+  --color-bg: color-mix(in oklab, #060913, var(--palette-tint) 55%);
+  --color-surface-1: color-mix(in oklab, #0f1628, var(--palette-tint) 45%);
+  --color-surface-2: color-mix(in oklab, #141f35, var(--palette-tint) 45%);
+  --color-surface-3: color-mix(in oklab, #192744, var(--palette-tint) 45%);
+  --color-border: color-mix(in oklab, #34465f, var(--palette-tint) 30%);
+  --color-input-border: color-mix(in oklab, #4a6282, var(--palette-tint) 30%);
 }
 
 * {
