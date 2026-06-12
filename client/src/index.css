@@ -60,9 +60,6 @@
   --color-nav-active-bg: color-mix(in srgb, var(--color-interactive) 10%, var(--color-surface-1));
   --color-pill-bg: var(--color-surface-2);
 
-  /* Palette atmosphere hue source (champ = current navy; per-palette override) */
-  --palette-tint: #0f172a;
-
   /* Palette swatches (picker UI only; light-mode accents) */
   --palette-swatch-champ: #6d5ef2;
   --palette-swatch-iron: #f59e0b;
@@ -130,15 +127,15 @@ html[data-theme="dark"] {
 }
 
 /* --- Named palettes (data-palette on <html>) ---
-   Accent/interactive tokens plus an atmosphere tint: backgrounds, surfaces and
-   borders are mixed toward --palette-tint (uniform per tier: bg 6%/55%,
-   surfaces 4%/45%, borders 8%/30% light/dark). nav-active-bg, pill, skeleton
-   and the accent rings derive from these tokens, so they follow automatically.
-   Text tokens are never tinted (light surface tier capped at 4% to keep
-   --color-text-secondary at AA contrast). Cascade safety: every token a light
-   palette block sets is re-set in its [data-theme="dark"][data-palette] variant,
-   which out-specifies it. Absent/unknown data-palette = champ (:root defaults,
-   so champ blocks carry no surface overrides). */
+   Accent/interactive tokens plus hand-authored environment surfaces per
+   palette (dark = themed near-blacks; light = tinted paper + near-white
+   surfaces with a faint matching cast). nav-active-bg, pill, skeleton and the
+   accent rings derive from --color-interactive / surface tokens, so they
+   follow automatically. Text tokens are never overridden. Cascade safety:
+   every token a light palette block sets is re-set in its
+   [data-theme="dark"][data-palette] variant, which out-specifies it.
+   Absent/unknown data-palette = champ (:root defaults, so champ blocks carry
+   no surface overrides). */
 
 html[data-palette="champ"] {
   --color-interactive: #6d5ef2;
@@ -155,16 +152,15 @@ html[data-theme="dark"][data-palette="champ"] {
 }
 
 html[data-palette="iron"] {
-  --palette-tint: #1c1917;
   --color-interactive: #f59e0b;
   --color-interactive-hover: #d97706;
 
-  --color-bg: color-mix(in oklab, #f1f5f9, var(--palette-tint) 6%);
-  --color-surface-1: color-mix(in oklab, #ffffff, var(--palette-tint) 4%);
-  --color-surface-2: color-mix(in oklab, #f8fafc, var(--palette-tint) 4%);
-  --color-surface-3: color-mix(in oklab, #eef2f7, var(--palette-tint) 4%);
-  --color-border: color-mix(in oklab, #e2e8f0, var(--palette-tint) 8%);
-  --color-input-border: color-mix(in oklab, #cbd5e1, var(--palette-tint) 8%);
+  --color-bg: #f9f5f0;
+  --color-surface-1: #fffdfa;
+  --color-surface-2: #faf6f1;
+  --color-surface-3: #f2ece4;
+  --color-border: #e7ded2;
+  --color-input-border: #d3c6b6;
 }
 
 html[data-theme="dark"][data-palette="iron"] {
@@ -175,25 +171,24 @@ html[data-theme="dark"][data-palette="iron"] {
   --color-btn-primary-hover-bg: #fbbf24;
   --color-btn-primary-active-bg: #d97706;
 
-  --color-bg: color-mix(in oklab, #060913, var(--palette-tint) 55%);
-  --color-surface-1: color-mix(in oklab, #0f1628, var(--palette-tint) 45%);
-  --color-surface-2: color-mix(in oklab, #141f35, var(--palette-tint) 45%);
-  --color-surface-3: color-mix(in oklab, #192744, var(--palette-tint) 45%);
-  --color-border: color-mix(in oklab, #34465f, var(--palette-tint) 30%);
-  --color-input-border: color-mix(in oklab, #4a6282, var(--palette-tint) 30%);
+  --color-bg: #171310;
+  --color-surface-1: #211c17;
+  --color-surface-2: #2b241e;
+  --color-surface-3: #352c24;
+  --color-border: #43382e;
+  --color-input-border: #4f4236;
 }
 
 html[data-palette="forest"] {
-  --palette-tint: #052e16;
   --color-interactive: #15803d;
   --color-interactive-hover: #166534;
 
-  --color-bg: color-mix(in oklab, #f1f5f9, var(--palette-tint) 6%);
-  --color-surface-1: color-mix(in oklab, #ffffff, var(--palette-tint) 4%);
-  --color-surface-2: color-mix(in oklab, #f8fafc, var(--palette-tint) 4%);
-  --color-surface-3: color-mix(in oklab, #eef2f7, var(--palette-tint) 4%);
-  --color-border: color-mix(in oklab, #e2e8f0, var(--palette-tint) 8%);
-  --color-input-border: color-mix(in oklab, #cbd5e1, var(--palette-tint) 8%);
+  --color-bg: #f3f8f4;
+  --color-surface-1: #fcfefc;
+  --color-surface-2: #f5faf6;
+  --color-surface-3: #eaf3ec;
+  --color-border: #d9e7dc;
+  --color-input-border: #c0d5c6;
 }
 
 html[data-theme="dark"][data-palette="forest"] {
@@ -204,25 +199,24 @@ html[data-theme="dark"][data-palette="forest"] {
   --color-btn-primary-hover-bg: #16a34a;
   --color-btn-primary-active-bg: #166534;
 
-  --color-bg: color-mix(in oklab, #060913, var(--palette-tint) 55%);
-  --color-surface-1: color-mix(in oklab, #0f1628, var(--palette-tint) 45%);
-  --color-surface-2: color-mix(in oklab, #141f35, var(--palette-tint) 45%);
-  --color-surface-3: color-mix(in oklab, #192744, var(--palette-tint) 45%);
-  --color-border: color-mix(in oklab, #34465f, var(--palette-tint) 30%);
-  --color-input-border: color-mix(in oklab, #4a6282, var(--palette-tint) 30%);
+  --color-bg: #0a140f;
+  --color-surface-1: #102019;
+  --color-surface-2: #152a21;
+  --color-surface-3: #1b3429;
+  --color-border: #27483a;
+  --color-input-border: #305747;
 }
 
 html[data-palette="crimson"] {
-  --palette-tint: #450a0a;
   --color-interactive: #b91c1c;
   --color-interactive-hover: #991b1b;
 
-  --color-bg: color-mix(in oklab, #f1f5f9, var(--palette-tint) 6%);
-  --color-surface-1: color-mix(in oklab, #ffffff, var(--palette-tint) 4%);
-  --color-surface-2: color-mix(in oklab, #f8fafc, var(--palette-tint) 4%);
-  --color-surface-3: color-mix(in oklab, #eef2f7, var(--palette-tint) 4%);
-  --color-border: color-mix(in oklab, #e2e8f0, var(--palette-tint) 8%);
-  --color-input-border: color-mix(in oklab, #cbd5e1, var(--palette-tint) 8%);
+  --color-bg: #fbf3f3;
+  --color-surface-1: #fffcfc;
+  --color-surface-2: #fbf5f5;
+  --color-surface-3: #f5eaea;
+  --color-border: #ecd9d9;
+  --color-input-border: #d8c2c2;
 }
 
 html[data-theme="dark"][data-palette="crimson"] {
@@ -233,12 +227,119 @@ html[data-theme="dark"][data-palette="crimson"] {
   --color-btn-primary-hover-bg: #dc2626;
   --color-btn-primary-active-bg: #991b1b;
 
-  --color-bg: color-mix(in oklab, #060913, var(--palette-tint) 55%);
-  --color-surface-1: color-mix(in oklab, #0f1628, var(--palette-tint) 45%);
-  --color-surface-2: color-mix(in oklab, #141f35, var(--palette-tint) 45%);
-  --color-surface-3: color-mix(in oklab, #192744, var(--palette-tint) 45%);
-  --color-border: color-mix(in oklab, #34465f, var(--palette-tint) 30%);
-  --color-input-border: color-mix(in oklab, #4a6282, var(--palette-tint) 30%);
+  --color-bg: #190c0e;
+  --color-surface-1: #241114;
+  --color-surface-2: #2f171a;
+  --color-surface-3: #3a1c20;
+  --color-border: #50292e;
+  --color-input-border: #613239;
+}
+
+/* --- Palette scenes (decorative full-viewport layer) ---
+   One clearly-delimited block per palette; future variant blocks (T2d) sit
+   alongside. The layer is a fixed body::before behind all app content; #root
+   is lifted above it (positioned pseudo-elements otherwise paint over
+   non-positioned content). Light mode re-declares each scene with alphas at
+   ~0.4x of dark (champ glow at half). */
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+#root {
+  position: relative;
+  z-index: 1;
+}
+
+/* === Scene: CHAMP (default — applies when data-palette is absent/unknown) === */
+
+/* Champ light: accent glow only, half opacity */
+body::before {
+  background: radial-gradient(ellipse 120% 50% at 50% -10%, rgba(109, 94, 242, 0.09), transparent 60%);
+}
+
+/* Champ dark: glow + stars and faint geometry */
+html[data-theme="dark"] body::before {
+  background:
+    radial-gradient(ellipse 120% 50% at 50% -10%, rgba(109, 94, 242, 0.18), transparent 60%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 480 320'%3E%3Cg fill='%238b7eff'%3E%3Ccircle cx='40' cy='60' r='1.5' opacity='.5'/%3E%3Ccircle cx='130' cy='30' r='1' opacity='.35'/%3E%3Ccircle cx='220' cy='90' r='1.2' opacity='.4'/%3E%3Ccircle cx='310' cy='40' r='1.6' opacity='.5'/%3E%3Ccircle cx='400' cy='110' r='1' opacity='.3'/%3E%3Ccircle cx='80' cy='180' r='1.2' opacity='.35'/%3E%3Ccircle cx='450' cy='200' r='1.4' opacity='.45'/%3E%3Ccircle cx='180' cy='250' r='1' opacity='.3'/%3E%3C/g%3E%3Cg stroke='%238b7eff' stroke-width='1' fill='none' opacity='.12'%3E%3Cpath d='M340 230 l50 -28 50 28 -50 28 z'/%3E%3Cpath d='M340 230 l50 -8 50 8 M390 202 v64'/%3E%3C/g%3E%3C/svg%3E");
+  background-repeat: no-repeat, repeat;
+  background-size: auto, 480px auto;
+  background-position: 0 0, bottom;
+}
+
+/* === Scene: IRON (chalk barbell sketch + grain) === */
+
+/* Iron light: ~0.4x alphas (chalk/grain hues are light-on-light here — intentionally near-invisible) */
+html[data-palette="iron"] body::before {
+  background:
+    radial-gradient(ellipse 140% 45% at 50% 110%, rgba(245, 158, 11, 0.06), transparent 65%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 360 140'%3E%3Cg stroke='%23d6c9b8' stroke-width='3' fill='none' opacity='.04' stroke-linecap='round'%3E%3Cline x1='30' y1='70' x2='330' y2='70'/%3E%3Crect x='60' y='30' width='16' height='80' rx='4'/%3E%3Crect x='84' y='40' width='12' height='60' rx='4'/%3E%3Crect x='284' y='30' width='16' height='80' rx='4'/%3E%3Crect x='264' y='40' width='12' height='60' rx='4'/%3E%3C/g%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0.84 0 0 0 0 0.79 0 0 0 0 0.72 0 0 0 0.02 0'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: no-repeat, no-repeat, repeat;
+  background-size: auto, 360px auto, 240px 240px;
+  background-position: 0 0, right 8% bottom 12%, 0 0;
+}
+
+/* Iron dark: forge glow + chalk barbell + grain */
+html[data-theme="dark"][data-palette="iron"] body::before {
+  background:
+    radial-gradient(ellipse 140% 45% at 50% 110%, rgba(245, 158, 11, 0.14), transparent 65%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 360 140'%3E%3Cg stroke='%23d6c9b8' stroke-width='3' fill='none' opacity='.10' stroke-linecap='round'%3E%3Cline x1='30' y1='70' x2='330' y2='70'/%3E%3Crect x='60' y='30' width='16' height='80' rx='4'/%3E%3Crect x='84' y='40' width='12' height='60' rx='4'/%3E%3Crect x='284' y='30' width='16' height='80' rx='4'/%3E%3Crect x='264' y='40' width='12' height='60' rx='4'/%3E%3C/g%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0.84 0 0 0 0 0.79 0 0 0 0 0.72 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: no-repeat, no-repeat, repeat;
+  background-size: auto, 360px auto, 240px 240px;
+  background-position: 0 0, right 8% bottom 12%, 0 0;
+}
+
+/* === Scene: FOREST (pixel treeline) === */
+
+/* Forest light: ~0.4x alphas */
+html[data-palette="forest"] body::before {
+  background:
+    radial-gradient(ellipse 120% 40% at 50% -10%, rgba(74, 222, 128, 0.03), transparent 60%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 320 96' shape-rendering='crispEdges'%3E%3Cdefs%3E%3Cg id='t'%3E%3Crect x='12' y='0' width='8' height='8'/%3E%3Crect x='8' y='8' width='16' height='12'/%3E%3Crect x='4' y='20' width='24' height='14'/%3E%3Crect x='0' y='34' width='32' height='16'/%3E%3Crect x='12' y='50' width='8' height='10'/%3E%3C/g%3E%3C/defs%3E%3Cg fill='%231d4434' opacity='.28'%3E%3Cuse href='%23t' x='6' y='14'/%3E%3Cuse href='%23t' x='78' y='6'/%3E%3Cuse href='%23t' x='150' y='18'/%3E%3Cuse href='%23t' x='222' y='2'/%3E%3Cuse href='%23t' x='286' y='14'/%3E%3C/g%3E%3Cg fill='%23143023' opacity='.4'%3E%3Cuse href='%23t' x='40' y='36'/%3E%3Cuse href='%23t' x='118' y='30'/%3E%3Cuse href='%23t' x='192' y='38'/%3E%3Cuse href='%23t' x='258' y='32'/%3E%3C/g%3E%3C/svg%3E");
+  background-repeat: no-repeat, repeat-x;
+  background-size: auto, 320px auto;
+  background-position: 0 0, bottom;
+}
+
+/* Forest dark: canopy glow + pixel treeline */
+html[data-theme="dark"][data-palette="forest"] body::before {
+  background:
+    radial-gradient(ellipse 120% 40% at 50% -10%, rgba(74, 222, 128, 0.07), transparent 60%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 320 96' shape-rendering='crispEdges'%3E%3Cdefs%3E%3Cg id='t'%3E%3Crect x='12' y='0' width='8' height='8'/%3E%3Crect x='8' y='8' width='16' height='12'/%3E%3Crect x='4' y='20' width='24' height='14'/%3E%3Crect x='0' y='34' width='32' height='16'/%3E%3Crect x='12' y='50' width='8' height='10'/%3E%3C/g%3E%3C/defs%3E%3Cg fill='%231d4434' opacity='.7'%3E%3Cuse href='%23t' x='6' y='14'/%3E%3Cuse href='%23t' x='78' y='6'/%3E%3Cuse href='%23t' x='150' y='18'/%3E%3Cuse href='%23t' x='222' y='2'/%3E%3Cuse href='%23t' x='286' y='14'/%3E%3C/g%3E%3Cg fill='%23143023'%3E%3Cuse href='%23t' x='40' y='36'/%3E%3Cuse href='%23t' x='118' y='30'/%3E%3Cuse href='%23t' x='192' y='38'/%3E%3Cuse href='%23t' x='258' y='32'/%3E%3C/g%3E%3C/svg%3E");
+  background-repeat: no-repeat, repeat-x;
+  background-size: auto, 320px auto;
+  background-position: 0 0, bottom;
+}
+
+/* === Scene: CRIMSON (blood moon + gothic skyline) === */
+
+/* Crimson light: ~0.4x alphas */
+html[data-palette="crimson"] body::before {
+  background:
+    radial-gradient(circle 26vmin at 82% 12%, rgba(248, 113, 113, 0.11), rgba(248, 113, 113, 0.04) 45%, transparent 70%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='44' fill='%23e25d5d' opacity='.22'/%3E%3Ccircle cx='38' cy='40' r='7' fill='%23b94747' opacity='.2'/%3E%3Ccircle cx='60' cy='62' r='5' fill='%23b94747' opacity='.18'/%3E%3Ccircle cx='55' cy='30' r='4' fill='%23b94747' opacity='.16'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 480 120' fill='%23120709'%3E%3Cpath opacity='.34' d='M0 120 V70 h18 v-14 h8 l4 -18 4 18 h8 v14 h22 V58 h14 l6 -26 6 26 h12 v62 h30 V80 h16 v-12 h10 l5 -22 5 22 h10 v12 h18 v40 h26 V64 h12 l7 -30 7 30 h12 v56 h34 V76 h14 v-10 h8 l4 -16 4 16 h8 v10 h16 v44 h28 V60 h12 l6 -24 6 24 h12 v60 h30 V78 h20 v-16 h8 l5 -20 5 20 h8 v16 h14 v42 z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat, no-repeat, repeat-x;
+  background-size: auto, 18vmin auto, 480px auto;
+  background-position: 0 0, right 6% top 4%, bottom;
+}
+
+/* Crimson dark: blood-moon glow + moon + skyline */
+html[data-theme="dark"][data-palette="crimson"] body::before {
+  background:
+    radial-gradient(circle 26vmin at 82% 12%, rgba(248, 113, 113, 0.28), rgba(248, 113, 113, 0.1) 45%, transparent 70%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='44' fill='%23e25d5d' opacity='.55'/%3E%3Ccircle cx='38' cy='40' r='7' fill='%23b94747' opacity='.5'/%3E%3Ccircle cx='60' cy='62' r='5' fill='%23b94747' opacity='.45'/%3E%3Ccircle cx='55' cy='30' r='4' fill='%23b94747' opacity='.4'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 480 120' fill='%23120709'%3E%3Cpath opacity='.85' d='M0 120 V70 h18 v-14 h8 l4 -18 4 18 h8 v14 h22 V58 h14 l6 -26 6 26 h12 v62 h30 V80 h16 v-12 h10 l5 -22 5 22 h10 v12 h18 v40 h26 V64 h12 l7 -30 7 30 h12 v56 h34 V76 h14 v-10 h8 l4 -16 4 16 h8 v10 h16 v44 h28 V60 h12 l6 -24 6 24 h12 v60 h30 V78 h20 v-16 h8 l5 -20 5 20 h8 v16 h14 v42 z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat, no-repeat, repeat-x;
+  background-size: auto, 18vmin auto, 480px auto;
+  background-position: 0 0, right 6% top 4%, bottom;
 }
 
 * {
