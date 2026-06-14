@@ -12,8 +12,8 @@
   --color-text-secondary: #64748b;
 
   /* Links, focus rings, selected borders (champ palette = default) */
-  --color-interactive: #6d5ef2;
-  --color-interactive-hover: #5a4be0;
+  --color-interactive: #5566c4;
+  --color-interactive-hover: #4453ad;
 
   /* Primary button (filled CTA) */
   --color-btn-primary-bg: #0f172a;
@@ -61,10 +61,11 @@
   --color-pill-bg: var(--color-surface-2);
 
   /* Palette swatches (picker UI only; light-mode accents) */
-  --palette-swatch-champ: #6d5ef2;
+  --palette-swatch-champ: #5566c4;
   --palette-swatch-iron: #f59e0b;
   --palette-swatch-forest: #15803d;
   --palette-swatch-crimson: #b91c1c;
+  --palette-swatch-chill: #5878b0;
   --color-error-border: #fecaca;
   --color-error-bg: #fff1f2;
   --font-sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial,
@@ -88,22 +89,23 @@ html[data-theme="dark"] {
   --color-text: #f1f5f9;
   --color-text-secondary: #94a3b8;
 
-  --color-interactive: #8b7eff;
-  --color-interactive-hover: #a89eff;
+  --color-interactive: #8b9bff;
+  --color-interactive-hover: #aab4ff;
 
-  --color-btn-primary-bg: #6d5ef2;
+  --color-btn-primary-bg: #5b6ee8;
   --color-btn-primary-fg: #ffffff;
-  --color-btn-primary-hover-bg: #7f72f5;
-  --color-btn-primary-active-bg: #5a4be0;
+  --color-btn-primary-hover-bg: #6e7ff0;
+  --color-btn-primary-active-bg: #4453ad;
 
   --color-nav-active-bg: color-mix(in srgb, var(--color-interactive) 20%, transparent);
   --color-pill-bg: var(--color-surface-2);
 
   /* Palette swatches (dark-mode accents) */
-  --palette-swatch-champ: #8b7eff;
+  --palette-swatch-champ: #8b9bff;
   --palette-swatch-iron: #fbbf24;
   --palette-swatch-forest: #4ade80;
   --palette-swatch-crimson: #f87171;
+  --palette-swatch-chill: #7c9fd4;
   --color-error-border: #dc2626;
   --color-error-bg: #3f1515;
   --shadow-card: 0 2px 14px rgba(0, 0, 0, 0.28);
@@ -138,17 +140,17 @@ html[data-theme="dark"] {
    no surface overrides). */
 
 html[data-palette="champ"] {
-  --color-interactive: #6d5ef2;
-  --color-interactive-hover: #5a4be0;
+  --color-interactive: #5566c4;
+  --color-interactive-hover: #4453ad;
 }
 
 html[data-theme="dark"][data-palette="champ"] {
-  --color-interactive: #8b7eff;
-  --color-interactive-hover: #a89eff;
-  --color-btn-primary-bg: #6d5ef2;
+  --color-interactive: #8b9bff;
+  --color-interactive-hover: #aab4ff;
+  --color-btn-primary-bg: #5b6ee8;
   --color-btn-primary-fg: #ffffff;
-  --color-btn-primary-hover-bg: #7f72f5;
-  --color-btn-primary-active-bg: #5a4be0;
+  --color-btn-primary-hover-bg: #6e7ff0;
+  --color-btn-primary-active-bg: #4453ad;
 }
 
 html[data-palette="iron"] {
@@ -235,6 +237,34 @@ html[data-theme="dark"][data-palette="crimson"] {
   --color-input-border: #613239;
 }
 
+html[data-palette="chill"] {
+  --color-interactive: #5878b0;
+  --color-interactive-hover: #496699;
+
+  --color-bg: #f2f4f8;
+  --color-surface-1: #fcfdff;
+  --color-surface-2: #f5f7fb;
+  --color-surface-3: #e9edf4;
+  --color-border: #d8dfeb;
+  --color-input-border: #c2cbdc;
+}
+
+html[data-theme="dark"][data-palette="chill"] {
+  --color-interactive: #7c9fd4;
+  --color-interactive-hover: #9fbce6;
+  --color-btn-primary-bg: #5878b0;
+  --color-btn-primary-fg: #ffffff;
+  --color-btn-primary-hover-bg: #6a8ac2;
+  --color-btn-primary-active-bg: #496699;
+
+  --color-bg: #0d0f1a;
+  --color-surface-1: #141826;
+  --color-surface-2: #1a1f30;
+  --color-surface-3: #21273b;
+  --color-border: #313a52;
+  --color-input-border: #3b4661;
+}
+
 /* --- Palette scenes (decorative full-viewport layer) ---
    One clearly-delimited block per palette; future variant blocks (T2d) sit
    alongside. The layer is a fixed body::before behind all app content; #root
@@ -257,43 +287,48 @@ body::before {
 
 /* === Scene: CHAMP (default — applies when data-palette is absent/unknown) === */
 
-/* Champ light: accent glow only, half opacity */
+/* Champ light: blue glow + pixel skyline at ~0.4x alphas */
 body::before {
-  background: radial-gradient(ellipse 120% 50% at 50% -10%, rgba(109, 94, 242, 0.09), transparent 60%);
+  background:
+    radial-gradient(ellipse 120% 50% at 50% -10%, rgba(91, 110, 232, 0.09), transparent 60%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 480 200' preserveAspectRatio='xMidYMax slice'%3E%3Cg fill='%23aab4ff'%3E%3Ccircle cx='40' cy='40' r='1.5' opacity='.24'/%3E%3Ccircle cx='95' cy='70' r='1.2' opacity='.2'/%3E%3Ccircle cx='175' cy='30' r='1.2' opacity='.18'/%3E%3Ccircle cx='250' cy='52' r='1.2' opacity='.18'/%3E%3Ccircle cx='320' cy='28' r='1.5' opacity='.24'/%3E%3Ccircle cx='420' cy='60' r='1.2' opacity='.18'/%3E%3Ccircle cx='140' cy='50' r='1' opacity='.14'/%3E%3Ccircle cx='380' cy='44' r='1.2' opacity='.16'/%3E%3Ccircle cx='455' cy='100' r='1' opacity='.12'/%3E%3Ccircle cx='60' cy='110' r='1' opacity='.12'/%3E%3C/g%3E%3Cg fill='%231c2348' opacity='.36'%3E%3Crect x='0' y='150' width='40' height='50'/%3E%3Crect x='40' y='158' width='26' height='42'/%3E%3Crect x='66' y='138' width='20' height='62'/%3E%3Crect x='86' y='152' width='36' height='48'/%3E%3Crect x='122' y='160' width='22' height='40'/%3E%3Crect x='144' y='144' width='30' height='56'/%3E%3Crect x='174' y='155' width='24' height='45'/%3E%3Crect x='198' y='132' width='18' height='68'/%3E%3Crect x='216' y='150' width='40' height='50'/%3E%3Crect x='256' y='158' width='24' height='42'/%3E%3Crect x='280' y='140' width='28' height='60'/%3E%3Crect x='308' y='154' width='34' height='46'/%3E%3Crect x='342' y='148' width='20' height='52'/%3E%3Crect x='362' y='158' width='38' height='42'/%3E%3Crect x='400' y='138' width='24' height='62'/%3E%3Crect x='424' y='152' width='56' height='48'/%3E%3C/g%3E%3Cg fill='%23aab4ff' opacity='.18'%3E%3Crect x='74' y='150' width='2' height='2'/%3E%3Crect x='204' y='146' width='2' height='2'/%3E%3Crect x='290' y='152' width='2' height='2'/%3E%3Crect x='408' y='150' width='2' height='2'/%3E%3C/g%3E%3C/svg%3E");
+  background-repeat: no-repeat, no-repeat;
+  background-size: auto, cover;
+  background-position: 0 0, center bottom;
 }
 
-/* Champ dark: glow + stars and faint geometry */
+/* Champ dark: blue glow + stars and pixel skyline */
 html[data-theme="dark"] body::before {
   background:
-    radial-gradient(ellipse 120% 50% at 50% -10%, rgba(109, 94, 242, 0.18), transparent 60%),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 480 320'%3E%3Cg fill='%238b7eff'%3E%3Ccircle cx='40' cy='60' r='1.5' opacity='.5'/%3E%3Ccircle cx='130' cy='30' r='1' opacity='.35'/%3E%3Ccircle cx='220' cy='90' r='1.2' opacity='.4'/%3E%3Ccircle cx='310' cy='40' r='1.6' opacity='.5'/%3E%3Ccircle cx='400' cy='110' r='1' opacity='.3'/%3E%3Ccircle cx='80' cy='180' r='1.2' opacity='.35'/%3E%3Ccircle cx='450' cy='200' r='1.4' opacity='.45'/%3E%3Ccircle cx='180' cy='250' r='1' opacity='.3'/%3E%3C/g%3E%3Cg stroke='%238b7eff' stroke-width='1' fill='none' opacity='.12'%3E%3Cpath d='M340 230 l50 -28 50 28 -50 28 z'/%3E%3Cpath d='M340 230 l50 -8 50 8 M390 202 v64'/%3E%3C/g%3E%3C/svg%3E");
-  background-repeat: no-repeat, repeat;
-  background-size: auto, 480px auto;
-  background-position: 0 0, bottom;
+    radial-gradient(ellipse 120% 50% at 50% -10%, rgba(91, 110, 232, 0.18), transparent 60%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 480 200' preserveAspectRatio='xMidYMax slice'%3E%3Cg fill='%23aab4ff'%3E%3Ccircle cx='40' cy='40' r='1.5' opacity='.6'/%3E%3Ccircle cx='95' cy='70' r='1.2' opacity='.5'/%3E%3Ccircle cx='175' cy='30' r='1.2' opacity='.45'/%3E%3Ccircle cx='250' cy='52' r='1.2' opacity='.45'/%3E%3Ccircle cx='320' cy='28' r='1.5' opacity='.6'/%3E%3Ccircle cx='420' cy='60' r='1.2' opacity='.45'/%3E%3Ccircle cx='140' cy='50' r='1' opacity='.35'/%3E%3Ccircle cx='380' cy='44' r='1.2' opacity='.4'/%3E%3Ccircle cx='455' cy='100' r='1' opacity='.3'/%3E%3Ccircle cx='60' cy='110' r='1' opacity='.3'/%3E%3C/g%3E%3Cg fill='%231c2348' opacity='.9'%3E%3Crect x='0' y='150' width='40' height='50'/%3E%3Crect x='40' y='158' width='26' height='42'/%3E%3Crect x='66' y='138' width='20' height='62'/%3E%3Crect x='86' y='152' width='36' height='48'/%3E%3Crect x='122' y='160' width='22' height='40'/%3E%3Crect x='144' y='144' width='30' height='56'/%3E%3Crect x='174' y='155' width='24' height='45'/%3E%3Crect x='198' y='132' width='18' height='68'/%3E%3Crect x='216' y='150' width='40' height='50'/%3E%3Crect x='256' y='158' width='24' height='42'/%3E%3Crect x='280' y='140' width='28' height='60'/%3E%3Crect x='308' y='154' width='34' height='46'/%3E%3Crect x='342' y='148' width='20' height='52'/%3E%3Crect x='362' y='158' width='38' height='42'/%3E%3Crect x='400' y='138' width='24' height='62'/%3E%3Crect x='424' y='152' width='56' height='48'/%3E%3C/g%3E%3Cg fill='%23aab4ff' opacity='.45'%3E%3Crect x='74' y='150' width='2' height='2'/%3E%3Crect x='204' y='146' width='2' height='2'/%3E%3Crect x='290' y='152' width='2' height='2'/%3E%3Crect x='408' y='150' width='2' height='2'/%3E%3C/g%3E%3C/svg%3E");
+  background-repeat: no-repeat, no-repeat;
+  background-size: auto, cover;
+  background-position: 0 0, center bottom;
 }
 
 /* === Scene: IRON (chalk barbell sketch + grain) === */
 
-/* Iron light: ~0.4x alphas (chalk/grain hues are light-on-light here — intentionally near-invisible) */
+/* Iron light: ~0.4x alphas (forge/grain hues are light-on-light here — intentionally near-invisible) */
 html[data-palette="iron"] body::before {
   background:
-    radial-gradient(ellipse 140% 45% at 50% 110%, rgba(245, 158, 11, 0.06), transparent 65%),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 360 140'%3E%3Cg stroke='%23d6c9b8' stroke-width='3' fill='none' opacity='.04' stroke-linecap='round'%3E%3Cline x1='30' y1='70' x2='330' y2='70'/%3E%3Crect x='60' y='30' width='16' height='80' rx='4'/%3E%3Crect x='84' y='40' width='12' height='60' rx='4'/%3E%3Crect x='284' y='30' width='16' height='80' rx='4'/%3E%3Crect x='264' y='40' width='12' height='60' rx='4'/%3E%3C/g%3E%3C/svg%3E"),
+    radial-gradient(ellipse 140% 45% at 52% 92%, rgba(255, 174, 61, 0.06), transparent 65%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 480 200' preserveAspectRatio='xMidYMax slice'%3E%3Cg fill='%230c0907' opacity='.4'%3E%3Crect x='200' y='184' width='120' height='16'/%3E%3Crect x='216' y='156' width='88' height='14'/%3E%3Cpath d='M216 156 q-20 0 -28 8 l0 6 q14 -8 28 -8z'/%3E%3Crect x='248' y='170' width='24' height='14'/%3E%3Crect x='234' y='180' width='52' height='6'/%3E%3C/g%3E%3Cg fill='%23ffc266'%3E%3Crect x='250' y='120' width='3' height='3' opacity='.28'/%3E%3Crect x='262' y='108' width='3' height='3' opacity='.22'/%3E%3Crect x='244' y='100' width='2' height='2' opacity='.2'/%3E%3Crect x='270' y='118' width='2' height='2' opacity='.24'/%3E%3Crect x='256' y='92' width='2' height='2' opacity='.16'/%3E%3C/g%3E%3Cg fill='%232a2017' opacity='.34'%3E%3Crect x='18' y='176' width='34' height='7' rx='2'/%3E%3Crect x='14' y='172' width='7' height='15' rx='2'/%3E%3Crect x='49' y='172' width='7' height='15' rx='2'/%3E%3Crect x='8' y='174' width='5' height='11' rx='1'/%3E%3Crect x='57' y='174' width='5' height='11' rx='1'/%3E%3C/g%3E%3C/svg%3E"),
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0.84 0 0 0 0 0.79 0 0 0 0 0.72 0 0 0 0.02 0'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)'/%3E%3C/svg%3E");
   background-repeat: no-repeat, no-repeat, repeat;
-  background-size: auto, 360px auto, 240px 240px;
-  background-position: 0 0, right 8% bottom 12%, 0 0;
+  background-size: auto, cover, 240px 240px;
+  background-position: 0 0, center bottom, 0 0;
 }
 
-/* Iron dark: forge glow + chalk barbell + grain */
+/* Iron dark: forge glow + anvil/barbell + grain */
 html[data-theme="dark"][data-palette="iron"] body::before {
   background:
-    radial-gradient(ellipse 140% 45% at 50% 110%, rgba(245, 158, 11, 0.14), transparent 65%),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 360 140'%3E%3Cg stroke='%23d6c9b8' stroke-width='3' fill='none' opacity='.10' stroke-linecap='round'%3E%3Cline x1='30' y1='70' x2='330' y2='70'/%3E%3Crect x='60' y='30' width='16' height='80' rx='4'/%3E%3Crect x='84' y='40' width='12' height='60' rx='4'/%3E%3Crect x='284' y='30' width='16' height='80' rx='4'/%3E%3Crect x='264' y='40' width='12' height='60' rx='4'/%3E%3C/g%3E%3C/svg%3E"),
+    radial-gradient(ellipse 140% 45% at 52% 92%, rgba(255, 174, 61, 0.16), transparent 65%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 480 200' preserveAspectRatio='xMidYMax slice'%3E%3Cg fill='%230c0907'%3E%3Crect x='200' y='184' width='120' height='16'/%3E%3Crect x='216' y='156' width='88' height='14'/%3E%3Cpath d='M216 156 q-20 0 -28 8 l0 6 q14 -8 28 -8z'/%3E%3Crect x='248' y='170' width='24' height='14'/%3E%3Crect x='234' y='180' width='52' height='6'/%3E%3C/g%3E%3Cg fill='%23ffc266'%3E%3Crect x='250' y='120' width='3' height='3' opacity='.7'/%3E%3Crect x='262' y='108' width='3' height='3' opacity='.55'/%3E%3Crect x='244' y='100' width='2' height='2' opacity='.5'/%3E%3Crect x='270' y='118' width='2' height='2' opacity='.6'/%3E%3Crect x='256' y='92' width='2' height='2' opacity='.4'/%3E%3C/g%3E%3Cg fill='%232a2017' opacity='.85'%3E%3Crect x='18' y='176' width='34' height='7' rx='2'/%3E%3Crect x='14' y='172' width='7' height='15' rx='2'/%3E%3Crect x='49' y='172' width='7' height='15' rx='2'/%3E%3Crect x='8' y='174' width='5' height='11' rx='1'/%3E%3Crect x='57' y='174' width='5' height='11' rx='1'/%3E%3C/g%3E%3C/svg%3E"),
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0.84 0 0 0 0 0.79 0 0 0 0 0.72 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)'/%3E%3C/svg%3E");
   background-repeat: no-repeat, no-repeat, repeat;
-  background-size: auto, 360px auto, 240px 240px;
-  background-position: 0 0, right 8% bottom 12%, 0 0;
+  background-size: auto, cover, 240px 240px;
+  background-position: 0 0, center bottom, 0 0;
 }
 
 /* === Scene: FOREST (pixel treeline) === */
@@ -340,6 +375,28 @@ html[data-theme="dark"][data-palette="crimson"] body::before {
   background-repeat: no-repeat, no-repeat, repeat-x;
   background-size: auto, 18vmin auto, 480px auto;
   background-position: 0 0, right 6% top 4%, bottom;
+}
+
+/* === Scene: CHILL (moonlit mountain ridgeline) === */
+
+/* Chill light: ~0.4x alphas */
+html[data-palette="chill"] body::before {
+  background:
+    radial-gradient(circle 30vmin at 56% 14%, rgba(159, 176, 216, 0.05), transparent 70%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 480 200' preserveAspectRatio='xMidYMax slice'%3E%3Cg fill='%23262d47' opacity='.22'%3E%3Crect x='0' y='120' width='200' height='10'/%3E%3Crect x='120' y='110' width='240' height='9'/%3E%3Crect x='300' y='124' width='180' height='11'/%3E%3Crect x='60' y='132' width='260' height='8'/%3E%3C/g%3E%3Cg fill='%231b2138' opacity='.4'%3E%3Crect x='0' y='150' width='480' height='50'/%3E%3Cpolygon points='0,152 40,140 90,150 150,138 220,150 300,140 380,150 440,142 480,150 480,152'/%3E%3C/g%3E%3Cg fill='%230c1020' opacity='.4'%3E%3Cpolygon points='50,178 60,150 70,178'/%3E%3Cpolygon points='58,184 70,150 82,184'/%3E%3Cpolygon points='120,180 130,152 140,180'/%3E%3Cpolygon points='180,182 192,148 204,182'/%3E%3Cpolygon points='250,180 260,152 270,180'/%3E%3Cpolygon points='320,184 332,148 344,184'/%3E%3Cpolygon points='390,180 400,152 410,180'/%3E%3Cpolygon points='430,182 442,150 454,182'/%3E%3C/g%3E%3C/svg%3E");
+  background-repeat: no-repeat, no-repeat;
+  background-size: auto, cover;
+  background-position: 0 0, center bottom;
+}
+
+/* Chill dark: moonlight glow + ridgeline + pines */
+html[data-theme="dark"][data-palette="chill"] body::before {
+  background:
+    radial-gradient(circle 30vmin at 56% 14%, rgba(159, 176, 216, 0.12), transparent 70%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 480 200' preserveAspectRatio='xMidYMax slice'%3E%3Cg fill='%23262d47' opacity='.55'%3E%3Crect x='0' y='120' width='200' height='10'/%3E%3Crect x='120' y='110' width='240' height='9'/%3E%3Crect x='300' y='124' width='180' height='11'/%3E%3Crect x='60' y='132' width='260' height='8'/%3E%3C/g%3E%3Cg fill='%231b2138'%3E%3Crect x='0' y='150' width='480' height='50'/%3E%3Cpolygon points='0,152 40,140 90,150 150,138 220,150 300,140 380,150 440,142 480,150 480,152'/%3E%3C/g%3E%3Cg fill='%230c1020'%3E%3Cpolygon points='50,178 60,150 70,178'/%3E%3Cpolygon points='58,184 70,150 82,184'/%3E%3Cpolygon points='120,180 130,152 140,180'/%3E%3Cpolygon points='180,182 192,148 204,182'/%3E%3Cpolygon points='250,180 260,152 270,180'/%3E%3Cpolygon points='320,184 332,148 344,184'/%3E%3Cpolygon points='390,180 400,152 410,180'/%3E%3Cpolygon points='430,182 442,150 454,182'/%3E%3C/g%3E%3C/svg%3E");
+  background-repeat: no-repeat, no-repeat;
+  background-size: auto, cover;
+  background-position: 0 0, center bottom;
 }
 
 * {
@@ -794,6 +851,10 @@ html[data-theme="dark"] .settings-group {
 
 .settings-palette-swatch--crimson {
   background: var(--palette-swatch-crimson);
+}
+
+.settings-palette-swatch--chill {
+  background: var(--palette-swatch-chill);
 }
 
 .settings-security-form {

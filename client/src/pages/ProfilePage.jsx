@@ -8,6 +8,7 @@ const PALETTE_OPTIONS = [
   { value: "iron", label: "Iron" },
   { value: "forest", label: "Forest" },
   { value: "crimson", label: "Crimson" },
+  { value: "chill", label: "Chill" },
 ];
 import * as authApi from "../api/authApi.js";
 import * as feedbackApi from "../api/feedbackApi.js";
