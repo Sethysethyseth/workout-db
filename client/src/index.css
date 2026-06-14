@@ -287,47 +287,41 @@ body::before {
 
 /* === Scene: CHAMP (default — applies when data-palette is absent/unknown) === */
 
-/* Champ light: blue glow + pixel skyline at ~0.4x alphas */
+/* Champ light: blue glow only (scene image is dark-mode-only) */
 body::before {
-  background:
-    radial-gradient(ellipse 120% 50% at 50% -10%, rgba(91, 110, 232, 0.09), transparent 60%),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 480 200' preserveAspectRatio='xMidYMax slice'%3E%3Cg fill='%23aab4ff'%3E%3Ccircle cx='40' cy='40' r='1.5' opacity='.24'/%3E%3Ccircle cx='95' cy='70' r='1.2' opacity='.2'/%3E%3Ccircle cx='175' cy='30' r='1.2' opacity='.18'/%3E%3Ccircle cx='250' cy='52' r='1.2' opacity='.18'/%3E%3Ccircle cx='320' cy='28' r='1.5' opacity='.24'/%3E%3Ccircle cx='420' cy='60' r='1.2' opacity='.18'/%3E%3Ccircle cx='140' cy='50' r='1' opacity='.14'/%3E%3Ccircle cx='380' cy='44' r='1.2' opacity='.16'/%3E%3Ccircle cx='455' cy='100' r='1' opacity='.12'/%3E%3Ccircle cx='60' cy='110' r='1' opacity='.12'/%3E%3C/g%3E%3Cg fill='%231c2348' opacity='.36'%3E%3Crect x='0' y='150' width='40' height='50'/%3E%3Crect x='40' y='158' width='26' height='42'/%3E%3Crect x='66' y='138' width='20' height='62'/%3E%3Crect x='86' y='152' width='36' height='48'/%3E%3Crect x='122' y='160' width='22' height='40'/%3E%3Crect x='144' y='144' width='30' height='56'/%3E%3Crect x='174' y='155' width='24' height='45'/%3E%3Crect x='198' y='132' width='18' height='68'/%3E%3Crect x='216' y='150' width='40' height='50'/%3E%3Crect x='256' y='158' width='24' height='42'/%3E%3Crect x='280' y='140' width='28' height='60'/%3E%3Crect x='308' y='154' width='34' height='46'/%3E%3Crect x='342' y='148' width='20' height='52'/%3E%3Crect x='362' y='158' width='38' height='42'/%3E%3Crect x='400' y='138' width='24' height='62'/%3E%3Crect x='424' y='152' width='56' height='48'/%3E%3C/g%3E%3Cg fill='%23aab4ff' opacity='.18'%3E%3Crect x='74' y='150' width='2' height='2'/%3E%3Crect x='204' y='146' width='2' height='2'/%3E%3Crect x='290' y='152' width='2' height='2'/%3E%3Crect x='408' y='150' width='2' height='2'/%3E%3C/g%3E%3C/svg%3E");
-  background-repeat: no-repeat, no-repeat;
-  background-size: auto, cover;
-  background-position: 0 0, center bottom;
+  background: radial-gradient(ellipse 120% 50% at 50% -10%, rgba(91, 110, 232, 0.09), transparent 60%);
 }
 
-/* Champ dark: blue glow + stars and pixel skyline */
+/* Champ dark: blue glow + night-skyline photo band */
 html[data-theme="dark"] body::before {
   background:
     radial-gradient(ellipse 120% 50% at 50% -10%, rgba(91, 110, 232, 0.18), transparent 60%),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 480 200' preserveAspectRatio='xMidYMax slice'%3E%3Cg fill='%23aab4ff'%3E%3Ccircle cx='40' cy='40' r='1.5' opacity='.6'/%3E%3Ccircle cx='95' cy='70' r='1.2' opacity='.5'/%3E%3Ccircle cx='175' cy='30' r='1.2' opacity='.45'/%3E%3Ccircle cx='250' cy='52' r='1.2' opacity='.45'/%3E%3Ccircle cx='320' cy='28' r='1.5' opacity='.6'/%3E%3Ccircle cx='420' cy='60' r='1.2' opacity='.45'/%3E%3Ccircle cx='140' cy='50' r='1' opacity='.35'/%3E%3Ccircle cx='380' cy='44' r='1.2' opacity='.4'/%3E%3Ccircle cx='455' cy='100' r='1' opacity='.3'/%3E%3Ccircle cx='60' cy='110' r='1' opacity='.3'/%3E%3C/g%3E%3Cg fill='%231c2348' opacity='.9'%3E%3Crect x='0' y='150' width='40' height='50'/%3E%3Crect x='40' y='158' width='26' height='42'/%3E%3Crect x='66' y='138' width='20' height='62'/%3E%3Crect x='86' y='152' width='36' height='48'/%3E%3Crect x='122' y='160' width='22' height='40'/%3E%3Crect x='144' y='144' width='30' height='56'/%3E%3Crect x='174' y='155' width='24' height='45'/%3E%3Crect x='198' y='132' width='18' height='68'/%3E%3Crect x='216' y='150' width='40' height='50'/%3E%3Crect x='256' y='158' width='24' height='42'/%3E%3Crect x='280' y='140' width='28' height='60'/%3E%3Crect x='308' y='154' width='34' height='46'/%3E%3Crect x='342' y='148' width='20' height='52'/%3E%3Crect x='362' y='158' width='38' height='42'/%3E%3Crect x='400' y='138' width='24' height='62'/%3E%3Crect x='424' y='152' width='56' height='48'/%3E%3C/g%3E%3Cg fill='%23aab4ff' opacity='.45'%3E%3Crect x='74' y='150' width='2' height='2'/%3E%3Crect x='204' y='146' width='2' height='2'/%3E%3Crect x='290' y='152' width='2' height='2'/%3E%3Crect x='408' y='150' width='2' height='2'/%3E%3C/g%3E%3C/svg%3E");
+    url("./assets/scenes/champ.jpg");
   background-repeat: no-repeat, no-repeat;
-  background-size: auto, cover;
+  background-size: auto, auto 320px;
   background-position: 0 0, center bottom;
 }
 
 /* === Scene: IRON (chalk barbell sketch + grain) === */
 
-/* Iron light: ~0.4x alphas (forge/grain hues are light-on-light here — intentionally near-invisible) */
+/* Iron light: forge glow + grain (scene image is dark-mode-only) */
 html[data-palette="iron"] body::before {
   background:
     radial-gradient(ellipse 140% 45% at 52% 92%, rgba(255, 174, 61, 0.06), transparent 65%),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 480 200' preserveAspectRatio='xMidYMax slice'%3E%3Cg fill='%230c0907' opacity='.4'%3E%3Crect x='200' y='184' width='120' height='16'/%3E%3Crect x='216' y='156' width='88' height='14'/%3E%3Cpath d='M216 156 q-20 0 -28 8 l0 6 q14 -8 28 -8z'/%3E%3Crect x='248' y='170' width='24' height='14'/%3E%3Crect x='234' y='180' width='52' height='6'/%3E%3C/g%3E%3Cg fill='%23ffc266'%3E%3Crect x='250' y='120' width='3' height='3' opacity='.28'/%3E%3Crect x='262' y='108' width='3' height='3' opacity='.22'/%3E%3Crect x='244' y='100' width='2' height='2' opacity='.2'/%3E%3Crect x='270' y='118' width='2' height='2' opacity='.24'/%3E%3Crect x='256' y='92' width='2' height='2' opacity='.16'/%3E%3C/g%3E%3Cg fill='%232a2017' opacity='.34'%3E%3Crect x='18' y='176' width='34' height='7' rx='2'/%3E%3Crect x='14' y='172' width='7' height='15' rx='2'/%3E%3Crect x='49' y='172' width='7' height='15' rx='2'/%3E%3Crect x='8' y='174' width='5' height='11' rx='1'/%3E%3Crect x='57' y='174' width='5' height='11' rx='1'/%3E%3C/g%3E%3C/svg%3E"),
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0.84 0 0 0 0 0.79 0 0 0 0 0.72 0 0 0 0.02 0'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)'/%3E%3C/svg%3E");
-  background-repeat: no-repeat, no-repeat, repeat;
-  background-size: auto, cover, 240px 240px;
-  background-position: 0 0, center bottom, 0 0;
+  background-repeat: no-repeat, repeat;
+  background-size: auto, 240px 240px;
+  background-position: 0 0, 0 0;
 }
 
-/* Iron dark: forge glow + anvil/barbell + grain */
+/* Iron dark: forge glow + forge/anvil photo band + grain */
 html[data-theme="dark"][data-palette="iron"] body::before {
   background:
     radial-gradient(ellipse 140% 45% at 52% 92%, rgba(255, 174, 61, 0.16), transparent 65%),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 480 200' preserveAspectRatio='xMidYMax slice'%3E%3Cg fill='%230c0907'%3E%3Crect x='200' y='184' width='120' height='16'/%3E%3Crect x='216' y='156' width='88' height='14'/%3E%3Cpath d='M216 156 q-20 0 -28 8 l0 6 q14 -8 28 -8z'/%3E%3Crect x='248' y='170' width='24' height='14'/%3E%3Crect x='234' y='180' width='52' height='6'/%3E%3C/g%3E%3Cg fill='%23ffc266'%3E%3Crect x='250' y='120' width='3' height='3' opacity='.7'/%3E%3Crect x='262' y='108' width='3' height='3' opacity='.55'/%3E%3Crect x='244' y='100' width='2' height='2' opacity='.5'/%3E%3Crect x='270' y='118' width='2' height='2' opacity='.6'/%3E%3Crect x='256' y='92' width='2' height='2' opacity='.4'/%3E%3C/g%3E%3Cg fill='%232a2017' opacity='.85'%3E%3Crect x='18' y='176' width='34' height='7' rx='2'/%3E%3Crect x='14' y='172' width='7' height='15' rx='2'/%3E%3Crect x='49' y='172' width='7' height='15' rx='2'/%3E%3Crect x='8' y='174' width='5' height='11' rx='1'/%3E%3Crect x='57' y='174' width='5' height='11' rx='1'/%3E%3C/g%3E%3C/svg%3E"),
+    url("./assets/scenes/iron.jpg"),
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0.84 0 0 0 0 0.79 0 0 0 0 0.72 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)'/%3E%3C/svg%3E");
   background-repeat: no-repeat, no-repeat, repeat;
-  background-size: auto, cover, 240px 240px;
+  background-size: auto, auto 320px, 240px 240px;
   background-position: 0 0, center bottom, 0 0;
 }
 
@@ -379,23 +373,18 @@ html[data-theme="dark"][data-palette="crimson"] body::before {
 
 /* === Scene: CHILL (moonlit mountain ridgeline) === */
 
-/* Chill light: ~0.4x alphas */
+/* Chill light: moonlight glow only (scene image is dark-mode-only) */
 html[data-palette="chill"] body::before {
-  background:
-    radial-gradient(circle 30vmin at 56% 14%, rgba(159, 176, 216, 0.05), transparent 70%),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 480 200' preserveAspectRatio='xMidYMax slice'%3E%3Cg fill='%23262d47' opacity='.22'%3E%3Crect x='0' y='120' width='200' height='10'/%3E%3Crect x='120' y='110' width='240' height='9'/%3E%3Crect x='300' y='124' width='180' height='11'/%3E%3Crect x='60' y='132' width='260' height='8'/%3E%3C/g%3E%3Cg fill='%231b2138' opacity='.4'%3E%3Crect x='0' y='150' width='480' height='50'/%3E%3Cpolygon points='0,152 40,140 90,150 150,138 220,150 300,140 380,150 440,142 480,150 480,152'/%3E%3C/g%3E%3Cg fill='%230c1020' opacity='.4'%3E%3Cpolygon points='50,178 60,150 70,178'/%3E%3Cpolygon points='58,184 70,150 82,184'/%3E%3Cpolygon points='120,180 130,152 140,180'/%3E%3Cpolygon points='180,182 192,148 204,182'/%3E%3Cpolygon points='250,180 260,152 270,180'/%3E%3Cpolygon points='320,184 332,148 344,184'/%3E%3Cpolygon points='390,180 400,152 410,180'/%3E%3Cpolygon points='430,182 442,150 454,182'/%3E%3C/g%3E%3C/svg%3E");
-  background-repeat: no-repeat, no-repeat;
-  background-size: auto, cover;
-  background-position: 0 0, center bottom;
+  background: radial-gradient(circle 30vmin at 56% 14%, rgba(159, 176, 216, 0.05), transparent 70%);
 }
 
-/* Chill dark: moonlight glow + ridgeline + pines */
+/* Chill dark: moonlight glow + pine-treeline photo band */
 html[data-theme="dark"][data-palette="chill"] body::before {
   background:
     radial-gradient(circle 30vmin at 56% 14%, rgba(159, 176, 216, 0.12), transparent 70%),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 480 200' preserveAspectRatio='xMidYMax slice'%3E%3Cg fill='%23262d47' opacity='.55'%3E%3Crect x='0' y='120' width='200' height='10'/%3E%3Crect x='120' y='110' width='240' height='9'/%3E%3Crect x='300' y='124' width='180' height='11'/%3E%3Crect x='60' y='132' width='260' height='8'/%3E%3C/g%3E%3Cg fill='%231b2138'%3E%3Crect x='0' y='150' width='480' height='50'/%3E%3Cpolygon points='0,152 40,140 90,150 150,138 220,150 300,140 380,150 440,142 480,150 480,152'/%3E%3C/g%3E%3Cg fill='%230c1020'%3E%3Cpolygon points='50,178 60,150 70,178'/%3E%3Cpolygon points='58,184 70,150 82,184'/%3E%3Cpolygon points='120,180 130,152 140,180'/%3E%3Cpolygon points='180,182 192,148 204,182'/%3E%3Cpolygon points='250,180 260,152 270,180'/%3E%3Cpolygon points='320,184 332,148 344,184'/%3E%3Cpolygon points='390,180 400,152 410,180'/%3E%3Cpolygon points='430,182 442,150 454,182'/%3E%3C/g%3E%3C/svg%3E");
+    url("./assets/scenes/chill.jpg");
   background-repeat: no-repeat, no-repeat;
-  background-size: auto, cover;
+  background-size: auto, auto 320px;
   background-position: 0 0, center bottom;
 }
 
