@@ -40,62 +40,60 @@ export function RegisterPage() {
   }
 
   return (
-    <div className="stack">
-      <h2>Register</h2>
+    <form className="card stack auth-form" onSubmit={onSubmit}>
+      <h2 className="auth-heading">Register</h2>
 
       <ErrorMessage error={error} />
 
-      <form className="card stack" onSubmit={onSubmit}>
-        <label>
-          Email
-          <input
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            autoComplete="email"
-            inputMode="email"
-            required
-          />
-        </label>
-        <label>
-          Username
-          <input
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            autoComplete="username"
-            required
-            minLength={3}
-            maxLength={30}
-          />
-        </label>
-        <p className="muted small" style={{ margin: 0 }}>
-          3–30 characters. Letters, numbers, spaces, and _ - . only.
-        </p>
-        <PasswordInput
-          label="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          autoComplete="new-password"
+      <label>
+        Email
+        <input
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          autoComplete="email"
+          inputMode="email"
           required
-          minLength={8}
         />
-        <PasswordInput
-          label="Confirm password"
-          value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
-          autoComplete="new-password"
+      </label>
+      <label>
+        Username
+        <input
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          autoComplete="username"
           required
-          minLength={8}
+          minLength={3}
+          maxLength={30}
         />
-        <div className="row">
-          <button className="btn" disabled={submitting}>
-            {submitting ? "Creating…" : "Create account"}
-          </button>
-          <Link className="muted" to="/login">
-            Already have an account? Login
-          </Link>
-        </div>
-      </form>
-    </div>
+      </label>
+      <p className="muted small auth-helper" style={{ margin: 0 }}>
+        3–30 characters. Letters, numbers, spaces, and _ - . only.
+      </p>
+      <PasswordInput
+        label="Password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        autoComplete="new-password"
+        required
+        minLength={8}
+      />
+      <PasswordInput
+        label="Confirm password"
+        value={confirmPassword}
+        onChange={(e) => setConfirmPassword(e.target.value)}
+        autoComplete="new-password"
+        required
+        minLength={8}
+      />
+      <div className="row auth-actions">
+        <button className="btn" disabled={submitting}>
+          {submitting ? "Creating…" : "Create account"}
+        </button>
+        <Link className="muted auth-crosslink" to="/login">
+          Already have an account? Login
+        </Link>
+      </div>
+    </form>
   );
 }
 
