@@ -3617,3 +3617,18 @@ html[data-theme="dark"] .start-workout-picker__sheet {
     inset 3px 0 0 0 var(--color-interactive),
     var(--shadow-card-hover);
 }
+
+/* --- Auth layout (navbar-less, centered floating card) --- */
+
+.auth-shell {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.auth-card-wrap {
+  width: 100%;
+  max-width: 380px;
+}

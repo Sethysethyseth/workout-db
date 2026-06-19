@@ -41,12 +41,7 @@ export function RegisterPage() {
 
   return (
     <div className="stack">
-      <div>
-        <h1>Register</h1>
-        <p className="muted">
-          Create your WorkoutDB beta account. Password must be at least 8 characters.
-        </p>
-      </div>
+      <h2>Register</h2>
 
       <ErrorMessage error={error} />
 

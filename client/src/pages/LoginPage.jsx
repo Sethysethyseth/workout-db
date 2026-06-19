@@ -39,12 +39,7 @@ export function LoginPage() {
 
   return (
     <div className="stack">
-      <div>
-        <h1>Login</h1>
-        <p className="muted">
-          Use your WorkoutDB beta account to continue. Cookies must be enabled.
-        </p>
-      </div>
+      <h2>Login</h2>
 
       <ErrorMessage error={error} />
 
