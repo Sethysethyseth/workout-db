@@ -3656,20 +3656,33 @@ html[data-theme="dark"] .start-workout-picker__sheet {
 }
 
 /* Scene is dark-only (gated below); anchored center bottom, auto height,
-   no-repeat per the scene hard rule. A darken-top gradient quiets the area
-   behind the card so it reads. */
+   no-repeat per the scene hard rule (never cover). The darken-top gradient
+   quiets the area behind the card, then fades to transparent by ~58% so the
+   scene reads clearly through the lower third. Overlay alphas are tokenized so
+   individual palettes (champ) can lighten them without redeclaring the scene. */
 html[data-theme="dark"] .auth-page {
+  --auth-overlay-top: 90%;
+  --auth-overlay-mid: 42%;
   background-image:
     linear-gradient(
       180deg,
-      color-mix(in srgb, var(--color-bg) 94%, transparent) 0%,
-      color-mix(in srgb, var(--color-bg) 55%, transparent) 42%,
-      transparent 100%
+      color-mix(in srgb, var(--color-bg) var(--auth-overlay-top), transparent) 0%,
+      color-mix(in srgb, var(--color-bg) var(--auth-overlay-mid), transparent) 26%,
+      transparent 58%
     ),
     var(--scene-image);
   background-repeat: no-repeat, no-repeat;
-  background-size: auto, auto 320px;
+  background-size: auto, auto 460px;
   background-position: center top, center bottom;
+}
+
+/* Champ skyline is the darkest source (bottom-band avg ~15/255); ease its
+   overlay so what's there reads. NOTE: source asset is a dark night export,
+   flagged for re-vendor — this only mitigates, it can't brighten silhouettes. */
+html[data-theme="dark"][data-palette="champ"] .auth-page,
+html[data-theme="dark"]:not([data-palette]) .auth-page {
+  --auth-overlay-top: 68%;
+  --auth-overlay-mid: 22%;
 }
 
 .auth-card-wrap {
@@ -3691,6 +3704,9 @@ html[data-theme="dark"] .auth-page {
   display: block;
   width: 100%;
   height: auto;
+  /* 1024px crisp pixel-art downscaled to 240px — keep hard edges, no blur. */
+  image-rendering: pixelated;
+  image-rendering: -webkit-optimize-contrast;
 }
 
 .wordmark::after {
@@ -3706,6 +3722,8 @@ html[data-theme="dark"] .auth-page {
   mask-size: contain;
   -webkit-mask-position: center top;
   mask-position: center top;
+  image-rendering: pixelated;
+  image-rendering: -webkit-optimize-contrast;
   pointer-events: none;
 }
 
@@ -3717,6 +3735,7 @@ html[data-theme="dark"] .auth-page {
 /* Translucent, blurred card with a subtle accent ring derived from
    --color-interactive (same color-mix pattern as rings/pills). */
 .auth-page .auth-form.card {
+  width: 100%;
   max-width: 380px;
   margin: 0 auto;
   padding: 18px;
@@ -3760,12 +3779,14 @@ html[data-theme="dark"] .auth-page .auth-form.card {
   background: var(--color-interactive);
   color: #fff;
   border-radius: var(--radius-control);
-  box-shadow: 0 8px 20px color-mix(in srgb, var(--color-interactive) 28%, transparent);
+  /* Subtle lift, not a halo — tight spread + low alpha so hot palettes
+     (crimson/gold) don't bloom. */
+  box-shadow: 0 3px 10px color-mix(in srgb, var(--color-interactive) 16%, transparent);
 }
 
 .auth-form .btn:hover:not(:disabled) {
   background: var(--color-interactive-hover);
-  box-shadow: 0 10px 24px color-mix(in srgb, var(--color-interactive) 35%, transparent);
+  box-shadow: 0 5px 12px color-mix(in srgb, var(--color-interactive) 22%, transparent);
 }
 
 .auth-form .auth-actions {
