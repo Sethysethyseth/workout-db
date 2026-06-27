@@ -25,6 +25,9 @@
   --radius-control: 12px;
   --radius-card: 14px;
   --notch-size: 8px;
+  /* Shared pixel-corner chrome (palette-agnostic; inherits --color-interactive per palette) */
+  --notch-stroke: 1.5px;
+  --notch-glow: color-mix(in srgb, var(--color-interactive) 45%, transparent);
   --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.05);
   --shadow-card-hover: 0 6px 18px rgba(15, 23, 42, 0.08);
   --shadow-ring-accent: 0 0 0 1px color-mix(in srgb, var(--color-interactive) 12%, transparent);
@@ -491,15 +494,29 @@ a {
 }
 
 .brand--subtle a {
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-  color: var(--color-text-secondary);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--color-text);
+}
+
+/* Pixel/flat crown, accent-tinted per palette, sized to cap height, left of wordmark */
+.brand--subtle a::before {
+  content: "";
+  flex: 0 0 auto;
+  width: 0.95em;
+  height: 0.95em;
+  background-color: var(--color-interactive);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%3E%3Cpath%20d='M3,19L3,8L8,12L12,5L16,12L21,8L21,19Z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%3E%3Cpath%20d='M3,19L3,8L8,12L12,5L16,12L21,8L21,19Z'/%3E%3C/svg%3E") center / contain no-repeat;
 }
 
 .brand--subtle a:hover {
   color: var(--color-text);
+  opacity: 0.85;
 }
 
 .nav-profile-link {
@@ -620,9 +637,17 @@ p {
   box-shadow: var(--shadow-card);
 }
 
-/* LogChamp pixel-corner motif — palette-agnostic stepped clip-path corners */
+/* LogChamp pixel-corner motif — palette-agnostic stepped clip-path corners.
+   The element itself is filled with the accent stroke color and clipped to the
+   stepped polygon. An inset ::before re-paints the card surface (also clipped),
+   so the accent shows through as a stepped stroke that follows every cut. The
+   outer glow is a drop-shadow() filter — applied after clipping, it hugs the
+   stepped silhouette where a box-shadow would have been clipped away. */
 .card--notched {
+  position: relative;
+  border: 0;
   border-radius: 0;
+  background: color-mix(in srgb, var(--color-interactive) 60%, var(--color-border));
   clip-path: polygon(
     0 var(--notch-size),
     var(--notch-size) var(--notch-size),
@@ -637,6 +662,53 @@ p {
     var(--notch-size) calc(100% - var(--notch-size)),
     0 calc(100% - var(--notch-size))
   );
+  filter: drop-shadow(0 0 6px var(--notch-glow));
+}
+
+html[data-theme="dark"] .card--notched {
+  background: color-mix(in srgb, var(--color-interactive) 60%, var(--color-border));
+}
+
+.card--notched::before {
+  content: "";
+  position: absolute;
+  inset: var(--notch-stroke);
+  z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-surface-2) 22%, transparent),
+      transparent 45%
+    ),
+    var(--color-surface-1);
+  clip-path: polygon(
+    0 var(--notch-size),
+    var(--notch-size) var(--notch-size),
+    var(--notch-size) 0,
+    calc(100% - var(--notch-size)) 0,
+    calc(100% - var(--notch-size)) var(--notch-size),
+    100% var(--notch-size),
+    100% calc(100% - var(--notch-size)),
+    calc(100% - var(--notch-size)) calc(100% - var(--notch-size)),
+    calc(100% - var(--notch-size)) 100%,
+    var(--notch-size) 100%,
+    var(--notch-size) calc(100% - var(--notch-size)),
+    0 calc(100% - var(--notch-size))
+  );
+}
+
+html[data-theme="dark"] .card--notched::before {
+  background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-surface-3) 18%, transparent),
+      transparent 52%
+    ),
+    var(--color-surface-1);
+}
+
+.card--notched > * {
+  position: relative;
+  z-index: 1;
 }
 
 html[data-theme="dark"] .card {
@@ -3260,6 +3332,38 @@ html[data-theme="dark"][data-palette="iron"] .workout-tab::before {
   z-index: 1;
 }
 
+/* Sparse star-glints in the dark space between cards. Decorative only:
+   pointer-events:none, sits below cards (z-index 0), motion-gated. */
+@media (prefers-reduced-motion: no-preference) {
+  .workout-tab.stack::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.5;
+    background-repeat: no-repeat;
+    background-image:
+      radial-gradient(1.5px 1.5px at 12% 22%, color-mix(in srgb, var(--color-interactive) 80%, white), transparent),
+      radial-gradient(2px 2px at 78% 14%, color-mix(in srgb, white 70%, var(--color-interactive)), transparent),
+      radial-gradient(1px 1px at 35% 58%, color-mix(in srgb, var(--color-interactive) 70%, white), transparent),
+      radial-gradient(2.5px 2.5px at 62% 72%, color-mix(in srgb, white 60%, var(--color-interactive)), transparent),
+      radial-gradient(1.5px 1.5px at 88% 48%, color-mix(in srgb, var(--color-interactive) 75%, white), transparent),
+      radial-gradient(1px 1px at 22% 82%, color-mix(in srgb, white 65%, var(--color-interactive)), transparent);
+    animation: notch-glint 6s ease-in-out infinite;
+  }
+
+  @keyframes notch-glint {
+    0%,
+    100% {
+      opacity: 0.25;
+    }
+    50% {
+      opacity: 0.6;
+    }
+  }
+}
+
 @media (min-width: 640px) {
   .workout-tab.stack {
     gap: 14px;
@@ -3281,7 +3385,7 @@ html[data-theme="dark"][data-palette="iron"] .workout-tab::before {
   gap: 10px;
 }
 
-.workout-hero.card--notched {
+.workout-hero.card--notched::before {
   background: linear-gradient(
       165deg,
       color-mix(in srgb, var(--color-surface-3) 28%, transparent),
@@ -3290,7 +3394,7 @@ html[data-theme="dark"][data-palette="iron"] .workout-tab::before {
     var(--color-surface-1);
 }
 
-html[data-theme="dark"] .workout-hero.card--notched {
+html[data-theme="dark"] .workout-hero.card--notched::before {
   background: linear-gradient(
       165deg,
       color-mix(in srgb, var(--color-surface-3) 22%, transparent),
@@ -3348,12 +3452,27 @@ html[data-theme="dark"] .workout-hero.card--notched {
 }
 
 .workout-hero__cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
   width: 100%;
   margin-top: 8px;
   min-height: 52px;
   font-size: 1.05rem;
   padding: 14px 16px;
   border-radius: var(--radius-control);
+}
+
+/* Line-style dumbbell trailing the label, inherits button text color */
+.workout-hero__cta::after {
+  content: "";
+  flex: 0 0 auto;
+  width: 1.25em;
+  height: 1.25em;
+  background-color: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='black'%20stroke-width='2'%20stroke-linecap='round'%3E%3Cpath%20d='M6.5%206.5v11M3.5%209v5M17.5%206.5v11M20.5%209v5M7%2012h10'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='black'%20stroke-width='2'%20stroke-linecap='round'%3E%3Cpath%20d='M6.5%206.5v11M3.5%209v5M17.5%206.5v11M20.5%209v5M7%2012h10'/%3E%3C/svg%3E") center / contain no-repeat;
 }
 
 .workout-tab-recent {
