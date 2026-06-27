@@ -398,6 +398,16 @@ html[data-theme="dark"]:not([data-palette]):has(.workout-tab) body::before {
   background-position: 0 0;
 }
 
+/* Home (.workout-tab) owns iron scene — suppress global iron.jpg, keep forge glow + grain */
+html[data-theme="dark"][data-palette="iron"]:has(.workout-tab) body::before {
+  background:
+    radial-gradient(ellipse 140% 45% at 52% 92%, rgba(255, 174, 61, 0.16), transparent 65%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0.84 0 0 0 0 0.79 0 0 0 0 0.72 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: no-repeat, repeat;
+  background-size: auto, 240px 240px;
+  background-position: 0 0, 0 0;
+}
+
 /* --- Auth scene source token (dark-only; consumed by .auth-page) ---
    One declaration per palette so the later forest/crimson raster swap is a
    one-liner. Deliberately dark-only: in light mode the auth card sits on plain
@@ -3203,6 +3213,28 @@ html[data-theme="dark"] .exercise-name-suggestions {
 /* Champ home scene (dark-only): bottom-band via --scene-image, auth hard rule — never cover */
 html[data-theme="dark"][data-palette="champ"] .workout-tab::before,
 html[data-theme="dark"]:not([data-palette]) .workout-tab::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  --workout-overlay-top: 68%;
+  --workout-overlay-mid: 22%;
+  background-image:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-bg) var(--workout-overlay-top), transparent) 0%,
+      color-mix(in srgb, var(--color-bg) var(--workout-overlay-mid), transparent) 26%,
+      transparent 58%
+    ),
+    var(--scene-image);
+  background-repeat: no-repeat, no-repeat;
+  background-size: auto, auto 460px;
+  background-position: center top, center bottom;
+}
+
+/* Iron home scene (dark-only): bottom-band via --scene-image, same hard rule as champ — never cover */
+html[data-theme="dark"][data-palette="iron"] .workout-tab::before {
   content: "";
   position: fixed;
   inset: 0;
