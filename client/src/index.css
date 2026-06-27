@@ -26,8 +26,8 @@
   --radius-card: 14px;
   --notch-size: 8px;
   /* Shared pixel-corner chrome (palette-agnostic; inherits --color-interactive per palette) */
-  --notch-stroke: 1.5px;
-  --notch-glow: color-mix(in srgb, var(--color-interactive) 45%, transparent);
+  --notch-stroke: 2.5px;
+  --notch-glow: color-mix(in srgb, var(--color-interactive) 70%, transparent);
   --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.05);
   --shadow-card-hover: 0 6px 18px rgba(15, 23, 42, 0.08);
   --shadow-ring-accent: 0 0 0 1px color-mix(in srgb, var(--color-interactive) 12%, transparent);
@@ -662,7 +662,7 @@ p {
     var(--notch-size) calc(100% - var(--notch-size)),
     0 calc(100% - var(--notch-size))
   );
-  filter: drop-shadow(0 0 6px var(--notch-glow));
+  filter: drop-shadow(0 0 10px var(--notch-glow));
 }
 
 html[data-theme="dark"] .card--notched {
@@ -3282,7 +3282,10 @@ html[data-theme="dark"] .exercise-name-suggestions {
   padding-bottom: 24px;
 }
 
-/* Champ home scene (dark-only): bottom-band via --scene-image, auth hard rule — never cover */
+/* Champ home scene (dark-only): bottom-band via --scene-image, auth hard rule — never cover.
+   Band ~220px tall anchored center bottom. Overlay ramps from transparent at the very
+   bottom (scene reads) to fully solid --color-bg by ~200px, so the bright top edge of the
+   image is hidden and there is no hard seam below the cards. */
 html[data-theme="dark"][data-palette="champ"] .workout-tab::before,
 html[data-theme="dark"]:not([data-palette]) .workout-tab::before {
   content: "";
@@ -3290,40 +3293,39 @@ html[data-theme="dark"]:not([data-palette]) .workout-tab::before {
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  --workout-overlay-top: 68%;
-  --workout-overlay-mid: 22%;
   background-image:
     linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--color-bg) var(--workout-overlay-top), transparent) 0%,
-      color-mix(in srgb, var(--color-bg) var(--workout-overlay-mid), transparent) 26%,
-      transparent 58%
+      to top,
+      transparent 0,
+      color-mix(in srgb, var(--color-bg) 55%, transparent) 90px,
+      var(--color-bg) 200px,
+      var(--color-bg) 100%
     ),
     var(--scene-image);
   background-repeat: no-repeat, no-repeat;
-  background-size: auto, auto 460px;
+  background-size: auto, auto 220px;
   background-position: center top, center bottom;
 }
 
-/* Iron home scene (dark-only): bottom-band via --scene-image, same hard rule as champ — never cover */
+/* Iron home scene (dark-only): bottom-band via --scene-image, same hard rule as champ — never cover.
+   Identical band + fade treatment as champ (220px, transparent-to-solid ramp, no seam). */
 html[data-theme="dark"][data-palette="iron"] .workout-tab::before {
   content: "";
   position: fixed;
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  --workout-overlay-top: 68%;
-  --workout-overlay-mid: 22%;
   background-image:
     linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--color-bg) var(--workout-overlay-top), transparent) 0%,
-      color-mix(in srgb, var(--color-bg) var(--workout-overlay-mid), transparent) 26%,
-      transparent 58%
+      to top,
+      transparent 0,
+      color-mix(in srgb, var(--color-bg) 55%, transparent) 90px,
+      var(--color-bg) 200px,
+      var(--color-bg) 100%
     ),
     var(--scene-image);
   background-repeat: no-repeat, no-repeat;
-  background-size: auto, auto 460px;
+  background-size: auto, auto 220px;
   background-position: center top, center bottom;
 }
 
