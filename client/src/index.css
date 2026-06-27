@@ -24,6 +24,7 @@
   /* Shape + elevation */
   --radius-control: 12px;
   --radius-card: 14px;
+  --notch-size: 8px;
   --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.05);
   --shadow-card-hover: 0 6px 18px rgba(15, 23, 42, 0.08);
   --shadow-ring-accent: 0 0 0 1px color-mix(in srgb, var(--color-interactive) 12%, transparent);
@@ -388,6 +389,15 @@ html[data-theme="dark"][data-palette="chill"] body::before {
   background-position: 0 0, center bottom;
 }
 
+/* Home (.workout-tab) owns champ scene — suppress global champ photo so only one layer paints */
+html[data-theme="dark"][data-palette="champ"]:has(.workout-tab) body::before,
+html[data-theme="dark"]:not([data-palette]):has(.workout-tab) body::before {
+  background: radial-gradient(ellipse 120% 50% at 50% -10%, rgba(91, 110, 232, 0.18), transparent 60%);
+  background-repeat: no-repeat;
+  background-size: auto;
+  background-position: 0 0;
+}
+
 /* --- Auth scene source token (dark-only; consumed by .auth-page) ---
    One declaration per palette so the later forest/crimson raster swap is a
    one-liner. Deliberately dark-only: in light mode the auth card sits on plain
@@ -532,6 +542,19 @@ a {
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-interactive) 24%, transparent);
 }
 
+.nav-tab--disabled {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 12px;
+  color: var(--color-text-secondary);
+  opacity: 0.42;
+  cursor: default;
+  pointer-events: none;
+  user-select: none;
+}
+
 @media (max-width: 420px) {
   .nav-main-links.links {
     flex-wrap: nowrap;
@@ -540,7 +563,8 @@ a {
     -webkit-overflow-scrolling: touch;
   }
 
-  .nav-main-links.links a {
+  .nav-main-links.links a,
+  .nav-main-links.links .nav-tab--disabled {
     flex: 0 0 auto;
   }
 }
@@ -584,6 +608,25 @@ p {
   border-radius: var(--radius-card);
   padding: 12px;
   box-shadow: var(--shadow-card);
+}
+
+/* LogChamp pixel-corner motif — palette-agnostic stepped clip-path corners */
+.card--notched {
+  border-radius: 0;
+  clip-path: polygon(
+    0 var(--notch-size),
+    var(--notch-size) var(--notch-size),
+    var(--notch-size) 0,
+    calc(100% - var(--notch-size)) 0,
+    calc(100% - var(--notch-size)) var(--notch-size),
+    100% var(--notch-size),
+    100% calc(100% - var(--notch-size)),
+    calc(100% - var(--notch-size)) calc(100% - var(--notch-size)),
+    calc(100% - var(--notch-size)) 100%,
+    var(--notch-size) 100%,
+    var(--notch-size) calc(100% - var(--notch-size)),
+    0 calc(100% - var(--notch-size))
+  );
 }
 
 html[data-theme="dark"] .card {
@@ -3150,7 +3193,39 @@ html[data-theme="dark"] .exercise-name-suggestions {
 /* --- Workout-first tab + global active bar --- */
 
 .workout-tab.stack {
+  position: relative;
+  isolation: isolate;
   gap: 12px;
+  min-height: calc(100dvh - 7.5rem);
+  padding-bottom: 24px;
+}
+
+/* Champ home scene (dark-only): bottom-band via --scene-image, auth hard rule — never cover */
+html[data-theme="dark"][data-palette="champ"] .workout-tab::before,
+html[data-theme="dark"]:not([data-palette]) .workout-tab::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  --workout-overlay-top: 68%;
+  --workout-overlay-mid: 22%;
+  background-image:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-bg) var(--workout-overlay-top), transparent) 0%,
+      color-mix(in srgb, var(--color-bg) var(--workout-overlay-mid), transparent) 26%,
+      transparent 58%
+    ),
+    var(--scene-image);
+  background-repeat: no-repeat, no-repeat;
+  background-size: auto, auto 460px;
+  background-position: center top, center bottom;
+}
+
+.workout-tab.stack > * {
+  position: relative;
+  z-index: 1;
 }
 
 @media (min-width: 640px) {
@@ -3166,10 +3241,30 @@ html[data-theme="dark"] .exercise-name-suggestions {
 }
 
 .workout-hero {
-  padding: 16px 14px 18px;
-  border-color: color-mix(in srgb, var(--accent) 38%, var(--color-border));
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 14%, transparent);
-  gap: 8px;
+  padding: 18px 16px 20px;
+  border-color: color-mix(in srgb, var(--color-interactive) 32%, var(--color-border));
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--color-interactive) 18%, transparent),
+    var(--shadow-card);
+  gap: 10px;
+}
+
+.workout-hero.card--notched {
+  background: linear-gradient(
+      165deg,
+      color-mix(in srgb, var(--color-surface-3) 28%, transparent),
+      transparent 55%
+    ),
+    var(--color-surface-1);
+}
+
+html[data-theme="dark"] .workout-hero.card--notched {
+  background: linear-gradient(
+      165deg,
+      color-mix(in srgb, var(--color-surface-3) 22%, transparent),
+      transparent 58%
+    ),
+    var(--color-surface-1);
 }
 
 .workout-hero__title,
@@ -3222,23 +3317,110 @@ html[data-theme="dark"] .exercise-name-suggestions {
 
 .workout-hero__cta {
   width: 100%;
-  margin-top: 6px;
+  margin-top: 8px;
   min-height: 52px;
   font-size: 1.05rem;
   padding: 14px 16px;
-  border-radius: 14px;
+  border-radius: var(--radius-control);
+}
+
+.workout-tab-recent {
+  display: grid;
+  gap: 10px;
+}
+
+.workout-tab-recent__head {
+  align-items: baseline;
+  gap: 8px 12px;
+}
+
+.workout-tab-recent__title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.workout-tab-recent__view-all {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  transition: color var(--motion-fast) var(--ease-standard);
+}
+
+.workout-tab-recent__view-all:hover {
+  color: var(--color-interactive);
+}
+
+.workout-tab-recent__empty {
+  padding-left: 2px;
+}
+
+.workout-tab-recent__scroll {
+  list-style: none;
+  margin: 0;
+  padding: 0 16px 4px 0;
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+.workout-tab-recent__item {
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+}
+
+.workout-tab-recent__card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 150px;
+  min-height: 72px;
+  padding: 10px 12px;
+  text-decoration: none;
+  color: inherit;
+  transition:
+    border-color var(--motion-base) var(--ease-standard),
+    box-shadow var(--motion-base) var(--ease-standard);
+}
+
+.workout-tab-recent__card:hover {
+  border-color: color-mix(in srgb, var(--color-interactive) 45%, var(--color-border));
+  box-shadow: var(--shadow-card-hover);
+}
+
+.workout-tab-recent__card-title {
+  font-weight: 700;
+  font-size: 13px;
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.workout-tab-recent__card-when {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .workout-tab__error-compact {
   padding: 10px 12px;
 }
 
+/* DEAD: removed from home Unit 1, cleanup queued */
 .workout-tab-history__title {
   margin: 0;
   font-size: 1rem;
   font-weight: 700;
 }
 
+/* DEAD: removed from home Unit 1, cleanup queued */
 .workout-tab-history {
   padding: 12px 14px;
   gap: 10px;
@@ -3254,6 +3436,7 @@ html[data-theme="dark"] .exercise-name-suggestions {
   font-weight: 600;
 }
 
+/* DEAD: removed from home Unit 1, cleanup queued */
 .quick-pick-templates__head {
   display: flex;
   align-items: baseline;
@@ -3336,6 +3519,7 @@ html[data-theme="dark"] .exercise-name-suggestions {
   font-variant-numeric: tabular-nums;
 }
 
+/* DEAD: removed from home Unit 1, cleanup queued */
 .secondary-actions {
   padding: 12px 14px;
   border: 1px dashed var(--color-input-border);
@@ -3391,6 +3575,7 @@ html[data-theme="dark"] .secondary-actions {
   text-underline-offset: 2px;
 }
 
+/* DEAD: removed from home Unit 1, cleanup queued */
 .workout-tab__community {
   text-align: left;
   padding-left: 2px;
@@ -3403,6 +3588,7 @@ html[data-theme="dark"] .secondary-actions {
   text-underline-offset: 3px;
 }
 
+/* DEAD: removed from home Unit 1, cleanup queued */
 .btn--quiet-history {
   font-weight: 500;
   color: var(--color-text-secondary);

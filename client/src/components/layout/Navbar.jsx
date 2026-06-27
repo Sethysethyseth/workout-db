@@ -49,7 +49,7 @@ export function Navbar() {
                 tryNavigate("/");
               }}
             >
-              WorkoutDB beta
+              LogChamp
             </Link>
           </div>
           {currentUser ? (
@@ -91,7 +91,7 @@ export function Navbar() {
                   tryNavigate("/templates");
                 }}
               >
-                Programs
+                Library
               </NavLink>
               <NavLink
                 to="/sessions"
@@ -105,17 +105,9 @@ export function Navbar() {
               >
                 History
               </NavLink>
-              <NavLink
-                to="/hello"
-                onClick={(e) => {
-                  if (!liveSessionGuard) return;
-                  if (location.pathname.startsWith("/hello")) return;
-                  e.preventDefault();
-                  tryNavigate("/hello");
-                }}
-              >
-                Hello!
-              </NavLink>
+              <span className="nav-tab--disabled" aria-disabled="true">
+                Analytics
+              </span>
               {canReviewFeedback ? (
                 <NavLink
                   to="/dev/feedback"
