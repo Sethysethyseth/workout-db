@@ -665,7 +665,7 @@ p {
   filter: drop-shadow(0 0 10px var(--notch-glow));
 }
 
-html[data-theme="dark"] .card--notched {
+html[data-theme="dark"] .card.card--notched {
   background: color-mix(in srgb, var(--color-interactive) 60%, var(--color-border));
 }
 
