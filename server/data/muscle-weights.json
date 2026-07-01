@@ -1,0 +1,38 @@
+{
+  "Barbell_Bench_Press_-_Medium_Grip": { "chest": 0.65, "triceps": 0.2, "shoulders": 0.15 },
+  "Bench_Press_-_Powerlifting": { "chest": 0.65, "triceps": 0.2, "shoulders": 0.15 },
+  "Close-Grip_Barbell_Bench_Press": { "triceps": 0.5, "chest": 0.35, "shoulders": 0.15 },
+  "Barbell_Incline_Bench_Press_-_Medium_Grip": { "chest": 0.55, "shoulders": 0.25, "triceps": 0.2 },
+  "Decline_Barbell_Bench_Press": { "chest": 0.7, "triceps": 0.2, "shoulders": 0.1 },
+  "Dumbbell_Bench_Press": { "chest": 0.6, "triceps": 0.2, "shoulders": 0.2 },
+  "Incline_Dumbbell_Press": { "chest": 0.5, "shoulders": 0.3, "triceps": 0.2 },
+
+  "Barbell_Squat": { "quadriceps": 0.55, "glutes": 0.25, "hamstrings": 0.1, "lower back": 0.1 },
+  "Barbell_Full_Squat": { "quadriceps": 0.55, "glutes": 0.25, "hamstrings": 0.1, "lower back": 0.1 },
+  "Front_Barbell_Squat": { "quadriceps": 0.65, "glutes": 0.2, "lower back": 0.1, "hamstrings": 0.05 },
+  "Box_Squat": { "quadriceps": 0.45, "glutes": 0.35, "hamstrings": 0.1, "lower back": 0.1 },
+
+  "Barbell_Deadlift": { "hamstrings": 0.3, "glutes": 0.25, "lower back": 0.2, "quadriceps": 0.15, "traps": 0.05, "lats": 0.05 },
+  "Sumo_Deadlift": { "glutes": 0.3, "quadriceps": 0.25, "hamstrings": 0.2, "lower back": 0.15, "traps": 0.05, "lats": 0.05 },
+  "Romanian_Deadlift": { "hamstrings": 0.5, "glutes": 0.3, "lower back": 0.2 },
+  "Stiff-Legged_Barbell_Deadlift": { "hamstrings": 0.5, "glutes": 0.3, "lower back": 0.2 },
+  "Trap_Bar_Deadlift": { "quadriceps": 0.3, "glutes": 0.25, "hamstrings": 0.2, "lower back": 0.15, "traps": 0.1 },
+
+  "Standing_Military_Press": { "shoulders": 0.6, "triceps": 0.25, "chest": 0.1, "traps": 0.05 },
+  "Seated_Barbell_Military_Press": { "shoulders": 0.65, "triceps": 0.25, "traps": 0.1 },
+  "Standing_Dumbbell_Press": { "shoulders": 0.6, "triceps": 0.25, "chest": 0.1, "traps": 0.05 },
+  "Seated_Dumbbell_Press": { "shoulders": 0.65, "triceps": 0.25, "traps": 0.1 },
+
+  "Bent_Over_Barbell_Row": { "lats": 0.4, "middle back": 0.25, "biceps": 0.15, "lower back": 0.1, "traps": 0.1 },
+  "T-Bar_Row_with_Handle": { "lats": 0.4, "middle back": 0.3, "biceps": 0.15, "traps": 0.15 },
+  "One-Arm_Dumbbell_Row": { "lats": 0.45, "middle back": 0.25, "biceps": 0.2, "traps": 0.1 },
+  "Seated_Cable_Rows": { "lats": 0.4, "middle back": 0.3, "biceps": 0.2, "traps": 0.1 },
+
+  "Pullups": { "lats": 0.5, "biceps": 0.2, "middle back": 0.15, "traps": 0.1, "forearms": 0.05 },
+  "Chin-Up": { "lats": 0.4, "biceps": 0.35, "middle back": 0.15, "traps": 0.05, "forearms": 0.05 },
+  "Wide-Grip_Lat_Pulldown": { "lats": 0.55, "middle back": 0.2, "biceps": 0.15, "traps": 0.1 },
+  "Close-Grip_Front_Lat_Pulldown": { "lats": 0.45, "biceps": 0.25, "middle back": 0.2, "traps": 0.1 },
+
+  "Dips_-_Chest_Version": { "chest": 0.55, "triceps": 0.3, "shoulders": 0.15 },
+  "Dips_-_Triceps_Version": { "triceps": 0.55, "chest": 0.3, "shoulders": 0.15 }
+}
