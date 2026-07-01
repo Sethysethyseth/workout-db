@@ -12,20 +12,38 @@
 
 ---
 
-## Model selection (soft default - you still choose)
+## Model selection / division of labor (the Fable split)
 
-Start in Sonnet. Both a Sonnet chat and an Opus chat stay open; reach into the
-Opus chat only when a task hits one of the Opus tendencies (see
-routing-cheatsheet.md section B). Drop back to Sonnet the moment the hard part
-is solved. Nothing auto-routes - "Sonnet first" is just the home base that keeps
-the cheap lane cheap and prevents Opus-drift.
+Two Fable seats, two roles:
 
-## Workflow note (the relay)
+- **Fable in Claude Code (this environment) = the brain.** Architecture and
+  planning with the repo in hand, unit-scale task-block authoring, diff review
+  against the spec after every Cursor unit, root-cause debugging, audits,
+  ALL git operations (commit/push/state), HANDOFF upkeep, and the formerly
+  Opus-tier escalations (A1 prod migration, A4 FK schema design, Track C
+  security). Sessions should be short and high-leverage - drop out when the
+  judgment work is done; don't let Fable become resident for mechanical work.
+- **Fable in Cursor = the hands.** Executes unit-scale task blocks (whole
+  roadmap items, multi-file, token-heavy codegen + tests). Writes code, runs
+  tests, STOPS. Never commits, never edits `docs/HANDOFF.md` (see the
+  division-of-labor rule in AGENTS.md).
+- **Sonnet chat = the cheap lane** for quick conversational questions that
+  don't need the repo. Truly mechanical work (rename sweeps, boilerplate)
+  doesn't need Fable anywhere - use a cheaper Cursor model.
 
-Claude plans / Cursor executes. For small changes (1-3 files), Claude produces a
-**Cursor task block** (scoped, file-named, acceptance criteria, stop condition -
-template: `cursor-task-block-template.md`) rather than editing directly. Hand
-big mechanical jobs + DB inspection + repo hygiene to Claude Code.
+## Workflow (the relay, v2)
+
+Claude Code plans and reviews / Cursor executes. The loop per unit:
+
+1. Claude Code emits a **unit-scale task block** (template:
+   `cursor-task-block-template.md`, "Unit-scale variant") - one coherent
+   roadmap unit with a testable contract, not a 1-3 file slice.
+2. Cursor (Fable) implements it, gets tests green, stops without committing.
+3. Claude Code reviews the working tree against the spec (this lane caught a
+   real shipped-contract bug on day one - it is not optional ceremony),
+   fixes-or-bounces, commits with SHA verification, updates HANDOFF, emits
+   the next block.
+
 `docs/HANDOFF.md` carries current-state between sessions - all agents read it.
 
 ## Claude-Code-specific environment

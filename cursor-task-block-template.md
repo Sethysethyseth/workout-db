@@ -77,6 +77,32 @@ stop and say so.
 
 ---
 
+## Unit-scale variant (for Fable-on-Cursor)
+
+When Cursor is running a frontier model (Fable) AND Claude Code is doing the
+review, the scope cap moves from "1-3 files, diff reviewable in a minute" to
+"one coherent roadmap unit with a testable contract" (e.g. ALL of B3b:
+per-exercise aggregation + PR detection + balance ratios + summary object +
+meta + tests, in one block). Same format, three changes:
+
+- **FILES TO TOUCH** may name directories plus a contract ("new modules under
+  `server/src/analytics/`, tests under `server/test/analytics/`") instead of
+  an exhaustive file list.
+- **ACCEPTANCE CRITERIA** must be machine-checkable: `npm run test:unit`
+  green, plus concrete input->output examples for the unit's public contract
+  (the reviewer verifies these, not vibes).
+- **STOP CONDITION** always includes these two lines verbatim:
+  - "Do NOT commit, push, or touch git in any way - leave the working tree
+    for review."
+  - "Do NOT edit docs/HANDOFF.md, AGENTS.md, or CLAUDE.md - state is the
+    reviewer's job."
+
+The safety net for the bigger diff is the review lane (Claude Code reads the
+tree against the spec before committing) plus the DB-free unit-test lane -
+not diff smallness. Don't use this variant without both.
+
+---
+
 ## How to ask Claude for one
 
 You usually won't write these by hand — that's the point. Just say:

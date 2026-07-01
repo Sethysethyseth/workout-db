@@ -94,6 +94,19 @@ Rebrand text lives in: rendered UI, `<title>`, PWA manifest name fields.
   is `position: relative; z-index: 1` as the stacking fix - check anything
   rendered via portal (outside `#root`) against this.
 
+## Division of labor (one writer for git and state)
+
+- **Cursor writes code and stops.** It does NOT commit, push, or edit
+  `docs/HANDOFF.md` - it implements the current task block, gets tests green,
+  and ends its turn. (The gate below says local commits are *permitted*
+  without asking; this rule says committing is *Claude Code's job*, so two
+  agents never race one working tree - see the two-agents gotcha.)
+- **Claude Code owns git and state:** reviews each unit against the spec,
+  commits with SHA verification, pushes to staging, and keeps HANDOFF
+  current.
+- Seth personally runs everything the gate marks ask-first (main merges,
+  prod, migrations).
+
 ## Conventions
 
 - Match existing component/file patterns before inventing new ones.
