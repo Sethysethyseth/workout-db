@@ -1,6 +1,6 @@
 # HANDOFF — current state
 
-**Updated:** July 1, 2026 (evening — analytics B1/B2/B3a built AND committed; repo-hygiene + test/CI infra session)
+**Updated:** July 1, 2026 (late — analytics B4 endpoint built via Cursor, reviewed, committed, pushed)
 **Rule:** rewritten in place at the end of every working session. Dated, never versioned. If this file looks stale (date > ~2 weeks old), verify branch/deploy state from ground truth before trusting it.
 
 ---
@@ -51,7 +51,7 @@
 ## Next up (the active task)
 
 1. Open TODOs #1-4 (prod verification — manual, browser).
-2. **Analytics B3b DONE, uncommitted** — commit it (`server/src/analytics/{aggregate,summary}.js` + tests + `index.js`). **Analytics B4 next**: `GET /api/analytics/summary` endpoint (see track section below for scope) — first unit touching DB/routes, worth a quick manual check on auth scoping before trusting it.
+2. **Analytics B4 DONE + committed (`bb05bc5`)** — `GET /api/analytics/summary` live on the branch, integration-tested including cross-user isolation. **Analytics B5 next**: the analytics screen UI (reserved tab). Seth: a quick personal read of the `findMany` where-clause in `analyticsController.js` is still worthwhile before this branch merges (the isolation test covers it, but it is the one cross-user-leak surface).
 3. Decide merge timing for `analytics-engine` -> main (gated: requires "push to main" verbatim).
 4. T3 remains the next unstarted UI unit if/when UI resumes.
 
@@ -60,7 +60,7 @@
 1. **Theme storage** — *proposed default:* device-local now (matches existing appearance setting, zero schema change), all reads through one accessor so account-level promotion later is one swap + an additive migration.
 2. **Login tagline** ("Log your shit dog") — *proposed default:* keep, with a trigger condition: it changes the day a stranger can sign up. One constant either way.
 
-## Analytics/catalog track — ACTIVE (B1/B2/B3a committed, B3b done but uncommitted, B4 next)
+## Analytics/catalog track — ACTIVE (B1-B4 committed, B5 next)
 
 *Full architecture spec: `docs/specs/analytics-engine.md`. Product-direction rationale:
 `analytics-engine-direction` memory.*
@@ -132,17 +132,34 @@ session - Claude Code owns git+state, Cursor stops after tests green, plus
 the new unit-scale task-block variant. Both commits pushed to origin
 (`analytics-engine`).
 
-**NEXT UNIT -> B4: `GET /api/analytics/summary` endpoint** (spec section 7,
-compute-on-read). First unit that touches the DB/routes layer — pulls a user's
-sets for a range, runs them through `enrichSet` -> `buildSummary`, returns the
-JSON. Route file `server/src/routes/analyticsRoutes.js` per the `*Routes.js`
-convention. Needs a Prisma query (WorkoutSet + WorkoutSession join, scoped to
-the authed user) which B1-B3 deliberately never touched — first analytics unit
-where a DB read is in scope. Hand to Cursor as a task block, but this is a
-good spot for a quick manual check from Seth before it's wired to real DB data
-(auth scoping mistakes here are a real cross-user data leak risk, not just a
-correctness nit). Sonnet-appropriate; escalate to Opus only for A1 (prod
-migration), A4 (FK schema design), and Track C productization security.
+**B4 `GET /api/analytics/summary` endpoint DONE + committed (`bb05bc5`).**
+Built via Cursor task block (unit-scale), reviewed independently (all four
+files read against the spec, both test lanes re-run by the reviewer: unit
+55/55 DB-free, full suite 89/89 across 12 suites; engine purity re-verified —
+zero Prisma under `server/src/analytics/`). Delivered:
+`server/src/controllers/analyticsController.js` (getSummary — from/to
+required + validated with descriptive 400s, date-only `to` treated as
+inclusive end-of-day `T23:59:59.999Z`, `workoutSession.findMany` scoped to
+`{ userId, performedAt: { gte, lte } }` — the single cross-user-isolation
+point; sets reach the engine only through user-owned sessions; exerciseName
+from sessionExercise ?? templateExercise, `exerciseId` always null until A4,
+nulls passed through unfiltered per the engine's degradation contract),
+`server/src/routes/analyticsRoutes.js` (one route behind `authRequired`),
+mounted at `/analytics` in `routes/index.js`,
+`server/test/analytics.integration.test.js` (5 tests: 401 unauth, four 400
+cases, cross-user isolation with a non-vacuous sanity check that user B sees
+their own data, happy path with exact Epley e1rm + chest effectiveSets +
+rirCoverage 1, inclusive date-only `to` at 18:00 on the boundary day).
+
+**NEXT UNIT -> B5: analytics screen UI** (the reserved top-level tab, spec
+section 9). First client-side analytics unit: fetch
+`/api/analytics/summary` for a range, render perMuscle / perExercise /
+balance / meta with the honesty affordances ("how is this calculated?",
+RIR-unlock degradation states, honestyNotes surfaced). Tokens-only styling
+across all palettes; no engine or endpoint changes in scope. Emit as a
+unit-scale Cursor task block. Sonnet-appropriate; escalate to Opus only for
+A1 (prod migration), A4 (FK schema design), and Track C productization
+security.
 
 **State / open items:**
 1. **A2 DONE + committed (`48c1e91`):** muscle-weights curation cleaned (3 bad IDs
