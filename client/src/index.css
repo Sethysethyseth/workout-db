@@ -4135,3 +4135,84 @@ html[data-theme="dark"] .auth-page .auth-form.card {
 .auth-crosslink {
   text-align: center;
 }
+
+/* --- Analytics page (B5) --- */
+
+.analytics-page .analytics-intro {
+  margin: 0;
+}
+
+.analytics-range-chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.range-chip {
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-2);
+  color: var(--color-text);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.range-chip:hover {
+  border-color: color-mix(in srgb, var(--color-interactive) 45%, var(--color-border));
+}
+
+.range-chip:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--color-interactive) 55%, transparent);
+  outline-offset: 2px;
+}
+
+.range-chip.is-active {
+  border-color: var(--color-interactive);
+  background: var(--color-nav-active-bg);
+  box-shadow: var(--shadow-ring-accent);
+}
+
+/* Table sections follow the template-table pattern: zero-padding card,
+   padded head, .table-scroll body. */
+.analytics-table-card {
+  padding: 0;
+  overflow: visible;
+}
+
+.analytics-card-head {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--color-border);
+  gap: 4px;
+}
+
+.analytics-card-head h2,
+.analytics-section-title {
+  margin: 0;
+}
+
+.analytics-card-sub {
+  margin: 0;
+}
+
+.analytics-muscle-name {
+  text-transform: capitalize;
+}
+
+/* Graceful-degradation tier: quiet unlock hint, deliberately NOT an error. */
+.analytics-unlock {
+  color: var(--color-text-secondary);
+  font-size: 12px;
+}
+
+.analytics-balance-row span:last-child {
+  font-variant-numeric: tabular-nums;
+}
+
+.analytics-honesty-notes {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 4px;
+}
