@@ -51,7 +51,7 @@
 ## Next up (the active task)
 
 1. Open TODOs #1-4 (prod verification — manual, browser).
-2. **Analytics B3b** — per-exercise aggregation, PR detection, balance ratios, Stage 6 summary object (see track section below for scope). Hand to Cursor as a task block.
+2. **Analytics B3b DONE, uncommitted** — commit it (`server/src/analytics/{aggregate,summary}.js` + tests + `index.js`). **Analytics B4 next**: `GET /api/analytics/summary` endpoint (see track section below for scope) — first unit touching DB/routes, worth a quick manual check on auth scoping before trusting it.
 3. Decide merge timing for `analytics-engine` -> main (gated: requires "push to main" verbatim).
 4. T3 remains the next unstarted UI unit if/when UI resumes.
 
@@ -60,7 +60,7 @@
 1. **Theme storage** — *proposed default:* device-local now (matches existing appearance setting, zero schema change), all reads through one accessor so account-level promotion later is one swap + an additive migration.
 2. **Login tagline** ("Log your shit dog") — *proposed default:* keep, with a trigger condition: it changes the day a stranger can sign up. One constant either way.
 
-## Analytics/catalog track — ACTIVE (B1/B2/B3a done + committed, B3b next)
+## Analytics/catalog track — ACTIVE (B1/B2/B3a committed, B3b done but uncommitted, B4 next)
 
 *Full architecture spec: `docs/specs/analytics-engine.md`. Product-direction rationale:
 `analytics-engine-direction` memory.*
@@ -103,15 +103,46 @@ per-muscle `effectiveSets`/`stimulatingSets`/`frequency`/`daysSinceLast` over a
 `null` not `0` when a muscle has no RIR data at all, `landmarkBand` correctly
 deferred).
 
-**NEXT UNIT -> B3b: per-exercise aggregation, PR detection, balance ratios, and
-the Stage 6 summary object** (spec sections 4 and 6). Consumes B3a's
-`aggregateMuscleVolume` output for the `perMuscle` array; adds `perExercise`
-(e1RM trend, best set), `prs` (tracked-vs-estimated), `balance` (push:pull,
-quad:ham, front:rear delt), and the top-level `range`/`meta` fields (include
-`rirCoverage` AND `resolutionCoverage` — % of sets resolved to catalog — in
-`meta`), assembling the full serializable summary object. Hand to Cursor as a
-task block. Sonnet-appropriate; escalate to Opus only for A1 (prod migration),
-A4 (FK schema design), and Track C productization security.
+**B3b per-exercise aggregation + balance ratios + Stage 6 summary object DONE
++ committed (`c954185`).** Built via Cursor task block, verified independently
+(files read, `npm run test:unit` + full `npm test`: 11 suites / 84 tests pass,
+grep confirms zero Prisma references). Delivered: `aggregate.js` extended with
+`aggregateExerciseMetrics` (per-exercise `e1rmTrend` + `bestSet`, grouped by
+resolved catalog id only) and `computeBalanceRatios` (`pushPull`/`quadHam` off
+`effectiveSets`, null on zero-denominator; `frontRearDelt` always `null` — the
+catalog's muscle taxonomy has no front/rear delt split, verified by inspecting
+`exercises.json`'s muscle vocabulary, so this is an honest gap not a bug);
+`summary.js` (`buildSummary` — the Stage 6 entrypoint: `range`, `perMuscle`,
+`perExercise`, `prs: []` (deferred — needs full history beyond the range, a
+separate design problem), `balance`, `execution: []`, `meta.rirCoverage` +
+`meta.honestyNotes`). Info equivalent to a `resolutionCoverage` % (an earlier
+placeholder note above anticipated this as a separate `meta` field) is instead
+surfaced as a prose count in `honestyNotes` when nonzero — not added as its own
+numeric field; revisit only if the UI needs it as a number.
+**Post-Cursor fix (this session):** `bestSet.weight`/`reps` were `null` in
+Cursor's delivery (comment cited "floating-point noise" from reconstructing
+them) — actually exactly recoverable via `weight = epley - tonnage/30`, `reps =
+tonnage / weight` (algebraic inverse of the formulas that produced them, both
+already present on the enriched set), so fixed directly in `aggregate.js` with
+a new test assertion; `rir` correctly stays `null` (genuinely unrecoverable,
+lossy stimulus-curve mapping). Also committed separately (`98b897e`): the
+Fable brain/hands division-of-labor doc update (CLAUDE.md/AGENTS.md/
+cursor-task-block-template.md) that had been left uncommitted from the prior
+session - Claude Code owns git+state, Cursor stops after tests green, plus
+the new unit-scale task-block variant. Both commits pushed to origin
+(`analytics-engine`).
+
+**NEXT UNIT -> B4: `GET /api/analytics/summary` endpoint** (spec section 7,
+compute-on-read). First unit that touches the DB/routes layer — pulls a user's
+sets for a range, runs them through `enrichSet` -> `buildSummary`, returns the
+JSON. Route file `server/src/routes/analyticsRoutes.js` per the `*Routes.js`
+convention. Needs a Prisma query (WorkoutSet + WorkoutSession join, scoped to
+the authed user) which B1-B3 deliberately never touched — first analytics unit
+where a DB read is in scope. Hand to Cursor as a task block, but this is a
+good spot for a quick manual check from Seth before it's wired to real DB data
+(auth scoping mistakes here are a real cross-user data leak risk, not just a
+correctness nit). Sonnet-appropriate; escalate to Opus only for A1 (prod
+migration), A4 (FK schema design), and Track C productization security.
 
 **State / open items:**
 1. **A2 DONE + committed (`48c1e91`):** muscle-weights curation cleaned (3 bad IDs
