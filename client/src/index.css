@@ -3298,7 +3298,10 @@ html[data-theme="dark"] .exercise-name-suggestions {
    (--scene-image already resolves per palette), auth hard rule — never cover.
    Band ~220px tall anchored center bottom. Overlay ramps from transparent at the very
    bottom (scene reads) to fully solid --color-bg by ~200px, so the bright top edge of the
-   image is hidden and there is no hard seam below the cards. */
+   image is hidden and there is no hard seam below the cards. Top wash (first layer) reaches
+   the opposite end - a faint --color-interactive tint anchored at the very top so the page
+   doesn't go flat solid behind the navbar; fades out well before the bottom band so the two
+   never overlap/muddy each other. */
 html[data-theme="dark"] .workout-tab::before {
   content: "";
   position: fixed;
@@ -3306,6 +3309,11 @@ html[data-theme="dark"] .workout-tab::before {
   z-index: 0;
   pointer-events: none;
   background-image:
+    radial-gradient(
+      ellipse 130% 65% at 50% 0%,
+      color-mix(in srgb, var(--color-interactive) 10%, transparent),
+      transparent 70%
+    ),
     linear-gradient(
       to top,
       transparent 0,
@@ -3314,9 +3322,9 @@ html[data-theme="dark"] .workout-tab::before {
       var(--color-bg) 100%
     ),
     var(--scene-image);
-  background-repeat: no-repeat, no-repeat;
-  background-size: auto, auto 220px;
-  background-position: center top, center bottom;
+  background-repeat: no-repeat, no-repeat, no-repeat;
+  background-size: auto, auto, auto 220px;
+  background-position: center top, center top, center bottom;
 }
 
 .workout-tab.stack > * {
