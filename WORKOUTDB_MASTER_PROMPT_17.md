@@ -1,8 +1,8 @@
-# WorkoutDB — Master Context Prompt v16
+# WorkoutDB — Master Context Prompt v17
 
-**Last updated:** June 11, 2026
-**Previous version:** v15 (username merge done, prod migration incident, schema-change deploy discipline)
-**This version:** structural change — the **handoff snapshot moves out of this file** into `docs/HANDOFF.md`, and recurring command rituals move into `docs/RUNBOOK.md`. This file is now *purely* stable context and changes only when fundamentals change. Product direction, schema, and principles unchanged from v15.
+**Last updated:** June 12, 2026
+**Previous version:** v16 (three-file split: handoff → `docs/HANDOFF.md`, rituals → `docs/RUNBOOK.md`)
+**This version:** the theme system shipped and its architecture is now stable, load-bearing context — the Theming section is rewritten to describe the **two-axis palette system** (`data-theme` × `data-palette`), hand-authored palette surfaces, and the scene layer as built. The theme-storage fork is resolved (device-local). The grouped-blocks card pattern and L-bar status semantics are recorded as design language. Everything else unchanged from v16.
 
 ---
 
@@ -100,12 +100,26 @@ Currently rudimentary (email + light/dark + password + feedback + logout — a s
 - **Separates identity from settings:** a Settings subsection or sub-screen holds theme / password / feedback / logout. Push-to-subscreen reads more "real app" and gives a natural home for a unique transition animation.
 - Email is de-emphasized (people don't like seeing their email as their identity).
 
-### Theming / personalization
-- First customization feature. A theme = a named set of CSS custom properties; switching swaps variable values at `:root`. If light/dark already runs through CSS variables, named themes are "more presets," not new architecture.
-- **The visual overhaul and the theme system are ONE effort.** Redesign the look by variable-izing design tokens, not hardcoding colors — otherwise theming gets harder later. Build on variables now; themes come nearly free.
-- Ship 3–4 tasteful presets first, not 16. Keep the mechanism generous so adding presets is trivial.
-- Storage: currently device-local (matches existing appearance setting). Can be promoted to a server-side user preference later. **Open fork:** device-local vs account-level.
-- Seed of a broader "let the user customize" direction.
+### Theming / personalization (SHIPPED — architecture is now load-bearing)
+
+**Two independent axes on `<html>`:**
+- `data-theme` — light / dark / system (pre-existing, unchanged)
+- `data-palette` — named environment: `champ | iron | forest | crimson`. Absent/unknown value renders identically to `champ` (`:root` IS champ; champ palette blocks carry no surface overrides).
+
+**Architecture rules for all future UI work:**
+- All styling is **tokens-only** (CSS custom properties in `client/src/index.css`). Never hardcode colors — every surface must render correctly across 4 palettes × 2 modes (8 combos) automatically.
+- Rings, nav-active, and pill states derive from `--color-interactive` via `color-mix` — new accent-adjacent styles should follow this pattern so palettes inherit them for free.
+- Each palette = a light block (`html[data-palette="X"]`) + a dark variant (`html[data-theme="dark"][data-palette="X"]`, specificity 0,2,1 out-specifies both the light palette block and the generic dark block). Palette surfaces are **hand-authored hexes**, not algorithmic tints (a `color-mix` tint mechanism was built and replaced — it reads as "a hue over it," not a distinct environment).
+- **Scene layer:** fixed full-viewport `body::before` (pointer-events: none, z-index 0) with per-palette CSS-gradient + inline-SVG-data-URI scenes (champ stars/glow, iron grain + chalk barbell + forge glow, forest pixel treeline, crimson moon + gothic skyline). **`#root` has `position: relative; z-index: 1`** as the stacking fix — anything rendered via portal OUTSIDE `#root` must be checked against this. Scene blocks are structured per-palette so rotating scene *variants* (planned fast-follow) are purely additive.
+- Light-mode scenes/tints are deliberately fainter than dark (light surfaces go muddy fast; AA contrast on secondary text is the binding constraint).
+- **Storage (fork RESOLVED):** device-local, `localStorage["workoutdb-palette"]` (rename boundary: `workoutdb-` prefix). `ThemeContext` owns both axes through the single `useTheme()` accessor (`{ theme, setTheme, resolved, palette, setPalette }`); read/write isolated so account-level promotion later is one swap + an additive migration.
+- Picker lives in Profile → Appearance. Swatches preview the accent (the palette's identity).
+- Adding a palette = one light block + one dark block + a scene + a swatch token set. Keep it that cheap.
+
+### Card design language (grouped blocks + L-bar)
+- Display surfaces (Workout / Programs / History) use the **grouped-blocks pattern**: list rows are `.sub-card` capsules (surface-2 on surface-1 cards, 1px `--color-border`, `--radius-control`) inside `.sub-card-list` (8px gap, no keyline separators). Primary buttons bottom-anchor cards that have rows.
+- **`card--live` (3px accent L-bar via inset box-shadow) means exactly one thing: a live in-progress workout.** Only the active-workout hero and the persistent compact banner carry it. Never decorate other cards with accent bars — the semantics are the point.
+- **Set-entry UI (`SessionSetRow`/`DraftSessionSetRow`/session detail) intentionally still has the old flat treatment.** Restyling it is phase 2, ideally after the set-row unification, to keep the mirror-component debt out of the blast radius.
 
 ### Motion / loading
 - Tab transitions + profile entry + workout enter/exit get a subtle, uniform motion layer (framer-motion-ish). Restraint per the anti-goal.
@@ -213,7 +227,7 @@ Not a training-style classifier; not a real-time set-by-set layer; not a "what t
 - U2. ✅ Username unit (schema + auth + hard-gate backfill) — **merged to main, live on prod and staging, gate verified on both**
 - U3. Feedback persistence verification + consolidation to Profile
 - U4. Profile restructure (identity header + Settings subscreen)
-- U5. Theme system + token-based visual overhaul + motion/loading layer (one effort)
+- U5. Theme system + token-based visual overhaul + motion/loading layer (one effort) — **tokens (T1) + palette system/scenes (T2) + display-card redesign (T2.5) shipped; loading screens (T3) + motion (T4) remain; see handoff**
 - U6. Hello-tab retirement → first-run popup + Profile help section
 - U7. Full rebrand display pass + IA changes (Programs→Library label, Hello retirement, "WORKOUTDB BETA" → LogChamp in all surfaces) — fold into U4–U6 where natural
 
@@ -262,7 +276,7 @@ A user-facing rebrand (WorkoutDB → LogChamp) is **display-layer only** and mus
 - Render/Neon/Vercel service names
 - Env var names and values (`VITE_API_URL`, `DATABASE_URL`)
 - npm `package.json` name fields
-- Cookie names (`workoutdb.sid`), localStorage keys (`workoutdb-theme`)
+- Cookie names (`workoutdb.sid`), localStorage keys (`workoutdb-theme`, `workoutdb-palette`)
 - Route paths (`/templates`, `/programs`), component filenames (`MyTemplatesPage`), CSS class prefixes, internal identifiers
 - API messages, migration content
 
@@ -373,4 +387,4 @@ Prefer a new Opus chat over mid-chat model switches.
 
 ---
 
-*End of v16.*
+*End of v17.*
