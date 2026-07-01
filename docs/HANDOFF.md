@@ -1,6 +1,6 @@
 # HANDOFF — current state
 
-**Updated:** July 1, 2026 (late — analytics B4 endpoint built via Cursor, reviewed, committed, pushed)
+**Updated:** July 1, 2026 (late — analytics B4 endpoint + B5 analytics screen built via Cursor, reviewed, committed, pushed)
 **Rule:** rewritten in place at the end of every working session. Dated, never versioned. If this file looks stale (date > ~2 weeks old), verify branch/deploy state from ground truth before trusting it.
 
 ---
@@ -51,7 +51,7 @@
 ## Next up (the active task)
 
 1. Open TODOs #1-4 (prod verification — manual, browser).
-2. **Analytics B4 DONE + committed (`bb05bc5`)** — `GET /api/analytics/summary` live on the branch, integration-tested including cross-user isolation. **Analytics B5 next**: the analytics screen UI (reserved tab). Seth: a quick personal read of the `findMany` where-clause in `analyticsController.js` is still worthwhile before this branch merges (the isolation test covers it, but it is the one cross-user-leak surface).
+2. **Analytics B4 (`bb05bc5`) and B5 (`e287a29`) DONE + committed** — endpoint live and the Analytics tab is now a real screen. **B5 needs an on-device smoke** (see track section) before it can be called visually done. Seth: a quick personal read of the `findMany` where-clause in `analyticsController.js` is still worthwhile before this branch merges (the isolation test covers it, but it is the one cross-user-leak surface).
 3. Decide merge timing for `analytics-engine` -> main (gated: requires "push to main" verbatim).
 4. T3 remains the next unstarted UI unit if/when UI resumes.
 
@@ -60,7 +60,7 @@
 1. **Theme storage** — *proposed default:* device-local now (matches existing appearance setting, zero schema change), all reads through one accessor so account-level promotion later is one swap + an additive migration.
 2. **Login tagline** ("Log your shit dog") — *proposed default:* keep, with a trigger condition: it changes the day a stranger can sign up. One constant either way.
 
-## Analytics/catalog track — ACTIVE (B1-B4 committed, B5 next)
+## Analytics/catalog track — ACTIVE (B1-B5 committed, B5 smoke + merge decision next)
 
 *Full architecture spec: `docs/specs/analytics-engine.md`. Product-direction rationale:
 `analytics-engine-direction` memory.*
@@ -151,15 +151,38 @@ cases, cross-user isolation with a non-vacuous sanity check that user B sees
 their own data, happy path with exact Epley e1rm + chest effectiveSets +
 rirCoverage 1, inclusive date-only `to` at 18:00 on the boundary day).
 
-**NEXT UNIT -> B5: analytics screen UI** (the reserved top-level tab, spec
-section 9). First client-side analytics unit: fetch
-`/api/analytics/summary` for a range, render perMuscle / perExercise /
-balance / meta with the honesty affordances ("how is this calculated?",
-RIR-unlock degradation states, honestyNotes surfaced). Tokens-only styling
-across all palettes; no engine or endpoint changes in scope. Emit as a
-unit-scale Cursor task block. Sonnet-appropriate; escalate to Opus only for
-A1 (prod migration), A4 (FK schema design), and Track C productization
-security.
+**B5 analytics screen UI DONE + committed (`e287a29`).** Built via Cursor
+task block (unit-scale), reviewed independently (all six files read against
+the block, client `npm run build` re-run green, server unit lane re-run
+55/55, every referenced CSS token/class grep-verified to exist). Delivered:
+`client/src/api/analyticsApi.js` (getSummary via shared `http`),
+`client/src/pages/AnalyticsPage.jsx` (SessionsPage pattern; 4/8/12-week
+preset chips, date-only from/to with stale-response guard; four card
+sections — per-muscle table with "log RIR to unlock" degradation state,
+per-exercise best-set/e1RM/trend with null guards, balance ratios with the
+Front:Rear delt row visibly "not available" per the honesty contract, data
+quality with rirCoverage % + verbatim honestyNotes; single empty-state card
+when both tables are empty), `HowCalculatedButton.jsx` (MetricInfoButton
+portal-popover pattern copied, props-driven `{title, copy}`, reuses
+`metric-info-*` classes so scene-layer stacking is already handled;
+MetricInfoButton itself untouched), `/analytics` route + Navbar tab enabled
+(same liveSessionGuard pattern as History), tokens-only CSS (chips derive
+active/hover/focus from `--color-interactive` via color-mix; v1 is
+deliberately chart-free — numbers + degradation states, no viz deps).
+
+**B5 OUTSTANDING: on-device smoke NOT done** (no browser in either agent
+lane this session). Before calling B5 visually done: /analytics with real
+logged data — sections render, chip refetch works, RIR-unlock state shows,
+honestyNotes verbatim, nav tab active state — across the 4 palettes in dark
+mode minimum. Build-passing + diff-looking-right do NOT prove the visual.
+
+**NEXT UNIT -> B6: matched-effort progression (L2)** (spec sections 1-2, 9)
+— engine-side, pure functions + fixtures again (back to the DB-free lane),
+plus wiring into `buildSummary`/`perExercise.matchedEffortTrend`. B4/B5
+closed the endpoint+screen loop, so B6's output lands on a live surface;
+alternatively pause Track B here and settle the merge decision (see below).
+Sonnet-appropriate; escalate to Opus only for A1 (prod migration), A4 (FK
+schema design), and Track C productization security.
 
 **State / open items:**
 1. **A2 DONE + committed (`48c1e91`):** muscle-weights curation cleaned (3 bad IDs
