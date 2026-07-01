@@ -4,8 +4,6 @@ import * as sessionApi from "../api/sessionApi.js";
 import * as templateApi from "../api/templateApi.js";
 import { ErrorMessage } from "../components/ErrorMessage.jsx";
 import { ActiveWorkoutHero } from "../components/workout/ActiveWorkoutHero.jsx";
-import { QuickPickTemplates } from "../components/workout/QuickPickTemplates.jsx";
-import { SecondaryActions } from "../components/workout/SecondaryActions.jsx";
 import { StartWorkoutHero } from "../components/workout/StartWorkoutHero.jsx";
 import { StartWorkoutPicker } from "../components/workout/StartWorkoutPicker.jsx";
 import { useActiveSession } from "../context/ActiveSessionContext.jsx";
@@ -39,8 +37,6 @@ export function DashboardPage() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [heroNow, setHeroNow] = useState(() => Date.now());
   const [workoutSavedFlash, setWorkoutSavedFlash] = useState(false);
-
-  const currentProgramRef = readCurrentProgram();
 
   const quickPickTemplates = useMemo(() => {
     const list = Array.isArray(templates) ? [...templates] : [];
@@ -141,7 +137,7 @@ export function DashboardPage() {
           <strong>Workout saved</strong>
           <span aria-hidden="true"> </span>✅
           <p className="muted small" style={{ margin: "6px 0 0" }}>
-            {"You're done. It's in History and Recently logged below."}
+            {"You're done. It's in History and Recent workouts below."}
           </p>
         </div>
       ) : null}
@@ -177,51 +173,33 @@ export function DashboardPage() {
         <StartWorkoutHero onOpenPicker={() => setPickerOpen(true)} />
       )}
 
-      <QuickPickTemplates
-        templates={quickPickTemplates}
-        loading={templatesLoading}
-        disabled={hasActive || Boolean(startingTemplateId)}
-        startingTemplateId={startingTemplateId}
-        onStartTemplate={(id) => void onStartFromTemplate(id)}
-      />
-
-      <SecondaryActions currentBlock={currentProgramRef?.kind === "block" ? currentProgramRef : null} />
-
-      <p className="workout-tab__community muted small" style={{ margin: 0 }}>
-        <Link to="/templates?area=community" className="workout-tab__community-link">
-          Community programs (beta)
-        </Link>
-      </p>
-
-      <section className="card stack workout-tab-history" aria-labelledby="workout-history-heading">
-        <div className="row">
-          <h2 id="workout-history-heading" className="workout-tab-history__title">
-            Recently logged
+      <section className="workout-tab-recent" aria-labelledby="workout-recent-heading">
+        <div className="row workout-tab-recent__head">
+          <h2 id="workout-recent-heading" className="workout-tab-recent__title">
+            Recent workouts
           </h2>
-          <Link className="btn btn-ghost btn--compact btn--quiet-history" to="/sessions">
-            History
+          <Link className="workout-tab-recent__view-all" to="/sessions">
+            View all → History
           </Link>
         </div>
         {sessionsLoading && completedRecent.length === 0 ? (
-          <p className="muted small" style={{ margin: 0 }}>
+          <p className="muted small workout-tab-recent__empty" style={{ margin: 0 }}>
             Loading…
           </p>
         ) : completedRecent.length === 0 ? (
-          <p className="muted small" style={{ margin: 0 }}>
+          <p className="muted small workout-tab-recent__empty" style={{ margin: 0 }}>
             Completed workouts show up here.
           </p>
         ) : (
-          <ul className="recent-activity-list workout-tab-history__list">
+          <ul className="workout-tab-recent__scroll">
             {completedRecent.map((s) => {
               const when = formatLoggedWhen(s.completedAt);
               const title = sessionDisplayTitle(s);
               return (
-                <li key={s.id}>
-                  <Link to={`/sessions/${s.id}`} className="recent-activity-row">
-                    <div className="recent-activity-row__main">
-                      <span className="recent-activity-row__title">{title}</span>
-                      <span className="muted small recent-activity-row__when">{when}</span>
-                    </div>
+                <li key={s.id} className="workout-tab-recent__item">
+                  <Link to={`/sessions/${s.id}`} className="card card--notched workout-tab-recent__card">
+                    <span className="workout-tab-recent__card-title">{title}</span>
+                    <span className="muted small workout-tab-recent__card-when">{when}</span>
                   </Link>
                 </li>
               );

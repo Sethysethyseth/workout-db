@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { ProtectedRoute } from "./components/ProtectedRoute.jsx";
 import { Layout } from "./components/Layout.jsx";
+import { AuthLayout } from "./components/AuthLayout.jsx";
 import { DashboardPage } from "./pages/DashboardPage.jsx";
 import { LoginPage } from "./pages/LoginPage.jsx";
 import { RegisterPage } from "./pages/RegisterPage.jsx";
@@ -19,10 +20,12 @@ import { HelloPage } from "./pages/HelloPage.jsx";
 export default function App() {
   return (
     <Routes>
-      <Route element={<Layout />}>
+      <Route element={<AuthLayout />}>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+      </Route>
 
+      <Route element={<Layout />}>
         <Route
           path="/"
           element={

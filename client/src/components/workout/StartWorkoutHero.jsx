@@ -1,6 +1,6 @@
 export function StartWorkoutHero({ onOpenPicker }) {
   return (
-    <section className="workout-hero workout-hero--start card" aria-labelledby="workout-hero-start-title">
+    <section className="workout-hero workout-hero--start card card--notched" aria-labelledby="workout-hero-start-title">
       <h1 id="workout-hero-start-title" className="workout-hero__title">
         Start workout
       </h1>

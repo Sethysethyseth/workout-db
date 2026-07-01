@@ -11,7 +11,7 @@ import {
 const STORAGE_KEY = "workoutdb-theme";
 const PALETTE_STORAGE_KEY = "workoutdb-palette";
 
-export const PALETTES = ["champ", "iron", "forest", "crimson"];
+export const PALETTES = ["champ", "iron", "forest", "crimson", "chill"];
 const DEFAULT_PALETTE = "champ";
 
 const ThemeContext = createContext(null);

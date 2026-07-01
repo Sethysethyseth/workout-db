@@ -12,8 +12,8 @@
   --color-text-secondary: #64748b;
 
   /* Links, focus rings, selected borders (champ palette = default) */
-  --color-interactive: #6d5ef2;
-  --color-interactive-hover: #5a4be0;
+  --color-interactive: #5566c4;
+  --color-interactive-hover: #4453ad;
 
   /* Primary button (filled CTA) */
   --color-btn-primary-bg: #0f172a;
@@ -24,6 +24,10 @@
   /* Shape + elevation */
   --radius-control: 12px;
   --radius-card: 14px;
+  --notch-size: 8px;
+  /* Shared pixel-corner chrome (palette-agnostic; inherits --color-interactive per palette) */
+  --notch-stroke: 2.5px;
+  --notch-glow: color-mix(in srgb, var(--color-interactive) 70%, transparent);
   --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.05);
   --shadow-card-hover: 0 6px 18px rgba(15, 23, 42, 0.08);
   --shadow-ring-accent: 0 0 0 1px color-mix(in srgb, var(--color-interactive) 12%, transparent);
@@ -61,10 +65,11 @@
   --color-pill-bg: var(--color-surface-2);
 
   /* Palette swatches (picker UI only; light-mode accents) */
-  --palette-swatch-champ: #6d5ef2;
+  --palette-swatch-champ: #5566c4;
   --palette-swatch-iron: #f59e0b;
   --palette-swatch-forest: #15803d;
   --palette-swatch-crimson: #b91c1c;
+  --palette-swatch-chill: #5878b0;
   --color-error-border: #fecaca;
   --color-error-bg: #fff1f2;
   --font-sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial,
@@ -88,22 +93,23 @@ html[data-theme="dark"] {
   --color-text: #f1f5f9;
   --color-text-secondary: #94a3b8;
 
-  --color-interactive: #8b7eff;
-  --color-interactive-hover: #a89eff;
+  --color-interactive: #8b9bff;
+  --color-interactive-hover: #aab4ff;
 
-  --color-btn-primary-bg: #6d5ef2;
+  --color-btn-primary-bg: #5b6ee8;
   --color-btn-primary-fg: #ffffff;
-  --color-btn-primary-hover-bg: #7f72f5;
-  --color-btn-primary-active-bg: #5a4be0;
+  --color-btn-primary-hover-bg: #6e7ff0;
+  --color-btn-primary-active-bg: #4453ad;
 
   --color-nav-active-bg: color-mix(in srgb, var(--color-interactive) 20%, transparent);
   --color-pill-bg: var(--color-surface-2);
 
   /* Palette swatches (dark-mode accents) */
-  --palette-swatch-champ: #8b7eff;
+  --palette-swatch-champ: #8b9bff;
   --palette-swatch-iron: #fbbf24;
   --palette-swatch-forest: #4ade80;
   --palette-swatch-crimson: #f87171;
+  --palette-swatch-chill: #7c9fd4;
   --color-error-border: #dc2626;
   --color-error-bg: #3f1515;
   --shadow-card: 0 2px 14px rgba(0, 0, 0, 0.28);
@@ -138,17 +144,17 @@ html[data-theme="dark"] {
    no surface overrides). */
 
 html[data-palette="champ"] {
-  --color-interactive: #6d5ef2;
-  --color-interactive-hover: #5a4be0;
+  --color-interactive: #5566c4;
+  --color-interactive-hover: #4453ad;
 }
 
 html[data-theme="dark"][data-palette="champ"] {
-  --color-interactive: #8b7eff;
-  --color-interactive-hover: #a89eff;
-  --color-btn-primary-bg: #6d5ef2;
+  --color-interactive: #8b9bff;
+  --color-interactive-hover: #aab4ff;
+  --color-btn-primary-bg: #5b6ee8;
   --color-btn-primary-fg: #ffffff;
-  --color-btn-primary-hover-bg: #7f72f5;
-  --color-btn-primary-active-bg: #5a4be0;
+  --color-btn-primary-hover-bg: #6e7ff0;
+  --color-btn-primary-active-bg: #4453ad;
 }
 
 html[data-palette="iron"] {
@@ -235,6 +241,34 @@ html[data-theme="dark"][data-palette="crimson"] {
   --color-input-border: #613239;
 }
 
+html[data-palette="chill"] {
+  --color-interactive: #5878b0;
+  --color-interactive-hover: #496699;
+
+  --color-bg: #f2f4f8;
+  --color-surface-1: #fcfdff;
+  --color-surface-2: #f5f7fb;
+  --color-surface-3: #e9edf4;
+  --color-border: #d8dfeb;
+  --color-input-border: #c2cbdc;
+}
+
+html[data-theme="dark"][data-palette="chill"] {
+  --color-interactive: #7c9fd4;
+  --color-interactive-hover: #9fbce6;
+  --color-btn-primary-bg: #5878b0;
+  --color-btn-primary-fg: #ffffff;
+  --color-btn-primary-hover-bg: #6a8ac2;
+  --color-btn-primary-active-bg: #496699;
+
+  --color-bg: #0d0f1a;
+  --color-surface-1: #141826;
+  --color-surface-2: #1a1f30;
+  --color-surface-3: #21273b;
+  --color-border: #313a52;
+  --color-input-border: #3b4661;
+}
+
 /* --- Palette scenes (decorative full-viewport layer) ---
    One clearly-delimited block per palette; future variant blocks (T2d) sit
    alongside. The layer is a fixed body::before behind all app content; #root
@@ -257,89 +291,156 @@ body::before {
 
 /* === Scene: CHAMP (default — applies when data-palette is absent/unknown) === */
 
-/* Champ light: accent glow only, half opacity */
+/* Champ light: blue glow only (scene image is dark-mode-only) */
 body::before {
-  background: radial-gradient(ellipse 120% 50% at 50% -10%, rgba(109, 94, 242, 0.09), transparent 60%);
+  background: radial-gradient(ellipse 120% 50% at 50% -10%, rgba(91, 110, 232, 0.09), transparent 60%);
 }
 
-/* Champ dark: glow + stars and faint geometry */
+/* Champ dark: blue glow + night-skyline photo band */
 html[data-theme="dark"] body::before {
   background:
-    radial-gradient(ellipse 120% 50% at 50% -10%, rgba(109, 94, 242, 0.18), transparent 60%),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 480 320'%3E%3Cg fill='%238b7eff'%3E%3Ccircle cx='40' cy='60' r='1.5' opacity='.5'/%3E%3Ccircle cx='130' cy='30' r='1' opacity='.35'/%3E%3Ccircle cx='220' cy='90' r='1.2' opacity='.4'/%3E%3Ccircle cx='310' cy='40' r='1.6' opacity='.5'/%3E%3Ccircle cx='400' cy='110' r='1' opacity='.3'/%3E%3Ccircle cx='80' cy='180' r='1.2' opacity='.35'/%3E%3Ccircle cx='450' cy='200' r='1.4' opacity='.45'/%3E%3Ccircle cx='180' cy='250' r='1' opacity='.3'/%3E%3C/g%3E%3Cg stroke='%238b7eff' stroke-width='1' fill='none' opacity='.12'%3E%3Cpath d='M340 230 l50 -28 50 28 -50 28 z'/%3E%3Cpath d='M340 230 l50 -8 50 8 M390 202 v64'/%3E%3C/g%3E%3C/svg%3E");
-  background-repeat: no-repeat, repeat;
-  background-size: auto, 480px auto;
-  background-position: 0 0, bottom;
+    radial-gradient(ellipse 120% 50% at 50% -10%, rgba(91, 110, 232, 0.18), transparent 60%),
+    url("./assets/scenes/champ.jpg");
+  background-repeat: no-repeat, no-repeat;
+  background-size: auto, auto 320px;
+  background-position: 0 0, center bottom;
 }
 
 /* === Scene: IRON (chalk barbell sketch + grain) === */
 
-/* Iron light: ~0.4x alphas (chalk/grain hues are light-on-light here — intentionally near-invisible) */
+/* Iron light: forge glow + grain (scene image is dark-mode-only) */
 html[data-palette="iron"] body::before {
   background:
-    radial-gradient(ellipse 140% 45% at 50% 110%, rgba(245, 158, 11, 0.06), transparent 65%),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 360 140'%3E%3Cg stroke='%23d6c9b8' stroke-width='3' fill='none' opacity='.04' stroke-linecap='round'%3E%3Cline x1='30' y1='70' x2='330' y2='70'/%3E%3Crect x='60' y='30' width='16' height='80' rx='4'/%3E%3Crect x='84' y='40' width='12' height='60' rx='4'/%3E%3Crect x='284' y='30' width='16' height='80' rx='4'/%3E%3Crect x='264' y='40' width='12' height='60' rx='4'/%3E%3C/g%3E%3C/svg%3E"),
+    radial-gradient(ellipse 140% 45% at 52% 92%, rgba(255, 174, 61, 0.06), transparent 65%),
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0.84 0 0 0 0 0.79 0 0 0 0 0.72 0 0 0 0.02 0'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)'/%3E%3C/svg%3E");
-  background-repeat: no-repeat, no-repeat, repeat;
-  background-size: auto, 360px auto, 240px 240px;
-  background-position: 0 0, right 8% bottom 12%, 0 0;
+  background-repeat: no-repeat, repeat;
+  background-size: auto, 240px 240px;
+  background-position: 0 0, 0 0;
 }
 
-/* Iron dark: forge glow + chalk barbell + grain */
+/* Iron dark: forge glow + forge/anvil photo band + grain */
 html[data-theme="dark"][data-palette="iron"] body::before {
   background:
-    radial-gradient(ellipse 140% 45% at 50% 110%, rgba(245, 158, 11, 0.14), transparent 65%),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 360 140'%3E%3Cg stroke='%23d6c9b8' stroke-width='3' fill='none' opacity='.10' stroke-linecap='round'%3E%3Cline x1='30' y1='70' x2='330' y2='70'/%3E%3Crect x='60' y='30' width='16' height='80' rx='4'/%3E%3Crect x='84' y='40' width='12' height='60' rx='4'/%3E%3Crect x='284' y='30' width='16' height='80' rx='4'/%3E%3Crect x='264' y='40' width='12' height='60' rx='4'/%3E%3C/g%3E%3C/svg%3E"),
+    radial-gradient(ellipse 140% 45% at 52% 92%, rgba(255, 174, 61, 0.16), transparent 65%),
+    url("./assets/scenes/iron.jpg"),
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0.84 0 0 0 0 0.79 0 0 0 0 0.72 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)'/%3E%3C/svg%3E");
   background-repeat: no-repeat, no-repeat, repeat;
-  background-size: auto, 360px auto, 240px 240px;
-  background-position: 0 0, right 8% bottom 12%, 0 0;
+  background-size: auto, auto 320px, 240px 240px;
+  background-position: 0 0, center bottom, 0 0;
 }
 
-/* === Scene: FOREST (pixel treeline) === */
+/* === Scene: FOREST (canopy treeline photo band) === */
 
-/* Forest light: ~0.4x alphas */
+/* Forest light: canopy glow only (scene image is dark-mode-only) */
 html[data-palette="forest"] body::before {
-  background:
-    radial-gradient(ellipse 120% 40% at 50% -10%, rgba(74, 222, 128, 0.03), transparent 60%),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 320 96' shape-rendering='crispEdges'%3E%3Cdefs%3E%3Cg id='t'%3E%3Crect x='12' y='0' width='8' height='8'/%3E%3Crect x='8' y='8' width='16' height='12'/%3E%3Crect x='4' y='20' width='24' height='14'/%3E%3Crect x='0' y='34' width='32' height='16'/%3E%3Crect x='12' y='50' width='8' height='10'/%3E%3C/g%3E%3C/defs%3E%3Cg fill='%231d4434' opacity='.28'%3E%3Cuse href='%23t' x='6' y='14'/%3E%3Cuse href='%23t' x='78' y='6'/%3E%3Cuse href='%23t' x='150' y='18'/%3E%3Cuse href='%23t' x='222' y='2'/%3E%3Cuse href='%23t' x='286' y='14'/%3E%3C/g%3E%3Cg fill='%23143023' opacity='.4'%3E%3Cuse href='%23t' x='40' y='36'/%3E%3Cuse href='%23t' x='118' y='30'/%3E%3Cuse href='%23t' x='192' y='38'/%3E%3Cuse href='%23t' x='258' y='32'/%3E%3C/g%3E%3C/svg%3E");
-  background-repeat: no-repeat, repeat-x;
-  background-size: auto, 320px auto;
-  background-position: 0 0, bottom;
+  background: radial-gradient(ellipse 120% 40% at 50% -10%, rgba(74, 222, 128, 0.03), transparent 60%);
 }
 
-/* Forest dark: canopy glow + pixel treeline */
+/* Forest dark: canopy glow + treeline photo band */
 html[data-theme="dark"][data-palette="forest"] body::before {
   background:
     radial-gradient(ellipse 120% 40% at 50% -10%, rgba(74, 222, 128, 0.07), transparent 60%),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 320 96' shape-rendering='crispEdges'%3E%3Cdefs%3E%3Cg id='t'%3E%3Crect x='12' y='0' width='8' height='8'/%3E%3Crect x='8' y='8' width='16' height='12'/%3E%3Crect x='4' y='20' width='24' height='14'/%3E%3Crect x='0' y='34' width='32' height='16'/%3E%3Crect x='12' y='50' width='8' height='10'/%3E%3C/g%3E%3C/defs%3E%3Cg fill='%231d4434' opacity='.7'%3E%3Cuse href='%23t' x='6' y='14'/%3E%3Cuse href='%23t' x='78' y='6'/%3E%3Cuse href='%23t' x='150' y='18'/%3E%3Cuse href='%23t' x='222' y='2'/%3E%3Cuse href='%23t' x='286' y='14'/%3E%3C/g%3E%3Cg fill='%23143023'%3E%3Cuse href='%23t' x='40' y='36'/%3E%3Cuse href='%23t' x='118' y='30'/%3E%3Cuse href='%23t' x='192' y='38'/%3E%3Cuse href='%23t' x='258' y='32'/%3E%3C/g%3E%3C/svg%3E");
-  background-repeat: no-repeat, repeat-x;
-  background-size: auto, 320px auto;
-  background-position: 0 0, bottom;
+    url("./assets/scenes/forest.jpg");
+  background-repeat: no-repeat, no-repeat;
+  background-size: auto, auto 320px;
+  background-position: 0 0, center bottom;
 }
 
-/* === Scene: CRIMSON (blood moon + gothic skyline) === */
+/* === Scene: CRIMSON (blood moon + wolf band photo) === */
 
-/* Crimson light: ~0.4x alphas */
+/* Crimson light: blood-moon glow only (scene image is dark-mode-only) */
 html[data-palette="crimson"] body::before {
-  background:
-    radial-gradient(circle 26vmin at 82% 12%, rgba(248, 113, 113, 0.11), rgba(248, 113, 113, 0.04) 45%, transparent 70%),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='44' fill='%23e25d5d' opacity='.22'/%3E%3Ccircle cx='38' cy='40' r='7' fill='%23b94747' opacity='.2'/%3E%3Ccircle cx='60' cy='62' r='5' fill='%23b94747' opacity='.18'/%3E%3Ccircle cx='55' cy='30' r='4' fill='%23b94747' opacity='.16'/%3E%3C/svg%3E"),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 480 120' fill='%23120709'%3E%3Cpath opacity='.34' d='M0 120 V70 h18 v-14 h8 l4 -18 4 18 h8 v14 h22 V58 h14 l6 -26 6 26 h12 v62 h30 V80 h16 v-12 h10 l5 -22 5 22 h10 v12 h18 v40 h26 V64 h12 l7 -30 7 30 h12 v56 h34 V76 h14 v-10 h8 l4 -16 4 16 h8 v10 h16 v44 h28 V60 h12 l6 -24 6 24 h12 v60 h30 V78 h20 v-16 h8 l5 -20 5 20 h8 v16 h14 v42 z'/%3E%3C/svg%3E");
-  background-repeat: no-repeat, no-repeat, repeat-x;
-  background-size: auto, 18vmin auto, 480px auto;
-  background-position: 0 0, right 6% top 4%, bottom;
+  background: radial-gradient(circle 26vmin at 82% 12%, rgba(248, 113, 113, 0.11), rgba(248, 113, 113, 0.04) 45%, transparent 70%);
 }
 
-/* Crimson dark: blood-moon glow + moon + skyline */
+/* Crimson dark: blood-moon glow + wolf photo band */
 html[data-theme="dark"][data-palette="crimson"] body::before {
   background:
     radial-gradient(circle 26vmin at 82% 12%, rgba(248, 113, 113, 0.28), rgba(248, 113, 113, 0.1) 45%, transparent 70%),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='44' fill='%23e25d5d' opacity='.55'/%3E%3Ccircle cx='38' cy='40' r='7' fill='%23b94747' opacity='.5'/%3E%3Ccircle cx='60' cy='62' r='5' fill='%23b94747' opacity='.45'/%3E%3Ccircle cx='55' cy='30' r='4' fill='%23b94747' opacity='.4'/%3E%3C/svg%3E"),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 480 120' fill='%23120709'%3E%3Cpath opacity='.85' d='M0 120 V70 h18 v-14 h8 l4 -18 4 18 h8 v14 h22 V58 h14 l6 -26 6 26 h12 v62 h30 V80 h16 v-12 h10 l5 -22 5 22 h10 v12 h18 v40 h26 V64 h12 l7 -30 7 30 h12 v56 h34 V76 h14 v-10 h8 l4 -16 4 16 h8 v10 h16 v44 h28 V60 h12 l6 -24 6 24 h12 v60 h30 V78 h20 v-16 h8 l5 -20 5 20 h8 v16 h14 v42 z'/%3E%3C/svg%3E");
-  background-repeat: no-repeat, no-repeat, repeat-x;
-  background-size: auto, 18vmin auto, 480px auto;
-  background-position: 0 0, right 6% top 4%, bottom;
+    url("./assets/scenes/crimson.jpg");
+  background-repeat: no-repeat, no-repeat;
+  background-size: auto, auto 320px;
+  background-position: 0 0, center bottom;
+}
+
+/* === Scene: CHILL (moonlit mountain ridgeline) === */
+
+/* Chill light: moonlight glow only (scene image is dark-mode-only) */
+html[data-palette="chill"] body::before {
+  background: radial-gradient(circle 30vmin at 56% 14%, rgba(159, 176, 216, 0.05), transparent 70%);
+}
+
+/* Chill dark: moonlight glow + pine-treeline photo band */
+html[data-theme="dark"][data-palette="chill"] body::before {
+  background:
+    radial-gradient(circle 30vmin at 56% 14%, rgba(159, 176, 216, 0.12), transparent 70%),
+    url("./assets/scenes/chill.jpg");
+  background-repeat: no-repeat, no-repeat;
+  background-size: auto, auto 320px;
+  background-position: 0 0, center bottom;
+}
+
+/* Home (.workout-tab) owns champ scene — suppress global champ photo so only one layer paints */
+html[data-theme="dark"][data-palette="champ"]:has(.workout-tab) body::before,
+html[data-theme="dark"]:not([data-palette]):has(.workout-tab) body::before {
+  background: radial-gradient(ellipse 120% 70% at 50% -10%, rgba(91, 110, 232, 0.18), transparent 88%);
+  background-repeat: no-repeat;
+  background-size: auto;
+  background-position: 0 0;
+}
+
+/* Home (.workout-tab) owns iron scene — suppress global iron.jpg, keep forge glow + grain */
+html[data-theme="dark"][data-palette="iron"]:has(.workout-tab) body::before {
+  background:
+    radial-gradient(ellipse 140% 65% at 52% 92%, rgba(255, 174, 61, 0.16), transparent 90%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0.84 0 0 0 0 0.79 0 0 0 0 0.72 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: no-repeat, repeat;
+  background-size: auto, 240px 240px;
+  background-position: 0 0, 0 0;
+}
+
+/* Home (.workout-tab) owns chill scene — suppress global chill.jpg so only one layer paints */
+html[data-theme="dark"][data-palette="chill"]:has(.workout-tab) body::before {
+  background: radial-gradient(circle 50vmin at 56% 14%, rgba(159, 176, 216, 0.12), transparent 85%);
+  background-repeat: no-repeat;
+  background-size: auto;
+  background-position: 0 0;
+}
+
+/* Home (.workout-tab) owns forest scene — suppress global forest.jpg so only one layer paints */
+html[data-theme="dark"][data-palette="forest"]:has(.workout-tab) body::before {
+  background: radial-gradient(ellipse 120% 60% at 50% -10%, rgba(74, 222, 128, 0.09), transparent 88%);
+  background-repeat: no-repeat;
+  background-size: auto;
+  background-position: 0 0;
+}
+
+/* Home (.workout-tab) owns crimson scene — suppress global crimson.jpg so only one layer paints */
+html[data-theme="dark"][data-palette="crimson"]:has(.workout-tab) body::before {
+  background: radial-gradient(circle 45vmin at 82% 12%, rgba(248, 113, 113, 0.28), rgba(248, 113, 113, 0.1) 55%, transparent 88%);
+  background-repeat: no-repeat;
+  background-size: auto;
+  background-position: 0 0;
+}
+
+/* --- Auth scene source token (dark-only; consumed by .auth-page) ---
+   One declaration per palette so the later forest/crimson raster swap is a
+   one-liner. Deliberately dark-only: in light mode the auth card sits on plain
+   --color-bg with no scene (mirrors the global scenes being dark-only). */
+html[data-theme="dark"] {
+  --scene-image: url("./assets/scenes/champ.jpg");
+}
+html[data-theme="dark"][data-palette="iron"] {
+  --scene-image: url("./assets/scenes/iron.jpg");
+}
+html[data-theme="dark"][data-palette="chill"] {
+  --scene-image: url("./assets/scenes/chill.jpg");
+}
+html[data-theme="dark"][data-palette="forest"] {
+  --scene-image: url("./assets/scenes/forest.jpg");
+}
+html[data-theme="dark"][data-palette="crimson"] {
+  --scene-image: url("./assets/scenes/crimson.jpg");
 }
 
 * {
@@ -378,8 +479,8 @@ a {
   position: sticky;
   top: 0;
   z-index: 5;
-  background: color-mix(in srgb, var(--color-surface-1) 92%, transparent);
-  border-bottom: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
+  background: color-mix(in srgb, var(--color-surface-1) 55%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-border) 35%, transparent);
   backdrop-filter: saturate(1.1) blur(10px);
 }
 
@@ -405,15 +506,29 @@ a {
 }
 
 .brand--subtle a {
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-  color: var(--color-text-secondary);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--color-text);
+}
+
+/* Pixel/flat crown, accent-tinted per palette, sized to cap height, left of wordmark */
+.brand--subtle a::before {
+  content: "";
+  flex: 0 0 auto;
+  width: 0.95em;
+  height: 0.95em;
+  background-color: var(--color-interactive);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%3E%3Cpath%20d='M3,19L3,8L8,12L12,5L16,12L21,8L21,19Z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%3E%3Cpath%20d='M3,19L3,8L8,12L12,5L16,12L21,8L21,19Z'/%3E%3C/svg%3E") center / contain no-repeat;
 }
 
 .brand--subtle a:hover {
   color: var(--color-text);
+  opacity: 0.85;
 }
 
 .nav-profile-link {
@@ -466,6 +581,19 @@ a {
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-interactive) 24%, transparent);
 }
 
+.nav-tab--disabled {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 12px;
+  color: var(--color-text-secondary);
+  opacity: 0.42;
+  cursor: default;
+  pointer-events: none;
+  user-select: none;
+}
+
 @media (max-width: 420px) {
   .nav-main-links.links {
     flex-wrap: nowrap;
@@ -474,7 +602,8 @@ a {
     -webkit-overflow-scrolling: touch;
   }
 
-  .nav-main-links.links a {
+  .nav-main-links.links a,
+  .nav-main-links.links .nav-tab--disabled {
     flex: 0 0 auto;
   }
 }
@@ -518,6 +647,80 @@ p {
   border-radius: var(--radius-card);
   padding: 12px;
   box-shadow: var(--shadow-card);
+}
+
+/* LogChamp pixel-corner motif — palette-agnostic stepped clip-path corners.
+   The element itself is filled with the accent stroke color and clipped to the
+   stepped polygon. An inset ::before re-paints the card surface (also clipped),
+   so the accent shows through as a stepped stroke that follows every cut. The
+   outer glow is a drop-shadow() filter — applied after clipping, it hugs the
+   stepped silhouette where a box-shadow would have been clipped away. */
+.card--notched {
+  position: relative;
+  border: 0;
+  border-radius: 0;
+  background: color-mix(in srgb, var(--color-interactive) 60%, var(--color-border));
+  clip-path: polygon(
+    0 var(--notch-size),
+    var(--notch-size) var(--notch-size),
+    var(--notch-size) 0,
+    calc(100% - var(--notch-size)) 0,
+    calc(100% - var(--notch-size)) var(--notch-size),
+    100% var(--notch-size),
+    100% calc(100% - var(--notch-size)),
+    calc(100% - var(--notch-size)) calc(100% - var(--notch-size)),
+    calc(100% - var(--notch-size)) 100%,
+    var(--notch-size) 100%,
+    var(--notch-size) calc(100% - var(--notch-size)),
+    0 calc(100% - var(--notch-size))
+  );
+  filter: drop-shadow(0 0 10px var(--notch-glow));
+}
+
+html[data-theme="dark"] .card.card--notched {
+  background: color-mix(in srgb, var(--color-interactive) 60%, var(--color-border));
+}
+
+.card--notched::before {
+  content: "";
+  position: absolute;
+  inset: var(--notch-stroke);
+  z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-surface-2) 22%, transparent),
+      transparent 45%
+    ),
+    var(--color-surface-1);
+  clip-path: polygon(
+    0 var(--notch-size),
+    var(--notch-size) var(--notch-size),
+    var(--notch-size) 0,
+    calc(100% - var(--notch-size)) 0,
+    calc(100% - var(--notch-size)) var(--notch-size),
+    100% var(--notch-size),
+    100% calc(100% - var(--notch-size)),
+    calc(100% - var(--notch-size)) calc(100% - var(--notch-size)),
+    calc(100% - var(--notch-size)) 100%,
+    var(--notch-size) 100%,
+    var(--notch-size) calc(100% - var(--notch-size)),
+    0 calc(100% - var(--notch-size))
+  );
+}
+
+html[data-theme="dark"] .card--notched::before {
+  background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-surface-3) 18%, transparent),
+      transparent 52%
+    ),
+    var(--color-surface-1);
+}
+
+.card--notched > * {
+  position: relative;
+  z-index: 1;
 }
 
 html[data-theme="dark"] .card {
@@ -794,6 +997,10 @@ html[data-theme="dark"] .settings-group {
 
 .settings-palette-swatch--crimson {
   background: var(--palette-swatch-crimson);
+}
+
+.settings-palette-swatch--chill {
+  background: var(--palette-swatch-chill);
 }
 
 .settings-security-form {
@@ -3080,7 +3287,81 @@ html[data-theme="dark"] .exercise-name-suggestions {
 /* --- Workout-first tab + global active bar --- */
 
 .workout-tab.stack {
+  position: relative;
+  isolation: isolate;
   gap: 12px;
+  min-height: calc(100dvh - 7.5rem);
+  padding-bottom: 24px;
+}
+
+/* Home scene (dark-only): bottom-band via --scene-image, shared across ALL palettes
+   (--scene-image already resolves per palette), auth hard rule — never cover.
+   Band ~220px tall anchored center bottom. Overlay ramps from transparent at the very
+   bottom (scene reads) to fully solid --color-bg by ~200px, so the bright top edge of the
+   image is hidden and there is no hard seam below the cards. Top wash (first layer) reaches
+   the opposite end - a faint --color-interactive tint anchored at the very top so the page
+   doesn't go flat solid behind the navbar; fades out well before the bottom band so the two
+   never overlap/muddy each other. */
+html[data-theme="dark"] .workout-tab::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(
+      ellipse 130% 65% at 50% 0%,
+      color-mix(in srgb, var(--color-interactive) 10%, transparent),
+      transparent 70%
+    ),
+    linear-gradient(
+      to top,
+      transparent 0,
+      color-mix(in srgb, var(--color-bg) 55%, transparent) 90px,
+      var(--color-bg) 200px,
+      var(--color-bg) 100%
+    ),
+    var(--scene-image);
+  background-repeat: no-repeat, no-repeat, no-repeat;
+  background-size: auto, auto, auto 220px;
+  background-position: center top, center top, center bottom;
+}
+
+.workout-tab.stack > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Sparse star-glints in the dark space between cards. Decorative only:
+   pointer-events:none, sits below cards (z-index 0), motion-gated. */
+@media (prefers-reduced-motion: no-preference) {
+  .workout-tab.stack::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.65;
+    background-repeat: no-repeat;
+    background-image:
+      radial-gradient(1.5px 1.5px at 12% 22%, color-mix(in srgb, var(--color-interactive) 80%, white), transparent),
+      radial-gradient(2px 2px at 78% 14%, color-mix(in srgb, white 70%, var(--color-interactive)), transparent),
+      radial-gradient(1px 1px at 35% 58%, color-mix(in srgb, var(--color-interactive) 70%, white), transparent),
+      radial-gradient(2.5px 2.5px at 62% 72%, color-mix(in srgb, white 60%, var(--color-interactive)), transparent),
+      radial-gradient(1.5px 1.5px at 88% 48%, color-mix(in srgb, var(--color-interactive) 75%, white), transparent),
+      radial-gradient(1px 1px at 22% 82%, color-mix(in srgb, white 65%, var(--color-interactive)), transparent);
+    animation: notch-glint 6s ease-in-out infinite;
+  }
+
+  @keyframes notch-glint {
+    0%,
+    100% {
+      opacity: 0.35;
+    }
+    50% {
+      opacity: 0.75;
+    }
+  }
 }
 
 @media (min-width: 640px) {
@@ -3096,10 +3377,30 @@ html[data-theme="dark"] .exercise-name-suggestions {
 }
 
 .workout-hero {
-  padding: 16px 14px 18px;
-  border-color: color-mix(in srgb, var(--accent) 38%, var(--color-border));
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 14%, transparent);
-  gap: 8px;
+  padding: 18px 16px 20px;
+  border-color: color-mix(in srgb, var(--color-interactive) 32%, var(--color-border));
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--color-interactive) 18%, transparent),
+    var(--shadow-card);
+  gap: 10px;
+}
+
+.workout-hero.card--notched::before {
+  background: linear-gradient(
+      165deg,
+      color-mix(in srgb, var(--color-surface-3) 28%, transparent),
+      transparent 55%
+    ),
+    var(--color-surface-1);
+}
+
+html[data-theme="dark"] .workout-hero.card--notched::before {
+  background: linear-gradient(
+      165deg,
+      color-mix(in srgb, var(--color-surface-3) 22%, transparent),
+      transparent 58%
+    ),
+    var(--color-surface-1);
 }
 
 .workout-hero__title,
@@ -3151,24 +3452,126 @@ html[data-theme="dark"] .exercise-name-suggestions {
 }
 
 .workout-hero__cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
   width: 100%;
-  margin-top: 6px;
+  margin-top: 8px;
   min-height: 52px;
   font-size: 1.05rem;
   padding: 14px 16px;
-  border-radius: 14px;
+  border-radius: var(--radius-control);
+}
+
+/* Line-style dumbbell trailing the label, inherits button text color */
+.workout-hero__cta::after {
+  content: "";
+  flex: 0 0 auto;
+  width: 1.25em;
+  height: 1.25em;
+  background-color: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='black'%20stroke-width='2'%20stroke-linecap='round'%3E%3Cpath%20d='M6.5%206.5v11M3.5%209v5M17.5%206.5v11M20.5%209v5M7%2012h10'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='black'%20stroke-width='2'%20stroke-linecap='round'%3E%3Cpath%20d='M6.5%206.5v11M3.5%209v5M17.5%206.5v11M20.5%209v5M7%2012h10'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+.workout-tab-recent {
+  display: grid;
+  gap: 10px;
+}
+
+.workout-tab-recent__head {
+  align-items: baseline;
+  gap: 8px 12px;
+}
+
+.workout-tab-recent__title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.workout-tab-recent__view-all {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  transition: color var(--motion-fast) var(--ease-standard);
+}
+
+.workout-tab-recent__view-all:hover {
+  color: var(--color-interactive);
+}
+
+.workout-tab-recent__empty {
+  padding-left: 2px;
+}
+
+.workout-tab-recent__scroll {
+  list-style: none;
+  margin: 0;
+  padding: 0 16px 4px 0;
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+.workout-tab-recent__item {
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+}
+
+.workout-tab-recent__card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 150px;
+  min-height: 72px;
+  padding: 10px 12px;
+  text-decoration: none;
+  color: inherit;
+  transition:
+    border-color var(--motion-base) var(--ease-standard),
+    box-shadow var(--motion-base) var(--ease-standard);
+}
+
+.workout-tab-recent__card:hover {
+  border-color: color-mix(in srgb, var(--color-interactive) 45%, var(--color-border));
+  box-shadow: var(--shadow-card-hover);
+}
+
+.workout-tab-recent__card-title {
+  font-weight: 700;
+  font-size: 13px;
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.workout-tab-recent__card-when {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .workout-tab__error-compact {
   padding: 10px 12px;
 }
 
+/* DEAD: removed from home Unit 1, cleanup queued */
 .workout-tab-history__title {
   margin: 0;
   font-size: 1rem;
   font-weight: 700;
 }
 
+/* DEAD: removed from home Unit 1, cleanup queued */
 .workout-tab-history {
   padding: 12px 14px;
   gap: 10px;
@@ -3184,6 +3587,7 @@ html[data-theme="dark"] .exercise-name-suggestions {
   font-weight: 600;
 }
 
+/* DEAD: removed from home Unit 1, cleanup queued */
 .quick-pick-templates__head {
   display: flex;
   align-items: baseline;
@@ -3266,6 +3670,7 @@ html[data-theme="dark"] .exercise-name-suggestions {
   font-variant-numeric: tabular-nums;
 }
 
+/* DEAD: removed from home Unit 1, cleanup queued */
 .secondary-actions {
   padding: 12px 14px;
   border: 1px dashed var(--color-input-border);
@@ -3321,6 +3726,7 @@ html[data-theme="dark"] .secondary-actions {
   text-underline-offset: 2px;
 }
 
+/* DEAD: removed from home Unit 1, cleanup queued */
 .workout-tab__community {
   text-align: left;
   padding-left: 2px;
@@ -3333,6 +3739,7 @@ html[data-theme="dark"] .secondary-actions {
   text-underline-offset: 3px;
 }
 
+/* DEAD: removed from home Unit 1, cleanup queued */
 .btn--quiet-history {
   font-weight: 500;
   color: var(--color-text-secondary);
@@ -3566,4 +3973,165 @@ html[data-theme="dark"] .start-workout-picker__sheet {
   box-shadow:
     inset 3px 0 0 0 var(--color-interactive),
     var(--shadow-card-hover);
+}
+
+/* --- Auth layout (navbar-less, scene-backed, centered card) --- */
+
+.auth-shell {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+/* Opaque base occludes the global body::before scene band on auth routes, so
+   the old scrolling-page band never reappears here. Light mode stops here:
+   plain --color-bg, no scene. */
+.auth-page {
+  background-color: var(--color-bg);
+}
+
+/* Scene is dark-only (gated below); anchored center bottom, auto height,
+   no-repeat per the scene hard rule (never cover). The darken-top gradient
+   quiets the area behind the card, then fades to transparent by ~58% so the
+   scene reads clearly through the lower third. Overlay alphas are tokenized so
+   individual palettes (champ) can lighten them without redeclaring the scene. */
+html[data-theme="dark"] .auth-page {
+  --auth-overlay-top: 90%;
+  --auth-overlay-mid: 42%;
+  background-image:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-bg) var(--auth-overlay-top), transparent) 0%,
+      color-mix(in srgb, var(--color-bg) var(--auth-overlay-mid), transparent) 26%,
+      transparent 58%
+    ),
+    var(--scene-image);
+  background-repeat: no-repeat, no-repeat;
+  background-size: auto, auto 460px;
+  background-position: center top, center bottom;
+}
+
+/* Champ skyline is the darkest source (bottom-band avg ~15/255); ease its
+   overlay so what's there reads. NOTE: source asset is a dark night export,
+   flagged for re-vendor — this only mitigates, it can't brighten silhouettes. */
+html[data-theme="dark"][data-palette="champ"] .auth-page,
+html[data-theme="dark"]:not([data-palette]) .auth-page {
+  --auth-overlay-top: 68%;
+  --auth-overlay-mid: 22%;
+}
+
+.auth-card-wrap {
+  width: 100%;
+  max-width: 380px;
+}
+
+/* Wordmark with accent-tinted crown (two-layer mask).
+   Base <img> = white letters (crown transparent); ::after fills the same box
+   with the palette accent, clipped to the crown silhouette so only the crown
+   picks up --color-interactive. Same box on both layers = registration. */
+.wordmark {
+  position: relative;
+  width: 240px;
+  margin: 0 auto 4px;
+}
+
+.wordmark img {
+  display: block;
+  width: 100%;
+  height: auto;
+  /* 1024px crisp pixel-art downscaled to 240px — keep hard edges, no blur. */
+  image-rendering: pixelated;
+  image-rendering: -webkit-optimize-contrast;
+}
+
+.wordmark::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-color: var(--color-interactive);
+  -webkit-mask-image: url("./assets/brand/wordmark_crown_mask.png");
+  mask-image: url("./assets/brand/wordmark_crown_mask.png");
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-position: center top;
+  mask-position: center top;
+  image-rendering: pixelated;
+  image-rendering: -webkit-optimize-contrast;
+  pointer-events: none;
+}
+
+.auth-tagline {
+  text-align: center;
+  margin: 0 0 14px;
+}
+
+/* Translucent, blurred card with a subtle accent ring derived from
+   --color-interactive (same color-mix pattern as rings/pills). */
+.auth-page .auth-form.card {
+  width: 100%;
+  max-width: 380px;
+  margin: 0 auto;
+  padding: 18px;
+  background: color-mix(in srgb, var(--color-surface-1) 78%, transparent);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--color-interactive) 22%, transparent),
+    var(--shadow-card-hover);
+}
+
+html[data-theme="dark"] .auth-page .auth-form.card {
+  background: color-mix(in srgb, var(--color-surface-1) 72%, transparent);
+}
+
+.auth-heading {
+  margin: 0;
+  text-align: center;
+}
+
+.auth-helper {
+  color: var(--color-text-secondary);
+}
+
+/* Fields: rounded-rectangle (--radius-control), accent-tinted border + focus. */
+.auth-form input:not([type="checkbox"]):not([type="radio"]) {
+  border-radius: var(--radius-control);
+  border-color: color-mix(in srgb, var(--color-interactive) 32%, var(--color-input-border));
+}
+
+.auth-form input:not([type="checkbox"]):not([type="radio"]):focus {
+  border-color: color-mix(in srgb, var(--color-interactive) 60%, var(--color-input-border));
+  outline: 2px solid color-mix(in srgb, var(--color-interactive) 55%, transparent);
+}
+
+/* Primary button: filled accent, readable text, matching radius. */
+.auth-form .btn {
+  width: 100%;
+  background: var(--color-interactive);
+  color: #fff;
+  border-radius: var(--radius-control);
+  /* Subtle lift, not a halo — tight spread + low alpha so hot palettes
+     (crimson/gold) don't bloom. */
+  box-shadow: 0 3px 10px color-mix(in srgb, var(--color-interactive) 16%, transparent);
+}
+
+.auth-form .btn:hover:not(:disabled) {
+  background: var(--color-interactive-hover);
+  box-shadow: 0 5px 12px color-mix(in srgb, var(--color-interactive) 22%, transparent);
+}
+
+.auth-form .auth-actions {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+}
+
+.auth-crosslink {
+  text-align: center;
 }

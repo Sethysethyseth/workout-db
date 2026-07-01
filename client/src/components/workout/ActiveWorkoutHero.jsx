@@ -36,7 +36,7 @@ export function ActiveWorkoutHero({ session, nowMs, onResume }) {
 
   return (
     <section
-      className="workout-hero workout-hero--active card card--live"
+      className="workout-hero workout-hero--active card card--notched card--live"
       aria-labelledby="workout-hero-active-headline"
     >
       <p className="workout-hero__eyebrow muted small">In progress</p>

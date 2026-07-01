@@ -38,44 +38,37 @@ export function LoginPage() {
   }
 
   return (
-    <div className="stack">
-      <div>
-        <h1>Login</h1>
-        <p className="muted">
-          Use your WorkoutDB beta account to continue. Cookies must be enabled.
-        </p>
-      </div>
+    <form className="card stack auth-form" onSubmit={onSubmit}>
+      <h2 className="auth-heading">Login</h2>
 
       <ErrorMessage error={error} />
 
-      <form className="card stack" onSubmit={onSubmit}>
-        <label>
-          Email or username
-          <input
-            value={login}
-            onChange={(e) => setLogin(e.target.value)}
-            autoComplete="username"
-            required
-          />
-        </label>
-        <PasswordInput
-          label="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          autoComplete="current-password"
+      <label>
+        Email or username
+        <input
+          value={login}
+          onChange={(e) => setLogin(e.target.value)}
+          autoComplete="username"
           required
-          minLength={8}
         />
-        <div className="row">
-          <button className="btn" disabled={submitting}>
-            {submitting ? "Logging in…" : "Login"}
-          </button>
-          <Link className="muted" to="/register">
-            Need an account? Register
-          </Link>
-        </div>
-      </form>
-    </div>
+      </label>
+      <PasswordInput
+        label="Password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        autoComplete="current-password"
+        required
+        minLength={8}
+      />
+      <div className="row auth-actions">
+        <button className="btn" disabled={submitting}>
+          {submitting ? "Logging in…" : "Login"}
+        </button>
+        <Link className="muted auth-crosslink" to="/register">
+          Need an account? Register
+        </Link>
+      </div>
+    </form>
   );
 }
 
