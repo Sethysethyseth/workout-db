@@ -8,6 +8,11 @@ const {
   estimateOneRepMax,
   computeTonnage,
 } = require("./setMetrics");
+const { enrichSet } = require("./enrichSet");
+const {
+  aggregateMuscleVolume,
+  computeWeeksInRange,
+} = require("./aggregate");
 
 module.exports = {
   loadCatalog,
@@ -18,4 +23,7 @@ module.exports = {
   computeSetMetrics,
   estimateOneRepMax,
   computeTonnage,
+  enrichSet,
+  aggregateMuscleVolume,
+  computeWeeksInRange,
 };
