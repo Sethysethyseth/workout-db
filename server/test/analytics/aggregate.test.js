@@ -1,6 +1,8 @@
 const {
   enrichSet,
   aggregateMuscleVolume,
+  aggregateExerciseMetrics,
+  computeBalanceRatios,
   computeWeeksInRange,
 } = require("../../src/analytics");
 
@@ -156,5 +158,126 @@ describe("aggregateMuscleVolume", () => {
     ];
     const result = aggregateMuscleVolume(sets, { from, to });
     expect(result).toEqual([]);
+  });
+});
+
+describe("aggregateExerciseMetrics", () => {
+  const from = "2026-06-01T00:00:00Z";
+  const to = "2026-06-15T00:00:00Z";
+
+  test("first/latest/best/delta and bestSet match the highest-e1RM set", () => {
+    const sets = [
+      // Chronologically first, lower e1RM.
+      enrichSet({
+        exerciseName: BENCH,
+        weight: 100,
+        reps: 5,
+        rir: 2,
+        performedAt: "2026-06-02T10:00:00Z",
+      }),
+      // Chronologically last, higher e1RM (this is the best set).
+      enrichSet({
+        exerciseName: BENCH,
+        weight: 110,
+        reps: 5,
+        rir: 1,
+        performedAt: "2026-06-09T10:00:00Z",
+      }),
+    ];
+
+    const result = aggregateExerciseMetrics(sets, { from, to });
+    expect(result.length).toBe(1);
+    const bench = result[0];
+    expect(bench.exerciseId).toBe("Barbell_Bench_Press_-_Medium_Grip");
+
+    const firstE1rm = 100 * (1 + 5 / 30);
+    const latestE1rm = 110 * (1 + 5 / 30);
+    expect(bench.e1rmTrend.first).toBeCloseTo(firstE1rm, 6);
+    expect(bench.e1rmTrend.latest).toBeCloseTo(latestE1rm, 6);
+    expect(bench.e1rmTrend.best).toBeCloseTo(latestE1rm, 6);
+    expect(bench.e1rmTrend.delta).toBeCloseTo(latestE1rm - firstE1rm, 6);
+
+    // bestSet identifies the highest-e1RM set via performedAt + e1rm.
+    expect(bench.bestSet.e1rm.epley).toBeCloseTo(latestE1rm, 6);
+    expect(bench.bestSet.performedAt.toISOString()).toBe(
+      "2026-06-09T10:00:00.000Z"
+    );
+
+    // weight/reps are algebraically recovered from tonnage + epley (exact
+    // inverse of the formulas that produced them), not fabricated. rir is
+    // genuinely unrecoverable (lossy stimulus-curve mapping) and stays null.
+    expect(bench.bestSet.weight).toBeCloseTo(110, 6);
+    expect(bench.bestSet.reps).toBeCloseTo(5, 6);
+    expect(bench.bestSet.rir).toBeNull();
+  });
+
+  test("unresolved exerciseName is excluded from output entirely", () => {
+    const sets = [
+      enrichSet({
+        exerciseName: BENCH,
+        weight: 100,
+        reps: 5,
+        rir: 2,
+        performedAt: "2026-06-02T10:00:00Z",
+      }),
+      enrichSet({
+        exerciseName: "Nonexistent Made Up Exercise",
+        weight: 100,
+        reps: 5,
+        rir: 2,
+        performedAt: "2026-06-03T10:00:00Z",
+      }),
+    ];
+
+    const result = aggregateExerciseMetrics(sets, { from, to });
+    expect(result.length).toBe(1);
+    expect(result[0].exerciseId).toBe("Barbell_Bench_Press_-_Medium_Grip");
+  });
+
+  test("group whose sets all lack weight/reps -> e1rmTrend all null, bestSet null", () => {
+    const sets = [
+      enrichSet({
+        exerciseName: BENCH,
+        rir: 2,
+        performedAt: "2026-06-02T10:00:00Z",
+      }),
+    ];
+
+    const result = aggregateExerciseMetrics(sets, { from, to });
+    expect(result.length).toBe(1);
+    expect(result[0].e1rmTrend).toEqual({
+      first: null,
+      latest: null,
+      best: null,
+      delta: null,
+    });
+    expect(result[0].bestSet).toBeNull();
+  });
+});
+
+describe("computeBalanceRatios", () => {
+  test("correct pushPull and quadHam from effectiveSets", () => {
+    const perMuscle = [
+      { muscle: "chest", effectiveSets: 6 },
+      { muscle: "lats", effectiveSets: 3 },
+      { muscle: "quadriceps", effectiveSets: 4 },
+      { muscle: "hamstrings", effectiveSets: 2 },
+    ];
+    const balance = computeBalanceRatios(perMuscle);
+    expect(balance.pushPull).toBe(2); // 6 / 3
+    expect(balance.quadHam).toBe(2); // 4 / 2
+    expect(balance.frontRearDelt).toBeNull();
+  });
+
+  test("a muscle group summing to 0 -> that ratio is null (no divide-by-zero)", () => {
+    const perMuscle = [
+      { muscle: "chest", effectiveSets: 6 },
+      { muscle: "quadriceps", effectiveSets: 4 },
+      // No pull muscles, no hamstrings.
+    ];
+    const balance = computeBalanceRatios(perMuscle);
+    expect(balance.pushPull).toBeNull();
+    expect(balance.quadHam).toBeNull();
+    expect(balance.frontRearDelt).toBeNull();
   });
 });

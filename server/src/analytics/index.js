@@ -11,8 +11,13 @@ const {
 const { enrichSet } = require("./enrichSet");
 const {
   aggregateMuscleVolume,
+  aggregateExerciseMetrics,
+  computeBalanceRatios,
   computeWeeksInRange,
+  filterInRange,
+  toDate,
 } = require("./aggregate");
+const { buildSummary } = require("./summary");
 
 module.exports = {
   loadCatalog,
@@ -25,5 +30,10 @@ module.exports = {
   computeTonnage,
   enrichSet,
   aggregateMuscleVolume,
+  aggregateExerciseMetrics,
+  computeBalanceRatios,
   computeWeeksInRange,
+  filterInRange,
+  toDate,
+  buildSummary,
 };

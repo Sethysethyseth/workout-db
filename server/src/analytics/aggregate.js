@@ -1,6 +1,14 @@
 const MS_PER_WEEK = 7 * 24 * 60 * 60 * 1000;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
+// Muscle-group membership for balance ratios. Named constants (mirrors the
+// STIMULUS_CURVE / TRACKABLE_CATEGORIES style) so the taxonomy is easy to find
+// and re-tune. Keys match the catalog's muscle bucket names.
+const PUSH_MUSCLES = ["chest", "shoulders", "triceps"];
+const PULL_MUSCLES = ["lats", "middle back", "traps", "biceps"];
+const QUAD_MUSCLES = ["quadriceps"];
+const HAM_MUSCLES = ["hamstrings"];
+
 function toDate(value) {
   return value instanceof Date ? value : new Date(value);
 }
@@ -15,16 +23,21 @@ function computeWeeksInRange(from, to) {
   return Math.max(1, Math.ceil((toDate_ - fromDate) / MS_PER_WEEK));
 }
 
-function aggregateMuscleVolume(enrichedSets, { from, to }) {
-  const fromDate = toDate(from);
-  const toDate_ = toDate(to);
-  const fromMs = fromDate.getTime();
-  const toMs = toDate_.getTime();
-
-  const inRange = enrichedSets.filter((s) => {
+function filterInRange(enrichedSets, { from, to }) {
+  const fromMs = toDate(from).getTime();
+  const toMs = toDate(to).getTime();
+  return enrichedSets.filter((s) => {
     const t = s.performedAt.getTime();
     return t >= fromMs && t <= toMs;
   });
+}
+
+function aggregateMuscleVolume(enrichedSets, { from, to }) {
+  const fromDate = toDate(from);
+  const toDate_ = toDate(to);
+  const toMs = toDate_.getTime();
+
+  const inRange = filterInRange(enrichedSets, { from: fromDate, to: toDate_ });
 
   // muscle -> accumulator
   const acc = new Map();
@@ -79,4 +92,100 @@ function aggregateMuscleVolume(enrichedSets, { from, to }) {
     }));
 }
 
-module.exports = { computeWeeksInRange, aggregateMuscleVolume, MS_PER_WEEK };
+function aggregateExerciseMetrics(enrichedSets, { from, to }) {
+  const inRange = filterInRange(enrichedSets, { from, to });
+
+  // catalog id -> { name, sets: [] }. Resolved sets only.
+  const groups = new Map();
+  for (const set of inRange) {
+    if (!set.resolution.resolved) continue;
+    const entry = set.resolution.catalogEntry;
+    let g = groups.get(entry.id);
+    if (!g) {
+      g = { name: entry.name, sets: [] };
+      groups.set(entry.id, g);
+    }
+    g.sets.push(set);
+  }
+
+  const result = [];
+  for (const [exerciseId, g] of groups.entries()) {
+    const sorted = g.sets
+      .slice()
+      .sort((a, b) => a.performedAt.getTime() - b.performedAt.getTime());
+
+    const validSets = sorted.filter((s) => s.metrics.e1rm.epley !== null);
+
+    let e1rmTrend = { first: null, latest: null, best: null, delta: null };
+    let bestSet = null;
+
+    if (validSets.length > 0) {
+      const first = validSets[0].metrics.e1rm.epley;
+      const latest = validSets[validSets.length - 1].metrics.e1rm.epley;
+
+      let bestSetEnriched = validSets[0];
+      for (const s of validSets) {
+        if (s.metrics.e1rm.epley > bestSetEnriched.metrics.e1rm.epley) {
+          bestSetEnriched = s;
+        }
+      }
+      const best = bestSetEnriched.metrics.e1rm.epley;
+
+      e1rmTrend = { first, latest, best, delta: latest - first };
+      // weight/reps are exactly recoverable from metrics already present on
+      // the enriched set (tonnage = weight*reps, epley = weight + tonnage/30),
+      // so no change to enrichSet.js/setMetrics.js is needed. rir is NOT
+      // recoverable - the stimulus curve is a lossy many-to-one mapping - so
+      // it stays null rather than guessing.
+      const bestTonnage = bestSetEnriched.metrics.tonnage;
+      const bestWeight = best - bestTonnage / 30;
+      bestSet = {
+        weight: bestWeight,
+        reps: bestTonnage / bestWeight,
+        rir: null,
+        performedAt: bestSetEnriched.performedAt,
+        e1rm: bestSetEnriched.metrics.e1rm,
+      };
+    }
+
+    result.push({ exerciseId, name: g.name, e1rmTrend, bestSet });
+  }
+
+  return result.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function sumGroupEffectiveSets(perMuscle, groupMuscles) {
+  let sum = 0;
+  for (const row of perMuscle) {
+    if (groupMuscles.includes(row.muscle)) sum += row.effectiveSets;
+  }
+  return sum;
+}
+
+function ratioOrNull(numerator, denominator) {
+  if (!denominator) return null; // avoid divide-by-zero / Infinity
+  return round2(numerator / denominator);
+}
+
+function computeBalanceRatios(perMuscle) {
+  const push = sumGroupEffectiveSets(perMuscle, PUSH_MUSCLES);
+  const pull = sumGroupEffectiveSets(perMuscle, PULL_MUSCLES);
+  const quad = sumGroupEffectiveSets(perMuscle, QUAD_MUSCLES);
+  const ham = sumGroupEffectiveSets(perMuscle, HAM_MUSCLES);
+
+  return {
+    pushPull: ratioOrNull(push, pull),
+    quadHam: ratioOrNull(quad, ham),
+    frontRearDelt: null,
+  };
+}
+
+module.exports = {
+  computeWeeksInRange,
+  aggregateMuscleVolume,
+  aggregateExerciseMetrics,
+  computeBalanceRatios,
+  filterInRange,
+  toDate,
+  MS_PER_WEEK,
+};
