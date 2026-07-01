@@ -479,8 +479,8 @@ a {
   position: sticky;
   top: 0;
   z-index: 5;
-  background: color-mix(in srgb, var(--color-surface-1) 92%, transparent);
-  border-bottom: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
+  background: color-mix(in srgb, var(--color-surface-1) 55%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-border) 35%, transparent);
   backdrop-filter: saturate(1.1) blur(10px);
 }
 
