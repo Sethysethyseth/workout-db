@@ -329,50 +329,38 @@ html[data-theme="dark"][data-palette="iron"] body::before {
   background-position: 0 0, center bottom, 0 0;
 }
 
-/* === Scene: FOREST (pixel treeline) === */
+/* === Scene: FOREST (canopy treeline photo band) === */
 
-/* Forest light: ~0.4x alphas */
+/* Forest light: canopy glow only (scene image is dark-mode-only) */
 html[data-palette="forest"] body::before {
-  background:
-    radial-gradient(ellipse 120% 40% at 50% -10%, rgba(74, 222, 128, 0.03), transparent 60%),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 320 96' shape-rendering='crispEdges'%3E%3Cdefs%3E%3Cg id='t'%3E%3Crect x='12' y='0' width='8' height='8'/%3E%3Crect x='8' y='8' width='16' height='12'/%3E%3Crect x='4' y='20' width='24' height='14'/%3E%3Crect x='0' y='34' width='32' height='16'/%3E%3Crect x='12' y='50' width='8' height='10'/%3E%3C/g%3E%3C/defs%3E%3Cg fill='%231d4434' opacity='.28'%3E%3Cuse href='%23t' x='6' y='14'/%3E%3Cuse href='%23t' x='78' y='6'/%3E%3Cuse href='%23t' x='150' y='18'/%3E%3Cuse href='%23t' x='222' y='2'/%3E%3Cuse href='%23t' x='286' y='14'/%3E%3C/g%3E%3Cg fill='%23143023' opacity='.4'%3E%3Cuse href='%23t' x='40' y='36'/%3E%3Cuse href='%23t' x='118' y='30'/%3E%3Cuse href='%23t' x='192' y='38'/%3E%3Cuse href='%23t' x='258' y='32'/%3E%3C/g%3E%3C/svg%3E");
-  background-repeat: no-repeat, repeat-x;
-  background-size: auto, 320px auto;
-  background-position: 0 0, bottom;
+  background: radial-gradient(ellipse 120% 40% at 50% -10%, rgba(74, 222, 128, 0.03), transparent 60%);
 }
 
-/* Forest dark: canopy glow + pixel treeline */
+/* Forest dark: canopy glow + treeline photo band */
 html[data-theme="dark"][data-palette="forest"] body::before {
   background:
     radial-gradient(ellipse 120% 40% at 50% -10%, rgba(74, 222, 128, 0.07), transparent 60%),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 320 96' shape-rendering='crispEdges'%3E%3Cdefs%3E%3Cg id='t'%3E%3Crect x='12' y='0' width='8' height='8'/%3E%3Crect x='8' y='8' width='16' height='12'/%3E%3Crect x='4' y='20' width='24' height='14'/%3E%3Crect x='0' y='34' width='32' height='16'/%3E%3Crect x='12' y='50' width='8' height='10'/%3E%3C/g%3E%3C/defs%3E%3Cg fill='%231d4434' opacity='.7'%3E%3Cuse href='%23t' x='6' y='14'/%3E%3Cuse href='%23t' x='78' y='6'/%3E%3Cuse href='%23t' x='150' y='18'/%3E%3Cuse href='%23t' x='222' y='2'/%3E%3Cuse href='%23t' x='286' y='14'/%3E%3C/g%3E%3Cg fill='%23143023'%3E%3Cuse href='%23t' x='40' y='36'/%3E%3Cuse href='%23t' x='118' y='30'/%3E%3Cuse href='%23t' x='192' y='38'/%3E%3Cuse href='%23t' x='258' y='32'/%3E%3C/g%3E%3C/svg%3E");
-  background-repeat: no-repeat, repeat-x;
-  background-size: auto, 320px auto;
-  background-position: 0 0, bottom;
+    url("./assets/scenes/forest.jpg");
+  background-repeat: no-repeat, no-repeat;
+  background-size: auto, auto 320px;
+  background-position: 0 0, center bottom;
 }
 
-/* === Scene: CRIMSON (blood moon + gothic skyline) === */
+/* === Scene: CRIMSON (blood moon + wolf band photo) === */
 
-/* Crimson light: ~0.4x alphas */
+/* Crimson light: blood-moon glow only (scene image is dark-mode-only) */
 html[data-palette="crimson"] body::before {
-  background:
-    radial-gradient(circle 26vmin at 82% 12%, rgba(248, 113, 113, 0.11), rgba(248, 113, 113, 0.04) 45%, transparent 70%),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='44' fill='%23e25d5d' opacity='.22'/%3E%3Ccircle cx='38' cy='40' r='7' fill='%23b94747' opacity='.2'/%3E%3Ccircle cx='60' cy='62' r='5' fill='%23b94747' opacity='.18'/%3E%3Ccircle cx='55' cy='30' r='4' fill='%23b94747' opacity='.16'/%3E%3C/svg%3E"),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 480 120' fill='%23120709'%3E%3Cpath opacity='.34' d='M0 120 V70 h18 v-14 h8 l4 -18 4 18 h8 v14 h22 V58 h14 l6 -26 6 26 h12 v62 h30 V80 h16 v-12 h10 l5 -22 5 22 h10 v12 h18 v40 h26 V64 h12 l7 -30 7 30 h12 v56 h34 V76 h14 v-10 h8 l4 -16 4 16 h8 v10 h16 v44 h28 V60 h12 l6 -24 6 24 h12 v60 h30 V78 h20 v-16 h8 l5 -20 5 20 h8 v16 h14 v42 z'/%3E%3C/svg%3E");
-  background-repeat: no-repeat, no-repeat, repeat-x;
-  background-size: auto, 18vmin auto, 480px auto;
-  background-position: 0 0, right 6% top 4%, bottom;
+  background: radial-gradient(circle 26vmin at 82% 12%, rgba(248, 113, 113, 0.11), rgba(248, 113, 113, 0.04) 45%, transparent 70%);
 }
 
-/* Crimson dark: blood-moon glow + moon + skyline */
+/* Crimson dark: blood-moon glow + wolf photo band */
 html[data-theme="dark"][data-palette="crimson"] body::before {
   background:
     radial-gradient(circle 26vmin at 82% 12%, rgba(248, 113, 113, 0.28), rgba(248, 113, 113, 0.1) 45%, transparent 70%),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='44' fill='%23e25d5d' opacity='.55'/%3E%3Ccircle cx='38' cy='40' r='7' fill='%23b94747' opacity='.5'/%3E%3Ccircle cx='60' cy='62' r='5' fill='%23b94747' opacity='.45'/%3E%3Ccircle cx='55' cy='30' r='4' fill='%23b94747' opacity='.4'/%3E%3C/svg%3E"),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 480 120' fill='%23120709'%3E%3Cpath opacity='.85' d='M0 120 V70 h18 v-14 h8 l4 -18 4 18 h8 v14 h22 V58 h14 l6 -26 6 26 h12 v62 h30 V80 h16 v-12 h10 l5 -22 5 22 h10 v12 h18 v40 h26 V64 h12 l7 -30 7 30 h12 v56 h34 V76 h14 v-10 h8 l4 -16 4 16 h8 v10 h16 v44 h28 V60 h12 l6 -24 6 24 h12 v60 h30 V78 h20 v-16 h8 l5 -20 5 20 h8 v16 h14 v42 z'/%3E%3C/svg%3E");
-  background-repeat: no-repeat, no-repeat, repeat-x;
-  background-size: auto, 18vmin auto, 480px auto;
-  background-position: 0 0, right 6% top 4%, bottom;
+    url("./assets/scenes/crimson.jpg");
+  background-repeat: no-repeat, no-repeat;
+  background-size: auto, auto 320px;
+  background-position: 0 0, center bottom;
 }
 
 /* === Scene: CHILL (moonlit mountain ridgeline) === */
@@ -425,10 +413,10 @@ html[data-theme="dark"][data-palette="chill"] {
   --scene-image: url("./assets/scenes/chill.jpg");
 }
 html[data-theme="dark"][data-palette="forest"] {
-  --scene-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 320 96' shape-rendering='crispEdges'%3E%3Cdefs%3E%3Cg id='t'%3E%3Crect x='12' y='0' width='8' height='8'/%3E%3Crect x='8' y='8' width='16' height='12'/%3E%3Crect x='4' y='20' width='24' height='14'/%3E%3Crect x='0' y='34' width='32' height='16'/%3E%3Crect x='12' y='50' width='8' height='10'/%3E%3C/g%3E%3C/defs%3E%3Cg fill='%231d4434' opacity='.7'%3E%3Cuse href='%23t' x='6' y='14'/%3E%3Cuse href='%23t' x='78' y='6'/%3E%3Cuse href='%23t' x='150' y='18'/%3E%3Cuse href='%23t' x='222' y='2'/%3E%3Cuse href='%23t' x='286' y='14'/%3E%3C/g%3E%3Cg fill='%23143023'%3E%3Cuse href='%23t' x='40' y='36'/%3E%3Cuse href='%23t' x='118' y='30'/%3E%3Cuse href='%23t' x='192' y='38'/%3E%3Cuse href='%23t' x='258' y='32'/%3E%3C/g%3E%3C/svg%3E");
+  --scene-image: url("./assets/scenes/forest.jpg");
 }
 html[data-theme="dark"][data-palette="crimson"] {
-  --scene-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 480 120' fill='%23120709'%3E%3Cpath opacity='.85' d='M0 120 V70 h18 v-14 h8 l4 -18 4 18 h8 v14 h22 V58 h14 l6 -26 6 26 h12 v62 h30 V80 h16 v-12 h10 l5 -22 5 22 h10 v12 h18 v40 h26 V64 h12 l7 -30 7 30 h12 v56 h34 V76 h14 v-10 h8 l4 -16 4 16 h8 v10 h16 v44 h28 V60 h12 l6 -24 6 24 h12 v60 h30 V78 h20 v-16 h8 l5 -20 5 20 h8 v16 h14 v42 z'/%3E%3C/svg%3E");
+  --scene-image: url("./assets/scenes/crimson.jpg");
 }
 
 * {
