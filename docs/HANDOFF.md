@@ -1,6 +1,6 @@
 # HANDOFF — current state
 
-**Updated:** July 2, 2026 (evening — analytics B6 matched-effort progression implemented DIRECTLY by Claude Code (inverted split, Seth out, expiring tokens), committed, pushed, smoked on-device via Playwright)
+**Updated:** July 2, 2026 (late evening — analytics B6 AND B7 implemented DIRECTLY by Claude Code (inverted split, Seth out, expiring tokens), both committed, pushed, smoked on-device via Playwright. Track B v1 is CODE-COMPLETE: B1-B7 all done.)
 **Rule:** rewritten in place at the end of every working session. Dated, never versioned. If this file looks stale (date > ~2 weeks old), verify branch/deploy state from ground truth before trusting it.
 
 ---
@@ -85,9 +85,9 @@
 ## Next up (the active task)
 
 1. Open TODOs #1-4 (prod verification — manual, browser).
-2. **Analytics B4/B5/B6 DONE + committed + smoked** (B6 = `94a1fbf`; smoke details in track section). Seth: a quick personal read of the `findMany` where-clause in `analyticsController.js` is still worthwhile before this branch merges (the isolation test covers it, but it is the one cross-user-leak surface).
-3. Decide merge timing for `analytics-engine` -> main (gated: requires "push to main" verbatim). Branch now carries B1-B6, a complete usable analytics v1 minus execution fidelity (B7).
-4. B7 (execution fidelity) is the next Track B unit; T3 remains the next unstarted UI unit if/when UI resumes.
+2. **Analytics B4-B7 DONE + committed + smoked** (B6 = `94a1fbf`, B7 = `9cfe7f0`; smoke details in track section). Seth: a quick personal read of the `findMany` where-clause + the new plan-side include in `analyticsController.js` is still worthwhile before this branch merges (the isolation tests cover it, but it is the one cross-user-leak surface).
+3. Decide merge timing for `analytics-engine` -> main (gated: requires "push to main" verbatim). **Branch now carries B1-B7 — Track B v1 complete.**
+4. Track A (A1 catalog merge, then A4 FK design — now including set->BlockWorkoutSet linkage for block-plan execution fidelity) is the next engine-adjacent work; T3 remains the next unstarted UI unit if/when UI resumes.
 
 ## Open forks (settle before merge)
 
@@ -234,16 +234,41 @@ endpoint + UI verified against seeded staging data; the seeded bench row
 shows e1RM trend -12.7 kg next to matched effort +6.3 kg — the exact
 dishonesty the metric exists to fix, visible on one row.
 
-**NEXT UNIT -> B7: execution fidelity Mechanism A (L2)** (spec section 4
-Stage 5, section 9) — plan-vs-actual join: WorkoutSet -> its plan source via
-`templateExerciseId`/`sessionExerciseId` -> TemplateSet/BlockWorkoutSet;
-load adherence, volume adherence, effort drift (actual RIR - planned RIR,
-positive = sandbagging). Engine-side pure functions + fixtures, wiring into
-`buildSummary.execution`, endpoint passes it through, UI section. NOTE: the
-join needs plan-side data the summary endpoint's findMany doesn't fetch yet,
-so B7 touches the controller include too (still auth-scoped through the
-session). Alternatively pause Track B and settle the merge decision (below).
-Back to the normal relay (Cursor implements) unless Seth says otherwise.
+**B7 execution fidelity Mechanism A DONE + committed (`9cfe7f0`) + smoked.**
+Implemented directly by Claude Code (same inverted-split session as B6).
+Delivered: `server/src/analytics/planVsActual.js` —
+`computeExecutionFidelity(enrichedSets, planLookup)`: pairs actual sets with
+TemplateSet plans ORDER-WISE within each (session, templateExercise) group;
+`loadAdherence` = mean(actual/planned weight), `volumeAdherence` =
+actual/planned set counts (extra sets raise it, skipped sets lower it),
+`effortDrift` = mean(actual RIR - planned RIR, positive = sandbagging);
+each null when no pair carries its data; resolved template-linked sets only.
+**Design finding baked in: the schema has NO path from a WorkoutSet to a
+BlockWorkoutSet** — block plans can't join and are an honest gap stated in
+the UI how-calculated copy (frontRearDelt pattern), NOT silently
+approximated. Fixing that needs a schema change (fold into A4 FK design).
+`enrichSet.input` gained `order` + `templateExerciseId`;
+`buildSummary(sets, { from, to, planLookup })` fills `execution` (still `[]`
+without planLookup). Controller now includes `templateSets` through BOTH
+linkage paths (set.templateExercise and set.sessionExercise.
+templateExercise — template-started sessions link sets via the latter) and
+builds the planLookup; isolation unchanged (plan data reached only through
+user-owned sessions). UI: new Execution card (Load %, Volume %, Effort
+drift +N RIR sandbagging / -N RIR overreaching / on target), unlock state
+when nothing plan-linked. Tests: 10 new — pairing, drift signs, volume
+over/under, null degradations, exclusions, wiring, plus an integration test
+driving the real template -> startSession -> log -> summary flow (unit lane
+76, full suite 111, all green). Smoked: seeded template session (plan 3x100
+@2, actual 2x95 @3) renders 95% / 67% / +1 RIR sandbagging in champ dark.
+
+**TRACK B v1 IS CODE-COMPLETE (B1-B7).** What remains before calling the
+analytics wedge shipped: the merge decision (below), Seth's personal read of
+the `findMany` where-clause, then Track A data plumbing (A1 catalog merge ->
+A4 FK linkage — add set->BlockWorkoutSet linkage to the A4 design — -> A5
+picker -> A6 backfill) to make resolution robust for real accounts, and the
+standing product asks (charts after algorithms; they're now landed). Track C
+(AI coach) stays dead-last. Back to the normal relay (Cursor implements)
+unless Seth says otherwise.
 
 **State / open items:**
 1. **A2 DONE + committed (`48c1e91`):** muscle-weights curation cleaned (3 bad IDs
