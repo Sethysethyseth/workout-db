@@ -31,6 +31,25 @@
 4. Confirm prod Render serving cleanly post-recovery.
 5. Low-priority: redundant spare stash on `ui-palettes-v2` (`WIP unrelated to ui-palettes-v2 merge`, July 1) — `git stash drop` once confirmed unneeded.
 
+## Session log (July 2 late — task-queue pilot scaffolding, Claude Code)
+
+- **File-dispatched task queue created (`docs/tasks/`):** README (protocol:
+  author -> dispatch-by-pointer-line -> execute -> review/land; Mode 1
+  serialized relay first, Mode 2 parallel worktrees after ~3 clean units),
+  QUEUE.md (status index, single writer = Claude Code), _TEMPLATE.md
+  (unit-scale block with standing no-git/no-state footer + MODEL/MODE
+  headers). Replaces chat-pasting task blocks into Cursor; Seth dispatches
+  with one pointer line.
+- **RUNBOOK section 8 added:** parallel worktree ritual (worktrees under
+  `C:\dev\worktrees\`, outside OneDrive; create/review/land/cleanup).
+  Old section 8 (safety invariants) renumbered to 9.
+- **`docs/specs/poor-mans-agentic-workflow.md` created:** tracking doc for a
+  FUTURE public repo (Seth's idea: "$40/mo agentic workflow" - Claude Pro +
+  Cursor Pro vs Claude Max). Not publishing yet; append to its log whenever
+  the workflow changes so the public repo can be extracted later.
+- No task blocks authored yet - next real Cursor-suited units (A5/A6) are
+  blocked on A4 FK design; QUEUE.md lists candidates.
+
 ## Session log (July 2 evening — B6 built + smoked, Claude Code solo, autonomous)
 
 - **B6 matched-effort progression DONE + committed (`94a1fbf`), pushed, on-device smoked.**

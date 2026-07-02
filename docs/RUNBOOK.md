@@ -146,7 +146,55 @@ git log -1 --format="%an <%ae>%n%B"
 
 ---
 
-## 8. Safety invariants (never violate)
+## 8. Parallel worktree ritual (task-queue Mode 2)
+
+For running Cursor in an isolated checkout while Claude Code works the main
+tree. Protocol + when this is allowed: `docs/tasks/README.md`. Worktrees live
+OUTSIDE OneDrive (avoids sync-lag/file-lock class of bugs).
+
+### Create (before dispatching the block)
+
+```powershell
+New-Item -ItemType Directory -Force C:\dev\worktrees
+git worktree add C:\dev\worktrees\<unit-id> -b unit/<unit-id> <base-branch>
+```
+```
+# Open Cursor at C:\dev\worktrees\<unit-id> (File -> Open Folder).
+# node_modules are NOT shared - inside the worktree run npm install in
+# server/ and client/ (installs from existing lockfiles; not a gate item).
+# The task block's MODE line must name this path + branch.
+```
+
+### Review + land (Claude Code, from the main checkout)
+
+```powershell
+git diff <base-branch>..unit/<unit-id> --stat
+git diff <base-branch>..unit/<unit-id>
+```
+```
+# Fix-or-bounce. Small fixes: edit IN THE WORKTREE, commit there on
+# unit/<unit-id> (SHA-verify). Then merge into the integration branch:
+```
+```powershell
+git checkout <base-branch>
+git merge --ff-only unit/<unit-id>
+git log -1 --oneline
+```
+
+### Cleanup
+
+```powershell
+git worktree remove C:\dev\worktrees\<unit-id>
+```
+```
+# Branch deletion (git branch -d unit/<unit-id>) is gate item 4 - ask first.
+# Merged unit branches can also just accumulate; deletion is hygiene, not
+# required.
+```
+
+---
+
+## 9. Safety invariants (never violate)
 
 - `server/.env` → staging or localhost only. Never prod.
 - Never paste prod connection strings into local files or ad-hoc CLI. Prod SQL = Neon SQL editor only.

@@ -70,6 +70,9 @@ Rebrand text lives in: rendered UI, `<title>`, PWA manifest name fields.
   any value change.
 - `docs/HANDOFF.md` - current state + next unit, rewritten every session.
   THE work-state channel for all agents.
+- `docs/tasks/` - file-dispatched task queue: Claude Code authors unit blocks
+  as files, Seth points Cursor at one, Cursor executes it verbatim. Protocol
+  in its README; Cursor never edits anything under `docs/tasks/`.
 - `docs/RUNBOOK.md` - copy-paste command rituals (schema deploys, merges, etc.)
 - `docs/specs/` - architecture specs (analytics engine, schema sentinel)
 - `WORKOUTDB_MASTER_PROMPT_17.md` - full stable context for planning work
