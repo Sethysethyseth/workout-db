@@ -44,6 +44,9 @@ server/node_modules/.cache/
 # Local scratch files
 cookies.txt
 
+# Playwright MCP session artifacts (agent browser snapshots/logs)
+.playwright-mcp/
+
 # Codebase export artifacts (scripts/export-codebase.mjs output)
 _tmp-export/
 ai-export/
