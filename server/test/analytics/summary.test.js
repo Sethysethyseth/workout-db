@@ -67,6 +67,29 @@ describe("buildSummary", () => {
     }
   });
 
+  test("perExercise entries carry matchedEffortTrend through buildSummary", () => {
+    // Two bench sessions at the same RIR so the trend is non-null.
+    const fixtures = resolvedFixtures().concat(
+      enrichSet({
+        exerciseName: BENCH,
+        weight: 105,
+        reps: 5,
+        rir: 2,
+        performedAt: "2026-06-12T10:00:00Z",
+      })
+    );
+
+    const summary = buildSummary(fixtures, { from, to });
+    for (const entry of summary.perExercise) {
+      expect(entry).toHaveProperty("matchedEffortTrend");
+    }
+    const bench = summary.perExercise.find((e) =>
+      /Bench Press/.test(e.name)
+    );
+    expect(bench.matchedEffortTrend.rir).toBe(2);
+    expect(bench.matchedEffortTrend.sessions).toBe(2);
+  });
+
   test("prs and execution are empty arrays", () => {
     const summary = buildSummary(resolvedFixtures(), { from, to });
     expect(summary.prs).toEqual([]);

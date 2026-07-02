@@ -17,6 +17,8 @@ const HOW_STIMULATING_SETS =
   "Attribution fraction × a stimulus multiplier from the set's RIR — sets closer to failure count for more. Sets logged without RIR are excluded from this number.";
 const HOW_BEST_E1RM =
   "Estimated 1-rep max from weight × reps using the Epley formula. It's an estimate of strength, not a tested max.";
+const HOW_MATCHED_EFFORT =
+  "Compares your estimated 1RM only across sets you took at the same RIR, so progress shows up even when you never max out. Uses the RIR you log most often for this exercise; needs 2 or more sessions at the same RIR.";
 
 function toDateOnlyString(d) {
   const y = d.getFullYear();
@@ -49,6 +51,22 @@ function E1rmTrendCell({ trend }) {
     <span>
       {sign}
       {formatKg(Math.abs(trend.delta))}
+    </span>
+  );
+}
+
+function MatchedEffortCell({ trend }) {
+  if (!trend) {
+    return <span className="analytics-unlock">log RIR across 2+ sessions</span>;
+  }
+  const sign = trend.delta >= 0 ? "+" : "-";
+  return (
+    <span>
+      {sign}
+      {formatKg(Math.abs(trend.delta))}{" "}
+      <span className="muted small">
+        @ {trend.rir} RIR · {trend.sessions} sessions
+      </span>
     </span>
   );
 }
@@ -122,6 +140,10 @@ function PerExerciseSection({ perExercise }) {
                 <HowCalculatedButton title="Best e1RM" copy={HOW_BEST_E1RM} />
               </th>
               <th scope="col">e1RM trend</th>
+              <th scope="col">
+                <span>Matched effort</span>{" "}
+                <HowCalculatedButton title="Matched effort" copy={HOW_MATCHED_EFFORT} />
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -144,6 +166,9 @@ function PerExerciseSection({ perExercise }) {
                 </td>
                 <td>
                   <E1rmTrendCell trend={ex.e1rmTrend} />
+                </td>
+                <td>
+                  <MatchedEffortCell trend={ex.matchedEffortTrend} />
                 </td>
               </tr>
             ))}

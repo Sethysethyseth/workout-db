@@ -18,6 +18,11 @@ function enrichSet(rawSet) {
       rawSet.performedAt instanceof Date
         ? rawSet.performedAt
         : new Date(rawSet.performedAt),
+    input: {
+      weight: rawSet.weight ?? null,
+      reps: rawSet.reps ?? null,
+      rir: rawSet.rir ?? null,
+    },
     resolution,
     attribution,
     metrics,

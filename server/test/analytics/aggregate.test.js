@@ -203,12 +203,39 @@ describe("aggregateExerciseMetrics", () => {
       "2026-06-09T10:00:00.000Z"
     );
 
-    // weight/reps are algebraically recovered from tonnage + epley (exact
-    // inverse of the formulas that produced them), not fabricated. rir is
-    // genuinely unrecoverable (lossy stimulus-curve mapping) and stays null.
-    expect(bench.bestSet.weight).toBeCloseTo(110, 6);
-    expect(bench.bestSet.reps).toBeCloseTo(5, 6);
-    expect(bench.bestSet.rir).toBeNull();
+    // weight/reps/rir come straight from the enriched set's carried input.
+    expect(bench.bestSet.weight).toBe(110);
+    expect(bench.bestSet.reps).toBe(5);
+    expect(bench.bestSet.rir).toBe(1);
+
+    // Both sessions are at different RIRs (2 then 1), so no bucket reaches
+    // 2 sessions -> matched-effort trend honestly degrades to null.
+    expect(bench.matchedEffortTrend).toBeNull();
+  });
+
+  test("matchedEffortTrend is computed per exercise from same-RIR sessions", () => {
+    const sets = [
+      enrichSet({
+        exerciseName: BENCH,
+        weight: 100,
+        reps: 5,
+        rir: 2,
+        performedAt: "2026-06-02T10:00:00Z",
+      }),
+      enrichSet({
+        exerciseName: BENCH,
+        weight: 105,
+        reps: 5,
+        rir: 2,
+        performedAt: "2026-06-09T10:00:00Z",
+      }),
+    ];
+
+    const result = aggregateExerciseMetrics(sets, { from, to });
+    const trend = result[0].matchedEffortTrend;
+    expect(trend.rir).toBe(2);
+    expect(trend.sessions).toBe(2);
+    expect(trend.delta).toBeCloseTo(5 * (1 + 5 / 30), 6);
   });
 
   test("unresolved exerciseName is excluded from output entirely", () => {

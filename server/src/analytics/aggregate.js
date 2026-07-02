@@ -1,3 +1,5 @@
+const { computeMatchedEffortTrend } = require("./matchedEffort");
+
 const MS_PER_WEEK = 7 * 24 * 60 * 60 * 1000;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
@@ -132,23 +134,22 @@ function aggregateExerciseMetrics(enrichedSets, { from, to }) {
       const best = bestSetEnriched.metrics.e1rm.epley;
 
       e1rmTrend = { first, latest, best, delta: latest - first };
-      // weight/reps are exactly recoverable from metrics already present on
-      // the enriched set (tonnage = weight*reps, epley = weight + tonnage/30),
-      // so no change to enrichSet.js/setMetrics.js is needed. rir is NOT
-      // recoverable - the stimulus curve is a lossy many-to-one mapping - so
-      // it stays null rather than guessing.
-      const bestTonnage = bestSetEnriched.metrics.tonnage;
-      const bestWeight = best - bestTonnage / 30;
       bestSet = {
-        weight: bestWeight,
-        reps: bestTonnage / bestWeight,
-        rir: null,
+        weight: bestSetEnriched.input.weight,
+        reps: bestSetEnriched.input.reps,
+        rir: bestSetEnriched.input.rir,
         performedAt: bestSetEnriched.performedAt,
         e1rm: bestSetEnriched.metrics.e1rm,
       };
     }
 
-    result.push({ exerciseId, name: g.name, e1rmTrend, bestSet });
+    result.push({
+      exerciseId,
+      name: g.name,
+      e1rmTrend,
+      bestSet,
+      matchedEffortTrend: computeMatchedEffortTrend(sorted),
+    });
   }
 
   return result.sort((a, b) => a.name.localeCompare(b.name));
