@@ -22,6 +22,8 @@ function enrichSet(rawSet) {
       weight: rawSet.weight ?? null,
       reps: rawSet.reps ?? null,
       rir: rawSet.rir ?? null,
+      order: rawSet.order ?? null,
+      templateExerciseId: rawSet.templateExerciseId ?? null,
     },
     resolution,
     attribution,

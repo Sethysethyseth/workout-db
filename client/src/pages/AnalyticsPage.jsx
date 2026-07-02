@@ -19,6 +19,8 @@ const HOW_BEST_E1RM =
   "Estimated 1-rep max from weight × reps using the Epley formula. It's an estimate of strength, not a tested max.";
 const HOW_MATCHED_EFFORT =
   "Compares your estimated 1RM only across sets you took at the same RIR, so progress shows up even when you never max out. Uses the RIR you log most often for this exercise; needs 2 or more sessions at the same RIR.";
+const HOW_EXECUTION =
+  "Your logged sets compared against the template they were logged from, set by set. Load = actual ÷ planned weight. Volume = sets done ÷ sets planned. Effort drift = actual RIR − planned RIR (positive means you stopped earlier than planned). Only sets logged from a template count — block plans aren't linked yet.";
 
 function toDateOnlyString(d) {
   const y = d.getFullYear();
@@ -207,6 +209,73 @@ function BalanceSection({ balance }) {
   );
 }
 
+function formatAdherence(value) {
+  if (value === null) return <span className="muted small">not enough data</span>;
+  return `${Math.round(value * 100)}%`;
+}
+
+function EffortDriftCell({ value }) {
+  if (value === null) {
+    return <span className="analytics-unlock">plan + log RIR to unlock</span>;
+  }
+  if (value === 0) return <span>on target</span>;
+  const sign = value > 0 ? "+" : "-";
+  return (
+    <span>
+      {sign}
+      {Math.abs(value)} RIR{" "}
+      <span className="muted small">{value > 0 ? "sandbagging" : "overreaching"}</span>
+    </span>
+  );
+}
+
+function ExecutionSection({ execution }) {
+  return (
+    <section className="card analytics-table-card">
+      <div className="analytics-card-head stack">
+        <h2>
+          Execution{" "}
+          <HowCalculatedButton title="Execution" copy={HOW_EXECUTION} />
+        </h2>
+        <p className="muted small analytics-card-sub">
+          Plan vs. actual for sets logged from a template.
+        </p>
+      </div>
+      {execution.length === 0 ? (
+        <p className="muted small analytics-card-sub" style={{ margin: 0 }}>
+          Log workouts from a template with planned sets to unlock execution
+          fidelity.
+        </p>
+      ) : (
+        <div className="table-scroll">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th scope="col">Exercise</th>
+                <th scope="col">Load</th>
+                <th scope="col">Volume</th>
+                <th scope="col">Effort drift</th>
+              </tr>
+            </thead>
+            <tbody>
+              {execution.map((ex) => (
+                <tr key={ex.exerciseId}>
+                  <td>{ex.name}</td>
+                  <td>{formatAdherence(ex.loadAdherence)}</td>
+                  <td>{formatAdherence(ex.volumeAdherence)}</td>
+                  <td>
+                    <EffortDriftCell value={ex.effortDrift} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </section>
+  );
+}
+
 function DataQualitySection({ meta }) {
   return (
     <section className="card stack">
@@ -300,6 +369,7 @@ export function AnalyticsPage() {
           <>
             <PerMuscleSection perMuscle={summary.perMuscle} />
             <PerExerciseSection perExercise={summary.perExercise} />
+            <ExecutionSection execution={summary.execution ?? []} />
             <BalanceSection balance={summary.balance} />
             <DataQualitySection meta={summary.meta} />
           </>

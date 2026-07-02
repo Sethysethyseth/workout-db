@@ -10,6 +10,7 @@ const {
 } = require("./setMetrics");
 const { enrichSet } = require("./enrichSet");
 const { computeMatchedEffortTrend } = require("./matchedEffort");
+const { computeExecutionFidelity } = require("./planVsActual");
 const {
   aggregateMuscleVolume,
   aggregateExerciseMetrics,
@@ -31,6 +32,7 @@ module.exports = {
   computeTonnage,
   enrichSet,
   computeMatchedEffortTrend,
+  computeExecutionFidelity,
   aggregateMuscleVolume,
   aggregateExerciseMetrics,
   computeBalanceRatios,

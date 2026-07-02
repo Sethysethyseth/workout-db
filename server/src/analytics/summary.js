@@ -6,6 +6,7 @@ const {
   filterInRange,
   toDate,
 } = require("./aggregate");
+const { computeExecutionFidelity } = require("./planVsActual");
 
 function round2(n) {
   return Math.round(n * 100) / 100;
@@ -16,7 +17,7 @@ const HONESTY_FRONT_REAR_DELT =
 const HONESTY_PR_DETECTION =
   "PR detection (tracked-vs-estimated) is not yet implemented; it requires full lift history beyond the selected range.";
 
-function buildSummary(enrichedSets, { from, to }) {
+function buildSummary(enrichedSets, { from, to, planLookup }) {
   const weeks = computeWeeksInRange(from, to);
   const perMuscle = aggregateMuscleVolume(enrichedSets, { from, to });
 
@@ -41,6 +42,7 @@ function buildSummary(enrichedSets, { from, to }) {
   const balance = computeBalanceRatios(perMuscle);
 
   const inRange = filterInRange(enrichedSets, { from, to });
+  const execution = computeExecutionFidelity(inRange, planLookup);
   const attributedInRange = inRange.filter((s) => s.attribution.attributed);
 
   const rirCoverage =
@@ -70,7 +72,7 @@ function buildSummary(enrichedSets, { from, to }) {
     perExercise,
     prs: [],
     balance,
-    execution: [],
+    execution,
     meta: { rirCoverage, honestyNotes },
   };
 }

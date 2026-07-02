@@ -70,11 +70,26 @@ async function getSummary(req, res, next) {
             sessionExercise: {
               select: {
                 exerciseName: true,
+                templateExerciseId: true,
+                templateExercise: {
+                  select: {
+                    id: true,
+                    templateSets: {
+                      select: { order: true, reps: true, weight: true, rir: true },
+                      orderBy: { order: "asc" },
+                    },
+                  },
+                },
               },
             },
             templateExercise: {
               select: {
+                id: true,
                 exerciseName: true,
+                templateSets: {
+                  select: { order: true, reps: true, weight: true, rir: true },
+                  orderBy: { order: "asc" },
+                },
               },
             },
           },
@@ -83,8 +98,16 @@ async function getSummary(req, res, next) {
     });
 
     const enriched = [];
+    // templateExerciseId -> planned sets, harvested from whichever linkage
+    // path (direct set FK or via sessionExercise) surfaced the plan.
+    const planLookup = {};
     for (const session of sessions) {
       for (const set of session.sets) {
+        const planSource =
+          set.templateExercise ?? set.sessionExercise?.templateExercise ?? null;
+        if (planSource && planSource.templateSets.length > 0) {
+          planLookup[planSource.id] = planSource.templateSets;
+        }
         enriched.push(
           enrichSet({
             performedAt: session.performedAt,
@@ -99,12 +122,14 @@ async function getSummary(req, res, next) {
             weight: set.weight,
             reps: set.reps,
             rir: set.rir,
+            order: set.order,
+            templateExerciseId: planSource ? planSource.id : null,
           })
         );
       }
     }
 
-    return res.json(buildSummary(enriched, { from, to }));
+    return res.json(buildSummary(enriched, { from, to, planLookup }));
   } catch (err) {
     return next(err);
   }

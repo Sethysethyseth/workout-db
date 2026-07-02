@@ -201,6 +201,70 @@ describe("GET /analytics/summary", () => {
     expect(res.body.meta.rirCoverage).toBe(1);
   });
 
+  test("execution fidelity: template-started session compares actual vs planned sets", async () => {
+    const agent = request.agent(app);
+    await registerAndLogin(agent, {
+      email: "analytics-execution@example.com",
+      password: "password123",
+    });
+
+    // Plan: 3 x 100 kg x 8 @ RIR 2.
+    const createdTemplate = await agent.post("/templates").send({
+      name: "Push Day",
+      exercises: [
+        {
+          exerciseName: BENCH,
+          sets: [
+            { order: 1, reps: 8, weight: 100, rir: 2 },
+            { order: 2, reps: 8, weight: 100, rir: 2 },
+            { order: 3, reps: 8, weight: 100, rir: 2 },
+          ],
+        },
+      ],
+    });
+    expect(createdTemplate.status).toBe(201);
+    const templateId = createdTemplate.body.template.id;
+
+    const started = await agent.post(`/sessions/start/${templateId}`).send({});
+    expect(started.status).toBe(201);
+    const sessionId = started.body.session.id;
+    const sessionExerciseId = started.body.session.sessionExercises[0].id;
+
+    // Actual: only 2 sets, lighter, one RIR above plan (sandbagging).
+    const actualSets = [
+      { weight: 95, reps: 8, rir: 3 },
+      { weight: 95, reps: 8, rir: 3 },
+    ];
+    let order = 1;
+    for (const set of actualSets) {
+      const res = await agent.post(`/sessions/${sessionId}/sets`).send({
+        sessionExerciseId,
+        order: order++,
+        ...set,
+      });
+      expect(res.status).toBe(201);
+    }
+
+    const patched = await agent.patch(`/sessions/${sessionId}`).send({
+      performedAt: "2026-06-10T10:00:00.000Z",
+    });
+    expect(patched.status).toBe(200);
+
+    const res = await agent.get("/analytics/summary").query({
+      from: "2026-06-01",
+      to: "2026-06-15",
+    });
+
+    expect(res.status).toBe(200);
+    expect(res.body.execution).toHaveLength(1);
+    const row = res.body.execution[0];
+    expect(row.name).toBe(BENCH);
+    expect(row.loadAdherence).toBe(0.95); // 95 / 100
+    expect(row.volumeAdherence).toBe(0.67); // 2 / 3
+    expect(row.effortDrift).toBe(1); // rir 3 actual vs 2 planned
+    expect(row.sessions).toBe(1);
+  });
+
   test("date-only `to` is inclusive: a session at 18:00 on the `to` date is counted", async () => {
     const agent = request.agent(app);
     await registerAndLogin(agent, {
