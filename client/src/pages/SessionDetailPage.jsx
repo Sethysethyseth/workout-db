@@ -383,7 +383,10 @@ const SessionSetRow = memo(function SessionSetRow({
       notes: set.notes ?? "",
     };
     if (rootRef.current?.contains(document.activeElement)) {
-      lastSentKeyRef.current = payloadKey(payloadFromDraft(draftRef.current));
+      // Record what the SERVER now holds, not the local draft: the draft may
+      // already contain unsent keystrokes, and keying them as "sent" would
+      // silently suppress their flush on blur/debounce (lost-reps bug).
+      lastSentKeyRef.current = payloadKey(payloadFromDraft(next));
       return;
     }
     setDraft(next);
@@ -401,14 +404,32 @@ const SessionSetRow = memo(function SessionSetRow({
     if (k === lastSentKeyRef.current) return;
     promotingRef.current = true;
     try {
-      await onPromoteDraft(cur);
+      const created = await onPromoteDraft(cur);
       lastSentKeyRef.current = k;
+      // Keystrokes that land while the POST is in flight would otherwise be
+      // dropped when this draft row unmounts (its pending re-promote timer is
+      // cleared) - patch them onto the set the promotion just created.
+      if (created && created.id != null && onUpdateSet) {
+        const latest = draftRef.current;
+        const latestKey = payloadKey(promotionPayloadFromDraft(latest));
+        if (latestKey !== k) {
+          lastSentKeyRef.current = latestKey;
+          onUpdateSet(created.id, {
+            order: created.order,
+            reps: latest.reps === "" ? "" : Number(latest.reps),
+            weight: latest.weight === "" ? "" : Number(latest.weight),
+            rpe: latest.rpe === "" ? "" : Number(latest.rpe),
+            rir: latest.rir === "" ? "" : Number(latest.rir),
+            notes: latest.notes === "" ? "" : latest.notes,
+          });
+        }
+      }
     } catch {
       lastSentKeyRef.current = null;
     } finally {
       promotingRef.current = false;
     }
-  }, [isDraft, onPromoteDraft]);
+  }, [isDraft, onPromoteDraft, onUpdateSet]);
 
   function flushNow() {
     if (isDraft || disabled) return;
@@ -951,6 +972,7 @@ function SessionExerciseBlock({
                     useSetNotes={useSetNotes}
                     onInteractStart={onActivateExercise}
                     onPromoteDraft={(d) => onPromoteDraftSet(se.id, d)}
+                    onUpdateSet={onUpdateSet}
                   />
                 </div>
               )
@@ -1317,11 +1339,32 @@ export function SessionDetailPage() {
     });
   }, [scrollToExerciseId, session?.sessionExercises]);
 
+  const pendingSetSavesRef = useRef(new Set());
+  const setPatchChainsRef = useRef(new Map());
+
+  const trackSetSave = useCallback((promise) => {
+    const pending = pendingSetSavesRef.current;
+    pending.add(promise);
+    const drop = () => pending.delete(promise);
+    promise.then(drop, drop);
+    return promise;
+  }, []);
+
   async function onComplete() {
     if (completeBusy) return;
     setError(null);
     setCompleteBusy(true);
     try {
+      // Commit the field being typed in (blur fires its save synchronously),
+      // then drain every in-flight set write - completing must not race or
+      // silently drop the last keystrokes. Loop because a draft promotion can
+      // enqueue a follow-up patch while we wait.
+      if (document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur();
+      }
+      while (pendingSetSavesRef.current.size > 0) {
+        await Promise.allSettled(Array.from(pendingSetSavesRef.current));
+      }
       const payload = (() => {
         if (!session || session.workoutTemplate) return {};
         const trimmed = quickTitleDraft.trim();
@@ -1400,9 +1443,10 @@ export function SessionDetailPage() {
         const data = await sessionApi.createSet(sessionId, body);
         if (data?.set) {
           appendSetRow(data.set);
-        } else {
-          await load();
+          return data.set;
         }
+        await load();
+        return null;
       } catch (err) {
         setError(err);
         await load();
@@ -1410,6 +1454,11 @@ export function SessionDetailPage() {
       }
     },
     [sessionId, appendSetRow, load]
+  );
+
+  const promoteDraftSetTracked = useCallback(
+    (sessionExerciseId, draft) => trackSetSave(promoteDraftSet(sessionExerciseId, draft)),
+    [promoteDraftSet, trackSetSave]
   );
 
   async function onAdjustSetCountForExercise(sessionExerciseId, targetCount) {
@@ -1485,7 +1534,7 @@ export function SessionDetailPage() {
     }
   }
 
-  const onUpdateSet = useCallback(async (setId, patch) => {
+  const applyUpdateSet = useCallback(async (setId, patch) => {
     setError(null);
     try {
       const data = await sessionApi.updateSet(setId, patch);
@@ -1515,6 +1564,27 @@ export function SessionDetailPage() {
       await load();
     }
   }, [load]);
+
+  // Rapid entry fires PATCHes for the same set in quick succession; each one
+  // carries the full row, so out-of-order arrival lets an older payload win.
+  // Chain per set id to guarantee server-side ordering, and track every
+  // in-flight write so onComplete can drain them before completing.
+  const onUpdateSet = useCallback(
+    (setId, patch) => {
+      const chains = setPatchChainsRef.current;
+      const prev = chains.get(setId) ?? Promise.resolve();
+      const next = prev.then(() => applyUpdateSet(setId, patch));
+      chains.set(
+        setId,
+        next.then(
+          () => {},
+          () => {}
+        )
+      );
+      return trackSetSave(next);
+    },
+    [applyUpdateSet, trackSetSave]
+  );
 
   const onDeleteSet = useCallback(
     async (setId) => {
@@ -1894,7 +1964,7 @@ export function SessionDetailPage() {
                       onExerciseCommitted={mergeSessionExerciseRow}
                       onSaved={load}
                       onCreateSet={onCreateSetForExercise}
-                      onPromoteDraftSet={promoteDraftSet}
+                      onPromoteDraftSet={promoteDraftSetTracked}
                       onUpdateSet={onUpdateSet}
                       onDeleteSet={onDeleteSet}
                       onDeleteExercise={onDeleteExercise}
