@@ -7,12 +7,13 @@ const {
 const BENCH = "Barbell Bench Press - Medium Grip";
 const BENCH_ID = "Barbell_Bench_Press_-_Medium_Grip";
 
-function benchSet({ weight, reps, rir, order, templateExerciseId, performedAt }) {
+function benchSet({ weight, reps, rir, rpe, order, templateExerciseId, performedAt }) {
   return enrichSet({
     exerciseName: BENCH,
     weight,
     reps,
     rir,
+    rpe,
     order,
     templateExerciseId,
     performedAt,
@@ -94,6 +95,32 @@ describe("computeExecutionFidelity", () => {
     expect(row.loadAdherence).toBeNull();
     expect(row.effortDrift).toBeNull();
     expect(row.volumeAdherence).toBe(1);
+  });
+
+  test("effort pooling: actual RPE 8 vs planned RIR 2 -> drift 0", () => {
+    const sets = [
+      benchSet({ weight: 100, reps: 8, rpe: 8, order: 1, templateExerciseId: 7, performedAt: "2026-06-02T10:00:00Z" }),
+    ];
+    const [row] = computeExecutionFidelity(sets, PLAN);
+    expect(row.effortDrift).toBe(0);
+  });
+
+  test("effort pooling: actual RPE 9 vs planned RIR 2 -> drift -1 (overreaching)", () => {
+    const sets = [
+      benchSet({ weight: 100, reps: 8, rpe: 9, order: 1, templateExerciseId: 7, performedAt: "2026-06-02T10:00:00Z" }),
+    ];
+    const [row] = computeExecutionFidelity(sets, PLAN);
+    expect(row.effortDrift).toBe(-1);
+  });
+
+  test("effort pooling: RPE-planned sets pair with RIR-logged actuals", () => {
+    const planRpe = { 7: [{ order: 1, reps: 8, weight: 100, rir: null, rpe: 8 }] };
+    const sets = [
+      benchSet({ weight: 100, reps: 8, rir: 3, order: 1, templateExerciseId: 7, performedAt: "2026-06-02T10:00:00Z" }),
+    ];
+    const [row] = computeExecutionFidelity(sets, planRpe);
+    // Planned RPE 8 -> effort 2; actual RIR 3 -> +1 (sandbagging).
+    expect(row.effortDrift).toBe(1);
   });
 
   test("sets without templateExerciseId, unresolved sets, and unknown plan ids are excluded", () => {

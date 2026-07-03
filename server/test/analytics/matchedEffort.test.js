@@ -2,8 +2,8 @@ const { enrichSet, computeMatchedEffortTrend } = require("../../src/analytics");
 
 const BENCH = "Barbell Bench Press - Medium Grip";
 
-function benchSet({ weight, reps, rir, performedAt }) {
-  return enrichSet({ exerciseName: BENCH, weight, reps, rir, performedAt });
+function benchSet({ weight, reps, rir, rpe, performedAt }) {
+  return enrichSet({ exerciseName: BENCH, weight, reps, rir, rpe, performedAt });
 }
 
 describe("computeMatchedEffortTrend", () => {
@@ -108,6 +108,38 @@ describe("computeMatchedEffortTrend", () => {
 
   test("empty input -> null", () => {
     expect(computeMatchedEffortTrend([])).toBeNull();
+  });
+
+  test("RIR and RPE pool into one bucket: RIR 2 and RPE 8 match", () => {
+    const sets = [
+      benchSet({ weight: 100, reps: 8, rir: 2, performedAt: "2026-05-01T10:00:00Z" }),
+      benchSet({ weight: 102.5, reps: 8, rpe: 8, performedAt: "2026-05-08T10:00:00Z" }),
+    ];
+
+    const trend = computeMatchedEffortTrend(sets);
+    expect(trend).not.toBeNull();
+    expect(trend.rir).toBe(2);
+    expect(trend.sessions).toBe(2);
+    expect(trend.delta).toBeCloseTo(2.5 * (1 + 8 / 30), 10);
+  });
+
+  test("fractional RPE forms its own bucket: 8.5 (-> 1.5) does not match RIR 2", () => {
+    const sets = [
+      benchSet({ weight: 100, reps: 8, rir: 2, performedAt: "2026-05-01T10:00:00Z" }),
+      benchSet({ weight: 102.5, reps: 8, rpe: 8.5, performedAt: "2026-05-08T10:00:00Z" }),
+    ];
+    expect(computeMatchedEffortTrend(sets)).toBeNull();
+  });
+
+  test("two fractional-RPE sessions at the same value form a trend", () => {
+    const sets = [
+      benchSet({ weight: 100, reps: 8, rpe: 8.5, performedAt: "2026-05-01T10:00:00Z" }),
+      benchSet({ weight: 102.5, reps: 8, rpe: 8.5, performedAt: "2026-05-08T10:00:00Z" }),
+    ];
+    const trend = computeMatchedEffortTrend(sets);
+    expect(trend).not.toBeNull();
+    expect(trend.rir).toBe(1.5);
+    expect(trend.sessions).toBe(2);
   });
 
   test("RIR 0 is a valid bucket (not treated as missing)", () => {

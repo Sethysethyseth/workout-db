@@ -3,6 +3,7 @@ const { normalizeExerciseName } = require("./normalize");
 const { resolveExercise } = require("./resolve");
 const { attributeSet } = require("./attribution");
 const { getStimulusMultiplier } = require("./stimulusCurve");
+const { deriveEffortRir } = require("./effort");
 const {
   computeSetMetrics,
   estimateOneRepMax,
@@ -27,6 +28,7 @@ module.exports = {
   resolveExercise,
   attributeSet,
   getStimulusMultiplier,
+  deriveEffortRir,
   computeSetMetrics,
   estimateOneRepMax,
   computeTonnage,

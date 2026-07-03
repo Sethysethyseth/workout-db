@@ -198,7 +198,41 @@ describe("GET /analytics/summary", () => {
     expect(res.body.execution).toEqual([]);
     expect(Array.isArray(res.body.meta.honestyNotes)).toBe(true);
     // The single set carries RIR, so coverage is complete.
-    expect(res.body.meta.rirCoverage).toBe(1);
+    expect(res.body.meta.effortCoverage).toBe(1);
+  });
+
+  test("RPE-only sets feed the pooled effort signal end to end", async () => {
+    const agent = request.agent(app);
+    await registerAndLogin(agent, {
+      email: "analytics-rpe@example.com",
+      password: "password123",
+    });
+
+    // One RPE-only set (RPE 8 -> derived RIR 2 -> 0.95 stimulus tier) and
+    // one set with no effort signal at all.
+    await logSession(agent, {
+      performedAt: "2026-06-10T10:00:00.000Z",
+      exerciseName: BENCH,
+      sets: [
+        { weight: 100, reps: 5, rpe: 8 },
+        { weight: 80, reps: 10 },
+      ],
+    });
+
+    const res = await agent.get("/analytics/summary").query({
+      from: "2026-06-01",
+      to: "2026-06-15",
+    });
+
+    expect(res.status).toBe(200);
+    // The RPE set produces stimulating volume (would be null if RPE were
+    // ignored, since the other set has no effort signal either).
+    const chest = res.body.perMuscle.find((m) => m.muscle === "chest");
+    expect(chest).toBeDefined();
+    expect(chest.stimulatingSets).not.toBeNull();
+    expect(chest.stimulatingSets).toBeGreaterThan(0);
+    // 1 of 2 sets carries an effort signal.
+    expect(res.body.meta.effortCoverage).toBe(0.5);
   });
 
   test("execution fidelity: template-started session compares actual vs planned sets", async () => {

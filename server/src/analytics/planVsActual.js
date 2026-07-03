@@ -9,6 +9,8 @@
 // actual sets count toward volume but have no pair; missed planned sets
 // lower volume adherence.
 
+const { deriveEffortRir } = require("./effort");
+
 function round2(n) {
   return Math.round(n * 100) / 100;
 }
@@ -19,13 +21,14 @@ function mean(values) {
 }
 
 // enrichedSets: the full enriched range (any exercises). planLookup:
-// { [templateExerciseId]: [{ order, reps, weight, rir }] } - the planned
-// sets for every templateExercise referenced in range. Returns one row per
-// resolved exercise that has at least one plan-linked set:
+// { [templateExerciseId]: [{ order, reps, weight, rir, rpe }] } - the
+// planned sets for every templateExercise referenced in range. Returns one
+// row per resolved exercise that has at least one plan-linked set:
 // { exerciseId, name, loadAdherence, volumeAdherence, effortDrift, sessions }
 // loadAdherence/volumeAdherence are ratios (1 = exactly on plan),
-// effortDrift is actual RIR - planned RIR (positive = sandbagging). Each is
-// null when no pair in range carries the data it needs.
+// effortDrift is actual effort - planned effort on the RIR scale (positive =
+// sandbagging); both sides pool RIR/RPE via deriveEffortRir. Each is null
+// when no pair in range carries the data it needs.
 function computeExecutionFidelity(enrichedSets, planLookup) {
   if (!planLookup) return [];
 
@@ -87,8 +90,12 @@ function computeExecutionFidelity(enrichedSets, planLookup) {
       if (actual.weight != null && planned.weight != null && planned.weight > 0) {
         a.loadRatios.push(actual.weight / planned.weight);
       }
-      if (actual.rir != null && planned.rir != null) {
-        a.effortDeltas.push(actual.rir - planned.rir);
+      const plannedEffort = deriveEffortRir({
+        rir: planned.rir,
+        rpe: planned.rpe,
+      });
+      if (actual.effortRir != null && plannedEffort != null) {
+        a.effortDeltas.push(actual.effortRir - plannedEffort);
       }
     }
   }

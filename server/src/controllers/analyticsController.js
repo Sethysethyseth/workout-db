@@ -75,7 +75,7 @@ async function getSummary(req, res, next) {
                   select: {
                     id: true,
                     templateSets: {
-                      select: { order: true, reps: true, weight: true, rir: true },
+                      select: { order: true, reps: true, weight: true, rir: true, rpe: true },
                       orderBy: { order: "asc" },
                     },
                   },
@@ -87,7 +87,7 @@ async function getSummary(req, res, next) {
                 id: true,
                 exerciseName: true,
                 templateSets: {
-                  select: { order: true, reps: true, weight: true, rir: true },
+                  select: { order: true, reps: true, weight: true, rir: true, rpe: true },
                   orderBy: { order: "asc" },
                 },
               },
@@ -122,6 +122,7 @@ async function getSummary(req, res, next) {
             weight: set.weight,
             reps: set.reps,
             rir: set.rir,
+            rpe: set.rpe,
             order: set.order,
             templateExerciseId: planSource ? planSource.id : null,
           })

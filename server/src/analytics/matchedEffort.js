@@ -1,7 +1,11 @@
 // Matched-effort progression (L2): e1RM compared ONLY across sets taken at
-// the same RIR on the same exercise. Removes the effort confound that makes a
-// plain e1RM trend dishonest (a back-off set at RIR 4 and a grinder at RIR 1
-// are not comparable). Buckets match on exact integer RIR - no banding in v1.
+// the same effort on the same exercise. Removes the effort confound that
+// makes a plain e1RM trend dishonest (a back-off set at RIR 4 and a grinder
+// at RIR 1 are not comparable). Buckets match on the exact derived effort
+// value (input.effortRir - RIR, or RIR = 10 - RPE when only RPE was logged),
+// so a set logged at RIR 2 and a set logged at RPE 8 land in the SAME
+// bucket; RPE 8.5 (-> 1.5) only matches other 1.5s. No banding - unchanged
+// policy, the values just may be fractional now.
 
 // A bucket needs at least this many distinct sessions to form a trend.
 const MIN_MATCHED_SESSIONS = 2;
@@ -15,7 +19,7 @@ function computeMatchedEffortTrend(enrichedSets) {
   const buckets = new Map();
 
   for (const set of enrichedSets) {
-    const rir = set.input.rir;
+    const rir = set.input.effortRir;
     const epley = set.metrics.e1rm.epley;
     if (rir === null || epley === null) continue;
 

@@ -100,7 +100,7 @@ A single JSON document per (user, time range), the engine's public contract:
   prs: [ { exerciseId, type: 'tracked'|'estimated', ... } ],
   balance: { pushPull, quadHam, frontRearDelt },
   execution: [ { exerciseId, loadAdherence, volumeAdherence, effortDrift } ],
-  meta: { rirCoverage, honestyNotes }
+  meta: { effortCoverage, honestyNotes }
 }
 ```
 

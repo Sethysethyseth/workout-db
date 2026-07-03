@@ -45,7 +45,9 @@ function buildSummary(enrichedSets, { from, to, planLookup }) {
   const execution = computeExecutionFidelity(inRange, planLookup);
   const attributedInRange = inRange.filter((s) => s.attribution.attributed);
 
-  const rirCoverage =
+  // Share of attributed sets carrying any effort signal (RIR or RPE - the
+  // multiplier is computed from the pooled derived value).
+  const effortCoverage =
     attributedInRange.length === 0
       ? null
       : round2(
@@ -73,7 +75,7 @@ function buildSummary(enrichedSets, { from, to, planLookup }) {
     prs: [],
     balance,
     execution,
-    meta: { rirCoverage, honestyNotes },
+    meta: { effortCoverage, honestyNotes },
   };
 }
 

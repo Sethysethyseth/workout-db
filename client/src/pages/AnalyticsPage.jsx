@@ -12,15 +12,15 @@ const RANGE_PRESETS = [
 
 /* Same 1-2 sentence voice as METRIC_INTRO_COPY. */
 const HOW_EFFECTIVE_SETS =
-  "Each set counts toward a muscle by its fractional attribution from the exercise catalog (a bench set is mostly chest, partly triceps and shoulders). Counted for every set, with or without RIR.";
+  "Each set counts toward a muscle by its fractional attribution from the exercise catalog (a bench set is mostly chest, partly triceps and shoulders). Counted for every set, with or without RIR (RPE counts too: RIR = 10 − RPE).";
 const HOW_STIMULATING_SETS =
-  "Attribution fraction × a stimulus multiplier from the set's RIR — sets closer to failure count for more. Sets logged without RIR are excluded from this number.";
+  "Attribution fraction × a stimulus multiplier from the set's RIR (RPE counts too: RIR = 10 − RPE) — sets closer to failure count for more. Sets logged without RIR or RPE are excluded from this number.";
 const HOW_BEST_E1RM =
   "Estimated 1-rep max from weight × reps using the Epley formula. It's an estimate of strength, not a tested max.";
 const HOW_MATCHED_EFFORT =
-  "Compares your estimated 1RM only across sets you took at the same RIR, so progress shows up even when you never max out. Uses the RIR you log most often for this exercise; needs 2 or more sessions at the same RIR.";
+  "Compares your estimated 1RM only across sets you took at the same RIR (RPE counts too: RIR = 10 − RPE), so progress shows up even when you never max out. Uses the RIR you log most often for this exercise; needs 2 or more sessions at the same RIR.";
 const HOW_EXECUTION =
-  "Your logged sets compared against the template they were logged from, set by set. Load = actual ÷ planned weight. Volume = sets done ÷ sets planned. Effort drift = actual RIR − planned RIR (positive means you stopped earlier than planned). Only sets logged from a template count — block plans aren't linked yet.";
+  "Your logged sets compared against the template they were logged from, set by set. Load = actual ÷ planned weight. Volume = sets done ÷ sets planned. Effort drift = actual RIR − planned RIR (RPE counts too: RIR = 10 − RPE; positive means you stopped earlier than planned). Only sets logged from a template count — block plans aren't linked yet.";
 
 function toDateOnlyString(d) {
   const y = d.getFullYear();
@@ -59,7 +59,7 @@ function E1rmTrendCell({ trend }) {
 
 function MatchedEffortCell({ trend }) {
   if (!trend) {
-    return <span className="analytics-unlock">log RIR across 2+ sessions</span>;
+    return <span className="analytics-unlock">log RIR or RPE across 2+ sessions</span>;
   }
   const sign = trend.delta >= 0 ? "+" : "-";
   return (
@@ -106,7 +106,7 @@ function PerMuscleSection({ perMuscle }) {
                 <td>{m.effectiveSets}</td>
                 <td>
                   {m.stimulatingSets === null ? (
-                    <span className="analytics-unlock">log RIR to unlock</span>
+                    <span className="analytics-unlock">log RIR or RPE to unlock</span>
                   ) : (
                     m.stimulatingSets
                   )}
@@ -216,7 +216,7 @@ function formatAdherence(value) {
 
 function EffortDriftCell({ value }) {
   if (value === null) {
-    return <span className="analytics-unlock">plan + log RIR to unlock</span>;
+    return <span className="analytics-unlock">plan + log RIR or RPE to unlock</span>;
   }
   if (value === 0) return <span>on target</span>;
   const sign = value > 0 ? "+" : "-";
@@ -280,11 +280,11 @@ function DataQualitySection({ meta }) {
   return (
     <section className="card stack">
       <h2 className="analytics-section-title">Data quality</h2>
-      {meta.rirCoverage === null ? (
+      {meta.effortCoverage === null ? (
         <p className="muted analytics-card-sub">no attributed sets in range</p>
       ) : (
         <p className="analytics-card-sub">
-          RIR logged on {Math.round(meta.rirCoverage * 100)}% of sets
+          Effort (RIR or RPE) logged on {Math.round(meta.effortCoverage * 100)}% of sets
         </p>
       )}
       {Array.isArray(meta.honestyNotes) && meta.honestyNotes.length > 0 ? (

@@ -125,6 +125,33 @@ describe("buildSummary", () => {
     expect(noteMatches(withoutNote.meta.honestyNotes)).toEqual([]);
   });
 
+  test("effortCoverage counts RIR and RPE sets alike; sets without either dilute it", () => {
+    // Fixtures: bench RIR 2, bench no-effort, hamstring RIR 3 -> plus one
+    // RPE-only bench set = 3 of 4 attributed sets carrying an effort signal.
+    const fixtures = resolvedFixtures().concat(
+      enrichSet({
+        exerciseName: BENCH,
+        weight: 100,
+        reps: 5,
+        rpe: 8,
+        performedAt: "2026-06-11T10:00:00Z",
+      })
+    );
+
+    const summary = buildSummary(fixtures, { from, to });
+    expect(summary.meta.effortCoverage).toBe(0.75);
+    // effortCoverage is the only coverage field (the old name is gone).
+    expect(Object.keys(summary.meta).sort()).toEqual([
+      "effortCoverage",
+      "honestyNotes",
+    ]);
+  });
+
+  test("effortCoverage is null with no attributed sets in range", () => {
+    const summary = buildSummary([], { from, to });
+    expect(summary.meta.effortCoverage).toBeNull();
+  });
+
   test("summary object is JSON-serializable (no raw Dates)", () => {
     const summary = buildSummary(resolvedFixtures(), { from, to });
     expect(() => JSON.stringify(summary)).not.toThrow();
