@@ -4286,6 +4286,81 @@ html[data-theme="dark"] .auth-page .auth-form.card {
   min-height: 1.2em;
 }
 
+/* -- Home weekly report band -- */
+
+.weekly-report {
+  display: grid;
+  gap: 10px;
+}
+
+.weekly-report__head {
+  align-items: baseline;
+  gap: 8px 12px;
+}
+
+.weekly-report__title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.weekly-report__link {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  transition: color var(--motion-fast) var(--ease-standard);
+}
+
+.weekly-report__link:hover {
+  color: var(--color-interactive);
+}
+
+.weekly-report__stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+}
+
+.weekly-report__stat {
+  display: grid;
+  gap: 1px;
+  min-width: 72px;
+  flex: 1 1 72px;
+}
+
+.weekly-report__stat-label {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  font-size: 10px;
+}
+
+.weekly-report__stat-value {
+  font-size: 18px;
+  font-weight: 650;
+  line-height: 1.2;
+  color: var(--color-text);
+}
+
+.weekly-report__stat-value--up {
+  color: var(--color-success-text);
+}
+
+.weekly-report__stat-delta {
+  min-height: 1.1em;
+}
+
+.weekly-report__stat-delta--up {
+  color: var(--color-success-text);
+}
+
+.weekly-report__nudge {
+  margin: 0;
+}
+
 /* -- Shared chart chrome -- */
 
 .chart-legend {

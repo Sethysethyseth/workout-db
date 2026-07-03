@@ -4,6 +4,7 @@
  * matched-effort trend over the raw e1RM trend - it is the honest metric.
  */
 
+import { pickTopGain } from "../../lib/topGain.js";
 import { loadWeightUnit } from "../../lib/weightUnitPref.js";
 
 /* Display-only unit label (what the user logs in); weights are never converted. */
@@ -25,29 +26,6 @@ function StatTile({ label, value, sub, tone = null }) {
       {sub ? <span className="stat-tile-sub muted small">{sub}</span> : null}
     </div>
   );
-}
-
-function pickTopGain(perExercise) {
-  let top = null;
-  for (const ex of perExercise) {
-    const matched = ex.matchedEffortTrend;
-    const candidate =
-      matched && matched.delta > 0
-        ? { delta: matched.delta, name: ex.name, matched, honest: true }
-        : ex.e1rmTrend && ex.e1rmTrend.delta > 0
-          ? { delta: ex.e1rmTrend.delta, name: ex.name, matched: null, honest: false }
-          : null;
-    if (!candidate) continue;
-    // Matched-effort gains outrank raw-trend gains regardless of size.
-    if (
-      !top ||
-      (candidate.honest && !top.honest) ||
-      (candidate.honest === top.honest && candidate.delta > top.delta)
-    ) {
-      top = candidate;
-    }
-  }
-  return top;
 }
 
 export function StatTiles({ summary }) {

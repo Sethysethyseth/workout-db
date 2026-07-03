@@ -9,6 +9,7 @@ import { MuscleVolumeChart } from "../components/analytics/MuscleVolumeChart.jsx
 import { StrengthTrendChart } from "../components/analytics/StrengthTrendChart.jsx";
 import { Meter } from "../components/analytics/Meter.jsx";
 import { BalanceScale } from "../components/analytics/BalanceScale.jsx";
+import { toDateOnlyString } from "../lib/dateOnly.js";
 import { loadWeightUnit } from "../lib/weightUnitPref.js";
 
 const RANGE_PRESETS = [
@@ -28,13 +29,6 @@ const HOW_MATCHED_EFFORT =
   "Compares your estimated 1RM only across sets you took at the same RIR (RPE counts too: RIR = 10 − RPE), so progress shows up even when you never max out. Uses the RIR you log most often for this exercise; needs 2 or more sessions at the same RIR.";
 const HOW_EXECUTION =
   "Your logged sets compared against the template they were logged from, set by set. Load = actual ÷ planned weight. Volume = sets done ÷ sets planned. Effort drift = actual RIR − planned RIR (RPE counts too: RIR = 10 − RPE; positive means you stopped earlier than planned). Only sets logged from a template count — block plans aren't linked yet.";
-
-function toDateOnlyString(d) {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
 
 /** to = today (date-only; the endpoint treats it as inclusive end-of-day), from = to minus N*7 days. */
 function rangeForWeeks(weeks) {
