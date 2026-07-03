@@ -1,6 +1,6 @@
 # HANDOFF — current state
 
-**Updated:** July 3, 2026 (U7 smoke feedback session — Seth smoked U7 on staging: weekly report band ACCEPTED, but the Start Workout hero shows a big dead-space block (root-caused: grid `align-content: stretch` + the tab's `min-height`) -> U10 authored+queued; analytics-tab overhaul = the already-queued U8/U9. Dispatch order U10 -> U8 -> U9, serialized.)
+**Updated:** July 3, 2026 (U10/U8/U9 review session — Cursor delivered ALL THREE units in one working tree; reviewed against all three blocks, six reviewer fixes applied, committed as ONE commit `d21608c` + pushed. Seth's visual smoke of the whole wave on the staging Vercel deploy is the next step.)
 **Rule:** rewritten in place at the end of every working session. Dated, never versioned. If this file looks stale (date > ~2 weeks old), verify branch/deploy state from ground truth before trusting it.
 
 ---
@@ -30,6 +30,47 @@
 3. **Verify the manually inserted prod `_prisma_migrations` row's `checksum` matches staging's** for `20260603140000_add_user_username`. Latent hazard — check once, fix if mismatched.
 4. Confirm prod Render serving cleanly post-recovery.
 5. Low-priority: redundant spare stash on `ui-palettes-v2` (`WIP unrelated to ui-palettes-v2 merge`, July 1) — `git stash drop` once confirmed unneeded.
+
+## Session log (July 3 latest+1 — U10/U8/U9 all landed `d21608c`, Claude Code)
+
+- **Cursor executed U10, U8, AND U9 in one working tree** instead of the
+  planned one-at-a-time dispatch. Since the files were already mixed
+  (index.css and AnalyticsPage.jsx overlap across units), reviewed the
+  combined tree against all three blocks and committed as ONE commit
+  (`d21608c`, 8 files, +683/-135), pushed to `origin/analytics-engine`.
+  Scope was exact (union of the three FILES TO TOUCH lists, no extra
+  files); client build green; no hex in new CSS; no new deps; HOW_BALANCE
+  copy verified against the engine's PUSH/PULL/QUAD/HAM group constants.
+- **Six reviewer fixes applied on top of Cursor's delivery:**
+  1. `formatPlanActual` printed "100.0 lbs" — failed U9's own acceptance
+     string ("@ 100 lbs"); weights now go through the strip-trailing-.0
+     formatter. (Cursor CLAIMED this criterion passed — it did not.
+     Verify-before-trust earns its keep again.)
+  2. Verdict clause trimming: newsy clauses now outrank on-plan filler —
+     "hit every planned set and on-plan loads" was crowding out a real
+     >=1-rep effort drift, the only news in that row.
+  3. Sparkline dots: `<circle>` under `preserveAspectRatio="none"`
+     stretches into ellipses (only the line had non-scaling-stroke); dots
+     are now zero-length round-cap strokes with non-scaling-stroke.
+  4. Single-session sparkline: dot centered (was pinned to left edge) and
+     the identical first/latest value no longer prints twice.
+  5. Volume-trend last-week label was absolutely positioned past the right
+     edge of the chart grid (would overhang the card border on every row);
+     moved to a fixed 34px third grid column so rows stay aligned and
+     nothing overflows.
+  6. `EffortDriftCompact` rendered "stopped ~0 reps early sandbagging" for
+     sub-rep drifts (e.g. +0.3); those now read "on target (+0.3 RIR)".
+     Plus the U10-adjacent tone fix: the sets-delta tone now derives from
+     the ROUNDED delta so "+0.04" can't print "same as last week" in green.
+- **Acceptance evidence:** all U9 verdict/format strings verified by
+  direct node eval (6/6 pass, including the fixed weight case); client
+  `npm run build` green; U10's `align-content: start` in place with
+  `min-height` byte-identical.
+- **Next: Seth smokes the whole wave on the staging Vercel deploy of
+  `d21608c`** (home: hero dead space gone, set counts clean; analytics:
+  Bars|Trend|Table toggle, sparklines, execution planned-vs-did line +
+  verdict, balance zone band + ghost tracks — across palettes x modes).
+  After sign-off: the deferred analytics-engine -> main merge decision.
 
 ## Session log (July 3 latest — U7 smoke feedback -> U10 queued, Claude Code)
 
@@ -208,12 +249,11 @@
    session maxes — they can disagree; the U8 block therefore requires the
    strength delta chip to derive from `e1rmSeries` endpoints, not
    `e1rmTrend`.
-2. **U7 smoked by Seth — band accepted; dispatch U10 -> U8 -> U9 to
-   Cursor, ONE AT A TIME** (all three touch index.css; U8/U9 also share
-   AnalyticsPage.jsx — strictly serialized, never a Mode 2 pair). U10 =
-   home hero dead-space fix + set-count formatting (Seth's July 3 smoke
-   critiques). Seth critiques each unit's visuals on the deployed staging
-   build after it lands before dispatching the next.
+2. **U10/U8/U9 ALL LANDED (`d21608c`) + pushed — Seth smokes the wave on
+   the staging Vercel deploy** (home: hero dead space + set-count
+   formatting; analytics: volume Trend view, e1RM sparklines, execution
+   planned-vs-did + verdict, balance zone band; palettes x modes, narrow
+   viewport). The analytics UI polish wave is now code-complete.
 2. **Merge `analytics-engine` -> main DEFERRED until the visuals are locked
    in** (Seth, July 3). When ready: "push to main" verbatim, then
    one-command-at-a-time with approval. Pre-merge: Seth's personal read of

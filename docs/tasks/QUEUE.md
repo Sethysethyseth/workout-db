@@ -6,14 +6,8 @@ Statuses: DRAFT / QUEUED / DISPATCHED / AWAITING-REVIEW / LANDED <sha> / BOUNCED
 
 ## Active
 
-Dispatch order: U10 -> U8 -> U9, strictly serialized (all three touch
-client/src/index.css; U8/U9 also share AnalyticsPage.jsx). Seth critiques
-each unit's visuals on the staging Vercel deploy after it lands before
-dispatching the next.
-
-- QUEUED | u10-home-hero-dead-space.md | home layout fix (grid align-content stretch = hero dead space) + weekly-report set-count formatting | client-only; root cause pre-diagnosed in the block; from Seth's July 3 U7 staging smoke
-- QUEUED | u8-volume-trend-strength-sparklines.md | volume Bars|Trend|Table small multiples + strength e1RM sparklines off B9 series | client-only; delta chip MUST derive from e1rmSeries endpoints, not e1rmTrend
-- QUEUED | u9-execution-legibility-balance-polish.md | execution concrete plan-vs-actual line + deterministic verdict; balance zone band + ghost tracks | client-only
+(nothing dispatched - Seth smokes the U10/U8/U9 wave on the staging Vercel
+deploy of `d21608c`, then the analytics-engine -> main merge decision)
 
 ## Candidates (next units, not yet authored as blocks)
 
@@ -25,6 +19,10 @@ dispatching the next.
   schema design (Claude-tier planning, not a Cursor unit)
 
 ## Landed
+
+- LANDED d21608c | u10-home-hero-dead-space.md | home layout fix (align-content: start) + weekly-report set-count formatting | Cursor ran U10/U8/U9 in ONE working tree (against the serialized-dispatch plan) - reviewed and committed together; reviewer added the rounded-delta tone fix
+- LANDED d21608c | u8-volume-trend-strength-sparklines.md | volume Bars|Trend|Table small multiples + strength e1RM sparklines | reviewer fixes: sparkline dots as non-scaling round-cap strokes (circles stretched to ellipses under preserveAspectRatio=none), single-session dot centered + no duplicate value, mvt last-week label moved to a fixed third grid column (was overflowing the card edge)
+- LANDED d21608c | u9-execution-legibility-balance-polish.md | execution verdict + planned-vs-did line; balance zone band + ghost tracks | reviewer fixes: weight formatting in formatPlanActual failed the block's own acceptance string ("100.0 lbs" vs "100 lbs"), newsy verdict clauses now outrank on-plan filler, sub-rep effort drift no longer reads "stopped ~0 reps early"
 
 - LANDED f22989d | u7-home-weekly-report.md | weekly report band on Home (last-7-days vs prior-7-days, under the hero) | review clean (build re-run, no-hex grep, sessions endpoint unlimited); Seth smoked it July 3 on staging - band accepted, two layout/formatting critiques spun off as U10
 - LANDED c7acb43 | b9-analytics-time-series.md | weekly volume series + per-session e1RM series + execution planned/actual summaries | reviewer tightened the inclusive-end bucket assertion; 103/103 unit lane
