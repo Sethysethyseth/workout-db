@@ -173,3 +173,16 @@ which is worse than either alternative).
   attention, rationing") are REQUIRED published content regardless of angle.
   Includes the "who should NOT use this" list and the Pro-limit scar as a
   documented receipt.
+- **2026-07-02 (later still):** Shell repo created at
+  `github.com/Sethysethyseth/the-poor-mans-agentic-workflow` (PRIVATE - still
+  not published; visibility flip stays Seth's call). Contents: `BRIEF.md`
+  (build instructions for a browser/cloud agent: batch the open questions to
+  Seth first - name, license, tool-agnostic vs named-tools, receipts
+  anonymity, tone - then build in reviewable PRs) + `source-material/`
+  (scrubbed verbatim copies of this doc, AGENTS.md, CLAUDE.md, the task
+  templates, queue protocol, RUNBOOK excerpts - carried in-repo because the
+  browser agent can't see workout-db). Infra identifiers scrubbed to
+  placeholders at copy time. Buildout is delegated to a Claude Code web
+  session (claude.ai/code) pointed at BRIEF.md; local clone lives at
+  `C:\dev\the-poor-mans-agentic-workflow` (outside OneDrive, per our own
+  rule). source-material/ gets deleted on the pre-publish checklist.
