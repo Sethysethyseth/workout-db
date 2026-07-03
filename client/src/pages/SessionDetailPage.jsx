@@ -25,6 +25,7 @@ import {
   loadQuickWorkoutLogPrefs,
   saveQuickWorkoutLogPrefs,
 } from "../lib/quickWorkoutLogPrefs.js";
+import { loadWeightUnit, saveWeightUnit } from "../lib/weightUnitPref.js";
 import { useSessionLiveLoggingGuard } from "../context/SessionLiveLoggingGuardContext.jsx";
 import {
   BLANK_SESSION_EXERCISE_NAME,
@@ -1042,6 +1043,7 @@ export function SessionDetailPage() {
   const [liveUseSessionNotes, setLiveUseSessionNotes] = useState(false);
   const [liveUseExerciseNotes, setLiveUseExerciseNotes] = useState(false);
   const [liveUseSetNotes, setLiveUseSetNotes] = useState(false);
+  const [weightUnit, setWeightUnit] = useState(() => loadWeightUnit());
   const [quickTitleDraft, setQuickTitleDraft] = useState("");
   const [scrollToExerciseId, setScrollToExerciseId] = useState(null);
   const [adjustingSetCountExerciseId, setAdjustingSetCountExerciseId] = useState(null);
@@ -1901,6 +1903,33 @@ export function SessionDetailPage() {
                     }}
                   >
                     Exercise notes
+                  </button>
+                </div>
+              </div>
+              <div className="quick-log-display-prefs__group stack">
+                <div className="quick-log-display-prefs__label muted small">Units</div>
+                <div className="quick-log-toggle-row row">
+                  <button
+                    type="button"
+                    className={`quick-log-toggle ${weightUnit === "lbs" ? "quick-log-toggle--on" : ""}`}
+                    aria-pressed={weightUnit === "lbs"}
+                    onClick={() => {
+                      saveWeightUnit("lbs");
+                      setWeightUnit("lbs");
+                    }}
+                  >
+                    lbs
+                  </button>
+                  <button
+                    type="button"
+                    className={`quick-log-toggle ${weightUnit === "kg" ? "quick-log-toggle--on" : ""}`}
+                    aria-pressed={weightUnit === "kg"}
+                    onClick={() => {
+                      saveWeightUnit("kg");
+                      setWeightUnit("kg");
+                    }}
+                  >
+                    kg
                   </button>
                 </div>
               </div>

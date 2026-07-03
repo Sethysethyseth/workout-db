@@ -3,6 +3,7 @@ import * as analyticsApi from "../api/analyticsApi.js";
 import { ErrorMessage } from "../components/ErrorMessage.jsx";
 import { LoadingState } from "../components/LoadingState.jsx";
 import { HowCalculatedButton } from "../components/analytics/HowCalculatedButton.jsx";
+import { loadWeightUnit } from "../lib/weightUnitPref.js";
 
 const RANGE_PRESETS = [
   { weeks: 4, label: "4 weeks" },
@@ -37,8 +38,10 @@ function rangeForWeeks(weeks) {
   return { from: toDateOnlyString(fromDate), to: toDateOnlyString(today) };
 }
 
-function formatKg(n) {
-  return `${Number(n).toFixed(1)} kg`;
+/* Display-only unit label (what the user logs in); read per call so an
+   in-session toggle in the live-log prefs is picked up without a reload. */
+function formatWeight(n) {
+  return `${Number(n).toFixed(1)} ${loadWeightUnit()}`;
 }
 
 function E1rmTrendCell({ trend }) {
@@ -52,7 +55,7 @@ function E1rmTrendCell({ trend }) {
   return (
     <span>
       {sign}
-      {formatKg(Math.abs(trend.delta))}
+      {formatWeight(Math.abs(trend.delta))}
     </span>
   );
 }
@@ -65,7 +68,7 @@ function MatchedEffortCell({ trend }) {
   return (
     <span>
       {sign}
-      {formatKg(Math.abs(trend.delta))}{" "}
+      {formatWeight(Math.abs(trend.delta))}{" "}
       <span className="muted small">
         @ {trend.rir} RIR · {trend.sessions} sessions
       </span>
@@ -154,14 +157,14 @@ function PerExerciseSection({ perExercise }) {
                 <td>{ex.name}</td>
                 <td>
                   {ex.bestSet ? (
-                    `${Number(ex.bestSet.weight).toFixed(1)} kg × ${Math.round(ex.bestSet.reps)}`
+                    `${formatWeight(ex.bestSet.weight)} × ${Math.round(ex.bestSet.reps)}`
                   ) : (
                     <span className="muted small">not enough data</span>
                   )}
                 </td>
                 <td>
                   {ex.bestSet && ex.bestSet.e1rm?.epley != null ? (
-                    formatKg(ex.bestSet.e1rm.epley)
+                    formatWeight(ex.bestSet.e1rm.epley)
                   ) : (
                     <span className="muted small">not enough data</span>
                   )}
