@@ -74,6 +74,12 @@
   and its plain e1RM trend is deliberately NEGATIVE from a backoff set, the
   honest-vs-dishonest contrast on one row), lat pulldown with no RIR (unlock
   states), rirCoverage 63%.
+  **SUPERSEDED (July 3):** `smoke-b6` gone in a later reset. Current smoke
+  account: `smoke-b8` / `SmokeTest-B8-2026` (email `smoke-b8@example.com`),
+  seeded via the new `scripts/seed-staging-smoke.mjs` (HTTP-only, idempotent,
+  re-run after any staging reset): 24 sessions over 8 weeks, 12 muscles / 11
+  exercises, matched-effort +39.9, 4 execution rows (template-linked), RIR
+  gaps for the honesty states, push:pull 1.01 / quad:ham 0.86.
 - **Dev-stack gotcha confirmed:** the long-running nodemon (started Jul 1) did
   NOT pick up the B6 engine changes — OneDrive file-watch flakiness. The
   /analytics endpoint silently served pre-B6 responses (no matchedEffortTrend)
