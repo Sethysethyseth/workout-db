@@ -149,10 +149,18 @@
 
 ## Next up (the active task)
 
-1. **Dispatch B9** (`docs/tasks/b9-analytics-time-series.md`, QUEUED) to
-   Cursor on `analytics-engine`. Then review/land, then author U7-U9 (see
-   July 3 session log for the five-point polish wave). Seth critiques each
-   UI unit visually as it ships.
+1. **B9 LANDED (`c7acb43`)** — Cursor implemented, Claude Code reviewed
+   (scope exact, all acceptance criteria tested, reviewer tightened the
+   inclusive-last-bucket assertion, re-ran unit lane 103/103, purity grep
+   clean), committed + pushed. KNOWN WRINKLE recorded for U8: `e1rmTrend.
+   first/latest` are raw first/last SET epley while `e1rmSeries` points are
+   session maxes — they can disagree; the U8 block therefore requires the
+   strength delta chip to derive from `e1rmSeries` endpoints, not
+   `e1rmTrend`.
+2. **Dispatch U7 -> U8 -> U9 to Cursor, ONE AT A TIME** (all three QUEUED
+   in `docs/tasks/`; they share AnalyticsPage.jsx/index.css so the wave is
+   strictly serialized — never a Mode 2 pair). Seth critiques each unit's
+   visuals on-device after it lands before dispatching the next.
 2. **Merge `analytics-engine` -> main DEFERRED until the visuals are locked
    in** (Seth, July 3). When ready: "push to main" verbatim, then
    one-command-at-a-time with approval. Pre-merge: Seth's personal read of
