@@ -6,7 +6,8 @@ Statuses: DRAFT / QUEUED / DISPATCHED / AWAITING-REVIEW / LANDED <sha> / BOUNCED
 
 ## Active
 
-(none - queue infrastructure just created; no blocks authored yet)
+- QUEUED | b8-rpe-effort-pooling.md | pool RPE with RIR as one effort signal across the whole engine (RIR = 10 - RPE, explicit RIR wins) | server engine + controller + copy; renames meta.rirCoverage -> effortCoverage
+- QUEUED | u6-weight-unit-pref.md | lbs/kg display pref in live-log prefs block + AnalyticsPage labels (display-only, no conversion) | client-only; NOT file-disjoint from B8 (both touch AnalyticsPage.jsx) - serialize, do not run as a Mode 2 pair
 
 ## Candidates (next units, not yet authored as blocks)
 
