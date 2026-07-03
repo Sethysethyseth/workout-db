@@ -24,11 +24,15 @@ function mean(values) {
 // { [templateExerciseId]: [{ order, reps, weight, rir, rpe }] } - the
 // planned sets for every templateExercise referenced in range. Returns one
 // row per resolved exercise that has at least one plan-linked set:
-// { exerciseId, name, loadAdherence, volumeAdherence, effortDrift, sessions }
+// { exerciseId, name, loadAdherence, volumeAdherence, effortDrift, sessions,
+//   planned: { setsPerSession, reps, weight, effortRir },
+//   actual:  { setsPerSession, reps, weight, effortRir } }
 // loadAdherence/volumeAdherence are ratios (1 = exactly on plan),
 // effortDrift is actual effort - planned effort on the RIR scale (positive =
 // sandbagging); both sides pool RIR/RPE via deriveEffortRir. Each is null
-// when no pair in range carries the data it needs.
+// when no pair in range carries the data it needs. planned/actual concrete
+// fields are means over all sets in participating groups (not index-paired);
+// each field is independently null when no data.
 function computeExecutionFidelity(enrichedSets, planLookup) {
   if (!planLookup) return [];
 
@@ -70,6 +74,12 @@ function computeExecutionFidelity(enrichedSets, planLookup) {
         actualSetCount: 0,
         plannedSetCount: 0,
         sessions: new Set(),
+        plannedReps: [],
+        plannedWeights: [],
+        plannedEfforts: [],
+        actualReps: [],
+        actualWeights: [],
+        actualEfforts: [],
       };
       acc.set(g.exerciseId, a);
     }
@@ -82,6 +92,22 @@ function computeExecutionFidelity(enrichedSets, planLookup) {
     a.actualSetCount += actualSorted.length;
     a.plannedSetCount += planSorted.length;
     a.sessions.add(g.performedMs);
+
+    for (const planned of planSorted) {
+      if (planned.reps != null) a.plannedReps.push(planned.reps);
+      if (planned.weight != null) a.plannedWeights.push(planned.weight);
+      const plannedEffort = deriveEffortRir({
+        rir: planned.rir,
+        rpe: planned.rpe,
+      });
+      if (plannedEffort != null) a.plannedEfforts.push(plannedEffort);
+    }
+    for (const set of actualSorted) {
+      const actual = set.input;
+      if (actual.reps != null) a.actualReps.push(actual.reps);
+      if (actual.weight != null) a.actualWeights.push(actual.weight);
+      if (actual.effortRir != null) a.actualEfforts.push(actual.effortRir);
+    }
 
     const pairCount = Math.min(actualSorted.length, planSorted.length);
     for (let i = 0; i < pairCount; i++) {
@@ -105,6 +131,13 @@ function computeExecutionFidelity(enrichedSets, planLookup) {
     .map(([exerciseId, a]) => {
       const load = mean(a.loadRatios);
       const drift = mean(a.effortDeltas);
+      const plannedReps = mean(a.plannedReps);
+      const plannedWeight = mean(a.plannedWeights);
+      const plannedEffort = mean(a.plannedEfforts);
+      const actualReps = mean(a.actualReps);
+      const actualWeight = mean(a.actualWeights);
+      const actualEffort = mean(a.actualEfforts);
+      const sessionCount = a.sessions.size;
       return {
         exerciseId,
         name: a.name,
@@ -114,7 +147,19 @@ function computeExecutionFidelity(enrichedSets, planLookup) {
             ? null
             : round2(a.actualSetCount / a.plannedSetCount),
         effortDrift: drift === null ? null : round2(drift),
-        sessions: a.sessions.size,
+        sessions: sessionCount,
+        planned: {
+          setsPerSession: round2(a.plannedSetCount / sessionCount),
+          reps: plannedReps === null ? null : round2(plannedReps),
+          weight: plannedWeight === null ? null : round2(plannedWeight),
+          effortRir: plannedEffort === null ? null : round2(plannedEffort),
+        },
+        actual: {
+          setsPerSession: round2(a.actualSetCount / sessionCount),
+          reps: actualReps === null ? null : round2(actualReps),
+          weight: actualWeight === null ? null : round2(actualWeight),
+          effortRir: actualEffort === null ? null : round2(actualEffort),
+        },
       };
     });
 }

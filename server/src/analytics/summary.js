@@ -19,16 +19,32 @@ const HONESTY_PR_DETECTION =
 
 function buildSummary(enrichedSets, { from, to, planLookup }) {
   const weeks = computeWeeksInRange(from, to);
-  const perMuscle = aggregateMuscleVolume(enrichedSets, { from, to });
+  const perMuscle = aggregateMuscleVolume(enrichedSets, { from, to }).map(
+    (row) => ({
+      ...row,
+      series: row.series.map((w) => ({
+        ...w,
+        weekStart: w.weekStart.toISOString(),
+        weekEnd: w.weekEnd.toISOString(),
+      })),
+    })
+  );
 
   const perExercisePartial = aggregateExerciseMetrics(enrichedSets, {
     from,
     to,
   });
   const perExercise = perExercisePartial.map((entry) => {
-    if (!entry.bestSet) return entry;
-    return {
+    const serialized = {
       ...entry,
+      e1rmSeries: entry.e1rmSeries.map((p) => ({
+        ...p,
+        performedAt: p.performedAt.toISOString(),
+      })),
+    };
+    if (!entry.bestSet) return serialized;
+    return {
+      ...serialized,
       bestSet: {
         ...entry.bestSet,
         performedAt:

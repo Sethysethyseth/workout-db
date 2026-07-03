@@ -34,6 +34,23 @@ function filterInRange(enrichedSets, { from, to }) {
   });
 }
 
+function getWeekBucketIndex(performedMs, toMs, weeks) {
+  for (let k = 0; k < weeks; k++) {
+    const weekStart = toMs - (weeks - k) * MS_PER_WEEK;
+    const weekEnd = toMs - (weeks - k - 1) * MS_PER_WEEK;
+    if (k === weeks - 1) {
+      if (performedMs >= weekStart && performedMs <= weekEnd) return k;
+    } else if (performedMs >= weekStart && performedMs < weekEnd) {
+      return k;
+    }
+  }
+  return null;
+}
+
+function emptyWeekBucket() {
+  return { effectiveSetsTotal: 0, stimulatingSetsTotal: 0, hasRirData: false };
+}
+
 function aggregateMuscleVolume(enrichedSets, { from, to }) {
   const fromDate = toDate(from);
   const toDate_ = toDate(to);
@@ -42,6 +59,8 @@ function aggregateMuscleVolume(enrichedSets, { from, to }) {
   const inRange = filterInRange(enrichedSets, { from: fromDate, to: toDate_ });
 
   // muscle -> accumulator
+  const weeks = computeWeeksInRange(fromDate, toDate_);
+
   const acc = new Map();
   const getAcc = (muscle) => {
     let a = acc.get(muscle);
@@ -52,6 +71,7 @@ function aggregateMuscleVolume(enrichedSets, { from, to }) {
         hasRirData: false,
         sessions: new Set(),
         lastPerformedMs: null,
+        weekBuckets: Array.from({ length: weeks }, emptyWeekBucket),
       };
       acc.set(muscle, a);
     }
@@ -63,6 +83,7 @@ function aggregateMuscleVolume(enrichedSets, { from, to }) {
     if (!eff) continue;
     const stim = set.metrics.stimulatingContribution;
     const performedMs = set.performedAt.getTime();
+    const bucketIdx = getWeekBucketIndex(performedMs, toMs, weeks);
 
     for (const [muscle, fraction] of Object.entries(eff)) {
       if (!fraction) continue; // nonzero fractions only
@@ -76,10 +97,16 @@ function aggregateMuscleVolume(enrichedSets, { from, to }) {
         a.stimulatingSetsTotal += stim[muscle];
         a.hasRirData = true;
       }
+      if (bucketIdx !== null) {
+        const bucket = a.weekBuckets[bucketIdx];
+        bucket.effectiveSetsTotal += fraction;
+        if (stim !== null) {
+          bucket.stimulatingSetsTotal += stim[muscle];
+          bucket.hasRirData = true;
+        }
+      }
     }
   }
-
-  const weeks = computeWeeksInRange(fromDate, toDate_);
 
   return Array.from(acc.entries())
     .sort(([a], [b]) => a.localeCompare(b))
@@ -91,6 +118,14 @@ function aggregateMuscleVolume(enrichedSets, { from, to }) {
         : null,
       frequency: round2(a.sessions.size / weeks),
       daysSinceLast: Math.round((toMs - a.lastPerformedMs) / MS_PER_DAY),
+      series: a.weekBuckets.map((bucket, k) => ({
+        weekStart: new Date(toMs - (weeks - k) * MS_PER_WEEK),
+        weekEnd: new Date(toMs - (weeks - k - 1) * MS_PER_WEEK),
+        effectiveSets: round2(bucket.effectiveSetsTotal),
+        stimulatingSets: bucket.hasRirData
+          ? round2(bucket.stimulatingSetsTotal)
+          : null,
+      })),
     }));
 }
 
@@ -120,6 +155,7 @@ function aggregateExerciseMetrics(enrichedSets, { from, to }) {
 
     let e1rmTrend = { first: null, latest: null, best: null, delta: null };
     let bestSet = null;
+    let e1rmSeries = [];
 
     if (validSets.length > 0) {
       const first = validSets[0].metrics.e1rm.epley;
@@ -141,12 +177,29 @@ function aggregateExerciseMetrics(enrichedSets, { from, to }) {
         performedAt: bestSetEnriched.performedAt,
         e1rm: bestSetEnriched.metrics.e1rm,
       };
+
+      const sessionBest = new Map();
+      for (const s of validSets) {
+        const performedMs = s.performedAt.getTime();
+        const epley = s.metrics.e1rm.epley;
+        const current = sessionBest.get(performedMs);
+        if (current === undefined || epley > current.epley) {
+          sessionBest.set(performedMs, {
+            performedAt: s.performedAt,
+            epley,
+          });
+        }
+      }
+      e1rmSeries = Array.from(sessionBest.values()).sort(
+        (a, b) => a.performedAt.getTime() - b.performedAt.getTime()
+      );
     }
 
     result.push({
       exerciseId,
       name: g.name,
       e1rmTrend,
+      e1rmSeries,
       bestSet,
       matchedEffortTrend: computeMatchedEffortTrend(sorted),
     });

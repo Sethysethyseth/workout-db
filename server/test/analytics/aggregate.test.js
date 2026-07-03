@@ -159,6 +159,101 @@ describe("aggregateMuscleVolume", () => {
     const result = aggregateMuscleVolume(sets, { from, to });
     expect(result).toEqual([]);
   });
+
+  test("weekly series buckets align to range end with inclusive last bucket", () => {
+    const from = "2026-01-01T00:00:00Z";
+    const to = "2026-01-15T00:00:00Z";
+    const weeks = 2;
+
+    const sets = [
+      enrichSet({
+        exerciseName: BENCH,
+        weight: 100,
+        reps: 5,
+        rir: 2,
+        performedAt: "2026-01-02T10:00:00Z",
+      }),
+      enrichSet({
+        exerciseName: BENCH,
+        weight: 100,
+        reps: 5,
+        rir: 2,
+        performedAt: "2026-01-14T10:00:00Z",
+      }),
+      enrichSet({
+        exerciseName: BENCH,
+        weight: 100,
+        reps: 5,
+        rir: 2,
+        performedAt: to,
+      }),
+    ];
+
+    const result = aggregateMuscleVolume(sets, { from, to });
+    const chest = result.find((r) => r.muscle === "chest");
+    expect(chest.series).toHaveLength(weeks);
+    expect(chest.series[0].effectiveSets).toBeGreaterThan(0);
+    // Bucket 1 holds the Jan-14 set AND the set at exactly `to` (inclusive
+    // last bucket) - dropping the boundary set would halve this.
+    expect(chest.series[1].effectiveSets).toBeCloseTo(
+      chest.series[0].effectiveSets * 2,
+      2
+    );
+    expect(chest.series[0].weekStart.toISOString()).toBe(
+      "2026-01-01T00:00:00.000Z"
+    );
+    expect(chest.series[1].weekEnd.toISOString()).toBe(
+      "2026-01-15T00:00:00.000Z"
+    );
+  });
+
+  test("muscle-empty week yields effectiveSets 0 and stimulatingSets null", () => {
+    const from = "2026-01-01T00:00:00Z";
+    const to = "2026-01-15T00:00:00Z";
+
+    const sets = [
+      enrichSet({
+        exerciseName: BENCH,
+        weight: 100,
+        reps: 5,
+        rir: 2,
+        performedAt: "2026-01-02T10:00:00Z",
+      }),
+    ];
+
+    const result = aggregateMuscleVolume(sets, { from, to });
+    const chest = result.find((r) => r.muscle === "chest");
+    expect(chest.series[0].effectiveSets).toBeGreaterThan(0);
+    expect(chest.series[1]).toEqual({
+      weekStart: new Date("2026-01-08T00:00:00.000Z"),
+      weekEnd: new Date("2026-01-15T00:00:00.000Z"),
+      effectiveSets: 0,
+      stimulatingSets: null,
+    });
+  });
+
+  test("series effectiveSets sum equals effectiveSets * weeks within rounding", () => {
+    const sets = [
+      enrichSet({
+        exerciseName: BENCH,
+        weight: 100,
+        reps: 5,
+        rir: 2,
+        performedAt: "2026-06-02T10:00:00Z",
+      }),
+      enrichSet({
+        exerciseName: BENCH,
+        weight: 100,
+        reps: 5,
+        performedAt: "2026-06-09T10:00:00Z",
+      }),
+    ];
+
+    const result = aggregateMuscleVolume(sets, { from, to });
+    const chest = result.find((r) => r.muscle === "chest");
+    const seriesSum = chest.series.reduce((s, w) => s + w.effectiveSets, 0);
+    expect(seriesSum).toBeCloseTo(chest.effectiveSets * 2, 2);
+  });
 });
 
 describe("aggregateExerciseMetrics", () => {
@@ -279,6 +374,80 @@ describe("aggregateExerciseMetrics", () => {
       delta: null,
     });
     expect(result[0].bestSet).toBeNull();
+  });
+
+  test("e1rmSeries dedupes same-session sets to max epley", () => {
+    const shared = "2026-06-02T10:00:00Z";
+    const sets = [
+      enrichSet({
+        exerciseName: BENCH,
+        weight: 100,
+        reps: 5,
+        rir: 2,
+        performedAt: shared,
+      }),
+      enrichSet({
+        exerciseName: BENCH,
+        weight: 110,
+        reps: 5,
+        rir: 1,
+        performedAt: shared,
+      }),
+    ];
+
+    const result = aggregateExerciseMetrics(sets, { from, to });
+    expect(result[0].e1rmSeries).toHaveLength(1);
+    expect(result[0].e1rmSeries[0].epley).toBeCloseTo(110 * (1 + 5 / 30), 6);
+  });
+
+  test("e1rmSeries has one ascending point per session matching e1rmTrend endpoints", () => {
+    const sets = [
+      enrichSet({
+        exerciseName: BENCH,
+        weight: 100,
+        reps: 5,
+        rir: 2,
+        performedAt: "2026-06-02T10:00:00Z",
+      }),
+      enrichSet({
+        exerciseName: BENCH,
+        weight: 105,
+        reps: 5,
+        rir: 2,
+        performedAt: "2026-06-09T10:00:00Z",
+      }),
+      enrichSet({
+        exerciseName: BENCH,
+        weight: 110,
+        reps: 5,
+        rir: 2,
+        performedAt: "2026-06-12T10:00:00Z",
+      }),
+    ];
+
+    const result = aggregateExerciseMetrics(sets, { from, to });
+    const bench = result[0];
+    expect(bench.e1rmSeries).toHaveLength(3);
+    expect(bench.e1rmSeries[0].epley).toBe(bench.e1rmTrend.first);
+    expect(bench.e1rmSeries[2].epley).toBe(bench.e1rmTrend.latest);
+    for (let i = 1; i < bench.e1rmSeries.length; i++) {
+      expect(bench.e1rmSeries[i].performedAt.getTime()).toBeGreaterThan(
+        bench.e1rmSeries[i - 1].performedAt.getTime()
+      );
+    }
+  });
+
+  test("exercise with no valid epley sets gets empty e1rmSeries", () => {
+    const sets = [
+      enrichSet({
+        exerciseName: BENCH,
+        rir: 2,
+        performedAt: "2026-06-02T10:00:00Z",
+      }),
+    ];
+
+    const result = aggregateExerciseMetrics(sets, { from, to });
+    expect(result[0].e1rmSeries).toEqual([]);
   });
 });
 

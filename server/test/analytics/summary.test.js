@@ -49,11 +49,19 @@ describe("buildSummary", () => {
     expect(summary.range.weeks).toBe(computeWeeksInRange(from, to));
   });
 
-  test("perMuscle matches a direct aggregateMuscleVolume call", () => {
+  test("perMuscle matches a direct aggregateMuscleVolume call with ISO series dates", () => {
     const fixtures = resolvedFixtures();
     const summary = buildSummary(fixtures, { from, to });
+    const raw = aggregateMuscleVolume(fixtures, { from, to });
     expect(summary.perMuscle).toEqual(
-      aggregateMuscleVolume(fixtures, { from, to })
+      raw.map((row) => ({
+        ...row,
+        series: row.series.map((w) => ({
+          ...w,
+          weekStart: w.weekStart.toISOString(),
+          weekEnd: w.weekEnd.toISOString(),
+        })),
+      }))
     );
   });
 
@@ -155,5 +163,35 @@ describe("buildSummary", () => {
   test("summary object is JSON-serializable (no raw Dates)", () => {
     const summary = buildSummary(resolvedFixtures(), { from, to });
     expect(() => JSON.stringify(summary)).not.toThrow();
+  });
+
+  function collectDates(value, found = []) {
+    if (value instanceof Date) {
+      found.push(value);
+      return found;
+    }
+    if (Array.isArray(value)) {
+      for (const item of value) collectDates(item, found);
+    } else if (value && typeof value === "object") {
+      for (const v of Object.values(value)) collectDates(v, found);
+    }
+    return found;
+  }
+
+  test("perMuscle and perExercise contain no Date instances in new time-series fields", () => {
+    const summary = buildSummary(resolvedFixtures(), { from, to });
+    for (const row of summary.perMuscle) {
+      expect(collectDates(row.series)).toEqual([]);
+      for (const w of row.series) {
+        expect(typeof w.weekStart).toBe("string");
+        expect(typeof w.weekEnd).toBe("string");
+      }
+    }
+    for (const entry of summary.perExercise) {
+      expect(collectDates(entry.e1rmSeries)).toEqual([]);
+      for (const p of entry.e1rmSeries) {
+        expect(typeof p.performedAt).toBe("string");
+      }
+    }
   });
 });

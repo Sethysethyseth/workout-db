@@ -146,6 +146,51 @@ describe("computeExecutionFidelity", () => {
     ];
     expect(computeExecutionFidelity(sets, undefined)).toEqual([]);
   });
+
+  test("concrete planned/actual summaries for partial session execution", () => {
+    const sets = [
+      benchSet({ weight: 95, reps: 8, rir: 3, order: 1, templateExerciseId: 7, performedAt: "2026-06-02T10:00:00Z" }),
+      benchSet({ weight: 95, reps: 8, rir: 3, order: 2, templateExerciseId: 7, performedAt: "2026-06-02T10:00:00Z" }),
+    ];
+
+    const [row] = computeExecutionFidelity(sets, PLAN);
+    expect(row.planned).toEqual({
+      setsPerSession: 3,
+      reps: 8,
+      weight: 100,
+      effortRir: 2,
+    });
+    expect(row.actual).toEqual({
+      setsPerSession: 2,
+      reps: 8,
+      weight: 95,
+      effortRir: 3,
+    });
+    expect(row.loadAdherence).toBe(0.95);
+    expect(row.volumeAdherence).toBe(0.67);
+    expect(row.effortDrift).toBe(1);
+  });
+
+  test("concrete summaries degrade null fields independently", () => {
+    const planNoWeight = {
+      7: [
+        { order: 1, reps: 10, weight: null, rir: null },
+        { order: 2, reps: 10, weight: null, rir: null },
+      ],
+    };
+    const sets = [
+      benchSet({ reps: 10, order: 1, templateExerciseId: 7, performedAt: "2026-06-02T10:00:00Z" }),
+      benchSet({ reps: 10, order: 2, templateExerciseId: 7, performedAt: "2026-06-02T10:00:00Z" }),
+    ];
+
+    const [row] = computeExecutionFidelity(sets, planNoWeight);
+    expect(row.planned.weight).toBeNull();
+    expect(row.actual.weight).toBeNull();
+    expect(row.planned.reps).toBe(10);
+    expect(row.actual.reps).toBe(10);
+    expect(row.planned.effortRir).toBeNull();
+    expect(row.actual.effortRir).toBeNull();
+  });
 });
 
 describe("buildSummary execution wiring", () => {
