@@ -87,7 +87,68 @@ file-disjoint blocks (planner reviews unit N while executor builds N+1).
 - Cloud-synced repo folders (OneDrive/Dropbox) cause file-lock hangs and
   stale reads - keep worktrees (ideally the repo) outside sync.
 
-## 5. Open questions before publishing
+## 5. Honest positioning - pros, cons, comparability (REQUIRED content)
+
+**Status of this section:** the final marketing angle is Seth's call and may
+differ from this framing - but whatever the angle, the published repo MUST
+carry the full pros/cons and the comparability claim below, stated plainly.
+Users adopting this setup should know exactly what they're trading. Treat
+this as required README content, not optional framing.
+
+**The comparability claim, in one line:** equal output *quality*, meaningfully
+lower cost, paid for in wall-clock time, human attention, and rationing
+discipline. It is not "Max for $40" - it is "Max-quality *results* for $40,
+if your work decomposes well and you're willing to be the router."
+
+### Where it genuinely wins
+
+- **Quality per dollar.** Same frontier models write and review the code;
+  the review gate catches defects before they compound (receipts in this
+  repo: a shipped-contract bug caught on day one; a null cop-out in a
+  delivered unit caught and fixed in review). On output quality the $40
+  setup matches Max; on quality per dollar it beats it.
+- **The economics are structurally right,** not a coupon: planning/review/
+  debugging are high-judgment low-token, codegen is low-judgment high-token.
+  Paying frontier prices for judgment and commodity prices for typing is
+  matching cost to value.
+- **The review gate doubles as a quality mechanism** a solo Max agent
+  doesn't get for free: a second context reads the tree against the spec
+  before anything is committed.
+
+### Where Max wins (do not soften these)
+
+1. **Throughput and your time.** Max buys autonomy - one agent grinds a unit
+   end-to-end unattended. Here the human is the message bus: every unit
+   costs a dispatch, a "it stopped," and a "review it," and Mode 1 is
+   strictly serialized. Part of the $160/mo saved is paid back in attention.
+   Right trade for time-rich/cash-poor; inverts for anyone billing hourly.
+2. **Pro-tier limits are real friction, not theoretical.** Documented scar:
+   July 2, 2026 session - Claude Code built two units directly because the
+   Pro seat's tokens were expiring mid-plan. Long debugging sessions and big
+   review diffs hit the 5-hour-window caps. Max's real product is never
+   thinking about the meter.
+3. **The $40 can creep.** Frontier-model usage in Cursor burns the included
+   allowance fast; heavy months throttle or spill into overage. The
+   template's MODEL: header is the mitigation - the price only holds if
+   mechanical work actually routes to cheap models. Say this or the first
+   issue filed is "this cost me $55."
+4. **Context loss at every seam.** A solo agent carries full context across
+   plan -> code -> debug. The relay forces self-contained task blocks (an
+   authoring tax on the planner seat) and the executor starts cold every
+   session. Mitigated by the template + AGENTS.md, never eliminated.
+5. **Worst at exploratory work.** Well-decomposed roadmap units are the
+   ideal case (this repo's B1-B7). Ambiguous "figure out why prod is slow"
+   work doesn't decompose into blocks - it lands on the planner seat and
+   eats its limits.
+
+### Who should NOT use this
+
+Anyone whose time is worth more than the savings, anyone whose work is
+mostly exploratory debugging, anyone unwilling to run the review ritual
+(skipping review quietly converts this into "cheap unreviewed codegen,"
+which is worse than either alternative).
+
+## 6. Open questions before publishing
 
 - Does Mode 2 actually pay for itself for a solo dev, or is Mode 1 the real
   product? (Measure during the pilot: units landed per week, bounce rate.)
@@ -97,7 +158,7 @@ file-disjoint blocks (planner reviews unit N while executor builds N+1).
   public version tool-agnostic (Cursor+Claude Code vs any planner+executor).
 - Name check + license before creating the repo.
 
-## 6. Log (append per session that changes the workflow)
+## 7. Log (append per session that changes the workflow)
 
 - **2026-07-02:** Concept agreed (Seth + Claude Code). Pilot scaffolding
   created: `docs/tasks/` (README protocol, QUEUE.md index, _TEMPLATE.md with
@@ -106,3 +167,9 @@ file-disjoint blocks (planner reviews unit N while executor builds N+1).
   after ~3 clean units; file-dispatch is token-neutral (documented so nobody
   optimizes it); QUEUE.md single-writer = Claude Code; model tier declared
   per block. Public repo deferred until Seth says go.
+- **2026-07-02 (later):** Honest-positioning section added (section 5) at
+  Seth's direction: final shipping angle is his call, but full pros/cons and
+  the comparability claim ("Max-quality results, not Max; paid in time,
+  attention, rationing") are REQUIRED published content regardless of angle.
+  Includes the "who should NOT use this" list and the Pro-limit scar as a
+  documented receipt.
