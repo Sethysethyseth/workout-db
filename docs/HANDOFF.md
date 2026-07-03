@@ -1,6 +1,6 @@
 # HANDOFF — current state
 
-**Updated:** July 2, 2026 (late evening — analytics B6 AND B7 implemented DIRECTLY by Claude Code (inverted split, Seth out, expiring tokens), both committed, pushed, smoked on-device via Playwright. Track B v1 is CODE-COMPLETE: B1-B7 all done.)
+**Updated:** July 3, 2026 (analytics UI critique session — Seth reviewed the B8 chart layout, five-point polish wave agreed, B9 engine task block QUEUED, merge to main PENDING Seth's trigger phrase)
 **Rule:** rewritten in place at the end of every working session. Dated, never versioned. If this file looks stale (date > ~2 weeks old), verify branch/deploy state from ground truth before trusting it.
 
 ---
@@ -30,6 +30,44 @@
 3. **Verify the manually inserted prod `_prisma_migrations` row's `checksum` matches staging's** for `20260603140000_add_user_username`. Latent hazard — check once, fix if mismatched.
 4. Confirm prod Render serving cleanly post-recovery.
 5. Low-priority: redundant spare stash on `ui-palettes-v2` (`WIP unrelated to ui-palettes-v2 merge`, July 1) — `git stash drop` once confirmed unneeded.
+
+## Session log (July 3 — analytics polish wave planned, Claude Code)
+
+- **Seth critiqued the B8 analytics screen; five-point polish wave agreed:**
+  1. KPI tiles evolve into a "weekly report" — DECIDED: it lives on the HOME
+     screen (DashboardPage, under the StartWorkoutHero) as a last-7-days vs
+     prior-7-days delta band, so users see stats on login. Range chips keep
+     governing only the analytics deep-dive cards.
+  2. Volume by muscle: add a time view — extend the Chart|Table toggle to
+     Bars|Trend|Table (per-muscle weekly sparklines/small multiples).
+  3. Strength trends: replace/augment the first-vs-latest dumbbell with
+     per-session e1RM sparklines; the existing Table view stays as the
+     raw-data screen.
+  4. Execution: comprehension rework — lead with the CONCRETE comparison
+     ("Planned 3x8 @ 100 -> Did 2x8 @ 95") + a deterministic plain-language
+     verdict line; percentages demoted to annotations; "sandbagging/
+     overreaching" demoted to secondary flavor.
+  5. Balance: diverging scale with colored deviation fill + shaded
+     "balanced zone" band (~0.8-1.3), ghost tracks on degraded rows.
+  Seth will critique each visually after it ships (2-5 are "show me" items).
+- **Root cause identified:** 1-3 all need TIME SERIES the engine collapses
+  away. One engine unit unlocks all three: **B9 task block authored + QUEUED**
+  (`docs/tasks/b9-analytics-time-series.md`) — weekly per-muscle volume
+  series, per-session e1RM series, execution planned/actual concrete
+  summaries. Additive, engine-only, no schema/controller change. UI wave
+  U7 (Home weekly report) / U8 (trend view + sparklines) / U9 (execution
+  rework + balance polish) listed as QUEUE candidates; U8/U9 blocks get
+  authored after B9 lands (they consume its payload shape).
+- **Merge to main: Seth said "merge the branch first if that suits you" —
+  NOT the verbatim trigger phrase, so the sequence was NOT started.** Waiting
+  on "push to main" verbatim. Pre-merge items still open: Seth's personal
+  read of the `analyticsController.js` findMany where-clause, and the two
+  open forks below. New polish work will pile onto `analytics-engine` unless
+  the merge happens first (Seth leaned yes-merge-first).
+- QUEUE.md refreshed: B8 (`00c67dc`) and U6 (`d4b1d72`) moved to Landed.
+- Stray smoke screenshots tidied into `docs/smoke-tests/images/`
+  (analytics-b8-u6-lbs-default + two smoke-b8 login-error shots) and
+  committed.
 
 ## Session log (July 2 late — task-queue pilot scaffolding, Claude Code)
 
@@ -111,10 +149,20 @@
 
 ## Next up (the active task)
 
-1. Open TODOs #1-4 (prod verification — manual, browser).
-2. **Analytics B4-B7 DONE + committed + smoked** (B6 = `94a1fbf`, B7 = `9cfe7f0`; smoke details in track section). Seth: a quick personal read of the `findMany` where-clause + the new plan-side include in `analyticsController.js` is still worthwhile before this branch merges (the isolation tests cover it, but it is the one cross-user-leak surface).
-3. Decide merge timing for `analytics-engine` -> main (gated: requires "push to main" verbatim). **Branch now carries B1-B7 — Track B v1 complete.**
-4. Track A (A1 catalog merge, then A4 FK design — now including set->BlockWorkoutSet linkage for block-plan execution fidelity) is the next engine-adjacent work; T3 remains the next unstarted UI unit if/when UI resumes.
+1. **Merge `analytics-engine` -> main** (Seth leaned yes; gated: requires
+   "push to main" verbatim, then one-command-at-a-time with approval).
+   Pre-merge: Seth's personal read of the `findMany` where-clause + plan-side
+   include in `analyticsController.js` (the one cross-user-leak surface), and
+   settle the two open forks below.
+2. **Dispatch B9** (`docs/tasks/b9-analytics-time-series.md`, QUEUED) to
+   Cursor — on a fresh branch if the merge happens first, else on
+   `analytics-engine`. Then review/land, then author U7-U9 (see July 3
+   session log for the five-point polish wave).
+3. Open TODOs #1-4 (prod verification — manual, browser).
+4. Track A (A1 catalog merge, then A4 FK design — now including
+   set->BlockWorkoutSet linkage for block-plan execution fidelity) is the
+   next engine-adjacent work; T3 remains the next unstarted UI unit if/when
+   UI resumes.
 
 ## Open forks (settle before merge)
 

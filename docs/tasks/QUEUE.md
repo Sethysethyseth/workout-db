@@ -6,11 +6,17 @@ Statuses: DRAFT / QUEUED / DISPATCHED / AWAITING-REVIEW / LANDED <sha> / BOUNCED
 
 ## Active
 
-- QUEUED | b8-rpe-effort-pooling.md | pool RPE with RIR as one effort signal across the whole engine (RIR = 10 - RPE, explicit RIR wins) | server engine + controller + copy; renames meta.rirCoverage -> effortCoverage
-- QUEUED | u6-weight-unit-pref.md | lbs/kg display pref in live-log prefs block + AnalyticsPage labels (display-only, no conversion) | client-only; NOT file-disjoint from B8 (both touch AnalyticsPage.jsx) - serialize, do not run as a Mode 2 pair
+- QUEUED | b9-analytics-time-series.md | weekly per-muscle volume series + per-session e1RM series + execution planned/actual concrete summaries (engine-only, additive) | unblocks the U7-U9 analytics UI wave; no controller/DB surface
 
 ## Candidates (next units, not yet authored as blocks)
 
+- U7 weekly report hero on Home (last-7-days vs prior-7-days deltas under
+  Start Workout; client-only, two getSummary calls) - author after B9 lands
+- U8 volume trend view (Bars|Trend|Table segmented) + strength sparklines
+  (consume B9 series) - author after B9 lands
+- U9 execution comprehension rework (concrete plan-vs-actual display +
+  plain-language verdict, consumes B9 planned/actual) + balance card polish
+  (diverging scale, balanced-zone band, ghost tracks on degraded rows)
 - A5 exercise picker (UI, Cursor-suited once A4 FK design is done)
 - A6 name-resolution backfill/aliasing (Cursor-suited, needs A4 first)
 - T3 dynamic loading screens (UI, file-disjoint from Track A -> a natural
@@ -20,4 +26,5 @@ Statuses: DRAFT / QUEUED / DISPATCHED / AWAITING-REVIEW / LANDED <sha> / BOUNCED
 
 ## Landed
 
-(none yet)
+- LANDED 00c67dc | b8-rpe-effort-pooling.md | RPE pooled with RIR as one effort signal engine-wide
+- LANDED d4b1d72 | u6-weight-unit-pref.md | lbs/kg display pref in log prefs + analytics
