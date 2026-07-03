@@ -1,12 +1,17 @@
+const DEFAULT_OPTIONS = [
+  { value: "chart", label: "Chart" },
+  { value: "table", label: "Table" },
+];
+
 /** Chart | Table segmented chips for an analytics card head. */
-export function ChartTableToggle({ value, onChange, cardName }) {
+export function ChartTableToggle({ value, onChange, cardName, options = DEFAULT_OPTIONS }) {
   return (
     <div
       className="chart-table-toggle"
       role="group"
       aria-label={`${cardName} view mode`}
     >
-      {["chart", "table"].map((mode) => (
+      {options.map(({ value: mode, label }) => (
         <button
           key={mode}
           type="button"
@@ -14,7 +19,7 @@ export function ChartTableToggle({ value, onChange, cardName }) {
           aria-pressed={value === mode}
           onClick={() => onChange(mode)}
         >
-          {mode === "chart" ? "Chart" : "Table"}
+          {label}
         </button>
       ))}
     </div>

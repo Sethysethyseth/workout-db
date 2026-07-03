@@ -70,6 +70,12 @@ function formatRir(r) {
   return Number.isInteger(r) ? String(r) : r.toFixed(1);
 }
 
+function formatSetCount(n) {
+  const rounded = Number(Number(n).toFixed(1));
+  const s = rounded.toFixed(1);
+  return s.endsWith(".0") ? s.slice(0, -2) : s;
+}
+
 function formatCountDelta(current, prior, priorEmpty) {
   if (priorEmpty) return "first week tracked";
   const delta = current - prior;
@@ -81,9 +87,9 @@ function formatCountDelta(current, prior, priorEmpty) {
 function formatSetsDelta(current, prior, priorEmpty) {
   if (priorEmpty) return "first week tracked";
   const delta = current - prior;
-  const rounded = delta.toFixed(1);
-  if (delta > 0) return `+${rounded} vs last week`;
-  if (delta < 0) return `${rounded} vs last week`;
+  const rounded = Number(delta.toFixed(1));
+  if (rounded > 0) return `+${formatSetCount(rounded)} vs last week`;
+  if (rounded < 0) return `${formatSetCount(rounded)} vs last week`;
   return "same as last week";
 }
 
@@ -191,7 +197,7 @@ export function WeeklyReport() {
 
   const workoutDelta = formatCountDelta(currentWorkouts, priorWorkouts, priorEmpty);
   const setsDelta = formatSetsDelta(currentSets, priorSets, priorEmpty);
-  const setsDeltaValue = priorEmpty ? null : currentSets - priorSets;
+  const setsDeltaValue = priorEmpty ? null : Number((currentSets - priorSets).toFixed(1));
 
   return (
     <section className="card weekly-report" aria-labelledby="weekly-report-heading">
@@ -212,7 +218,7 @@ export function WeeklyReport() {
         />
         <ReportStat
           label="Sets"
-          value={currentSets.toFixed(1)}
+          value={formatSetCount(currentSets)}
           delta={setsDelta}
           deltaTone={deltaTone(setsDeltaValue ?? 0, priorEmpty)}
         />

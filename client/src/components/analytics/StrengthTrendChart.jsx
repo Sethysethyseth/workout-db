@@ -1,12 +1,11 @@
-import { niceRange } from "../../lib/chartScale.js";
 import { loadWeightUnit } from "../../lib/weightUnitPref.js";
 
 /**
- * Dumbbell chart: estimated 1RM first -> latest per exercise on a shared
- * weight axis. Emphasis form - the "first" dot is a neutral context mark, the
- * "latest" dot wears the accent. The matched-effort line under an exercise
- * name is the honest trend (same-RIR comparison) and gets the celebratory
- * treatment when positive; the raw delta chip describes the plotted dots.
+ * Sparkline chart: estimated 1RM per session via e1rmSeries. Emphasis form -
+ * earlier dots are neutral context marks; the latest dot wears the accent.
+ * Delta chip and trend summary use e1rmSeries endpoints (session maxes), not
+ * e1rmTrend.first/latest (raw first/last set values) so the chip describes
+ * the drawn line.
  */
 
 /* Display-only unit label (what the user logs in); weights are never converted. */
@@ -29,15 +28,95 @@ function DeltaChip({ delta }) {
   );
 }
 
+function paddedRange(min, max) {
+  if (min === max) {
+    const pad = Math.max(Math.abs(min) * 0.1, 1);
+    return { min: min - pad, max: max + pad };
+  }
+  const span = max - min;
+  const pad = span * 0.12;
+  return { min: min - pad, max: max + pad };
+}
+
+function SparklinePlot({ series }) {
+  const first = series[0];
+  const last = series[series.length - 1];
+  const values = series.map((p) => p.epley);
+  const rawMin = Math.min(...values);
+  const rawMax = Math.max(...values);
+  const { min, max } = paddedRange(rawMin, rawMax);
+
+  const tMin = new Date(series[0].performedAt).getTime();
+  const tMax = new Date(series[series.length - 1].performedAt).getTime();
+  const tSpan = tMax - tMin || 1;
+
+  const W = 100;
+  const H = 28;
+  const padX = 4;
+  const padY = 4;
+
+  const xOf =
+    series.length === 1 ? () => W / 2 : (t) => padX + ((t - tMin) / tSpan) * (W - padX * 2);
+  const yOf = (v) => padY + (1 - (v - min) / (max - min)) * (H - padY * 2);
+
+  const points = series.map((p) => {
+    const t = new Date(p.performedAt).getTime();
+    return `${xOf(t)},${yOf(p.epley)}`;
+  });
+
+  const tip = `${series.length} sessions: e1RM ${formatWeight(first.epley)} → ${formatWeight(last.epley)}`;
+
+  return (
+    <div
+      className="st-sparkline chart-tip-host"
+      tabIndex={0}
+      aria-label={tip}
+      data-tip={tip}
+    >
+      <span className="st-sparkline-val st-sparkline-val--first">
+        {series.length > 1 ? formatWeight(first.epley) : null}
+      </span>
+      <svg
+        className="st-sparkline-svg"
+        viewBox={`0 0 ${W} ${H}`}
+        preserveAspectRatio="none"
+        aria-hidden="true"
+      >
+        {series.length > 1 ? (
+          <polyline className="st-sparkline-line" points={points.join(" ")} />
+        ) : null}
+        {/* Dots as zero-length round-cap strokes with non-scaling-stroke:
+            preserveAspectRatio="none" stretches circle geometry into
+            ellipses, but a non-scaling stroke stays round at any width. */}
+        {series.map((p, i) => {
+          const t = new Date(p.performedAt).getTime();
+          const cx = xOf(t);
+          const cy = yOf(p.epley);
+          const isLatest = i === series.length - 1;
+          return (
+            <path
+              key={p.performedAt}
+              className={`st-sparkline-dot${isLatest ? " st-sparkline-dot--accent" : ""}`}
+              d={`M ${cx} ${cy} l 0.0001 0`}
+            />
+          );
+        })}
+      </svg>
+      <span className="st-sparkline-val st-sparkline-val--last">{formatWeight(last.epley)}</span>
+    </div>
+  );
+}
+
 export function StrengthTrendChart({ perExercise }) {
   const rows = perExercise
     .map((ex) => {
-      const e1rm = ex.bestSet?.e1rm?.epley ?? null;
-      const trend = ex.e1rmTrend && ex.e1rmTrend.first !== null ? ex.e1rmTrend : null;
-      return { ...ex, e1rm, trend };
+      const series = Array.isArray(ex.e1rmSeries) ? ex.e1rmSeries : [];
+      const delta =
+        series.length >= 2 ? series[series.length - 1].epley - series[0].epley : series.length === 1 ? 0 : null;
+      return { ...ex, series, delta };
     })
-    .filter((ex) => ex.trend || ex.e1rm !== null)
-    .sort((a, b) => (b.trend?.delta ?? -Infinity) - (a.trend?.delta ?? -Infinity));
+    .filter((ex) => ex.series.length > 0 || (ex.bestSet?.e1rm?.epley ?? null) !== null)
+    .sort((a, b) => (b.delta ?? -Infinity) - (a.delta ?? -Infinity));
 
   if (rows.length === 0) {
     return (
@@ -47,19 +126,12 @@ export function StrengthTrendChart({ perExercise }) {
     );
   }
 
-  const values = rows.flatMap((ex) =>
-    ex.trend ? [ex.trend.first, ex.trend.latest] : [ex.e1rm]
-  );
-  const { min, max, ticks } = niceRange(Math.min(...values), Math.max(...values));
-  const pct = (v) => `${(((v - min) / (max - min)) * 100).toFixed(2)}%`;
-  const spanPct = (a, b) => `${((Math.abs(b - a) / (max - min)) * 100).toFixed(2)}%`;
-
   return (
     <div className="st-chart stack">
       <div className="chart-legend" aria-hidden="true">
         <span className="legend-key">
           <i className="legend-dot legend-dot--context" />
-          First session in range
+          Earlier sessions
         </span>
         <span className="legend-key">
           <i className="legend-dot legend-dot--accent" />
@@ -68,18 +140,31 @@ export function StrengthTrendChart({ perExercise }) {
       </div>
       <div className="st-rows">
         {rows.map((ex) => {
-          const t = ex.trend;
-          const tip = t
-            ? `${ex.name}: e1RM ${formatWeight(t.first)} → ${formatWeight(t.latest)} (best ${formatWeight(t.best)})`
-            : `${ex.name}: e1RM ${formatWeight(ex.e1rm)} · one session in range`;
+          const { series } = ex;
+          if (series.length === 0) {
+            return (
+              <div key={ex.exerciseId} className="st-row">
+                <div className="row st-row-head">
+                  <span className="st-name">{ex.name}</span>
+                  <span className="muted small">not enough data</span>
+                </div>
+              </div>
+            );
+          }
+
+          const tip =
+            series.length === 1
+              ? `${ex.name}: e1RM ${formatWeight(series[0].epley)} · 1 session in range`
+              : `${ex.name}: e1RM ${formatWeight(series[0].epley)} → ${formatWeight(series[series.length - 1].epley)} · ${series.length} sessions`;
+
           return (
-            <div key={ex.exerciseId} className="st-row">
+            <div key={ex.exerciseId} className="st-row" aria-label={tip}>
               <div className="row st-row-head">
                 <span className="st-name">{ex.name}</span>
-                {t ? (
-                  <DeltaChip delta={t.delta} />
-                ) : (
+                {series.length === 1 ? (
                   <span className="muted small">1 session</span>
+                ) : (
+                  <DeltaChip delta={ex.delta} />
                 )}
               </div>
               {ex.matchedEffortTrend ? (
@@ -92,41 +177,10 @@ export function StrengthTrendChart({ perExercise }) {
                   {ex.matchedEffortTrend.sessions} sessions
                 </span>
               ) : null}
-              <div
-                className="st-plot chart-tip-host"
-                tabIndex={0}
-                aria-label={tip}
-                data-tip={tip}
-              >
-                {t ? (
-                  <>
-                    <span
-                      className="st-connector"
-                      style={{
-                        left: pct(Math.min(t.first, t.latest)),
-                        width: spanPct(t.first, t.latest),
-                      }}
-                    />
-                    <span className="st-dot st-dot--context" style={{ left: pct(t.first) }} />
-                    <span className="st-dot st-dot--accent" style={{ left: pct(t.latest) }} />
-                  </>
-                ) : (
-                  <span className="st-dot st-dot--accent" style={{ left: pct(ex.e1rm) }} />
-                )}
-              </div>
+              <SparklinePlot series={series} />
             </div>
           );
         })}
-      </div>
-      <div className="st-axis" aria-hidden="true">
-        {ticks.map((t) => (
-          <span key={t} className="st-tick" style={{ left: pct(t) }}>
-            {t}
-          </span>
-        ))}
-        <span className="st-axis-unit muted small">
-          {loadWeightUnit()} (estimated 1RM)
-        </span>
       </div>
     </div>
   );

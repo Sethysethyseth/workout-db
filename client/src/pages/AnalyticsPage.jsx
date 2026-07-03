@@ -6,11 +6,13 @@ import { HowCalculatedButton } from "../components/analytics/HowCalculatedButton
 import { ChartTableToggle } from "../components/analytics/ChartTableToggle.jsx";
 import { StatTiles } from "../components/analytics/StatTiles.jsx";
 import { MuscleVolumeChart } from "../components/analytics/MuscleVolumeChart.jsx";
+import { MuscleVolumeTrend } from "../components/analytics/MuscleVolumeTrend.jsx";
 import { StrengthTrendChart } from "../components/analytics/StrengthTrendChart.jsx";
 import { Meter } from "../components/analytics/Meter.jsx";
 import { BalanceScale } from "../components/analytics/BalanceScale.jsx";
 import { toDateOnlyString } from "../lib/dateOnly.js";
 import { loadWeightUnit } from "../lib/weightUnitPref.js";
+import { buildExecutionVerdict, formatPlanActual, formatPlannedSummary, formatActualSummary } from "../lib/executionVerdict.js";
 
 const RANGE_PRESETS = [
   { weeks: 4, label: "4 weeks" },
@@ -28,7 +30,9 @@ const HOW_BEST_E1RM =
 const HOW_MATCHED_EFFORT =
   "Compares your estimated 1RM only across sets you took at the same RIR (RPE counts too: RIR = 10 − RPE), so progress shows up even when you never max out. Uses the RIR you log most often for this exercise; needs 2 or more sessions at the same RIR.";
 const HOW_EXECUTION =
-  "Your logged sets compared against the template they were logged from, set by set. Load = actual ÷ planned weight. Volume = sets done ÷ sets planned. Effort drift = actual RIR − planned RIR (RPE counts too: RIR = 10 − RPE; positive means you stopped earlier than planned). Only sets logged from a template count — block plans aren't linked yet.";
+  "Each row shows what you planned vs. what you logged (sets, reps, weight, RIR). Load % = actual weight ÷ planned; Volume % = sets done ÷ sets planned; effort drift = actual RIR − planned (positive = stopped earlier). Only sets logged from a template count — block plans aren't linked yet.";
+const HOW_BALANCE =
+  "Push vs. pull and quad vs. hamstring ratios use effective sets summed over the engine's muscle groups (push: chest, shoulders, triceps; pull: lats, middle back, traps, biceps; quads and hamstrings each stand alone). The shaded band is a rough 0.8–1.25 guide, not a prescription.";
 
 /** to = today (date-only; the endpoint treats it as inclusive end-of-day), from = to minus N*7 days. */
 function rangeForWeeks(weeks) {
@@ -76,15 +80,26 @@ function MatchedEffortCell({ trend }) {
   );
 }
 
+const VOLUME_VIEW_OPTIONS = [
+  { value: "chart", label: "Bars" },
+  { value: "trend", label: "Trend" },
+  { value: "table", label: "Table" },
+];
+
 /** Shared head for a chart card: title + sub on the left, Chart|Table chips
     on the right. `cardName` is the plain-string title for aria labels (the
     title itself may carry JSX like a how-calculated button). */
-function ChartCardHead({ title, cardName, sub, view, onViewChange }) {
+function ChartCardHead({ title, cardName, sub, view, onViewChange, toggleOptions }) {
   return (
     <div className="analytics-card-head stack">
       <div className="row">
         <h2>{title}</h2>
-        <ChartTableToggle value={view} onChange={onViewChange} cardName={cardName} />
+        <ChartTableToggle
+          value={view}
+          onChange={onViewChange}
+          cardName={cardName}
+          options={toggleOptions}
+        />
       </div>
       <p className="muted small analytics-card-sub">{sub}</p>
     </div>
@@ -108,10 +123,15 @@ function PerMuscleSection({ perMuscle }) {
         }
         view={view}
         onViewChange={setView}
+        toggleOptions={VOLUME_VIEW_OPTIONS}
       />
       {view === "chart" ? (
         <div className="analytics-chart-body">
           <MuscleVolumeChart perMuscle={perMuscle} />
+        </div>
+      ) : view === "trend" ? (
+        <div className="analytics-chart-body">
+          <MuscleVolumeTrend perMuscle={perMuscle} />
         </div>
       ) : (
         <div className="table-scroll">
@@ -232,7 +252,14 @@ function PerExerciseSection({ perExercise }) {
 function BalanceSection({ balance }) {
   return (
     <section className="card stack">
-      <h2 className="analytics-section-title">Balance</h2>
+      <div className="analytics-card-head stack">
+        <h2 className="analytics-section-title">
+          Balance <HowCalculatedButton title="Balance" copy={HOW_BALANCE} />
+        </h2>
+        <p className="muted small analytics-card-sub">
+          Push vs. pull and quad vs. hamstring volume ratios from effective sets.
+        </p>
+      </div>
       <BalanceScale
         label="Push : Pull"
         value={balance.pushPull}
@@ -272,12 +299,38 @@ function EffortDriftCell({ value }) {
   );
 }
 
+function EffortDriftCompact({ value }) {
+  if (value === null) {
+    return <span className="analytics-unlock muted small">plan + log RIR or RPE to unlock</span>;
+  }
+  const n = Math.abs(Math.round(value));
+  /* Sub-rep drifts round to 0 - "stopped ~0 reps early" is nonsense, so they
+     read as on target with the exact drift kept as the annotation. */
+  if (n === 0) {
+    const exact = Math.round(Math.abs(value) * 10) / 10;
+    return (
+      <span className="exec-drift--on-target muted small">
+        on target{exact > 0 ? ` (${value > 0 ? "+" : "-"}${exact} RIR)` : ""}
+      </span>
+    );
+  }
+  const repWord = n === 1 ? "rep" : "reps";
+  const plain =
+    value > 0 ? `stopped ~${n} ${repWord} early` : `pushed ~${n} ${repWord} past plan`;
+  return (
+    <span className="exec-drift--off muted small">
+      {plain}{" "}
+      <span className="exec-drift-flavor">{value > 0 ? "sandbagging" : "overreaching"}</span>
+    </span>
+  );
+}
+
 /* Meters cap the fill at 120%; the printed % is always the true value. */
 const ADHERENCE_METER_MAX = 1.2;
 
-function AdherenceMetric({ label, value }) {
+function AdherenceMetric({ label, value, compact = false }) {
   return (
-    <div className="exec-metric">
+    <div className={`exec-metric${compact ? " exec-metric--compact" : ""}`}>
       <span className="muted small">{label}</span>
       {value === null ? (
         <>
@@ -305,7 +358,7 @@ function ExecutionSection({ execution }) {
           </>
         }
         cardName="Execution"
-        sub="Plan vs. actual for sets logged from a template. The hairline marks 100% — right on plan."
+        sub="Planned vs. logged for template sets. The headline line shows the concrete comparison; percentages and drift are the supporting detail."
         view={view}
         onViewChange={setView}
       />
@@ -320,15 +373,29 @@ function ExecutionSection({ execution }) {
           <div className="exec-rows">
             {execution.map((ex) => (
               <div key={ex.exerciseId} className="exec-row">
-                <span className="exec-name">{ex.name}</span>
-                <AdherenceMetric label="Load" value={ex.loadAdherence} />
-                <AdherenceMetric label="Volume" value={ex.volumeAdherence} />
-                <div className="exec-metric">
-                  <span className="muted small">Effort</span>
-                  <span />
-                  <span className="exec-val">
-                    <EffortDriftCell value={ex.effortDrift} />
+                <div className="exec-row-head stack">
+                  <span className="exec-name">{ex.name}</span>
+                  <span className="exec-verdict muted small">
+                    {buildExecutionVerdict({
+                      loadAdherence: ex.loadAdherence,
+                      volumeAdherence: ex.volumeAdherence,
+                      effortDrift: ex.effortDrift,
+                    })}
                   </span>
+                </div>
+                <p className="exec-plan-actual">
+                  {formatPlanActual(ex.planned, ex.actual, loadWeightUnit())}
+                </p>
+                <div className="exec-metrics-secondary">
+                  <AdherenceMetric label="Load" value={ex.loadAdherence} compact />
+                  <AdherenceMetric label="Volume" value={ex.volumeAdherence} compact />
+                  <div className="exec-metric exec-metric--compact">
+                    <span className="muted small">Effort</span>
+                    <span />
+                    <span className="exec-val">
+                      <EffortDriftCompact value={ex.effortDrift} />
+                    </span>
+                  </div>
                 </div>
               </div>
             ))}
@@ -340,6 +407,8 @@ function ExecutionSection({ execution }) {
             <thead>
               <tr>
                 <th scope="col">Exercise</th>
+                <th scope="col">Planned</th>
+                <th scope="col">Did</th>
                 <th scope="col">Load</th>
                 <th scope="col">Volume</th>
                 <th scope="col">Effort drift</th>
@@ -349,6 +418,12 @@ function ExecutionSection({ execution }) {
               {execution.map((ex) => (
                 <tr key={ex.exerciseId}>
                   <td>{ex.name}</td>
+                  <td className="exec-table-side">
+                    {formatPlannedSummary(ex.planned, loadWeightUnit())}
+                  </td>
+                  <td className="exec-table-side">
+                    {formatActualSummary(ex.actual, loadWeightUnit())}
+                  </td>
                   <td>{formatAdherence(ex.loadAdherence)}</td>
                   <td>{formatAdherence(ex.volumeAdherence)}</td>
                   <td>
