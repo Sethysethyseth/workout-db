@@ -1,6 +1,6 @@
 # TASK U7: weekly report band on Home
 
-STATUS: QUEUED
+STATUS: LANDED f22989d
 MODEL: fable
 MODE: 1-relay (index.css + AnalyticsPage overlap with U8/U9 - never parallel)
 

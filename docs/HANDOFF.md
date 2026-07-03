@@ -1,6 +1,6 @@
 # HANDOFF — current state
 
-**Updated:** July 3, 2026 (analytics UI critique session — Seth reviewed the B8 chart layout, five-point polish wave agreed, B9 engine task block QUEUED, merge to main PENDING Seth's trigger phrase)
+**Updated:** July 3, 2026 (U7 review session — U7 landed `f22989d` + pushed, Seth's visual sign-off pending on the Vercel staging deploy; NEW standing workflow: Seth smoke-tests on the staging-branch Vercel deployment, so reviewed units get committed+pushed BEFORE his sign-off)
 **Rule:** rewritten in place at the end of every working session. Dated, never versioned. If this file looks stale (date > ~2 weeks old), verify branch/deploy state from ground truth before trusting it.
 
 ---
@@ -30,6 +30,31 @@
 3. **Verify the manually inserted prod `_prisma_migrations` row's `checksum` matches staging's** for `20260603140000_add_user_username`. Latent hazard — check once, fix if mismatched.
 4. Confirm prod Render serving cleanly post-recovery.
 5. Low-priority: redundant spare stash on `ui-palettes-v2` (`WIP unrelated to ui-palettes-v2 merge`, July 1) — `git stash drop` once confirmed unneeded.
+
+## Session log (July 3 later — U7 landed + smoke-workflow change, Claude Code)
+
+- **U7 (Home weekly report band) reviewed + committed (`f22989d`) + pushed.**
+  Cursor delivered to spec: `WeeklyReport.jsx` self-fetching two parallel
+  non-overlapping summary windows (today-6d..today vs today-13d..today-7d),
+  mounted on DashboardPage between hero and Recent workouts; `pickTopGain`
+  and `toDateOnlyString` extracted verbatim to `client/src/lib/` (StatTiles/
+  AnalyticsPage diffs are pure import swaps); all four states implemented
+  (loading/error/both-empty render nothing, prior-empty = "first week
+  tracked", current-empty = nudge with prior count); CSS tokens-only under
+  `weekly-report-` prefix. Reviewer verified: build re-run green, no hex in
+  the new CSS block, `/sessions/mine` has no server-side limit so the
+  workout counts are trustworthy. Two accepted cosmetic nits: a tiny
+  positive sets delta can render "+0.0", and windows compute once at mount
+  (stale after midnight until reload).
+- **WORKFLOW CHANGE (Seth, standing):** all smoke testing now happens on the
+  Vercel deployment built from the staging branch — never local dev (avoids
+  the client/.env prod-API trap). Relay order updated: after spec review
+  passes, Claude Code commits + pushes to staging IMMEDIATELY so a deploy
+  exists to test; Seth's visual sign-off happens on the deployment, after
+  the commit. Merge to main still gated on sign-off + trigger phrase.
+- **U7 visual sign-off PENDING** — Seth smokes the Vercel build of
+  `analytics-engine` @ `f22989d` (login `smoke_b8`, band on Home, palettes x
+  modes, narrow-viewport wrap). U8 dispatches only after sign-off.
 
 ## Session log (July 3 — analytics polish wave planned, Claude Code)
 
@@ -157,10 +182,11 @@
    session maxes — they can disagree; the U8 block therefore requires the
    strength delta chip to derive from `e1rmSeries` endpoints, not
    `e1rmTrend`.
-2. **Dispatch U7 -> U8 -> U9 to Cursor, ONE AT A TIME** (all three QUEUED
-   in `docs/tasks/`; they share AnalyticsPage.jsx/index.css so the wave is
-   strictly serialized — never a Mode 2 pair). Seth critiques each unit's
-   visuals on-device after it lands before dispatching the next.
+2. **U7 LANDED (`f22989d`), Seth's visual sign-off on the Vercel staging
+   deploy PENDING; then dispatch U8 -> U9 to Cursor, ONE AT A TIME** (they
+   share AnalyticsPage.jsx/index.css so the wave is strictly serialized —
+   never a Mode 2 pair). Seth critiques each unit's visuals on the deployed
+   staging build after it lands before dispatching the next.
 2. **Merge `analytics-engine` -> main DEFERRED until the visuals are locked
    in** (Seth, July 3). When ready: "push to main" verbatim, then
    one-command-at-a-time with approval. Pre-merge: Seth's personal read of

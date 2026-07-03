@@ -173,6 +173,17 @@ which is worse than either alternative).
   attention, rationing") are REQUIRED published content regardless of angle.
   Includes the "who should NOT use this" list and the Pro-limit scar as a
   documented receipt.
+- **2026-07-03:** Smoke-testing lane changed (Seth): visual verification now
+  happens on the STAGING-BRANCH CLOUD DEPLOYMENT (Vercel preview of
+  `analytics-engine`), never a local dev server. Reason: local dev had a
+  footgun (client env silently pointing at the prod API) and the deployed
+  build is the real artifact anyway. Relay-order consequence: the reviewer
+  seat commits + pushes a unit to staging as soon as spec review passes, so
+  a deployment exists for the human to smoke; visual sign-off moves AFTER
+  the commit (it gates dispatching the NEXT unit and the eventual main
+  merge, not the staging commit). Generalizes for the public repo as:
+  "review gates the commit; human visual sign-off gates the next unit and
+  the release, and it happens on a deployed build, not a dev server."
 - **2026-07-02 (later still):** Shell repo created at
   `github.com/Sethysethyseth/the-poor-mans-agentic-workflow` (PRIVATE - still
   not published; visibility flip stays Seth's call). Contents: `BRIEF.md`
