@@ -1,6 +1,6 @@
 # HANDOFF — current state
 
-**Updated:** July 3, 2026 (U7 review session — U7 landed `f22989d` + pushed, Seth's visual sign-off pending on the Vercel staging deploy; NEW standing workflow: Seth smoke-tests on the staging-branch Vercel deployment, so reviewed units get committed+pushed BEFORE his sign-off)
+**Updated:** July 3, 2026 (U7 smoke feedback session — Seth smoked U7 on staging: weekly report band ACCEPTED, but the Start Workout hero shows a big dead-space block (root-caused: grid `align-content: stretch` + the tab's `min-height`) -> U10 authored+queued; analytics-tab overhaul = the already-queued U8/U9. Dispatch order U10 -> U8 -> U9, serialized.)
 **Rule:** rewritten in place at the end of every working session. Dated, never versioned. If this file looks stale (date > ~2 weeks old), verify branch/deploy state from ground truth before trusting it.
 
 ---
@@ -30,6 +30,32 @@
 3. **Verify the manually inserted prod `_prisma_migrations` row's `checksum` matches staging's** for `20260603140000_add_user_username`. Latent hazard — check once, fix if mismatched.
 4. Confirm prod Render serving cleanly post-recovery.
 5. Low-priority: redundant spare stash on `ui-palettes-v2` (`WIP unrelated to ui-palettes-v2 merge`, July 1) — `git stash drop` once confirmed unneeded.
+
+## Session log (July 3 latest — U7 smoke feedback -> U10 queued, Claude Code)
+
+- **Seth smoked U7 on the staging Vercel deploy** (screenshot committed:
+  `docs/smoke-tests/images/u7-home-weekly-report-champ-dark-staging.png`).
+  Verdict: weekly report band ACCEPTED; two critiques:
+  1. **Start Workout hero renders a big dead-space block** inside its
+     border. Root-caused by Claude Code (not a hero bug): `.stack` is
+     `display: grid`, and `.workout-tab.stack` has
+     `min-height: calc(100dvh - 7.5rem)` — grid's default
+     `align-content: stretch` distributes the spare viewport height into
+     the card rows, and the hero (least content) shows it worst. Fix =
+     `align-content: start` so spare space collects at the bottom under
+     the scene band. Pre-U7 this stretch existed but read as intentional;
+     the third row (weekly report) changed the distribution.
+  2. Weekly report set counts print needless decimals ("29.0",
+     "-3.0 vs last week") + the accepted "+0.0" tiny-delta nit.
+  Both folded into **U10 (`docs/tasks/u10-home-hero-dead-space.md`),
+  QUEUED, MODEL auto/cheap** (fully pre-diagnosed, mechanical).
+- **Analytics-tab critique ("looks untouched") needs no new authoring** —
+  correct observation, U8/U9 simply haven't been dispatched yet; they ARE
+  the full analytics update (volume trend view + e1RM sparklines;
+  execution concrete-comparison rework + balance polish).
+- **Dispatch order set: U10 -> U8 -> U9, strictly serialized** (all three
+  touch `client/src/index.css`); Seth smokes each on the staging deploy
+  after it lands before dispatching the next.
 
 ## Session log (July 3 later — U7 landed + smoke-workflow change, Claude Code)
 
@@ -182,11 +208,12 @@
    session maxes — they can disagree; the U8 block therefore requires the
    strength delta chip to derive from `e1rmSeries` endpoints, not
    `e1rmTrend`.
-2. **U7 LANDED (`f22989d`), Seth's visual sign-off on the Vercel staging
-   deploy PENDING; then dispatch U8 -> U9 to Cursor, ONE AT A TIME** (they
-   share AnalyticsPage.jsx/index.css so the wave is strictly serialized —
-   never a Mode 2 pair). Seth critiques each unit's visuals on the deployed
-   staging build after it lands before dispatching the next.
+2. **U7 smoked by Seth — band accepted; dispatch U10 -> U8 -> U9 to
+   Cursor, ONE AT A TIME** (all three touch index.css; U8/U9 also share
+   AnalyticsPage.jsx — strictly serialized, never a Mode 2 pair). U10 =
+   home hero dead-space fix + set-count formatting (Seth's July 3 smoke
+   critiques). Seth critiques each unit's visuals on the deployed staging
+   build after it lands before dispatching the next.
 2. **Merge `analytics-engine` -> main DEFERRED until the visuals are locked
    in** (Seth, July 3). When ready: "push to main" verbatim, then
    one-command-at-a-time with approval. Pre-merge: Seth's personal read of
