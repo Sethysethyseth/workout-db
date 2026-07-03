@@ -6,7 +6,8 @@
 // sessions/templates before reseeding, so re-run freely after a staging DB
 // reset (`npm test` pretest) nukes the account.
 //
-// Account: smoke-b8 / SmokeTest-B8-2026 (smoke-b8@example.com)
+// Account: username smoke_b8 (UNDERSCORE - the account predates this script
+// and usernames are immutable) / SmokeTest-B8-2026 (smoke-b8@example.com)
 // Data: 8 weeks (Mon/Wed/Fri upper/lower), progressive overload, RIR mostly
 // logged (gaps on lat pulldown wk1-3 + cable rows odd weeks for the honesty
 // states), last 3 "Upper A" sessions template-linked so the execution card
@@ -16,7 +17,7 @@
 // the start-session response relation is `sessionExercises`.
 
 const BASE = "https://workout-db-staging.onrender.com";
-const USERNAME = "smoke-b8";
+const USERNAME = "smoke_b8";
 const EMAIL = "smoke-b8@example.com";
 const PASSWORD = "SmokeTest-B8-2026";
 
