@@ -58,12 +58,12 @@
   U7 (Home weekly report) / U8 (trend view + sparklines) / U9 (execution
   rework + balance polish) listed as QUEUE candidates; U8/U9 blocks get
   authored after B9 lands (they consume its payload shape).
-- **Merge to main: Seth said "merge the branch first if that suits you" —
-  NOT the verbatim trigger phrase, so the sequence was NOT started.** Waiting
-  on "push to main" verbatim. Pre-merge items still open: Seth's personal
-  read of the `analyticsController.js` findMany where-clause, and the two
-  open forks below. New polish work will pile onto `analytics-engine` unless
-  the merge happens first (Seth leaned yes-merge-first).
+- **Merge to main: DEFERRED by Seth — "i dont think i want to push the
+  analytics to main until the visuals are locked in."** The B9/U7-U9 polish
+  wave continues on `analytics-engine`; the merge happens after Seth signs
+  off on the visuals (still gated on "push to main" verbatim). Pre-merge
+  items still open: Seth's personal read of the `analyticsController.js`
+  findMany where-clause, and the two open forks below.
 - QUEUE.md refreshed: B8 (`00c67dc`) and U6 (`d4b1d72`) moved to Landed.
 - Stray smoke screenshots tidied into `docs/smoke-tests/images/`
   (analytics-b8-u6-lbs-default + two smoke-b8 login-error shots) and
@@ -149,15 +149,16 @@
 
 ## Next up (the active task)
 
-1. **Merge `analytics-engine` -> main** (Seth leaned yes; gated: requires
-   "push to main" verbatim, then one-command-at-a-time with approval).
-   Pre-merge: Seth's personal read of the `findMany` where-clause + plan-side
-   include in `analyticsController.js` (the one cross-user-leak surface), and
-   settle the two open forks below.
-2. **Dispatch B9** (`docs/tasks/b9-analytics-time-series.md`, QUEUED) to
-   Cursor — on a fresh branch if the merge happens first, else on
-   `analytics-engine`. Then review/land, then author U7-U9 (see July 3
-   session log for the five-point polish wave).
+1. **Dispatch B9** (`docs/tasks/b9-analytics-time-series.md`, QUEUED) to
+   Cursor on `analytics-engine`. Then review/land, then author U7-U9 (see
+   July 3 session log for the five-point polish wave). Seth critiques each
+   UI unit visually as it ships.
+2. **Merge `analytics-engine` -> main DEFERRED until the visuals are locked
+   in** (Seth, July 3). When ready: "push to main" verbatim, then
+   one-command-at-a-time with approval. Pre-merge: Seth's personal read of
+   the `findMany` where-clause + plan-side include in
+   `analyticsController.js` (the one cross-user-leak surface), and settle
+   the two open forks below.
 3. Open TODOs #1-4 (prod verification — manual, browser).
 4. Track A (A1 catalog merge, then A4 FK design — now including
    set->BlockWorkoutSet linkage for block-plan execution fidelity) is the
