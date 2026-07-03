@@ -3,6 +3,12 @@ import * as analyticsApi from "../api/analyticsApi.js";
 import { ErrorMessage } from "../components/ErrorMessage.jsx";
 import { LoadingState } from "../components/LoadingState.jsx";
 import { HowCalculatedButton } from "../components/analytics/HowCalculatedButton.jsx";
+import { ChartTableToggle } from "../components/analytics/ChartTableToggle.jsx";
+import { StatTiles } from "../components/analytics/StatTiles.jsx";
+import { MuscleVolumeChart } from "../components/analytics/MuscleVolumeChart.jsx";
+import { StrengthTrendChart } from "../components/analytics/StrengthTrendChart.jsx";
+import { Meter } from "../components/analytics/Meter.jsx";
+import { BalanceScale } from "../components/analytics/BalanceScale.jsx";
 import { loadWeightUnit } from "../lib/weightUnitPref.js";
 
 const RANGE_PRESETS = [
@@ -76,126 +82,156 @@ function MatchedEffortCell({ trend }) {
   );
 }
 
+/** Shared head for a chart card: title + sub on the left, Chart|Table chips
+    on the right. `cardName` is the plain-string title for aria labels (the
+    title itself may carry JSX like a how-calculated button). */
+function ChartCardHead({ title, cardName, sub, view, onViewChange }) {
+  return (
+    <div className="analytics-card-head stack">
+      <div className="row">
+        <h2>{title}</h2>
+        <ChartTableToggle value={view} onChange={onViewChange} cardName={cardName} />
+      </div>
+      <p className="muted small analytics-card-sub">{sub}</p>
+    </div>
+  );
+}
+
 function PerMuscleSection({ perMuscle }) {
+  const [view, setView] = useState("chart");
   return (
     <section className="card analytics-table-card">
-      <div className="analytics-card-head stack">
-        <h2>Per muscle</h2>
-        <p className="muted small analytics-card-sub">
-          Weekly training volume per muscle over the selected range.
-        </p>
-      </div>
-      <div className="table-scroll">
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th scope="col">Muscle</th>
-              <th scope="col">
-                <span>Effective sets/wk</span>{" "}
-                <HowCalculatedButton title="Effective sets/wk" copy={HOW_EFFECTIVE_SETS} />
-              </th>
-              <th scope="col">
-                <span>Stimulating sets/wk</span>{" "}
-                <HowCalculatedButton title="Stimulating sets/wk" copy={HOW_STIMULATING_SETS} />
-              </th>
-              <th scope="col">Sessions/wk</th>
-              <th scope="col">Last trained</th>
-            </tr>
-          </thead>
-          <tbody>
-            {perMuscle.map((m) => (
-              <tr key={m.muscle}>
-                <td className="analytics-muscle-name">{m.muscle}</td>
-                <td>{m.effectiveSets}</td>
-                <td>
-                  {m.stimulatingSets === null ? (
-                    <span className="analytics-unlock">log RIR or RPE to unlock</span>
-                  ) : (
-                    m.stimulatingSets
-                  )}
-                </td>
-                <td>{m.frequency}</td>
-                <td>{m.daysSinceLast}d ago</td>
+      <ChartCardHead
+        title="Weekly volume by muscle"
+        cardName="Weekly volume by muscle"
+        sub={
+          <>
+            Effective <HowCalculatedButton title="Effective sets/wk" copy={HOW_EFFECTIVE_SETS} />{" "}
+            vs. stimulating{" "}
+            <HowCalculatedButton title="Stimulating sets/wk" copy={HOW_STIMULATING_SETS} /> sets
+            per week over the selected range.
+          </>
+        }
+        view={view}
+        onViewChange={setView}
+      />
+      {view === "chart" ? (
+        <div className="analytics-chart-body">
+          <MuscleVolumeChart perMuscle={perMuscle} />
+        </div>
+      ) : (
+        <div className="table-scroll">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th scope="col">Muscle</th>
+                <th scope="col">
+                  <span>Effective sets/wk</span>{" "}
+                  <HowCalculatedButton title="Effective sets/wk" copy={HOW_EFFECTIVE_SETS} />
+                </th>
+                <th scope="col">
+                  <span>Stimulating sets/wk</span>{" "}
+                  <HowCalculatedButton title="Stimulating sets/wk" copy={HOW_STIMULATING_SETS} />
+                </th>
+                <th scope="col">Sessions/wk</th>
+                <th scope="col">Last trained</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {perMuscle.map((m) => (
+                <tr key={m.muscle}>
+                  <td className="analytics-muscle-name">{m.muscle}</td>
+                  <td>{m.effectiveSets}</td>
+                  <td>
+                    {m.stimulatingSets === null ? (
+                      <span className="analytics-unlock">log RIR or RPE to unlock</span>
+                    ) : (
+                      m.stimulatingSets
+                    )}
+                  </td>
+                  <td>{m.frequency}</td>
+                  <td>{m.daysSinceLast}d ago</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </section>
   );
 }
 
 function PerExerciseSection({ perExercise }) {
+  const [view, setView] = useState("chart");
   return (
     <section className="card analytics-table-card">
-      <div className="analytics-card-head stack">
-        <h2>Per exercise</h2>
-        <p className="muted small analytics-card-sub">
-          Best set and estimated 1-rep-max trend per exercise in range.
-        </p>
-      </div>
-      <div className="table-scroll">
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th scope="col">Exercise</th>
-              <th scope="col">Best set</th>
-              <th scope="col">
-                <span>Best e1RM</span>{" "}
-                <HowCalculatedButton title="Best e1RM" copy={HOW_BEST_E1RM} />
-              </th>
-              <th scope="col">e1RM trend</th>
-              <th scope="col">
-                <span>Matched effort</span>{" "}
-                <HowCalculatedButton title="Matched effort" copy={HOW_MATCHED_EFFORT} />
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {perExercise.map((ex) => (
-              <tr key={ex.exerciseId}>
-                <td>{ex.name}</td>
-                <td>
-                  {ex.bestSet ? (
-                    `${formatWeight(ex.bestSet.weight)} × ${Math.round(ex.bestSet.reps)}`
-                  ) : (
-                    <span className="muted small">not enough data</span>
-                  )}
-                </td>
-                <td>
-                  {ex.bestSet && ex.bestSet.e1rm?.epley != null ? (
-                    formatWeight(ex.bestSet.e1rm.epley)
-                  ) : (
-                    <span className="muted small">not enough data</span>
-                  )}
-                </td>
-                <td>
-                  <E1rmTrendCell trend={ex.e1rmTrend} />
-                </td>
-                <td>
-                  <MatchedEffortCell trend={ex.matchedEffortTrend} />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </section>
-  );
-}
-
-function BalanceRatio({ label, value, unavailable = false }) {
-  return (
-    <div className="row analytics-balance-row">
-      <span>{label}</span>
-      {unavailable ? (
-        <span className="muted small">not available</span>
-      ) : value === null ? (
-        <span className="muted small">— not enough data</span>
+      <ChartCardHead
+        title="Strength trends"
+        cardName="Strength trends"
+        sub={
+          <>
+            Estimated 1RM <HowCalculatedButton title="Best e1RM" copy={HOW_BEST_E1RM} /> first
+            vs. latest session per exercise, with the matched-effort{" "}
+            <HowCalculatedButton title="Matched effort" copy={HOW_MATCHED_EFFORT} /> trend where
+            unlocked.
+          </>
+        }
+        view={view}
+        onViewChange={setView}
+      />
+      {view === "chart" ? (
+        <div className="analytics-chart-body">
+          <StrengthTrendChart perExercise={perExercise} />
+        </div>
       ) : (
-        <span>{value.toFixed(2)} : 1</span>
+        <div className="table-scroll">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th scope="col">Exercise</th>
+                <th scope="col">Best set</th>
+                <th scope="col">
+                  <span>Best e1RM</span>{" "}
+                  <HowCalculatedButton title="Best e1RM" copy={HOW_BEST_E1RM} />
+                </th>
+                <th scope="col">e1RM trend</th>
+                <th scope="col">
+                  <span>Matched effort</span>{" "}
+                  <HowCalculatedButton title="Matched effort" copy={HOW_MATCHED_EFFORT} />
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {perExercise.map((ex) => (
+                <tr key={ex.exerciseId}>
+                  <td>{ex.name}</td>
+                  <td>
+                    {ex.bestSet ? (
+                      `${formatWeight(ex.bestSet.weight)} × ${Math.round(ex.bestSet.reps)}`
+                    ) : (
+                      <span className="muted small">not enough data</span>
+                    )}
+                  </td>
+                  <td>
+                    {ex.bestSet && ex.bestSet.e1rm?.epley != null ? (
+                      formatWeight(ex.bestSet.e1rm.epley)
+                    ) : (
+                      <span className="muted small">not enough data</span>
+                    )}
+                  </td>
+                  <td>
+                    <E1rmTrendCell trend={ex.e1rmTrend} />
+                  </td>
+                  <td>
+                    <MatchedEffortCell trend={ex.matchedEffortTrend} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
-    </div>
+    </section>
   );
 }
 
@@ -203,11 +239,21 @@ function BalanceSection({ balance }) {
   return (
     <section className="card stack">
       <h2 className="analytics-section-title">Balance</h2>
-      <BalanceRatio label="Push : Pull" value={balance.pushPull} />
-      <BalanceRatio label="Quad : Hamstring" value={balance.quadHam} />
+      <BalanceScale
+        label="Push : Pull"
+        value={balance.pushPull}
+        leftCaption="pull-heavy"
+        rightCaption="push-heavy"
+      />
+      <BalanceScale
+        label="Quad : Hamstring"
+        value={balance.quadHam}
+        leftCaption="ham-heavy"
+        rightCaption="quad-heavy"
+      />
       {/* Always null in v1 - the row stays visible because the gap is part of
           the honesty contract (the reason ships in honestyNotes below). */}
-      <BalanceRatio label="Front : Rear delt" value={balance.frontRearDelt} unavailable />
+      <BalanceScale label="Front : Rear delt" value={balance.frontRearDelt} unavailable />
     </section>
   );
 }
@@ -221,10 +267,10 @@ function EffortDriftCell({ value }) {
   if (value === null) {
     return <span className="analytics-unlock">plan + log RIR or RPE to unlock</span>;
   }
-  if (value === 0) return <span>on target</span>;
+  if (value === 0) return <span className="exec-drift--on-target">on target</span>;
   const sign = value > 0 ? "+" : "-";
   return (
-    <span>
+    <span className="exec-drift--off">
       {sign}
       {Math.abs(value)} RIR{" "}
       <span className="muted small">{value > 0 ? "sandbagging" : "overreaching"}</span>
@@ -232,23 +278,68 @@ function EffortDriftCell({ value }) {
   );
 }
 
+/* Meters cap the fill at 120%; the printed % is always the true value. */
+const ADHERENCE_METER_MAX = 1.2;
+
+function AdherenceMetric({ label, value }) {
+  return (
+    <div className="exec-metric">
+      <span className="muted small">{label}</span>
+      {value === null ? (
+        <>
+          <span />
+          <span className="exec-val muted small">not enough data</span>
+        </>
+      ) : (
+        <>
+          <Meter value={value} max={ADHERENCE_METER_MAX} target={1} />
+          <span className="exec-val">{Math.round(value * 100)}%</span>
+        </>
+      )}
+    </div>
+  );
+}
+
 function ExecutionSection({ execution }) {
+  const [view, setView] = useState("chart");
   return (
     <section className="card analytics-table-card">
-      <div className="analytics-card-head stack">
-        <h2>
-          Execution{" "}
-          <HowCalculatedButton title="Execution" copy={HOW_EXECUTION} />
-        </h2>
-        <p className="muted small analytics-card-sub">
-          Plan vs. actual for sets logged from a template.
-        </p>
-      </div>
+      <ChartCardHead
+        title={
+          <>
+            Execution <HowCalculatedButton title="Execution" copy={HOW_EXECUTION} />
+          </>
+        }
+        cardName="Execution"
+        sub="Plan vs. actual for sets logged from a template. The hairline marks 100% — right on plan."
+        view={view}
+        onViewChange={setView}
+      />
       {execution.length === 0 ? (
-        <p className="muted small analytics-card-sub" style={{ margin: 0 }}>
-          Log workouts from a template with planned sets to unlock execution
-          fidelity.
-        </p>
+        <div className="analytics-chart-body">
+          <p className="muted small analytics-chart-note">
+            Log workouts from a template with planned sets to unlock execution fidelity.
+          </p>
+        </div>
+      ) : view === "chart" ? (
+        <div className="analytics-chart-body">
+          <div className="exec-rows">
+            {execution.map((ex) => (
+              <div key={ex.exerciseId} className="exec-row">
+                <span className="exec-name">{ex.name}</span>
+                <AdherenceMetric label="Load" value={ex.loadAdherence} />
+                <AdherenceMetric label="Volume" value={ex.volumeAdherence} />
+                <div className="exec-metric">
+                  <span className="muted small">Effort</span>
+                  <span />
+                  <span className="exec-val">
+                    <EffortDriftCell value={ex.effortDrift} />
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       ) : (
         <div className="table-scroll">
           <table className="data-table">
@@ -286,9 +377,12 @@ function DataQualitySection({ meta }) {
       {meta.effortCoverage === null ? (
         <p className="muted analytics-card-sub">no attributed sets in range</p>
       ) : (
-        <p className="analytics-card-sub">
-          Effort (RIR or RPE) logged on {Math.round(meta.effortCoverage * 100)}% of sets
-        </p>
+        <div className="coverage-row">
+          <p className="analytics-card-sub">
+            Effort (RIR or RPE) logged on {Math.round(meta.effortCoverage * 100)}% of sets
+          </p>
+          <Meter value={meta.effortCoverage} />
+        </div>
       )}
       {Array.isArray(meta.honestyNotes) && meta.honestyNotes.length > 0 ? (
         <ul className="muted small analytics-honesty-notes">
@@ -359,9 +453,11 @@ export function AnalyticsPage() {
       </div>
 
       <ErrorMessage error={error} />
-      {loading ? <LoadingState /> : null}
+      {/* Skeleton only on first load; a range refetch dims the previous
+          render in place instead of flashing it away. */}
+      {loading && !summary ? <LoadingState /> : null}
 
-      {!loading && !error && summary ? (
+      {!error && summary ? (
         isEmpty ? (
           <div className="card stack">
             <p className="muted" style={{ margin: 0 }}>
@@ -369,13 +465,14 @@ export function AnalyticsPage() {
             </p>
           </div>
         ) : (
-          <>
+          <div className={`stack analytics-content${loading ? " is-refreshing" : ""}`}>
+            <StatTiles summary={summary} />
             <PerMuscleSection perMuscle={summary.perMuscle} />
             <PerExerciseSection perExercise={summary.perExercise} />
             <ExecutionSection execution={summary.execution ?? []} />
             <BalanceSection balance={summary.balance} />
             <DataQualitySection meta={summary.meta} />
-          </>
+          </div>
         )
       ) : null}
     </div>

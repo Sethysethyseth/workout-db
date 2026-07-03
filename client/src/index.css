@@ -4216,3 +4216,483 @@ html[data-theme="dark"] .auth-page .auth-form.card {
   display: grid;
   gap: 4px;
 }
+
+/* --- Analytics charts (layout pass) ---
+   Emphasis encoding: context marks (effective sets, first-session dots) are
+   neutral gray; the ONE accent series per chart is the headline metric
+   (stimulating sets, latest e1RM). Chosen over a two-shade accent ramp
+   because light-mode iron/champ/forest/chill accents cannot yield a second,
+   lighter shade that stays >= 2:1 on the card surface (validated with the
+   dataviz ordinal checks). Direct value labels + the Table view are the
+   contrast relief channel everywhere a fill sits below 3:1 (iron light). */
+
+.analytics-page {
+  --chart-accent: var(--color-interactive);
+  --chart-context: color-mix(in srgb, var(--color-text-secondary) 46%, var(--color-surface-3));
+  --chart-track: color-mix(in srgb, var(--color-text-secondary) 14%, var(--color-surface-2));
+  --chart-hairline: color-mix(in srgb, var(--color-text) 14%, transparent);
+}
+
+/* Refetch: hold the previous render dimmed instead of a skeleton flash. */
+.analytics-content {
+  transition: opacity var(--motion-base) var(--ease-standard);
+}
+
+.analytics-content.is-refreshing {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+/* -- KPI stat tiles -- */
+
+.analytics-kpis {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+@media (min-width: 720px) {
+  .analytics-kpis {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.stat-tile {
+  display: grid;
+  gap: 2px;
+  align-content: start;
+}
+
+.stat-tile-label {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  font-size: 11px;
+}
+
+/* Proportional figures on purpose: tabular-nums reads loose at display size. */
+.stat-tile-value {
+  font-size: 26px;
+  font-weight: 650;
+  line-height: 1.15;
+  color: var(--color-text);
+}
+
+.stat-tile-value--up {
+  color: var(--color-success-text);
+}
+
+.stat-tile-sub {
+  min-height: 1.2em;
+}
+
+/* -- Shared chart chrome -- */
+
+.chart-legend {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.legend-key {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend-swatch {
+  width: 12px;
+  height: 8px;
+  border-radius: 2px;
+  display: inline-block;
+}
+
+.legend-swatch--context {
+  background: var(--chart-context);
+}
+
+.legend-swatch--accent {
+  background: var(--chart-accent);
+}
+
+.legend-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.legend-dot--context {
+  background: var(--chart-context);
+}
+
+.legend-dot--accent {
+  background: var(--chart-accent);
+}
+
+.analytics-chart-note {
+  margin: 0;
+}
+
+/* Hover/focus tooltip carried in data-tip; values also live in direct
+   labels and the Table view, so the tip enhances rather than gates. */
+.chart-tip-host {
+  position: relative;
+}
+
+.chart-tip-host:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--color-interactive) 55%, transparent);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.chart-tip-host:hover::after,
+.chart-tip-host:focus-visible::after {
+  content: attr(data-tip);
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 4px);
+  z-index: 5;
+  max-width: min(320px, 90vw);
+  padding: 5px 8px;
+  border-radius: 8px;
+  background: var(--color-surface-3);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-card);
+  color: var(--color-text);
+  font-size: 12px;
+  line-height: 1.35;
+  pointer-events: none;
+  white-space: normal;
+}
+
+/* Cards with charts host the padded chart body below the bordered head. */
+.analytics-chart-body {
+  padding: 12px 14px 14px;
+  display: grid;
+  gap: 10px;
+}
+
+.chart-table-toggle {
+  display: flex;
+  gap: 6px;
+}
+
+.view-chip {
+  padding: 4px 12px;
+  font-size: 12px;
+}
+
+/* -- Muscle volume bars -- */
+
+.mv-rows {
+  display: grid;
+  gap: 7px;
+}
+
+.mv-row {
+  display: grid;
+  grid-template-columns: minmax(74px, 108px) 1fr;
+  align-items: center;
+  gap: 10px;
+}
+
+.mv-name {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: capitalize;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mv-track {
+  position: relative;
+  height: 18px;
+}
+
+/* Bars: thin marks, 4px rounded data-end, square at the baseline (left). */
+.mv-bar {
+  position: absolute;
+  left: 0;
+  border-radius: 0 4px 4px 0;
+  min-width: 2px;
+}
+
+.mv-bar--effective {
+  top: 0;
+  height: 18px;
+  background: var(--chart-context);
+}
+
+.mv-bar--stimulating {
+  top: 5px;
+  height: 8px;
+  background: var(--chart-accent);
+}
+
+.mv-val {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+/* -- Strength trend dumbbells -- */
+
+.st-rows {
+  display: grid;
+  gap: 12px;
+}
+
+.st-row {
+  display: grid;
+  gap: 3px;
+}
+
+.st-row-head {
+  gap: 8px;
+  flex-wrap: nowrap;
+}
+
+.st-name {
+  font-size: 13px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.st-delta {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.st-delta--up {
+  color: var(--color-success-text);
+  font-weight: 600;
+}
+
+.st-matched {
+  color: var(--color-text-secondary);
+}
+
+.st-matched--up {
+  color: var(--color-success-text);
+}
+
+/* Plot line: dots >= 8px with a 2px surface ring so overlapping
+   first/latest marks stay separable. Inset horizontally so edge
+   values do not clip at 0% / 100%. */
+.st-plot {
+  position: relative;
+  height: 14px;
+  margin: 2px 6px 0;
+}
+
+.st-connector {
+  position: absolute;
+  top: 6px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--chart-context);
+}
+
+.st-dot {
+  position: absolute;
+  top: 2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  transform: translateX(-50%);
+  box-shadow: 0 0 0 2px var(--color-surface-1);
+}
+
+.st-dot--context {
+  background: var(--chart-context);
+}
+
+.st-dot--accent {
+  background: var(--chart-accent);
+}
+
+.st-axis {
+  position: relative;
+  height: 30px;
+  margin: 0 6px;
+  border-top: 1px solid var(--chart-hairline);
+}
+
+.st-tick {
+  position: absolute;
+  top: 3px;
+  transform: translateX(-50%);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-secondary);
+}
+
+.st-axis-unit {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+}
+
+/* -- Meters (execution adherence, effort coverage) -- */
+
+.meter {
+  position: relative;
+  display: block;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--chart-track);
+  overflow: hidden;
+  min-width: 0;
+}
+
+.meter-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 0 4px 4px 0;
+  background: var(--chart-accent);
+  min-width: 2px;
+}
+
+.meter-target {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  width: 2px;
+  background: color-mix(in srgb, var(--color-text) 55%, transparent);
+}
+
+.exec-rows {
+  display: grid;
+  gap: 14px;
+}
+
+.exec-row {
+  display: grid;
+  gap: 6px;
+}
+
+.exec-name {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.exec-metric {
+  display: grid;
+  grid-template-columns: 56px 1fr 88px;
+  align-items: center;
+  gap: 10px;
+}
+
+.exec-metric .meter {
+  align-self: center;
+}
+
+.exec-val {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.exec-drift--on-target {
+  color: var(--color-success-text);
+}
+
+.exec-drift--off {
+  color: var(--color-warn-text);
+}
+
+/* -- Balance scales -- */
+
+.balance-block {
+  gap: 4px;
+}
+
+.balance-value {
+  font-variant-numeric: tabular-nums;
+}
+
+.balance-scale {
+  position: relative;
+  height: 14px;
+}
+
+.balance-track {
+  position: absolute;
+  inset: 3px 0;
+  border-radius: 4px;
+  background: var(--chart-track);
+}
+
+.balance-fill {
+  position: absolute;
+  top: 3px;
+  height: 8px;
+  background: var(--chart-accent);
+  border-radius: 2px;
+}
+
+.balance-center {
+  position: absolute;
+  left: 50%;
+  top: -1px;
+  bottom: -1px;
+  width: 2px;
+  transform: translateX(-50%);
+  background: color-mix(in srgb, var(--color-text) 55%, transparent);
+}
+
+.balance-marker {
+  position: absolute;
+  top: 2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  transform: translateX(-50%);
+  background: var(--chart-accent);
+  box-shadow: 0 0 0 2px var(--color-surface-1);
+}
+
+.balance-captions {
+  flex-wrap: nowrap;
+}
+
+/* -- Data quality -- */
+
+.coverage-row {
+  display: grid;
+  grid-template-columns: 1fr 120px;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Restrained entrance: bars/fills grow once, ~180ms ease-out. */
+@media (prefers-reduced-motion: no-preference) {
+  .mv-bar,
+  .meter-fill,
+  .balance-fill {
+    animation: chart-grow var(--motion-base) var(--ease-standard);
+    transform-origin: left center;
+  }
+}
+
+@keyframes chart-grow {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
