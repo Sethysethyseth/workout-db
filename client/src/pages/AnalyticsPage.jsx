@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import * as analyticsApi from "../api/analyticsApi.js";
 import { ErrorMessage } from "../components/ErrorMessage.jsx";
 import { LoadingState } from "../components/LoadingState.jsx";
 import { HowCalculatedButton } from "../components/analytics/HowCalculatedButton.jsx";
 import { ChartTableToggle } from "../components/analytics/ChartTableToggle.jsx";
+import { AnalyticsViewTabs } from "../components/analytics/AnalyticsViewTabs.jsx";
 import { StatTiles } from "../components/analytics/StatTiles.jsx";
 import { MuscleVolumeChart } from "../components/analytics/MuscleVolumeChart.jsx";
 import { MuscleVolumeTrend } from "../components/analytics/MuscleVolumeTrend.jsx";
@@ -19,6 +21,14 @@ const RANGE_PRESETS = [
   { weeks: 8, label: "8 weeks" },
   { weeks: 12, label: "12 weeks" },
 ];
+
+const ANALYTICS_VIEWS = ["muscles", "strength", "execution"];
+
+function parseAnalyticsView(searchParams) {
+  const raw = searchParams.get("view");
+  if (raw === "strength" || raw === "execution") return raw;
+  return "muscles";
+}
 
 /* Same 1-2 sentence voice as METRIC_INTRO_COPY. */
 const HOW_EFFECTIVE_SETS =
@@ -465,10 +475,17 @@ function DataQualitySection({ meta }) {
 }
 
 export function AnalyticsPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [weeks, setWeeks] = useState(4);
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const view = parseAnalyticsView(searchParams);
+
+  function setView(nextView) {
+    if (!ANALYTICS_VIEWS.includes(nextView)) return;
+    setSearchParams({ view: nextView }, { replace: true });
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -536,10 +553,19 @@ export function AnalyticsPage() {
         ) : (
           <div className={`stack analytics-content${loading ? " is-refreshing" : ""}`}>
             <StatTiles summary={summary} />
-            <PerMuscleSection perMuscle={summary.perMuscle} />
-            <PerExerciseSection perExercise={summary.perExercise} />
-            <ExecutionSection execution={summary.execution ?? []} />
-            <BalanceSection balance={summary.balance} />
+            <AnalyticsViewTabs value={view} onChange={setView} />
+            {view === "muscles" ? (
+              <>
+                <PerMuscleSection perMuscle={summary.perMuscle} />
+                <BalanceSection balance={summary.balance} />
+              </>
+            ) : null}
+            {view === "strength" ? (
+              <PerExerciseSection perExercise={summary.perExercise} />
+            ) : null}
+            {view === "execution" ? (
+              <ExecutionSection execution={summary.execution ?? []} />
+            ) : null}
             <DataQualitySection meta={summary.meta} />
           </div>
         )

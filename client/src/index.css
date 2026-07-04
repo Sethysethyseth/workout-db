@@ -4644,6 +4644,54 @@ html[data-theme="dark"] .auth-page .auth-form.card {
   box-shadow: var(--shadow-ring-accent);
 }
 
+.analytics-view-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  width: 100%;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--color-border) 42%, transparent);
+  background: var(--color-surface-2);
+}
+
+.analytics-view-tab {
+  min-height: 44px;
+  margin: 0;
+  padding: 10px 8px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.2;
+  cursor: pointer;
+  transition:
+    background var(--motion-fast) var(--ease-standard),
+    color var(--motion-fast) var(--ease-standard),
+    border-color var(--motion-fast) var(--ease-standard),
+    box-shadow var(--motion-fast) var(--ease-standard);
+}
+
+.analytics-view-tab:hover:not(.is-active) {
+  color: var(--color-text);
+  background: color-mix(in srgb, var(--color-surface-3) 55%, transparent);
+}
+
+.analytics-view-tab:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--color-interactive) 55%, transparent);
+  outline-offset: 2px;
+}
+
+.analytics-view-tab.is-active {
+  border-color: var(--color-interactive);
+  background: var(--color-nav-active-bg);
+  color: var(--color-text);
+  box-shadow: var(--shadow-ring-accent);
+}
+
 /* Table sections follow the template-table pattern: zero-padding card,
    padded head, .table-scroll body. */
 .analytics-table-card {
