@@ -1,9 +1,10 @@
 # HANDOFF — current state
 
-**Updated:** July 4, 2026 (Fable — N1 smoked by Seth: tab bar ACCEPTED, two
-critiques -> N1b task block authored + QUEUED (`n1b-mobile-chrome-fix.md`),
-dispatches before N2/N3. Earlier same day: Sonnet landed N1 (`d266242`) on
-`ui-nav-overhaul`; Fable authored N1/N2/N3; T3 merged to `main` (`750c42b`).)
+**Updated:** July 4, 2026 (Fable — N1b LANDED (`b366e17`) on
+`ui-nav-overhaul`, pushed: Cursor executed the block same session, Fable
+reviewed (one dead-CSS-rule fix) and committed. Awaiting Seth's visual smoke
+on the branch Vercel deploy before N2 dispatches. Earlier same day: N1
+landed + smoked, T3 merged to `main` (`750c42b`).)
 **Rule:** rewritten in place at the end of every working session. Dated, never versioned. If this file looks stale (date > ~2 weeks old), verify branch/deploy state from ground truth before trusting it.
 
 ---
@@ -30,6 +31,32 @@ dispatches before N2/N3. Earlier same day: Sonnet landed N1 (`d266242`) on
   - No schema changes rode along — `analytics-engine`'s merge has no migration coupling. The separate `exercise-catalog-seed` branch (A1) still has its own gated migration track.
 - **Render/Vercel not yet repointed from the `analytics-engine` staging deploy back to `main`** — RUNBOOK step 6 ("Repoint staging Render back to main. Verify redeploy SHA in Events.") is still open; do this before smoking prod.
 - Username feature LIVE and verified on both environments (unchanged).
+
+## Session log (July 4 latest+3 — N1b landed, Fable)
+
+- **Cursor executed `n1b-mobile-chrome-fix.md`; Fable reviewed and committed
+  (`b366e17`, 5 files, +129/-12), pushed to `origin/ui-nav-overhaul`.**
+  Scope exact (the 5 specced files); client build green; no hex in added
+  CSS; `client/package.json` untouched; every acceptance grep verified by
+  direct diff read. Delivered: scene-band bottom-inset lifts (both placed
+  correctly AFTER their inset:0 base rules), `.app:has(.bottom-nav) .nav`
+  mobile hide, Home masthead (crown/wordmark/date, mobile-only), shared
+  `.settings-page-title, .page-title` declaration on the three tab h1s,
+  frosted resume pill + empty-wrap fix + live-session-page hide.
+- **One reviewer fix:** the `--session-sticky-top` mobile override was DEAD
+  as delivered - placed in the media block at ~line 692, but the base rule
+  (`.session-detail-page { --session-sticky-top: 64px }`, ~line 2716) comes
+  later in source order at equal specificity, so 64px won. Relocated the
+  override to immediately after the base rule with a comment. Root cause
+  was the BLOCK's own placement instruction (Fable spec imprecision), not
+  a Cursor error - the block even warned about this exact hazard for the
+  scene rules but missed it for this one.
+- **Not yet done:** Seth's visual smoke of N1b on the branch Vercel deploy.
+  Checklist: scene band flush on the tab bar (all palettes x dark, Home +
+  a global-scene page like History), no top bar when logged in, masthead
+  renders (crown tinted per palette), page titles consistent, resume pill
+  while a workout is live (frosted, single line, band reads through),
+  desktop unchanged, and the flagged finish-dock-covers-tabs question.
 
 ## Session log (July 4 latest+2 — N1 smoke critiques -> N1b authored, Fable)
 
@@ -458,11 +485,13 @@ dispatches before N2/N3. Earlier same day: Sonnet landed N1 (`d266242`) on
 ## Next up (the active task)
 
 0. **N-wave navigation overhaul is the active UI track** (July 4).
-   **N1 LANDED (`d266242`) and smoked: tab bar accepted, fixes specced as
-   N1b (`n1b-mobile-chrome-fix.md`, QUEUED) — dispatch N1b to Cursor next.**
-   Then N2 (Profile hub), then N3 (analytics sub-views). Strictly
-   serialized (shared `index.css`). Fable pre-main review before the wave
-   merges.
+   **N1 (`d266242`) + N1b (`b366e17`) LANDED on `ui-nav-overhaul`, pushed —
+   awaiting Seth's visual smoke of N1b on the branch's Vercel deploy**
+   (mobile: scene band flush on the tab bar across palettes, no top bar +
+   Home masthead + big page titles, resume pill while live, finish-dock-
+   covers-tabs question; desktop: unchanged except the three page titles).
+   N2 (Profile hub) dispatches after sign-off, then N3. Strictly serialized
+   (shared `index.css`). Fable pre-main review before the wave merges.
 1. **B9 LANDED (`c7acb43`)** — Cursor implemented, Claude Code reviewed
    (scope exact, all acceptance criteria tested, reviewer tightened the
    inclusive-last-bucket assertion, re-ran unit lane 103/103, purity grep
