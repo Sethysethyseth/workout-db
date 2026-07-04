@@ -14,7 +14,7 @@ export function AppearancePage() {
 
   return (
     <div className="settings-page stack">
-      <Link to="/profile" className="settings-page-back muted small">
+      <Link to="/profile" className="settings-page-back">
         &larr; Profile
       </Link>
       <header className="settings-page-header">

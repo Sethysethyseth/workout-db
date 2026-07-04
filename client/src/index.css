@@ -1030,15 +1030,29 @@ html[data-theme="dark"] .loading-state {
 }
 
 .settings-page-back {
-  display: inline-block;
-  margin-bottom: 8px;
-  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+  padding: 9px 14px 9px 11px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-nav-active-bg);
+  color: var(--color-text);
+  font-size: 0.9rem;
+  font-weight: 650;
+  line-height: 1;
   text-decoration: none;
-  line-height: 1.35;
 }
 
 .settings-page-back:hover {
+  border-color: color-mix(in srgb, var(--color-interactive) 45%, var(--color-border));
   color: var(--color-text);
+}
+
+.settings-page-back:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--color-interactive) 55%, transparent);
+  outline-offset: 2px;
 }
 
 .profile-hub-header {
