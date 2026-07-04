@@ -1,9 +1,9 @@
 const express = require("express");
+const authRequired = require("../middleware/authRequired");
+const { resolveExerciseNames } = require("../controllers/exerciseController");
 
 const router = express.Router();
 
-router.get("/", (req, res) => {
-  res.json({ message: "Exercise routes working" });
-});
+router.post("/resolve", authRequired, resolveExerciseNames);
 
 module.exports = router;

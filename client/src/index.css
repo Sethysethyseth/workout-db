@@ -2982,6 +2982,29 @@ html[data-theme="dark"] .session-finish-dock {
   font-weight: 600;
 }
 
+.session-exercise-tracked-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  margin-left: 6px;
+  vertical-align: -2px;
+  flex-shrink: 0;
+}
+
+.session-exercise-tracked-badge svg {
+  display: block;
+}
+
+.session-exercise-tracked-badge--resolved {
+  color: color-mix(in srgb, var(--color-interactive) 72%, var(--color-text-secondary));
+}
+
+.session-exercise-tracked-badge--unresolved {
+  color: color-mix(in srgb, var(--color-text-secondary) 55%, var(--color-border));
+}
+
 .session-exercise-heading-summary {
   font-weight: 500;
   white-space: normal;

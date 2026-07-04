@@ -8,6 +8,7 @@ import {
   useState,
 } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import * as exerciseApi from "../api/exerciseApi.js";
 import * as sessionApi from "../api/sessionApi.js";
 import { ErrorMessage } from "../components/ErrorMessage.jsx";
 import { LoadingState } from "../components/LoadingState.jsx";
@@ -33,6 +34,109 @@ import {
   isBlankSessionExerciseName,
   sessionExerciseNameForInput,
 } from "../lib/sessionExerciseName.js";
+
+const exerciseResolutionCache = new Map();
+
+function exerciseResolutionCacheKey(name) {
+  const trimmed = String(name ?? "").trim();
+  if (!trimmed) return null;
+  return trimmed.toLowerCase();
+}
+
+async function cacheExerciseResolutions(names, onUpdate) {
+  const unique = [];
+  const seen = new Set();
+  for (const raw of names) {
+    const trimmed = String(raw ?? "").trim();
+    if (!trimmed) continue;
+    const key = trimmed.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    if (!exerciseResolutionCache.has(key)) unique.push(trimmed);
+  }
+  if (unique.length === 0) return;
+  try {
+    const data = await exerciseApi.resolveExerciseNames(unique);
+    const results = Array.isArray(data?.results) ? data.results : [];
+    for (const row of results) {
+      const key = exerciseResolutionCacheKey(row.name);
+      if (key) exerciseResolutionCache.set(key, row);
+    }
+    onUpdate?.();
+  } catch {
+    // Network failure: render no indicator rather than a wrong one.
+  }
+}
+
+async function refreshExerciseResolution(name, onUpdate) {
+  const trimmed = String(name ?? "").trim();
+  if (!trimmed) return;
+  try {
+    const data = await exerciseApi.resolveExerciseNames([trimmed]);
+    const row = data?.results?.[0];
+    if (row) {
+      const key = exerciseResolutionCacheKey(row.name);
+      if (key) exerciseResolutionCache.set(key, row);
+      onUpdate?.();
+    }
+  } catch {
+    // Keep prior cache entry or absent state on failure.
+  }
+}
+
+function lookupExerciseTrackedStatus(exerciseName) {
+  const key = exerciseResolutionCacheKey(exerciseName);
+  if (!key) return null;
+  const row = exerciseResolutionCache.get(key);
+  if (!row) return null;
+  return row.resolved ? "resolved" : "unresolved";
+}
+
+function ExerciseTrackedIndicator({ status }) {
+  if (status === "resolved") {
+    return (
+      <span
+        className="session-exercise-tracked-badge session-exercise-tracked-badge--resolved"
+        title="Tracked - counts toward your analytics"
+        aria-label="Tracked - counts toward your analytics"
+      >
+        <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
+          <circle cx="7" cy="7" r="6" fill="none" stroke="currentColor" strokeWidth="1.25" />
+          <path
+            d="M4.25 7.25 L6.25 9.25 L9.75 4.75"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.25"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </span>
+    );
+  }
+  if (status === "unresolved") {
+    return (
+      <span
+        className="session-exercise-tracked-badge session-exercise-tracked-badge--unresolved"
+        title="Not in the exercise library yet - analytics can't attribute this one"
+        aria-label="Not in the exercise library yet - analytics can't attribute this one"
+      >
+        <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
+          <circle
+            cx="7"
+            cy="7"
+            r="5.5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.25"
+            strokeDasharray="2.5 2"
+          />
+        </svg>
+      </span>
+    );
+  }
+  return null;
+}
 
 function formatDate(value) {
   if (!value) return "—";
@@ -767,6 +871,8 @@ function SessionExerciseBlock({
   onActivateExercise,
   /** First incomplete set in the whole session (by exercise order, then set order). */
   nextIncompleteSetId = null,
+  /** null = blank/unknown; resolved | unresolved from catalog lookup. */
+  trackedStatus = null,
 }) {
   const [draftResumeVersion, setDraftResumeVersion] = useState(0);
   const prevSetsLenRef = useRef(null);
@@ -827,7 +933,11 @@ function SessionExerciseBlock({
       ) : null}
       <span className="session-exercise-heading-text">
         <strong className="session-exercise-heading">{namePart}</strong>
-        <span className="session-exercise-heading-meta muted"> · {setCountLabel}</span>
+        <span className="session-exercise-heading-meta muted">
+          {" "}
+          · {setCountLabel}
+          <ExerciseTrackedIndicator status={trackedStatus} />
+        </span>
         {summaryLine ? (
           <span className="session-exercise-heading-summary muted small"> · {summaryLine}</span>
         ) : null}
@@ -1048,6 +1158,7 @@ export function SessionDetailPage() {
   const [scrollToExerciseId, setScrollToExerciseId] = useState(null);
   const [adjustingSetCountExerciseId, setAdjustingSetCountExerciseId] = useState(null);
   const [completeBusy, setCompleteBusy] = useState(false);
+  const [resolutionTick, setResolutionTick] = useState(0);
   const exerciseAnchorRefs = useRef(new Map());
   const sessionNoteTogglesInitRef = useRef(null);
 
@@ -1144,14 +1255,24 @@ export function SessionDetailPage() {
     }
   }, [sessionId]);
 
-  const mergeSessionExerciseRow = useCallback((row) => {
-    if (!row?.id) return;
-    setSession((prev) => {
-      if (!prev?.sessionExercises) return prev;
-      const list = prev.sessionExercises.map((e) => (e.id === row.id ? { ...e, ...row } : e));
-      return { ...prev, sessionExercises: list };
-    });
+  const bumpResolutions = useCallback(() => {
+    setResolutionTick((t) => t + 1);
   }, []);
+
+  const mergeSessionExerciseRow = useCallback(
+    (row) => {
+      if (!row?.id) return;
+      setSession((prev) => {
+        if (!prev?.sessionExercises) return prev;
+        const list = prev.sessionExercises.map((e) => (e.id === row.id ? { ...e, ...row } : e));
+        return { ...prev, sessionExercises: list };
+      });
+      if (row.exerciseName != null && !isBlankSessionExerciseName(row.exerciseName)) {
+        void refreshExerciseResolution(row.exerciseName, bumpResolutions);
+      }
+    },
+    [bumpResolutions]
+  );
 
   const appendSessionExerciseRow = useCallback((row) => {
     if (!row?.id) return;
@@ -1184,6 +1305,22 @@ export function SessionDetailPage() {
     }
     load();
   }, [sessionId, load]);
+
+  useEffect(() => {
+    const names = (session?.sessionExercises || [])
+      .map((se) => se.exerciseName)
+      .filter((n) => !isBlankSessionExerciseName(n));
+    if (names.length === 0) return;
+    void cacheExerciseResolutions(names, bumpResolutions);
+  }, [session?.sessionExercises, bumpResolutions]);
+
+  const trackedStatusByExerciseId = useMemo(() => {
+    const map = new Map();
+    for (const se of orderedSessionExercises) {
+      map.set(se.id, lookupExerciseTrackedStatus(se.exerciseName));
+    }
+    return map;
+  }, [orderedSessionExercises, resolutionTick]);
 
   useEffect(() => {
     activeExerciseInitRef.current = false;
@@ -1990,6 +2127,7 @@ export function SessionDetailPage() {
                       useExerciseNotes={liveUseExerciseNotes}
                       useSetNotes={isFromTemplate && liveUseSetNotes}
                       isQuickLog={isQuickLog}
+                      trackedStatus={trackedStatusByExerciseId.get(se.id) ?? null}
                       onExerciseCommitted={mergeSessionExerciseRow}
                       onSaved={load}
                       onCreateSet={onCreateSetForExercise}
@@ -2054,6 +2192,7 @@ export function SessionDetailPage() {
                   useExerciseNotes={liveUseExerciseNotes}
                   useSetNotes={isFromTemplate && liveUseSetNotes}
                   isQuickLog={isQuickLog}
+                  trackedStatus={trackedStatusByExerciseId.get(se.id) ?? null}
                   onSaved={load}
                   onCreateSet={onCreateSetForExercise}
                   onUpdateSet={onUpdateSet}
