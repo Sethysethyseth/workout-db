@@ -9,6 +9,7 @@
     "render-build": "prisma generate && prisma migrate deploy",
     "pretest": "prisma migrate deploy && prisma generate",
     "test": "cross-env NODE_ENV=test jest --runInBand",
+    "test:unit": "cross-env NODE_ENV=test jest --selectProjects unit",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio"

@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import * as sessionApi from "../api/sessionApi.js";
 import * as templateApi from "../api/templateApi.js";
 import { ErrorMessage } from "../components/ErrorMessage.jsx";
+import { WeeklyReport } from "../components/analytics/WeeklyReport.jsx";
 import { ActiveWorkoutHero } from "../components/workout/ActiveWorkoutHero.jsx";
 import { StartWorkoutHero } from "../components/workout/StartWorkoutHero.jsx";
 import { StartWorkoutPicker } from "../components/workout/StartWorkoutPicker.jsx";
@@ -172,6 +173,8 @@ export function DashboardPage() {
       ) : (
         <StartWorkoutHero onOpenPicker={() => setPickerOpen(true)} />
       )}
+
+      <WeeklyReport />
 
       <section className="workout-tab-recent" aria-labelledby="workout-recent-heading">
         <div className="row workout-tab-recent__head">

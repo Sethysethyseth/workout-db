@@ -105,9 +105,18 @@ export function Navbar() {
               >
                 History
               </NavLink>
-              <span className="nav-tab--disabled" aria-disabled="true">
+              <NavLink
+                to="/analytics"
+                end
+                onClick={(e) => {
+                  if (!liveSessionGuard) return;
+                  if (location.pathname === "/analytics") return;
+                  e.preventDefault();
+                  tryNavigate("/analytics");
+                }}
+              >
                 Analytics
-              </span>
+              </NavLink>
               {canReviewFeedback ? (
                 <NavLink
                   to="/dev/feedback"

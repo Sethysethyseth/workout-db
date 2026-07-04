@@ -3291,6 +3291,7 @@ html[data-theme="dark"] .exercise-name-suggestions {
   isolation: isolate;
   gap: 12px;
   min-height: calc(100dvh - 7.5rem);
+  align-content: start; /* cards hug their content; leftover viewport height collects at the bottom under the scene band instead of stretching into the card rows. */
   padding-bottom: 24px;
 }
 
@@ -4134,4 +4135,780 @@ html[data-theme="dark"] .auth-page .auth-form.card {
 
 .auth-crosslink {
   text-align: center;
+}
+
+/* --- Analytics page (B5) --- */
+
+.analytics-page .analytics-intro {
+  margin: 0;
+}
+
+.analytics-range-chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.range-chip {
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-2);
+  color: var(--color-text);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.range-chip:hover {
+  border-color: color-mix(in srgb, var(--color-interactive) 45%, var(--color-border));
+}
+
+.range-chip:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--color-interactive) 55%, transparent);
+  outline-offset: 2px;
+}
+
+.range-chip.is-active {
+  border-color: var(--color-interactive);
+  background: var(--color-nav-active-bg);
+  box-shadow: var(--shadow-ring-accent);
+}
+
+/* Table sections follow the template-table pattern: zero-padding card,
+   padded head, .table-scroll body. */
+.analytics-table-card {
+  padding: 0;
+  overflow: visible;
+}
+
+.analytics-card-head {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--color-border);
+  gap: 4px;
+}
+
+.analytics-card-head h2,
+.analytics-section-title {
+  margin: 0;
+}
+
+.analytics-card-sub {
+  margin: 0;
+}
+
+.analytics-muscle-name {
+  text-transform: capitalize;
+}
+
+/* Graceful-degradation tier: quiet unlock hint, deliberately NOT an error. */
+.analytics-unlock {
+  color: var(--color-text-secondary);
+  font-size: 12px;
+}
+
+.analytics-balance-row span:last-child {
+  font-variant-numeric: tabular-nums;
+}
+
+.analytics-honesty-notes {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 4px;
+}
+
+/* --- Analytics charts (layout pass) ---
+   Emphasis encoding: context marks (effective sets, first-session dots) are
+   neutral gray; the ONE accent series per chart is the headline metric
+   (stimulating sets, latest e1RM). Chosen over a two-shade accent ramp
+   because light-mode iron/champ/forest/chill accents cannot yield a second,
+   lighter shade that stays >= 2:1 on the card surface (validated with the
+   dataviz ordinal checks). Direct value labels + the Table view are the
+   contrast relief channel everywhere a fill sits below 3:1 (iron light). */
+
+.analytics-page {
+  --chart-accent: var(--color-interactive);
+  --chart-context: color-mix(in srgb, var(--color-text-secondary) 46%, var(--color-surface-3));
+  --chart-track: color-mix(in srgb, var(--color-text-secondary) 14%, var(--color-surface-2));
+  --chart-hairline: color-mix(in srgb, var(--color-text) 14%, transparent);
+}
+
+/* Refetch: hold the previous render dimmed instead of a skeleton flash. */
+.analytics-content {
+  transition: opacity var(--motion-base) var(--ease-standard);
+}
+
+.analytics-content.is-refreshing {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+/* -- KPI stat tiles -- */
+
+.analytics-kpis {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+@media (min-width: 720px) {
+  .analytics-kpis {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.stat-tile {
+  display: grid;
+  gap: 2px;
+  align-content: start;
+}
+
+.stat-tile-label {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  font-size: 11px;
+}
+
+/* Proportional figures on purpose: tabular-nums reads loose at display size. */
+.stat-tile-value {
+  font-size: 26px;
+  font-weight: 650;
+  line-height: 1.15;
+  color: var(--color-text);
+}
+
+.stat-tile-value--up {
+  color: var(--color-success-text);
+}
+
+.stat-tile-sub {
+  min-height: 1.2em;
+}
+
+/* -- Home weekly report band -- */
+
+.weekly-report {
+  display: grid;
+  gap: 10px;
+}
+
+.weekly-report__head {
+  align-items: baseline;
+  gap: 8px 12px;
+}
+
+.weekly-report__title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.weekly-report__link {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  transition: color var(--motion-fast) var(--ease-standard);
+}
+
+.weekly-report__link:hover {
+  color: var(--color-interactive);
+}
+
+.weekly-report__stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+}
+
+.weekly-report__stat {
+  display: grid;
+  gap: 1px;
+  min-width: 72px;
+  flex: 1 1 72px;
+}
+
+.weekly-report__stat-label {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  font-size: 10px;
+}
+
+.weekly-report__stat-value {
+  font-size: 18px;
+  font-weight: 650;
+  line-height: 1.2;
+  color: var(--color-text);
+}
+
+.weekly-report__stat-value--up {
+  color: var(--color-success-text);
+}
+
+.weekly-report__stat-delta {
+  min-height: 1.1em;
+}
+
+.weekly-report__stat-delta--up {
+  color: var(--color-success-text);
+}
+
+.weekly-report__nudge {
+  margin: 0;
+}
+
+/* -- Shared chart chrome -- */
+
+.chart-legend {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.legend-key {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend-swatch {
+  width: 12px;
+  height: 8px;
+  border-radius: 2px;
+  display: inline-block;
+}
+
+.legend-swatch--context {
+  background: var(--chart-context);
+}
+
+.legend-swatch--accent {
+  background: var(--chart-accent);
+}
+
+.legend-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.legend-dot--context {
+  background: var(--chart-context);
+}
+
+.legend-dot--accent {
+  background: var(--chart-accent);
+}
+
+.analytics-chart-note {
+  margin: 0;
+}
+
+/* Hover/focus tooltip carried in data-tip; values also live in direct
+   labels and the Table view, so the tip enhances rather than gates. */
+.chart-tip-host {
+  position: relative;
+}
+
+.chart-tip-host:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--color-interactive) 55%, transparent);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.chart-tip-host:hover::after,
+.chart-tip-host:focus-visible::after {
+  content: attr(data-tip);
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 4px);
+  z-index: 5;
+  max-width: min(320px, 90vw);
+  padding: 5px 8px;
+  border-radius: 8px;
+  background: var(--color-surface-3);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-card);
+  color: var(--color-text);
+  font-size: 12px;
+  line-height: 1.35;
+  pointer-events: none;
+  white-space: normal;
+}
+
+/* Cards with charts host the padded chart body below the bordered head. */
+.analytics-chart-body {
+  padding: 12px 14px 14px;
+  display: grid;
+  gap: 10px;
+}
+
+.chart-table-toggle {
+  display: flex;
+  gap: 6px;
+}
+
+.view-chip {
+  padding: 4px 12px;
+  font-size: 12px;
+}
+
+/* -- Muscle volume bars -- */
+
+.mv-rows {
+  display: grid;
+  gap: 7px;
+}
+
+.mv-row {
+  display: grid;
+  grid-template-columns: minmax(74px, 108px) 1fr;
+  align-items: center;
+  gap: 10px;
+}
+
+.mv-name {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: capitalize;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mv-track {
+  position: relative;
+  height: 18px;
+}
+
+/* Bars: thin marks, 4px rounded data-end, square at the baseline (left). */
+.mv-bar {
+  position: absolute;
+  left: 0;
+  border-radius: 0 4px 4px 0;
+  min-width: 2px;
+}
+
+.mv-bar--effective {
+  top: 0;
+  height: 18px;
+  background: var(--chart-context);
+}
+
+.mv-bar--stimulating {
+  top: 5px;
+  height: 8px;
+  background: var(--chart-accent);
+}
+
+.mv-val {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+/* -- Muscle volume trend (weekly small multiples) -- */
+
+.mvt-rows {
+  display: grid;
+  gap: 7px;
+}
+
+/* Third column reserves fixed room for the last-week value on every row so
+   the week grids stay horizontally aligned across the small multiples. */
+.mvt-row {
+  display: grid;
+  grid-template-columns: minmax(74px, 108px) 1fr 34px;
+  align-items: end;
+  gap: 10px;
+}
+
+.mvt-name {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: capitalize;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mvt-cols {
+  display: grid;
+  gap: 2px;
+  align-items: end;
+}
+
+.mvt-col {
+  min-width: 0;
+}
+
+.mvt-col-track {
+  position: relative;
+  height: 48px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.mvt-bar {
+  border-radius: 4px 4px 0 0;
+  min-height: 0;
+}
+
+.mvt-bar--effective {
+  width: 100%;
+  background: var(--chart-context);
+}
+
+.mvt-bar--stimulating {
+  position: absolute;
+  bottom: 0;
+  width: 55%;
+  background: var(--chart-accent);
+}
+
+.mvt-val {
+  align-self: end;
+  padding-bottom: 1px;
+  font-size: 11px;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.mvt-x-caption {
+  display: grid;
+  grid-template-columns: minmax(74px, 108px) 1fr 34px;
+  gap: 10px;
+}
+
+.mvt-x-labels {
+  justify-content: space-between;
+}
+
+/* -- Strength trend sparklines -- */
+
+.st-rows {
+  display: grid;
+  gap: 12px;
+}
+
+.st-row {
+  display: grid;
+  gap: 3px;
+}
+
+.st-row-head {
+  gap: 8px;
+  flex-wrap: nowrap;
+}
+
+.st-name {
+  font-size: 13px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.st-delta {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.st-delta--up {
+  color: var(--color-success-text);
+  font-weight: 600;
+}
+
+.st-matched {
+  color: var(--color-text-secondary);
+}
+
+.st-matched--up {
+  color: var(--color-success-text);
+}
+
+.st-sparkline {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.st-sparkline-val {
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.st-sparkline-svg {
+  display: block;
+  width: 100%;
+  height: 28px;
+  overflow: visible;
+  color: var(--chart-context);
+}
+
+.st-sparkline-line {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+
+/* Dots are zero-length round-cap strokes (see StrengthTrendChart) so they
+   stay circular under the sparkline's preserveAspectRatio="none" stretch. */
+.st-sparkline-dot {
+  fill: none;
+  stroke: var(--chart-context);
+  stroke-width: 5;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.st-sparkline-dot--accent {
+  stroke: var(--chart-accent);
+  stroke-width: 7;
+}
+
+/* -- Meters (execution adherence, effort coverage) -- */
+
+.meter {
+  position: relative;
+  display: block;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--chart-track);
+  overflow: hidden;
+  min-width: 0;
+}
+
+.meter-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 0 4px 4px 0;
+  background: var(--chart-accent);
+  min-width: 2px;
+}
+
+.meter-target {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  width: 2px;
+  background: color-mix(in srgb, var(--color-text) 55%, transparent);
+}
+
+.exec-rows {
+  display: grid;
+  gap: 14px;
+}
+
+.exec-row {
+  display: grid;
+  gap: 6px;
+}
+
+.exec-row-head {
+  gap: 2px;
+}
+
+.exec-name {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.exec-verdict {
+  line-height: 1.35;
+}
+
+.exec-plan-actual {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--color-text);
+}
+
+.exec-metrics-secondary {
+  display: grid;
+  gap: 4px;
+  padding-top: 2px;
+}
+
+.exec-metric {
+  display: grid;
+  grid-template-columns: 56px 1fr 88px;
+  align-items: center;
+  gap: 10px;
+}
+
+.exec-metric--compact {
+  grid-template-columns: 44px 1fr 1fr;
+  gap: 8px;
+}
+
+.exec-metric--compact .muted.small,
+.exec-metric--compact > .muted.small {
+  font-size: 11px;
+}
+
+.exec-metric--compact .exec-val {
+  font-size: 11px;
+}
+
+.exec-metric .meter {
+  align-self: center;
+}
+
+.exec-val {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.exec-drift-flavor {
+  opacity: 0.75;
+}
+
+.exec-drift--on-target {
+  color: var(--color-success-text);
+}
+
+.exec-drift--off {
+  color: var(--color-warn-text);
+}
+
+/* -- Balance scales -- */
+
+.balance-block {
+  gap: 4px;
+}
+
+.balance-value-wrap {
+  align-items: flex-end;
+  gap: 0;
+}
+
+.balance-value {
+  font-variant-numeric: tabular-nums;
+}
+
+.balance-value.is-outside-zone {
+  color: var(--color-warn-text);
+}
+
+.balance-outside-caption {
+  line-height: 1.2;
+}
+
+.balance-scale {
+  position: relative;
+  height: 14px;
+}
+
+.balance-scale--ghost {
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+.balance-track {
+  position: absolute;
+  inset: 3px 0;
+  border-radius: 4px;
+  background: var(--chart-track);
+}
+
+.balance-zone {
+  position: absolute;
+  left: 34%;
+  width: 32%;
+  top: 3px;
+  height: 8px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--chart-accent) 14%, var(--chart-track));
+}
+
+.balance-fill {
+  position: absolute;
+  top: 3px;
+  height: 8px;
+  background: var(--chart-accent);
+  border-radius: 2px;
+}
+
+.balance-center {
+  position: absolute;
+  left: 50%;
+  top: -1px;
+  bottom: -1px;
+  width: 2px;
+  transform: translateX(-50%);
+  background: color-mix(in srgb, var(--color-text) 55%, transparent);
+}
+
+.balance-marker {
+  position: absolute;
+  top: 2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  transform: translateX(-50%);
+  background: var(--chart-accent);
+  box-shadow: 0 0 0 2px var(--color-surface-1);
+}
+
+.balance-marker.is-outside-zone {
+  background: color-mix(in srgb, var(--color-warn-text) 70%, var(--chart-accent));
+}
+
+.balance-captions {
+  flex-wrap: nowrap;
+}
+
+/* -- Data quality -- */
+
+.coverage-row {
+  display: grid;
+  grid-template-columns: 1fr 120px;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Restrained entrance: bars/fills grow once, ~180ms ease-out. */
+@media (prefers-reduced-motion: no-preference) {
+  .mv-bar,
+  .mvt-bar,
+  .meter-fill,
+  .balance-fill {
+    animation: chart-grow var(--motion-base) var(--ease-standard);
+    transform-origin: left center;
+  }
+}
+
+@keyframes chart-grow {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
 }

@@ -1,167 +1,77 @@
-# CLAUDE.md  (LogChamp)
+# CLAUDE.md  (LogChamp - Claude Code specifics)
 
-> Repo-root context. Rides along on every turn - keep it lean. Full stable
-> context (product vision, schema rationale, incident history) lives in
-> `WORKOUTDB_MASTER_PROMPT_17.md` - pull that in for planning/architecture
-> work, not every turn.
+> All shared agent context - project, stack, conventions, UI architecture,
+> the command-running gate, verify-before-trust, durable gotchas - lives in
+> AGENTS.md (single source, imported below). This file holds ONLY what is
+> specific to Claude/Claude Code. Don't duplicate AGENTS.md content here.
+> Current work-state: `docs/HANDOFF.md`. Full stable context (product vision,
+> schema rationale, incident history): `WORKOUTDB_MASTER_PROMPT_17.md` - pull
+> that in for planning/architecture work, not every turn.
+
+@AGENTS.md
 
 ---
 
-## Project
+## Model selection / division of labor (v3 - Sonnet resident, Fable gated)
 
-LogChamp (formerly WorkoutDB) - an analytics-first weightlifting tracker for
-intermediate lifters. Differentiates on the insight layer (volume analytics, PR
-detection, 1RM estimation, progressive-overload trends), not logging UX. Sole
-dev: Seth. Claude = planning/review partner, Cursor = code-execution agent,
-Claude Code = mechanical jobs + DB inspection.
+Decided July 3, 2026 (token-efficiency rebalance). Three roles:
 
-Anti-goals worth knowing before adding scope: no max-data-for-its-own-sake, no
-out-featuring Strong/Hevy on logging UX, no over-built motion (~150-250ms,
-ease-out, restraint - flashy reads as amateur).
+- **Sonnet in Claude Code = the resident driver.** Runs the day-to-day
+  relay: light per-unit review of each Cursor delivery (re-run build +
+  test lanes, scope check against FILES TO TOUCH, spot-check acceptance
+  criteria - verify-before-trust still applies in full), commits with SHA
+  verification, pushes to staging, HANDOFF + QUEUE upkeep, dispatch
+  bookkeeping. Sonnet does NOT author task blocks and does NOT settle
+  contract ambiguity - it bounces up instead of guessing (escalation
+  triggers below).
+- **Fable/Opus in Claude Code = the architect + final gate.** Short, rare,
+  high-leverage sessions: (a) authors the unit-scale task blocks (the
+  skeletons Sonnet/Cursor execute), architecture and planning with the repo
+  in hand; (b) ONE thorough review of the accumulated branch diff before
+  any merge to main - nothing ships to main without a Fable/Opus pass.
+  Standing escalation triggers that pull Fable in mid-wave: schema or
+  migration design (A4), security / cross-user isolation surfaces, prod
+  incidents, root-cause debugging Sonnet can't close, and any unit where
+  Sonnet's review finds the delivery and the spec disagree in a way the
+  block doesn't settle.
+- **Cursor = the hands.** Executes unit-scale task blocks (Sonnet, or
+  cheaper per the block's MODEL header - mechanical units route to auto/
+  cheap). Writes code, runs tests, STOPS. Never commits, never edits
+  `docs/HANDOFF.md` (see the division-of-labor rule in AGENTS.md).
 
-**Rename boundary (WorkoutDB -> LogChamp is DISPLAY-LAYER ONLY):** never rename
-for a rebrand - repo/remote, Render/Neon/Vercel service names, env var names,
-`package.json` name fields, cookie names (`workoutdb.sid`), localStorage keys
-(`workoutdb-theme`, `workoutdb-palette`), route paths, component filenames,
-CSS class prefixes, internal identifiers, migration content, API messages.
-Rebrand text lives in: rendered UI, `<title>`, PWA manifest name fields.
+Accepted trade-off, stated so nobody "fixes" it silently: deep review moves
+from per-unit to the single pre-main gate, so a contract bug can now land on
+staging and be caught one gate later. Sonnet's per-unit pass is the tripwire
+(tests, scope, acceptance strings); the pre-main Fable review is the net.
 
-## Stack
+## Workflow (the relay, v3)
 
-- Frontend: React + Vite (Vercel)
-- Backend: Express + Node (Render), Prisma 6 - config in `prisma.config.ts`,
-  not `package.json`
-- Database: PostgreSQL via Neon - SEPARATE prod and staging projects
-- Repo: Sethysethyseth/workout-db
-- Auth: cookie-based sessions (primary) + JWT Bearer (fallback)
+Fable plans / Cursor executes / Sonnet drives and lands. The loop per unit:
 
-## How to run
+1. Fable (Claude Code) emits a **unit-scale task block** (template:
+   `cursor-task-block-template.md`, "Unit-scale variant") - one coherent
+   roadmap unit with a testable contract, not a 1-3 file slice. Fable
+   typically authors a wave of blocks in one session, then drops out.
+2. Cursor implements it, gets tests green, stops without committing.
+3. Sonnet (Claude Code) runs the per-unit pass: re-runs the test lanes and
+   client build, checks scope against the block, spot-checks acceptance
+   criteria, fixes trivia or bounces (to Cursor for rework, to Fable for
+   ambiguity), commits with SHA verification, pushes to staging, updates
+   HANDOFF, dispatches the next block.
+4. Before merge to main: Fable/Opus reviews the full accumulated branch
+   diff against the specs (the review lane caught a real shipped-contract
+   bug on day one - it is not optional ceremony; it has moved gates, not
+   disappeared). Merge itself stays behind Seth's "push to main" trigger
+   phrase per the gate.
 
-- Server (from `server/`): `npm install` -> copy `.env.example` to `.env` ->
-  `npm run prisma:generate` -> `npm run prisma:migrate` -> `npm run dev`
-  (listens on `localhost:3000`)
-- Client (from `client/`): `npm install` -> `npm run dev` (calls API at
-  `localhost:3000` by default; `npm run dev:mobile` for LAN/phone testing)
-- Tests: `npm test` from `server/`. Integration suite is known-flaky on shared
-  staging (FK pollution, not the code under test) - a failure isn't
-  automatically a regression; check whether `main` fails the same way first.
-- Build: `npm run build` from `client/` (Vite)
+`docs/HANDOFF.md` carries current-state between sessions - all agents read it.
 
-## Structure
+## Claude-Code-specific environment
 
-- `client/src/components` - UI components
-- `client/src/context` - `ThemeContext` owns both `data-theme` and
-  `data-palette` axes via the `useTheme()` accessor
-- `client/src/assets/scenes` - palette scene rasters (champ, iron, chill,
-  forest, crimson)
-- `server/` - Express API, Prisma schema, migrations
-- `server/data/` - exercise catalog + muscle-weights curation, vendored not
-  hot-linked
-- `docs/HANDOFF.md` - current state, rewritten every session
-- `docs/RUNBOOK.md` - copy-paste command rituals (schema deploys, merges, etc.)
-- `WORKOUTDB_MASTER_PROMPT_17.md` - full stable context
-
-## UI architecture - palettes/tokens (load-bearing, read before touching styles)
-
-- Two independent axes on `<html>`: `data-theme` (light/dark/system) x
-  `data-palette` (`champ | iron | forest | crimson`). Absent/unknown palette
-  renders as champ.
-- **Tokens-only.** Never hardcode colors - every surface must render correctly
-  across all 4 palettes x 2 modes (8 combos). New colors go through the CSS
-  custom properties in `client/src/index.css`.
-- Accent-adjacent states (rings, nav-active, pills) derive from
-  `--color-interactive` via `color-mix` - follow this pattern so new palettes
-  inherit them for free.
-- Palette surfaces are hand-authored hexes per palette, not algorithmic tints
-  (a `color-mix`-tint mechanism was built and replaced - reads as "a hue over
-  it," not a distinct environment).
-- `card--live` (accent L-bar) means exactly one thing: a live in-progress
-  workout. Don't reuse it for other emphasis - the semantics are the point.
-- Scene layer is a fixed `body::before` (full-viewport, `z-index 0`); `#root`
-  is `position: relative; z-index: 1` as the stacking fix - check anything
-  rendered via portal (outside `#root`) against this.
-
-## Conventions
-
-- Match existing component/file patterns before inventing new ones.
-- ASCII-only commit messages; hyphens, never em-dashes (PowerShell mangles
-  non-ASCII in `-m`).
-- Stage files individually - never `git add .`.
-
-## Command-running (the rule + the gate)
-
-Default is HANDS-OFF. Agents (Cursor, Claude Code) run commands freely WITHOUT
-asking - including staging files, local commits, AND `git push` to staging.
-Only the items below stop and ask first. Everything not listed runs automatically.
-
-ASK BEFORE RUNNING (the short gate):
-
-1. MERGE INTO `main` - always a manual human step. Never auto-merge.
-2. PRODUCTION touches - prod Neon (`ep-solitary-sea-an56mioq`), prod Render
-   (`workout-db-l3gc`), any prod data operation, or any `git push` that deploys
-   to production. Staging pushes are fine; prod-bound pushes ask first.
-3. MIGRATIONS - ANY environment. Separate manual track. Code push != DB migrate.
-   A bad migration corrupts live data and is not locally reversible.
-4. LOCAL-DESTRUCTIVE / IRREVERSIBLE ops - `reset --hard`, `git clean`,
-   `push --force`, branch deletion. These can destroy work on disk.
-5. DEPENDENCY installs - anything mutating `package.json` / lockfiles.
-
-Everything else - reads, dev server, scoped file edits, branch creation,
-individual staging, local commits, and pushes to staging - runs without asking.
-
-Schema changes specifically: DB migration always lands before the code that
-depends on it deploys (code-ahead-of-DB crashes prod login). Exact steps:
-`docs/RUNBOOK.md` -> "Schema-change deploy."
-
-## Verify-before-trust (still holds, even when hands-off)
-
-- SHA check after every commit via `git log --oneline`.
-- Confirm the commit reached `origin` before treating a deploy as evidence
-  (`git log origin/<branch> --oneline`). A redeploy rebuilds the OLD HEAD until
-  the push lands.
-- Render Events tab confirms the right commit deployed.
-- Smoke on device - build-passing + diff-looking-right do NOT prove the visual.
-
-## Model selection (soft default - you still choose)
-
-Start in Sonnet. Both a Sonnet chat and an Opus chat stay open; reach into the
-Opus chat only when a task hits one of the Opus tendencies (see
-routing-cheatsheet.md section B). Drop back to Sonnet the moment the hard part
-is solved. Nothing auto-routes - "Sonnet first" is just the home base that keeps
-the cheap lane cheap and prevents Opus-drift.
-
-## Workflow note (the relay)
-
-Claude plans / Cursor executes. For small changes (1-3 files), Claude produces a
-**Cursor task block** (scoped, file-named, acceptance criteria, stop condition)
-rather than editing directly. Hand big mechanical jobs + DB inspection to Claude
-Code. AGENTS.md carries current-state between sessions - both agents read it.
-
-## Environment / gotchas
-
-- OS: Windows, PowerShell. Use `;` not `&&` to chain.
-- Desktop is OneDrive-redirected - expect possible sync lag on file writes; a
-  stale-looking file is usually that.
 - NEVER set `ANTHROPIC_API_KEY` - subscription login auth; an env key bills
-  per-token silently.
-- Never commit `.env` or hardcode secrets. `server/.env` only ever points at
-  staging or localhost, never prod. `dbHostGuard` enforces this two ways:
-  `assertSafeForBoot()` runs automatically at server boot (`server.js`);
-  `assertSafeForReset()` covers the test/reset path (`jest.setup.js`) and must
-  be called explicitly by any new DB-connecting script at the top of `main()`.
-- `HANDOFF.md` rides uncommitted until the `ui-palettes-v2` -> `main` ff-merge.
-
-## Do-nots
-
-- Don't add dependencies without asking (see gate, item 5).
-- Don't refactor unrelated code during a scoped task.
-- Don't route work-state through the database - AGENTS.md is the work-state
-  channel; the DB is app data only.
-- Don't hardcode colors or touch infra/env-var/route/cookie/localStorage-key
-  names for a rebrand or display-text change (see rename boundary above).
-
-## Gate-sync rule
-
-The gate above is duplicated verbatim in AGENTS.md so both agents see it. If you
-change the gate in one file, change it in the other in the same edit. They must
-never disagree.
+  per-token silently. (This is about THIS environment's auth - it does not
+  forbid the app itself from using its own API key server-side; that's a
+  separate, deliberate app-billing choice. See the analytics spec, section 8.)
+- `.claude/settings.local.json` is per-machine (gitignored). Destructive ops
+  are deliberately NOT allowlisted there - they must always prompt, matching
+  gate item 4.
