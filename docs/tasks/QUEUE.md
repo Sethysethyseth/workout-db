@@ -6,8 +6,12 @@ Statuses: DRAFT / QUEUED / DISPATCHED / AWAITING-REVIEW / LANDED <sha> / BOUNCED
 
 ## Active
 
-(nothing dispatched - U10/U8/U9 wave still awaiting Seth's staging smoke;
-analytics-engine -> main merge decision separate; T3 below moved to Landed)
+- QUEUED | n1-bottom-tab-bar.md | mobile bottom tab bar (Home/Analytics/History/Library/Profile) + slim top bar; desktop nav unchanged; shared useGuardedNav hook | N-wave unit 1 of 3; dispatch strictly serialized N1 -> N2 -> N3 (all touch index.css); start the wave on a fresh branch off post-T3 main (suggest `ui-nav-overhaul`)
+- QUEUED | n2-profile-hub.md | Profile becomes identity header + stat strip (workouts/this week/week streak) + drill-in Appearance/Security/Feedback sub-routes | N-wave unit 2; dispatch after N1 lands; no server changes (createdAt already in /auth/me, stats from /sessions/mine)
+- QUEUED | n3-analytics-subviews.md | analytics page reorg: persistent header (chips + StatTiles) + Muscles\|Strength\|Execution segmented sub-views via ?view= param; DataQuality always visible | N-wave unit 3; dispatch after N2 lands; pure page reorg, section components untouched
+
+(U10/U8/U9 wave landed and merged with analytics-engine; analytics-engine ->
+main merge done July 4; T3 below moved to Landed)
 
 ## Candidates (next units, not yet authored as blocks)
 

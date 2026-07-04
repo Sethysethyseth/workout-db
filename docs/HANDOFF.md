@@ -1,6 +1,6 @@
 # HANDOFF — current state
 
-**Updated:** July 4, 2026 (Sonnet — T3 dynamic loading screens merged to `main` (`750c42b`), pushed.)
+**Updated:** July 4, 2026 (Fable — N-wave navigation overhaul authored, N1/N2/N3 QUEUED. Earlier same day, Sonnet: T3 dynamic loading screens merged to `main` (`750c42b`), pushed.)
 **Rule:** rewritten in place at the end of every working session. Dated, never versioned. If this file looks stale (date > ~2 weeks old), verify branch/deploy state from ground truth before trusting it.
 
 ---
@@ -28,7 +28,46 @@
 - **Render/Vercel not yet repointed from the `analytics-engine` staging deploy back to `main`** — RUNBOOK step 6 ("Repoint staging Render back to main. Verify redeploy SHA in Events.") is still open; do this before smoking prod.
 - Username feature LIVE and verified on both environments (unchanged).
 
-## Session log (July 4 latest — T3 landed on ui-loading-screens, Sonnet)
+## Session log (July 4 latest — N-wave navigation overhaul authored, Fable)
+
+- **Seth's ask: overhaul how the app's tabs/layout are used, rework the
+  Profile section, and give the Analytics page real organization.** Four
+  design forks put to Seth and settled (all recommended defaults accepted):
+  1. **Bottom tab bar on mobile** (< 720px), slim brand-only top bar;
+     desktop (>= 720px) top nav unchanged. The app-standard tracker
+     pattern (thumb reach mid-set); the anti-goal is out-featuring
+     Strong/Hevy on logging UX, not matching table-stakes ergonomics.
+  2. **Tab order: Home · Analytics · History · Library · Profile** —
+     Analytics promoted to slot 2 (it's the differentiator), Library
+     demoted, Profile becomes a first-class 5th tab. "Workout" tab label
+     renamed to "Home" (display text only).
+  3. **Profile becomes a hub**: identity header (initials avatar, name,
+     member-since from `/auth/me` `createdAt` — already in the payload,
+     `sanitizeUser` strips only `passwordHash`), stat strip (workouts /
+     this week / week streak, all client-derived from `/sessions/mine`),
+     drill-in sub-routes for Appearance / Security / Feedback, logout
+     footer. NO server changes anywhere in the wave.
+  4. **Analytics reorganized into segmented sub-views**: persistent header
+     (range chips + StatTiles) + Muscles | Strength | Execution segmented
+     control, sub-view in `?view=` for deep-linking, DataQualitySection
+     always visible (honesty contract). No "Overview" sub-tab — Home's
+     weekly report already is the overview.
+- **Three unit-scale task blocks authored and QUEUED** (all MODEL: sonnet,
+  MODE: 1-relay): `n1-bottom-tab-bar.md` (BottomNav + shared
+  `useGuardedNav` hook extraction + exact inline SVG icon paths provided
+  in-block), `n2-profile-hub.md` (hub + 3 extracted sub-pages +
+  `profileStats.js` pure helpers with a testable weekStreak contract +
+  `reviewerEmails.js` extraction), `n3-analytics-subviews.md`
+  (AnalyticsPage JSX reorg + AnalyticsViewTabs component; section
+  components untouched). **Dispatch strictly serialized N1 -> N2 -> N3**
+  — all three touch `client/src/index.css` (the U-wave lesson). Start the
+  wave on a fresh branch off post-T3 `main` (suggest `ui-nav-overhaul`).
+- Concurrent-session note: the T3 merge to main (`750c42b`) happened in a
+  parallel Sonnet session while this session was authoring; HANDOFF/QUEUE
+  edits were reconciled against ground truth (`origin/main` = `3a5e0c0`)
+  before committing.
+
+## Session log (July 4 earlier — T3 landed on ui-loading-screens, Sonnet)
 
 - **Cursor executed `t3-dynamic-loading-screens.md`; reviewed and committed
   (`de03801`, 11 files, +162/-10), pushed to `origin/ui-loading-screens`.**
@@ -347,6 +386,13 @@
 
 ## Next up (the active task)
 
+0. **N-wave navigation overhaul is the active UI track** (July 4, Fable):
+   N1 (bottom tab bar) -> N2 (Profile hub) -> N3 (analytics sub-views),
+   all QUEUED in `docs/tasks/`, strictly serialized (shared index.css).
+   Sonnet: create `ui-nav-overhaul` off post-T3 `main`, dispatch N1 to
+   Cursor, run the per-unit pass per v3. Seth smokes each unit on the
+   branch's Vercel deploy before the next dispatches; Fable pre-main
+   review before the wave merges.
 1. **B9 LANDED (`c7acb43`)** — Cursor implemented, Claude Code reviewed
    (scope exact, all acceptance criteria tested, reviewer tightened the
    inclusive-last-bucket assertion, re-ran unit lane 103/103, purity grep
@@ -362,8 +408,9 @@
    first, then prod verification — manual, browser).
 4. Track A (A1 catalog merge, then A4 FK design — now including
    set->BlockWorkoutSet linkage for block-plan execution fidelity) is the
-   next engine-adjacent work; T3 remains the next unstarted UI unit if/when
-   UI resumes.
+   next engine-adjacent work; with T3 merged (`750c42b`), T4 (motion) is
+   the last unstarted U5 unit — but the N-wave (item 0) is the active UI
+   track first.
 5. U11 "what's new" one-time modal is queued as a candidate (see
    `docs/tasks/QUEUE.md`) — needs a Fable-authored task block before Cursor
    can pick it up.
