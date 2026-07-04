@@ -1,11 +1,6 @@
-import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext.jsx";
-import { useSessionLiveLoggingGuard } from "../../context/SessionLiveLoggingGuardContext.jsx";
-import { confirmLeaveLiveSession } from "../../lib/confirmLeaveLiveSession.js";
-
-function isSessionDetailPath(pathname) {
-  return /^\/sessions\/[^/]+$/.test(pathname);
-}
+import { useGuardedNav } from "../../lib/useGuardedNav.js";
 
 function parseReviewerEmails(raw) {
   if (!raw || typeof raw !== "string") return [];
@@ -17,52 +12,22 @@ function parseReviewerEmails(raw) {
 
 export function Navbar() {
   const { currentUser } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { isActive: liveSessionGuard } = useSessionLiveLoggingGuard();
+  const { guardedClick } = useGuardedNav();
   const reviewerEmails = parseReviewerEmails(import.meta.env.VITE_FEEDBACK_REVIEWER_EMAILS);
   const canReviewFeedback =
     !!currentUser?.email && reviewerEmails.includes(String(currentUser.email).toLowerCase());
-
-  function tryNavigate(to, { replace = false } = {}) {
-    if (liveSessionGuard) {
-      const from = location.pathname;
-      if (isSessionDetailPath(from) && isSessionDetailPath(to) && from !== to) {
-        navigate(to, { replace });
-        return;
-      }
-      if (!confirmLeaveLiveSession()) return;
-    }
-    navigate(to, { replace });
-  }
 
   return (
     <header className="nav">
       <div className="container nav-inner">
         <div className="nav-top">
           <div className="brand brand--subtle">
-            <Link
-              to="/"
-              onClick={(e) => {
-                if (!liveSessionGuard || location.pathname === "/") return;
-                e.preventDefault();
-                tryNavigate("/");
-              }}
-            >
+            <Link to="/" onClick={guardedClick("/", { end: true })}>
               LogChamp
             </Link>
           </div>
           {currentUser ? (
-            <Link
-              className="nav-profile-link"
-              to="/profile"
-              onClick={(e) => {
-                if (!liveSessionGuard) return;
-                if (location.pathname.startsWith("/profile")) return;
-                e.preventDefault();
-                tryNavigate("/profile");
-              }}
-            >
+            <Link className="nav-profile-link" to="/profile" onClick={guardedClick("/profile")}>
               Profile
             </Link>
           ) : null}
@@ -70,63 +35,20 @@ export function Navbar() {
         <nav className="links nav-main-links" aria-label="Main">
           {currentUser ? (
             <>
-              <NavLink
-                to="/"
-                end
-                onClick={(e) => {
-                  if (!liveSessionGuard) return;
-                  if (location.pathname === "/") return;
-                  e.preventDefault();
-                  tryNavigate("/");
-                }}
-              >
+              <NavLink to="/" end onClick={guardedClick("/", { end: true })}>
                 Workout
               </NavLink>
-              <NavLink
-                to="/templates"
-                onClick={(e) => {
-                  if (!liveSessionGuard) return;
-                  if (location.pathname.startsWith("/templates")) return;
-                  e.preventDefault();
-                  tryNavigate("/templates");
-                }}
-              >
+              <NavLink to="/templates" onClick={guardedClick("/templates")}>
                 Library
               </NavLink>
-              <NavLink
-                to="/sessions"
-                end
-                onClick={(e) => {
-                  if (!liveSessionGuard) return;
-                  if (location.pathname === "/sessions") return;
-                  e.preventDefault();
-                  tryNavigate("/sessions");
-                }}
-              >
+              <NavLink to="/sessions" end onClick={guardedClick("/sessions", { end: true })}>
                 History
               </NavLink>
-              <NavLink
-                to="/analytics"
-                end
-                onClick={(e) => {
-                  if (!liveSessionGuard) return;
-                  if (location.pathname === "/analytics") return;
-                  e.preventDefault();
-                  tryNavigate("/analytics");
-                }}
-              >
+              <NavLink to="/analytics" end onClick={guardedClick("/analytics", { end: true })}>
                 Analytics
               </NavLink>
               {canReviewFeedback ? (
-                <NavLink
-                  to="/dev/feedback"
-                  onClick={(e) => {
-                    if (!liveSessionGuard) return;
-                    if (location.pathname.startsWith("/dev/feedback")) return;
-                    e.preventDefault();
-                    tryNavigate("/dev/feedback");
-                  }}
-                >
+                <NavLink to="/dev/feedback" onClick={guardedClick("/dev/feedback")}>
                   Dev feedback
                 </NavLink>
               ) : null}
