@@ -48,7 +48,7 @@ export function SessionsPage() {
     <div className="stack sessions-page">
       <div className="row">
         <div>
-          <h1>History</h1>
+          <h1 className="page-title">History</h1>
           <p className="muted sessions-intro">Started and completed sessions.</p>
         </div>
         <button className="btn btn-secondary btn--toolbar" type="button" onClick={load} disabled={loading}>

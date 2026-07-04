@@ -443,6 +443,12 @@ html[data-theme="dark"][data-palette="crimson"] {
   --scene-image: url("./assets/scenes/crimson.jpg");
 }
 
+@media (max-width: 719px) {
+  body:has(.bottom-nav)::before {
+    bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px));
+  }
+}
+
 * {
   box-sizing: border-box;
 }
@@ -674,17 +680,12 @@ a {
 }
 
 @media (max-width: 719px) {
-  .nav-main-links,
-  .nav-profile-link {
+  .app:has(.bottom-nav) .nav {
     display: none;
   }
 
-  .nav-inner {
-    gap: 0;
-    padding-bottom: 4px;
-  }
-
   .main {
+    padding-top: calc(12px + env(safe-area-inset-top, 0px));
     padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom) + 16px);
   }
 }
@@ -1013,7 +1014,8 @@ html[data-theme="dark"] .loading-state {
   padding-bottom: 2px;
 }
 
-.settings-page-title {
+.settings-page-title,
+.page-title {
   margin: 0 0 4px;
   font-size: clamp(1.45rem, 4.5vw, 1.65rem);
   font-weight: 800;
@@ -2711,6 +2713,14 @@ html[data-theme="dark"] .checkbox-inline:hover {
   --session-sticky-top: 64px;
 }
 
+/* No top bar on mobile - sticky exercise headings pin to the viewport top.
+   Must follow the base rule above: same specificity, source order decides. */
+@media (max-width: 719px) {
+  .session-detail-page {
+    --session-sticky-top: env(safe-area-inset-top, 0px);
+  }
+}
+
 /* Live session: keep last rows clear of fixed finish dock */
 .session-detail-page--live {
   padding-bottom: calc(7.75rem + env(safe-area-inset-bottom, 0px));
@@ -3551,6 +3561,12 @@ html[data-theme="dark"] .workout-tab::before {
   background-position: center top, center top, center bottom;
 }
 
+@media (max-width: 719px) {
+  html[data-theme="dark"] .workout-tab::before {
+    bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px));
+  }
+}
+
 .workout-tab.stack > * {
   position: relative;
   z-index: 1;
@@ -3596,7 +3612,45 @@ html[data-theme="dark"] .workout-tab::before {
 
 @media (max-width: 719px) {
   .workout-tab.stack {
-    min-height: calc(100dvh - 5rem - var(--bottom-nav-height) - env(safe-area-inset-bottom));
+    min-height: calc(
+      100dvh - var(--bottom-nav-height) - env(safe-area-inset-bottom, 0px) -
+        env(safe-area-inset-top, 0px) - 1.75rem
+    );
+  }
+}
+
+.home-masthead__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.home-masthead__crown {
+  flex: 0 0 auto;
+  width: 1.15em;
+  height: 1.15em;
+  background-color: var(--color-interactive);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%3E%3Cpath%20d='M3,19L3,8L8,12L12,5L16,12L21,8L21,19Z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%3E%3Cpath%20d='M3,19L3,8L8,12L12,5L16,12L21,8L21,19Z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+.home-masthead__wordmark {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--color-text);
+}
+
+.home-masthead__date {
+  margin: 2px 0 0;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+@media (min-width: 720px) {
+  .home-masthead {
+    display: none;
   }
 }
 
@@ -4105,6 +4159,10 @@ html[data-theme="dark"] .start-workout-picker__sheet {
   border-bottom: 1px solid var(--color-border);
 }
 
+.persistent-workout-bar-wrap:not(:has(.persistent-workout-bar)) {
+  display: none;
+}
+
 .persistent-workout-bar {
   width: 100%;
   display: flex;
@@ -4203,6 +4261,53 @@ html[data-theme="dark"] .start-workout-picker__sheet {
   box-shadow:
     inset 3px 0 0 0 var(--color-interactive),
     var(--shadow-card-hover);
+}
+
+@media (max-width: 719px) {
+  .persistent-workout-bar-wrap {
+    position: fixed;
+    top: auto;
+    bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px));
+    left: 0;
+    right: 0;
+    z-index: 5;
+    padding: 0 10px 8px;
+    background: transparent;
+    border-bottom: none;
+  }
+
+  .persistent-workout-bar {
+    min-height: 44px;
+    padding: 8px 12px;
+    background: color-mix(in srgb, var(--color-surface-1) 72%, transparent);
+    backdrop-filter: saturate(1.1) blur(10px);
+  }
+
+  .persistent-workout-bar__left {
+    flex-direction: row;
+    align-items: baseline;
+    gap: 8px;
+  }
+
+  .persistent-workout-bar__sub {
+    display: none;
+  }
+
+  .persistent-workout-bar__title {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .app:has(.persistent-workout-bar) .main {
+    padding-bottom: calc(
+      var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px) + 16px + 64px
+    );
+  }
+
+  .app:has(.session-detail-page--live) .persistent-workout-bar-wrap {
+    display: none;
+  }
 }
 
 /* --- Auth layout (navbar-less, scene-backed, centered card) --- */

@@ -130,9 +130,21 @@ export function DashboardPage() {
   }
 
   const hasActive = Boolean(activeSession);
+  const mastheadDate = new Date().toLocaleDateString(undefined, {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  });
 
   return (
     <div className="stack workout-tab">
+      <header className="home-masthead">
+        <div className="home-masthead__brand">
+          <span className="home-masthead__crown" aria-hidden="true" />
+          <h1 className="home-masthead__wordmark">LogChamp</h1>
+        </div>
+        <p className="home-masthead__date">{mastheadDate}</p>
+      </header>
       {workoutSavedFlash ? (
         <div className="workout-tab__saved-flash card" role="status">
           <strong>Workout saved</strong>

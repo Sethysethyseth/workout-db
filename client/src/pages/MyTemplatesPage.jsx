@@ -215,7 +215,7 @@ export function MyTemplatesPage() {
     <div className="stack programs-page">
       <div className="row">
         <div>
-          <h1>Programs</h1>
+          <h1 className="page-title">Programs</h1>
           <p className="muted programs-intro">Your workouts, blocks, and community programs.</p>
         </div>
         <button

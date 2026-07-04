@@ -501,7 +501,7 @@ export function AnalyticsPage() {
   return (
     <div className="stack analytics-page">
       <div>
-        <h1>Analytics</h1>
+        <h1 className="page-title">Analytics</h1>
         <p className="muted analytics-intro">
           Volume, strength trends, and balance from your logged sets.
         </p>
