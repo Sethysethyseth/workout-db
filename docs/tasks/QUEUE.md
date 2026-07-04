@@ -6,11 +6,21 @@ Statuses: DRAFT / QUEUED / DISPATCHED / AWAITING-REVIEW / LANDED <sha> / BOUNCED
 
 ## Active
 
-(N-wave now fully landed on `ui-nav-overhaul` - see Landed. Next: Seth's
-visual smoke of N3, then Fable pre-main branch-diff review before merge.)
+L-wave (logging + exercise-library UX), authored July 4 (Fable), branch
+`logging-ux-wave` (off ui-nav-overhaul HEAD). **Dispatch order is
+L2 -> L1 -> L3 -> L4, strictly serialized** - L2 before L1 because L2 runs
+the integration lane and L1 parks an unapplied migration that `npm test`'s
+pretest would silently apply (gated). L1 and L3 each carry a migration:
+Seth applies L1's to staging before L3 dispatches, and L3's before L4
+dispatches (RUNBOOK "Schema-change deploy").
 
-(U10/U8/U9 wave landed and merged with analytics-engine; analytics-engine ->
-main merge done July 4; T3 below moved to Landed)
+- QUEUED | l2-tracked-exercise-indicator.md | POST /exercises/resolve + tracked/untracked indicator next to exercise headings | no schema change; integration lane fine to run
+- QUEUED | l1-unilateral-side-logging.md | per-side L/R logging (name contains "single" or manual toggle), R weight defaults from L; WorkoutSet.side migration | Cursor must NOT run npm test
+- QUEUED | l3-custom-exercises-server.md | UserExercise schema + CRUD + engine resolver/attribution overlay | Fable-designed schema; Cursor must NOT run npm test
+- QUEUED | l4-custom-exercise-ui.md | "Add to library" sheet: name + tap-chip muscle picker (Main/Assists), flips indicator live | needs L3 migration applied to staging first
+
+(N-wave fully landed on `ui-nav-overhaul`, cleared for merge, awaiting
+Seth's "push to main" trigger phrase.)
 
 ## Candidates (next units, not yet authored as blocks)
 

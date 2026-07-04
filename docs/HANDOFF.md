@@ -1,11 +1,13 @@
 # HANDOFF — current state
 
-**Updated:** July 4, 2026 (Fable — **pre-main branch-diff review of
-`ui-nav-overhaul` DONE.** Seth smoked N1-N3 (all passed). Full accumulated
-diff (20 files, +1490/-380) reviewed against all four N-wave blocks; one
-reviewer fix committed (`3a1a7fc`, profile stat-tile placeholder gating),
-pushed to origin. **Branch is CLEARED FOR MERGE — awaiting Seth's
-"push to main" trigger phrase.** Details in the latest session log.)
+**Updated:** July 4, 2026 (Fable — **L-wave authored (4 blocks, QUEUED) +
+two small fixes landed directly** on new branch `logging-ux-wave` off
+`ui-nav-overhaul` HEAD. Profile sub-page back link restyled as a visible
+pill; feedback pipeline audited (code sound - the open question is deploy
+env vars, see the session log). **`ui-nav-overhaul` is still CLEARED FOR
+MERGE and awaiting Seth's "push to main" trigger phrase** — the L-wave
+branch stacks on top of it and Sonnet should rebase-or-merge reconcile
+`logging-ux-wave` after that merge lands.)
 **Rule:** rewritten in place at the end of every working session. Dated, never versioned. If this file looks stale (date > ~2 weeks old), verify branch/deploy state from ground truth before trusting it.
 
 ---
@@ -32,6 +34,54 @@ pushed to origin. **Branch is CLEARED FOR MERGE — awaiting Seth's
   - No schema changes rode along — `analytics-engine`'s merge has no migration coupling. The separate `exercise-catalog-seed` branch (A1) still has its own gated migration track.
 - **Render/Vercel not yet repointed from the `analytics-engine` staging deploy back to `main`** — RUNBOOK step 6 ("Repoint staging Render back to main. Verify redeploy SHA in Events.") is still open; do this before smoking prod.
 - Username feature LIVE and verified on both environments (unchanged).
+
+## Session log (July 4 latest+7 — L-wave authored + misc fixes, Fable)
+
+- **Seth's batch of five asks, split hybrid at his choice** (Fable does the
+  tiny items directly, authors blocks for the big ones - cheaper than
+  full-relay for small items since block-authoring costs ~the same Fable
+  tokens as just doing them):
+  1. Unilateral "single" logging -> L1 block
+  2. Tracked-workout indicator -> L2 block
+  3. Custom exercise creation (name + per-muscle intensity) -> L3+L4 blocks
+  4. Profile sub-page back button too small -> fixed directly
+  5. "Is feedback actually going somewhere?" -> audited directly
+- **New branch `logging-ux-wave`** off `ui-nav-overhaul` HEAD (`516d249`) -
+  NOT off main, because the fixes touch N2's profile sub-pages which don't
+  exist on main yet. After the pending ui-nav-overhaul -> main merge, this
+  branch fast-forwards cleanly over it.
+- **Back-link fix (direct):** `.settings-page-back` restyled from a muted
+  small text link to a tappable pill chip (border + `--color-nav-active-bg`
+  fill + focus ring off `--color-interactive`, matching the range-chip
+  pattern); dropped the `muted small` classes on the three profile
+  sub-pages. Tokens only. Client build green.
+- **Feedback pipeline audit (no code change needed):** submissions POST to
+  `/api/feedback` -> `Feedback` table in whichever DB the deployed server
+  points at; reviewers read them at `/dev/feedback` (reviewer-gated both
+  ends). Code is sound. THE GAP IS CONFIG, not code: `client/.env` (which
+  holds `VITE_FEEDBACK_REVIEWER_EMAILS`) is NOT committed, so the Vercel
+  build only shows Seth the Dev feedback row if that var is set in the
+  Vercel dashboard; likewise the server check needs
+  `FEEDBACK_REVIEWER_EMAILS` set in Render's env (both prod + staging
+  services). 30-second self-test for Seth on prod: open Profile - if the
+  "Dev feedback" row is visible, the Vercel var is set; click it - if
+  entries load (not a 403), the Render var is set too. Both vars =
+  `sethjknisel@gmail.com` (matching is case-insensitive).
+- **L-wave authored + QUEUED (all MODEL: sonnet, MODE: 1-relay), dispatch
+  strictly serialized L2 -> L1 -> L3 -> L4** (order rationale + per-unit
+  scope in QUEUE.md). Two gated migrations ride this wave: L1 adds
+  nullable `WorkoutSet.side` ("L"/"R"), L3 adds the `UserExercise` table
+  (per-user custom exercises with primary/secondary muscle designations
+  feeding the engine's existing fallback attribution math). Cursor is
+  forbidden from running `npm test` in L1/L3 (pretest would auto-apply
+  the parked migrations to staging); Seth applies each per RUNBOOK before
+  the next unit needs it. Seth settled the "single" ambiguity: it means
+  UNILATERAL per-side L/R entry (not 1-rep singles), right side defaults
+  its weight from the left.
+- **Not yet done:** dispatch (starts with L2 once Seth points Cursor at
+  it); Seth's visual smoke of the back-link pill on the branch Vercel
+  deploy; the two env-var checks above; and the still-pending
+  ui-nav-overhaul merge (item 0 below).
 
 ## Session log (July 4 latest+6 — Fable pre-main review of ui-nav-overhaul)
 
@@ -590,7 +640,10 @@ pushed to origin. **Branch is CLEARED FOR MERGE — awaiting Seth's
 
 ## Next up (the active task)
 
-0. **N-wave navigation overhaul: REVIEW DONE, CLEARED FOR MERGE** (July 4).
+0a. **L-wave QUEUED on `logging-ux-wave`** — dispatch L2 first (Sonnet
+   drives the relay per v3). Wave order + migration choreography in
+   QUEUE.md. Reconcile this branch after the ui-nav-overhaul merge (0b).
+0b. **N-wave navigation overhaul: REVIEW DONE, CLEARED FOR MERGE** (July 4).
    All four units smoked + passed by Seth; Fable pre-main branch-diff
    review complete with one fix (`3a1a7fc`, pushed to origin). Branch HEAD
    for the merge is `3a1a7fc`. **Waiting only on Seth's "push to main"
