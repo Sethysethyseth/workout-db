@@ -1,10 +1,11 @@
 # HANDOFF — current state
 
-**Updated:** July 4, 2026 (Sonnet — N2 LANDED (`4dcd829`) on
-`ui-nav-overhaul`, pushed: Seth smoked N1b (passed), Cursor executed
-`n2-profile-hub.md`, Sonnet reviewed (clean delivery, no bounces) and
-committed. Awaiting Seth's visual smoke of N2 on the branch Vercel deploy
-before N3 dispatches.)
+**Updated:** July 4, 2026 (Sonnet — N3 LANDED (`f5767f8`) on
+`ui-nav-overhaul`, pushed: Seth smoked N2 (passed), Cursor executed
+`n3-analytics-subviews.md`, Sonnet reviewed (clean delivery, no bounces) and
+committed. **N-wave is now fully landed on the branch (N1/N1b/N2/N3 all
+in).** Awaiting Seth's visual smoke of N3, then the Fable/Opus pre-main
+branch-diff review before merge to `main`.)
 **Rule:** rewritten in place at the end of every working session. Dated, never versioned. If this file looks stale (date > ~2 weeks old), verify branch/deploy state from ground truth before trusting it.
 
 ---
@@ -31,6 +32,41 @@ before N3 dispatches.)
   - No schema changes rode along — `analytics-engine`'s merge has no migration coupling. The separate `exercise-catalog-seed` branch (A1) still has its own gated migration track.
 - **Render/Vercel not yet repointed from the `analytics-engine` staging deploy back to `main`** — RUNBOOK step 6 ("Repoint staging Render back to main. Verify redeploy SHA in Events.") is still open; do this before smoking prod.
 - Username feature LIVE and verified on both environments (unchanged).
+
+## Session log (July 4 latest+5 — N2 smoked, N3 landed, Sonnet)
+
+- **Seth smoked N2 on the `ui-nav-overhaul` Vercel deploy — passed.**
+  Confirmed N3 does not touch analytics engine/data, only page layout. N3
+  dispatched immediately after.
+- **Cursor executed `n3-analytics-subviews.md`; Sonnet reviewed and
+  committed (`f5767f8`, 3 files, +102/-4), pushed to
+  `origin/ui-nav-overhaul`.** Scope exact (the 3 specced files, nothing
+  extra - one unrelated stray edit to `.claude/settings.json` found in the
+  working tree, left uncommitted/unstaged as out of scope, flagged to
+  Seth separately); client build green; no new hex in the CSS diff; the
+  fetch `useEffect`'s dependency array confirmed still `[weeks]` only (grep
+  verified) so switching views triggers no refetch; `client/package.json`
+  and every other file under `client/src/components/analytics/` untouched.
+  Delivered: `AnalyticsViewTabs.jsx` (page-level segmented control, same
+  aria pattern as `ChartTableToggle`, active cell via `--color-nav-active-bg`
+  / `color-mix`); `AnalyticsPage.jsx` restructured so `view` lives in
+  `?view=` via `useSearchParams` (`parseAnalyticsView` defaults any
+  unknown/absent value to `muscles`, `setSearchParams(..., { replace: true
+  })` so switching tabs doesn't spam history), StatTiles + tabs persistent
+  above the swapped body (muscles -> PerMuscleSection + BalanceSection,
+  strength -> PerExerciseSection, execution -> ExecutionSection),
+  DataQualitySection always last on every view; empty-range state still
+  replaces tabs + body with the single empty card. Clean delivery - no
+  bounces, no reviewer fixes needed.
+- **N-wave is now fully landed on `ui-nav-overhaul`** (N1 `d266242`, N1b
+  `b366e17`, N2 `4dcd829`, N3 `f5767f8`) - all four units in, nothing left
+  queued for this branch.
+- **Not yet done:** Seth's visual smoke of N3 (view switching via tabs,
+  `?view=strength`/`?view=execution` deep-links, `?view=bogus` falls back to
+  muscles, range-chip refetch preserves the selected view, empty-range state
+  still shows no tabs). After sign-off: the Fable/Opus pre-main
+  branch-diff review (mandated by the v3 workflow, not optional) before any
+  merge to `main` - gated on Seth's "push to main" trigger phrase as always.
 
 ## Session log (July 4 latest+4 — N1b smoked, N2 landed, Sonnet)
 
@@ -515,12 +551,13 @@ before N3 dispatches.)
 ## Next up (the active task)
 
 0. **N-wave navigation overhaul is the active UI track** (July 4).
-   **N1 (`d266242`), N1b (`b366e17`) both smoked + passed. N2 (`4dcd829`)
-   LANDED on `ui-nav-overhaul`, pushed — awaiting Seth's visual smoke of N2
-   on the branch's Vercel deploy** (Profile hub: identity header, stat tile
-   values, sub-route back links, Dev feedback row gating). N3 (Analytics
-   sub-views) dispatches after sign-off. Strictly serialized (shared
-   `index.css`). Fable pre-main review before the wave merges.
+   **N1 (`d266242`), N1b (`b366e17`), N2 (`4dcd829`) all smoked + passed.
+   N3 (`f5767f8`) LANDED on `ui-nav-overhaul`, pushed — N-wave is fully
+   landed, nothing left queued.** Awaiting Seth's visual smoke of N3 (view
+   tabs, `?view=` deep-links, bogus-value fallback, range-chip refetch
+   preserving the view, empty-range state). After sign-off: Fable/Opus
+   pre-main branch-diff review, then merge to `main` on Seth's trigger
+   phrase.
 1. **B9 LANDED (`c7acb43`)** — Cursor implemented, Claude Code reviewed
    (scope exact, all acceptance criteria tested, reviewer tightened the
    inclusive-last-bucket assertion, re-ran unit lane 103/103, purity grep
