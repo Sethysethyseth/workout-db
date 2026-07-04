@@ -1,13 +1,11 @@
 # HANDOFF — current state
 
-**Updated:** July 4, 2026 (Fable — **L-wave authored (4 blocks, QUEUED) +
-two small fixes landed directly** on new branch `logging-ux-wave` off
-`ui-nav-overhaul` HEAD. Profile sub-page back link restyled as a visible
-pill; feedback pipeline audited (code sound - the open question is deploy
-env vars, see the session log). **`ui-nav-overhaul` is still CLEARED FOR
-MERGE and awaiting Seth's "push to main" trigger phrase** — the L-wave
-branch stacks on top of it and Sonnet should rebase-or-merge reconcile
-`logging-ux-wave` after that merge lands.)
+**Updated:** July 4, 2026 (Sonnet — **L2 landed** (`f66f9ea`) on
+`logging-ux-wave`, pushed to origin. Dispatch L1 next (Cursor must NOT run
+`npm test` on L1 - it parks an unapplied migration). **`ui-nav-overhaul` is
+still CLEARED FOR MERGE and awaiting Seth's "push to main" trigger
+phrase** — the L-wave branch stacks on top of it and Sonnet should
+rebase-or-merge reconcile `logging-ux-wave` after that merge lands.)
 **Rule:** rewritten in place at the end of every working session. Dated, never versioned. If this file looks stale (date > ~2 weeks old), verify branch/deploy state from ground truth before trusting it.
 
 ---
@@ -34,6 +32,37 @@ branch stacks on top of it and Sonnet should rebase-or-merge reconcile
   - No schema changes rode along — `analytics-engine`'s merge has no migration coupling. The separate `exercise-catalog-seed` branch (A1) still has its own gated migration track.
 - **Render/Vercel not yet repointed from the `analytics-engine` staging deploy back to `main`** — RUNBOOK step 6 ("Repoint staging Render back to main. Verify redeploy SHA in Events.") is still open; do this before smoking prod.
 - Username feature LIVE and verified on both environments (unchanged).
+
+## Session log (July 4 latest+8 — L2 landed, Sonnet)
+
+- **Cursor executed `l2-tracked-exercise-indicator.md`; Sonnet reviewed and
+  committed (`f66f9ea`, 6 files, +293/-12), pushed to
+  `origin/logging-ux-wave`.** Scope exact (the 6 specced files; one stray
+  unrelated `.claude/settings.json` permission-list edit found in the
+  working tree, left uncommitted/unstaged as out of scope, same precedent
+  as the N3 stray edit). Server unit lane 103/103, client build green,
+  integration lane re-run fresh (3/3: 401 unauthenticated, 400 on
+  `names: []`, happy path resolving a real catalog name + rejecting a
+  fake one) - confirmed no pending migrations, safe per the block's own
+  note. Delivered: `POST /exercises/resolve` (batched, `authRequired`,
+  caps at 100 names, imports `resolveExercise` from
+  `server/src/analytics/resolve.js` - engine untouched); client
+  `exerciseApi.js` mirrors `analyticsApi.js`'s shape; SessionDetailPage
+  gained a module-level resolution cache (keyed by trimmed-lowercase
+  name, survives session navigation) populated by one batched call per
+  session load plus a single-name re-resolve after `onExerciseCommitted`;
+  quiet check-circle (resolved) / hollow dashed circle (unresolved)
+  indicator via inline SVG, tokens-only color-mix off
+  `--color-interactive`/`--color-text-secondary`, network failures render
+  no indicator rather than a wrong one. The acceptance grep
+  (`normalizeExerciseName\|exercises.json` in `client/src`) found one hit
+  in `smartWorkoutName.js` - verified pre-existing and unrelated (a
+  different, unchanged helper for smart session-naming, not catalog
+  duplication) - not a violation. Clean delivery - no bounces, no
+  reviewer fixes needed.
+- **Not yet done:** dispatch L1 (`l1-unilateral-side-logging.md`) - Cursor
+  must NOT run `npm test` on it (parks an unapplied `WorkoutSet.side`
+  migration that pretest would silently apply).
 
 ## Session log (July 4 latest+7 — L-wave authored + misc fixes, Fable)
 
@@ -640,8 +669,9 @@ branch stacks on top of it and Sonnet should rebase-or-merge reconcile
 
 ## Next up (the active task)
 
-0a. **L-wave QUEUED on `logging-ux-wave`** — dispatch L2 first (Sonnet
-   drives the relay per v3). Wave order + migration choreography in
+0a. **L-wave in progress on `logging-ux-wave`** — L2 LANDED (`f66f9ea`).
+   Dispatch L1 next (Cursor must NOT run `npm test` - parks an unapplied
+   `WorkoutSet.side` migration). Wave order + migration choreography in
    QUEUE.md. Reconcile this branch after the ui-nav-overhaul merge (0b).
 0b. **N-wave navigation overhaul: REVIEW DONE, CLEARED FOR MERGE** (July 4).
    All four units smoked + passed by Seth; Fable pre-main branch-diff

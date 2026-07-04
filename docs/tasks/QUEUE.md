@@ -12,9 +12,9 @@ L2 -> L1 -> L3 -> L4, strictly serialized** - L2 before L1 because L2 runs
 the integration lane and L1 parks an unapplied migration that `npm test`'s
 pretest would silently apply (gated). L1 and L3 each carry a migration:
 Seth applies L1's to staging before L3 dispatches, and L3's before L4
-dispatches (RUNBOOK "Schema-change deploy").
+dispatches (RUNBOOK "Schema-change deploy"). L2 now LANDED - L1 dispatches
+next.
 
-- QUEUED | l2-tracked-exercise-indicator.md | POST /exercises/resolve + tracked/untracked indicator next to exercise headings | no schema change; integration lane fine to run
 - QUEUED | l1-unilateral-side-logging.md | per-side L/R logging (name contains "single" or manual toggle), R weight defaults from L; WorkoutSet.side migration | Cursor must NOT run npm test
 - QUEUED | l3-custom-exercises-server.md | UserExercise schema + CRUD + engine resolver/attribution overlay | Fable-designed schema; Cursor must NOT run npm test
 - QUEUED | l4-custom-exercise-ui.md | "Add to library" sheet: name + tap-chip muscle picker (Main/Assists), flips indicator live | needs L3 migration applied to staging first
@@ -39,6 +39,7 @@ Seth's "push to main" trigger phrase.)
 
 ## Landed
 
+- LANDED f66f9ea | l2-tracked-exercise-indicator.md | POST /exercises/resolve (batched, authRequired) + quiet check/hollow-circle indicator next to exercise headings, live + completed sessions | scope exact (6 files), server unit 103/103, client build green, integration 3/3 (401/400/happy path) re-run fresh; no client-side catalog duplication (the one grep hit is a pre-existing unrelated smartWorkoutName.js helper, not touched by this diff); package.json byte-identical, no new hex; module-level resolution cache + post-commit re-resolve verified by diff read
 - LANDED f5767f8 | n3-analytics-subviews.md | analytics page reorg: persistent header (chips + StatTiles) + page-level Muscles\|Strength\|Execution segmented control via ?view= param; DataQuality always renders last | scope exact (3 files), build green, no hex, fetch effect deps unchanged ([weeks] only - confirmed by grep), package.json/other analytics/ files untouched; ?view=bogus and absent both default to muscles per spec
 - LANDED 4dcd829 | n2-profile-hub.md | Profile becomes identity header (avatar/name/member-since) + stat strip (workouts/this week/week streak) + drill-in Appearance/Security/Feedback sub-routes | scope exact (9 files), build green, no hex, package.json byte-identical; profileStats.js weekStreak/countThisWeek contract verified 5/5 by direct node eval; sub-pages confirmed verbatim extractions (same classes/api calls) against pre-N2 ProfilePage.jsx; copy fix "Help improve LogChamp." present, old string gone; parseReviewerEmails centralized, Navbar diff is import-swap only
 - LANDED b366e17 | n1b-mobile-chrome-fix.md | scene band lifted flush above tab bar; mobile top bar removed (Home masthead + page-title standardization); resume bar as frosted pill above tabs; empty-wrap phantom strip fixed | scope exact (5 files), build green, no hex, no new deps; reviewer fix: session-sticky-top mobile override was dead (placed before the base rule, same specificity - source order decides), relocated after it; block's own placement spec caused it, not a Cursor error
