@@ -6,7 +6,6 @@ Statuses: DRAFT / QUEUED / DISPATCHED / AWAITING-REVIEW / LANDED <sha> / BOUNCED
 
 ## Active
 
-- QUEUED | n1-bottom-tab-bar.md | mobile bottom tab bar (Home/Analytics/History/Library/Profile) + slim top bar; desktop nav unchanged; shared useGuardedNav hook | N-wave unit 1 of 3; dispatch strictly serialized N1 -> N2 -> N3 (all touch index.css); start the wave on a fresh branch off post-T3 main (suggest `ui-nav-overhaul`)
 - QUEUED | n2-profile-hub.md | Profile becomes identity header + stat strip (workouts/this week/week streak) + drill-in Appearance/Security/Feedback sub-routes | N-wave unit 2; dispatch after N1 lands; no server changes (createdAt already in /auth/me, stats from /sessions/mine)
 - QUEUED | n3-analytics-subviews.md | analytics page reorg: persistent header (chips + StatTiles) + Muscles\|Strength\|Execution segmented sub-views via ?view= param; DataQuality always visible | N-wave unit 3; dispatch after N2 lands; pure page reorg, section components untouched
 
@@ -30,6 +29,7 @@ main merge done July 4; T3 below moved to Landed)
 
 ## Landed
 
+- LANDED d266242 | n1-bottom-tab-bar.md | mobile bottom tab bar (Home/Analytics/History/Library/Profile) + slim top bar; desktop nav unchanged; shared useGuardedNav hook | on branch ui-nav-overhaul (not main/staging-pointed yet); scope exact match, build green, no hex, no new deps, guard logic consolidated to one file; one acceptance-criterion string (literal `tryNavigate` grep hit in Navbar.jsx) didn't literally match since Navbar only needs `guardedClick` - substantive intent (single guard location, zero behavior change) verified independently, not bounced
 - LANDED de03801 | t3-dynamic-loading-screens.md | animated soft-tone (pulsing three-dot indicator) + page-tone (breathing accent ring, cross-faded label/slowLabel swap) + slowLabel="Waking up the server..." wired onto all 10 LoadingState call sites | on branch ui-loading-screens (not main/staging yet); review clean - scope exact, hook/props untouched, no hex, no new deps, build green; timing skeleton (useDelayedReveal) built directly by Claude Code same session, block covered visual/animation layer only
 - LANDED d21608c | u10-home-hero-dead-space.md | home layout fix (align-content: start) + weekly-report set-count formatting | Cursor ran U10/U8/U9 in ONE working tree (against the serialized-dispatch plan) - reviewed and committed together; reviewer added the rounded-delta tone fix
 - LANDED d21608c | u8-volume-trend-strength-sparklines.md | volume Bars|Trend|Table small multiples + strength e1RM sparklines | reviewer fixes: sparkline dots as non-scaling round-cap strokes (circles stretched to ellipses under preserveAspectRatio=none), single-session dot centered + no duplicate value, mvt last-week label moved to a fixed third grid column (was overflowing the card edge)

@@ -1,6 +1,8 @@
 # HANDOFF — current state
 
-**Updated:** July 4, 2026 (Fable — N-wave navigation overhaul authored, N1/N2/N3 QUEUED. Earlier same day, Sonnet: T3 dynamic loading screens merged to `main` (`750c42b`), pushed.)
+**Updated:** July 4, 2026 (Sonnet — N1 bottom tab bar landed (`d266242`) on
+`ui-nav-overhaul`, pushed. Earlier same day: Fable authored N1/N2/N3; before
+that, T3 dynamic loading screens merged to `main` (`750c42b`).)
 **Rule:** rewritten in place at the end of every working session. Dated, never versioned. If this file looks stale (date > ~2 weeks old), verify branch/deploy state from ground truth before trusting it.
 
 ---
@@ -27,6 +29,39 @@
   - No schema changes rode along — `analytics-engine`'s merge has no migration coupling. The separate `exercise-catalog-seed` branch (A1) still has its own gated migration track.
 - **Render/Vercel not yet repointed from the `analytics-engine` staging deploy back to `main`** — RUNBOOK step 6 ("Repoint staging Render back to main. Verify redeploy SHA in Events.") is still open; do this before smoking prod.
 - Username feature LIVE and verified on both environments (unchanged).
+
+## Session log (July 4 latest+1 — N1 bottom tab bar landed, Sonnet)
+
+- **Branch `ui-nav-overhaul` created off post-T3 `main` (`47bec4a`), pushed.**
+  Also pushed the docs-only `47bec4a` commit itself to `origin/main` at
+  Seth's explicit request (N-wave task-block authoring, no functional
+  change).
+- **Cursor executed `n1-bottom-tab-bar.md`; reviewed and committed
+  (`d266242`, 5 files, +238/-88), pushed to `origin/ui-nav-overhaul`.**
+  Scope exact match (the 5 expected files, nothing extra); client
+  `npm run build` green; no hex in the new CSS; `client/package.json`
+  byte-identical; guard logic (`isSessionDetailPath`, `confirmLeaveLiveSession`
+  calls) consolidated into exactly one file, `client/src/lib/
+  useGuardedNav.js`; Navbar's desktop DOM/behavior confirmed unchanged by
+  direct diff read (all five links now route through `guardedClick(...)`
+  instead of inline per-link handlers, zero behavior change). `BottomNav.jsx`
+  renders the 5 tabs in spec order (Home/Analytics/History/Library/Profile)
+  with the exact icon paths and end/prefix matching from the block.
+  `.bottom-nav` hidden at `min-width: 720px`, uses
+  `env(safe-area-inset-bottom)`, `.main` gets the mobile bottom padding via
+  the shared `--bottom-nav-height` custom property; `.workout-tab.stack`'s
+  mobile min-height adjusted to account for both bars.
+  **One acceptance-criterion string didn't literally match:** the block's
+  `grep -n "tryNavigate" client/src/components/layout/Navbar.jsx` expects a
+  literal hit, but Navbar only calls `guardedClick` (which internally calls
+  `tryNavigate` inside the hook) — the substantive intent (single guard
+  location, hook-based extraction, zero behavior change) is satisfied and
+  verified independently by reading the diff; treated as spec-wording
+  imprecision, not bounced.
+- **Not yet done:** Seth's visual smoke on the `ui-nav-overhaul` Vercel
+  deploy (mobile bottom bar across viewports/palettes, desktop nav
+  untouched) before N2 dispatches — N1/N2/N3 stay strictly serialized since
+  all three touch `client/src/index.css`.
 
 ## Session log (July 4 latest — N-wave navigation overhaul authored, Fable)
 
@@ -386,13 +421,12 @@
 
 ## Next up (the active task)
 
-0. **N-wave navigation overhaul is the active UI track** (July 4, Fable):
-   N1 (bottom tab bar) -> N2 (Profile hub) -> N3 (analytics sub-views),
-   all QUEUED in `docs/tasks/`, strictly serialized (shared index.css).
-   Sonnet: create `ui-nav-overhaul` off post-T3 `main`, dispatch N1 to
-   Cursor, run the per-unit pass per v3. Seth smokes each unit on the
-   branch's Vercel deploy before the next dispatches; Fable pre-main
-   review before the wave merges.
+0. **N-wave navigation overhaul is the active UI track** (July 4).
+   **N1 (bottom tab bar) LANDED (`d266242`) on `ui-nav-overhaul`, pushed —
+   awaiting Seth's visual smoke on the branch's Vercel deploy.** N2 (Profile
+   hub) dispatches only after that sign-off; N3 (analytics sub-views) after
+   N2. Strictly serialized (shared `index.css`). Fable pre-main review
+   before the wave merges.
 1. **B9 LANDED (`c7acb43`)** — Cursor implemented, Claude Code reviewed
    (scope exact, all acceptance criteria tested, reviewer tightened the
    inclusive-last-bucket assertion, re-ran unit lane 103/103, purity grep
