@@ -184,6 +184,24 @@ which is worse than either alternative).
   merge, not the staging commit). Generalizes for the public repo as:
   "review gates the commit; human visual sign-off gates the next unit and
   the release, and it happens on a deployed build, not a dev server."
+- **2026-07-03 (later):** Relay v3 - planner seat split by model tier
+  (Seth). The planner seat's work turned out to be TWO cost profiles, not
+  one: judgment (block authoring, architecture, pre-release review) and
+  bookkeeping (per-unit sanity pass, commits, state upkeep, dispatch).
+  v3 routes them separately: the frontier model (Fable/Opus) authors task
+  blocks in short wave-sessions and does ONE thorough review of the
+  accumulated branch diff before release; a mid-tier model (Sonnet) becomes
+  the RESIDENT driver - per-unit tripwire review (re-run tests/build, scope
+  + acceptance checks), commit/push/state, dispatch - and escalates on
+  defined triggers (schema, security, prod, unresolved spec conflicts)
+  instead of guessing. Executor seat also defaults down-tier. Accepted
+  trade-off, stated in CLAUDE.md so it isn't silently reverted: deep review
+  moves from per-unit to the release gate, so a contract bug can live on
+  staging one gate longer. Generalizes for the public repo as: "the planner
+  seat is really two roles - rent frontier intelligence by the session for
+  authoring + release review, keep a cheap resident for the loop." This is
+  the same cost-to-value matching as the original split, applied one level
+  deeper.
 - **2026-07-02 (later still):** Shell repo created at
   `github.com/Sethysethyseth/the-poor-mans-agentic-workflow` (PRIVATE - still
   not published; visibility flip stays Seth's call). Contents: `BRIEF.md`

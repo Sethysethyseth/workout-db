@@ -1,6 +1,6 @@
 # HANDOFF — current state
 
-**Updated:** July 3, 2026 (U10/U8/U9 review session — Cursor delivered ALL THREE units in one working tree; reviewed against all three blocks, six reviewer fixes applied, committed as ONE commit `d21608c` + pushed. Seth's visual smoke of the whole wave on the staging Vercel deploy is the next step.)
+**Updated:** July 3, 2026 (relay v3 session, Fable — division of labor rebalanced: Sonnet becomes the resident Claude Code driver, Fable/Opus drops to task-block authoring + the pre-main review gate. Seth's visual smoke of the U10/U8/U9 wave on the staging Vercel deploy is still the next step.)
 **Rule:** rewritten in place at the end of every working session. Dated, never versioned. If this file looks stale (date > ~2 weeks old), verify branch/deploy state from ground truth before trusting it.
 
 ---
@@ -30,6 +30,37 @@
 3. **Verify the manually inserted prod `_prisma_migrations` row's `checksum` matches staging's** for `20260603140000_add_user_username`. Latent hazard — check once, fix if mismatched.
 4. Confirm prod Render serving cleanly post-recovery.
 5. Low-priority: redundant spare stash on `ui-palettes-v2` (`WIP unrelated to ui-palettes-v2 merge`, July 1) — `git stash drop` once confirmed unneeded.
+
+## Session log (July 3 latest+2 — relay v3: model split rebalanced, Fable)
+
+- **Division of labor rebalanced (Seth's call, token-efficiency harmonization),
+  now codified in CLAUDE.md ("v3 - Sonnet resident, Fable gated"):**
+  - **Sonnet in Claude Code becomes the resident driver:** per-unit light
+    review (re-run test lanes + build, scope vs FILES TO TOUCH, acceptance
+    spot-checks), commits with SHA verification, staging pushes, HANDOFF +
+    QUEUE upkeep, dispatch. Sonnet never authors blocks and never settles
+    contract ambiguity — it escalates.
+  - **Fable/Opus drops to two jobs:** authoring unit-scale task blocks (a
+    wave per session, then drop out), and ONE thorough review of the full
+    accumulated branch diff before any merge to main. Standing escalation
+    triggers: schema/migration design, security/isolation surfaces, prod
+    incidents, root-cause Sonnet can't close, spec-vs-delivery conflicts.
+  - **Cursor stays the hands**, now on Sonnet or cheaper per the block's
+    MODEL header (Fable-in-Cursor no longer the default).
+  - **Accepted trade-off (do not silently "fix"):** deep review moves from
+    per-unit to the pre-main gate; Sonnet's per-unit pass is the tripwire,
+    Fable's pre-main review is the net. Merge still gated on Seth's
+    "push to main" trigger phrase.
+- Model facts behind the call (from the API skill, July 3): Fable 5 is a
+  Mythos-class tier ABOVE Opus 4.8 ($10/$50 per MTok vs $5/$25); Sonnet 5
+  is $3/$15 with near-Opus coding/agentic quality — a Fable session burns
+  roughly 3x the quota of the same session on Sonnet. Fable and Sonnet are
+  NOT interchangeable; the plan works because judgment stays on Fable and
+  well-specified execution + bookkeeping move to Sonnet.
+- Workflow-change log appended to `docs/specs/poor-mans-agentic-workflow.md`.
+- **Next session should run on Sonnet** (this is the handoff): its first
+  jobs are whatever falls out of Seth's U10/U8/U9 staging smoke, under the
+  new v3 rules. No code changed this session — docs only.
 
 ## Session log (July 3 latest+1 — U10/U8/U9 all landed `d21608c`, Claude Code)
 
