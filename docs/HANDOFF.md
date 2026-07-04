@@ -1,15 +1,19 @@
 # HANDOFF — current state
 
-**Updated:** July 4, 2026 (Sonnet — **L2 landed** (`f66f9ea`) **and L1
-landed** (`4ae0fbf`) on `logging-ux-wave`, pushed to origin. L1's
-`WorkoutSet.side` migration applied to STAGING (Seth, manual per RUNBOOK)
-and independently verified — see session log. Staging Render repointed to
-`logging-ux-wave` and redeployed at `4ae0fbf`. **Not yet done: Seth's
-visual smoke of L2 + L1 on the staging deploy** — L3 dispatches after
-sign-off. **`ui-nav-overhaul` is still CLEARED FOR MERGE and awaiting
-Seth's "push to main" trigger phrase** — the L-wave branch stacks on top
-of it and Sonnet should rebase-or-merge reconcile `logging-ux-wave` after
-that merge lands.)
+**Updated:** July 4, 2026 (Sonnet — Seth's L2/L1 staging smoke surfaced a
+decimal-reps screenshot and a "changes aren't showing" report; triaged live
+via a Playwright-driven browser session against the staging Vercel preview.
+Found and fixed a real L1 bug (`0ee1a51`, pushed to `logging-ux-wave`): the
+sets area rendered nothing when toggling L/R on a fresh 0-set exercise,
+looking exactly like the feature was broken. The decimal-reps screenshots
+turned out to be a separate, pre-existing, unrelated bug (`step="0.01"` on
+the Reps input, ~2 months old — not fixed yet, see Open TODOs). L2 was
+independently confirmed working (Barbell curl showed the tracked checkmark
+correctly). **Not yet done: Seth's re-smoke of L1 + L2 on `0ee1a51`** — L3
+dispatches after sign-off. **`ui-nav-overhaul` is still CLEARED FOR MERGE
+and awaiting Seth's "push to main" trigger phrase** — the L-wave branch
+stacks on top of it and Sonnet should rebase-or-merge reconcile
+`logging-ux-wave` after that merge lands.)
 **Rule:** rewritten in place at the end of every working session. Dated, never versioned. If this file looks stale (date > ~2 weeks old), verify branch/deploy state from ground truth before trusting it.
 
 ---
@@ -36,6 +40,59 @@ that merge lands.)
   - No schema changes rode along — `analytics-engine`'s merge has no migration coupling. The separate `exercise-catalog-seed` branch (A1) still has its own gated migration track.
 - **Render/Vercel not yet repointed from the `analytics-engine` staging deploy back to `main`** — RUNBOOK step 6 ("Repoint staging Render back to main. Verify redeploy SHA in Events.") is still open; do this before smoking prod.
 - Username feature LIVE and verified on both environments (unchanged).
+
+## Session log (July 4 latest+10 — L1 blank-toggle bug found + fixed, Sonnet)
+
+- **Seth reported L1 + L2 "changes aren't showing" on the `logging-ux-wave`
+  staging deploy**, with two screenshots showing the session-edit form
+  displaying `9.98`/`9.99` in the Reps field (docs/smoke-tests/
+  L2-DECIMAL-REPS-SMOKE.md, committed this session alongside the images).
+- **Decimal-reps triage (code read, no live repro needed):** the Reps
+  `<input type="number">` (SessionDetailPage.jsx ~line 883) has
+  `step="0.01"`, copied from the adjacent Weight field which legitimately
+  needs decimals. The native spinner/mouse-wheel-over-focused-input
+  decrements by 0.01 per tick — two ticks down from 10 gives exactly
+  `9.99` then `9.98`, matching both screenshots. `git blame` traces this to
+  `9112eda7` (May 5, 2026), ~2 months before L1/L2 — confirmed unrelated to
+  either feature, would reproduce on `main` too. **Not fixed yet** (out of
+  L-wave scope, low severity) — see Open TODOs.
+- **The checkmark badge in the screenshots (next to "Set 1") is also
+  unrelated** — it's the pre-existing "Saved" sync badge (`f8f3cb0`, April),
+  not L2's tracked-exercise indicator. L2's indicator renders in the
+  exercise's collapsed heading line ("· N sets ✓"), never in the open
+  edit-form view the screenshots showed — so those screenshots couldn't
+  have shown it either way.
+- **Live-tested both features directly** (Playwright browser, since reading
+  code alone couldn't confirm runtime behavior): the documented staging
+  smoke credentials (`smoke_b8` / `SmokeTest-B8-2026`) returned 401 — gone,
+  almost certainly wiped by the full `npm test` re-run recorded in the
+  latest+9 log below (integration lane resets the staging DB on every run,
+  a standing AGENTS.md gotcha). Registered a throwaway account
+  (`smoke_lwave`) instead to keep testing unblocked.
+  - **L2 confirmed working:** naming an exercise "Barbell curl" and
+    blurring the field triggered `POST /exercises/resolve` (200) and the
+    heading correctly rendered "Tracked - counts toward your analytics"
+    with the check icon.
+  - **L1 bug found:** toggling `L/R` on while the exercise still had 0 sets
+    made the entire sets area render `null` (SessionDetailPage.jsx line
+    ~1266, `perSideMode ? null : (<SessionSetRow isDraft .../>)`) — no
+    input fields, no visible affordance, indistinguishable from the
+    feature not working. The toolbar's "+ Add set" button was still present
+    and functional underneath (clicking it correctly created a real
+    Left/Right pair against the migrated `side` column) but nothing in the
+    empty state pointed at it.
+- **Fix applied and pushed (`0ee1a51`):** the `null` branch now renders a
+  one-line hint ("Tap \"+ Add set\" above to log your first left/right
+  pair.") using the same `session-empty-sets` class as the existing
+  completed-session empty state — no new architecture, no CSS, reuses the
+  working "+ Add set" control. Client `npm run build` re-verified green.
+  Committed separately from the original L1 unit for a clean scope
+  boundary; pushed straight to `origin/logging-ux-wave` (`11a9f0e..0ee1a51`,
+  confirmed via `git log origin/logging-ux-wave`).
+- **Not yet done:** Seth's re-smoke of L1 (retry the L/R toggle on a fresh
+  exercise, confirm the hint + "+ Add set" now reads as working) and L2
+  (check the collapsed-heading checkmark, not the open edit form) on
+  `0ee1a51`. L3 dispatches after this sign-off, same as before.
 
 ## Session log (July 4 latest+9 — L1 landed + migration applied to staging, Sonnet)
 
@@ -484,6 +541,18 @@ that merge lands.)
 
 ## Open TODOs (do at next session start)
 
+0. **Fix the pre-existing decimal-reps bug**: Reps `<input type="number">`
+   in `client/src/pages/SessionDetailPage.jsx` (~line 883) has
+   `step="0.01"` (copied from the adjacent Weight field); should be
+   `step="1"`. Native spinner/mouse-wheel-scroll on the focused field can
+   silently decrement reps into fractions (e.g. 9.98). Predates L1/L2 by
+   ~2 months (`9112eda7`); low severity, small fix, not yet done.
+0b. **Re-seed the staging smoke account**: `smoke_b8` / `SmokeTest-B8-2026`
+   (documented in the July 3 session log below) now 401s — wiped by a
+   later `npm test` run resetting staging's DB (expected AGENTS.md
+   behavior, easy to forget). Either re-run `scripts/seed-staging-smoke.mjs`
+   or document whatever throwaway account replaces it (`smoke_lwave` was
+   used ad hoc this session, not seeded with fixture data).
 1. **Repoint staging Render/Vercel back to `main`**, verify redeploy SHA is `750c42b` in Events (now includes T3), then smoke-test on prod (5 palettes x dark x Home at minimum, per `docs/smoke-tests/SCENE-SMOKE-CRITIQUE.md`, plus the analytics screen, Home weekly-report band, and the T3 loading screens - soft-tone pulsing dots + page-tone breathing ring + label cross-fade).
 1b. **Confirm prod Render + Vercel Events both show `750c42b` deployed** (T3 merge) - not yet checked this session; `main` auto-deploys to both.
 2. **Diff `_prisma_migrations` prod vs staging** (RUNBOOK -> "Migration history diff"). Unresolved, predates the UI work.
