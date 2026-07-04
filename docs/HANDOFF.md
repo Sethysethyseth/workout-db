@@ -1,10 +1,10 @@
 # HANDOFF — current state
 
-**Updated:** July 4, 2026 (Fable — N1b LANDED (`b366e17`) on
-`ui-nav-overhaul`, pushed: Cursor executed the block same session, Fable
-reviewed (one dead-CSS-rule fix) and committed. Awaiting Seth's visual smoke
-on the branch Vercel deploy before N2 dispatches. Earlier same day: N1
-landed + smoked, T3 merged to `main` (`750c42b`).)
+**Updated:** July 4, 2026 (Sonnet — N2 LANDED (`4dcd829`) on
+`ui-nav-overhaul`, pushed: Seth smoked N1b (passed), Cursor executed
+`n2-profile-hub.md`, Sonnet reviewed (clean delivery, no bounces) and
+committed. Awaiting Seth's visual smoke of N2 on the branch Vercel deploy
+before N3 dispatches.)
 **Rule:** rewritten in place at the end of every working session. Dated, never versioned. If this file looks stale (date > ~2 weeks old), verify branch/deploy state from ground truth before trusting it.
 
 ---
@@ -31,6 +31,36 @@ landed + smoked, T3 merged to `main` (`750c42b`).)
   - No schema changes rode along — `analytics-engine`'s merge has no migration coupling. The separate `exercise-catalog-seed` branch (A1) still has its own gated migration track.
 - **Render/Vercel not yet repointed from the `analytics-engine` staging deploy back to `main`** — RUNBOOK step 6 ("Repoint staging Render back to main. Verify redeploy SHA in Events.") is still open; do this before smoking prod.
 - Username feature LIVE and verified on both environments (unchanged).
+
+## Session log (July 4 latest+4 — N1b smoked, N2 landed, Sonnet)
+
+- **Seth smoked N1b on the `ui-nav-overhaul` Vercel deploy — passed.** No
+  critiques recorded; N2 dispatched immediately after.
+- **Cursor executed `n2-profile-hub.md`; Sonnet reviewed and committed
+  (`4dcd829`, 9 files, +652/-273), pushed to `origin/ui-nav-overhaul`.**
+  Scope exact (the 9 specced files, nothing extra); client build green;
+  `client/package.json` byte-identical; no new hex in the CSS diff (the one
+  `rgba(15, 23, 42, ...)` box-shadow matches the pre-existing established
+  pattern used elsewhere in `index.css`, not a new token violation).
+  Delivered: `ProfilePage.jsx` is now the hub (initials avatar, name/email,
+  "Member since" from `createdAt`, 3 stat tiles wired to
+  `useActiveSession()` with em-dash loading placeholders, settings rows to
+  the three sub-routes + conditional Dev feedback row, logout footer
+  unchanged); `AppearancePage.jsx`/`SecurityPage.jsx`/`FeedbackPage.jsx` are
+  verbatim extractions of the old ProfilePage sections (confirmed by diff
+  against the pre-N2 file — identical class names, state logic, and API
+  calls), each with a `← Profile` back link; `profileStats.js`
+  (`countCompleted`/`countThisWeek`/`weekStreak`, Monday-based local weeks)
+  verified by direct node eval against all 5 of the block's acceptance
+  assertions (3/2/1/0-streak cases + the last-Sunday exclusion), all passed;
+  `reviewerEmails.js` centralizes `parseReviewerEmails` — grep confirms it
+  only lives there, Navbar's diff is a pure import swap (`canReviewFeedback`
+  in, local parser out), zero behavior change. Copy fix verified: "Help
+  improve LogChamp." present in `FeedbackPage.jsx`, old "WorkoutDB." string
+  gone repo-wide. Clean delivery — no bounces, no reviewer fixes needed.
+- **Not yet done:** Seth's visual smoke of N2 on the branch Vercel deploy
+  (hub layout, stat tile values against real seeded data, sub-route back
+  links, Dev feedback row gating). N3 dispatches after sign-off.
 
 ## Session log (July 4 latest+3 — N1b landed, Fable)
 
@@ -485,13 +515,12 @@ landed + smoked, T3 merged to `main` (`750c42b`).)
 ## Next up (the active task)
 
 0. **N-wave navigation overhaul is the active UI track** (July 4).
-   **N1 (`d266242`) + N1b (`b366e17`) LANDED on `ui-nav-overhaul`, pushed —
-   awaiting Seth's visual smoke of N1b on the branch's Vercel deploy**
-   (mobile: scene band flush on the tab bar across palettes, no top bar +
-   Home masthead + big page titles, resume pill while live, finish-dock-
-   covers-tabs question; desktop: unchanged except the three page titles).
-   N2 (Profile hub) dispatches after sign-off, then N3. Strictly serialized
-   (shared `index.css`). Fable pre-main review before the wave merges.
+   **N1 (`d266242`), N1b (`b366e17`) both smoked + passed. N2 (`4dcd829`)
+   LANDED on `ui-nav-overhaul`, pushed — awaiting Seth's visual smoke of N2
+   on the branch's Vercel deploy** (Profile hub: identity header, stat tile
+   values, sub-route back links, Dev feedback row gating). N3 (Analytics
+   sub-views) dispatches after sign-off. Strictly serialized (shared
+   `index.css`). Fable pre-main review before the wave merges.
 1. **B9 LANDED (`c7acb43`)** — Cursor implemented, Claude Code reviewed
    (scope exact, all acceptance criteria tested, reviewer tightened the
    inclusive-last-bucket assertion, re-ran unit lane 103/103, purity grep
