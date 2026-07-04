@@ -15,6 +15,14 @@ deploy of `d21608c`, then the analytics-engine -> main merge decision)
 - A6 name-resolution backfill/aliasing (Cursor-suited, needs A4 first)
 - T3 dynamic loading screens (UI, file-disjoint from Track A -> a natural
   first Mode 2 parallel pair once designed)
+- U11 "what's new" one-time announcement modal (decided July 3, Sonnet
+  session): per-device via `localStorage`, versioned/reusable (not a
+  one-off) so future releases just bump a constant + add bullets. New key
+  must follow the `workoutdb-` prefix convention (see `workoutdb-theme`/
+  `workoutdb-palette` in `ThemeContext.jsx`) per the rename-boundary rule in
+  AGENTS.md - display text is LogChamp, identifiers stay WorkoutDB. First
+  content: the 5-palette rollout (champ/iron/chill/forest/crimson) + the
+  analytics engine. Cursor-suited once Fable authors the block.
 - NOT queueable: A1 catalog merge (gated migration, Seth manual), A4 FK
   schema design (Claude-tier planning, not a Cursor unit)
 
