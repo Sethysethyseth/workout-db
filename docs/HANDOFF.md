@@ -1,35 +1,30 @@
 # HANDOFF — current state
 
-**Updated:** July 3, 2026 (relay v3 session, Fable — division of labor rebalanced: Sonnet becomes the resident Claude Code driver, Fable/Opus drops to task-block authoring + the pre-main review gate. Seth's visual smoke of the U10/U8/U9 wave on the staging Vercel deploy is still the next step.)
+**Updated:** July 4, 2026 (Sonnet — `analytics-engine` merged to `main`.)
 **Rule:** rewritten in place at the end of every working session. Dated, never versioned. If this file looks stale (date > ~2 weeks old), verify branch/deploy state from ground truth before trusting it.
 
 ---
 
 ## Repo / deploy state
 
-- **`main` is at `ccd0829`** (merge: ui-palettes-v2 -> main, palette scene system + navbar bleed-through fix), confirmed on `origin/main`. Unchanged since the morning merge.
-- **Render prod (`workout-db-l3gc`) deploy of `ccd0829` NOT YET VISUALLY CONFIRMED** — Events-tab SHA check and on-device smoke pass still outstanding (see Open TODOs).
-- **NEW branch `analytics-engine`** (branched from `ui-palettes-v2` @ `ec3d85a`, pushed to origin). Carries ALL previously-untracked work — **nothing critical rides untracked anymore**:
-  - `e4c96be` analytics B1 (resolver + attribution) — NOTE: this commit alone doesn't build; its `index.js` got swept ahead by a concurrent edit (see gotchas). Tree is consistent from `cd72e9c` onward.
-  - `48c1e91` vendored catalog + muscle weights (A2) + validator + export script
-  - `859595d` master prompt v16 -> v17 (committed as a rename), analytics spec, cursor task-block template
-  - `bf24b46` gitignore (export artifacts, `.claude/settings.local.json`), brand asset, mocks -> `docs/design/mocks/`
-  - `cd72e9c` analytics B2 (stimulus curve + set metrics + rationale doc)
-  - `dfd04ef` jest unit/integration split + `npm run test:unit`
-  - `7f044da`/`ce9e199` GitHub Actions CI cheap lane — **first runs green**
-  - `7192e2c` analytics B3a (enrichSet composition + weekly per-muscle aggregation)
-  - (+ final docs commit: this handoff + CLAUDE/AGENTS consolidation)
-- `ui-palettes-v2` (`ec3d85a`) is fully contained in `analytics-engine`; deletable after analytics merges (branch deletion is gated — ask first). Merging `analytics-engine` to main also brings `ec3d85a` (gate-protocol docs commit) along.
-- No schema changes on `analytics-engine`, so its eventual merge has no migration coupling. The separate `exercise-catalog-seed` branch (A1) still has its own gated migration track.
+- **`main` is at `e9ce82c`** (merge: `analytics-engine` -> `main`, "analytics wedge (B1-B9) + UI polish wave (U6-U10)"), confirmed on `origin/main`. Merged July 4 (Sonnet session) via scratch `git worktree` (not stash+checkout — see the worktree-merge gotcha), pushed same session.
+  - `git merge --ff-only` was NOT possible — `main`'s `ccd0829` (the ui-palettes-v2 merge commit) postdates `analytics-engine`'s branch point, so the branches had genuinely diverged. Did `git merge --no-ff analytics-engine` instead, matching how `ccd0829` itself was created.
+  - **Two conflicts, both resolved by taking `analytics-engine`'s version whole:** `AGENTS.md` and `CLAUDE.md` (add/add — main still had the stale PRE-consolidation duplicated-gate versions of both files from before the July 1 single-source consolidation; `analytics-engine`'s versions are the current v3 ones and fully supersede them, no unique content lost).
+  - Verified before committing the merge: server unit lane 103/103 green, client `npm run build` green, both run fresh in the worktree (had to `npm install` there — worktrees don't carry `node_modules`).
+  - Pre-merge sign-off (Seth, July 4): smoke test on the d21608c UI wave passed; `analyticsController.js` `findMany` where-clause reviewed and confirmed as the single cross-user isolation point (sets reached only through a session scoped to `{ userId, performedAt }`); the two open forks below settled. **The Fable/Opus pre-main branch-diff review (mandated by the v3 workflow) was explicitly skipped this one time at Seth's instruction** — noted here so it isn't silently treated as having happened.
+  - `ui-palettes-v2` (`ec3d85a`) was already fully contained in `analytics-engine` and is now merged too; deletable (branch deletion is gated — ask first).
+  - No schema changes rode along — `analytics-engine`'s merge has no migration coupling. The separate `exercise-catalog-seed` branch (A1) still has its own gated migration track.
+- **Render/Vercel not yet repointed from the `analytics-engine` staging deploy back to `main`** — RUNBOOK step 6 ("Repoint staging Render back to main. Verify redeploy SHA in Events.") is still open; do this before smoking prod.
 - Username feature LIVE and verified on both environments (unchanged).
 
 ## Open TODOs (do at next session start)
 
-1. **Confirm Render prod (`workout-db-l3gc`) Events tab shows `ccd0829` deployed**, then smoke-test the merged UI on prod (5 palettes x dark x Home at minimum, per `docs/smoke-tests/SCENE-SMOKE-CRITIQUE.md`).
+1. **Repoint staging Render/Vercel back to `main`**, verify redeploy SHA is `e9ce82c` in Events, then smoke-test on prod (5 palettes x dark x Home at minimum, per `docs/smoke-tests/SCENE-SMOKE-CRITIQUE.md`, plus the analytics screen and Home weekly-report band).
 2. **Diff `_prisma_migrations` prod vs staging** (RUNBOOK -> "Migration history diff"). Unresolved, predates the UI work.
 3. **Verify the manually inserted prod `_prisma_migrations` row's `checksum` matches staging's** for `20260603140000_add_user_username`. Latent hazard — check once, fix if mismatched.
 4. Confirm prod Render serving cleanly post-recovery.
 5. Low-priority: redundant spare stash on `ui-palettes-v2` (`WIP unrelated to ui-palettes-v2 merge`, July 1) — `git stash drop` once confirmed unneeded.
+6. Low-priority: `ui-palettes-v2` and `analytics-engine` branches are both fully merged to `main` now — candidates for deletion whenever Seth wants to ask for that gated op.
 
 ## Session log (July 3 latest+2 — relay v3: model split rebalanced, Fable)
 
@@ -280,27 +275,23 @@
    session maxes — they can disagree; the U8 block therefore requires the
    strength delta chip to derive from `e1rmSeries` endpoints, not
    `e1rmTrend`.
-2. **U10/U8/U9 ALL LANDED (`d21608c`) + pushed — Seth smokes the wave on
-   the staging Vercel deploy** (home: hero dead space + set-count
-   formatting; analytics: volume Trend view, e1RM sparklines, execution
-   planned-vs-did + verdict, balance zone band; palettes x modes, narrow
-   viewport). The analytics UI polish wave is now code-complete.
-2. **Merge `analytics-engine` -> main DEFERRED until the visuals are locked
-   in** (Seth, July 3). When ready: "push to main" verbatim, then
-   one-command-at-a-time with approval. Pre-merge: Seth's personal read of
-   the `findMany` where-clause + plan-side include in
-   `analyticsController.js` (the one cross-user-leak surface), and settle
-   the two open forks below.
-3. Open TODOs #1-4 (prod verification — manual, browser).
+2. **`analytics-engine` MERGED TO MAIN (`e9ce82c`), July 4 (Sonnet).** Track B
+   v1 (B1-B9) and the UI polish wave (U6-U10) are both live on `main`. See
+   Repo/deploy state above for merge mechanics and the skipped-Fable-review note.
+3. Open TODOs #1-6 (Render/Vercel repoint to main + redeploy SHA check comes
+   first, then prod verification — manual, browser).
 4. Track A (A1 catalog merge, then A4 FK design — now including
    set->BlockWorkoutSet linkage for block-plan execution fidelity) is the
    next engine-adjacent work; T3 remains the next unstarted UI unit if/when
    UI resumes.
+5. U11 "what's new" one-time modal is queued as a candidate (see
+   `docs/tasks/QUEUE.md`) — needs a Fable-authored task block before Cursor
+   can pick it up.
 
-## Open forks (settle before merge)
+## Open forks — SETTLED (Seth, July 4, pre-merge)
 
-1. **Theme storage** — *proposed default:* device-local now (matches existing appearance setting, zero schema change), all reads through one accessor so account-level promotion later is one swap + an additive migration.
-2. **Login tagline** ("Log your shit dog") — *proposed default:* keep, with a trigger condition: it changes the day a stranger can sign up. One constant either way.
+1. **Theme storage** — went with the proposed default: device-local (matches existing appearance setting, zero schema change), all reads through one accessor so account-level promotion later is one swap + an additive migration.
+2. **Login tagline** ("Log your shit dog") — went with the proposed default: keep, with a trigger condition: it changes the day a stranger can sign up. One constant either way.
 
 ## Analytics/catalog track — ACTIVE (B1-B5 committed, B5 smoke + merge decision next)
 
