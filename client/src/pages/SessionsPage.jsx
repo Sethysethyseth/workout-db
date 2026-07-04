@@ -57,7 +57,7 @@ export function SessionsPage() {
       </div>
 
       <ErrorMessage error={error} />
-      {loading ? <LoadingState /> : null}
+      {loading ? <LoadingState slowLabel="Waking up the server…" /> : null}
 
       {!loading && sessions.length === 0 ? (
         <div className="card stack">

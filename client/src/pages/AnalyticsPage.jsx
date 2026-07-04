@@ -524,7 +524,7 @@ export function AnalyticsPage() {
       <ErrorMessage error={error} />
       {/* Skeleton only on first load; a range refetch dims the previous
           render in place instead of flashing it away. */}
-      {loading && !summary ? <LoadingState /> : null}
+      {loading && !summary ? <LoadingState slowLabel="Waking up the server…" /> : null}
 
       {!error && summary ? (
         isEmpty ? (

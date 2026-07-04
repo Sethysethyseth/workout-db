@@ -1687,7 +1687,7 @@ export function SessionDetailPage() {
     }
   }
 
-  if (loading) return <LoadingState label="Loading workout…" />;
+  if (loading) return <LoadingState label="Loading workout…" slowLabel="Waking up the server…" />;
 
   const isFromTemplate = Boolean(session?.workoutTemplate);
   const isQuickLog = !isFromTemplate;

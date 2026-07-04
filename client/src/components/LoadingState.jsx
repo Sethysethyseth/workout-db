@@ -30,9 +30,28 @@ export function LoadingState({ label = "Loading…", slowLabel, tone = "soft", d
   const text = slow && slowLabel ? slowLabel : label;
 
   if (tone === "page") {
+    const showSlow = slow && slowLabel;
     return (
       <div className="loading-page" role="status" aria-live="polite">
-        <span className="loading-page__text">{text}</span>
+        <div className="loading-page__content">
+          <div className="loading-page__mark" aria-hidden="true">
+            <span className="loading-page__ring" />
+          </div>
+          <div className="loading-page__text-wrap">
+            <span
+              className={`loading-page__text loading-page__text--primary${showSlow ? " loading-page__text--hidden" : ""}`}
+            >
+              {label}
+            </span>
+            {slowLabel ? (
+              <span
+                className={`loading-page__text loading-page__text--slow${showSlow ? " loading-page__text--visible" : ""}`}
+              >
+                {slowLabel}
+              </span>
+            ) : null}
+          </div>
+        </div>
       </div>
     );
   }
@@ -46,6 +65,11 @@ export function LoadingState({ label = "Loading…", slowLabel, tone = "soft", d
   }
   return (
     <div className="loading-state" role="status" aria-live="polite">
+      <span className="loading-state__dots" aria-hidden="true">
+        <span className="loading-state__dot" />
+        <span className="loading-state__dot" />
+        <span className="loading-state__dot" />
+      </span>
       <span className="loading-state__text">{text}</span>
     </div>
   );

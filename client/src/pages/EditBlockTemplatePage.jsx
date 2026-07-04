@@ -218,7 +218,7 @@ export function EditBlockTemplatePage() {
   }
 
   if (loading) {
-    return <LoadingState />;
+    return <LoadingState slowLabel="Waking up the server…" />;
   }
 
   if (!blockWeeks) {

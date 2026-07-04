@@ -61,7 +61,7 @@ export function DevFeedbackPage() {
         </div>
       ) : null}
 
-      {items === null && !error ? <LoadingState label="Loading feedback…" /> : null}
+      {items === null && !error ? <LoadingState label="Loading feedback…" slowLabel="Waking up the server…" /> : null}
 
       {items && items.length === 0 ? (
         <p className="muted small">No submissions yet.</p>

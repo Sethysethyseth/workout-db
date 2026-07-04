@@ -334,7 +334,7 @@ export function MyTemplatesPage() {
             </div>
           ) : null}
 
-          {loading ? <LoadingState /> : null}
+          {loading ? <LoadingState slowLabel="Waking up the server…" /> : null}
 
           {emptyAll ? (
             <div className="card stack">
