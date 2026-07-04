@@ -151,6 +151,94 @@ function nextSetOrder(session) {
   return max + 1;
 }
 
+function exerciseNameImpliesPerSide(name) {
+  const n = String(name ?? "").trim();
+  if (!n || isBlankSessionExerciseName(n)) return false;
+  return /\bsingle\b/i.test(n);
+}
+
+function anySetHasSide(sets) {
+  return Array.isArray(sets) && sets.some((s) => s.side === "L" || s.side === "R");
+}
+
+function derivePerSideMode(manualOverride, exerciseName, sets) {
+  if (manualOverride === true) return true;
+  if (manualOverride === false) return false;
+  return anySetHasSide(sets) || exerciseNameImpliesPerSide(exerciseName);
+}
+
+function buildCreateSetBodyFromLast(last, sessionExerciseId, order, side) {
+  const body = { sessionExerciseId, order };
+  if (side) body.side = side;
+  if (last) {
+    const w = last.weight != null ? String(last.weight).trim() : "";
+    if (w !== "") body.weight = last.weight;
+    // Intentionally do NOT copy reps: it can make a new set look completed.
+    const rpe = last.rpe != null ? String(last.rpe).trim() : "";
+    if (rpe !== "") body.rpe = last.rpe;
+    const rir = last.rir != null ? String(last.rir).trim() : "";
+    if (rir !== "") body.rir = last.rir;
+    const note = last.notes != null ? String(last.notes).trim() : "";
+    if (note) body.notes = note;
+  }
+  return body;
+}
+
+function groupSetsIntoRenderUnits(sortedSets, perSideMode) {
+  if (!perSideMode) {
+    return sortedSets.map((s, i) => ({
+      type: "single",
+      pairOrdinal: null,
+      sets: [s],
+      setOrdinal: i + 1,
+    }));
+  }
+  const units = [];
+  let i = 0;
+  let pairNum = 1;
+  while (i < sortedSets.length) {
+    if (i + 1 < sortedSets.length) {
+      units.push({
+        type: "pair",
+        pairOrdinal: pairNum,
+        sets: [sortedSets[i], sortedSets[i + 1]],
+      });
+      pairNum += 1;
+      i += 2;
+    } else {
+      units.push({
+        type: "single",
+        pairOrdinal: null,
+        sets: [sortedSets[i]],
+        setOrdinal: pairNum,
+      });
+      pairNum += 1;
+      i += 1;
+    }
+  }
+  return units;
+}
+
+function perSideSetLabel(set, pairOrdinal, setOrdinal) {
+  if (set.side === "L") return `Set ${pairOrdinal} - Left`;
+  if (set.side === "R") return `Set ${pairOrdinal} - Right`;
+  return `Set ${setOrdinal ?? "—"}`;
+}
+
+async function createSetPairForExercise(sessionId, sessionExerciseId, getLatestSession) {
+  for (const side of ["L", "R"]) {
+    const latest = await getLatestSession();
+    if (!latest) return;
+    const setsList = (Array.isArray(latest.sets) ? latest.sets : [])
+      .filter((s) => s.sessionExerciseId === sessionExerciseId)
+      .sort((a, b) => a.order - b.order);
+    const order = nextSetOrder(latest);
+    const lastSameSide = [...setsList].reverse().find((s) => s.side === side) ?? null;
+    const body = buildCreateSetBodyFromLast(lastSameSide, sessionExerciseId, order, side);
+    await sessionApi.createSet(sessionId, body);
+  }
+}
+
 /** True when a session set row has no logged targets or notes (safe to drop when lowering set count). */
 function sessionSetRowIsBlank(set) {
   if (!set || typeof set !== "object") return true;
@@ -411,6 +499,10 @@ const SessionSetRow = memo(function SessionSetRow({
   onPromoteDraft,
   set,
   setOrdinal,
+  setLabelOverride,
+  sideBadgeLetter,
+  partnerSet,
+  onAutofillPartnerWeight,
   lockSetOrder = false,
   disabled = false,
   onUpdateSet,
@@ -550,6 +642,25 @@ const SessionSetRow = memo(function SessionSetRow({
     else flushNow();
   }
 
+  function onWeightFieldBlur() {
+    if (isDraft) {
+      void tryPromote();
+      return;
+    }
+    flushNow();
+    if (
+      !disabled &&
+      set?.side === "L" &&
+      partnerSet &&
+      onAutofillPartnerWeight
+    ) {
+      const w = (draftRef.current.weight ?? "").toString().trim();
+      if (w !== "") {
+        onAutofillPartnerWeight(partnerSet.id, w, partnerSet);
+      }
+    }
+  }
+
   useEffect(() => {
     if (isDraft) {
       const cur = draftRef.current;
@@ -610,7 +721,9 @@ const SessionSetRow = memo(function SessionSetRow({
       </label>
     ) : null;
 
-  const setLabel = isDraft ? "Set 1" : lockSetOrder ? `Set ${setOrdinal ?? "—"}` : `Set ${draft.order || "—"}`;
+  const setLabel =
+    setLabelOverride ??
+    (isDraft ? "Set 1" : lockSetOrder ? `Set ${setOrdinal ?? "—"}` : `Set ${draft.order || "—"}`);
 
   const coreLogged = useMemo(() => {
     const w = (draft.weight ?? "").toString().trim();
@@ -675,6 +788,17 @@ const SessionSetRow = memo(function SessionSetRow({
       </span>
     ) : null;
 
+  const sideBadge =
+    sideBadgeLetter && !isDraft ? (
+      <span
+        className="session-set-side-badge"
+        title={sideBadgeLetter === "L" ? "Left side" : "Right side"}
+        aria-label={sideBadgeLetter === "L" ? "Left side" : "Right side"}
+      >
+        {sideBadgeLetter}
+      </span>
+    ) : null;
+
   return (
     <div
       ref={isDraft ? undefined : rootRef}
@@ -694,6 +818,7 @@ const SessionSetRow = memo(function SessionSetRow({
           isDraft ? null : (
             <>
               {orderField}
+              {sideBadge}
               {statusBadge}
             </>
           )
@@ -725,7 +850,7 @@ const SessionSetRow = memo(function SessionSetRow({
                 type="number"
                 value={draft.weight}
                 onChange={(e) => setDraft((d) => ({ ...d, weight: e.target.value }))}
-                onBlur={onFieldBlur}
+                onBlur={onWeightFieldBlur}
                 onKeyDown={(e) => onEnterNext(e, "weight")}
                 enterKeyHint="next"
                 inputMode="decimal"
@@ -875,8 +1000,13 @@ function SessionExerciseBlock({
   trackedStatus = null,
 }) {
   const [draftResumeVersion, setDraftResumeVersion] = useState(0);
+  const [perSideOverride, setPerSideOverride] = useState(null);
   const prevSetsLenRef = useRef(null);
   const [confirmRemove, setConfirmRemove] = useState(false);
+
+  useEffect(() => {
+    setPerSideOverride(null);
+  }, [se.id]);
 
   useEffect(() => {
     const prev = prevSetsLenRef.current;
@@ -898,6 +1028,52 @@ function SessionExerciseBlock({
 
   const exerciseCommitted = isCompleted ? undefined : onExerciseCommitted;
   const rawName = se.exerciseName ?? "";
+  const perSideMode = derivePerSideMode(perSideOverride, rawName, sets);
+  const sortedSets = useMemo(
+    () => [...sets].sort((a, b) => a.order - b.order),
+    [sets]
+  );
+  const renderUnits = useMemo(
+    () => groupSetsIntoRenderUnits(sortedSets, perSideMode),
+    [sortedSets, perSideMode]
+  );
+  const pairCount = perSideMode ? Math.max(1, Math.ceil(sortedSets.length / 2)) : Math.max(1, sets.length);
+
+  const onAutofillPartnerWeight = useCallback(
+    (partnerSetId, weight, partnerSet) => {
+      if (!partnerSet || sessionSetHasCoreLogged(partnerSet)) return;
+      const wBlank =
+        partnerSet.weight == null || String(partnerSet.weight).trim() === "";
+      if (!wBlank) return;
+      const num = Number(String(weight).trim());
+      if (!Number.isFinite(num)) return;
+      onUpdateSet(partnerSetId, { weight: num });
+    },
+    [onUpdateSet]
+  );
+
+  const handleDeleteSet = useCallback(
+    (setId, unit) => {
+      if (!onDeleteSet) return;
+      if (perSideMode && unit?.type === "pair" && unit.sets.length === 2) {
+        const filled = unit.sets.some((s) => !sessionSetRowIsBlank(s));
+        if (filled) {
+          const ok = window.confirm(
+            "Remove this left/right pair? Both sides will be deleted, including any entered weight, reps, or notes."
+          );
+          if (!ok) return;
+        }
+        const ids = [...unit.sets].reverse().map((s) => s.id);
+        for (const id of ids) {
+          void onDeleteSet(id);
+        }
+        return;
+      }
+      void onDeleteSet(setId);
+    },
+    [onDeleteSet, perSideMode]
+  );
+
   const namePart =
     isBlankSessionExerciseName(rawName) || !String(rawName).trim()
       ? `Exercise ${se.order}`
@@ -1044,11 +1220,26 @@ function SessionExerciseBlock({
           >
             <div className="exercise-editor-set-toolbar row session-set-toolbar">
               {!isCompleted ? (
-                <PlanningSetCountControl
-                  value={Math.max(1, sets.length)}
-                  disabled={setCountBusy}
-                  onChange={(n) => onAdjustSetCount(se.id, n)}
-                />
+                <>
+                  <PlanningSetCountControl
+                    value={pairCount}
+                    disabled={setCountBusy}
+                    onChange={(n) =>
+                      onAdjustSetCount(se.id, n, perSideMode ? { perSide: true } : undefined)
+                    }
+                  />
+                  <button
+                    type="button"
+                    className={`session-side-mode-chip ${perSideMode ? "session-side-mode-chip--on" : ""}`}
+                    title="Log left/right sides separately"
+                    aria-pressed={perSideMode}
+                    onClick={() => {
+                      setPerSideOverride(perSideMode ? false : true);
+                    }}
+                  >
+                    L/R
+                  </button>
+                </>
               ) : (
                 <span className="muted small" style={{ fontWeight: 600 }}>
                   Sets
@@ -1060,7 +1251,7 @@ function SessionExerciseBlock({
                   className="btn btn-secondary exercise-editor-add-set-btn"
                   onClick={() => {
                     onActivateExercise?.();
-                    onCreateSet(se.id);
+                    onCreateSet(se.id, perSideMode ? { perSide: true } : undefined);
                   }}
                   disabled={setCountBusy}
                 >
@@ -1072,7 +1263,7 @@ function SessionExerciseBlock({
             {sets.length === 0 ? (
               isCompleted ? (
                 <div className="muted small session-empty-sets">No sets logged.</div>
-              ) : (
+              ) : perSideMode ? null : (
                 <div className="stack session-set-rows">
                   <SessionSetRow
                     isDraft
@@ -1090,26 +1281,64 @@ function SessionExerciseBlock({
             ) : (
               <>
                 <div className="stack session-set-rows">
-                  {sets.map((s, setIdx) => (
-                    <SessionSetRow
-                      key={s.id}
-                      set={s}
-                      setOrdinal={setIdx + 1}
-                      lockSetOrder
-                      disabled={isCompleted}
-                      useRIR={useRIR}
-                      useRPE={useRPE}
-                      useSetNotes={useSetNotes}
-                      isNext={
-                        !isCompleted &&
-                        nextIncompleteSetId != null &&
-                        s.id === nextIncompleteSetId
-                      }
-                      onInteractStart={!isCompleted ? onActivateExercise : undefined}
-                      onUpdateSet={onUpdateSet}
-                      onDeleteSet={onDeleteSet}
-                    />
-                  ))}
+                  {renderUnits.map((unit) => {
+                    if (unit.type === "pair") {
+                      const leftSet = unit.sets.find((s) => s.side === "L") ?? unit.sets[0];
+                      const rightSet = unit.sets.find((s) => s.side === "R") ?? unit.sets[1];
+                      return (
+                        <div key={`pair-${leftSet.id}-${rightSet.id}`} className="session-set-pair stack">
+                          {[leftSet, rightSet].map((s) => (
+                            <SessionSetRow
+                              key={s.id}
+                              set={s}
+                              setLabelOverride={perSideSetLabel(s, unit.pairOrdinal, unit.setOrdinal)}
+                              sideBadgeLetter={s.side === "L" || s.side === "R" ? s.side : null}
+                              partnerSet={s.side === "L" ? rightSet : null}
+                              onAutofillPartnerWeight={onAutofillPartnerWeight}
+                              lockSetOrder
+                              disabled={isCompleted}
+                              useRIR={useRIR}
+                              useRPE={useRPE}
+                              useSetNotes={useSetNotes}
+                              isNext={
+                                !isCompleted &&
+                                nextIncompleteSetId != null &&
+                                s.id === nextIncompleteSetId
+                              }
+                              onInteractStart={!isCompleted ? onActivateExercise : undefined}
+                              onUpdateSet={onUpdateSet}
+                              onDeleteSet={() => handleDeleteSet(s.id, unit)}
+                            />
+                          ))}
+                        </div>
+                      );
+                    }
+                    const s = unit.sets[0];
+                    return (
+                      <SessionSetRow
+                        key={s.id}
+                        set={s}
+                        setOrdinal={unit.setOrdinal}
+                        setLabelOverride={
+                          perSideMode ? perSideSetLabel(s, unit.pairOrdinal, unit.setOrdinal) : undefined
+                        }
+                        sideBadgeLetter={perSideMode && (s.side === "L" || s.side === "R") ? s.side : null}
+                        lockSetOrder
+                        disabled={isCompleted}
+                        useRIR={useRIR}
+                        useRPE={useRPE}
+                        useSetNotes={useSetNotes}
+                        isNext={
+                          !isCompleted &&
+                          nextIncompleteSetId != null &&
+                          s.id === nextIncompleteSetId
+                        }
+                        onInteractStart={!isCompleted ? onActivateExercise : undefined}
+                        onUpdateSet={onUpdateSet}
+                        onDeleteSet={() => handleDeleteSet(s.id, unit)}
+                      />
+                    );
+                  })}
                 </div>
                 {!isCompleted ? (
                   <div className="stack session-add-set-footer">
@@ -1118,7 +1347,7 @@ function SessionExerciseBlock({
                       className="btn btn-secondary session-add-set-footer-btn"
                       onClick={() => {
                         onActivateExercise?.();
-                        onCreateSet(se.id);
+                        onCreateSet(se.id, perSideMode ? { perSide: true } : undefined);
                       }}
                       disabled={setCountBusy}
                     >
@@ -1528,9 +1757,22 @@ export function SessionDetailPage() {
   }
 
   const onCreateSetForExercise = useCallback(
-    async (sessionExerciseId) => {
+    async (sessionExerciseId, options) => {
+      const perSide = options?.perSide === true;
       setError(null);
       try {
+        if (perSide) {
+          await createSetPairForExercise(sessionId, sessionExerciseId, async () => {
+            const latestRes = await sessionApi.getSessionById(sessionId);
+            const latest = latestRes?.session;
+            if (latest) setSession(latest);
+            return latest ?? null;
+          });
+          const end = await sessionApi.getSessionById(sessionId);
+          if (end?.session) setSession(end.session);
+          return;
+        }
+
         const sess = sessionRef.current;
         if (!sess) {
           await load();
@@ -1541,18 +1783,7 @@ export function SessionDetailPage() {
           .filter((s) => s.sessionExerciseId === sessionExerciseId)
           .sort((a, b) => a.order - b.order);
         const last = setsList.length ? setsList[setsList.length - 1] : null;
-        const body = { sessionExerciseId, order };
-        if (last) {
-          const w = last.weight != null ? String(last.weight).trim() : "";
-          if (w !== "") body.weight = last.weight;
-          // Intentionally do NOT copy reps: it can make a new set look completed.
-          const rpe = last.rpe != null ? String(last.rpe).trim() : "";
-          if (rpe !== "") body.rpe = last.rpe;
-          const rir = last.rir != null ? String(last.rir).trim() : "";
-          if (rir !== "") body.rir = last.rir;
-          const note = last.notes != null ? String(last.notes).trim() : "";
-          if (note) body.notes = note;
-        }
+        const body = buildCreateSetBodyFromLast(last, sessionExerciseId, order, null);
         const data = await sessionApi.createSet(sessionId, body);
         if (data?.set) {
           appendSetRow(data.set);
@@ -1600,8 +1831,9 @@ export function SessionDetailPage() {
     [promoteDraftSet, trackSetSave]
   );
 
-  async function onAdjustSetCountForExercise(sessionExerciseId, targetCount) {
+  async function onAdjustSetCountForExercise(sessionExerciseId, targetCount, options) {
     if (!Number.isInteger(targetCount) || targetCount < 1) return;
+    const perSide = options?.perSide === true;
     setError(null);
     setAdjustingSetCountExerciseId(sessionExerciseId);
     try {
@@ -1612,6 +1844,49 @@ export function SessionDetailPage() {
       const sorted = (Array.isArray(sess.sets) ? sess.sets : [])
         .filter((s) => s.sessionExerciseId === sessionExerciseId)
         .sort((a, b) => a.order - b.order);
+
+      if (perSide) {
+        const cur = Math.max(1, Math.ceil(sorted.length / 2));
+        if (targetCount === cur) {
+          setSession(sess);
+          return;
+        }
+
+        if (targetCount > cur) {
+          const toAdd = targetCount - cur;
+          for (let k = 0; k < toAdd; k += 1) {
+            await createSetPairForExercise(sessionId, sessionExerciseId, async () => {
+              const latestRes = await sessionApi.getSessionById(sessionId);
+              const latest = latestRes?.session;
+              if (latest) setSession(latest);
+              return latest ?? null;
+            });
+          }
+          const end = await sessionApi.getSessionById(sessionId);
+          if (end?.session) setSession(end.session);
+          return;
+        }
+
+        const pairsToRemove = cur - targetCount;
+        const rowsToRemove = sorted.slice(sorted.length - pairsToRemove * 2);
+        const anyFilled = rowsToRemove.some((s) => !sessionSetRowIsBlank(s));
+        if (anyFilled) {
+          const ok = window.confirm(
+            `Lower the set count to ${targetCount}? This removes ${pairsToRemove} left/right pair(s) from the end, including some with entered weight, reps, or notes.`
+          );
+          if (!ok) {
+            setSession(sess);
+            return;
+          }
+        }
+        for (let i = rowsToRemove.length - 1; i >= 0; i -= 1) {
+          await sessionApi.deleteSet(rowsToRemove[i].id);
+        }
+        const end = await sessionApi.getSessionById(sessionId);
+        if (end?.session) setSession(end.session);
+        return;
+      }
+
       const cur = sorted.length;
       if (targetCount === cur) {
         setSession(sess);
@@ -1630,18 +1905,7 @@ export function SessionDetailPage() {
             .sort((a, b) => a.order - b.order);
           const order = nextSetOrder(latest);
           const last = setsList.length ? setsList[setsList.length - 1] : null;
-          const body = { sessionExerciseId, order };
-          if (last) {
-            const w = last.weight != null ? String(last.weight).trim() : "";
-            if (w !== "") body.weight = last.weight;
-            // Intentionally do NOT copy reps: it can make a new set look completed.
-            const rpe = last.rpe != null ? String(last.rpe).trim() : "";
-            if (rpe !== "") body.rpe = last.rpe;
-            const rir = last.rir != null ? String(last.rir).trim() : "";
-            if (rir !== "") body.rir = last.rir;
-            const note = last.notes != null ? String(last.notes).trim() : "";
-            if (note) body.notes = note;
-          }
+          const body = buildCreateSetBodyFromLast(last, sessionExerciseId, order, null);
           await sessionApi.createSet(sessionId, body);
         }
         const end = await sessionApi.getSessionById(sessionId);
@@ -1692,6 +1956,7 @@ export function SessionDetailPage() {
             rpe: "rpe" in apiSet ? apiSet.rpe : nextSets[idx].rpe,
             rir: "rir" in apiSet ? apiSet.rir : nextSets[idx].rir,
             notes: "notes" in apiSet ? apiSet.notes : nextSets[idx].notes,
+            side: "side" in apiSet ? apiSet.side : nextSets[idx].side,
           };
           return { ...prev, sets: nextSets };
         });

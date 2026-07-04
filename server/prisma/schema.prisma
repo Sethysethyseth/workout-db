@@ -116,6 +116,7 @@ model WorkoutSet {
   rpe                Float?
   rir                Int?
   notes              String?
+  side               String?
   workoutSessionId   Int
   workoutSession     WorkoutSession    @relation(fields: [workoutSessionId], references: [id], onDelete: Cascade)
   templateExerciseId Int?

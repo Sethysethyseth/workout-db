@@ -380,3 +380,66 @@ describe("Ad-hoc sessions and session exercises", () => {
   });
 });
 
+describe("WorkoutSet side field", () => {
+  jest.setTimeout(30000);
+
+  test("create-set with side L round-trips; invalid side returns 400; PATCH null clears side", async () => {
+    const agent = request.agent(app);
+
+    await registerAndLogin(agent, {
+      email: "side-field@example.com",
+      password: "password123",
+    });
+
+    const created = await agent.post("/sessions").send({});
+    expect(created.status).toBe(201);
+    const sessionId = created.body.session.id;
+
+    const addEx = await agent.post(`/sessions/${sessionId}/exercises`).send({
+      exerciseName: "Single Arm Row",
+    });
+    expect(addEx.status).toBe(201);
+    const sessionExerciseId = addEx.body.sessionExercise.id;
+
+    let setId;
+    {
+      const res = await agent.post(`/sessions/${sessionId}/sets`).send({
+        sessionExerciseId,
+        order: 1,
+        reps: 10,
+        weight: 50,
+        side: "L",
+      });
+      expect(res.status).toBe(201);
+      expect(res.body.set).toMatchObject({
+        sessionExerciseId,
+        order: 1,
+        reps: 10,
+        weight: 50,
+        side: "L",
+      });
+      setId = res.body.set.id;
+    }
+
+    {
+      const res = await agent.post(`/sessions/${sessionId}/sets`).send({
+        sessionExerciseId,
+        order: 2,
+        side: "X",
+      });
+      expect(res.status).toBe(400);
+      expect(typeof res.body.error).toBe("string");
+      expect(res.body.error).toMatch(/side must be/);
+    }
+
+    {
+      const res = await agent.patch(`/sessions/sets/${setId}`).send({
+        side: null,
+      });
+      expect(res.status).toBe(200);
+      expect(res.body.set).toHaveProperty("id", setId);
+      expect(res.body.set.side).toBeNull();
+    }
+  });
+});
+

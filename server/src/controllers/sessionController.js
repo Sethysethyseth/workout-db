@@ -48,6 +48,19 @@ function parseNullableFloat(value) {
   return parsed;
 }
 
+function validateOptionalSide(value) {
+  if (value === undefined) {
+    return { ok: true, value: undefined };
+  }
+  if (value === null || value === "") {
+    return { ok: true, value: null };
+  }
+  if (value === "L" || value === "R") {
+    return { ok: true, value };
+  }
+  return { ok: false, error: 'side must be "L", "R", or null when provided' };
+}
+
 async function startSession(req, res, next) {
   try {
     const userId = req.authUserId;
@@ -598,6 +611,7 @@ async function createSetForSession(req, res, next) {
       rpe: rawRpe,
       rir: rawRir,
       notes: rawNotes,
+      side: rawSide,
     } = req.body || {};
 
     const sessionExerciseId = parsePositiveInt(rawSessionExerciseId);
@@ -648,6 +662,12 @@ async function createSetForSession(req, res, next) {
 
     const notes =
       typeof rawNotes === "string" && rawNotes.trim() ? rawNotes.trim() : null;
+
+    const sideResult = validateOptionalSide(rawSide);
+    if (!sideResult.ok) {
+      return res.status(400).json({ error: sideResult.error });
+    }
+    const side = sideResult.value === undefined ? null : sideResult.value;
 
     const set = await prisma.$transaction(async (tx) => {
       const session = await tx.workoutSession.findUnique({
@@ -712,6 +732,7 @@ async function createSetForSession(req, res, next) {
           rpe,
           rir,
           notes,
+          side,
         },
         include: {
           sessionExercise: true,
@@ -784,6 +805,7 @@ async function updateSet(req, res, next) {
       rpe: rawRpe,
       rir: rawRir,
       notes: rawNotes,
+      side: rawSide,
     } = req.body || {};
 
     const data = {};
@@ -859,6 +881,14 @@ async function updateSet(req, res, next) {
     if (rawNotes !== undefined) {
       data.notes =
         typeof rawNotes === "string" && rawNotes.trim() ? rawNotes.trim() : null;
+    }
+
+    if (rawSide !== undefined) {
+      const sideResult = validateOptionalSide(rawSide);
+      if (!sideResult.ok) {
+        return res.status(400).json({ error: sideResult.error });
+      }
+      data.side = sideResult.value;
     }
 
     if (Object.keys(data).length === 0) {
