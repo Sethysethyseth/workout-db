@@ -6,6 +6,7 @@ Statuses: DRAFT / QUEUED / DISPATCHED / AWAITING-REVIEW / LANDED <sha> / BOUNCED
 
 ## Active
 
+- QUEUED | n1b-mobile-chrome-fix.md | N1 smoke fixes: scene band lifts flush above the tab bar; top bar removed on mobile (Home masthead + standardized big page titles); live-workout bar becomes slim frosted pill docked above tabs + empty-wrap phantom-strip defect fix | dispatch FIRST (before N2/N3, shared index.css); forks settled with Seth July 4 (Fable session); tab bar itself accepted, do not restyle
 - QUEUED | n2-profile-hub.md | Profile becomes identity header + stat strip (workouts/this week/week streak) + drill-in Appearance/Security/Feedback sub-routes | N-wave unit 2; dispatch after N1 lands; no server changes (createdAt already in /auth/me, stats from /sessions/mine)
 - QUEUED | n3-analytics-subviews.md | analytics page reorg: persistent header (chips + StatTiles) + Muscles\|Strength\|Execution segmented sub-views via ?view= param; DataQuality always visible | N-wave unit 3; dispatch after N2 lands; pure page reorg, section components untouched
 

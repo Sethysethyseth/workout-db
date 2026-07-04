@@ -1,8 +1,9 @@
 # HANDOFF — current state
 
-**Updated:** July 4, 2026 (Sonnet — N1 bottom tab bar landed (`d266242`) on
-`ui-nav-overhaul`, pushed. Earlier same day: Fable authored N1/N2/N3; before
-that, T3 dynamic loading screens merged to `main` (`750c42b`).)
+**Updated:** July 4, 2026 (Fable — N1 smoked by Seth: tab bar ACCEPTED, two
+critiques -> N1b task block authored + QUEUED (`n1b-mobile-chrome-fix.md`),
+dispatches before N2/N3. Earlier same day: Sonnet landed N1 (`d266242`) on
+`ui-nav-overhaul`; Fable authored N1/N2/N3; T3 merged to `main` (`750c42b`).)
 **Rule:** rewritten in place at the end of every working session. Dated, never versioned. If this file looks stale (date > ~2 weeks old), verify branch/deploy state from ground truth before trusting it.
 
 ---
@@ -29,6 +30,41 @@ that, T3 dynamic loading screens merged to `main` (`750c42b`).)
   - No schema changes rode along — `analytics-engine`'s merge has no migration coupling. The separate `exercise-catalog-seed` branch (A1) still has its own gated migration track.
 - **Render/Vercel not yet repointed from the `analytics-engine` staging deploy back to `main`** — RUNBOOK step 6 ("Repoint staging Render back to main. Verify redeploy SHA in Events.") is still open; do this before smoking prod.
 - Username feature LIVE and verified on both environments (unchanged).
+
+## Session log (July 4 latest+2 — N1 smoke critiques -> N1b authored, Fable)
+
+- **Seth smoked N1 on the ui-nav-overhaul Vercel deploy.** Bottom tab bar
+  ACCEPTED as-is ("absolutely beautiful" - do not restyle it). Two
+  critiques: (1) the fixed bar buries the palette scene band (every scene
+  anchors `center bottom` of the viewport, so the artwork's best part sits
+  behind the frosted bar); (2) the slimmed mobile top bar is dead chrome
+  (~30px strip, tiny brand, every page already opens with its own h1).
+- **Review also found a pre-existing defect:** `.persistent-workout-bar-wrap`
+  (index.css ~4098) paints an empty ~19px strip + border on every page even
+  with no live workout (the inner bar returns null, the wrap always renders).
+- **Three design forks put to Seth and settled:**
+  1. Mobile top: NO top bar when logged in (hidden via
+     `.app:has(.bottom-nav) .nav` so logged-out Layout pages keep Login/
+     Register) + Home masthead (crown + wordmark + date, mobile-only) +
+     `.page-title` standardization on History/Programs/Analytics h1s
+     (shares the `.settings-page-title` declaration - the one intentional
+     desktop-visible change).
+  2. Scene band: LIFTED flush above the tab bar on mobile (bottom-inset
+     override on both fixed scene pseudo-elements; source-order matters
+     since the base rules set `inset: 0` - overrides placed after them).
+  3. Live-workout bar: slim frosted single-line pill docked directly above
+     the tab bar on mobile (Spotify pattern; translucent so the band reads
+     through while live; hidden on the live session detail page where the
+     finish dock owns the bottom). Seth specifically flagged the docked bar
+     must not re-bury the scenery - hence pill + frost, not a full card.
+- **`docs/tasks/n1b-mobile-chrome-fix.md` authored + QUEUED (MODEL: sonnet).
+  Dispatch order is now N1b -> N2 -> N3** (all touch index.css, still
+  strictly serialized). N2 has no collision with N1b (its only Navbar touch
+  is the reviewerEmails import swap; N1b touches Navbar zero - all CSS).
+- **Flag for the next smoke, not in N1b's scope:** during live logging the
+  `.session-finish-dock` (fixed, z-index 40, bottom 0) fully covers the
+  bottom tab bar - plausibly good (focus mode; the nav guard intercepts
+  anyway) but Seth should confirm it reads as intended on device.
 
 ## Session log (July 4 latest+1 — N1 bottom tab bar landed, Sonnet)
 
@@ -422,11 +458,11 @@ that, T3 dynamic loading screens merged to `main` (`750c42b`).)
 ## Next up (the active task)
 
 0. **N-wave navigation overhaul is the active UI track** (July 4).
-   **N1 (bottom tab bar) LANDED (`d266242`) on `ui-nav-overhaul`, pushed —
-   awaiting Seth's visual smoke on the branch's Vercel deploy.** N2 (Profile
-   hub) dispatches only after that sign-off; N3 (analytics sub-views) after
-   N2. Strictly serialized (shared `index.css`). Fable pre-main review
-   before the wave merges.
+   **N1 LANDED (`d266242`) and smoked: tab bar accepted, fixes specced as
+   N1b (`n1b-mobile-chrome-fix.md`, QUEUED) — dispatch N1b to Cursor next.**
+   Then N2 (Profile hub), then N3 (analytics sub-views). Strictly
+   serialized (shared `index.css`). Fable pre-main review before the wave
+   merges.
 1. **B9 LANDED (`c7acb43`)** — Cursor implemented, Claude Code reviewed
    (scope exact, all acceptance criteria tested, reviewer tightened the
    inclusive-last-bucket assertion, re-ran unit lane 103/103, purity grep
