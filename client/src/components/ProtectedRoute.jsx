@@ -7,7 +7,15 @@ export function ProtectedRoute({ children }) {
   const { currentUser, authLoading } = useAuth();
   const location = useLocation();
 
-  if (authLoading) return <LoadingState label="Loading session…" />;
+  if (authLoading) {
+    return (
+      <LoadingState
+        tone="page"
+        label="Loading session…"
+        slowLabel="Waking up the server…"
+      />
+    );
+  }
   if (!currentUser) {
     const next = encodeURIComponent(location.pathname + location.search);
     return <Navigate to={`/login?next=${next}`} replace />;

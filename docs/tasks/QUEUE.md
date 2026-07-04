@@ -6,15 +6,21 @@ Statuses: DRAFT / QUEUED / DISPATCHED / AWAITING-REVIEW / LANDED <sha> / BOUNCED
 
 ## Active
 
-(nothing dispatched - Seth smokes the U10/U8/U9 wave on the staging Vercel
-deploy of `d21608c`, then the analytics-engine -> main merge decision)
+- QUEUED | t3-dynamic-loading-screens.md | animated/visual layer for the
+  shared LoadingState component (soft + page tones) + wire slowLabel
+  cold-start copy across the remaining 9 call sites | timing skeleton
+  (useDelayedReveal: 400ms show-delay, 4s slow-copy escalation) built and
+  build-verified directly by Claude Code this session (Seth's explicit
+  call, off the normal Fable-authors-blocks default); this block is the
+  visual/animation work only
+
+(U10/U8/U9 wave still awaiting Seth's staging smoke; analytics-engine ->
+main merge decision separate from the above)
 
 ## Candidates (next units, not yet authored as blocks)
 
 - A5 exercise picker (UI, Cursor-suited once A4 FK design is done)
 - A6 name-resolution backfill/aliasing (Cursor-suited, needs A4 first)
-- T3 dynamic loading screens (UI, file-disjoint from Track A -> a natural
-  first Mode 2 parallel pair once designed)
 - U11 "what's new" one-time announcement modal (decided July 3, Sonnet
   session): per-device via `localStorage`, versioned/reusable (not a
   one-off) so future releases just bump a constant + add bullets. New key

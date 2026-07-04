@@ -1,6 +1,6 @@
 # HANDOFF — current state
 
-**Updated:** July 4, 2026 (Sonnet — `analytics-engine` merged to `main`.)
+**Updated:** July 4, 2026 (Sonnet — T3 dynamic loading screens: skeleton built, task block queued for Cursor.)
 **Rule:** rewritten in place at the end of every working session. Dated, never versioned. If this file looks stale (date > ~2 weeks old), verify branch/deploy state from ground truth before trusting it.
 
 ---
@@ -16,6 +16,43 @@
   - No schema changes rode along — `analytics-engine`'s merge has no migration coupling. The separate `exercise-catalog-seed` branch (A1) still has its own gated migration track.
 - **Render/Vercel not yet repointed from the `analytics-engine` staging deploy back to `main`** — RUNBOOK step 6 ("Repoint staging Render back to main. Verify redeploy SHA in Events.") is still open; do this before smoking prod.
 - Username feature LIVE and verified on both environments (unchanged).
+
+## Session log (July 4 later — T3 dynamic loading screens: skeleton built, Sonnet)
+
+- **Seth's call for this session: Sonnet builds the T3 skeleton directly
+  (not Fable) and authors the Cursor task block itself** - an explicit
+  one-off departure from the v3 default (Sonnet doesn't normally author
+  blocks); T3 was judged easy/mechanical enough not to need Fable's
+  judgment pass first.
+- **Timing skeleton DONE, build-verified, not yet committed:**
+  `client/src/components/LoadingState.jsx` gained a local
+  `useDelayedReveal(enabled, delayMs, slowMs)` hook implementing the cold-
+  start spec from `WORKOUTDB_MASTER_PROMPT_17.md` ("Motion / loading"):
+  nothing renders for the first 400ms (fast/cached loads never flash a
+  loader), and after 4s more the displayed text swaps to an optional new
+  `slowLabel` prop (the honest "still waking up" case). New `tone="page"`
+  branch added (`.loading-page` / `.loading-page__text`, bare/centered,
+  structural only - deliberately unstyled beyond layout) for the cold-start
+  full-tab case, distinct from the existing compact inline `tone="soft"`
+  and the untouched `tone="card"`. `ProtectedRoute.jsx` (the actual
+  cold-start gate - first thing a user sits on while Render wakes up) now
+  uses `tone="page"` with `slowLabel="Waking up the server…"`. Existing 9
+  call sites unchanged/backward-compatible (prop defaults preserve old
+  behavior). `client/npm run build` green.
+- **Visual/animation layer handed to Cursor:** `docs/tasks/
+  t3-dynamic-loading-screens.md` authored and QUEUED (MODEL: fable - this
+  is genuinely judgment-heavy visual design, not mechanical). Scope: design
+  the actual animated/satisfying treatment for the `soft` and `page` tones
+  (token-only, all 4 palettes x 2 modes, restrained per the anti-goal on
+  over-built motion), plus wire `slowLabel="Waking up the server…"`
+  (exact string) onto the remaining 9 `<LoadingState>` call sites. Timing
+  logic (`useDelayedReveal`, the two constants, the component's prop
+  signature) is explicitly off-limits to Cursor - JSX-inside-branches and
+  CSS only.
+- **Not yet done this session:** committing the skeleton changes (3 files:
+  `LoadingState.jsx`, `ProtectedRoute.jsx`, `index.css`) - do this before
+  dispatching the task block so Cursor's diff lands on top of a clean base.
+  QUEUE.md's Active section updated to list T3; moved out of Candidates.
 
 ## Open TODOs (do at next session start)
 

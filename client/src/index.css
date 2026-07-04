@@ -771,6 +771,20 @@ html[data-theme="dark"] .loading-state {
   color: var(--color-text-secondary);
 }
 
+.loading-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40vh;
+  padding: 24px;
+}
+
+.loading-page__text {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
 /* --- Profile / Account settings (mobile settings–style) --- */
 
 .settings-page.profile-page.stack {
