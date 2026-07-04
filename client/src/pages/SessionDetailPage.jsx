@@ -1263,7 +1263,11 @@ function SessionExerciseBlock({
             {sets.length === 0 ? (
               isCompleted ? (
                 <div className="muted small session-empty-sets">No sets logged.</div>
-              ) : perSideMode ? null : (
+              ) : perSideMode ? (
+                <div className="muted small session-empty-sets">
+                  Tap "+ Add set" above to log your first left/right pair.
+                </div>
+              ) : (
                 <div className="stack session-set-rows">
                   <SessionSetRow
                     isDraft
