@@ -39,6 +39,9 @@ export function ProfilePage() {
 
   const showDevFeedback = canReviewFeedback(currentUser);
   const memberSince = formatMemberSince(currentUser?.createdAt);
+  /* Placeholder only on the initial load - the context re-enters loading on
+     every 20s background poll, and settled values must not flash to em dashes. */
+  const statsPending = sessionsLoading && sessions.length === 0;
   const workoutCount = countCompleted(sessions);
   const thisWeekCount = countThisWeek(sessions);
   const streak = weekStreak(sessions);
@@ -79,19 +82,19 @@ export function ProfilePage() {
       <div className="profile-hub-stats" aria-label="Workout stats">
         <div className="profile-hub-stat-tile">
           <span className="profile-hub-stat-tile__value">
-            {formatStatValue(sessionsLoading, workoutCount)}
+            {formatStatValue(statsPending, workoutCount)}
           </span>
           <span className="profile-hub-stat-tile__label muted small">Workouts</span>
         </div>
         <div className="profile-hub-stat-tile">
           <span className="profile-hub-stat-tile__value">
-            {formatStatValue(sessionsLoading, thisWeekCount)}
+            {formatStatValue(statsPending, thisWeekCount)}
           </span>
           <span className="profile-hub-stat-tile__label muted small">This week</span>
         </div>
         <div className="profile-hub-stat-tile">
           <span className="profile-hub-stat-tile__value">
-            {sessionsLoading ? "\u2014" : `${streak} wk`}
+            {statsPending ? "\u2014" : `${streak} wk`}
           </span>
           <span className="profile-hub-stat-tile__label muted small">Week streak</span>
         </div>
