@@ -1,13 +1,24 @@
 # HANDOFF — current state
 
-**Updated:** July 4, 2026 (Sonnet — T3 dynamic loading screens LANDED on `ui-loading-screens` (`de03801`); not yet merged to main or smoked.)
+**Updated:** July 4, 2026 (Sonnet — T3 dynamic loading screens merged to `main` (`750c42b`), pushed.)
 **Rule:** rewritten in place at the end of every working session. Dated, never versioned. If this file looks stale (date > ~2 weeks old), verify branch/deploy state from ground truth before trusting it.
 
 ---
 
 ## Repo / deploy state
 
-- **`main` is at `e9ce82c`** (merge: `analytics-engine` -> `main`, "analytics wedge (B1-B9) + UI polish wave (U6-U10)"), confirmed on `origin/main`. Merged July 4 (Sonnet session) via scratch `git worktree` (not stash+checkout — see the worktree-merge gotcha), pushed same session.
+- **`main` is at `750c42b`** (fast-forward: `ui-loading-screens` -> `main`,
+  T3 dynamic loading screens), confirmed on `origin/main`. Merged + pushed
+  July 4 (Sonnet session). `main` had not moved since the branch point, so
+  `git merge --ff-only` applied cleanly - no worktree, no conflicts.
+  Seth confirmed the Vercel preview of `ui-loading-screens` looked right
+  (pulsing dots / breathing ring / label cross-fade) before triggering
+  "push to main" - matches the standing visual-sign-off-before-merge rule.
+  No schema/migration coupling (client + docs only, 15 files).
+  Render/Vercel prod both track `main` and auto-deploy on push - **verify
+  the prod deploy SHA is `750c42b` in Render/Vercel Events before assuming
+  it's live.**
+- **`main` was previously at `e9ce82c`** (merge: `analytics-engine` -> `main`, "analytics wedge (B1-B9) + UI polish wave (U6-U10)"). Merged July 4 (Sonnet session) via scratch `git worktree` (not stash+checkout — see the worktree-merge gotcha), pushed same session.
   - `git merge --ff-only` was NOT possible — `main`'s `ccd0829` (the ui-palettes-v2 merge commit) postdates `analytics-engine`'s branch point, so the branches had genuinely diverged. Did `git merge --no-ff analytics-engine` instead, matching how `ccd0829` itself was created.
   - **Two conflicts, both resolved by taking `analytics-engine`'s version whole:** `AGENTS.md` and `CLAUDE.md` (add/add — main still had the stale PRE-consolidation duplicated-gate versions of both files from before the July 1 single-source consolidation; `analytics-engine`'s versions are the current v3 ones and fully supersede them, no unique content lost).
   - Verified before committing the merge: server unit lane 103/103 green, client `npm run build` green, both run fresh in the worktree (had to `npm install` there — worktrees don't carry `node_modules`).
@@ -36,17 +47,17 @@
   `tone="card"` untouched as instructed. No dark-mode-specific override
   needed - all new colors route through existing theme-aware custom
   properties, so the token indirection alone covers both modes.
-- **NOT YET DONE:** visual smoke on the Vercel deploy of `ui-loading-screens`
-  (Seth needs to actually watch the pulsing dots / breathing ring / label
-  cross-fade render across palettes x modes - build-passing does not prove
-  the feel, especially for something Seth wants to be "satisfying to
-  users"); merge to main (still gated on "push to main" verbatim, and on
-  Seth's visual sign-off first, matching the U7-U10 pattern).
-- Branch `ui-loading-screens` is NOT the same branch as `analytics-engine`
-  (already merged to main) - this is a fresh branch off post-merge `main`,
-  so no relationship to the deferred Render/Vercel-repoint-to-main TODO
-  below; whichever Vercel preview/staging setup builds feature branches
-  should pick this one up automatically once pushed.
+- **Seth visually smoked the Vercel preview of `ui-loading-screens` and
+  signed off** (pulsing dots / breathing ring / label cross-fade all
+  confirmed rendering as intended); triggered "push to main" verbatim.
+  Merged fast-forward to `main` at `750c42b` (see Repo/deploy state above)
+  - not a worktree merge, no conflicts, ran one command at a time per the
+  gate (checkout main -> merge --ff-only -> push, each with explicit
+  approval). Branch `ui-loading-screens` is now fully contained in `main`;
+  deletable whenever Seth wants to ask for that gated op.
+- **Open follow-up:** confirm the prod Render + Vercel deploy SHA reads
+  `750c42b` in their Events tabs once they redeploy - not yet verified this
+  session (see Open TODOs).
 
 ## Session log (July 4 later — T3 dynamic loading screens: skeleton built, Sonnet)
 
@@ -87,7 +98,8 @@
 
 ## Open TODOs (do at next session start)
 
-1. **Repoint staging Render/Vercel back to `main`**, verify redeploy SHA is `e9ce82c` in Events, then smoke-test on prod (5 palettes x dark x Home at minimum, per `docs/smoke-tests/SCENE-SMOKE-CRITIQUE.md`, plus the analytics screen and Home weekly-report band).
+1. **Repoint staging Render/Vercel back to `main`**, verify redeploy SHA is `750c42b` in Events (now includes T3), then smoke-test on prod (5 palettes x dark x Home at minimum, per `docs/smoke-tests/SCENE-SMOKE-CRITIQUE.md`, plus the analytics screen, Home weekly-report band, and the T3 loading screens - soft-tone pulsing dots + page-tone breathing ring + label cross-fade).
+1b. **Confirm prod Render + Vercel Events both show `750c42b` deployed** (T3 merge) - not yet checked this session; `main` auto-deploys to both.
 2. **Diff `_prisma_migrations` prod vs staging** (RUNBOOK -> "Migration history diff"). Unresolved, predates the UI work.
 3. **Verify the manually inserted prod `_prisma_migrations` row's `checksum` matches staging's** for `20260603140000_add_user_username`. Latent hazard — check once, fix if mismatched.
 4. Confirm prod Render serving cleanly post-recovery.
