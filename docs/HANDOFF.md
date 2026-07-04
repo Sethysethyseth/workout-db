@@ -1,6 +1,6 @@
 # HANDOFF — current state
 
-**Updated:** July 4, 2026 (Sonnet — T3 dynamic loading screens: skeleton built, task block queued for Cursor.)
+**Updated:** July 4, 2026 (Sonnet — T3 dynamic loading screens LANDED on `ui-loading-screens` (`de03801`); not yet merged to main or smoked.)
 **Rule:** rewritten in place at the end of every working session. Dated, never versioned. If this file looks stale (date > ~2 weeks old), verify branch/deploy state from ground truth before trusting it.
 
 ---
@@ -16,6 +16,37 @@
   - No schema changes rode along — `analytics-engine`'s merge has no migration coupling. The separate `exercise-catalog-seed` branch (A1) still has its own gated migration track.
 - **Render/Vercel not yet repointed from the `analytics-engine` staging deploy back to `main`** — RUNBOOK step 6 ("Repoint staging Render back to main. Verify redeploy SHA in Events.") is still open; do this before smoking prod.
 - Username feature LIVE and verified on both environments (unchanged).
+
+## Session log (July 4 latest — T3 landed on ui-loading-screens, Sonnet)
+
+- **Cursor executed `t3-dynamic-loading-screens.md`; reviewed and committed
+  (`de03801`, 11 files, +162/-10), pushed to `origin/ui-loading-screens`.**
+  Scope exact match to the block (the 10 expected files, nothing extra);
+  `LoadingState.jsx`'s `useDelayedReveal` hook and props signature
+  byte-identical to before (JSX-inside-branches + CSS only, confirmed by
+  diff); `grep slowLabel="Waking up the server…"` hits exactly the 10
+  expected call sites; no hex introduced; `client/package.json` unchanged;
+  `npm run build` re-run green. Delivered: `tone="soft"` gets a subtle
+  pulsing three-dot indicator (`loading-state__dots`, 1.2s cycle, color off
+  `--color-interactive` via `color-mix`); `tone="page"` gets a breathing
+  accent ring (`loading-page__mark`/`__ring`, 1.4s cycle) plus a
+  cross-faded swap between `label` and `slowLabel` on the 4s escalation
+  (opacity transition via `--motion-base`/`--ease-standard`, no layout
+  jump - `loading-page__text-wrap` reserves space for both strings).
+  `tone="card"` untouched as instructed. No dark-mode-specific override
+  needed - all new colors route through existing theme-aware custom
+  properties, so the token indirection alone covers both modes.
+- **NOT YET DONE:** visual smoke on the Vercel deploy of `ui-loading-screens`
+  (Seth needs to actually watch the pulsing dots / breathing ring / label
+  cross-fade render across palettes x modes - build-passing does not prove
+  the feel, especially for something Seth wants to be "satisfying to
+  users"); merge to main (still gated on "push to main" verbatim, and on
+  Seth's visual sign-off first, matching the U7-U10 pattern).
+- Branch `ui-loading-screens` is NOT the same branch as `analytics-engine`
+  (already merged to main) - this is a fresh branch off post-merge `main`,
+  so no relationship to the deferred Render/Vercel-repoint-to-main TODO
+  below; whichever Vercel preview/staging setup builds feature branches
+  should pick this one up automatically once pushed.
 
 ## Session log (July 4 later — T3 dynamic loading screens: skeleton built, Sonnet)
 

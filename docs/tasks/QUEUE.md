@@ -6,16 +6,8 @@ Statuses: DRAFT / QUEUED / DISPATCHED / AWAITING-REVIEW / LANDED <sha> / BOUNCED
 
 ## Active
 
-- QUEUED | t3-dynamic-loading-screens.md | animated/visual layer for the
-  shared LoadingState component (soft + page tones) + wire slowLabel
-  cold-start copy across the remaining 9 call sites | timing skeleton
-  (useDelayedReveal: 400ms show-delay, 4s slow-copy escalation) built and
-  build-verified directly by Claude Code this session (Seth's explicit
-  call, off the normal Fable-authors-blocks default); this block is the
-  visual/animation work only
-
-(U10/U8/U9 wave still awaiting Seth's staging smoke; analytics-engine ->
-main merge decision separate from the above)
+(nothing dispatched - U10/U8/U9 wave still awaiting Seth's staging smoke;
+analytics-engine -> main merge decision separate; T3 below moved to Landed)
 
 ## Candidates (next units, not yet authored as blocks)
 
@@ -34,6 +26,7 @@ main merge decision separate from the above)
 
 ## Landed
 
+- LANDED de03801 | t3-dynamic-loading-screens.md | animated soft-tone (pulsing three-dot indicator) + page-tone (breathing accent ring, cross-faded label/slowLabel swap) + slowLabel="Waking up the server..." wired onto all 10 LoadingState call sites | on branch ui-loading-screens (not main/staging yet); review clean - scope exact, hook/props untouched, no hex, no new deps, build green; timing skeleton (useDelayedReveal) built directly by Claude Code same session, block covered visual/animation layer only
 - LANDED d21608c | u10-home-hero-dead-space.md | home layout fix (align-content: start) + weekly-report set-count formatting | Cursor ran U10/U8/U9 in ONE working tree (against the serialized-dispatch plan) - reviewed and committed together; reviewer added the rounded-delta tone fix
 - LANDED d21608c | u8-volume-trend-strength-sparklines.md | volume Bars|Trend|Table small multiples + strength e1RM sparklines | reviewer fixes: sparkline dots as non-scaling round-cap strokes (circles stretched to ellipses under preserveAspectRatio=none), single-session dot centered + no duplicate value, mvt last-week label moved to a fixed third grid column (was overflowing the card edge)
 - LANDED d21608c | u9-execution-legibility-balance-polish.md | execution verdict + planned-vs-did line; balance zone band + ghost tracks | reviewer fixes: weight formatting in formatPlanActual failed the block's own acceptance string ("100.0 lbs" vs "100 lbs"), newsy verdict clauses now outrank on-plan filler, sub-rep effort drift no longer reads "stopped ~0 reps early"
