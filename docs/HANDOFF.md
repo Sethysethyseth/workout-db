@@ -1,11 +1,11 @@
 # HANDOFF — current state
 
-**Updated:** July 4, 2026 (Sonnet — N3 LANDED (`f5767f8`) on
-`ui-nav-overhaul`, pushed: Seth smoked N2 (passed), Cursor executed
-`n3-analytics-subviews.md`, Sonnet reviewed (clean delivery, no bounces) and
-committed. **N-wave is now fully landed on the branch (N1/N1b/N2/N3 all
-in).** Awaiting Seth's visual smoke of N3, then the Fable/Opus pre-main
-branch-diff review before merge to `main`.)
+**Updated:** July 4, 2026 (Fable — **pre-main branch-diff review of
+`ui-nav-overhaul` DONE.** Seth smoked N1-N3 (all passed). Full accumulated
+diff (20 files, +1490/-380) reviewed against all four N-wave blocks; one
+reviewer fix committed (`3a1a7fc`, profile stat-tile placeholder gating),
+pushed to origin. **Branch is CLEARED FOR MERGE — awaiting Seth's
+"push to main" trigger phrase.** Details in the latest session log.)
 **Rule:** rewritten in place at the end of every working session. Dated, never versioned. If this file looks stale (date > ~2 weeks old), verify branch/deploy state from ground truth before trusting it.
 
 ---
@@ -32,6 +32,46 @@ branch-diff review before merge to `main`.)
   - No schema changes rode along — `analytics-engine`'s merge has no migration coupling. The separate `exercise-catalog-seed` branch (A1) still has its own gated migration track.
 - **Render/Vercel not yet repointed from the `analytics-engine` staging deploy back to `main`** — RUNBOOK step 6 ("Repoint staging Render back to main. Verify redeploy SHA in Events.") is still open; do this before smoking prod.
 - Username feature LIVE and verified on both environments (unchanged).
+
+## Session log (July 4 latest+6 — Fable pre-main review of ui-nav-overhaul)
+
+- **Seth smoked N3 on the branch Vercel deploy — passed** (with N1/N1b/N2
+  already passed, the whole N-wave has visual sign-off).
+- **Fable pre-main branch-diff review DONE (the v3 mandated gate).** Full
+  `main...ui-nav-overhaul` diff (20 files, +1490/-380) read against all four
+  task blocks. Verified: N1 guard extraction is behavior-identical (every
+  Navbar per-link handler maps exactly onto `guardedClick`'s end/prefix
+  short-circuits); N2 sub-pages are verbatim extractions (markup, state,
+  API calls) and `profileStats` matches its weekStreak contract; N3 is a
+  pure JSX reorg with the fetch effect untouched (`[weeks]` deps). Cross-
+  cutting: zero hex in added CSS (the one rgba box-shadow matches 12
+  pre-existing occurrences); `.workout-tab::before` exists ONLY as a
+  dark-theme rule, so N1b's single dark override is complete scene-lift
+  coverage; both `body::before` base rules precede the lift override (and
+  `:has` outranks them on specificity anyway); the sticky-top override
+  correctly follows its base rule; all Layout routes are ProtectedRoute
+  (Login/Register live under AuthLayout), so the mobile chrome rules are
+  effectively logged-in-only. Re-ran both lanes fresh: client build green,
+  server unit 103/103.
+- **One reviewer fix (`3a1a7fc`, pushed):** the profile hub gated its
+  stat-tile em-dash placeholder on bare `sessionsLoading`, but
+  ActiveSessionContext re-enters loading on every 20s background poll —
+  all three tiles flashed to dashes every 20 seconds while sitting on
+  /profile. Now gated on loading AND `sessions.length === 0` (initial load
+  only). Root cause was the N2 block's own wording ("while loading render
+  an em dash"), not a Cursor error.
+- **Two accepted nits, recorded not fixed:** (1) on the live session detail
+  page `.app:has(.persistent-workout-bar) .main` still adds its +64px pill
+  clearance even though the pill itself is hidden there (the bar is in the
+  DOM inside the display:none wrap, so `:has` matches) — ~64px of extra
+  scroll headroom above the finish dock, invisible in practice; (2) a
+  cold direct load of /profile can paint one frame of "0" before the
+  provider's effect flips loading true — unreachable in practice since the
+  provider fetches at app mount, well before /profile can be visited.
+- **VERDICT: cleared for merge.** Nothing ships to main without this pass;
+  it has now happened. Merge stays gated on Seth's "push to main" verbatim
+  (then one command at a time per the gate). No schema/migration coupling
+  anywhere in the N-wave (client + docs only).
 
 ## Session log (July 4 latest+5 — N2 smoked, N3 landed, Sonnet)
 
@@ -550,14 +590,15 @@ branch-diff review before merge to `main`.)
 
 ## Next up (the active task)
 
-0. **N-wave navigation overhaul is the active UI track** (July 4).
-   **N1 (`d266242`), N1b (`b366e17`), N2 (`4dcd829`) all smoked + passed.
-   N3 (`f5767f8`) LANDED on `ui-nav-overhaul`, pushed — N-wave is fully
-   landed, nothing left queued.** Awaiting Seth's visual smoke of N3 (view
-   tabs, `?view=` deep-links, bogus-value fallback, range-chip refetch
-   preserving the view, empty-range state). After sign-off: Fable/Opus
-   pre-main branch-diff review, then merge to `main` on Seth's trigger
-   phrase.
+0. **N-wave navigation overhaul: REVIEW DONE, CLEARED FOR MERGE** (July 4).
+   All four units smoked + passed by Seth; Fable pre-main branch-diff
+   review complete with one fix (`3a1a7fc`, pushed to origin). Branch HEAD
+   for the merge is `3a1a7fc`. **Waiting only on Seth's "push to main"
+   trigger phrase** — then one command at a time per the gate. No
+   schema/migration coupling (client + docs only). Note: Seth has NOT
+   visually smoked the `3a1a7fc` fix itself (a one-line placeholder gating
+   change on /profile) — worth a 10-second look on the branch deploy if
+   desired, not blocking.
 1. **B9 LANDED (`c7acb43`)** — Cursor implemented, Claude Code reviewed
    (scope exact, all acceptance criteria tested, reviewer tightened the
    inclusive-last-bucket assertion, re-ran unit lane 103/103, purity grep
