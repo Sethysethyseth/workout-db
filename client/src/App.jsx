@@ -15,6 +15,9 @@ import { AnalyticsPage } from "./pages/AnalyticsPage.jsx";
 import { SessionDetailPage } from "./pages/SessionDetailPage.jsx";
 import { StartLogWorkoutPage } from "./pages/StartLogWorkoutPage.jsx";
 import { ProfilePage } from "./pages/ProfilePage.jsx";
+import { AppearancePage } from "./pages/profile/AppearancePage.jsx";
+import { SecurityPage } from "./pages/profile/SecurityPage.jsx";
+import { FeedbackPage } from "./pages/profile/FeedbackPage.jsx";
 import { DevFeedbackPage } from "./pages/DevFeedbackPage.jsx";
 import { HelloPage } from "./pages/HelloPage.jsx";
 
@@ -113,6 +116,30 @@ export default function App() {
           element={
             <ProtectedRoute>
               <ProfilePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile/appearance"
+          element={
+            <ProtectedRoute>
+              <AppearancePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile/security"
+          element={
+            <ProtectedRoute>
+              <SecurityPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile/feedback"
+          element={
+            <ProtectedRoute>
+              <FeedbackPage />
             </ProtectedRoute>
           }
         />

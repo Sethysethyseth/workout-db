@@ -1,21 +1,12 @@
 import { Link, NavLink } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useGuardedNav } from "../../lib/useGuardedNav.js";
-
-function parseReviewerEmails(raw) {
-  if (!raw || typeof raw !== "string") return [];
-  return raw
-    .split(",")
-    .map((s) => s.trim().toLowerCase())
-    .filter(Boolean);
-}
+import { canReviewFeedback } from "../../lib/reviewerEmails.js";
 
 export function Navbar() {
   const { currentUser } = useAuth();
   const { guardedClick } = useGuardedNav();
-  const reviewerEmails = parseReviewerEmails(import.meta.env.VITE_FEEDBACK_REVIEWER_EMAILS);
-  const canReviewFeedback =
-    !!currentUser?.email && reviewerEmails.includes(String(currentUser.email).toLowerCase());
+  const showDevFeedback = canReviewFeedback(currentUser);
 
   return (
     <header className="nav">
@@ -47,7 +38,7 @@ export function Navbar() {
               <NavLink to="/analytics" end onClick={guardedClick("/analytics", { end: true })}>
                 Analytics
               </NavLink>
-              {canReviewFeedback ? (
+              {showDevFeedback ? (
                 <NavLink to="/dev/feedback" onClick={guardedClick("/dev/feedback")}>
                   Dev feedback
                 </NavLink>

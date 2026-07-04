@@ -1,64 +1,47 @@
 import { useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
-import { useTheme } from "../context/ThemeContext.jsx";
-
-const PALETTE_OPTIONS = [
-  { value: "champ", label: "Champ" },
-  { value: "iron", label: "Iron" },
-  { value: "forest", label: "Forest" },
-  { value: "crimson", label: "Crimson" },
-  { value: "chill", label: "Chill" },
-];
-import * as authApi from "../api/authApi.js";
-import * as feedbackApi from "../api/feedbackApi.js";
+import { useActiveSession } from "../context/ActiveSessionContext.jsx";
 import { ApiError } from "../api/http.js";
-import { PasswordInput } from "../components/auth/PasswordInput.jsx";
 import { ErrorMessage } from "../components/ErrorMessage.jsx";
+import { canReviewFeedback } from "../lib/reviewerEmails.js";
+import { countCompleted, countThisWeek, weekStreak } from "../lib/profileStats.js";
+
+function getInitials(user) {
+  const name = user?.displayName?.trim();
+  if (name) {
+    const words = name.split(/\s+/).filter(Boolean).slice(0, 2);
+    return words.map((w) => w[0]).join("").toUpperCase();
+  }
+  const email = user?.email?.trim();
+  if (email) return email[0].toUpperCase();
+  return "?";
+}
+
+function formatMemberSince(createdAt) {
+  if (!createdAt) return null;
+  const d = new Date(createdAt);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleDateString(undefined, { month: "short", year: "numeric" });
+}
+
+function formatStatValue(loading, value, suffix = "") {
+  if (loading) return "\u2014";
+  return `${value}${suffix}`;
+}
 
 export function ProfilePage() {
   const { currentUser, logout } = useAuth();
+  const { sessions, loading: sessionsLoading } = useActiveSession();
   const navigate = useNavigate();
-  const location = useLocation();
-  const { theme, setTheme, palette, setPalette } = useTheme();
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [submitting, setSubmitting] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(null);
-  const [feedbackCategory, setFeedbackCategory] = useState("Bug");
-  const [feedbackMessage, setFeedbackMessage] = useState("");
-  const [feedbackSubmitting, setFeedbackSubmitting] = useState(false);
-  const [feedbackError, setFeedbackError] = useState(null);
-  const [feedbackSuccess, setFeedbackSuccess] = useState(false);
 
-  async function onSubmit(e) {
-    e.preventDefault();
-    setError(null);
-    setSuccess(null);
-    if (newPassword !== confirmPassword) {
-      setError(new Error("New passwords do not match."));
-      return;
-    }
-    if (newPassword.length < 8) {
-      setError(new Error("New password must be at least 8 characters."));
-      return;
-    }
-    setSubmitting(true);
-    try {
-      await authApi.changePassword({ currentPassword, newPassword });
-      setSuccess("Password updated.");
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
-    } catch (err) {
-      setError(err);
-    } finally {
-      setSubmitting(false);
-    }
-  }
+  const showDevFeedback = canReviewFeedback(currentUser);
+  const memberSince = formatMemberSince(currentUser?.createdAt);
+  const workoutCount = countCompleted(sessions);
+  const thisWeekCount = countThisWeek(sessions);
+  const streak = weekStreak(sessions);
 
   async function onLogout() {
     setLoggingOut(true);
@@ -74,227 +57,89 @@ export function ProfilePage() {
     }
   }
 
-  async function onFeedbackSubmit(e) {
-    e.preventDefault();
-    setFeedbackError(null);
-    setFeedbackSuccess(false);
-    const trimmed = feedbackMessage.trim();
-    if (!trimmed) {
-      setFeedbackError(new Error("Please enter a message."));
-      return;
-    }
-    setFeedbackSubmitting(true);
-    try {
-      await feedbackApi.createFeedback({
-        category: feedbackCategory,
-        message: trimmed,
-        pagePath: location.pathname || null,
-        theme,
-      });
-      setFeedbackMessage("");
-      setFeedbackCategory("Bug");
-      setFeedbackSuccess(true);
-    } catch (err) {
-      setFeedbackError(err);
-    } finally {
-      setFeedbackSubmitting(false);
-    }
-  }
-
   return (
-    <div className="settings-page profile-page stack">
-      <header className="settings-page-header">
-        <h1 className="settings-page-title">Profile</h1>
-        <p className="settings-page-subtitle muted small">Account &amp; security</p>
+    <div className="settings-page profile-page profile-hub stack">
+      <header className="profile-hub-header">
+        <div className="profile-hub-avatar" aria-hidden="true">
+          {getInitials(currentUser)}
+        </div>
+        <div className="profile-hub-identity">
+          <h1 className="profile-hub-name settings-page-title">
+            {currentUser?.displayName || currentUser?.email}
+          </h1>
+          {currentUser?.displayName ? (
+            <p className="profile-hub-email muted small">{currentUser.email}</p>
+          ) : null}
+          {memberSince ? (
+            <p className="profile-hub-member-since muted small">Member since {memberSince}</p>
+          ) : null}
+        </div>
       </header>
 
-      <ErrorMessage error={error} />
+      <div className="profile-hub-stats" aria-label="Workout stats">
+        <div className="profile-hub-stat-tile">
+          <span className="profile-hub-stat-tile__value">
+            {formatStatValue(sessionsLoading, workoutCount)}
+          </span>
+          <span className="profile-hub-stat-tile__label muted small">Workouts</span>
+        </div>
+        <div className="profile-hub-stat-tile">
+          <span className="profile-hub-stat-tile__value">
+            {formatStatValue(sessionsLoading, thisWeekCount)}
+          </span>
+          <span className="profile-hub-stat-tile__label muted small">This week</span>
+        </div>
+        <div className="profile-hub-stat-tile">
+          <span className="profile-hub-stat-tile__value">
+            {sessionsLoading ? "\u2014" : `${streak} wk`}
+          </span>
+          <span className="profile-hub-stat-tile__label muted small">Week streak</span>
+        </div>
+      </div>
 
-      <section className="settings-section" aria-labelledby="settings-account-heading">
-        <h2 id="settings-account-heading" className="settings-section-heading">
-          Account
+      <section className="settings-section" aria-labelledby="profile-settings-heading">
+        <h2 id="profile-settings-heading" className="settings-section-heading">
+          Settings
         </h2>
         <div className="settings-group">
-          <div className="settings-row settings-row--identity" role="group" aria-label="Signed-in account">
-            <div className="settings-row__main">
-              <span className="settings-row__label muted small">Signed in as</span>
-              <span className="settings-row__value">
-                {currentUser?.displayName || currentUser?.email}
+          <Link className="settings-row settings-row--link" to="/profile/appearance">
+            <span className="settings-row__main">
+              <span className="settings-row__value">Appearance</span>
+            </span>
+            <span className="settings-row__chevron" aria-hidden="true">
+              ›
+            </span>
+          </Link>
+          <Link className="settings-row settings-row--link" to="/profile/security">
+            <span className="settings-row__main">
+              <span className="settings-row__value">Security</span>
+            </span>
+            <span className="settings-row__chevron" aria-hidden="true">
+              ›
+            </span>
+          </Link>
+          <Link className="settings-row settings-row--link" to="/profile/feedback">
+            <span className="settings-row__main">
+              <span className="settings-row__value">Send feedback</span>
+            </span>
+            <span className="settings-row__chevron" aria-hidden="true">
+              ›
+            </span>
+          </Link>
+          {showDevFeedback ? (
+            <Link className="settings-row settings-row--link" to="/dev/feedback">
+              <span className="settings-row__main">
+                <span className="settings-row__value">Dev feedback</span>
               </span>
-              {currentUser?.displayName ? (
-                <span className="muted small">{currentUser.email}</span>
-              ) : null}
-            </div>
-          </div>
+              <span className="settings-row__chevron" aria-hidden="true">
+                ›
+              </span>
+            </Link>
+          ) : null}
         </div>
       </section>
 
-      <section className="settings-section" aria-labelledby="settings-appearance-heading">
-        <h2 id="settings-appearance-heading" className="settings-section-heading">
-          Appearance
-        </h2>
-        <div className="settings-group settings-group--tight">
-          <p className="settings-group-hint muted small">Applies to this device only.</p>
-          <div className="settings-theme-list" role="radiogroup" aria-label="Theme">
-            <label className="settings-theme-row">
-              <span className="settings-theme-row__label">Light</span>
-              <input
-                type="radio"
-                name="theme"
-                value="light"
-                checked={theme === "light"}
-                onChange={() => setTheme("light")}
-              />
-            </label>
-            <label className="settings-theme-row">
-              <span className="settings-theme-row__label">Dark</span>
-              <input
-                type="radio"
-                name="theme"
-                value="dark"
-                checked={theme === "dark"}
-                onChange={() => setTheme("dark")}
-              />
-            </label>
-            <label className="settings-theme-row">
-              <span className="settings-theme-row__label">System</span>
-              <input
-                type="radio"
-                name="theme"
-                value="system"
-                checked={theme === "system"}
-                onChange={() => setTheme("system")}
-              />
-            </label>
-          </div>
-          <div className="settings-palette-block">
-            <span className="settings-palette-block__label muted small">Accent color</span>
-            <div className="settings-palette-grid" role="radiogroup" aria-label="Accent color">
-              {PALETTE_OPTIONS.map((option) => (
-                <label
-                  key={option.value}
-                  className={
-                    "settings-palette-option" +
-                    (palette === option.value ? " settings-palette-option--selected" : "")
-                  }
-                >
-                  <span
-                    className={`settings-palette-swatch settings-palette-swatch--${option.value}`}
-                    aria-hidden="true"
-                  />
-                  <span className="settings-palette-option__label">{option.label}</span>
-                  <input
-                    type="radio"
-                    name="palette"
-                    value={option.value}
-                    checked={palette === option.value}
-                    onChange={() => setPalette(option.value)}
-                  />
-                </label>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="settings-section" aria-labelledby="settings-security-heading">
-        <h2 id="settings-security-heading" className="settings-section-heading">
-          Security
-        </h2>
-        <form className="settings-group settings-security-form" onSubmit={onSubmit}>
-          {success ? (
-            <div className="settings-feedback settings-feedback--success" role="status">
-              {success}
-            </div>
-          ) : null}
-          <PasswordInput
-            label="Current password"
-            value={currentPassword}
-            onChange={(e) => setCurrentPassword(e.target.value)}
-            autoComplete="current-password"
-            required
-          />
-          <PasswordInput
-            label="New password"
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-            autoComplete="new-password"
-            required
-            minLength={8}
-          />
-          <PasswordInput
-            label="Confirm new password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            autoComplete="new-password"
-            required
-            minLength={8}
-          />
-          <div className="settings-security-actions">
-            <button className="btn" type="submit" disabled={submitting}>
-              {submitting ? "Updating…" : "Update password"}
-            </button>
-          </div>
-        </form>
-      </section>
-
-      <section className="settings-section" aria-labelledby="settings-beta-feedback-heading">
-        <h2 id="settings-beta-feedback-heading" className="settings-section-heading">
-          Beta feedback
-        </h2>
-        <form className="settings-group settings-feedback-form" onSubmit={onFeedbackSubmit}>
-          <p className="settings-group-hint muted small">
-            Help improve WorkoutDB. Report bugs, confusing moments, or small annoyances.
-          </p>
-          {feedbackError ? (
-            <p className="settings-feedback-inline-error" role="alert">
-              {feedbackError instanceof Error ? feedbackError.message : String(feedbackError)}
-            </p>
-          ) : null}
-          {feedbackSuccess ? (
-            <div className="settings-feedback settings-feedback--success" role="status">
-              Thanks — feedback sent.
-            </div>
-          ) : null}
-          <div className="settings-feedback-form__body">
-            <label className="settings-feedback-field">
-              <span className="settings-feedback-field__label muted small">Category</span>
-              <select
-                className="settings-feedback-select"
-                value={feedbackCategory}
-                onChange={(e) => {
-                  setFeedbackCategory(e.target.value);
-                  if (feedbackSuccess) setFeedbackSuccess(false);
-                }}
-                aria-label="Feedback category"
-              >
-                <option value="Bug">Bug</option>
-                <option value="Confusing">Confusing</option>
-                <option value="Idea">Idea</option>
-              </select>
-            </label>
-            <label className="settings-feedback-field">
-              <span className="settings-feedback-field__label muted small">Message</span>
-              <textarea
-                className="settings-feedback-textarea"
-                rows={4}
-                value={feedbackMessage}
-                onChange={(e) => {
-                  setFeedbackMessage(e.target.value);
-                  if (feedbackSuccess) setFeedbackSuccess(false);
-                }}
-                placeholder="What felt off?"
-                autoComplete="off"
-              />
-            </label>
-            <div className="settings-feedback-form__actions">
-              <button className="btn btn-secondary" type="submit" disabled={feedbackSubmitting}>
-                {feedbackSubmitting ? "Sending…" : "Send feedback"}
-              </button>
-            </div>
-          </div>
-        </form>
-      </section>
+      <ErrorMessage error={error} />
 
       <footer className="settings-logout-region">
         <button
