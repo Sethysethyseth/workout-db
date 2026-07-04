@@ -1,11 +1,15 @@
 # HANDOFF — current state
 
-**Updated:** July 4, 2026 (Sonnet — **L2 landed** (`f66f9ea`) on
-`logging-ux-wave`, pushed to origin. Dispatch L1 next (Cursor must NOT run
-`npm test` on L1 - it parks an unapplied migration). **`ui-nav-overhaul` is
-still CLEARED FOR MERGE and awaiting Seth's "push to main" trigger
-phrase** — the L-wave branch stacks on top of it and Sonnet should
-rebase-or-merge reconcile `logging-ux-wave` after that merge lands.)
+**Updated:** July 4, 2026 (Sonnet — **L2 landed** (`f66f9ea`) **and L1
+landed** (`4ae0fbf`) on `logging-ux-wave`, pushed to origin. L1's
+`WorkoutSet.side` migration applied to STAGING (Seth, manual per RUNBOOK)
+and independently verified — see session log. Staging Render repointed to
+`logging-ux-wave` and redeployed at `4ae0fbf`. **Not yet done: Seth's
+visual smoke of L2 + L1 on the staging deploy** — L3 dispatches after
+sign-off. **`ui-nav-overhaul` is still CLEARED FOR MERGE and awaiting
+Seth's "push to main" trigger phrase** — the L-wave branch stacks on top
+of it and Sonnet should rebase-or-merge reconcile `logging-ux-wave` after
+that merge lands.)
 **Rule:** rewritten in place at the end of every working session. Dated, never versioned. If this file looks stale (date > ~2 weeks old), verify branch/deploy state from ground truth before trusting it.
 
 ---
@@ -32,6 +36,66 @@ rebase-or-merge reconcile `logging-ux-wave` after that merge lands.)
   - No schema changes rode along — `analytics-engine`'s merge has no migration coupling. The separate `exercise-catalog-seed` branch (A1) still has its own gated migration track.
 - **Render/Vercel not yet repointed from the `analytics-engine` staging deploy back to `main`** — RUNBOOK step 6 ("Repoint staging Render back to main. Verify redeploy SHA in Events.") is still open; do this before smoking prod.
 - Username feature LIVE and verified on both environments (unchanged).
+
+## Session log (July 4 latest+9 — L1 landed + migration applied to staging, Sonnet)
+
+- **Cursor executed `l1-unilateral-side-logging.md`; Sonnet reviewed and
+  committed (`4ae0fbf`, 6 files, +470/-56), pushed to
+  `origin/logging-ux-wave`.** Scope exact (the 6 specced files, plus the
+  new hand-authored migration file; same stray unrelated
+  `.claude/settings.json` edit left uncommitted as before). Server unit
+  103/103, client build green (the only two lanes safe to run before the
+  migration existed anywhere - integration deliberately NOT run yet, per
+  the block's own gate). Schema diff is exactly the one `side String?`
+  line; migration.sql is exactly one `ALTER TABLE` statement. Delivered:
+  `validateOptionalSide` follows the codebase's existing optional-field
+  validator pattern; per-side mode derives reactively from
+  `manualOverride ?? (anySetHasSide || /\bsingle\b/i.test(name))` so the
+  name-based trigger re-derives for free on every name commit with no
+  special-case code; set-count control and add/remove operate on L/R
+  pairs (`groupSetsIntoRenderUnits` degrades an odd trailing row to a
+  plain labeled row rather than crashing); the Right-weight autofill on
+  Left blur reuses the PRE-EXISTING focus-guard effect (row skips
+  resyncing from the `set` prop while it contains focus) - so "must not
+  steal focus" came for free from infrastructure already in place, not
+  new code. CSS tokens-only, no hex. Clean delivery - no bounces, no
+  reviewer fixes needed.
+- **CRITICAL SEQUENCING FLAG caught in review (before any deploy):** the
+  controller unconditionally includes `side` (defaulting to `null`) in
+  EVERY set-creation call, not just per-side sets. Once `prisma generate`
+  regenerates the client with the new field, ANY set creation - not just
+  the new feature - would 500 against a database missing the `side`
+  column (Postgres "column does not exist"). This is the exact
+  code-ahead-of-DB hazard from the June 8 incident, but sharper here:
+  normal logging breaks app-wide, not just the new surface. Flagged to
+  Seth before any Render repoint.
+- **Migration applied to STAGING, done by Seth manually (browser agent,
+  RUNBOOK "Schema-change deploy"):** confirmed host `noisy-surf` /
+  `ep-bitter-breeze-am81izlh` throughout, never touched
+  `snowy-resonance` / `ep-solitary-sea-an56mioq` (prod). `ALTER TABLE
+  "WorkoutSet" ADD COLUMN "side" TEXT;` run, `_prisma_migrations` row
+  inserted with checksum `0dea47c048f0d8db874880e3a32200d0da46c09e0eac1769e83dbe7eb312308c`
+  (SHA-256 of the committed migration.sql, confirmed to be pure-LF/49
+  bytes so the hash is checkout-independent), column verified present via
+  `information_schema.columns`. Staging Render (`workout-db-staging`)
+  repointed from its prior branch to `logging-ux-wave`, redeployed at
+  `4ae0fbf`.
+- **Independently re-verified by Sonnet after Seth's report (verify-
+  before-trust):** `npx prisma migrate status` against staging ->
+  "Database schema is up to date!", 13 migrations, zero drift (confirms
+  the manually-inserted checksum was accepted cleanly). Full `npm test`
+  (both lanes) re-run fresh -> **16 suites / 143 tests, all green**,
+  including the L1 side-round-trip integration test (create with
+  `side:"L"` round-trips, `side:"X"` -> 400, PATCH `side:null` clears it)
+  now running for real against the migrated column, and L2's
+  `/exercises/resolve` tests still green alongside it - no regression
+  from the schema change.
+- **Not yet done:** Seth's visual/manual smoke of L2 (tracked indicator)
+  + L1 (per-side logging: name-trigger, L/R toggle both ways, pair
+  add/remove, weight autofill L->R, non-per-side flow unchanged) on the
+  `logging-ux-wave` Render+Vercel staging deploy. **L3 dispatches only
+  after that sign-off** (L3 also carries a migration - `UserExercise`
+  table - so the same code-ahead-of-DB discipline applies again).
 
 ## Session log (July 4 latest+8 — L2 landed, Sonnet)
 
@@ -669,10 +733,13 @@ rebase-or-merge reconcile `logging-ux-wave` after that merge lands.)
 
 ## Next up (the active task)
 
-0a. **L-wave in progress on `logging-ux-wave`** — L2 LANDED (`f66f9ea`).
-   Dispatch L1 next (Cursor must NOT run `npm test` - parks an unapplied
-   `WorkoutSet.side` migration). Wave order + migration choreography in
-   QUEUE.md. Reconcile this branch after the ui-nav-overhaul merge (0b).
+0a. **L-wave in progress on `logging-ux-wave`** — L2 LANDED (`f66f9ea`),
+   L1 LANDED (`4ae0fbf`), its migration applied + verified on staging,
+   Render repointed and redeployed at `4ae0fbf`. **Awaiting Seth's smoke
+   test of L2+L1 on the staging deploy before dispatching L3** (L3 also
+   carries a migration - UserExercise table). Wave order + migration
+   choreography in QUEUE.md. Reconcile this branch after the
+   ui-nav-overhaul merge (0b).
 0b. **N-wave navigation overhaul: REVIEW DONE, CLEARED FOR MERGE** (July 4).
    All four units smoked + passed by Seth; Fable pre-main branch-diff
    review complete with one fix (`3a1a7fc`, pushed to origin). Branch HEAD

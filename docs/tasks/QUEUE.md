@@ -12,10 +12,10 @@ L2 -> L1 -> L3 -> L4, strictly serialized** - L2 before L1 because L2 runs
 the integration lane and L1 parks an unapplied migration that `npm test`'s
 pretest would silently apply (gated). L1 and L3 each carry a migration:
 Seth applies L1's to staging before L3 dispatches, and L3's before L4
-dispatches (RUNBOOK "Schema-change deploy"). L2 now LANDED - L1 dispatches
-next.
+dispatches (RUNBOOK "Schema-change deploy"). L2 and L1 now LANDED; L1's
+migration is applied + verified on staging and Render is redeployed at
+`4ae0fbf` - L3 dispatches after Seth's smoke sign-off on L2+L1.
 
-- QUEUED | l1-unilateral-side-logging.md | per-side L/R logging (name contains "single" or manual toggle), R weight defaults from L; WorkoutSet.side migration | Cursor must NOT run npm test
 - QUEUED | l3-custom-exercises-server.md | UserExercise schema + CRUD + engine resolver/attribution overlay | Fable-designed schema; Cursor must NOT run npm test
 - QUEUED | l4-custom-exercise-ui.md | "Add to library" sheet: name + tap-chip muscle picker (Main/Assists), flips indicator live | needs L3 migration applied to staging first
 
@@ -39,6 +39,7 @@ Seth's "push to main" trigger phrase.)
 
 ## Landed
 
+- LANDED 4ae0fbf | l1-unilateral-side-logging.md | nullable WorkoutSet.side ("L"/"R"); exercises named "single" (or L/R toggle) log sets as Left/Right pairs, Right weight autofills from Left on blur (one-way, one-time, no focus steal); set-count/add/remove operate on pairs | scope exact (6 files), server unit 103/103 + client build green pre-migration, then migration applied to staging (Seth, RUNBOOK) and independently re-verified: `prisma migrate status` clean (13 migrations, no drift), full `npm test` 16/143 green including the side-round-trip integration test for real; reviewer flag caught pre-deploy: side is unconditionally in every create-set call, so deploying before the migration would break ALL set logging app-wide, not just per-side (sharper version of the June 8 code-ahead-of-DB incident) - migration landed first, no incident
 - LANDED f66f9ea | l2-tracked-exercise-indicator.md | POST /exercises/resolve (batched, authRequired) + quiet check/hollow-circle indicator next to exercise headings, live + completed sessions | scope exact (6 files), server unit 103/103, client build green, integration 3/3 (401/400/happy path) re-run fresh; no client-side catalog duplication (the one grep hit is a pre-existing unrelated smartWorkoutName.js helper, not touched by this diff); package.json byte-identical, no new hex; module-level resolution cache + post-commit re-resolve verified by diff read
 - LANDED f5767f8 | n3-analytics-subviews.md | analytics page reorg: persistent header (chips + StatTiles) + page-level Muscles\|Strength\|Execution segmented control via ?view= param; DataQuality always renders last | scope exact (3 files), build green, no hex, fetch effect deps unchanged ([weeks] only - confirmed by grep), package.json/other analytics/ files untouched; ?view=bogus and absent both default to muscles per spec
 - LANDED 4dcd829 | n2-profile-hub.md | Profile becomes identity header (avatar/name/member-since) + stat strip (workouts/this week/week streak) + drill-in Appearance/Security/Feedback sub-routes | scope exact (9 files), build green, no hex, package.json byte-identical; profileStats.js weekStreak/countThisWeek contract verified 5/5 by direct node eval; sub-pages confirmed verbatim extractions (same classes/api calls) against pre-N2 ProfilePage.jsx; copy fix "Help improve LogChamp." present, old string gone; parseReviewerEmails centralized, Navbar diff is import-swap only
