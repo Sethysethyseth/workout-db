@@ -27,11 +27,15 @@ already handles it; verify against `metric-info-*`).
 
 CHANGE:
 
-1. **Entry point**: in a LIVE session, the L2 untracked indicator becomes
-   a button ("Not tracked - add to library?" as its title; visually the
-   same hollow glyph plus a small "+"), opening the sheet prefilled with
-   the exercise's current name. Completed sessions keep the passive
-   indicator (no entry point v1).
+1. **Entry point**: in a LIVE session, the untracked indicator becomes a
+   button opening the sheet prefilled with the exercise's current name.
+   NOTE (updated after L2B): the indicator is now a labeled pill
+   (`session-exercise-tracked-pill--unresolved`, text "Not tracked",
+   rendered inside `ExerciseTrackedIndicator`) - turn THAT pill into the
+   button (label becomes "Not tracked - add?", keep the dashed treatment,
+   add a small "+"; title "Not tracked - add to library?"). All markup
+   stays inside `ExerciseTrackedIndicator` per L2B's compatibility note.
+   Completed sessions keep the passive pill (no entry point v1).
 
 2. **The sheet** (`AddExerciseToLibrarySheet`): portal overlay + centered
    card (mobile: bottom-sheet feel, full-width, `max-height` +

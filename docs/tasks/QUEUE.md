@@ -7,17 +7,23 @@ Statuses: DRAFT / QUEUED / DISPATCHED / AWAITING-REVIEW / LANDED <sha> / BOUNCED
 ## Active
 
 L-wave (logging + exercise-library UX), authored July 4 (Fable), branch
-`logging-ux-wave` (off ui-nav-overhaul HEAD). **Dispatch order is
-L2 -> L1 -> L3 -> L4, strictly serialized** - L2 before L1 because L2 runs
-the integration lane and L1 parks an unapplied migration that `npm test`'s
-pretest would silently apply (gated). L1 and L3 each carry a migration:
-Seth applies L1's to staging before L3 dispatches, and L3's before L4
-dispatches (RUNBOOK "Schema-change deploy"). L2 and L1 now LANDED; L1's
-migration is applied + verified on staging and Render is redeployed at
-`4ae0fbf` - L3 dispatches after Seth's smoke sign-off on L2+L1.
+`logging-ux-wave` (off ui-nav-overhaul HEAD). Extended July 5 (Fable) with
+L2B (indicator visibility, from Seth's smoke feedback) and L5 (What's New
+visuals - skeleton built directly by Fable same session, T3 pattern).
+**Dispatch order is now L2B -> L3 -> L4 -> L5, strictly serialized**
+(L2B/L4/L5 all touch index.css; L2B and L4 both touch
+SessionDetailPage.jsx; L2B must precede L4 because L4's entry point builds
+on the L2B pill). L3 still carries the UserExercise migration: Seth
+applies it to staging before L4 dispatches (RUNBOOK "Schema-change
+deploy"); Cursor must NOT run `npm test` in L3. L2 and L1 LANDED; L1's
+migration applied + verified on staging, Render redeployed - Seth's smoke
+sign-off on L2+L1 (`0ee1a51`) still pending; L2B can land first so one
+smoke covers everything.
 
+- QUEUED | l2b-tracked-indicator-visibility.md | tracked/untracked glyph becomes labeled status pills ("Tracked" / "Not tracked") on the exercise heading | Fable-specified design; client-only, no server touch
 - QUEUED | l3-custom-exercises-server.md | UserExercise schema + CRUD + engine resolver/attribution overlay | Fable-designed schema; Cursor must NOT run npm test
-- QUEUED | l4-custom-exercise-ui.md | "Add to library" sheet: name + tap-chip muscle picker (Main/Assists), flips indicator live | needs L3 migration applied to staging first
+- QUEUED | l4-custom-exercise-ui.md | "Add to library" sheet: name + tap-chip muscle picker (Main/Assists), flips indicator live | needs L3 migration applied to staging first; entry-point wording updated for the L2B pill
+- QUEUED | l5-whats-new-visuals.md | Overwatch-patch-notes visual treatment for the What's New modal + archive page | skeleton already committed (data/storage/gate/modal/page); MODEL fable - visual judgment; release copy in whatsNew.js is DRAFT, Seth finalizes at merge time
 
 (N-wave fully landed on `ui-nav-overhaul`, cleared for merge, awaiting
 Seth's "push to main" trigger phrase.)
@@ -26,14 +32,10 @@ Seth's "push to main" trigger phrase.)
 
 - A5 exercise picker (UI, Cursor-suited once A4 FK design is done)
 - A6 name-resolution backfill/aliasing (Cursor-suited, needs A4 first)
-- U11 "what's new" one-time announcement modal (decided July 3, Sonnet
-  session): per-device via `localStorage`, versioned/reusable (not a
-  one-off) so future releases just bump a constant + add bullets. New key
-  must follow the `workoutdb-` prefix convention (see `workoutdb-theme`/
-  `workoutdb-palette` in `ThemeContext.jsx`) per the rename-boundary rule in
-  AGENTS.md - display text is LogChamp, identifiers stay WorkoutDB. First
-  content: the 5-palette rollout (champ/iron/chill/forest/crimson) + the
-  analytics engine. Cursor-suited once Fable authors the block.
+- (U11 "what's new" candidate PROMOTED into the L-wave July 5: skeleton
+  built directly by Fable - `workoutdb-whats-new-seen` key, versioned
+  releases in `client/src/data/whatsNew.js` - and the visual layer queued
+  as L5. Kept here as a pointer only.)
 - NOT queueable: A1 catalog merge (gated migration, Seth manual), A4 FK
   schema design (Claude-tier planning, not a Cursor unit)
 

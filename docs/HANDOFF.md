@@ -1,19 +1,20 @@
 # HANDOFF — current state
 
-**Updated:** July 4, 2026 (Sonnet — Seth's L2/L1 staging smoke surfaced a
-decimal-reps screenshot and a "changes aren't showing" report; triaged live
-via a Playwright-driven browser session against the staging Vercel preview.
-Found and fixed a real L1 bug (`0ee1a51`, pushed to `logging-ux-wave`): the
-sets area rendered nothing when toggling L/R on a fresh 0-set exercise,
-looking exactly like the feature was broken. The decimal-reps screenshots
-turned out to be a separate, pre-existing, unrelated bug (`step="0.01"` on
-the Reps input, ~2 months old — not fixed yet, see Open TODOs). L2 was
-independently confirmed working (Barbell curl showed the tracked checkmark
-correctly). **Not yet done: Seth's re-smoke of L1 + L2 on `0ee1a51`** — L3
-dispatches after sign-off. **`ui-nav-overhaul` is still CLEARED FOR MERGE
-and awaiting Seth's "push to main" trigger phrase** — the L-wave branch
-stacks on top of it and Sonnet should rebase-or-merge reconcile
-`logging-ux-wave` after that merge lands.)
+**Updated:** July 5, 2026 (Fable — L-wave extended per Seth's asks: (1) the
+L2 indicator must be OBVIOUS for both states -> `l2b-tracked-indicator-
+visibility.md` authored (labeled "Tracked"/"Not tracked" pills, full design
+specified in-block); (2) a What's New feature (Overwatch-patch-notes style,
+release date + changes, once per device per release) joins this cycle
+before the main merge -> skeleton BUILT directly this session (T3 pattern)
+and `l5-whats-new-visuals.md` authored for the visual layer (MODEL fable).
+**New dispatch order: L2B -> L3 -> L4 -> L5, strictly serialized**; L4's
+entry-point wording updated to build on the L2B pill. Release copy in
+`client/src/data/whatsNew.js` is DRAFT — Seth finalizes wording + date at
+merge time. Still pending from before: Seth's re-smoke of L1 + L2 on
+`0ee1a51` (now best done after L2B lands so one smoke covers all three),
+and **`ui-nav-overhaul` is still CLEARED FOR MERGE awaiting Seth's "push
+to main" trigger phrase** — the L-wave branch stacks on top of it;
+reconcile `logging-ux-wave` after that merge lands.)
 **Rule:** rewritten in place at the end of every working session. Dated, never versioned. If this file looks stale (date > ~2 weeks old), verify branch/deploy state from ground truth before trusting it.
 
 ---
@@ -40,6 +41,63 @@ stacks on top of it and Sonnet should rebase-or-merge reconcile
   - No schema changes rode along — `analytics-engine`'s merge has no migration coupling. The separate `exercise-catalog-seed` branch (A1) still has its own gated migration track.
 - **Render/Vercel not yet repointed from the `analytics-engine` staging deploy back to `main`** — RUNBOOK step 6 ("Repoint staging Render back to main. Verify redeploy SHA in Events.") is still open; do this before smoking prod.
 - Username feature LIVE and verified on both environments (unchanged).
+
+## Session log (July 5 — L2B + What's New: skeleton built, two blocks authored, Fable)
+
+- **Seth's two asks this session:** (1) the tracked checkmark AND the
+  not-in-database state must be far more obvious to the user; (2) a
+  "What's New" feature joins this cycle before anything merges to main —
+  Overwatch-patch-notes feel (release date + what changed) but in the
+  LogChamp aesthetic/theme, skeleton built now, and Fable personally owns
+  the checkmark design (still executed via a Cursor block, per the relay).
+- **L2B block authored (`l2b-tracked-indicator-visibility.md`, MODEL
+  sonnet):** the 14px glyph tucked in the muted "· N sets" meta text
+  becomes labeled status pills rendered as their own element on the
+  heading line — "Tracked" (success-token family: bg/border/text, NOT
+  accent, so it reads as status rather than something selectable) and
+  "Not tracked" (dashed border, muted text — the dashed semantics carry
+  over from the old hollow circle). Exact placement, classes, CSS values,
+  and the success-vs-accent rationale are written into the block so
+  Cursor implements rather than improvises. L4 compatibility preserved:
+  all pill markup stays inside `ExerciseTrackedIndicator`, and L4's
+  entry-point wording was amended in place to build on the pill.
+- **What's New SKELETON built directly by Fable (T3 pattern - structure/
+  behavior in-session, visuals to a block), client build green:**
+  - `client/src/data/whatsNew.js` — versioned releases array (newest
+    first), `LATEST_RELEASE`, `formatReleaseDate`; bumping the top entry's
+    `id` is what re-fires the modal per device. Seeded with DRAFT copy for
+    this merge train (analytics/logging/navigation/look-and-feel sections)
+    — Seth finalizes wording + date at merge time.
+  - `client/src/lib/whatsNewStorage.js` — `workoutdb-whats-new-seen`
+    localStorage key (rename-boundary compliant; accessor pattern copied
+    from `weightUnitPref.js` for later account-level promotion).
+  - `client/src/components/whatsnew/` — `WhatsNewGate` (logged-in only,
+    fires once per device per release, mounted in `Layout.jsx`),
+    `WhatsNewModal` (fixed-overlay pattern from `UsernameRequiredModal`,
+    inside #root so no portal/stacking hazard; dismiss = Got it, backdrop,
+    Escape, or the see-all link; role=dialog + aria wiring),
+    `WhatsNewContent` (one release: date kicker/title/tagline/sections —
+    shared by modal + archive page).
+  - `client/src/pages/profile/WhatsNewPage.jsx` at `/profile/whats-new` —
+    full archive, newest first, profile sub-page pattern (back pill,
+    settings-page-title); visiting marks the latest release seen. New
+    "What's new" settings row on the Profile hub.
+  - `client/src/index.css` — structural rules only under a comment
+    explicitly marking them SKELETON for L5 to replace/extend.
+- **L5 block authored (`l5-whats-new-visuals.md`, MODEL fable —
+  judgment-heavy visual design, same reasoning as T3's visual block):**
+  the Overwatch translation — announcement-poster header band, strong
+  accent-derived section headers, bullet rhythm, ONE restrained entrance
+  (150-250ms, ease-out), archive page as a changelog of posters. Gate/
+  storage/dismiss/a11y/data all explicitly off-limits.
+- **Dispatch order updated in QUEUE.md: L2B -> L3 -> L4 -> L5, strictly
+  serialized** (index.css + SessionDetailPage collisions; L2B before L4
+  because L4's entry point builds on the pill). U11 candidate closed out
+  as promoted into the wave.
+- **Not yet done:** dispatch L2B (Seth points Cursor at it); Seth's
+  combined smoke of L1 + L2 + L2B once L2B lands (supersedes the pending
+  `0ee1a51` re-smoke — one pass covers all three); everything else in
+  Open TODOs unchanged.
 
 ## Session log (July 4 latest+10 — L1 blank-toggle bug found + fixed, Sonnet)
 
