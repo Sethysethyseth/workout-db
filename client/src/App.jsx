@@ -18,6 +18,7 @@ import { ProfilePage } from "./pages/ProfilePage.jsx";
 import { AppearancePage } from "./pages/profile/AppearancePage.jsx";
 import { SecurityPage } from "./pages/profile/SecurityPage.jsx";
 import { FeedbackPage } from "./pages/profile/FeedbackPage.jsx";
+import { WhatsNewPage } from "./pages/profile/WhatsNewPage.jsx";
 import { DevFeedbackPage } from "./pages/DevFeedbackPage.jsx";
 import { HelloPage } from "./pages/HelloPage.jsx";
 
@@ -140,6 +141,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <FeedbackPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile/whats-new"
+          element={
+            <ProtectedRoute>
+              <WhatsNewPage />
             </ProtectedRoute>
           }
         />

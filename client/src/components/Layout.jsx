@@ -2,6 +2,7 @@ import { Outlet } from "react-router-dom";
 import { BottomNav } from "./layout/BottomNav.jsx";
 import { Navbar } from "./layout/Navbar.jsx";
 import { PersistentWorkoutBar } from "./workout/PersistentWorkoutBar.jsx";
+import { WhatsNewGate } from "./whatsnew/WhatsNewGate.jsx";
 
 export function Layout() {
   return (
@@ -14,6 +15,7 @@ export function Layout() {
         <Outlet />
       </main>
       <BottomNav />
+      <WhatsNewGate />
     </div>
   );
 }

@@ -4697,6 +4697,68 @@ html[data-theme="dark"] .auth-page .auth-form.card {
   text-align: center;
 }
 
+/* ---------------------------------------------------------------------------
+   What's new (release notes) - SKELETON ONLY. Structure/behavior lives in
+   client/src/components/whatsnew/; the visual patch-notes treatment (L5 task
+   block) replaces/extends these rules. Tokens only, as everywhere. */
+
+.whats-new-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: var(--color-overlay);
+}
+
+.whats-new-card {
+  width: 100%;
+  max-width: 28rem;
+  max-height: min(84dvh, 42rem);
+  overflow-y: auto;
+}
+
+.whats-new-kicker {
+  margin: 0;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.whats-new-release__date {
+  margin: 0;
+}
+
+.whats-new-release__title {
+  margin: 0;
+}
+
+.whats-new-release__tagline {
+  margin: 0;
+}
+
+.whats-new-section__heading {
+  margin: 0 0 4px;
+}
+
+.whats-new-section__list {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.whats-new-section__item + .whats-new-section__item {
+  margin-top: 4px;
+}
+
+.whats-new-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 /* --- Analytics page (B5) --- */
 
 .analytics-page .analytics-intro {
