@@ -17,6 +17,16 @@ implement as specified, bounce if the spec conflicts with reality rather
 than improvising. The UI for this lands separately (L4); this unit is
 schema + API + engine overlay only.
 
+A6 NOTE (landed 3f7fe14, July 5, before this unit): `resolveExercise` now
+has an alias tier (curated `server/data/exercise-aliases.json` + a plural
+fold) inside the catalog path. Nothing in this block changes, but read
+"resolves against the catalog" as INCLUDING alias/fold hits everywhere it
+appears below - so POST /custom's "already tracked as <canonicalName>"
+rejection fires for "bench press" or "squats" too (resolveExercise already
+returns the aliased catalogEntry; no extra code). Catalog + alias always
+beat the user overlay; your new third arg slots after them, exactly as
+specced.
+
 FILES TO TOUCH:
 - server/prisma/schema.prisma                    (UserExercise model + User relation)
 - server/prisma/migrations/20260704130000_add_user_exercise/migration.sql (NEW, hand-authored)

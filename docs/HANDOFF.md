@@ -1,31 +1,27 @@
 # HANDOFF — current state
 
-**Updated:** July 5, 2026 later (Sonnet — L2B landed, then Seth's smoke
-surfaced the resolution gap; ESCALATED TO FABLE, L3 dispatch PAUSED.**
-L2B (`ef4ac98`) shipped clean. Seth's smoke screenshots (real "Bench
-press" logged as "Not tracked", gibberish also "Not tracked") led to a
-root-cause dig: the tracked-pill/resolve code is working exactly as
-designed — the actual gap is the catalog itself. `resolveExercise` is
-exact-normalized-name match only, and `server/data/exercises.json` (873
-entries, vendored free-exercise-db) has NO bare "Bench Press" entry, only
-qualified variants ("Barbell Bench Press - Medium Grip", "Dumbbell Bench
-Press", "Machine Bench Press", etc.) — no alias field exists anywhere in
-the data. Tested 10 common colloquial lift names: 9/10 fail to resolve
-(bench press/squat/deadlift/overhead press/pull up/push up/bent-over
-row/curl/lat pulldown all `false`; only "leg press" happened to match
-verbatim). This means the L2/L2B indicator will read "Not tracked" for
-most real-world logging — it undermines the feature it's meant to
-communicate. **This is the pre-existing A6 candidate (name-resolution
-backfill/aliasing) — Seth chose to escalate to Fable now rather than
-patch around it or continue L-wave regardless.** L3/L4 dispatch is
-PAUSED pending Fable's A6 design session (schema/data-model judgment call,
-per the standing escalation triggers — Sonnet does not design this).
-Still pending underneath: Seth's combined smoke sign-off on L1+L2+L2B
-(`ef4ac98`) - the L1/L2 mechanics themselves passed, only the resolution
-data gap was the finding. Release copy in `client/src/data/whatsNew.js`
-still DRAFT. **`ui-nav-overhaul` still CLEARED FOR MERGE awaiting Seth's
-"push to main" trigger phrase** — the L-wave branch stacks on top of it;
-reconcile `logging-ux-wave` after that merge lands.)
+**Updated:** July 5, 2026 latest (Fable — A6 RESOLVED `3f7fe14`, pushed;
+L3/L4/L5 dispatch UNPAUSED.** The escalated resolution gap is fixed by a
+curated alias layer, built directly by Fable in the escalation session
+(hybrid precedent — the curation IS the judgment work; no relay): 92
+vendored aliases in `server/data/exercise-aliases.json` + a rationale doc
+(same-commit rule), a guarded trailing-s plural fold applied to both
+catalog names and queries, and an alias tier in `resolveExercise`
+(exerciseId > exact name > alias > unresolved). The July 5 smoke list now
+resolves 10/10; unit lane 111/111 (8 new tests, the 10-name list pinned);
+NO schema, NO migration, NO API-shape or client change — the L2B pill
+just starts reading "Tracked" for real names. Deliberately NOT aliased:
+movements the catalog genuinely lacks (bulgarian split squat, pendlay
+row) — those stay honestly unresolved; they're L3's job. A6 landed
+BEFORE L3 on purpose: L3's "name must not already resolve against the
+catalog" validation now includes aliases for free (A6 NOTE added to the
+L3 block). **Next: Seth's combined smoke of L1+L2+L2B+A6 on `3f7fe14`**
+(staging Render redeploys this push — verify the SHA in Events first),
+then dispatch L3 -> L4 -> L5, strictly serialized. Release copy in
+`client/src/data/whatsNew.js` still DRAFT. **`ui-nav-overhaul` still
+CLEARED FOR MERGE awaiting Seth's "push to main" trigger phrase** — the
+L-wave branch stacks on top of it; reconcile `logging-ux-wave` after that
+merge lands.)
 **Rule:** rewritten in place at the end of every working session. Dated, never versioned. If this file looks stale (date > ~2 weeks old), verify branch/deploy state from ground truth before trusting it.
 
 ---
@@ -53,7 +49,59 @@ reconcile `logging-ux-wave` after that merge lands.)
 - **Render/Vercel not yet repointed from the `analytics-engine` staging deploy back to `main`** — RUNBOOK step 6 ("Repoint staging Render back to main. Verify redeploy SHA in Events.") is still open; do this before smoking prod.
 - Username feature LIVE and verified on both environments (unchanged).
 
-## Session log (July 5 latest — resolution gap found, escalated to Fable, Sonnet)
+## Session log (July 5 latest — A6 designed + landed, Fable)
+
+- **Design settled (the escalation's question):** aliases live in VENDORED
+  DATA (`server/data/exercise-aliases.json`, alias -> catalog id), not a
+  DB table/column (the catalog itself is a vendored file that never
+  touches the DB — a migration would be wrong-layer and drags in the
+  gated migration track for nothing) and not client-side (L2 already
+  enforces no client catalog duplication). Curated + deterministic, NO
+  fuzzy matching: a fuzzy false positive silently books volume against
+  the wrong muscles; the honesty principle prefers a true "Not tracked".
+  One mechanical rule rides along: a trailing-s plural fold (guarded
+  against "ss" endings so "press"/"leg press" are safe, and against
+  <=3-char strings), applied to catalog names at load AND queries at
+  lookup — buys "squats", "push ups", "chin ups", and singular queries
+  against plural catalog entries ("seated cable row" -> "Seated Cable
+  Rows") without curating every plural.
+- **Executed directly by Fable, no relay** (hybrid precedent from July 4:
+  block-authoring would cost the same Fable tokens as just doing it, and
+  the alias curation is itself the judgment work). 92 aliases, every
+  target validated against the catalog by the authoring script (which
+  also caught that "Seated Calf Raise" exists verbatim and would have
+  been shadowed); `loadCatalog()` re-validates at load with warn-and-skip
+  (unknown target / shadows-real-name / duplicate), matching the existing
+  collision pattern. `resolveExercise` precedence: exerciseId > exact
+  normalized name > alias/fold > unresolved; alias hits report
+  `source: "alias"` and carry the target `catalogEntry`, so attribution,
+  the resolve endpoint, and the L2B pill all work unchanged.
+- **Ambiguity calls recorded in `server/data/exercise-aliases-rationale.md`**
+  (same-commit rule, like muscle-weights): "bench press" -> Barbell Bench
+  Press - Medium Grip; OHP family -> Standing Military Press; "dip" ->
+  Dips - Triceps Version; "pec deck" -> Butterfly; "lunge" -> Dumbbell
+  Lunges; etc. Deliberately NOT aliased: bulgarian split squat, pendlay
+  row — genuinely missing upstream, aliasing to a neighbor would
+  misattribute; they're the motivating cases for L3 custom exercises.
+- **Verified:** unit lane 111/111 (8 new resolve tests incl. the pinned
+  10-name smoke list at 10/10 and a no-alias-shadows-real-name sweep);
+  direct node check: all 10 smoke names + 26 broader colloquial spellings
+  resolve to the right canonical ids, gibberish still false. Integration
+  lane deliberately NOT run: the endpoint is untouched (pure-function
+  change) and `npm test` resets the staging DB — would wipe smoke
+  accounts right before Seth's pending sign-off.
+- **Committed `3f7fe14`** (6 files: 2 new data/doc, 3 engine, 1 test),
+  pushed, confirmed on `origin/logging-ux-wave`. Stray
+  `.claude/settings.json` edit left uncommitted per standing precedent.
+- **L3/L4/L5 dispatch UNPAUSED** (QUEUE.md updated; A6 NOTE added to the
+  L3 block: "resolves against the catalog" now includes alias/fold hits,
+  no spec change needed). A6 QUEUE candidate closed out as a pointer.
+- **Not yet done:** Seth's combined smoke of L1+L2+L2B+A6 on `3f7fe14`
+  (verify staging Render redeployed at that SHA first); then L3
+  dispatches (carries the UserExercise migration — Cursor must NOT run
+  `npm test`; Seth applies per RUNBOOK before L4).
+
+## Session log (July 5 earlier — resolution gap found, escalated to Fable, Sonnet)
 
 - **Seth smoked L2B via two phone screenshots** (dropped as Discord-CDN
   `.url` shortcuts in `claudefiledrop/`, fetched directly since the

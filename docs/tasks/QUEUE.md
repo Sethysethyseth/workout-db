@@ -11,21 +11,21 @@ L-wave (logging + exercise-library UX), authored July 4 (Fable), branch
 L2B (indicator visibility, from Seth's smoke feedback) and L5 (What's New
 visuals - skeleton built directly by Fable same session, T3 pattern).
 L2B, L2, and L1 all LANDED; L1's migration applied + verified on staging,
-Render redeployed - Seth's combined smoke sign-off on L1+L2+L2B
-(`ef4ac98`) still pending mechanically, but the smoke ALSO surfaced the
-A6 resolution-gap finding below (real "Bench press" reads "Not tracked" -
-catalog has no bare-name entries, 9/10 common lift names fail to
-resolve). **L3/L4/L5 DISPATCH PAUSED pending a Fable session to design
-A6** (Seth's call, escalated rather than patched or deferred - see
-HANDOFF.md "resolution gap found" session log for full root-cause
-writeup). Once A6 is designed and queued: L3 still carries the
-UserExercise migration (Seth applies to staging before L4; Cursor must
-NOT run `npm test` in L3); L4/L5 both touch index.css, and L4's entry
-point builds on the L2B pill (landed) - dispatch order L3 -> L4 -> L5
-still strictly serialized once resumed, with A6 slotting in wherever
-Fable decides (before L3, alongside it, or after - open question).
+Render redeployed. **A6 RESOLVED July 5 (Fable session, done directly not
+relayed - `3f7fe14`, pushed):** curated alias layer (92 vendored aliases +
+rationale doc in `server/data/`, guarded trailing-s plural fold, alias
+tier in `resolveExercise` between exact match and unresolved). The July 5
+smoke list now resolves 10/10; no schema, no migration, no API change.
+**DISPATCH UNPAUSED - order L3 -> L4 -> L5, strictly serialized.** A6
+landed BEFORE L3 deliberately: L3's "name must not already resolve
+against the catalog" validation now includes aliases for free (its block
+carries an A6 NOTE). L3 still carries the UserExercise migration (Seth
+applies to staging before L4; Cursor must NOT run `npm test` in L3);
+L4/L5 both touch index.css, and L4's entry point builds on the L2B pill.
+Seth's combined smoke sign-off on L1+L2+L2B is still pending - one pass
+on `3f7fe14` now also covers the A6 fix (real names show "Tracked").
 
-- PAUSED | l3-custom-exercises-server.md | UserExercise schema + CRUD + engine resolver/attribution overlay | Fable-designed schema; Cursor must NOT run npm test; dispatch paused pending A6 design decision (see above)
+- QUEUED | l3-custom-exercises-server.md | UserExercise schema + CRUD + engine resolver/attribution overlay | Fable-designed schema; Cursor must NOT run npm test; A6 NOTE added to block (aliases count as catalog-resolvable)
 - QUEUED | l4-custom-exercise-ui.md | "Add to library" sheet: name + tap-chip muscle picker (Main/Assists), flips indicator live | needs L3 migration applied to staging first; entry-point wording updated for the L2B pill
 - QUEUED | l5-whats-new-visuals.md | Overwatch-patch-notes visual treatment for the What's New modal + archive page | skeleton already committed (data/storage/gate/modal/page); MODEL fable - visual judgment; release copy in whatsNew.js is DRAFT, Seth finalizes at merge time
 
@@ -35,16 +35,10 @@ Seth's "push to main" trigger phrase.)
 ## Candidates (next units, not yet authored as blocks)
 
 - A5 exercise picker (UI, Cursor-suited once A4 FK design is done)
-- **A6 name-resolution backfill/aliasing — PROMOTED to blocking, July 5
-  (Sonnet finding, Seth escalated to Fable).** No longer a someday-item:
-  L2/L2B smoke showed 9/10 common lift names (bench press, squat,
-  deadlift, overhead press, pull up, push up, bent-over row, curl, lat
-  pulldown) fail to resolve against the catalog verbatim - only fully
-  qualified variant names exist, no alias field anywhere in
-  `server/data/exercises.json`. Needs a Fable session to design the fix
-  (alias table vs. new column vs. client-side synonym map) before L3/L4
-  dispatch resumes on `logging-ux-wave`. Full root-cause writeup in
-  HANDOFF.md's "resolution gap found" session log.
+- (A6 name-resolution aliasing RESOLVED July 5, Fable direct - `3f7fe14`
+  on `logging-ux-wave`; see Active section + the Landed row. Curation
+  grows via `server/data/exercise-aliases.json` + its rationale doc,
+  same-commit rule. Kept here as a pointer only.)
 - (U11 "what's new" candidate PROMOTED into the L-wave July 5: skeleton
   built directly by Fable - `workoutdb-whats-new-seen` key, versioned
   releases in `client/src/data/whatsNew.js` - and the visual layer queued
@@ -54,6 +48,7 @@ Seth's "push to main" trigger phrase.)
 
 ## Landed
 
+- LANDED 3f7fe14 | (A6, no task block - Fable direct) | colloquial-name alias layer: 92 curated vendored aliases + rationale doc + guarded plural fold; alias tier in resolveExercise (exerciseId > exact name > alias) | unit lane 111/111 (8 new tests incl. the 10-name smoke list pinned 10/10); integration lane deliberately NOT run (endpoint untouched, avoids wiping staging smoke accounts pre-sign-off); no client change, no schema, no migration
 - LANDED ef4ac98 | l2b-tracked-indicator-visibility.md | tracked/untracked glyph becomes labeled status pills ("Tracked" / "Not tracked") on the exercise heading | scope exact (2 files), client build green, server unit 103/103 (no server touch), package.json byte-identical, no new hex (success-token family + existing color-mix pattern); labels present as JSX text children (grep for literal `>Tracked<` found nothing since that's compiled-HTML shape, not JSX source - verified by direct read instead, same precedent as N1's tryNavigate); pill moved out of the muted meta span per spec
 - LANDED 4ae0fbf | l1-unilateral-side-logging.md | nullable WorkoutSet.side ("L"/"R"); exercises named "single" (or L/R toggle) log sets as Left/Right pairs, Right weight autofills from Left on blur (one-way, one-time, no focus steal); set-count/add/remove operate on pairs | scope exact (6 files), server unit 103/103 + client build green pre-migration, then migration applied to staging (Seth, RUNBOOK) and independently re-verified: `prisma migrate status` clean (13 migrations, no drift), full `npm test` 16/143 green including the side-round-trip integration test for real; reviewer flag caught pre-deploy: side is unconditionally in every create-set call, so deploying before the migration would break ALL set logging app-wide, not just per-side (sharper version of the June 8 code-ahead-of-DB incident) - migration landed first, no incident
 - LANDED f66f9ea | l2-tracked-exercise-indicator.md | POST /exercises/resolve (batched, authRequired) + quiet check/hollow-circle indicator next to exercise headings, live + completed sessions | scope exact (6 files), server unit 103/103, client build green, integration 3/3 (401/400/happy path) re-run fresh; no client-side catalog duplication (the one grep hit is a pre-existing unrelated smartWorkoutName.js helper, not touched by this diff); package.json byte-identical, no new hex; module-level resolution cache + post-commit re-resolve verified by diff read
