@@ -2982,27 +2982,35 @@ html[data-theme="dark"] .session-finish-dock {
   font-weight: 600;
 }
 
-.session-exercise-tracked-badge {
+.session-exercise-tracked-pill {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  width: 14px;
-  height: 14px;
-  margin-left: 6px;
-  vertical-align: -2px;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  margin-left: 8px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.session-exercise-tracked-pill svg {
+  display: block;
   flex-shrink: 0;
 }
 
-.session-exercise-tracked-badge svg {
-  display: block;
+.session-exercise-tracked-pill--resolved {
+  background: var(--color-success-bg);
+  border: 1px solid var(--color-success-border);
+  color: var(--color-success-text);
 }
 
-.session-exercise-tracked-badge--resolved {
-  color: color-mix(in srgb, var(--color-interactive) 72%, var(--color-text-secondary));
-}
-
-.session-exercise-tracked-badge--unresolved {
-  color: color-mix(in srgb, var(--color-text-secondary) 55%, var(--color-border));
+.session-exercise-tracked-pill--unresolved {
+  background: transparent;
+  border: 1px dashed color-mix(in srgb, var(--color-text-secondary) 45%, var(--color-border));
+  color: var(--color-text-secondary);
 }
 
 .session-exercise-heading-summary {

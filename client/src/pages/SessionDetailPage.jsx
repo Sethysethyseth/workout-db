@@ -96,11 +96,11 @@ function ExerciseTrackedIndicator({ status }) {
   if (status === "resolved") {
     return (
       <span
-        className="session-exercise-tracked-badge session-exercise-tracked-badge--resolved"
+        className="session-exercise-tracked-pill session-exercise-tracked-pill--resolved"
         title="Tracked - counts toward your analytics"
         aria-label="Tracked - counts toward your analytics"
       >
-        <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
+        <svg width="12" height="12" viewBox="0 0 14 14" aria-hidden="true">
           <circle cx="7" cy="7" r="6" fill="none" stroke="currentColor" strokeWidth="1.25" />
           <path
             d="M4.25 7.25 L6.25 9.25 L9.75 4.75"
@@ -111,17 +111,18 @@ function ExerciseTrackedIndicator({ status }) {
             strokeLinejoin="round"
           />
         </svg>
+        Tracked
       </span>
     );
   }
   if (status === "unresolved") {
     return (
       <span
-        className="session-exercise-tracked-badge session-exercise-tracked-badge--unresolved"
+        className="session-exercise-tracked-pill session-exercise-tracked-pill--unresolved"
         title="Not in the exercise library yet - analytics can't attribute this one"
         aria-label="Not in the exercise library yet - analytics can't attribute this one"
       >
-        <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
+        <svg width="12" height="12" viewBox="0 0 14 14" aria-hidden="true">
           <circle
             cx="7"
             cy="7"
@@ -132,6 +133,7 @@ function ExerciseTrackedIndicator({ status }) {
             strokeDasharray="2.5 2"
           />
         </svg>
+        Not tracked
       </span>
     );
   }
@@ -1112,8 +1114,8 @@ function SessionExerciseBlock({
         <span className="session-exercise-heading-meta muted">
           {" "}
           · {setCountLabel}
-          <ExerciseTrackedIndicator status={trackedStatus} />
         </span>
+        <ExerciseTrackedIndicator status={trackedStatus} />
         {summaryLine ? (
           <span className="session-exercise-heading-summary muted small"> · {summaryLine}</span>
         ) : null}
