@@ -10,17 +10,14 @@ L-wave (logging + exercise-library UX), authored July 4 (Fable), branch
 `logging-ux-wave` (off ui-nav-overhaul HEAD). Extended July 5 (Fable) with
 L2B (indicator visibility, from Seth's smoke feedback) and L5 (What's New
 visuals - skeleton built directly by Fable same session, T3 pattern).
-**Dispatch order is now L2B -> L3 -> L4 -> L5, strictly serialized**
-(L2B/L4/L5 all touch index.css; L2B and L4 both touch
-SessionDetailPage.jsx; L2B must precede L4 because L4's entry point builds
-on the L2B pill). L3 still carries the UserExercise migration: Seth
-applies it to staging before L4 dispatches (RUNBOOK "Schema-change
-deploy"); Cursor must NOT run `npm test` in L3. L2 and L1 LANDED; L1's
-migration applied + verified on staging, Render redeployed - Seth's smoke
-sign-off on L2+L1 (`0ee1a51`) still pending; L2B can land first so one
-smoke covers everything.
+**Dispatch order is now L3 -> L4 -> L5, strictly serialized** (L4/L5 both
+touch index.css; L4's entry point builds on the L2B pill, now landed). L3
+still carries the UserExercise migration: Seth applies it to staging
+before L4 dispatches (RUNBOOK "Schema-change deploy"); Cursor must NOT run
+`npm test` in L3. L2B, L2, and L1 all LANDED; L1's migration applied +
+verified on staging, Render redeployed - Seth's combined smoke sign-off on
+L1+L2+L2B (`ef4ac98`) still pending, one pass covers all three.
 
-- QUEUED | l2b-tracked-indicator-visibility.md | tracked/untracked glyph becomes labeled status pills ("Tracked" / "Not tracked") on the exercise heading | Fable-specified design; client-only, no server touch
 - QUEUED | l3-custom-exercises-server.md | UserExercise schema + CRUD + engine resolver/attribution overlay | Fable-designed schema; Cursor must NOT run npm test
 - QUEUED | l4-custom-exercise-ui.md | "Add to library" sheet: name + tap-chip muscle picker (Main/Assists), flips indicator live | needs L3 migration applied to staging first; entry-point wording updated for the L2B pill
 - QUEUED | l5-whats-new-visuals.md | Overwatch-patch-notes visual treatment for the What's New modal + archive page | skeleton already committed (data/storage/gate/modal/page); MODEL fable - visual judgment; release copy in whatsNew.js is DRAFT, Seth finalizes at merge time
@@ -41,6 +38,7 @@ Seth's "push to main" trigger phrase.)
 
 ## Landed
 
+- LANDED ef4ac98 | l2b-tracked-indicator-visibility.md | tracked/untracked glyph becomes labeled status pills ("Tracked" / "Not tracked") on the exercise heading | scope exact (2 files), client build green, server unit 103/103 (no server touch), package.json byte-identical, no new hex (success-token family + existing color-mix pattern); labels present as JSX text children (grep for literal `>Tracked<` found nothing since that's compiled-HTML shape, not JSX source - verified by direct read instead, same precedent as N1's tryNavigate); pill moved out of the muted meta span per spec
 - LANDED 4ae0fbf | l1-unilateral-side-logging.md | nullable WorkoutSet.side ("L"/"R"); exercises named "single" (or L/R toggle) log sets as Left/Right pairs, Right weight autofills from Left on blur (one-way, one-time, no focus steal); set-count/add/remove operate on pairs | scope exact (6 files), server unit 103/103 + client build green pre-migration, then migration applied to staging (Seth, RUNBOOK) and independently re-verified: `prisma migrate status` clean (13 migrations, no drift), full `npm test` 16/143 green including the side-round-trip integration test for real; reviewer flag caught pre-deploy: side is unconditionally in every create-set call, so deploying before the migration would break ALL set logging app-wide, not just per-side (sharper version of the June 8 code-ahead-of-DB incident) - migration landed first, no incident
 - LANDED f66f9ea | l2-tracked-exercise-indicator.md | POST /exercises/resolve (batched, authRequired) + quiet check/hollow-circle indicator next to exercise headings, live + completed sessions | scope exact (6 files), server unit 103/103, client build green, integration 3/3 (401/400/happy path) re-run fresh; no client-side catalog duplication (the one grep hit is a pre-existing unrelated smartWorkoutName.js helper, not touched by this diff); package.json byte-identical, no new hex; module-level resolution cache + post-commit re-resolve verified by diff read
 - LANDED f5767f8 | n3-analytics-subviews.md | analytics page reorg: persistent header (chips + StatTiles) + page-level Muscles\|Strength\|Execution segmented control via ?view= param; DataQuality always renders last | scope exact (3 files), build green, no hex, fetch effect deps unchanged ([weeks] only - confirmed by grep), package.json/other analytics/ files untouched; ?view=bogus and absent both default to muscles per spec

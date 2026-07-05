@@ -1,20 +1,15 @@
 # HANDOFF — current state
 
-**Updated:** July 5, 2026 (Fable — L-wave extended per Seth's asks: (1) the
-L2 indicator must be OBVIOUS for both states -> `l2b-tracked-indicator-
-visibility.md` authored (labeled "Tracked"/"Not tracked" pills, full design
-specified in-block); (2) a What's New feature (Overwatch-patch-notes style,
-release date + changes, once per device per release) joins this cycle
-before the main merge -> skeleton BUILT directly this session (T3 pattern)
-and `l5-whats-new-visuals.md` authored for the visual layer (MODEL fable).
-**New dispatch order: L2B -> L3 -> L4 -> L5, strictly serialized**; L4's
-entry-point wording updated to build on the L2B pill. Release copy in
-`client/src/data/whatsNew.js` is DRAFT — Seth finalizes wording + date at
-merge time. Still pending from before: Seth's re-smoke of L1 + L2 on
-`0ee1a51` (now best done after L2B lands so one smoke covers all three),
-and **`ui-nav-overhaul` is still CLEARED FOR MERGE awaiting Seth's "push
-to main" trigger phrase** — the L-wave branch stacks on top of it;
-reconcile `logging-ux-wave` after that merge lands.)
+**Updated:** July 5, 2026 (Sonnet — L2B landed. `l2b-tracked-indicator-
+visibility.md` executed by Cursor, reviewed and committed (`ef4ac98`, 2
+files, +27/-17), pushed to `origin/logging-ux-wave`. **Dispatch order now
+L3 -> L4 -> L5, strictly serialized** (L2B done). Still pending: Seth's
+combined smoke of L1 + L2 + L2B on `ef4ac98` (one pass covers all three).
+Release copy in `client/src/data/whatsNew.js` is still DRAFT — Seth
+finalizes wording + date at merge time. **`ui-nav-overhaul` is still
+CLEARED FOR MERGE awaiting Seth's "push to main" trigger phrase** — the
+L-wave branch stacks on top of it; reconcile `logging-ux-wave` after that
+merge lands.)
 **Rule:** rewritten in place at the end of every working session. Dated, never versioned. If this file looks stale (date > ~2 weeks old), verify branch/deploy state from ground truth before trusting it.
 
 ---
@@ -41,6 +36,34 @@ reconcile `logging-ux-wave` after that merge lands.)
   - No schema changes rode along — `analytics-engine`'s merge has no migration coupling. The separate `exercise-catalog-seed` branch (A1) still has its own gated migration track.
 - **Render/Vercel not yet repointed from the `analytics-engine` staging deploy back to `main`** — RUNBOOK step 6 ("Repoint staging Render back to main. Verify redeploy SHA in Events.") is still open; do this before smoking prod.
 - Username feature LIVE and verified on both environments (unchanged).
+
+## Session log (July 5 later — L2B landed, Sonnet)
+
+- **Cursor executed `l2b-tracked-indicator-visibility.md`; Sonnet reviewed
+  and committed (`ef4ac98`, 2 files, +27/-17), pushed to
+  `origin/logging-ux-wave`.** Scope exact (the 2 specced files; the usual
+  stray unrelated `.claude/settings.json` edit left uncommitted). Client
+  build green, server unit lane 103/103 (no server touch, as expected).
+  `grep session-exercise-tracked-badge` -> zero hits (old classes fully
+  replaced). Package.json byte-identical both sides, no new hex - the
+  resolved pill uses the success-token family exactly as specified
+  (`--color-success-bg/border/text`, defined for both light and dark),
+  the unresolved pill keeps the dashed-border pattern via `color-mix` off
+  `--color-text-secondary`. Placement matches spec exactly: indicator
+  moved out of the muted `session-exercise-heading-meta` span, now a
+  direct sibling before `summaryLine`. **One acceptance-criterion grep
+  didn't literally match** (`>Tracked<`/`>Not tracked<` assumes compiled-
+  HTML shape; the JSX source has `Tracked`/`Not tracked` as plain text
+  children on their own line, not wrapped in `>...<`) — verified by direct
+  read instead (both labels present, correctly gated per status), same
+  precedent as N1's `tryNavigate` grep-wording mismatch. Not bounced.
+  Clean delivery otherwise - no reviewer fixes needed.
+- **Not yet done:** Seth's combined smoke of L1 + L2 + L2B on `ef4ac98`
+  (per-side toggle, tracked-exercise resolution, and now the pill's
+  legibility across palettes x light/dark on both collapsed and expanded
+  headings, plus ~360px width wrap behavior). L3 dispatches after
+  sign-off — it carries the `UserExercise` migration, so Cursor must NOT
+  run `npm test` on it.
 
 ## Session log (July 5 — L2B + What's New: skeleton built, two blocks authored, Fable)
 
