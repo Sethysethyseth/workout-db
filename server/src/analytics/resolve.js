@@ -1,5 +1,8 @@
 const { loadCatalog } = require("./catalog");
-const { normalizeExerciseName } = require("./normalize");
+const {
+  normalizeExerciseName,
+  foldExerciseNamePlural,
+} = require("./normalize");
 
 function resolveExercise(input, catalog = loadCatalog()) {
   const { exerciseName, exerciseId } = input || {};
@@ -13,12 +16,44 @@ function resolveExercise(input, catalog = loadCatalog()) {
   }
 
   const normalized = normalizeExerciseName(exerciseName);
-  if (normalized && catalog.byNormalizedName.has(normalized)) {
-    return {
-      resolved: true,
-      source: "exerciseName",
-      catalogEntry: catalog.byNormalizedName.get(normalized),
-    };
+  if (normalized) {
+    if (catalog.byNormalizedName.has(normalized)) {
+      return {
+        resolved: true,
+        source: "exerciseName",
+        catalogEntry: catalog.byNormalizedName.get(normalized),
+      };
+    }
+
+    // Alias layer: curated colloquial names + plural folds, both directions
+    // (folded catalog names live in byAlias; the query is folded here).
+    // catalog.byAlias is optional so hand-built catalogs in tests still work.
+    const byAlias = catalog.byAlias;
+    if (byAlias && byAlias.has(normalized)) {
+      return {
+        resolved: true,
+        source: "alias",
+        catalogEntry: byAlias.get(normalized),
+      };
+    }
+
+    const folded = foldExerciseNamePlural(normalized);
+    if (folded !== normalized) {
+      if (catalog.byNormalizedName.has(folded)) {
+        return {
+          resolved: true,
+          source: "alias",
+          catalogEntry: catalog.byNormalizedName.get(folded),
+        };
+      }
+      if (byAlias && byAlias.has(folded)) {
+        return {
+          resolved: true,
+          source: "alias",
+          catalogEntry: byAlias.get(folded),
+        };
+      }
+    }
   }
 
   return { resolved: false, source: null, catalogEntry: null };
