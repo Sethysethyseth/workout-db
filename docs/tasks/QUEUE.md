@@ -10,15 +10,22 @@ L-wave (logging + exercise-library UX), authored July 4 (Fable), branch
 `logging-ux-wave` (off ui-nav-overhaul HEAD). Extended July 5 (Fable) with
 L2B (indicator visibility, from Seth's smoke feedback) and L5 (What's New
 visuals - skeleton built directly by Fable same session, T3 pattern).
-**Dispatch order is now L3 -> L4 -> L5, strictly serialized** (L4/L5 both
-touch index.css; L4's entry point builds on the L2B pill, now landed). L3
-still carries the UserExercise migration: Seth applies it to staging
-before L4 dispatches (RUNBOOK "Schema-change deploy"); Cursor must NOT run
-`npm test` in L3. L2B, L2, and L1 all LANDED; L1's migration applied +
-verified on staging, Render redeployed - Seth's combined smoke sign-off on
-L1+L2+L2B (`ef4ac98`) still pending, one pass covers all three.
+L2B, L2, and L1 all LANDED; L1's migration applied + verified on staging,
+Render redeployed - Seth's combined smoke sign-off on L1+L2+L2B
+(`ef4ac98`) still pending mechanically, but the smoke ALSO surfaced the
+A6 resolution-gap finding below (real "Bench press" reads "Not tracked" -
+catalog has no bare-name entries, 9/10 common lift names fail to
+resolve). **L3/L4/L5 DISPATCH PAUSED pending a Fable session to design
+A6** (Seth's call, escalated rather than patched or deferred - see
+HANDOFF.md "resolution gap found" session log for full root-cause
+writeup). Once A6 is designed and queued: L3 still carries the
+UserExercise migration (Seth applies to staging before L4; Cursor must
+NOT run `npm test` in L3); L4/L5 both touch index.css, and L4's entry
+point builds on the L2B pill (landed) - dispatch order L3 -> L4 -> L5
+still strictly serialized once resumed, with A6 slotting in wherever
+Fable decides (before L3, alongside it, or after - open question).
 
-- QUEUED | l3-custom-exercises-server.md | UserExercise schema + CRUD + engine resolver/attribution overlay | Fable-designed schema; Cursor must NOT run npm test
+- PAUSED | l3-custom-exercises-server.md | UserExercise schema + CRUD + engine resolver/attribution overlay | Fable-designed schema; Cursor must NOT run npm test; dispatch paused pending A6 design decision (see above)
 - QUEUED | l4-custom-exercise-ui.md | "Add to library" sheet: name + tap-chip muscle picker (Main/Assists), flips indicator live | needs L3 migration applied to staging first; entry-point wording updated for the L2B pill
 - QUEUED | l5-whats-new-visuals.md | Overwatch-patch-notes visual treatment for the What's New modal + archive page | skeleton already committed (data/storage/gate/modal/page); MODEL fable - visual judgment; release copy in whatsNew.js is DRAFT, Seth finalizes at merge time
 
@@ -28,7 +35,16 @@ Seth's "push to main" trigger phrase.)
 ## Candidates (next units, not yet authored as blocks)
 
 - A5 exercise picker (UI, Cursor-suited once A4 FK design is done)
-- A6 name-resolution backfill/aliasing (Cursor-suited, needs A4 first)
+- **A6 name-resolution backfill/aliasing — PROMOTED to blocking, July 5
+  (Sonnet finding, Seth escalated to Fable).** No longer a someday-item:
+  L2/L2B smoke showed 9/10 common lift names (bench press, squat,
+  deadlift, overhead press, pull up, push up, bent-over row, curl, lat
+  pulldown) fail to resolve against the catalog verbatim - only fully
+  qualified variant names exist, no alias field anywhere in
+  `server/data/exercises.json`. Needs a Fable session to design the fix
+  (alias table vs. new column vs. client-side synonym map) before L3/L4
+  dispatch resumes on `logging-ux-wave`. Full root-cause writeup in
+  HANDOFF.md's "resolution gap found" session log.
 - (U11 "what's new" candidate PROMOTED into the L-wave July 5: skeleton
   built directly by Fable - `workoutdb-whats-new-seen` key, versioned
   releases in `client/src/data/whatsNew.js` - and the visual layer queued

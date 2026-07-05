@@ -1,15 +1,31 @@
 # HANDOFF — current state
 
-**Updated:** July 5, 2026 (Sonnet — L2B landed. `l2b-tracked-indicator-
-visibility.md` executed by Cursor, reviewed and committed (`ef4ac98`, 2
-files, +27/-17), pushed to `origin/logging-ux-wave`. **Dispatch order now
-L3 -> L4 -> L5, strictly serialized** (L2B done). Still pending: Seth's
-combined smoke of L1 + L2 + L2B on `ef4ac98` (one pass covers all three).
-Release copy in `client/src/data/whatsNew.js` is still DRAFT — Seth
-finalizes wording + date at merge time. **`ui-nav-overhaul` is still
-CLEARED FOR MERGE awaiting Seth's "push to main" trigger phrase** — the
-L-wave branch stacks on top of it; reconcile `logging-ux-wave` after that
-merge lands.)
+**Updated:** July 5, 2026 later (Sonnet — L2B landed, then Seth's smoke
+surfaced the resolution gap; ESCALATED TO FABLE, L3 dispatch PAUSED.**
+L2B (`ef4ac98`) shipped clean. Seth's smoke screenshots (real "Bench
+press" logged as "Not tracked", gibberish also "Not tracked") led to a
+root-cause dig: the tracked-pill/resolve code is working exactly as
+designed — the actual gap is the catalog itself. `resolveExercise` is
+exact-normalized-name match only, and `server/data/exercises.json` (873
+entries, vendored free-exercise-db) has NO bare "Bench Press" entry, only
+qualified variants ("Barbell Bench Press - Medium Grip", "Dumbbell Bench
+Press", "Machine Bench Press", etc.) — no alias field exists anywhere in
+the data. Tested 10 common colloquial lift names: 9/10 fail to resolve
+(bench press/squat/deadlift/overhead press/pull up/push up/bent-over
+row/curl/lat pulldown all `false`; only "leg press" happened to match
+verbatim). This means the L2/L2B indicator will read "Not tracked" for
+most real-world logging — it undermines the feature it's meant to
+communicate. **This is the pre-existing A6 candidate (name-resolution
+backfill/aliasing) — Seth chose to escalate to Fable now rather than
+patch around it or continue L-wave regardless.** L3/L4 dispatch is
+PAUSED pending Fable's A6 design session (schema/data-model judgment call,
+per the standing escalation triggers — Sonnet does not design this).
+Still pending underneath: Seth's combined smoke sign-off on L1+L2+L2B
+(`ef4ac98`) - the L1/L2 mechanics themselves passed, only the resolution
+data gap was the finding. Release copy in `client/src/data/whatsNew.js`
+still DRAFT. **`ui-nav-overhaul` still CLEARED FOR MERGE awaiting Seth's
+"push to main" trigger phrase** — the L-wave branch stacks on top of it;
+reconcile `logging-ux-wave` after that merge lands.)
 **Rule:** rewritten in place at the end of every working session. Dated, never versioned. If this file looks stale (date > ~2 weeks old), verify branch/deploy state from ground truth before trusting it.
 
 ---
@@ -36,6 +52,52 @@ merge lands.)
   - No schema changes rode along — `analytics-engine`'s merge has no migration coupling. The separate `exercise-catalog-seed` branch (A1) still has its own gated migration track.
 - **Render/Vercel not yet repointed from the `analytics-engine` staging deploy back to `main`** — RUNBOOK step 6 ("Repoint staging Render back to main. Verify redeploy SHA in Events.") is still open; do this before smoking prod.
 - Username feature LIVE and verified on both environments (unchanged).
+
+## Session log (July 5 latest — resolution gap found, escalated to Fable, Sonnet)
+
+- **Seth smoked L2B via two phone screenshots** (dropped as Discord-CDN
+  `.url` shortcuts in `claudefiledrop/`, fetched directly since the
+  folder held only shortcuts, not the actual images): a live session with
+  a real "Bench press" exercise showed the dashed "Not tracked" pill —
+  same as a gibberish-named exercise ("Sheghdjksishbe") in the same
+  session. Visually the pill itself renders correctly for both states;
+  the problem is which state "Bench press" gets assigned.
+- **Root-caused by reading the resolve chain end to end** (client cache ->
+  `POST /exercises/resolve` -> `resolveExercise` -> `loadCatalog`): all of
+  it behaves correctly per its own contract. `resolveExercise`
+  (`server/src/analytics/resolve.js`) does exact
+  `normalizeExerciseName` match against `catalog.byNormalizedName`, built
+  straight off `entry.name` in `server/data/exercises.json` with zero
+  alias/fuzzy layer. That catalog (873 entries, vendored free-exercise-db)
+  simply has no bare "Bench Press" record — only qualified variants
+  ("Barbell Bench Press - Medium Grip", "Dumbbell Bench Press", "Machine
+  Bench Press", "Bench Press - Powerlifting", etc.).
+- **Confirmed the blast radius with a direct node check** against 10
+  common colloquial lift names: bench press, squat, deadlift, overhead
+  press, pull up, push up, bent-over row, curl, lat pulldown all resolve
+  `false`; only "leg press" happened to match a verbatim entry. 9/10
+  failure rate on exactly the names a real user types — this is not an
+  edge case, it's the common case.
+- **This is the standing A6 candidate** ("name-resolution
+  backfill/aliasing", QUEUE.md Candidates section, previously noted as
+  needing A4 first) — it was already known-missing, just not yet visible
+  because L2B is what made the resolved/unresolved status legible enough
+  to notice from a screenshot.
+- **Put the fork to Seth directly** (escalate now vs. quick alias patch
+  vs. continue L-wave and fix later): **Seth chose escalate to Fable now.**
+  Per CLAUDE.md's model-split rules this is squarely Fable-tier (data-
+  model/matching-strategy judgment, not mechanical) — Sonnet does not
+  design the resolution strategy, only flags it clearly and stops.
+- **L3 dispatch PAUSED.** L3 (custom-exercises server, `UserExercise`
+  table + resolver/attribution overlay) is exactly the kind of unit that
+  would compound this gap if built on top of it unresolved — worth
+  having Fable weigh in on whether A6 should land before or alongside L3.
+- **Not yet done:** a Fable session to design A6 (likely: alias table or
+  fuzzy/normalized-substring matching over the existing catalog — schema
+  question is whether aliases live in new rows, a new column, or a
+  client-side synonym map; Fable's call). Once that's designed and
+  queued, L3/L4/L5 dispatch resumes. Seth's L1+L2+L2B mechanical smoke
+  sign-off is otherwise clear to give independently of this finding.
 
 ## Session log (July 5 later — L2B landed, Sonnet)
 
