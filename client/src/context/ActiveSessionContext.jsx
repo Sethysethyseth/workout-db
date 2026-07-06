@@ -47,6 +47,33 @@ export function ActiveSessionProvider({ children }) {
     return () => window.clearInterval(id);
   }, [currentUser, refresh]);
 
+  // Apply completions/deletions locally the moment the API call succeeds
+  // (ids compared as strings - route params are strings, server ids are
+  // ints), then re-fetch to reconcile. Without this the dashboard keeps
+  // offering "resume" on a finished workout until the next 20s poll.
+  useEffect(() => {
+    function onSessionsChanged(event) {
+      const { type, sessionId } = event?.detail || {};
+      if (sessionId != null) {
+        const idKey = String(sessionId);
+        if (type === "completed") {
+          setSessions((prev) =>
+            prev.map((s) =>
+              s && String(s.id) === idKey && !s.completedAt
+                ? { ...s, completedAt: new Date().toISOString() }
+                : s
+            )
+          );
+        } else if (type === "deleted") {
+          setSessions((prev) => prev.filter((s) => s && String(s.id) !== idKey));
+        }
+      }
+      void refresh();
+    }
+    window.addEventListener(sessionApi.SESSIONS_CHANGED_EVENT, onSessionsChanged);
+    return () => window.removeEventListener(sessionApi.SESSIONS_CHANGED_EVENT, onSessionsChanged);
+  }, [refresh]);
+
   const activeSession = useMemo(() => pickLatestActiveSession(sessions), [sessions]);
 
   const value = useMemo(

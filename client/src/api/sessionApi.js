@@ -1,5 +1,21 @@
 import { http } from "./http.js";
 
+/**
+ * Fired after a mutation that changes which session (if any) is active, so
+ * ActiveSessionContext can update immediately instead of waiting for its
+ * next poll. detail: { type: "completed" | "deleted", sessionId }.
+ */
+export const SESSIONS_CHANGED_EVENT = "sessions:changed";
+
+function notifySessionsChanged(detail) {
+  try {
+    if (typeof window === "undefined") return;
+    window.dispatchEvent(new CustomEvent(SESSIONS_CHANGED_EVENT, { detail }));
+  } catch {
+    // never let a notification failure break the mutation itself
+  }
+}
+
 export function createAdHocSession() {
   return http("/sessions", { method: "POST", body: {} });
 }
@@ -35,15 +51,19 @@ export function updateSession(id, { notes, performedAt, name }) {
   return http(`/sessions/${id}`, { method: "PATCH", body });
 }
 
-export function deleteSession(id) {
-  return http(`/sessions/${id}`, { method: "DELETE" });
+export async function deleteSession(id) {
+  const data = await http(`/sessions/${id}`, { method: "DELETE" });
+  notifySessionsChanged({ type: "deleted", sessionId: id });
+  return data;
 }
 
-export function completeSession(id, body = undefined) {
-  return http(`/sessions/${id}/complete`, {
+export async function completeSession(id, body = undefined) {
+  const data = await http(`/sessions/${id}/complete`, {
     method: "POST",
     ...(body !== undefined ? { body } : {}),
   });
+  notifySessionsChanged({ type: "completed", sessionId: id });
+  return data;
 }
 
 export function createSet(sessionId, payload) {
