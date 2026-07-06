@@ -899,6 +899,7 @@ const SessionSetRow = memo(function SessionSetRow({
                 value={draft.weight}
                 onChange={(e) => setDraft((d) => ({ ...d, weight: e.target.value }))}
                 onBlur={onWeightFieldBlur}
+                onWheel={(e) => e.currentTarget.blur()}
                 onKeyDown={(e) => onEnterNext(e, "weight")}
                 enterKeyHint="next"
                 inputMode="decimal"
@@ -924,6 +925,7 @@ const SessionSetRow = memo(function SessionSetRow({
                 value={draft.reps}
                 onChange={(e) => setDraft((d) => ({ ...d, reps: e.target.value }))}
                 onBlur={onFieldBlur}
+                onWheel={(e) => e.currentTarget.blur()}
                 onKeyDown={(e) => onEnterNext(e, "reps")}
                 enterKeyHint={useRIR || useRPE || useSetNotes ? "next" : "done"}
                 inputMode="decimal"
