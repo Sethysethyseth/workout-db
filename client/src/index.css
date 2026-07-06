@@ -2982,13 +2982,31 @@ html[data-theme="dark"] .session-finish-dock {
   font-weight: 600;
 }
 
+.session-exercise-tracked-slot {
+  display: inline-grid;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
+.session-exercise-tracked-slot-sizer,
+.session-exercise-tracked-slot-pill {
+  grid-area: 1 / 1;
+}
+
+.session-exercise-tracked-slot-sizer {
+  visibility: hidden;
+}
+
+.session-exercise-tracked-slot-pill {
+  justify-self: start;
+}
+
 .session-exercise-tracked-pill {
   display: inline-flex;
   align-items: center;
   gap: 4px;
   padding: 2px 8px;
   border-radius: 999px;
-  margin-left: 8px;
   font-size: 0.72rem;
   font-weight: 600;
   line-height: 1.2;

@@ -93,51 +93,70 @@ function lookupExerciseTrackedStatus(exerciseName) {
 }
 
 function ExerciseTrackedIndicator({ status }) {
-  if (status === "resolved") {
-    return (
-      <span
-        className="session-exercise-tracked-pill session-exercise-tracked-pill--resolved"
-        title="Tracked - counts toward your analytics"
-        aria-label="Tracked - counts toward your analytics"
-      >
-        <svg width="12" height="12" viewBox="0 0 14 14" aria-hidden="true">
-          <circle cx="7" cy="7" r="6" fill="none" stroke="currentColor" strokeWidth="1.25" />
-          <path
-            d="M4.25 7.25 L6.25 9.25 L9.75 4.75"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.25"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-        Tracked
+  const unresolvedPillMarkup = (
+    <span className="session-exercise-tracked-pill session-exercise-tracked-pill--unresolved">
+      <svg width="12" height="12" viewBox="0 0 14 14" aria-hidden="true">
+        <circle
+          cx="7"
+          cy="7"
+          r="5.5"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.25"
+          strokeDasharray="2.5 2"
+        />
+      </svg>
+      Not tracked
+    </span>
+  );
+
+  return (
+    <span className="session-exercise-tracked-slot">
+      <span className="session-exercise-tracked-slot-sizer" aria-hidden="true">
+        {unresolvedPillMarkup}
       </span>
-    );
-  }
-  if (status === "unresolved") {
-    return (
-      <span
-        className="session-exercise-tracked-pill session-exercise-tracked-pill--unresolved"
-        title="Not in the exercise library yet - analytics can't attribute this one"
-        aria-label="Not in the exercise library yet - analytics can't attribute this one"
-      >
-        <svg width="12" height="12" viewBox="0 0 14 14" aria-hidden="true">
-          <circle
-            cx="7"
-            cy="7"
-            r="5.5"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.25"
-            strokeDasharray="2.5 2"
-          />
-        </svg>
-        Not tracked
-      </span>
-    );
-  }
-  return null;
+      {status === "resolved" ? (
+        <span
+          className="session-exercise-tracked-slot-pill session-exercise-tracked-pill session-exercise-tracked-pill--resolved"
+          title="Tracked - counts toward your analytics"
+          aria-label="Tracked - counts toward your analytics"
+        >
+          <svg width="12" height="12" viewBox="0 0 14 14" aria-hidden="true">
+            <circle cx="7" cy="7" r="6" fill="none" stroke="currentColor" strokeWidth="1.25" />
+            <path
+              d="M4.25 7.25 L6.25 9.25 L9.75 4.75"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.25"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+          Tracked
+        </span>
+      ) : null}
+      {status === "unresolved" ? (
+        <span
+          className="session-exercise-tracked-slot-pill session-exercise-tracked-pill session-exercise-tracked-pill--unresolved"
+          title="Not in the exercise library yet - analytics can't attribute this one"
+          aria-label="Not in the exercise library yet - analytics can't attribute this one"
+        >
+          <svg width="12" height="12" viewBox="0 0 14 14" aria-hidden="true">
+            <circle
+              cx="7"
+              cy="7"
+              r="5.5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.25"
+              strokeDasharray="2.5 2"
+            />
+          </svg>
+          Not tracked
+        </span>
+      ) : null}
+    </span>
+  );
 }
 
 function formatDate(value) {
@@ -581,15 +600,20 @@ const SessionSetRow = memo(function SessionSetRow({
       rir: set.rir ?? "",
       notes: set.notes ?? "",
     };
+    const echoedKey = payloadKey(payloadFromDraft(next));
+    if (echoedKey === payloadKey(payloadFromDraft(draftRef.current))) {
+      lastSentKeyRef.current = echoedKey;
+      return;
+    }
     if (rootRef.current?.contains(document.activeElement)) {
       // Record what the SERVER now holds, not the local draft: the draft may
       // already contain unsent keystrokes, and keying them as "sent" would
       // silently suppress their flush on blur/debounce (lost-reps bug).
-      lastSentKeyRef.current = payloadKey(payloadFromDraft(next));
+      lastSentKeyRef.current = echoedKey;
       return;
     }
     setDraft(next);
-    lastSentKeyRef.current = payloadKey(payloadFromDraft(next));
+    lastSentKeyRef.current = echoedKey;
     // payloadFromDraft closes over `set` + lockSetOrder; deps list mirrors those inputs.
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only re-sync when server fields change
   }, [isDraft, set?.id, set?.order, set?.reps, set?.weight, set?.rpe, set?.rir, set?.notes, lockSetOrder]);
@@ -623,12 +647,34 @@ const SessionSetRow = memo(function SessionSetRow({
           });
         }
       }
+      if (created?.id != null) {
+        const activeId = document.activeElement?.id ?? "";
+        const draftPrefix = `log-draft-${sessionExerciseId}-`;
+        if (activeId.startsWith(draftPrefix)) {
+          const suffix = activeId.slice(draftPrefix.length);
+          const targetId = `log-set-${created.id}-${suffix}`;
+          const attemptFocus = () => {
+            const el = document.getElementById(targetId);
+            if (el) {
+              el.focus();
+              return true;
+            }
+            return false;
+          };
+          requestAnimationFrame(() => {
+            if (attemptFocus()) return;
+            requestAnimationFrame(() => {
+              attemptFocus();
+            });
+          });
+        }
+      }
     } catch {
       lastSentKeyRef.current = null;
     } finally {
       promotingRef.current = false;
     }
-  }, [isDraft, onPromoteDraft, onUpdateSet]);
+  }, [isDraft, onPromoteDraft, onUpdateSet, sessionExerciseId]);
 
   function flushNow() {
     if (isDraft || disabled) return;
@@ -882,7 +928,7 @@ const SessionSetRow = memo(function SessionSetRow({
                 enterKeyHint={useRIR || useRPE || useSetNotes ? "next" : "done"}
                 inputMode="decimal"
                 min="0"
-                step="0.01"
+                step="1"
                 disabled={isDraft ? false : disabled}
                 placeholder="e.g. 8"
                 aria-invalid={needsRepsHighlight ? true : undefined}
