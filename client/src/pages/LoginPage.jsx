@@ -1,11 +1,11 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { ErrorMessage } from "../components/ErrorMessage.jsx";
 import { PasswordInput } from "../components/auth/PasswordInput.jsx";
 
 export function LoginPage() {
-  const { login: signIn } = useAuth();
+  const { login: signIn, currentUser } = useAuth();
   const navigate = useNavigate();
   const [params] = useSearchParams();
 
@@ -22,6 +22,13 @@ export function LoginPage() {
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
+
+  // Already signed in (or a background /auth/me just resolved a live cookie
+  // session after ProtectedRoute short-circuited here): skip the form.
+  useEffect(() => {
+    if (submitting || !currentUser) return;
+    navigate(nextUrl, { replace: true });
+  }, [currentUser, submitting, navigate, nextUrl]);
 
   async function onSubmit(e) {
     e.preventDefault();

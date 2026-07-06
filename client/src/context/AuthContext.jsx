@@ -26,6 +26,21 @@ function setStoredAuthToken(token) {
   }
 }
 
+/**
+ * Device-level "has logged in here before" hint. Every login/register stores
+ * a token; logout (and a definitive /auth/me 401) clears it. Used to skip the
+ * blocking boot spinner for visitors who can only ever end up at /login.
+ */
+export function hasStoredAuthToken() {
+  try {
+    if (typeof window === "undefined") return false;
+    const t = window.localStorage.getItem("authToken");
+    return Boolean(t && t.trim());
+  } catch {
+    return false;
+  }
+}
+
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -52,6 +67,10 @@ export function AuthProvider({ children }) {
         return null;
       }
       if (err instanceof ApiError && err.status === 401) {
+        // The http layer already retried with the stored Bearer token, so a
+        // 401 here means both cookie and token are dead - drop the token so
+        // hasStoredAuthToken() stays an honest boot hint.
+        setStoredAuthToken(null);
         setCurrentUser(null);
         return null;
       }
