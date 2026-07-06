@@ -18,14 +18,19 @@ tier in `resolveExercise` between exact match and unresolved). The July 5
 smoke list now resolves 10/10; no schema, no migration, no API change.
 **L6 and L3 now LANDED too** (`cac5999` + follow-ups `4d82311`/`ae49cbe`;
 `fbb054b` with its UserExercise migration applied + verified on staging
-July 6 - see the Landed rows). **L4 LANDED `62b3ec2` July 6** (Seth
-dispatched ahead of the combined smoke - his call; smoke now covers L4
-too). **Remaining order: L5 (dispatched next, serialized after L4 -
-both touch index.css) -> Seth's combined smoke
+July 6 - see the Landed rows). **L4 LANDED `62b3ec2` and L5 LANDED
+`33d613d`, both July 6** (Seth dispatched ahead of the combined smoke -
+his call; smoke covers them). **The L-wave is fully landed. Remaining
+order: Seth's combined smoke
 (L1+L2+L2B+A6+L6+wheel-fix+L4+L5+`/analytics/summary`) -> Fable pre-main
-branch-diff review -> merge.**
-
-- DISPATCHED | l5-whats-new-visuals.md | Overwatch-patch-notes visual treatment for the What's New modal + archive page | skeleton already committed (data/storage/gate/modal/page); MODEL fable - visual judgment; release copy in whatsNew.js is DRAFT, Seth finalizes at merge time
+branch-diff review -> merge.** WARNING (July 6, during the L5 audit): a
+SECOND agent session was writing to the same tree mid-audit - an
+uncommitted login-fast-path + sessions-changed-event feature set
+(sessionApi.js, ActiveSessionContext.jsx, ProtectedRoute.jsx,
+AuthContext.jsx, LoginPage.jsx + a login-immediate.png screenshot).
+Deliberately left OUT of the L5 commit; unowned by any task block; needs
+Seth to identify the session and route it (task block or direct land)
+before the pre-main review.
 
 (N-wave fully landed on `ui-nav-overhaul`, cleared for merge, awaiting
 Seth's "push to main" trigger phrase.)
@@ -46,6 +51,7 @@ Seth's "push to main" trigger phrase.)
 
 ## Landed
 
+- LANDED 33d613d | l5-whats-new-visuals.md | patch-notes visual treatment: hero accent band (gradient wash + 3px top rule), small-caps accent section headers with left bars, diamond list markers, overlay-fade + 12px card-rise entrance at --motion-base, reduced-motion opt-out, mobile bottom-sheet, pinned footer outside scroll; archive cards reuse the treatment | landed July 6 (Fable audited); scope exact (4 files); build + unit 119/119 fresh; zero hex in added CSS, motion/color tokens verified defined; whatsnew gate/storage/data untouched (seen-key single-hit confirmed); WhatsNewContent split into presentation subcomponents; visual sign-off deferred to Seth's combined smoke (4 palettes x 2 modes, 360px)
 - LANDED 62b3ec2 | l4-custom-exercise-ui.md | "Add to library" sheet: portal overlay (start-workout-picker z-80 tier), prefilled name, 17-muscle tap-chip picker (off -> Main -> Assists), live summary line, already-tracked guard, interactive "Not tracked - add?" pill in live sessions only; success invalidates + re-resolves so the indicator flips without reload | landed July 6 (Fable audited); scope exact (4 files, FILES TO TOUCH match); unit 119/119 + client build re-run fresh; no hex (0 matches in 207-line CSS diff), all 10 referenced tokens verified defined; client muscle constant verified 17/17 identical to server catalog-derived vocabulary (getMuscles fetch doubles as availability check - accepted, block itself prescribed the client-side grouping constant); manual contract deferred to Seth's combined smoke
 - LANDED fbb054b | l3-custom-exercises-server.md | UserExercise schema + CRUD + engine resolver/attribution overlay | landed July 5, scope exact (12 files); one accepted deviation: userId String not the block's Int (User.id is String cuid - the block's snippet was a wrong FK); unit lane 119/119, purity grep clean, integration tests written but NOT run (migration gate); UserExercise migration applied + verified on staging July 6 (Seth, RUNBOOK, same precedent as L1) after the review caught the same code-ahead-of-DB sequencing flag as L1
 - LANDED cac5999 | l6-logging-focus-interruptions.md | draft-row focus handoff on set promotion + server-echo resync suppression + layout-stable tracked-pill slot + reps step fix | landed July 5, clean delivery (2 files); same-wave follow-ups fixed directly: wheel-scroll decimal bug 4d82311 (onWheel blur on both number inputs), residual promotion glitch ae49cbe (div-vs-Fragment branch type change remounted the draft row - unified shell + stable slot key; L6's rAF refocus hack removed as dead)
