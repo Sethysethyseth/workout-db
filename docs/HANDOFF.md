@@ -1,5 +1,33 @@
 # HANDOFF — current state
 
+**Updated:** July 6, 2026 latest (Opus — L-wave MERGED TO MAIN; prod migrations
+applied + verified first.)** `logging-ux-wave` (`d927fb8`) fast-forwarded onto
+`origin/main` — the whole L-wave (L1/L2/L2B/L3/L4/L5/L6 + A6), the off-queue
+login-UX + resume-hero fixes, and the docs/relay-v4 restructuring are now on
+`main`. **State correction:** `main` was NOT at `750c42b` as the older entries
+below say — `ui-nav-overhaul` had already merged (main was at `516d249`, nav
+features live), so the feared merge-order conflict was moot and the What's New
+copy (which advertises the nav overhaul) is accurate. Merge was a clean ff
+(`516d249..d927fb8`), no worktree, no conflicts; local + origin `main` both
+confirmed at `d927fb8`. **Prod DB migrated FIRST (schema-ahead-of-code, the
+safe order), by Seth by hand in the prod Neon SQL editor
+(`ep-solitary-sea-an56mioq`), verified this session from his screenshots:**
+`WorkoutSet.side` (`text`) exists; `UserExercise` table has its 6 columns;
+`_prisma_migrations` went 12 -> 14 rows. Both ledger rows carry the real
+staging checksums (pulled read-only this session):
+`20260704120000_add_workout_set_side` =
+`0dea47c048f0d8db874880e3a32200d0da46c09e0eac1769e83dbe7eb312308c`,
+`20260704130000_add_user_exercise` =
+`4b2195e0821ef9e6df5afd2b55fcb3b8246fbbe6f297d0ec185e927da645866b` (both
+`applied_steps_count` 1). **Next: verify prod Render/Vercel Events show
+`d927fb8` deployed, then smoke prod** — analytics/summary end-to-end (the path
+the L3 flag threatened), unilateral L/R logging, the tracked-exercise pills +
+add-to-library sheet, and the What's New modal firing once. Pre-existing Open
+TODOs (#1-6) below still stand. Cursor's migration-prep branch
+(`origin/cursor/prod-migrate-l1-l3-prep-0b4a`) is now redundant — deletable
+whenever.
+Previous entry retained below for continuity.
+
 **Updated:** July 6, 2026 late night (Fable — two Seth-directed direct UX
 fixes landed off-queue on `logging-ux-wave`, disjoint from all L-wave
 files; origin confirmed at `c0d37fb`.)** (1) `3a530a7`: logged-out
