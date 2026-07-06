@@ -3031,6 +3031,30 @@ html[data-theme="dark"] .session-finish-dock {
   color: var(--color-text-secondary);
 }
 
+button.session-exercise-tracked-pill--action {
+  cursor: pointer;
+  font: inherit;
+  margin: 0;
+  text-align: inherit;
+}
+
+button.session-exercise-tracked-pill--action:hover {
+  border-color: color-mix(in srgb, var(--color-interactive) 45%, var(--color-border));
+  color: var(--color-text);
+}
+
+button.session-exercise-tracked-pill--action:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--color-interactive) 55%, transparent);
+  outline-offset: 2px;
+}
+
+.session-exercise-tracked-pill-plus {
+  font-size: 0.85em;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--color-interactive);
+}
+
 .session-exercise-heading-summary {
   font-weight: 500;
   white-space: normal;
@@ -4399,6 +4423,171 @@ html[data-theme="dark"] .start-workout-picker__sheet {
 
 .start-workout-picker__cancel {
   min-height: 44px;
+}
+
+.add-exercise-library-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.add-exercise-library-sheet__backdrop {
+  position: absolute;
+  inset: 0;
+  border: none;
+  margin: 0;
+  padding: 0;
+  background: var(--color-backdrop);
+  cursor: pointer;
+}
+
+.add-exercise-library-sheet__card {
+  position: relative;
+  width: 100%;
+  max-width: 28rem;
+  margin: 0 auto;
+  border-radius: 20px 20px 0 0;
+  padding: 16px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+  display: grid;
+  gap: 12px;
+  max-height: min(85vh, 36rem);
+  overflow-y: auto;
+  box-shadow: var(--shadow-card-hover);
+}
+
+.add-exercise-library-sheet__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.add-exercise-library-sheet__title {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.add-exercise-library-sheet__close {
+  min-width: 36px;
+  min-height: 36px;
+  padding: 0;
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.add-exercise-library-sheet__lead {
+  margin: -4px 0 0;
+}
+
+.add-exercise-library-sheet__name-field {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  font-weight: 600;
+}
+
+.add-exercise-library-sheet__already-tracked {
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: var(--radius-control);
+  background: color-mix(in srgb, var(--color-interactive) 10%, var(--color-surface-2));
+  border: 1px solid color-mix(in srgb, var(--color-interactive) 25%, var(--color-border));
+}
+
+.add-exercise-library-sheet__picker {
+  display: grid;
+  gap: 12px;
+}
+
+.add-exercise-library-sheet__muscle-group {
+  display: grid;
+  gap: 8px;
+}
+
+.add-exercise-library-sheet__muscle-group-label {
+  margin: 0;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.add-exercise-library-sheet__muscle-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.add-exercise-library-sheet__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-2);
+  color: var(--color-text);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.add-exercise-library-sheet__chip:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--color-interactive) 45%, var(--color-border));
+}
+
+.add-exercise-library-sheet__chip:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--color-interactive) 55%, transparent);
+  outline-offset: 2px;
+}
+
+.add-exercise-library-sheet__chip--main {
+  border-color: var(--color-interactive);
+  background: var(--color-nav-active-bg);
+  box-shadow: var(--shadow-ring-accent);
+}
+
+.add-exercise-library-sheet__chip--assist {
+  border-color: color-mix(in srgb, var(--color-interactive) 50%, var(--color-border));
+  background: color-mix(in srgb, var(--color-interactive) 12%, var(--color-surface-2));
+  color: var(--color-text);
+}
+
+.add-exercise-library-sheet__chip-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  opacity: 0.85;
+}
+
+.add-exercise-library-sheet__summary {
+  margin: 0;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.add-exercise-library-sheet__footer {
+  display: grid;
+  gap: 8px;
+  padding-top: 4px;
+}
+
+@media (min-width: 640px) {
+  .add-exercise-library-sheet {
+    align-items: center;
+    padding: 16px;
+  }
+
+  .add-exercise-library-sheet__card {
+    border-radius: var(--radius-card);
+    padding: 20px;
+    max-height: min(85vh, 36rem);
+  }
 }
 
 .persistent-workout-bar-wrap {

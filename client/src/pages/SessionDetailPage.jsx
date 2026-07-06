@@ -19,6 +19,7 @@ import { ViewModeToggle } from "../components/templates/ViewModeToggle.jsx";
 import { WorkoutTemplateTableView } from "../components/templates/WorkoutTemplateTableView.jsx";
 import { WorkoutSetRowShell } from "../components/workout/WorkoutSetRowShell.jsx";
 import { MetricInfoButton } from "../components/workout/MetricInfoButton.jsx";
+import { AddExerciseToLibrarySheet } from "../components/workout/AddExerciseToLibrarySheet.jsx";
 import { getAdHocSessionTitle, setAdHocSessionTitle } from "../lib/adHocSessionTitle.js";
 import { sessionDisplayTitle } from "../lib/sessionDisplay.js";
 import { smartWorkoutNameFromSessionExercises } from "../lib/smartWorkoutName.js";
@@ -84,6 +85,11 @@ async function refreshExerciseResolution(name, onUpdate) {
   }
 }
 
+function invalidateExerciseResolution(name) {
+  const key = exerciseResolutionCacheKey(name);
+  if (key) exerciseResolutionCache.delete(key);
+}
+
 function lookupExerciseTrackedStatus(exerciseName) {
   const key = exerciseResolutionCacheKey(exerciseName);
   if (!key) return null;
@@ -92,20 +98,42 @@ function lookupExerciseTrackedStatus(exerciseName) {
   return row.resolved ? "resolved" : "unresolved";
 }
 
-function ExerciseTrackedIndicator({ status }) {
-  const unresolvedPillMarkup = (
+function ExerciseTrackedIndicator({ status, interactive = false, onOpenAddToLibrary }) {
+  const unresolvedIcon = (
+    <svg width="12" height="12" viewBox="0 0 14 14" aria-hidden="true">
+      <circle
+        cx="7"
+        cy="7"
+        r="5.5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.25"
+        strokeDasharray="2.5 2"
+      />
+    </svg>
+  );
+
+  const unresolvedPillMarkup = interactive ? (
+    <button
+      type="button"
+      className="session-exercise-tracked-pill session-exercise-tracked-pill--unresolved session-exercise-tracked-pill--action"
+      title="Not tracked - add to library?"
+      aria-label="Not tracked - add to library?"
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onOpenAddToLibrary?.();
+      }}
+    >
+      {unresolvedIcon}
+      Not tracked - add?
+      <span className="session-exercise-tracked-pill-plus" aria-hidden="true">
+        +
+      </span>
+    </button>
+  ) : (
     <span className="session-exercise-tracked-pill session-exercise-tracked-pill--unresolved">
-      <svg width="12" height="12" viewBox="0 0 14 14" aria-hidden="true">
-        <circle
-          cx="7"
-          cy="7"
-          r="5.5"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.25"
-          strokeDasharray="2.5 2"
-        />
-      </svg>
+      {unresolvedIcon}
       Not tracked
     </span>
   );
@@ -136,24 +164,18 @@ function ExerciseTrackedIndicator({ status }) {
         </span>
       ) : null}
       {status === "unresolved" ? (
-        <span
-          className="session-exercise-tracked-slot-pill session-exercise-tracked-pill session-exercise-tracked-pill--unresolved"
-          title="Not in the exercise library yet - analytics can't attribute this one"
-          aria-label="Not in the exercise library yet - analytics can't attribute this one"
-        >
-          <svg width="12" height="12" viewBox="0 0 14 14" aria-hidden="true">
-            <circle
-              cx="7"
-              cy="7"
-              r="5.5"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.25"
-              strokeDasharray="2.5 2"
-            />
-          </svg>
-          Not tracked
-        </span>
+        interactive ? (
+          <span className="session-exercise-tracked-slot-pill">{unresolvedPillMarkup}</span>
+        ) : (
+          <span
+            className="session-exercise-tracked-slot-pill session-exercise-tracked-pill session-exercise-tracked-pill--unresolved"
+            title="Not in the exercise library yet - analytics can't attribute this one"
+            aria-label="Not in the exercise library yet - analytics can't attribute this one"
+          >
+            {unresolvedIcon}
+            Not tracked
+          </span>
+        )
       ) : null}
     </span>
   );
@@ -1027,6 +1049,7 @@ function SessionExerciseBlock({
   nextIncompleteSetId = null,
   /** null = blank/unknown; resolved | unresolved from catalog lookup. */
   trackedStatus = null,
+  onOpenAddToLibrary,
 }) {
   const [draftResumeVersion, setDraftResumeVersion] = useState(0);
   const [perSideOverride, setPerSideOverride] = useState(null);
@@ -1142,7 +1165,13 @@ function SessionExerciseBlock({
           {" "}
           · {setCountLabel}
         </span>
-        <ExerciseTrackedIndicator status={trackedStatus} />
+        <ExerciseTrackedIndicator
+          status={trackedStatus}
+          interactive={!isCompleted && trackedStatus === "unresolved"}
+          onOpenAddToLibrary={
+            !isCompleted && trackedStatus === "unresolved" ? onOpenAddToLibrary : undefined
+          }
+        />
         {summaryLine ? (
           <span className="session-exercise-heading-summary muted small"> · {summaryLine}</span>
         ) : null}
@@ -1420,6 +1449,7 @@ export function SessionDetailPage() {
   const [adjustingSetCountExerciseId, setAdjustingSetCountExerciseId] = useState(null);
   const [completeBusy, setCompleteBusy] = useState(false);
   const [resolutionTick, setResolutionTick] = useState(0);
+  const [addToLibrarySheet, setAddToLibrarySheet] = useState(null);
   const exerciseAnchorRefs = useRef(new Map());
   const sessionNoteTogglesInitRef = useRef(null);
 
@@ -1519,6 +1549,25 @@ export function SessionDetailPage() {
   const bumpResolutions = useCallback(() => {
     setResolutionTick((t) => t + 1);
   }, []);
+
+  const openAddToLibrarySheet = useCallback((exerciseName) => {
+    const trimmed = String(exerciseName ?? "").trim();
+    if (!trimmed || isBlankSessionExerciseName(trimmed)) return;
+    setAddToLibrarySheet({ exerciseName: trimmed });
+  }, []);
+
+  const closeAddToLibrarySheet = useCallback(() => {
+    setAddToLibrarySheet(null);
+  }, []);
+
+  const handleAddToLibrarySuccess = useCallback(
+    (name) => {
+      invalidateExerciseResolution(name);
+      void refreshExerciseResolution(name, bumpResolutions);
+      setAddToLibrarySheet(null);
+    },
+    [bumpResolutions]
+  );
 
   const mergeSessionExerciseRow = useCallback(
     (row) => {
@@ -2425,6 +2474,7 @@ export function SessionDetailPage() {
                       useSetNotes={isFromTemplate && liveUseSetNotes}
                       isQuickLog={isQuickLog}
                       trackedStatus={trackedStatusByExerciseId.get(se.id) ?? null}
+                      onOpenAddToLibrary={() => openAddToLibrarySheet(se.exerciseName)}
                       onExerciseCommitted={mergeSessionExerciseRow}
                       onSaved={load}
                       onCreateSet={onCreateSetForExercise}
@@ -2526,6 +2576,13 @@ export function SessionDetailPage() {
           </div>
         </div>
       ) : null}
+
+      <AddExerciseToLibrarySheet
+        open={Boolean(addToLibrarySheet)}
+        initialName={addToLibrarySheet?.exerciseName ?? ""}
+        onClose={closeAddToLibrarySheet}
+        onSuccess={handleAddToLibrarySuccess}
+      />
     </div>
   );
 }
