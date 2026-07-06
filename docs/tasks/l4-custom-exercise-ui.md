@@ -94,6 +94,10 @@ ACCEPTANCE CRITERIA (machine-checkable):
 STOP CONDITION (standing footer - keep verbatim in every block):
 Stop when the acceptance criteria are met. If a criterion cannot be met,
 stop and explain why instead of guessing.
+- Before stopping, run every lane this block allows and write the delivery
+  report to DELIVERY.md at the repo root (files touched; verbatim test
+  output; each acceptance criterion with the evidence that proved it; any
+  deviations from this block, with reasons). Do not commit it.
 - Do NOT commit, push, or touch git in any way - leave the working tree
   for review.
 - Do NOT edit docs/HANDOFF.md, AGENTS.md, CLAUDE.md, this task file, or
