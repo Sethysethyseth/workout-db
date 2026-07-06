@@ -23,7 +23,7 @@ export function WhatsNewPage() {
         <h1 className="settings-page-title">What&apos;s new</h1>
       </header>
       {RELEASES.map((release) => (
-        <article key={release.id} className="card stack whats-new-archive-entry">
+        <article key={release.id} className="card whats-new-archive-entry">
           <WhatsNewContent release={release} />
         </article>
       ))}

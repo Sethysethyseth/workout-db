@@ -4913,9 +4913,28 @@ html[data-theme="dark"] .auth-page .auth-form.card {
 }
 
 /* ---------------------------------------------------------------------------
-   What's new (release notes) - SKELETON ONLY. Structure/behavior lives in
-   client/src/components/whatsnew/; the visual patch-notes treatment (L5 task
-   block) replaces/extends these rules. Tokens only, as everywhere. */
+   What's new (release notes) - patch-notes visual treatment (L5). Structure/
+   behavior in client/src/components/whatsnew/; tokens only. */
+
+@keyframes whats-new-overlay-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes whats-new-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 
 .whats-new-overlay {
   position: fixed;
@@ -4926,45 +4945,135 @@ html[data-theme="dark"] .auth-page .auth-form.card {
   justify-content: center;
   padding: 1rem;
   background: var(--color-overlay);
+  animation: whats-new-overlay-in var(--motion-base) var(--ease-standard);
 }
 
 .whats-new-card {
   width: 100%;
   max-width: 28rem;
   max-height: min(84dvh, 42rem);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: whats-new-card-in var(--motion-base) var(--ease-standard);
+}
+
+.whats-new-card__scroll {
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.whats-new-hero,
+.whats-new-archive-entry .whats-new-release__header {
+  position: relative;
+  padding: 1.15rem 1.25rem 1rem;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-interactive) 14%, var(--color-surface-1)) 0%,
+    color-mix(in srgb, var(--color-interactive) 4%, var(--color-surface-1)) 100%
+  );
+  border-bottom: 1px solid color-mix(in srgb, var(--color-interactive) 22%, var(--color-border));
+}
+
+.whats-new-hero::before,
+.whats-new-archive-entry .whats-new-release__header::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--color-interactive);
+  opacity: 0.88;
 }
 
 .whats-new-kicker {
-  margin: 0;
-  font-weight: 600;
+  margin: 0 0 0.65rem;
+  font-size: 0.68rem;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.1em;
+  color: var(--color-interactive);
 }
 
 .whats-new-release__date {
-  margin: 0;
+  margin: 0 0 0.35rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
 }
 
 .whats-new-release__title {
   margin: 0;
+  font-size: clamp(1.35rem, 4.8vw, 1.8rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.12;
+  color: var(--color-text);
 }
 
 .whats-new-release__tagline {
-  margin: 0;
+  margin: 0.45rem 0 0;
+  font-size: 0.92rem;
+  line-height: 1.4;
+}
+
+.whats-new-card .whats-new-release__sections,
+.whats-new-archive-entry .whats-new-release__sections {
+  padding: 1rem 1.25rem 1.15rem;
+  gap: 1.1rem;
 }
 
 .whats-new-section__heading {
-  margin: 0 0 4px;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin: 0 0 0.55rem;
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--color-interactive);
+}
+
+.whats-new-section__heading::before {
+  content: "";
+  display: block;
+  width: 3px;
+  height: 1.05em;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--color-interactive) 82%, var(--color-text));
+  flex-shrink: 0;
 }
 
 .whats-new-section__list {
   margin: 0;
-  padding-left: 1.25rem;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.65rem;
 }
 
-.whats-new-section__item + .whats-new-section__item {
-  margin-top: 4px;
+.whats-new-section__item {
+  position: relative;
+  padding-left: 1.05rem;
+  line-height: 1.52;
+  font-size: 0.94rem;
+  color: var(--color-text);
+}
+
+.whats-new-section__item::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.58em;
+  width: 5px;
+  height: 5px;
+  border-radius: 1px;
+  background: color-mix(in srgb, var(--color-interactive) 65%, var(--color-text-secondary));
+  transform: rotate(45deg);
 }
 
 .whats-new-footer {
@@ -4972,6 +5081,50 @@ html[data-theme="dark"] .auth-page .auth-form.card {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  flex-shrink: 0;
+  padding: 0.9rem 1.25rem calc(0.9rem + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface-1);
+}
+
+.whats-new-all-link {
+  text-decoration: none;
+  font-weight: 600;
+  transition: color var(--motion-fast) var(--ease-standard);
+}
+
+.whats-new-all-link:hover {
+  color: var(--color-interactive);
+}
+
+.whats-new-archive-entry {
+  padding: 0;
+  overflow: hidden;
+}
+
+.whats-new-page {
+  gap: 1rem;
+}
+
+@media (max-width: 639px) {
+  .whats-new-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .whats-new-card {
+    max-width: 100%;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    max-height: min(88dvh, 42rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .whats-new-overlay,
+  .whats-new-card {
+    animation: none;
+  }
 }
 
 /* --- Analytics page (B5) --- */
