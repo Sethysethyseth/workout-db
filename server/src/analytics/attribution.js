@@ -1,8 +1,17 @@
 const { loadCatalog } = require("./catalog");
+const { userExerciseWeights } = require("./userExercises");
 
 function attributeSet(resolution, catalog = loadCatalog()) {
   if (!resolution || !resolution.resolved) {
     return { attributed: false, source: null, muscles: {} };
+  }
+
+  if (resolution.source === "userExercise" && resolution.userExercise) {
+    const muscles = userExerciseWeights(resolution.userExercise.muscles);
+    if (Object.keys(muscles).length === 0) {
+      return { attributed: false, source: null, muscles: {} };
+    }
+    return { attributed: true, source: "userExercise", muscles };
   }
 
   const entry = resolution.catalogEntry;

@@ -4,7 +4,7 @@ const {
   foldExerciseNamePlural,
 } = require("./normalize");
 
-function resolveExercise(input, catalog = loadCatalog()) {
+function resolveExercise(input, catalog = loadCatalog(), userIndex = new Map()) {
   const { exerciseName, exerciseId } = input || {};
 
   if (exerciseId && catalog.byId.has(exerciseId)) {
@@ -53,6 +53,15 @@ function resolveExercise(input, catalog = loadCatalog()) {
           catalogEntry: byAlias.get(folded),
         };
       }
+    }
+
+    if (userIndex && userIndex.has(normalized)) {
+      return {
+        resolved: true,
+        source: "userExercise",
+        catalogEntry: null,
+        userExercise: userIndex.get(normalized),
+      };
     }
   }
 

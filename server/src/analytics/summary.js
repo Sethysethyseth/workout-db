@@ -17,7 +17,7 @@ const HONESTY_FRONT_REAR_DELT =
 const HONESTY_PR_DETECTION =
   "PR detection (tracked-vs-estimated) is not yet implemented; it requires full lift history beyond the selected range.";
 
-function buildSummary(enrichedSets, { from, to, planLookup }) {
+function buildSummary(enrichedSets, { from, to, planLookup, userExercises }) {
   const weeks = computeWeeksInRange(from, to);
   const perMuscle = aggregateMuscleVolume(enrichedSets, { from, to }).map(
     (row) => ({

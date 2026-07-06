@@ -3,11 +3,30 @@ const { attributeSet } = require("./attribution");
 const { computeSetMetrics } = require("./setMetrics");
 const { deriveEffortRir } = require("./effort");
 
-function enrichSet(rawSet) {
-  const resolution = resolveExercise({
-    exerciseName: rawSet.exerciseName,
-    exerciseId: rawSet.exerciseId,
-  });
+function enrichSet(rawSet, userIndex = new Map()) {
+  let resolution = resolveExercise(
+    {
+      exerciseName: rawSet.exerciseName,
+      exerciseId: rawSet.exerciseId,
+    },
+    undefined,
+    userIndex
+  );
+
+  if (
+    resolution.resolved &&
+    resolution.source === "userExercise" &&
+    resolution.userExercise
+  ) {
+    resolution = {
+      ...resolution,
+      catalogEntry: {
+        id: `user:${resolution.userExercise.id}`,
+        name: resolution.userExercise.name,
+      },
+    };
+  }
+
   const attribution = attributeSet(resolution);
   // Effort-driven metrics run on the pooled RIR/RPE signal, not raw rir.
   const effortRir = deriveEffortRir({ rir: rawSet.rir, rpe: rawSet.rpe });

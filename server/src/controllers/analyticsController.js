@@ -1,5 +1,6 @@
 const prisma = require("../lib/prisma");
 const { enrichSet, buildSummary } = require("../analytics");
+const { buildUserExerciseIndex } = require("../analytics/userExercises");
 
 const DATE_ONLY_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -56,46 +57,53 @@ async function getSummary(req, res, next) {
 
     // Cross-user isolation happens here and only here: every set is reached
     // exclusively through a session owned by the authed user.
-    const sessions = await prisma.workoutSession.findMany({
-      where: {
-        userId,
-        performedAt: {
-          gte: from,
-          lte: to,
+    const [sessions, userExerciseRows] = await Promise.all([
+      prisma.workoutSession.findMany({
+        where: {
+          userId,
+          performedAt: {
+            gte: from,
+            lte: to,
+          },
         },
-      },
-      include: {
-        sets: {
-          include: {
-            sessionExercise: {
-              select: {
-                exerciseName: true,
-                templateExerciseId: true,
-                templateExercise: {
-                  select: {
-                    id: true,
-                    templateSets: {
-                      select: { order: true, reps: true, weight: true, rir: true, rpe: true },
-                      orderBy: { order: "asc" },
+        include: {
+          sets: {
+            include: {
+              sessionExercise: {
+                select: {
+                  exerciseName: true,
+                  templateExerciseId: true,
+                  templateExercise: {
+                    select: {
+                      id: true,
+                      templateSets: {
+                        select: { order: true, reps: true, weight: true, rir: true, rpe: true },
+                        orderBy: { order: "asc" },
+                      },
                     },
                   },
                 },
               },
-            },
-            templateExercise: {
-              select: {
-                id: true,
-                exerciseName: true,
-                templateSets: {
-                  select: { order: true, reps: true, weight: true, rir: true, rpe: true },
-                  orderBy: { order: "asc" },
+              templateExercise: {
+                select: {
+                  id: true,
+                  exerciseName: true,
+                  templateSets: {
+                    select: { order: true, reps: true, weight: true, rir: true, rpe: true },
+                    orderBy: { order: "asc" },
+                  },
                 },
               },
             },
           },
         },
-      },
-    });
+      }),
+      prisma.userExercise.findMany({
+        where: { userId },
+      }),
+    ]);
+
+    const userIndex = buildUserExerciseIndex(userExerciseRows);
 
     const enriched = [];
     // templateExerciseId -> planned sets, harvested from whichever linkage
@@ -109,28 +117,33 @@ async function getSummary(req, res, next) {
           planLookup[planSource.id] = planSource.templateSets;
         }
         enriched.push(
-          enrichSet({
-            performedAt: session.performedAt,
-            exerciseName:
-              set.sessionExercise?.exerciseName ??
-              set.templateExercise?.exerciseName ??
-              null,
-            // No exercise FK exists yet (A4 pending), so resolution is
-            // name-only. Null weight/reps/rir and unresolvable names are
-            // handled by the engine - pass them through unfiltered.
-            exerciseId: null,
-            weight: set.weight,
-            reps: set.reps,
-            rir: set.rir,
-            rpe: set.rpe,
-            order: set.order,
-            templateExerciseId: planSource ? planSource.id : null,
-          })
+          enrichSet(
+            {
+              performedAt: session.performedAt,
+              exerciseName:
+                set.sessionExercise?.exerciseName ??
+                set.templateExercise?.exerciseName ??
+                null,
+              // No exercise FK exists yet (A4 pending), so resolution is
+              // name-only. Null weight/reps/rir and unresolvable names are
+              // handled by the engine - pass them through unfiltered.
+              exerciseId: null,
+              weight: set.weight,
+              reps: set.reps,
+              rir: set.rir,
+              rpe: set.rpe,
+              order: set.order,
+              templateExerciseId: planSource ? planSource.id : null,
+            },
+            userIndex
+          )
         );
       }
     }
 
-    return res.json(buildSummary(enriched, { from, to, planLookup }));
+    return res.json(
+      buildSummary(enriched, { from, to, planLookup, userExercises: userExerciseRows })
+    );
   } catch (err) {
     return next(err);
   }

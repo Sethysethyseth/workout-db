@@ -22,6 +22,7 @@ model User {
   blockTemplates   BlockTemplate[]
   workoutSessions  WorkoutSession[]
   feedback         Feedback[]
+  userExercises    UserExercise[]
 }
 
 model Feedback {
@@ -203,6 +204,19 @@ model BlockWorkoutExercise {
 
   @@unique([blockWorkoutId, order])
   @@index([blockWorkoutId])
+}
+
+model UserExercise {
+  id             Int      @id @default(autoincrement())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name           String
+  normalizedName String
+  muscles        Json
+  createdAt      DateTime @default(now())
+
+  @@unique([userId, normalizedName])
+  @@index([userId])
 }
 
 model BlockWorkoutSet {
