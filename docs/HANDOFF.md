@@ -1,5 +1,33 @@
 # HANDOFF — current state
 
+**Updated:** July 5, 2026 latest+3 (Sonnet — root-caused + fixed the
+weight->reps promotion glitch that survived L6, `ae49cbe`, pushed to
+`origin/logging-ux-wave`.** Seth reported it was "still a little glitchy
+sometimes when switching from weight to reps" even after L6 + the
+wheel-scroll fix. Root cause was structural, not timing: `SessionExerciseBlock`
+rendered the 0-sets branch as a bare `<div>` wrapping the draft
+`SessionSetRow`, and the >0-sets branch as a `<>` Fragment wrapping the row
+list + add-set footer. Switching element TYPE (div vs Fragment) at that one
+JSX position forces React to unmount the entire old subtree on every
+draft->real promotion, no matter what key the inner row carries - so the
+Weight/Reps `<input>` was destroyed and recreated mid-keystroke every single
+time an exercise's first set was logged, regardless of L6's rAF
+focus-search hack (which could only refocus a NEW element, not prevent the
+old one's destruction). Fixed by unifying both branches under one
+persistent Fragment/div shell (branching only INSIDE it) and giving the
+row that transitions from draft to real (index 0, non-per-side) a stable
+key (`session-set-slot-${se.id}`) shared across both states. React now
+reuses the same fiber/DOM node across the transition, so the pre-existing
+echo-suppressing resync effect (from L6) picks up the handoff for free -
+focus and cursor position are never disturbed, no hack needed. Removed the
+now-dead id-search-and-refocus block in `tryPromote` (the draft row never
+unmounts anymore, so it had nothing left to do). Client build + lint
+verified clean (one pre-existing unrelated `sessionExerciseId`
+exhaustive-deps warning fixed as a trivial side effect of the removal; all
+other lint errors on the file predate this change and are untouched).
+**Not yet smoked by Seth** - fold into the next combined smoke pass.
+Previous entry retained below for continuity.
+
 **Updated:** July 5, 2026 latest+2 (Sonnet — L6 landed `cac5999`, then a
 follow-up wheel-scroll fix `4d82311`, both pushed to
 `origin/logging-ux-wave`.** Seth's report right after the L6 push ("weight
@@ -63,6 +91,64 @@ trigger phrase** — the L-wave branch stacks on top of it; reconcile
   - No schema changes rode along — `analytics-engine`'s merge has no migration coupling. The separate `exercise-catalog-seed` branch (A1) still has its own gated migration track.
 - **Render/Vercel not yet repointed from the `analytics-engine` staging deploy back to `main`** — RUNBOOK step 6 ("Repoint staging Render back to main. Verify redeploy SHA in Events.") is still open; do this before smoking prod.
 - Username feature LIVE and verified on both environments (unchanged).
+
+## Session log (July 5 latest+3 — weight->reps promotion glitch root-caused + fixed, Sonnet)
+
+- **Seth's report:** "still is a little glitchy sometimes when switching
+  from weight to reps" - after both L6 (focus handoff, resync echo, pill
+  reflow) and the wheel-scroll fix had already landed, so this was a
+  residual symptom, not a fresh regression.
+- **Root-caused by reading the render branch, not by live repro:**
+  `SessionExerciseBlock`'s sets area had two top-level branches at the same
+  JSX position - `sets.length === 0` rendered a bare `<div
+  className="session-set-rows">` wrapping the draft `SessionSetRow`;
+  `sets.length > 0` rendered a `<>` Fragment wrapping the row list plus the
+  add-set footer. React's reconciler keys off element TYPE at a given tree
+  position before it ever looks at a child's `key` - div vs Fragment is a
+  type change, so EVERY draft->real promotion unmounted the whole subtree
+  and mounted a fresh one, destroying and recreating the Weight/Reps
+  `<input>` out from under the user's keystrokes. L6's rAF
+  id-search-and-refocus hack could only refocus a brand-new element after
+  the fact; it could never stop the old one from being destroyed first -
+  that destruction (not a focus race) was the residual "glitchy" feel.
+- **Fixed structurally:** unified both branches under one persistent
+  Fragment/div shell (the `sets.length` check now only decides what renders
+  INSIDE it), and gave the row that transitions from draft to real (index 0
+  of `renderUnits`, non-per-side only - per-side sets never go through a
+  draft) a stable key, `session-set-slot-${se.id}`, shared by both its
+  draft and real-set renders. Same key + same position + now-same wrapper
+  type = React reuses the existing fiber and DOM node across the
+  transition instead of remounting. The pre-existing echo-suppressing
+  resync effect (added in L6, previously only exercised on later edits)
+  now also naturally absorbs the draft->real handoff: it sees the draft
+  already matches what the server just echoed back and returns without
+  calling `setDraft`, so focus/cursor position are never touched - no hack
+  needed at all.
+- **Removed the now-dead code in `tryPromote`** (the
+  `document.activeElement` id-search + double-`requestAnimationFrame`
+  refocus block from L6): with the row never unmounting, it had nothing
+  left to do. Left the OTHER piece of L6's promotion logic untouched (the
+  in-flight-keystroke patch onto the newly-created set) - that one is
+  about syncing the SERVER's copy across the async gap, unrelated to
+  DOM/focus identity, still needed regardless of remounting.
+- **Verified:** client `npm run build` green; `npm run lint` clean on this
+  file except pre-existing, unrelated errors/warnings that predate this
+  change (confirmed by their line numbers sitting in untouched code -
+  `ActiveSessionContext.jsx`, `ThemeContext.jsx`, `DashboardPage.jsx`, and
+  three `set-state-in-effect` findings elsewhere in this same file, none
+  touched by this diff). One lint warning WAS caused by this edit
+  (`sessionExerciseId` became an unused `useCallback` dependency once the
+  dead block was removed) and was fixed by dropping it from the deps
+  array.
+- **Committed `ae49cbe`** (1 file, +49/-71), pushed, confirmed on
+  `origin/logging-ux-wave`. No live browser repro was done this session
+  (no staging URL/credentials in hand) - the diagnosis and fix are from
+  direct code/render-semantics reading, same precedent as L6's own
+  no-repro-needed diagnosis.
+- **Not yet done:** Seth's smoke - specifically, re-run the L6 smoke notes
+  (Slow-3G weight-to-reps typing test) on `ae49cbe` and confirm the
+  glitch is gone; fold into the same pending combined
+  L1+L2+L2B+A6+L6+wheel-fix smoke below.
 
 ## Session log (July 5 latest+2 — wheel-scroll decimal bug fixed, Sonnet)
 
