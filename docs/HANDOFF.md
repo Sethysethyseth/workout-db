@@ -1,5 +1,29 @@
 # HANDOFF — current state
 
+**Updated:** July 6, 2026 late night (Fable — two Seth-directed direct UX
+fixes landed off-queue on `logging-ux-wave`, disjoint from all L-wave
+files; origin confirmed at `c0d37fb`.)** (1) `3a530a7`: logged-out
+first-open no longer sits on the "Loading session…" boot spinner waiting
+for a cold server - no stored `authToken` means ProtectedRoute redirects
+straight to `/login` (the form renders instantly; `/auth/me` still fires
+and warms the server in the background). `/login` now bounces
+already-signed-in users onward (covers the valid-cookie/cleared-storage
+edge), and a definitive `/auth/me` 401 clears the dead stored token.
+(2) `c0d37fb`: finishing (or deleting) a workout now dispatches a
+`sessions:changed` window event from `sessionApi`; `ActiveSessionContext`
+applies it locally at once and re-fetches - the home "Resume workout"
+hero/persistent bar clear immediately instead of surviving until the 20s
+poll or a manual refresh. Both verified end-to-end (Playwright against a
+local server on the staging DB; register -> start -> finish -> home flip,
+plus logout/reload/login-visit probes; throwaway staging account
+`smoke_fable_jul6` created in the process). This session was the "second
+agent" flagged in QUEUE's L5-audit warning - flag resolved in QUEUE, the
+L5 audit's leave-it-out call was correct. **Add to Seth's combined smoke:
+open the app logged-out (should land on login instantly) and finish a
+workout (Resume hero should vanish on return to Home).** Next unchanged:
+Seth's combined smoke -> Fable pre-main branch-diff review -> merge.
+Previous entry retained below for continuity.
+
 **Updated:** July 6, 2026 (Fable — relay v4: two-tier state channel +
 Cursor rebalance. Docs-only session, no app code touched.)** HANDOFF is now
 CAPPED: current state, repo/deploy state, the latest 1-2 session entries,

@@ -23,14 +23,17 @@ July 6 - see the Landed rows). **L4 LANDED `62b3ec2` and L5 LANDED
 his call; smoke covers them). **The L-wave is fully landed. Remaining
 order: Seth's combined smoke
 (L1+L2+L2B+A6+L6+wheel-fix+L4+L5+`/analytics/summary`) -> Fable pre-main
-branch-diff review -> merge.** WARNING (July 6, during the L5 audit): a
-SECOND agent session was writing to the same tree mid-audit - an
-uncommitted login-fast-path + sessions-changed-event feature set
-(sessionApi.js, ActiveSessionContext.jsx, ProtectedRoute.jsx,
-AuthContext.jsx, LoginPage.jsx + a login-immediate.png screenshot).
-Deliberately left OUT of the L5 commit; unowned by any task block; needs
-Seth to identify the session and route it (task block or direct land)
-before the pre-main review.
+branch-diff review -> merge.** RESOLVED (July 6, later the same night):
+the "second agent session" flagged during the L5 audit was a
+Seth-directed Fable session doing two direct UX fixes off-queue
+(explicitly scoped to avoid L4/L5 files; the L5 audit's
+leave-it-out-of-the-commit call was correct). Both LANDED - `3a530a7`
+(logged-out visitors skip the boot spinner, straight to /login) and
+`c0d37fb` (resume-workout hero clears immediately on finish via a
+sessions:changed event) - pushed, origin confirmed at `c0d37fb`, with
+end-to-end Playwright verification against a local server on the
+staging DB. See the Landed rows; they ride the same combined smoke +
+pre-main review as the L-wave.
 
 (N-wave fully landed on `ui-nav-overhaul`, cleared for merge, awaiting
 Seth's "push to main" trigger phrase.)
@@ -51,6 +54,8 @@ Seth's "push to main" trigger phrase.)
 
 ## Landed
 
+- LANDED c0d37fb | (no task block - Seth-directed Fable direct, off-queue) | resume-workout hero clears immediately after finishing: completeSession/deleteSession dispatch sessions:changed, ActiveSessionContext applies the completion/deletion locally (string-compared ids) then re-fetches | 2 files (sessionApi.js, ActiveSessionContext.jsx), disjoint from all L-wave units; verified end-to-end via Playwright (local server on staging DB): finish -> home shows Start hero + saved flash + workout in Recents with no poll wait; rides the combined smoke + pre-main review
+- LANDED 3a530a7 | (no task block - Seth-directed Fable direct, off-queue) | logged-out first-open goes straight to /login instead of holding on the boot spinner while a cold server answers /auth/me: no stored authToken -> immediate redirect; /login self-heals valid-cookie/cleared-storage by bouncing signed-in users onward; definitive /auth/me 401 clears the dead token | 3 files (ProtectedRoute.jsx, AuthContext.jsx, LoginPage.jsx); verified end-to-end via Playwright: fresh profile -> instant /login, logout -> instant /login, logged-in reload + /login visit both land on the dashboard
 - LANDED 33d613d | l5-whats-new-visuals.md | patch-notes visual treatment: hero accent band (gradient wash + 3px top rule), small-caps accent section headers with left bars, diamond list markers, overlay-fade + 12px card-rise entrance at --motion-base, reduced-motion opt-out, mobile bottom-sheet, pinned footer outside scroll; archive cards reuse the treatment | landed July 6 (Fable audited); scope exact (4 files); build + unit 119/119 fresh; zero hex in added CSS, motion/color tokens verified defined; whatsnew gate/storage/data untouched (seen-key single-hit confirmed); WhatsNewContent split into presentation subcomponents; visual sign-off deferred to Seth's combined smoke (4 palettes x 2 modes, 360px)
 - LANDED 62b3ec2 | l4-custom-exercise-ui.md | "Add to library" sheet: portal overlay (start-workout-picker z-80 tier), prefilled name, 17-muscle tap-chip picker (off -> Main -> Assists), live summary line, already-tracked guard, interactive "Not tracked - add?" pill in live sessions only; success invalidates + re-resolves so the indicator flips without reload | landed July 6 (Fable audited); scope exact (4 files, FILES TO TOUCH match); unit 119/119 + client build re-run fresh; no hex (0 matches in 207-line CSS diff), all 10 referenced tokens verified defined; client muscle constant verified 17/17 identical to server catalog-derived vocabulary (getMuscles fetch doubles as availability check - accepted, block itself prescribed the client-side grouping constant); manual contract deferred to Seth's combined smoke
 - LANDED fbb054b | l3-custom-exercises-server.md | UserExercise schema + CRUD + engine resolver/attribution overlay | landed July 5, scope exact (12 files); one accepted deviation: userId String not the block's Int (User.id is String cuid - the block's snippet was a wrong FK); unit lane 119/119, purity grep clean, integration tests written but NOT run (migration gate); UserExercise migration applied + verified on staging July 6 (Seth, RUNBOOK, same precedent as L1) after the review caught the same code-ahead-of-DB sequencing flag as L1
