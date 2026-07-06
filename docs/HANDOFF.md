@@ -1,30 +1,30 @@
 # HANDOFF — current state
 
-**Updated:** July 5, 2026 latest (Fable — A6 RESOLVED `3f7fe14`, pushed;
-L3/L4/L5 dispatch UNPAUSED.** The escalated resolution gap is fixed by a
-curated alias layer, built directly by Fable in the escalation session
-(hybrid precedent — the curation IS the judgment work; no relay): 92
-vendored aliases in `server/data/exercise-aliases.json` + a rationale doc
-(same-commit rule), a guarded trailing-s plural fold applied to both
-catalog names and queries, and an alias tier in `resolveExercise`
-(exerciseId > exact name > alias > unresolved). The July 5 smoke list now
-resolves 10/10; unit lane 111/111 (8 new tests, the 10-name list pinned);
-NO schema, NO migration, NO API-shape or client change — the L2B pill
-just starts reading "Tracked" for real names. Deliberately NOT aliased:
-movements the catalog genuinely lacks (bulgarian split squat, pendlay
-row) — those stay honestly unresolved; they're L3's job. A6 landed
-BEFORE L3 on purpose: L3's "name must not already resolve against the
-catalog" validation now includes aliases for free (A6 NOTE added to the
-L3 block). Seth's follow-up smoke report (taps into weight/reps getting
-interrupted) was root-caused same session — three mechanisms, all
-covered by the new L6 block (`l6-logging-focus-interruptions.md`,
-queued). **Next: dispatch L6, then Seth's combined smoke of
-L1+L2+L2B+A6+L6** (verify staging Render redeployed at the reviewed SHA
-first), then L3 -> L4 -> L5, strictly serialized. Release copy in
-`client/src/data/whatsNew.js` still DRAFT. **`ui-nav-overhaul` still
-CLEARED FOR MERGE awaiting Seth's "push to main" trigger phrase** — the
-L-wave branch stacks on top of it; reconcile `logging-ux-wave` after that
-merge lands.)
+**Updated:** July 5, 2026 latest+1 (Sonnet — L6 landed `cac5999`, pushed to
+`origin/logging-ux-wave`.** All three root-cause mechanisms fixed exactly
+per the block: focus handoff from the draft row to the promoted real row
+(`document.activeElement` check right after the `await` resolves, before
+React's unmount/remount commits, then a `requestAnimationFrame` retry-once
+to find the new field once it has), an echo-equality check in the resync
+effect that skips `setDraft` when the server's PATCH response matches the
+draft already held (no more pointless re-render in the blur gap), and the
+tracked pill now rendering inside a fixed-size `inline-grid` slot (hidden
+sizer + stacked pill, `grid-area: 1/1`) so its null -> pill transition
+never reflows the heading. Reps `step="0.01"` -> `step="1"` folded in
+(weight untouched). Reviewed clean: client build green, all acceptance
+greps pass (`session-exercise-tracked-slot` in both files, `step="0.01"`
+count now 1, `log-set-` handoff construction present), no new hex, no new
+deps, `package.json` byte-identical, scope exactly the 2 specced files
+(usual stray unrelated `.claude/settings.json` permission edit left
+uncommitted). No bounces. **Next: Seth's combined smoke of
+L1+L2+L2B+A6+L6** (verify staging Render redeployed at `cac5999` first;
+the block's own manual-verification notes — Slow-3G weight-to-reps typing
+test, and pill-appearing-must-not-move-inputs on a rename — are the
+smoke's focus for L6 specifically), then L3 -> L4 -> L5, strictly
+serialized. Release copy in `client/src/data/whatsNew.js` still DRAFT.
+**`ui-nav-overhaul` still CLEARED FOR MERGE awaiting Seth's "push to main"
+trigger phrase** — the L-wave branch stacks on top of it; reconcile
+`logging-ux-wave` after that merge lands.)
 **Rule:** rewritten in place at the end of every working session. Dated, never versioned. If this file looks stale (date > ~2 weeks old), verify branch/deploy state from ground truth before trusting it.
 
 ---
@@ -51,6 +51,44 @@ merge lands.)
   - No schema changes rode along — `analytics-engine`'s merge has no migration coupling. The separate `exercise-catalog-seed` branch (A1) still has its own gated migration track.
 - **Render/Vercel not yet repointed from the `analytics-engine` staging deploy back to `main`** — RUNBOOK step 6 ("Repoint staging Render back to main. Verify redeploy SHA in Events.") is still open; do this before smoking prod.
 - Username feature LIVE and verified on both environments (unchanged).
+
+## Session log (July 5 latest+1 — L6 landed, Sonnet)
+
+- **Cursor executed `l6-logging-focus-interruptions.md`; Sonnet reviewed
+  and committed (`cac5999`, 2 files, +113/-49), pushed to
+  `origin/logging-ux-wave`.** Scope exact (the 2 specced files; usual
+  stray unrelated `.claude/settings.json` permission edit left
+  uncommitted). Client build green. Verified all three fixes by direct
+  diff read against the block's root-cause writeup:
+  - Focus handoff (`tryPromote`): the `document.activeElement?.id`
+    prefix check runs synchronously right after the `await` resolves —
+    before React's scheduler actually commits the unmount/remount, so
+    the draft field is still focused at check time — then a
+    `requestAnimationFrame` (retry once on the next frame, silent
+    give-up, never throws) does the actual `getElementById` + `.focus()`
+    once the promoted row has committed. `sessionExerciseId` correctly
+    added to the callback's dependency array.
+  - Resync echo suppression: `echoedKey` computed once, compared against
+    the current draft's key; equal -> set `lastSentKeyRef` and return
+    with no `setDraft` call; the pre-existing focused-row guard is kept
+    unchanged immediately after, for the genuinely-different case.
+  - Tracked pill: `session-exercise-tracked-slot` (`inline-grid`) wraps
+    an always-rendered hidden sizer (widest "Not tracked" markup,
+    `aria-hidden`, no title) plus the real pill, both `grid-area: 1/1`;
+    `margin-left: 8px` moved from the pill class to the slot. CSS diff
+    is structural-only, no new hex.
+  - Reps `step="0.01"` -> `step="1"` confirmed the only such change
+    (grep count 1, weight untouched).
+  All acceptance-criteria greps re-run and passed; `package.json`
+  byte-identical. Clean delivery — no bounces, no reviewer fixes needed.
+- **Not yet done:** Seth's combined smoke of L1+L2+L2B+A6+L6 on
+  `cac5999` (verify staging Render redeployed at that SHA first) — for
+  L6 specifically, the block's manual notes: Slow-3G throttle, type a
+  weight on a fresh 0-set exercise, click straight into Reps and keep
+  typing (focus/keystrokes must survive the promotion), and rename an
+  exercise then click Weight (the pill landing must not shift the
+  inputs). L3 dispatches after sign-off (carries the `UserExercise`
+  migration — Cursor must NOT run `npm test`).
 
 ## Session log (July 5 latest — A6 designed + landed, Fable)
 
