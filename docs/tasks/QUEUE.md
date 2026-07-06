@@ -16,22 +16,15 @@ relayed - `3f7fe14`, pushed):** curated alias layer (92 vendored aliases +
 rationale doc in `server/data/`, guarded trailing-s plural fold, alias
 tier in `resolveExercise` between exact match and unresolved). The July 5
 smoke list now resolves 10/10; no schema, no migration, no API change.
-**DISPATCH UNPAUSED - order L6 -> L3 -> L4 -> L5, strictly serialized.**
-A6 landed BEFORE L3 deliberately: L3's "name must not already resolve
-against the catalog" validation now includes aliases for free (its block
-carries an A6 NOTE). L6 (authored July 5, Fable, from Seth's smoke
-report: taps into weight/reps interrupted by the tracked-resolve landing
-and by the weight->reps transition) goes FIRST: it touches
-SessionDetailPage.jsx + index.css (collides with L4, none with L3), has
-no migration, and landing it before Seth's combined smoke means one pass
-signs off L1+L2+L2B+A6+L6 together. L3 still carries the UserExercise
-migration (Seth applies to staging before L4; Cursor must NOT run
-`npm test` in L3); L4/L5 both touch index.css, and L4's entry point
-builds on the L2B pill.
+**L6 and L3 now LANDED too** (`cac5999` + follow-ups `4d82311`/`ae49cbe`;
+`fbb054b` with its UserExercise migration applied + verified on staging
+July 6 - see the Landed rows). **Remaining order: Seth's combined smoke
+(L1+L2+L2B+A6+L6+wheel-fix+`/analytics/summary`) -> L4 -> L5, strictly
+serialized** (both touch index.css, and L4's entry point builds on the
+L2B pill). Both blocks carry the v4 delivery-report footer (Cursor writes
+DELIVERY.md before stopping - relay v4, July 6).
 
-- QUEUED | l6-logging-focus-interruptions.md | draft-row focus handoff on set promotion + server-echo resync suppression + layout-stable tracked-pill slot + reps step fix | Fable root-caused all three mechanisms in-block; 2 files only; folds in the pre-existing decimal-reps Open TODO
-- QUEUED | l3-custom-exercises-server.md | UserExercise schema + CRUD + engine resolver/attribution overlay | Fable-designed schema; Cursor must NOT run npm test; A6 NOTE added to block (aliases count as catalog-resolvable)
-- QUEUED | l4-custom-exercise-ui.md | "Add to library" sheet: name + tap-chip muscle picker (Main/Assists), flips indicator live | needs L3 migration applied to staging first; entry-point wording updated for the L2B pill
+- QUEUED | l4-custom-exercise-ui.md | "Add to library" sheet: name + tap-chip muscle picker (Main/Assists), flips indicator live | L3 migration applied + verified on staging July 6; dispatches after Seth's combined smoke; entry-point wording updated for the L2B pill
 - QUEUED | l5-whats-new-visuals.md | Overwatch-patch-notes visual treatment for the What's New modal + archive page | skeleton already committed (data/storage/gate/modal/page); MODEL fable - visual judgment; release copy in whatsNew.js is DRAFT, Seth finalizes at merge time
 
 (N-wave fully landed on `ui-nav-overhaul`, cleared for merge, awaiting
@@ -53,6 +46,8 @@ Seth's "push to main" trigger phrase.)
 
 ## Landed
 
+- LANDED fbb054b | l3-custom-exercises-server.md | UserExercise schema + CRUD + engine resolver/attribution overlay | landed July 5, scope exact (12 files); one accepted deviation: userId String not the block's Int (User.id is String cuid - the block's snippet was a wrong FK); unit lane 119/119, purity grep clean, integration tests written but NOT run (migration gate); UserExercise migration applied + verified on staging July 6 (Seth, RUNBOOK, same precedent as L1) after the review caught the same code-ahead-of-DB sequencing flag as L1
+- LANDED cac5999 | l6-logging-focus-interruptions.md | draft-row focus handoff on set promotion + server-echo resync suppression + layout-stable tracked-pill slot + reps step fix | landed July 5, clean delivery (2 files); same-wave follow-ups fixed directly: wheel-scroll decimal bug 4d82311 (onWheel blur on both number inputs), residual promotion glitch ae49cbe (div-vs-Fragment branch type change remounted the draft row - unified shell + stable slot key; L6's rAF refocus hack removed as dead)
 - LANDED 3f7fe14 | (A6, no task block - Fable direct) | colloquial-name alias layer: 92 curated vendored aliases + rationale doc + guarded plural fold; alias tier in resolveExercise (exerciseId > exact name > alias) | unit lane 111/111 (8 new tests incl. the 10-name smoke list pinned 10/10); integration lane deliberately NOT run (endpoint untouched, avoids wiping staging smoke accounts pre-sign-off); no client change, no schema, no migration
 - LANDED ef4ac98 | l2b-tracked-indicator-visibility.md | tracked/untracked glyph becomes labeled status pills ("Tracked" / "Not tracked") on the exercise heading | scope exact (2 files), client build green, server unit 103/103 (no server touch), package.json byte-identical, no new hex (success-token family + existing color-mix pattern); labels present as JSX text children (grep for literal `>Tracked<` found nothing since that's compiled-HTML shape, not JSX source - verified by direct read instead, same precedent as N1's tryNavigate); pill moved out of the muted meta span per spec
 - LANDED 4ae0fbf | l1-unilateral-side-logging.md | nullable WorkoutSet.side ("L"/"R"); exercises named "single" (or L/R toggle) log sets as Left/Right pairs, Right weight autofills from Left on blur (one-way, one-time, no focus steal); set-count/add/remove operate on pairs | scope exact (6 files), server unit 103/103 + client build green pre-migration, then migration applied to staging (Seth, RUNBOOK) and independently re-verified: `prisma migrate status` clean (13 migrations, no drift), full `npm test` 16/143 green including the side-round-trip integration test for real; reviewer flag caught pre-deploy: side is unconditionally in every create-set call, so deploying before the migration would break ALL set logging app-wide, not just per-side (sharper version of the June 8 code-ahead-of-DB incident) - migration landed first, no incident
