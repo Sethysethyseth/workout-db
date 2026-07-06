@@ -16,15 +16,20 @@ relayed - `3f7fe14`, pushed):** curated alias layer (92 vendored aliases +
 rationale doc in `server/data/`, guarded trailing-s plural fold, alias
 tier in `resolveExercise` between exact match and unresolved). The July 5
 smoke list now resolves 10/10; no schema, no migration, no API change.
-**DISPATCH UNPAUSED - order L3 -> L4 -> L5, strictly serialized.** A6
-landed BEFORE L3 deliberately: L3's "name must not already resolve
+**DISPATCH UNPAUSED - order L6 -> L3 -> L4 -> L5, strictly serialized.**
+A6 landed BEFORE L3 deliberately: L3's "name must not already resolve
 against the catalog" validation now includes aliases for free (its block
-carries an A6 NOTE). L3 still carries the UserExercise migration (Seth
-applies to staging before L4; Cursor must NOT run `npm test` in L3);
-L4/L5 both touch index.css, and L4's entry point builds on the L2B pill.
-Seth's combined smoke sign-off on L1+L2+L2B is still pending - one pass
-on `3f7fe14` now also covers the A6 fix (real names show "Tracked").
+carries an A6 NOTE). L6 (authored July 5, Fable, from Seth's smoke
+report: taps into weight/reps interrupted by the tracked-resolve landing
+and by the weight->reps transition) goes FIRST: it touches
+SessionDetailPage.jsx + index.css (collides with L4, none with L3), has
+no migration, and landing it before Seth's combined smoke means one pass
+signs off L1+L2+L2B+A6+L6 together. L3 still carries the UserExercise
+migration (Seth applies to staging before L4; Cursor must NOT run
+`npm test` in L3); L4/L5 both touch index.css, and L4's entry point
+builds on the L2B pill.
 
+- QUEUED | l6-logging-focus-interruptions.md | draft-row focus handoff on set promotion + server-echo resync suppression + layout-stable tracked-pill slot + reps step fix | Fable root-caused all three mechanisms in-block; 2 files only; folds in the pre-existing decimal-reps Open TODO
 - QUEUED | l3-custom-exercises-server.md | UserExercise schema + CRUD + engine resolver/attribution overlay | Fable-designed schema; Cursor must NOT run npm test; A6 NOTE added to block (aliases count as catalog-resolvable)
 - QUEUED | l4-custom-exercise-ui.md | "Add to library" sheet: name + tap-chip muscle picker (Main/Assists), flips indicator live | needs L3 migration applied to staging first; entry-point wording updated for the L2B pill
 - QUEUED | l5-whats-new-visuals.md | Overwatch-patch-notes visual treatment for the What's New modal + archive page | skeleton already committed (data/storage/gate/modal/page); MODEL fable - visual judgment; release copy in whatsNew.js is DRAFT, Seth finalizes at merge time

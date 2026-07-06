@@ -15,9 +15,12 @@ movements the catalog genuinely lacks (bulgarian split squat, pendlay
 row) — those stay honestly unresolved; they're L3's job. A6 landed
 BEFORE L3 on purpose: L3's "name must not already resolve against the
 catalog" validation now includes aliases for free (A6 NOTE added to the
-L3 block). **Next: Seth's combined smoke of L1+L2+L2B+A6 on `3f7fe14`**
-(staging Render redeploys this push — verify the SHA in Events first),
-then dispatch L3 -> L4 -> L5, strictly serialized. Release copy in
+L3 block). Seth's follow-up smoke report (taps into weight/reps getting
+interrupted) was root-caused same session — three mechanisms, all
+covered by the new L6 block (`l6-logging-focus-interruptions.md`,
+queued). **Next: dispatch L6, then Seth's combined smoke of
+L1+L2+L2B+A6+L6** (verify staging Render redeployed at the reviewed SHA
+first), then L3 -> L4 -> L5, strictly serialized. Release copy in
 `client/src/data/whatsNew.js` still DRAFT. **`ui-nav-overhaul` still
 CLEARED FOR MERGE awaiting Seth's "push to main" trigger phrase** — the
 L-wave branch stacks on top of it; reconcile `logging-ux-wave` after that
@@ -96,10 +99,31 @@ merge lands.)
 - **L3/L4/L5 dispatch UNPAUSED** (QUEUE.md updated; A6 NOTE added to the
   L3 block: "resolves against the catalog" now includes alias/fold hits,
   no spec change needed). A6 QUEUE candidate closed out as a pointer.
-- **Not yet done:** Seth's combined smoke of L1+L2+L2B+A6 on `3f7fe14`
-  (verify staging Render redeployed at that SHA first); then L3
-  dispatches (carries the UserExercise migration — Cursor must NOT run
-  `npm test`; Seth applies per RUNBOOK before L4).
+- **Same session, second ask — L6 authored from Seth's follow-up smoke
+  report** ("tracked check can interrupt tapping weight/reps; same thing
+  sometimes going weight -> reps"). Fable root-caused three independent
+  mechanisms, all in SessionDetailPage.jsx: (1) the 0-set DRAFT set row
+  unmounts mid-interaction when its promotion POST resolves (`sets.length`
+  0 -> 1 swaps the ternary at ~line 1265 and destroys the reps input the
+  user just tapped — data survives via the in-flight-keystroke patch,
+  focus does not); (2) the real-row resync effect fires on the server
+  ECHO of a flush if the PATCH lands in the blur gap between weight and
+  reps (activeElement is body, so the focused-row guard misses); (3) the
+  tracked pill renders null -> pill when the async resolve lands,
+  reflowing the heading (and re-wrapping it at narrow widths) under the
+  user's finger. `l6-logging-focus-interruptions.md` authored + QUEUED
+  (MODEL sonnet, 2 files): focus handoff draft -> promoted row via the
+  deterministic field ids, echo-equality skip in the resync effect,
+  always-rendered fixed-size pill slot (inline-grid + hidden sizer), and
+  the pre-existing decimal-reps `step="0.01"` Open TODO folded in (reps
+  -> `step="1"`, weight untouched). Dispatch order now L6 -> L3 -> L4 ->
+  L5 (L6 collides with L4 on both files, none with L3; landing L6 first
+  lets one smoke pass cover the whole stack).
+- **Not yet done:** dispatch L6 (Seth points Cursor at it); Seth's
+  combined smoke of L1+L2+L2B+A6+L6 once L6 lands (verify staging Render
+  redeployed at the reviewed SHA first); then L3 dispatches (carries the
+  UserExercise migration — Cursor must NOT run `npm test`; Seth applies
+  per RUNBOOK before L4).
 
 ## Session log (July 5 earlier — resolution gap found, escalated to Fable, Sonnet)
 
