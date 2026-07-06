@@ -18,14 +18,14 @@ tier in `resolveExercise` between exact match and unresolved). The July 5
 smoke list now resolves 10/10; no schema, no migration, no API change.
 **L6 and L3 now LANDED too** (`cac5999` + follow-ups `4d82311`/`ae49cbe`;
 `fbb054b` with its UserExercise migration applied + verified on staging
-July 6 - see the Landed rows). **Remaining order: Seth's combined smoke
-(L1+L2+L2B+A6+L6+wheel-fix+`/analytics/summary`) -> L4 -> L5, strictly
-serialized** (both touch index.css, and L4's entry point builds on the
-L2B pill). Both blocks carry the v4 delivery-report footer (Cursor writes
-DELIVERY.md before stopping - relay v4, July 6).
+July 6 - see the Landed rows). **L4 LANDED `62b3ec2` July 6** (Seth
+dispatched ahead of the combined smoke - his call; smoke now covers L4
+too). **Remaining order: L5 (dispatched next, serialized after L4 -
+both touch index.css) -> Seth's combined smoke
+(L1+L2+L2B+A6+L6+wheel-fix+L4+L5+`/analytics/summary`) -> Fable pre-main
+branch-diff review -> merge.**
 
-- QUEUED | l4-custom-exercise-ui.md | "Add to library" sheet: name + tap-chip muscle picker (Main/Assists), flips indicator live | L3 migration applied + verified on staging July 6; dispatches after Seth's combined smoke; entry-point wording updated for the L2B pill
-- QUEUED | l5-whats-new-visuals.md | Overwatch-patch-notes visual treatment for the What's New modal + archive page | skeleton already committed (data/storage/gate/modal/page); MODEL fable - visual judgment; release copy in whatsNew.js is DRAFT, Seth finalizes at merge time
+- DISPATCHED | l5-whats-new-visuals.md | Overwatch-patch-notes visual treatment for the What's New modal + archive page | skeleton already committed (data/storage/gate/modal/page); MODEL fable - visual judgment; release copy in whatsNew.js is DRAFT, Seth finalizes at merge time
 
 (N-wave fully landed on `ui-nav-overhaul`, cleared for merge, awaiting
 Seth's "push to main" trigger phrase.)
@@ -46,6 +46,7 @@ Seth's "push to main" trigger phrase.)
 
 ## Landed
 
+- LANDED 62b3ec2 | l4-custom-exercise-ui.md | "Add to library" sheet: portal overlay (start-workout-picker z-80 tier), prefilled name, 17-muscle tap-chip picker (off -> Main -> Assists), live summary line, already-tracked guard, interactive "Not tracked - add?" pill in live sessions only; success invalidates + re-resolves so the indicator flips without reload | landed July 6 (Fable audited); scope exact (4 files, FILES TO TOUCH match); unit 119/119 + client build re-run fresh; no hex (0 matches in 207-line CSS diff), all 10 referenced tokens verified defined; client muscle constant verified 17/17 identical to server catalog-derived vocabulary (getMuscles fetch doubles as availability check - accepted, block itself prescribed the client-side grouping constant); manual contract deferred to Seth's combined smoke
 - LANDED fbb054b | l3-custom-exercises-server.md | UserExercise schema + CRUD + engine resolver/attribution overlay | landed July 5, scope exact (12 files); one accepted deviation: userId String not the block's Int (User.id is String cuid - the block's snippet was a wrong FK); unit lane 119/119, purity grep clean, integration tests written but NOT run (migration gate); UserExercise migration applied + verified on staging July 6 (Seth, RUNBOOK, same precedent as L1) after the review caught the same code-ahead-of-DB sequencing flag as L1
 - LANDED cac5999 | l6-logging-focus-interruptions.md | draft-row focus handoff on set promotion + server-echo resync suppression + layout-stable tracked-pill slot + reps step fix | landed July 5, clean delivery (2 files); same-wave follow-ups fixed directly: wheel-scroll decimal bug 4d82311 (onWheel blur on both number inputs), residual promotion glitch ae49cbe (div-vs-Fragment branch type change remounted the draft row - unified shell + stable slot key; L6's rAF refocus hack removed as dead)
 - LANDED 3f7fe14 | (A6, no task block - Fable direct) | colloquial-name alias layer: 92 curated vendored aliases + rationale doc + guarded plural fold; alias tier in resolveExercise (exerciseId > exact name > alias) | unit lane 111/111 (8 new tests incl. the 10-name smoke list pinned 10/10); integration lane deliberately NOT run (endpoint untouched, avoids wiping staging smoke accounts pre-sign-off); no client change, no schema, no migration
