@@ -629,9 +629,10 @@ const SessionSetRow = memo(function SessionSetRow({
     try {
       const created = await onPromoteDraft(cur);
       lastSentKeyRef.current = k;
-      // Keystrokes that land while the POST is in flight would otherwise be
-      // dropped when this draft row unmounts (its pending re-promote timer is
-      // cleared) - patch them onto the set the promotion just created.
+      // The POST above sent a snapshot (`cur`) taken before the await; keystrokes
+      // typed into this same row while it was in flight already live in local
+      // state but never reached the server under the just-created set's id -
+      // patch them on now.
       if (created && created.id != null && onUpdateSet) {
         const latest = draftRef.current;
         const latestKey = payloadKey(promotionPayloadFromDraft(latest));
@@ -647,34 +648,12 @@ const SessionSetRow = memo(function SessionSetRow({
           });
         }
       }
-      if (created?.id != null) {
-        const activeId = document.activeElement?.id ?? "";
-        const draftPrefix = `log-draft-${sessionExerciseId}-`;
-        if (activeId.startsWith(draftPrefix)) {
-          const suffix = activeId.slice(draftPrefix.length);
-          const targetId = `log-set-${created.id}-${suffix}`;
-          const attemptFocus = () => {
-            const el = document.getElementById(targetId);
-            if (el) {
-              el.focus();
-              return true;
-            }
-            return false;
-          };
-          requestAnimationFrame(() => {
-            if (attemptFocus()) return;
-            requestAnimationFrame(() => {
-              attemptFocus();
-            });
-          });
-        }
-      }
     } catch {
       lastSentKeyRef.current = null;
     } finally {
       promotingRef.current = false;
     }
-  }, [isDraft, onPromoteDraft, onUpdateSet, sessionExerciseId]);
+  }, [isDraft, onPromoteDraft, onUpdateSet]);
 
   function flushNow() {
     if (isDraft || disabled) return;
@@ -1310,32 +1289,31 @@ function SessionExerciseBlock({
               ) : null}
             </div>
 
-            {sets.length === 0 ? (
-              isCompleted ? (
-                <div className="muted small session-empty-sets">No sets logged.</div>
-              ) : perSideMode ? (
-                <div className="muted small session-empty-sets">
-                  Tap "+ Add set" above to log your first left/right pair.
-                </div>
-              ) : (
-                <div className="stack session-set-rows">
-                  <SessionSetRow
-                    isDraft
-                    resumeVersion={draftResumeVersion}
-                    sessionExerciseId={se.id}
-                    useRIR={useRIR}
-                    useRPE={useRPE}
-                    useSetNotes={useSetNotes}
-                    onInteractStart={onActivateExercise}
-                    onPromoteDraft={(d) => onPromoteDraftSet(se.id, d)}
-                    onUpdateSet={onUpdateSet}
-                  />
-                </div>
-              )
-            ) : (
-              <>
-                <div className="stack session-set-rows">
-                  {renderUnits.map((unit) => {
+            <>
+              <div className="stack session-set-rows">
+                {sets.length === 0 ? (
+                  isCompleted ? (
+                    <div className="muted small session-empty-sets">No sets logged.</div>
+                  ) : perSideMode ? (
+                    <div className="muted small session-empty-sets">
+                      Tap "+ Add set" above to log your first left/right pair.
+                    </div>
+                  ) : (
+                    <SessionSetRow
+                      key={`session-set-slot-${se.id}`}
+                      isDraft
+                      resumeVersion={draftResumeVersion}
+                      sessionExerciseId={se.id}
+                      useRIR={useRIR}
+                      useRPE={useRPE}
+                      useSetNotes={useSetNotes}
+                      onInteractStart={onActivateExercise}
+                      onPromoteDraft={(d) => onPromoteDraftSet(se.id, d)}
+                      onUpdateSet={onUpdateSet}
+                    />
+                  )
+                ) : (
+                  renderUnits.map((unit, idx) => {
                     if (unit.type === "pair") {
                       const leftSet = unit.sets.find((s) => s.side === "L") ?? unit.sets[0];
                       const rightSet = unit.sets.find((s) => s.side === "R") ?? unit.sets[1];
@@ -1370,7 +1348,7 @@ function SessionExerciseBlock({
                     const s = unit.sets[0];
                     return (
                       <SessionSetRow
-                        key={s.id}
+                        key={idx === 0 && !perSideMode ? `session-set-slot-${se.id}` : s.id}
                         set={s}
                         setOrdinal={unit.setOrdinal}
                         setLabelOverride={
@@ -1392,25 +1370,25 @@ function SessionExerciseBlock({
                         onDeleteSet={() => handleDeleteSet(s.id, unit)}
                       />
                     );
-                  })}
+                  })
+                )}
+              </div>
+              {!isCompleted && sets.length > 0 ? (
+                <div className="stack session-add-set-footer">
+                  <button
+                    type="button"
+                    className="btn btn-secondary session-add-set-footer-btn"
+                    onClick={() => {
+                      onActivateExercise?.();
+                      onCreateSet(se.id, perSideMode ? { perSide: true } : undefined);
+                    }}
+                    disabled={setCountBusy}
+                  >
+                    + Add set
+                  </button>
                 </div>
-                {!isCompleted ? (
-                  <div className="stack session-add-set-footer">
-                    <button
-                      type="button"
-                      className="btn btn-secondary session-add-set-footer-btn"
-                      onClick={() => {
-                        onActivateExercise?.();
-                        onCreateSet(se.id, perSideMode ? { perSide: true } : undefined);
-                      }}
-                      disabled={setCountBusy}
-                    >
-                      + Add set
-                    </button>
-                  </div>
-                ) : null}
-              </>
-            )}
+              ) : null}
+            </>
           </div>
         </>
       ) : null}
