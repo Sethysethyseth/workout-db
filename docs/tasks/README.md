@@ -19,12 +19,23 @@ public-repo tracking live in `docs/specs/poor-mans-agentic-workflow.md`.
    > Read `docs/tasks/<unit>.md` and execute it exactly. It is the complete
    > task; do not ask for the task in chat.
 
-3. **Execute (Cursor):** implements, gets tests green, STOPS. The standing
-   footer in every block repeats the hard rules (no git, no HANDOFF, no
-   scope creep, no editing the task file).
-4. **Review + land (Claude Code):** diffs the working tree against the block,
-   fixes-or-bounces, commits with SHA verification, flips the unit's status
-   in `QUEUE.md`, updates `docs/HANDOFF.md`.
+3. **Execute (Cursor):** implements, gets tests green, writes the delivery
+   report to `DELIVERY.md` at the repo root (files touched, verbatim test
+   output, per-criterion evidence, deviations - format in the template),
+   STOPS. The standing footer in every block repeats the hard rules (no
+   git, no HANDOFF, no scope creep, no editing the task file).
+4. **Review + land (Claude Code):** audits `DELIVERY.md` against the working
+   tree (scope, spot-check 1-2 criteria, verify claimed deviations), re-runs
+   the unit lane + client build fresh (the report is never trusted for green
+   tests), fixes-or-bounces, commits with SHA verification, flips the unit's
+   status in `QUEUE.md`, updates `docs/HANDOFF.md` (moving aged session logs
+   to `docs/HANDOFF-ARCHIVE.md`).
+
+Bugs enter the queue as DIAGNOSIS blocks first (root cause + evidence +
+proposed fix in `DELIVERY.md`, no code changes); the fix block dispatches
+after the reviewer verifies the reasoning. Two blocks with fully disjoint
+FILES TO TOUCH may be dispatched back-to-back and reviewed in one session
+(one commit per unit). Details for both: `cursor-task-block-template.md`.
 
 Seth's whole job: dispatch lines, and telling Claude Code "review <unit>"
 when Cursor stops. No prompt authoring, no pasting specs.

@@ -44,6 +44,9 @@ server/node_modules/.cache/
 # Local scratch files
 cookies.txt
 
+# Cursor per-unit delivery report (read by the reviewer, never committed)
+/DELIVERY.md
+
 # Playwright MCP session artifacts (agent browser snapshots/logs)
 .playwright-mcp/
 

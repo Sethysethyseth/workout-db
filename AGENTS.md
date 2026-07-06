@@ -68,8 +68,12 @@ Rebrand text lives in: rendered UI, `<title>`, PWA manifest name fields.
 - `server/data/` - exercise catalog + muscle-weights curation + rationale
   docs, vendored not hot-linked. Rationale docs update in the SAME commit as
   any value change.
-- `docs/HANDOFF.md` - current state + next unit, rewritten every session.
-  THE work-state channel for all agents.
+- `docs/HANDOFF.md` - current state + next unit, rewritten every session,
+  CAPPED (~300 lines). THE work-state channel for all agents.
+- `docs/HANDOFF-ARCHIVE.md` - append-only history tier: aged session logs
+  move there VERBATIM (never summarized) when HANDOFF is rewritten, newest
+  first. Fable/Opus greps it for pre-main review and big-picture planning;
+  Sonnet and Cursor never load it. Same single writer as HANDOFF.
 - `docs/tasks/` - file-dispatched task queue: Claude Code authors unit blocks
   as files, Seth points Cursor at one, Cursor executes it verbatim. Protocol
   in its README; Cursor never edits anything under `docs/tasks/`.
@@ -99,14 +103,26 @@ Rebrand text lives in: rendered UI, `<title>`, PWA manifest name fields.
 
 ## Division of labor (one writer for git and state)
 
-- **Cursor writes code and stops.** It does NOT commit, push, or edit
-  `docs/HANDOFF.md` - it implements the current task block, gets tests green,
-  and ends its turn. (The gate below says local commits are *permitted*
-  without asking; this rule says committing is *Claude Code's job*, so two
-  agents never race one working tree - see the two-agents gotcha.)
-- **Claude Code owns git and state:** reviews each unit against the spec,
-  commits with SHA verification, pushes to staging, and keeps HANDOFF
-  current.
+- **Cursor writes code, self-verifies, and stops.** It does NOT commit,
+  push, or edit `docs/HANDOFF.md` - it implements the current task block,
+  gets tests green, writes the delivery report to `DELIVERY.md` at the repo
+  root (gitignored; files touched, verbatim test output, per-criterion
+  evidence, deviations - format in `cursor-task-block-template.md`), and
+  ends its turn. (The gate below says local commits are *permitted* without
+  asking; this rule says committing is *Claude Code's job*, so two agents
+  never race one working tree - see the two-agents gotcha.)
+- **Claude Code owns git and state:** audits each delivery report against
+  the working tree and the block (re-running the unit lane + client build
+  fresh - the report is never trusted for green tests), commits with SHA
+  verification, pushes to staging, and keeps HANDOFF current (aged session
+  logs move verbatim to `docs/HANDOFF-ARCHIVE.md`).
+- **Bugs get a Cursor diagnosis block first:** root cause with evidence
+  (file:line, mechanism, why it explains the exact symptom) + proposed fix
+  in `DELIVERY.md`, NO code changes; the reviewer verifies the reasoning,
+  then green-lights a fix block or escalates. Stated exception, so it
+  doesn't drift: when diagnosis was ~95% of the work and the fix is
+  trivial, the diagnosing agent ships it directly - anything where
+  implementation is the bulk of the work goes to Cursor, however small.
 - Seth personally runs everything the gate marks ask-first (main merges,
   prod, migrations).
 
@@ -162,9 +178,11 @@ depends on it deploys (code-ahead-of-DB crashes prod login). Exact steps:
 
 ## Current state / next up
 
-Read `docs/HANDOFF.md`. It is rewritten every session and is the ONLY
+Read `docs/HANDOFF.md`. It is rewritten every session, capped, and is the
 work-state channel - this file never carries state, and the DB is app data
-only (never route work-state through it).
+only (never route work-state through it). Aged session logs live verbatim
+in `docs/HANDOFF-ARCHIVE.md` (Fable-only reading, for pre-main review and
+big-picture work).
 
 ## Durable gotchas
 

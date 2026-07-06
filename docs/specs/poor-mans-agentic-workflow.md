@@ -202,6 +202,37 @@ which is worse than either alternative).
   authoring + release review, keep a cheap resident for the loop." This is
   the same cost-to-value matching as the original split, applied one level
   deeper.
+- **2026-07-06:** Relay v4 - executor rebalance + two-tier state channel
+  (Seth: "claude is doing a lot more"; diagnosis confirmed it - the planner
+  seat was leaking effort through four holes, none of them the review gate
+  itself). The four fixes: (1) **state channel split into two tiers** - the
+  work-state file is CAPPED (~300 lines, every agent reads it every
+  session) and aged session logs move VERBATIM to an append-only archive
+  file only the frontier model reads (pre-release review, big-picture
+  planning). The uncapped state file had grown to ~42k tokens and was a
+  per-session tax on every seat. (2) **Executor self-verifies:** every
+  block's standing footer now requires a DELIVERY.md report (gitignored;
+  files touched, verbatim lane output, per-criterion evidence, deviations)
+  before stopping. The resident reviewer AUDITS the report against the
+  tree and re-runs only the cheap lanes fresh (never trusts it for green
+  tests - the "executor lies about done" scar stands) instead of
+  re-deriving the whole delivery. (3) **Bugs get an executor diagnosis
+  block first** (root cause + evidence + proposed fix, no code); the
+  reviewer verifies reasoning instead of deriving it. The previously
+  unstated direct-fix precedent is now a stated exception: when diagnosis
+  was ~95% of the work and the fix is trivial, the diagnosing agent ships
+  it - everything implementation-heavy goes to the executor, however
+  small (unstated precedents expand; stated ones hold their shape).
+  (4) **Blocks go contract-first** (files, patterns by name,
+  machine-checkable criteria - not line-level implementation), except
+  judgment-heavy visual units where the design IS the spec; plus
+  file-disjoint blocks may batch two executor runs per review session
+  (one commit per unit). Accepted trade-off, stated in CLAUDE.md:
+  contract-first blocks raise the bounce rate slightly - that is the price
+  of moving implementation thinking off the frontier seat. Generalizes for
+  the public repo as: "the executor should hand the reviewer a claim to
+  audit, not a tree to reconstruct; state files every agent reads must be
+  capped, with history in a tier only the expensive seat reads."
 - **2026-07-02 (later still):** Shell repo created at
   `github.com/Sethysethyseth/the-poor-mans-agentic-workflow` (PRIVATE - still
   not published; visibility flip stays Seth's call). Contents: `BRIEF.md`
