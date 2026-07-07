@@ -38,6 +38,15 @@ pre-main review as the L-wave.
 (N-wave fully landed on `ui-nav-overhaul`, cleared for merge, awaiting
 Seth's "push to main" trigger phrase.)
 
+LANDED 73becdc | t3b-coldstart-lifter-loader.md | cold-start boot loader (the sole
+`tone="page"` LoadingState, shown while /auth/me wakes a cold Render server)
+swaps the breathing ring for the accent-tinted pixel lifter doing slow reps -
+mask-tint idiom (matches `.wordmark::after`), asymmetric rep motion + lockout
+glow, reduced-motion static fallback, label cross-fade + delayed reveal
+untouched | authored July 6 (Opus), 2 files (LoadingState.jsx, index.css),
+asset already vendored (lifter.png), no deps, no schema; visual sign-off is
+Seth's on the Vercel deploy
+
 ## Candidates (next units, not yet authored as blocks)
 
 - A5 exercise picker (UI, Cursor-suited once A4 FK design is done)
