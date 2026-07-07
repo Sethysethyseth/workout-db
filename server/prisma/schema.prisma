@@ -219,6 +219,28 @@ model UserExercise {
   @@index([userId])
 }
 
+/// Vendored Free Exercise DB catalog (server/data/exercises.json), seeded by
+/// prisma/seed.js (idempotent upserts). Standalone in A1 - FK linkage from the
+/// exerciseName-carrying models is the separate A4 unit.
+model Exercise {
+  id                String   @id
+  name              String
+  force             String?
+  level             String?
+  mechanic          String?
+  equipment         String?
+  category          String?
+  primaryMuscles    String[]
+  secondaryMuscles  String[]
+  instructions      String[]
+  images            String[]
+  muscleWeights     Json?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([name])
+}
+
 model BlockWorkoutSet {
   id                     Int                  @id @default(autoincrement())
   order                  Int
