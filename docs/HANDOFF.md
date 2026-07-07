@@ -1,5 +1,45 @@
 # HANDOFF — current state
 
+**Updated:** July 7, 2026 (Fable — A-WAVE OPENED: Track A structural
+exercise identity. A1 landed direct; A4/A5/A6b authored and queued.)**
+New branch `catalog-fk-wave` (off `logging-ux-wave` HEAD `80373e1` = main
+`3767840` + one docs commit). **A1 LANDED `3a6bc25` (Fable direct):** the
+stale `exercise-catalog-seed` branch (`c27a6de`, May 27) reconciled by
+hand, NOT merged - its package.json predated `test:unit` (a blind merge
+would have deleted it) and its prisma.config.ts seed shape predated Prisma
+6.19 (`migrations.seed` is the current location; the deprecated
+package.json `prisma` block was deliberately skipped). Exercise model added
+standalone (no FKs), migration re-timestamped `20260527120000` ->
+`20260707120000_add_exercise_catalog` (safe: never applied to prod, and
+test resets wiped it from staging - July 6 verification showed 14
+migrations, zero drift), seed.js verbatim (idempotent upserts,
+`assertSafeForReset` guard), `server/data/README.md` updated for the
+curated muscle-weights/aliases reality. `exercises.json` was already
+byte-identical on main - data shipped with the engine, only the table
+never landed. Unit lane 119/119 + `prisma validate` green; deploy-safe
+before its migration (nothing queries the table). **Wave blocks authored
+(contract-first): `a4-exercise-fk-linkage.md`** (nullable
+exerciseId String? / userExerciseId Int? on TemplateExercise /
+SessionExercise / BlockWorkoutExercise + CHECK at-most-one + WorkoutSet.
+blockWorkoutSetId groundwork for block plan-vs-actual; write-path stamping
+helper; engine gains a stored-userExerciseId tier; schema snippet in the
+block IS the contract - L3's wrong-FK-type lesson), **`a5-exercise-picker.
+md`** (pure searchCatalog + GET /exercises/search + live-session typeahead
+writing ids on commit; free text stays first-class), **`a6b-exercise-id-
+backfill.md`** (dry-run-default script stamping historical rows; unresolved
+report feeds alias curation). **Migration choreography (Seth, RUNBOOK,
+gated): after A4 lands - staging gets catalog migration, then `npx prisma
+db seed`, then the A4 linkage migration, in that order (stamped FK values
+need catalog rows), then Render redeploy, then A5/A6b.** A4's sequencing
+flag is app-wide (regenerated client selects new columns on every
+template/session/block read). Housekeeping this session: stale TODO #0
+closed (reps `step="1"` verified at SessionDetailPage.jsx:934 - L6 fixed
+it), moot `prod-migrate-l1-l3-prep.md` task file deleted (prod migrations
+were applied by hand July 6), QUEUE rewritten for the A-wave. **Next:
+dispatch A4 to Cursor; Seth's prod smoke of the L-wave on `3767840` is
+still outstanding (list below).**
+Previous entry retained below for continuity.
+
 **Updated:** July 6, 2026 latest+1 (Opus — T3B "basic" cold-start lifter
 loader MERGED TO MAIN; Gemini sprite upgrade queued.)** `logging-ux-wave`
 fast-forwarded onto `origin/main` again — clean ff `451a3d6..3767840`, two
@@ -63,81 +103,9 @@ TODOs (#1-6) below still stand. Cursor's migration-prep branch
 whenever.
 Previous entry retained below for continuity.
 
-**Updated:** July 6, 2026 late night (Fable — two Seth-directed direct UX
-fixes landed off-queue on `logging-ux-wave`, disjoint from all L-wave
-files; origin confirmed at `c0d37fb`.)** (1) `3a530a7`: logged-out
-first-open no longer sits on the "Loading session…" boot spinner waiting
-for a cold server - no stored `authToken` means ProtectedRoute redirects
-straight to `/login` (the form renders instantly; `/auth/me` still fires
-and warms the server in the background). `/login` now bounces
-already-signed-in users onward (covers the valid-cookie/cleared-storage
-edge), and a definitive `/auth/me` 401 clears the dead stored token.
-(2) `c0d37fb`: finishing (or deleting) a workout now dispatches a
-`sessions:changed` window event from `sessionApi`; `ActiveSessionContext`
-applies it locally at once and re-fetches - the home "Resume workout"
-hero/persistent bar clear immediately instead of surviving until the 20s
-poll or a manual refresh. Both verified end-to-end (Playwright against a
-local server on the staging DB; register -> start -> finish -> home flip,
-plus logout/reload/login-visit probes; throwaway staging account
-`smoke_fable_jul6` created in the process). This session was the "second
-agent" flagged in QUEUE's L5-audit warning - flag resolved in QUEUE, the
-L5 audit's leave-it-out call was correct. **Add to Seth's combined smoke:
-open the app logged-out (should land on login instantly) and finish a
-workout (Resume hero should vanish on return to Home).** Next unchanged:
-Seth's combined smoke -> Fable pre-main branch-diff review -> merge.
-Previous entry retained below for continuity.
-
-**Updated:** July 6, 2026 (Fable — relay v4: two-tier state channel +
-Cursor rebalance. Docs-only session, no app code touched.)** HANDOFF is now
-CAPPED: current state, repo/deploy state, the latest 1-2 session entries,
-Open TODOs / Next up, and the short reference sections. Everything older
-moved VERBATIM to `docs/HANDOFF-ARCHIVE.md` (append-only, newest first —
-Fable greps it for pre-main review and big-picture work; Sonnet and Cursor
-never load it). Workflow changes codified in CLAUDE.md ("v4"), AGENTS.md,
-`cursor-task-block-template.md`, and `docs/tasks/` (template + README):
-Cursor now self-verifies and writes a `DELIVERY.md` report (repo root,
-gitignored) before stopping; Sonnet AUDITS that report against the tree and
-re-runs only the cheap lanes fresh (unit + client build — never trusts the
-report for green tests) instead of re-deriving the whole delivery; bugs get
-a Cursor DIAGNOSIS block first (root cause + evidence + proposed fix, no
-code); the direct-fix exception is now stated (when diagnosis was ~95% of
-the work and the fix is trivial, the diagnosing agent ships it — everything
-else goes to Cursor, however small); non-colliding units may batch two
-Cursor blocks per review session. All gates unchanged: single git/state
-writer, migration track, pre-main Fable review, "push to main" verbatim.
-**Next: unchanged from the entry below** — Seth's smoke of
-`/analytics/summary` end-to-end, then the combined
-L1+L2+L2B+A6+L6+wheel-fix backlog, then L4 dispatches.
-Previous entry retained below for continuity.
-
-**Updated:** July 6, 2026 (Sonnet — L3's CRITICAL SEQUENCING FLAG resolved:
-migration applied to STAGING, independently verified.)** Seth applied the
-`UserExercise` migration to staging manually per RUNBOOK "Schema-change
-deploy" (same precedent as L1). Independently re-verified this session
-(verify-before-trust): `npx prisma migrate status` against staging -
-Datasource resolved to `ep-bitter-breeze-am81izlh` (confirmed correct
-staging host, never `ep-solitary-sea-an56mioq` prod) - "Database schema is
-up to date!", 14 migrations, zero drift. Direct `information_schema.columns`
-query confirms the `UserExercise` table exists with the exact columns L3
-shipped (`id`, `userId` **text** - matching the deliberate String-not-Int
-deviation from the block, `name`, `normalizedName`, `muscles` jsonb,
-`createdAt`). Staging Render root (`https://workout-db-staging.onrender.com/`)
-responds 200 `{"message":"WorkoutDB API running"}` - not crash-looping, so
-the feared app-wide `/analytics/summary` 500 (every user, not just
-custom-exercise users, per the flag) is no longer live now that the table
-exists ahead of/alongside the deploy. **Not independently verified this
-session (needs Seth):** the exact deploy SHA in Render's Events tab (should
-read `fbb054b` or later - confirm before treating this as fully live), and
-an authenticated end-to-end hit on `/analytics/summary` (root health alone
-doesn't exercise the `userExercise.findMany` code path the flag was about).
-**Next: Seth's smoke** - `/analytics/summary` end-to-end first (the specific
-path the flag threatened), then the still-pending combined
-L1+L2+L2B+A6+L6+wheel-fix backlog (custom-exercise CRUD has no UI yet - L4
-builds that) - then L4 dispatches.
-Previous entry retained below for continuity.
-
-Older session entries (incl. July 5 latest+4, L3 `fbb054b` + its sequencing
-flag): moved verbatim to `docs/HANDOFF-ARCHIVE.md`.
+Older session entries (incl. the July 6 off-queue login-UX fixes, the
+relay-v4 restructuring, and the L3 staging-migration verification): moved
+verbatim to `docs/HANDOFF-ARCHIVE.md`.
 
 **Rule:** rewritten in place at the end of every working session; kept
 CAPPED (~300 lines: current state, repo/deploy, latest 1-2 session entries,
@@ -151,7 +119,13 @@ trusting it.
 
 ## Repo / deploy state
 
-- **`main` is at `3767840` (latest, July 6 Opus)** — T3B basic cold-start
+- **Active branch: `catalog-fk-wave` at `3a6bc25`** (July 7 Fable) — A1
+  exercise catalog table + seed, pushed, origin confirmed. Branched off
+  `logging-ux-wave` HEAD `80373e1` (= main + one HANDOFF docs commit).
+  Carries one UNAPPLIED migration (`20260707120000_add_exercise_catalog`) —
+  deploy-safe before migration (standalone table, nothing queries it), but
+  the A4 unit that follows is NOT; see the wave choreography in QUEUE.md.
+- **`main` is at `3767840` (July 6 Opus)** — T3B basic cold-start
   lifter loader, clean ff from `logging-ux-wave` (`451a3d6..3767840`). Client
   CSS + docs only, no migration/schema/server. Prod Vercel/Render track `main`
   and auto-deploy on push — **verify Events show `3767840`** before treating it
@@ -182,25 +156,34 @@ trusting it.
 
 ## Open TODOs (do at next session start)
 
-0. **Fix the pre-existing decimal-reps bug**: Reps `<input type="number">`
-   in `client/src/pages/SessionDetailPage.jsx` (~line 883) has
-   `step="0.01"` (copied from the adjacent Weight field); should be
-   `step="1"`. Native spinner/mouse-wheel-scroll on the focused field can
-   silently decrement reps into fractions (e.g. 9.98). Predates L1/L2 by
-   ~2 months (`9112eda7`); low severity, small fix, not yet done.
+0. ~~Fix the pre-existing decimal-reps bug~~ **DONE — verified July 7**:
+   reps input at SessionDetailPage.jsx:934 now has `step="1"` (L6 shipped
+   the step fix; `4d82311` killed the wheel-scroll path). Weight keeps its
+   correct `step="0.01"` (line 908).
 0b. **Re-seed the staging smoke account**: `smoke_b8` / `SmokeTest-B8-2026`
    (documented in the July 3 session log below) now 401s — wiped by a
    later `npm test` run resetting staging's DB (expected AGENTS.md
    behavior, easy to forget). Either re-run `scripts/seed-staging-smoke.mjs`
    or document whatever throwaway account replaces it (`smoke_lwave` was
    used ad hoc this session, not seeded with fixture data).
-1. **Repoint staging Render/Vercel back to `main`**, verify redeploy SHA is `750c42b` in Events (now includes T3), then smoke-test on prod (5 palettes x dark x Home at minimum, per `docs/smoke-tests/SCENE-SMOKE-CRITIQUE.md`, plus the analytics screen, Home weekly-report band, and the T3 loading screens - soft-tone pulsing dots + page-tone breathing ring + label cross-fade).
-1b. **Confirm prod Render + Vercel Events both show `750c42b` deployed** (T3 merge) - not yet checked this session; `main` auto-deploys to both.
+1. **Prod smoke of the L-wave on `main` (Seth, browser) — still outstanding
+   July 7.** First confirm prod Render + Vercel Events both show `3767840`
+   deployed (supersedes the stale `750c42b` checks that sat here). Then:
+   `/analytics/summary` end-to-end (the path L3's flag threatened),
+   unilateral L/R logging, tracked-exercise pills + add-to-library sheet,
+   What's New modal firing exactly once, logged-out open lands on /login
+   instantly, finishing a workout clears the Resume hero immediately, and
+   the T3B cold-start lifter loader.
 2. **Diff `_prisma_migrations` prod vs staging** (RUNBOOK -> "Migration history diff"). Unresolved, predates the UI work.
 3. **Verify the manually inserted prod `_prisma_migrations` row's `checksum` matches staging's** for `20260603140000_add_user_username`. Latent hazard — check once, fix if mismatched.
 4. Confirm prod Render serving cleanly post-recovery.
 5. Low-priority: redundant spare stash on `ui-palettes-v2` (`WIP unrelated to ui-palettes-v2 merge`, July 1) — `git stash drop` once confirmed unneeded.
-6. Low-priority: `ui-palettes-v2` and `analytics-engine` branches are both fully merged to `main` now — candidates for deletion whenever Seth wants to ask for that gated op.
+6. Low-priority: branch graveyard has grown — `ui-palettes-v2`,
+   `analytics-engine`, `ui-loading-screens`, `ui-nav-overhaul` (all merged
+   to `main`), `exercise-catalog-seed` (superseded by `3a6bc25`), and
+   `origin/cursor/prod-migrate-l1-l3-prep-0b4a` (moot; prod migrated by
+   hand July 6) are all deletion candidates whenever Seth wants to ask for
+   that gated op.
 
 ## U5 — UI overhaul (T1/T2/T3 MERGED TO MAIN, T4 not started)
 
@@ -212,43 +195,18 @@ trusting it.
 
 ## Next up (the active task)
 
-0a. **L-wave in progress on `logging-ux-wave`** — L2 LANDED (`f66f9ea`),
-   L1 LANDED (`4ae0fbf`), its migration applied + verified on staging,
-   Render repointed and redeployed at `4ae0fbf`. **Awaiting Seth's smoke
-   test of L2+L1 on the staging deploy before dispatching L3** (L3 also
-   carries a migration - UserExercise table). Wave order + migration
-   choreography in QUEUE.md. Reconcile this branch after the
-   ui-nav-overhaul merge (0b).
-0b. **N-wave navigation overhaul: REVIEW DONE, CLEARED FOR MERGE** (July 4).
-   All four units smoked + passed by Seth; Fable pre-main branch-diff
-   review complete with one fix (`3a1a7fc`, pushed to origin). Branch HEAD
-   for the merge is `3a1a7fc`. **Waiting only on Seth's "push to main"
-   trigger phrase** — then one command at a time per the gate. No
-   schema/migration coupling (client + docs only). Note: Seth has NOT
-   visually smoked the `3a1a7fc` fix itself (a one-line placeholder gating
-   change on /profile) — worth a 10-second look on the branch deploy if
-   desired, not blocking.
-1. **B9 LANDED (`c7acb43`)** — Cursor implemented, Claude Code reviewed
-   (scope exact, all acceptance criteria tested, reviewer tightened the
-   inclusive-last-bucket assertion, re-ran unit lane 103/103, purity grep
-   clean), committed + pushed. KNOWN WRINKLE recorded for U8: `e1rmTrend.
-   first/latest` are raw first/last SET epley while `e1rmSeries` points are
-   session maxes — they can disagree; the U8 block therefore requires the
-   strength delta chip to derive from `e1rmSeries` endpoints, not
-   `e1rmTrend`.
-2. **`analytics-engine` MERGED TO MAIN (`e9ce82c`), July 4 (Sonnet).** Track B
-   v1 (B1-B9) and the UI polish wave (U6-U10) are both live on `main`. See
-   Repo/deploy state above for merge mechanics and the skipped-Fable-review note.
-3. Open TODOs #1-6 (Render/Vercel repoint to main + redeploy SHA check comes
-   first, then prod verification — manual, browser).
-4. Track A (A1 catalog merge, then A4 FK design — now including
-   set->BlockWorkoutSet linkage for block-plan execution fidelity) is the
-   next engine-adjacent work; with T3 merged (`750c42b`), T4 (motion) is
-   the last unstarted U5 unit — but the N-wave (item 0) is the active UI
-   track first.
-5. U11 "what's new" one-time modal is queued as a candidate (see
-   `docs/tasks/QUEUE.md`) — needs a Fable-authored task block before Cursor
-   can pick it up.
+0. **A-wave on `catalog-fk-wave` (`3a6bc25`).** A1 landed (Fable direct).
+   Dispatch order: A4 (`a4-exercise-fk-linkage.md`) -> Seth's staging
+   migration choreography (catalog migration -> `npx prisma db seed` ->
+   A4 linkage migration, in that order - see QUEUE.md) -> A5 + A6b
+   (disjoint files, batchable). Then combined smoke -> Fable pre-main
+   branch-diff review -> merge, with the SAME choreography on prod first.
+1. **Seth's prod smoke of the L-wave on `3767840`** (Open TODO #1) can
+   happen any time, independent of the wave.
+2. **T3C sprite loader upgrade** unblocks whenever Seth drops the Gemini
+   frames in `claudefiledrop/` (art direction + prompts settled July 6).
+3. T4 motion (last unstarted U5 unit) — needs a Fable design pass first;
+   queued behind the A-wave.
 
 ## Analytics/catalog track — state
 
@@ -257,24 +215,26 @@ rationale: `analytics-engine-direction` memory. Full B1-B9 build history:
 `docs/HANDOFF-ARCHIVE.md`.*
 
 **Track B v1 (B1-B9) is code-complete and MERGED TO MAIN (`e9ce82c`, July 4).**
-Track A data plumbing (A1 catalog merge -> A4 FK design, now including
-set->BlockWorkoutSet linkage) is the next engine-adjacent work. Track C
-(AI coach) stays dead-last.
+**Track A is the ACTIVE WAVE (July 7)** — A1 landed on `catalog-fk-wave`,
+A4/A5/A6b queued (see QUEUE.md). Track C (AI coach) stays dead-last.
 
 **State / open items:**
 1. **A2 DONE + committed (`48c1e91`):** muscle-weights curation cleaned (3 bad IDs
    fixed: `Incline_Bench_Press` -> `Barbell_Incline_Bench_Press_-_Medium_Grip`,
    dropped `Bulgarian_Split_Squat` + `Pendlay_Row`; 32 -> 30, all keys resolve,
    sums valid). `scripts/validate-catalog.mjs` disk-only validator included.
-2. **`exercise-catalog-seed` committed (`c27a6de`) but NOT merged to main.** Staging
-   DB has the catalog migration; main's code doesn't. Prod has neither — when the
-   catalog merges (A1), its migration must be applied to prod per the schema-change
-   deploy discipline. Reconcile before FK work (A4).
+2. **A1 DONE (`3a6bc25`, July 7)** — the old `exercise-catalog-seed` branch
+   (`c27a6de`) is now fully SUPERSEDED (reconciled by hand, migration
+   re-timestamped) and deletable (gated op, ask Seth). Its migration was
+   NOT still on staging (test resets wiped it; July 6 verification showed
+   14 migrations, zero drift) — the July 5-era note claiming staging had it
+   was stale. Neither staging nor prod has the catalog table yet; the wave
+   choreography in QUEUE.md covers both.
 3. **Validator surfaced 29 secondary-less compounds** in the 675-exercise lifting
    subset (mostly ab/isolation, not loaded compounds) — attribution gaps to skim
-   during a later curation pass (A3), not urgent.
+   during a later curation pass (A3 candidate), not urgent.
 4. **Integration test step-6 output (malformed-key seed behavior) still UNVIEWED.**
-   Look before designing the FK unit (A4).
+   The A4 design is done regardless; worth a look before the staging seed runs.
 
 ## Other branches floating around
 

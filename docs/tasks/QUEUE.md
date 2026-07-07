@@ -6,63 +6,72 @@ Statuses: DRAFT / QUEUED / DISPATCHED / AWAITING-REVIEW / LANDED <sha> / BOUNCED
 
 ## Active
 
-L-wave (logging + exercise-library UX), authored July 4 (Fable), branch
-`logging-ux-wave` (off ui-nav-overhaul HEAD). Extended July 5 (Fable) with
-L2B (indicator visibility, from Seth's smoke feedback) and L5 (What's New
-visuals - skeleton built directly by Fable same session, T3 pattern).
-L2B, L2, and L1 all LANDED; L1's migration applied + verified on staging,
-Render redeployed. **A6 RESOLVED July 5 (Fable session, done directly not
-relayed - `3f7fe14`, pushed):** curated alias layer (92 vendored aliases +
-rationale doc in `server/data/`, guarded trailing-s plural fold, alias
-tier in `resolveExercise` between exact match and unresolved). The July 5
-smoke list now resolves 10/10; no schema, no migration, no API change.
-**L6 and L3 now LANDED too** (`cac5999` + follow-ups `4d82311`/`ae49cbe`;
-`fbb054b` with its UserExercise migration applied + verified on staging
-July 6 - see the Landed rows). **L4 LANDED `62b3ec2` and L5 LANDED
-`33d613d`, both July 6** (Seth dispatched ahead of the combined smoke -
-his call; smoke covers them). **The L-wave is fully landed. Remaining
-order: Seth's combined smoke
-(L1+L2+L2B+A6+L6+wheel-fix+L4+L5+`/analytics/summary`) -> Fable pre-main
-branch-diff review -> merge.** RESOLVED (July 6, later the same night):
-the "second agent session" flagged during the L5 audit was a
-Seth-directed Fable session doing two direct UX fixes off-queue
-(explicitly scoped to avoid L4/L5 files; the L5 audit's
-leave-it-out-of-the-commit call was correct). Both LANDED - `3a530a7`
-(logged-out visitors skip the boot spinner, straight to /login) and
-`c0d37fb` (resume-workout hero clears immediately on finish via a
-sessions:changed event) - pushed, origin confirmed at `c0d37fb`, with
-end-to-end Playwright verification against a local server on the
-staging DB. See the Landed rows; they ride the same combined smoke +
-pre-main review as the L-wave.
+A-wave (Track A: structural exercise identity), authored July 7 (Fable),
+branch `catalog-fk-wave` (off logging-ux-wave HEAD `80373e1`, which is
+main `3767840` + one docs commit). Everything prior (L-wave, T3B) is
+MERGED TO MAIN - see Landed.
 
-(N-wave fully landed on `ui-nav-overhaul`, cleared for merge, awaiting
-Seth's "push to main" trigger phrase.)
+**A1 LANDED `3a6bc25` (Fable direct, July 7):** Exercise catalog table +
+idempotent seed, reconciled by hand from the stale `exercise-catalog-seed`
+branch (migration re-timestamped 20260527 -> `20260707120000_add_exercise_
+catalog` - the old row was never on prod and test resets wiped it from
+staging; seed wired via prisma.config.ts `migrations.seed`, Prisma 6.19
+shape, NOT the deprecated package.json block; main's `test:unit` script
+preserved). Unit lane 119/119 + `prisma validate` green. Standalone model,
+no FKs - deploy-safe before its migration.
 
-LANDED 73becdc | t3b-coldstart-lifter-loader.md | cold-start boot loader (the sole
-`tone="page"` LoadingState, shown while /auth/me wakes a cold Render server)
-swaps the breathing ring for the accent-tinted pixel lifter doing slow reps -
-mask-tint idiom (matches `.wordmark::after`), asymmetric rep motion + lockout
-glow, reduced-motion static fallback, label cross-fade + delayed reveal
-untouched | authored July 6 (Opus), 2 files (LoadingState.jsx, index.css),
-asset already vendored (lifter.png), no deps, no schema; visual sign-off is
-Seth's on the Vercel deploy
+QUEUED | a4-exercise-fk-linkage.md | nullable exerciseId/userExerciseId on
+TemplateExercise/SessionExercise/BlockWorkoutExercise (+ CHECK at-most-one),
+WorkoutSet.blockWorkoutSetId groundwork, write-path stamping helper, engine
+userExerciseId tier | DISPATCH FIRST; schema snippet in the block is the
+contract, do not improvise types. CRITICAL SEQUENCING: integration lane
+forbidden in-block (pretest auto-migrates = gate violation)
+QUEUED | a5-exercise-picker.md | GET /exercises/search (pure searchCatalog
+module) + live-session typeahead that writes ids on commit; free text stays
+first-class | GATED on A4 landed + staging migration choreography done
+QUEUED | a6b-exercise-id-backfill.md | dry-run-default script stamping ids
+onto historical rows; unresolved-names report feeds alias curation | same
+gate as A5; disjoint files from A5 - batchable per v4
+
+**Migration choreography for the wave (Seth, RUNBOOK "Schema-change
+deploy", ask-first gate):** after A4 lands on the branch, apply to STAGING
+in this order: (1) `20260707120000_add_exercise_catalog`, (2) `npx prisma
+db seed` from server/ (FK values need catalog rows to exist), (3) A4's
+`20260707130000_add_exercise_fk_linkage`. Only then: staging Render
+redeploy, A5/A6b dispatch, integration lanes. PROD gets the same sequence
+before the eventual main merge deploys (plus prod seed - a prod data op,
+Seth by hand).
 
 ## Candidates (next units, not yet authored as blocks)
 
-- A5 exercise picker (UI, Cursor-suited once A4 FK design is done)
-- (A6 name-resolution aliasing RESOLVED July 5, Fable direct - `3f7fe14`
-  on `logging-ux-wave`; see Active section + the Landed row. Curation
-  grows via `server/data/exercise-aliases.json` + its rationale doc,
-  same-commit rule. Kept here as a pointer only.)
-- (U11 "what's new" candidate PROMOTED into the L-wave July 5: skeleton
-  built directly by Fable - `workoutdb-whats-new-seen` key, versioned
-  releases in `client/src/data/whatsNew.js` - and the visual layer queued
+- A5B: extend the picker to template + block builders (after A5 proves the
+  pattern in live sessions)
+- A3 curation skim: the 29 secondary-less compounds the validator surfaced
+  (content pass, not urgent; A5's lifting-subset filter already handles the
+  category question mechanically)
+- T4 motion (last unstarted U5 unit) - needs Fable design first
+- T3C sprite loader upgrade: BLOCKED on Seth's Gemini frames landing in
+  claudefiledrop/ (art direction + prompts settled July 6, see HANDOFF)
+- (U11 "what's new" candidate PROMOTED into the L-wave July 5 and shipped
   as L5. Kept here as a pointer only.)
-- NOT queueable: A1 catalog merge (gated migration, Seth manual), A4 FK
-  schema design (Claude-tier planning, not a Cursor unit)
+- (prod-migrate-l1-l3-prep.md task file DELETED July 7: Seth applied both
+  prod migrations by hand July 6, verified with real checksums - the
+  bundle-prep task was moot before dispatch; Cursor's
+  `origin/cursor/prod-migrate-l1-l3-prep-0b4a` branch is likewise
+  redundant, deletable whenever.)
 
 ## Landed
 
+- LANDED 3a6bc25 | (A1, no task block - Fable direct) | Exercise catalog
+  table + idempotent dbHostGuard-protected seed, reconciled from
+  exercise-catalog-seed with re-timestamped migration | branch
+  catalog-fk-wave; unit 119/119 + prisma validate green; migration NOT
+  applied anywhere yet (wave choreography above)
+- LANDED 73becdc | t3b-coldstart-lifter-loader.md | cold-start boot loader
+  (the sole `tone="page"` LoadingState) swaps the breathing ring for the
+  accent-tinted pixel lifter doing slow reps - mask-tint idiom, asymmetric
+  rep motion + lockout glow, reduced-motion static fallback | MERGED TO
+  MAIN `3767840`; deliberate placeholder pending the Gemini sprite upgrade
 - LANDED c0d37fb | (no task block - Seth-directed Fable direct, off-queue) | resume-workout hero clears immediately after finishing: completeSession/deleteSession dispatch sessions:changed, ActiveSessionContext applies the completion/deletion locally (string-compared ids) then re-fetches | 2 files (sessionApi.js, ActiveSessionContext.jsx), disjoint from all L-wave units; verified end-to-end via Playwright (local server on staging DB): finish -> home shows Start hero + saved flash + workout in Recents with no poll wait; rides the combined smoke + pre-main review
 - LANDED 3a530a7 | (no task block - Seth-directed Fable direct, off-queue) | logged-out first-open goes straight to /login instead of holding on the boot spinner while a cold server answers /auth/me: no stored authToken -> immediate redirect; /login self-heals valid-cookie/cleared-storage by bouncing signed-in users onward; definitive /auth/me 401 clears the dead token | 3 files (ProtectedRoute.jsx, AuthContext.jsx, LoginPage.jsx); verified end-to-end via Playwright: fresh profile -> instant /login, logout -> instant /login, logged-in reload + /login visit both land on the dashboard
 - LANDED 33d613d | l5-whats-new-visuals.md | patch-notes visual treatment: hero accent band (gradient wash + 3px top rule), small-caps accent section headers with left bars, diamond list markers, overlay-fade + 12px card-rise entrance at --motion-base, reduced-motion opt-out, mobile bottom-sheet, pinned footer outside scroll; archive cards reuse the treatment | landed July 6 (Fable audited); scope exact (4 files); build + unit 119/119 fresh; zero hex in added CSS, motion/color tokens verified defined; whatsnew gate/storage/data untouched (seen-key single-hit confirmed); WhatsNewContent split into presentation subcomponents; visual sign-off deferred to Seth's combined smoke (4 palettes x 2 modes, 360px)

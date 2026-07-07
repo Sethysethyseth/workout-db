@@ -13,6 +13,81 @@ context) and the git history of `docs/HANDOFF.md`.
 
 ---
 
+## Superseded current-state entries (July 6, 2026)
+
+**Updated:** July 6, 2026 late night (Fable — two Seth-directed direct UX
+fixes landed off-queue on `logging-ux-wave`, disjoint from all L-wave
+files; origin confirmed at `c0d37fb`.)** (1) `3a530a7`: logged-out
+first-open no longer sits on the "Loading session…" boot spinner waiting
+for a cold server - no stored `authToken` means ProtectedRoute redirects
+straight to `/login` (the form renders instantly; `/auth/me` still fires
+and warms the server in the background). `/login` now bounces
+already-signed-in users onward (covers the valid-cookie/cleared-storage
+edge), and a definitive `/auth/me` 401 clears the dead stored token.
+(2) `c0d37fb`: finishing (or deleting) a workout now dispatches a
+`sessions:changed` window event from `sessionApi`; `ActiveSessionContext`
+applies it locally at once and re-fetches - the home "Resume workout"
+hero/persistent bar clear immediately instead of surviving until the 20s
+poll or a manual refresh. Both verified end-to-end (Playwright against a
+local server on the staging DB; register -> start -> finish -> home flip,
+plus logout/reload/login-visit probes; throwaway staging account
+`smoke_fable_jul6` created in the process). This session was the "second
+agent" flagged in QUEUE's L5-audit warning - flag resolved in QUEUE, the
+L5 audit's leave-it-out call was correct. **Add to Seth's combined smoke:
+open the app logged-out (should land on login instantly) and finish a
+workout (Resume hero should vanish on return to Home).** Next unchanged:
+Seth's combined smoke -> Fable pre-main branch-diff review -> merge.
+Previous entry retained below for continuity.
+
+**Updated:** July 6, 2026 (Fable — relay v4: two-tier state channel +
+Cursor rebalance. Docs-only session, no app code touched.)** HANDOFF is now
+CAPPED: current state, repo/deploy state, the latest 1-2 session entries,
+Open TODOs / Next up, and the short reference sections. Everything older
+moved VERBATIM to `docs/HANDOFF-ARCHIVE.md` (append-only, newest first —
+Fable greps it for pre-main review and big-picture work; Sonnet and Cursor
+never load it). Workflow changes codified in CLAUDE.md ("v4"), AGENTS.md,
+`cursor-task-block-template.md`, and `docs/tasks/` (template + README):
+Cursor now self-verifies and writes a `DELIVERY.md` report (repo root,
+gitignored) before stopping; Sonnet AUDITS that report against the tree and
+re-runs only the cheap lanes fresh (unit + client build — never trusts the
+report for green tests) instead of re-deriving the whole delivery; bugs get
+a Cursor DIAGNOSIS block first (root cause + evidence + proposed fix, no
+code); the direct-fix exception is now stated (when diagnosis was ~95% of
+the work and the fix is trivial, the diagnosing agent ships it — everything
+else goes to Cursor, however small); non-colliding units may batch two
+Cursor blocks per review session. All gates unchanged: single git/state
+writer, migration track, pre-main Fable review, "push to main" verbatim.
+**Next: unchanged from the entry below** — Seth's smoke of
+`/analytics/summary` end-to-end, then the combined
+L1+L2+L2B+A6+L6+wheel-fix backlog, then L4 dispatches.
+Previous entry retained below for continuity.
+
+**Updated:** July 6, 2026 (Sonnet — L3's CRITICAL SEQUENCING FLAG resolved:
+migration applied to STAGING, independently verified.)** Seth applied the
+`UserExercise` migration to staging manually per RUNBOOK "Schema-change
+deploy" (same precedent as L1). Independently re-verified this session
+(verify-before-trust): `npx prisma migrate status` against staging -
+Datasource resolved to `ep-bitter-breeze-am81izlh` (confirmed correct
+staging host, never `ep-solitary-sea-an56mioq` prod) - "Database schema is
+up to date!", 14 migrations, zero drift. Direct `information_schema.columns`
+query confirms the `UserExercise` table exists with the exact columns L3
+shipped (`id`, `userId` **text** - matching the deliberate String-not-Int
+deviation from the block, `name`, `normalizedName`, `muscles` jsonb,
+`createdAt`). Staging Render root (`https://workout-db-staging.onrender.com/`)
+responds 200 `{"message":"WorkoutDB API running"}` - not crash-looping, so
+the feared app-wide `/analytics/summary` 500 (every user, not just
+custom-exercise users, per the flag) is no longer live now that the table
+exists ahead of/alongside the deploy. **Not independently verified this
+session (needs Seth):** the exact deploy SHA in Render's Events tab (should
+read `fbb054b` or later - confirm before treating this as fully live), and
+an authenticated end-to-end hit on `/analytics/summary` (root health alone
+doesn't exercise the `userExercise.findMany` code path the flag was about).
+**Next: Seth's smoke** - `/analytics/summary` end-to-end first (the specific
+path the flag threatened), then the still-pending combined
+L1+L2+L2B+A6+L6+wheel-fix backlog (custom-exercise CRUD has no UI yet - L4
+builds that) - then L4 dispatches.
+Previous entry retained below for continuity.
+
 ## Superseded current-state entries (July 5, 2026)
 
 **Updated:** July 5, 2026 latest+4 (Sonnet — L3 landed `fbb054b`, pushed to
