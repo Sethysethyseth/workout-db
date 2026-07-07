@@ -15,6 +15,57 @@ context) and the git history of `docs/HANDOFF.md`.
 
 ## Superseded current-state entries (July 5, 2026)
 
+**Updated:** July 5, 2026 latest+4 (Sonnet — L3 landed `fbb054b`, pushed to
+`origin/logging-ux-wave`. CRITICAL SEQUENCING FLAG, unresolved.)**
+Cursor executed `l3-custom-exercises-server.md`; reviewed and committed (12
+files, +830/-65). Scope exact match to the block's FILES TO TOUCH. One
+deliberate correct deviation from spec: `UserExercise.userId` is `String`,
+not the block's stated `Int` - the block's schema snippet was wrong,
+`User.id` is `String @default(cuid())`; `Int` would have been a broken FK.
+Delivered: `UserExercise` model + migration (hand-authored, matches
+existing migration rendering); `GET /api/exercises/muscles` (17-muscle
+vocabulary, catalog-derived, not hardcoded); custom-exercise CRUD (POST
+rejects catalog/alias-resolvable names and duplicate normalizedNames,
+GET/DELETE both userId-scoped, DELETE 404s in the standard
+not-found-shape on not-own-or-missing, matching the existing pattern used
+across every other controller); `resolveExercise` gained an optional
+third `userIndex` arg, catalog+alias still wins on collision, then the
+user overlay, `source: "userExercise"` threaded through
+`/exercises/resolve`; `userExercises.js` (pure, no Prisma) has
+`buildUserExerciseIndex` + `userExerciseWeights` (primary 1.0/secondary
+0.5, same fallback convention as `attribution.js`); `enrichSet` gives a
+user-exercise resolution a synthetic `catalogEntry.id = user:<id>` so
+`aggregateExerciseMetrics`'s existing id-keyed grouping works unmodified;
+`analyticsController.getSummary` now also fetches the caller's
+`UserExercise` rows and builds the overlay index. Server unit lane
+119/119 (new pure tests: weights math, catalog-beats-user precedence,
+unresolved-stays-unresolved-with-overlay, a user-exercise set landing
+fractional volume in `perMuscle`). Purity grep
+(`prisma\|@prisma` under `server/src/analytics/`) - zero hits. Client
+untouched, `server/package.json` byte-identical. Integration tests
+WRITTEN (custom CRUD happy path, cross-user isolation 404, catalog-name
+rejection, resolve endpoint's `userExercise` source, summary
+end-to-end volume) but deliberately NOT RUN - `npm test` would
+auto-apply the parked migration, exactly the gate the block specified.
+**CRITICAL SEQUENCING FLAG (same class as L1's, caught in review before
+any further action):** `analyticsController.getSummary` now
+unconditionally runs `prisma.userExercise.findMany({ where: { userId } })`
+on EVERY summary request, not just when a custom exercise is involved.
+Staging Render is repointed to `logging-ux-wave` and auto-deploys on
+push - once it redeploys at `fbb054b`, `/analytics/summary` will 500 for
+ALL users (not just custom-exercise users) until the `UserExercise`
+migration is applied, because the regenerated Prisma client will expect a
+table that doesn't exist yet on staging. **Not yet done: apply the
+migration to STAGING per RUNBOOK "Schema-change deploy" (confirm
+`noisy-surf`/`ep-bitter-breeze-am81izlh` host, same as L1 - never prod)
+before or immediately after this redeploys; verify `npx prisma migrate
+status` clean afterward, same as the L1 precedent.** Only after that:
+Seth's smoke (custom exercise CRUD via API/client is not built yet - L4
+is the UI - so this session's smoke is really "does the rest of the app,
+especially analytics, still work" - the summary endpoint end-to-end is
+the thing to check first) - then L4 dispatches (custom-exercise UI,
+builds on this).
+
 **Updated:** July 5, 2026 latest+3 (Sonnet — root-caused + fixed the
 weight->reps promotion glitch that survived L6, `ae49cbe`, pushed to
 `origin/logging-ux-wave`.** Seth reported it was "still a little glitchy

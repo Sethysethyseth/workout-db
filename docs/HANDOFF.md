@@ -1,5 +1,40 @@
 # HANDOFF — current state
 
+**Updated:** July 6, 2026 latest+1 (Opus — T3B "basic" cold-start lifter
+loader MERGED TO MAIN; Gemini sprite upgrade queued.)** `logging-ux-wave`
+fast-forwarded onto `origin/main` again — clean ff `451a3d6..3767840`, two
+commits only: `73becdc` (feat: animated lifter mark on the cold-start boot
+loader) + `3767840` (QUEUE doc). No migrations, no schema, no server change —
+client CSS + docs only; **prod DB untouched**, deploys the client to prod
+Vercel. Local + origin `main` both at `3767840` (local ref fast-forwarded to
+match; ff push straight to `origin/main`, no checkout — avoids the OneDrive
+lock hang). **What shipped:** the page-tone `LoadingState` (ProtectedRoute's
+sole `tone="page"` user — the boot screen shown while `/auth/me` wakes a cold
+Render server) swapped its breathing ring for an accent-tinted pixel-lifter
+mask (`client/src/assets/brand/lifter.png`) doing a CSS-transform "rep"
+(translateY + scaleY, `coldstart-lift`/`coldstart-glow` keyframes, lockout
+glow, reduced-motion static, label cross-fade + delayed reveal untouched).
+**This is a deliberate PLACEHOLDER** — Seth judged the single-silhouette bob
+"not professional" (no articulation, no face). **Queued upgrade (decided this
+session):** replace it with a real 3-frame full-color expressive pixel sprite —
+Rack (bar at shoulders, elbows bent) / Drive (mid, gritted-teeth effort) /
+Lockout (bar overhead, arms straight) — looped **A-B-C-B** via CSS `steps()`.
+Art direction settled: full-color expressive mascot, ONE master character
+recolored per palette (unique-per-theme, like the scene rasters). **Seth
+generates the 3 frames in Gemini** (hero-then-image-edit workflow; prompts
+handed off this session — flat limited palette, neutral skin / chalk-gray
+singlet / steel bar so recolor is clean, feet+hips locked across frames to
+prevent jump), drops the transparent PNGs in `claudefiledrop/`; then Claude
+Code slices+aligns into a sheet, builds the `steps()` A-B-C-B animation,
+generates the 4 palette recolors, wires it into `LoadingState`/`index.css`,
+refreshes the preview harness. **Preview harness exists:** a standalone
+Artifact (real sprite mask + real per-palette tokens + exact keyframes, with
+palette/theme/motion/size controls) to judge the loader without a cold-start
+wait or deploy — reuse/refresh it when the real sprite lands. **Verify (Seth,
+browser):** Vercel prod Events show `3767840` deployed. Next: Gemini frames ->
+sprite upgrade.
+Previous entry retained below for continuity.
+
 **Updated:** July 6, 2026 latest (Opus — L-wave MERGED TO MAIN; prod migrations
 applied + verified first.)** `logging-ux-wave` (`d927fb8`) fast-forwarded onto
 `origin/main` — the whole L-wave (L1/L2/L2B/L3/L4/L5/L6 + A6), the off-queue
@@ -101,57 +136,8 @@ L1+L2+L2B+A6+L6+wheel-fix backlog (custom-exercise CRUD has no UI yet - L4
 builds that) - then L4 dispatches.
 Previous entry retained below for continuity.
 
-**Updated:** July 5, 2026 latest+4 (Sonnet — L3 landed `fbb054b`, pushed to
-`origin/logging-ux-wave`. CRITICAL SEQUENCING FLAG, unresolved.)**
-Cursor executed `l3-custom-exercises-server.md`; reviewed and committed (12
-files, +830/-65). Scope exact match to the block's FILES TO TOUCH. One
-deliberate correct deviation from spec: `UserExercise.userId` is `String`,
-not the block's stated `Int` - the block's schema snippet was wrong,
-`User.id` is `String @default(cuid())`; `Int` would have been a broken FK.
-Delivered: `UserExercise` model + migration (hand-authored, matches
-existing migration rendering); `GET /api/exercises/muscles` (17-muscle
-vocabulary, catalog-derived, not hardcoded); custom-exercise CRUD (POST
-rejects catalog/alias-resolvable names and duplicate normalizedNames,
-GET/DELETE both userId-scoped, DELETE 404s in the standard
-not-found-shape on not-own-or-missing, matching the existing pattern used
-across every other controller); `resolveExercise` gained an optional
-third `userIndex` arg, catalog+alias still wins on collision, then the
-user overlay, `source: "userExercise"` threaded through
-`/exercises/resolve`; `userExercises.js` (pure, no Prisma) has
-`buildUserExerciseIndex` + `userExerciseWeights` (primary 1.0/secondary
-0.5, same fallback convention as `attribution.js`); `enrichSet` gives a
-user-exercise resolution a synthetic `catalogEntry.id = user:<id>` so
-`aggregateExerciseMetrics`'s existing id-keyed grouping works unmodified;
-`analyticsController.getSummary` now also fetches the caller's
-`UserExercise` rows and builds the overlay index. Server unit lane
-119/119 (new pure tests: weights math, catalog-beats-user precedence,
-unresolved-stays-unresolved-with-overlay, a user-exercise set landing
-fractional volume in `perMuscle`). Purity grep
-(`prisma\|@prisma` under `server/src/analytics/`) - zero hits. Client
-untouched, `server/package.json` byte-identical. Integration tests
-WRITTEN (custom CRUD happy path, cross-user isolation 404, catalog-name
-rejection, resolve endpoint's `userExercise` source, summary
-end-to-end volume) but deliberately NOT RUN - `npm test` would
-auto-apply the parked migration, exactly the gate the block specified.
-**CRITICAL SEQUENCING FLAG (same class as L1's, caught in review before
-any further action):** `analyticsController.getSummary` now
-unconditionally runs `prisma.userExercise.findMany({ where: { userId } })`
-on EVERY summary request, not just when a custom exercise is involved.
-Staging Render is repointed to `logging-ux-wave` and auto-deploys on
-push - once it redeploys at `fbb054b`, `/analytics/summary` will 500 for
-ALL users (not just custom-exercise users) until the `UserExercise`
-migration is applied, because the regenerated Prisma client will expect a
-table that doesn't exist yet on staging. **Not yet done: apply the
-migration to STAGING per RUNBOOK "Schema-change deploy" (confirm
-`noisy-surf`/`ep-bitter-breeze-am81izlh` host, same as L1 - never prod)
-before or immediately after this redeploys; verify `npx prisma migrate
-status` clean afterward, same as the L1 precedent.** Only after that:
-Seth's smoke (custom exercise CRUD via API/client is not built yet - L4
-is the UI - so this session's smoke is really "does the rest of the app,
-especially analytics, still work" - the summary endpoint end-to-end is
-the thing to check first) - then L4 dispatches (custom-exercise UI,
-builds on this).
-Older session entries: moved verbatim to `docs/HANDOFF-ARCHIVE.md`.
+Older session entries (incl. July 5 latest+4, L3 `fbb054b` + its sequencing
+flag): moved verbatim to `docs/HANDOFF-ARCHIVE.md`.
 
 **Rule:** rewritten in place at the end of every working session; kept
 CAPPED (~300 lines: current state, repo/deploy, latest 1-2 session entries,
@@ -165,7 +151,15 @@ trusting it.
 
 ## Repo / deploy state
 
-- **`main` is at `750c42b`** (fast-forward: `ui-loading-screens` -> `main`,
+- **`main` is at `3767840` (latest, July 6 Opus)** — T3B basic cold-start
+  lifter loader, clean ff from `logging-ux-wave` (`451a3d6..3767840`). Client
+  CSS + docs only, no migration/schema/server. Prod Vercel/Render track `main`
+  and auto-deploy on push — **verify Events show `3767840`** before treating it
+  as live. This entry supersedes the historical merge notes below.
+- **`main` was at `d927fb8`** — L-wave (L1-L6 + A6) + login-UX/resume-hero
+  fixes + relay-v4 docs, merged July 6 (clean ff, prod migrations applied +
+  verified first). `451a3d6` was a HANDOFF doc commit on top.
+- **`main` was at `750c42b`** (fast-forward: `ui-loading-screens` -> `main`,
   T3 dynamic loading screens), confirmed on `origin/main`. Merged + pushed
   July 4 (Sonnet session). `main` had not moved since the branch point, so
   `git merge --ff-only` applied cleanly - no worktree, no conflicts.
