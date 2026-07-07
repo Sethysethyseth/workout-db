@@ -20,12 +20,6 @@ shape, NOT the deprecated package.json block; main's `test:unit` script
 preserved). Unit lane 119/119 + `prisma validate` green. Standalone model,
 no FKs - deploy-safe before its migration.
 
-QUEUED | a4-exercise-fk-linkage.md | nullable exerciseId/userExerciseId on
-TemplateExercise/SessionExercise/BlockWorkoutExercise (+ CHECK at-most-one),
-WorkoutSet.blockWorkoutSetId groundwork, write-path stamping helper, engine
-userExerciseId tier | DISPATCH FIRST; schema snippet in the block is the
-contract, do not improvise types. CRITICAL SEQUENCING: integration lane
-forbidden in-block (pretest auto-migrates = gate violation)
 QUEUED | a5-exercise-picker.md | GET /exercises/search (pure searchCatalog
 module) + live-session typeahead that writes ids on commit; free text stays
 first-class | GATED on A4 landed + staging migration choreography done
@@ -62,6 +56,22 @@ Seth by hand).
 
 ## Landed
 
+- LANDED 0743070 | a4-exercise-fk-linkage.md | nullable exerciseId/
+  userExerciseId on TemplateExercise/SessionExercise/BlockWorkoutExercise
+  (+ at-most-one CHECK), blockWorkoutSetId groundwork on WorkoutSet,
+  write-path stamping helper (catalog beats userExercise, mirrors
+  resolveExercise tier order), resolve.js gains a stored-userExerciseId
+  tier ahead of name resolution | scope exact (13 files, matches FILES TO
+  TOUCH); unit lane 124/124 + prisma validate re-run fresh; migration SQL
+  verified 7 ADD COLUMN / 7 indexes / 7 SET-NULL FKs / 3 CHECK, no DROP/
+  NOT NULL/DEFAULT; schema types match the block's exact spec (String? on
+  Exercise FK, Int? on UserExercise FK - L3's wrong-FK-type lesson
+  avoided); analyticsController id-selection precedence spot-checked
+  against existing exerciseName derivation (sessionExercise ?? template
+  Exercise ?? null) - identical shape; integration lane written (4 tests)
+  but NOT run per the block's sequencing flag; migration NOT applied to
+  any environment yet - staging needs A1's catalog migration + seed first
+  (choreography below)
 - LANDED 3a6bc25 | (A1, no task block - Fable direct) | Exercise catalog
   table + idempotent dbHostGuard-protected seed, reconciled from
   exercise-catalog-seed with re-timestamped migration | branch

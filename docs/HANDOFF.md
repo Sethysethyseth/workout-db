@@ -1,5 +1,31 @@
 # HANDOFF — current state
 
+**Updated:** July 7, 2026 latest (Sonnet — A4 LANDED `0743070`; L-wave prod
+smoke closed.)** Seth confirmed the L-wave prod smoke (Open TODO #1) is
+complete — no issues reported. **A4 (`a4-exercise-fk-linkage.md`) audited and
+committed `0743070`, pushed, origin confirmed on `catalog-fk-wave`.** Nullable
+`exerciseId`/`userExerciseId` on TemplateExercise/SessionExercise/
+BlockWorkoutExercise (+ at-most-one CHECK per model), `blockWorkoutSetId`
+groundwork on WorkoutSet, write-path stamping helper
+(`server/src/lib/exerciseIdentity.js`, catalog beats userExercise, mirrors
+`resolveExercise` tier order), `resolve.js` gains a stored-`userExerciseId`
+tier ahead of name resolution. Audit re-ran both lanes fresh (unit 124/124,
+`prisma validate` clean — matches `DELIVERY.md`'s claims), confirmed scope
+exact against FILES TO TOUCH (13 files, no client touch), verified the
+migration SQL by hand (7 ADD COLUMN / 7 indexes / 7 SET-NULL FKs / 3 CHECK,
+no DROP/NOT NULL/DEFAULT), confirmed schema types match the block's exact
+spec (String? on the Exercise FK, Int? on the UserExercise FK — avoids L3's
+wrong-FK-type mistake), and spot-checked `analyticsController.js`'s id
+precedence against the pre-existing `exerciseName` derivation precedence
+(`sessionExercise ?? templateExercise ?? null`) — identical shape, not
+invented. Integration lane written (4 tests) but deliberately NOT run per
+the block's sequencing flag. **Migration is NOT applied to any environment
+yet.** Next: Seth's staging migration choreography (RUNBOOK, gated) — (1)
+`20260707120000_add_exercise_catalog`, (2) `npx prisma db seed` from
+`server/`, (3) `20260707130000_add_exercise_fk_linkage`, in that order —
+then staging Render redeploy, then dispatch A5/A6b.
+Previous entry retained below for continuity.
+
 **Updated:** July 7, 2026 (Fable — A-WAVE OPENED: Track A structural
 exercise identity. A1 landed direct; A4/A5/A6b authored and queued.)**
 New branch `catalog-fk-wave` (off `logging-ux-wave` HEAD `80373e1` = main
@@ -75,34 +101,6 @@ browser):** Vercel prod Events show `3767840` deployed. Next: Gemini frames ->
 sprite upgrade.
 Previous entry retained below for continuity.
 
-**Updated:** July 6, 2026 latest (Opus — L-wave MERGED TO MAIN; prod migrations
-applied + verified first.)** `logging-ux-wave` (`d927fb8`) fast-forwarded onto
-`origin/main` — the whole L-wave (L1/L2/L2B/L3/L4/L5/L6 + A6), the off-queue
-login-UX + resume-hero fixes, and the docs/relay-v4 restructuring are now on
-`main`. **State correction:** `main` was NOT at `750c42b` as the older entries
-below say — `ui-nav-overhaul` had already merged (main was at `516d249`, nav
-features live), so the feared merge-order conflict was moot and the What's New
-copy (which advertises the nav overhaul) is accurate. Merge was a clean ff
-(`516d249..d927fb8`), no worktree, no conflicts; local + origin `main` both
-confirmed at `d927fb8`. **Prod DB migrated FIRST (schema-ahead-of-code, the
-safe order), by Seth by hand in the prod Neon SQL editor
-(`ep-solitary-sea-an56mioq`), verified this session from his screenshots:**
-`WorkoutSet.side` (`text`) exists; `UserExercise` table has its 6 columns;
-`_prisma_migrations` went 12 -> 14 rows. Both ledger rows carry the real
-staging checksums (pulled read-only this session):
-`20260704120000_add_workout_set_side` =
-`0dea47c048f0d8db874880e3a32200d0da46c09e0eac1769e83dbe7eb312308c`,
-`20260704130000_add_user_exercise` =
-`4b2195e0821ef9e6df5afd2b55fcb3b8246fbbe6f297d0ec185e927da645866b` (both
-`applied_steps_count` 1). **Next: verify prod Render/Vercel Events show
-`d927fb8` deployed, then smoke prod** — analytics/summary end-to-end (the path
-the L3 flag threatened), unilateral L/R logging, the tracked-exercise pills +
-add-to-library sheet, and the What's New modal firing once. Pre-existing Open
-TODOs (#1-6) below still stand. Cursor's migration-prep branch
-(`origin/cursor/prod-migrate-l1-l3-prep-0b4a`) is now redundant — deletable
-whenever.
-Previous entry retained below for continuity.
-
 Older session entries (incl. the July 6 off-queue login-UX fixes, the
 relay-v4 restructuring, and the L3 staging-migration verification): moved
 verbatim to `docs/HANDOFF-ARCHIVE.md`.
@@ -119,12 +117,13 @@ trusting it.
 
 ## Repo / deploy state
 
-- **Active branch: `catalog-fk-wave` at `3a6bc25`** (July 7 Fable) — A1
-  exercise catalog table + seed, pushed, origin confirmed. Branched off
-  `logging-ux-wave` HEAD `80373e1` (= main + one HANDOFF docs commit).
-  Carries one UNAPPLIED migration (`20260707120000_add_exercise_catalog`) —
-  deploy-safe before migration (standalone table, nothing queries it), but
-  the A4 unit that follows is NOT; see the wave choreography in QUEUE.md.
+- **Active branch: `catalog-fk-wave` at `0743070`** (July 7 Sonnet) — A1 +
+  A4 landed, pushed, origin confirmed. Branched off `logging-ux-wave` HEAD
+  `80373e1` (= main + one HANDOFF docs commit). Carries TWO unapplied
+  migrations (`20260707120000_add_exercise_catalog`,
+  `20260707130000_add_exercise_fk_linkage`) — A1's is deploy-safe alone
+  (standalone table), but A4's is NOT (every template/session/block read
+  selects the new columns); see the wave choreography in QUEUE.md.
 - **`main` is at `3767840` (July 6 Opus)** — T3B basic cold-start
   lifter loader, clean ff from `logging-ux-wave` (`451a3d6..3767840`). Client
   CSS + docs only, no migration/schema/server. Prod Vercel/Render track `main`
@@ -166,14 +165,8 @@ trusting it.
    behavior, easy to forget). Either re-run `scripts/seed-staging-smoke.mjs`
    or document whatever throwaway account replaces it (`smoke_lwave` was
    used ad hoc this session, not seeded with fixture data).
-1. **Prod smoke of the L-wave on `main` (Seth, browser) — still outstanding
-   July 7.** First confirm prod Render + Vercel Events both show `3767840`
-   deployed (supersedes the stale `750c42b` checks that sat here). Then:
-   `/analytics/summary` end-to-end (the path L3's flag threatened),
-   unilateral L/R logging, tracked-exercise pills + add-to-library sheet,
-   What's New modal firing exactly once, logged-out open lands on /login
-   instantly, finishing a workout clears the Resume hero immediately, and
-   the T3B cold-start lifter loader.
+1. ~~Prod smoke of the L-wave on `main`~~ **DONE — confirmed by Seth July
+   7**, no issues reported.
 2. **Diff `_prisma_migrations` prod vs staging** (RUNBOOK -> "Migration history diff"). Unresolved, predates the UI work.
 3. **Verify the manually inserted prod `_prisma_migrations` row's `checksum` matches staging's** for `20260603140000_add_user_username`. Latent hazard — check once, fix if mismatched.
 4. Confirm prod Render serving cleanly post-recovery.
@@ -195,17 +188,18 @@ trusting it.
 
 ## Next up (the active task)
 
-0. **A-wave on `catalog-fk-wave` (`3a6bc25`).** A1 landed (Fable direct).
-   Dispatch order: A4 (`a4-exercise-fk-linkage.md`) -> Seth's staging
-   migration choreography (catalog migration -> `npx prisma db seed` ->
-   A4 linkage migration, in that order - see QUEUE.md) -> A5 + A6b
-   (disjoint files, batchable). Then combined smoke -> Fable pre-main
-   branch-diff review -> merge, with the SAME choreography on prod first.
-1. **Seth's prod smoke of the L-wave on `3767840`** (Open TODO #1) can
-   happen any time, independent of the wave.
-2. **T3C sprite loader upgrade** unblocks whenever Seth drops the Gemini
+0. **A-wave on `catalog-fk-wave` (`0743070`).** A1 + A4 landed. Next: Seth's
+   staging migration choreography (catalog migration -> `npx prisma db seed`
+   -> A4 linkage migration, in that order - see QUEUE.md), then staging
+   Render redeploy, then dispatch A5 + A6b (disjoint files, batchable).
+   Then combined smoke -> Fable pre-main branch-diff review -> merge, with
+   the SAME choreography on prod first.
+1. **T3C sprite loader upgrade** unblocks whenever Seth drops the Gemini
    frames in `claudefiledrop/` (art direction + prompts settled July 6).
-3. T4 motion (last unstarted U5 unit) — needs a Fable design pass first;
+   Note: `claudefiledrop/` currently holds two `.url` shortcut files
+   pointing at a Discord CDN, not the transparent PNG frames themselves -
+   not yet the expected drop.
+2. T4 motion (last unstarted U5 unit) — needs a Fable design pass first;
    queued behind the A-wave.
 
 ## Analytics/catalog track — state
@@ -215,8 +209,8 @@ rationale: `analytics-engine-direction` memory. Full B1-B9 build history:
 `docs/HANDOFF-ARCHIVE.md`.*
 
 **Track B v1 (B1-B9) is code-complete and MERGED TO MAIN (`e9ce82c`, July 4).**
-**Track A is the ACTIVE WAVE (July 7)** — A1 landed on `catalog-fk-wave`,
-A4/A5/A6b queued (see QUEUE.md). Track C (AI coach) stays dead-last.
+**Track A is the ACTIVE WAVE (July 7)** — A1 + A4 landed on `catalog-fk-wave`
+(`0743070`), A5/A6b queued (see QUEUE.md). Track C (AI coach) stays dead-last.
 
 **State / open items:**
 1. **A2 DONE + committed (`48c1e91`):** muscle-weights curation cleaned (3 bad IDs
@@ -234,7 +228,12 @@ A4/A5/A6b queued (see QUEUE.md). Track C (AI coach) stays dead-last.
    subset (mostly ab/isolation, not loaded compounds) — attribution gaps to skim
    during a later curation pass (A3 candidate), not urgent.
 4. **Integration test step-6 output (malformed-key seed behavior) still UNVIEWED.**
-   The A4 design is done regardless; worth a look before the staging seed runs.
+   Worth a look before the staging seed runs.
+5. **A4 DONE (`0743070`, July 7)** — structural exercise identity (nullable
+   exerciseId/userExerciseId FKs) landed on TemplateExercise, SessionExercise,
+   BlockWorkoutExercise + blockWorkoutSetId groundwork on WorkoutSet. Neither
+   staging nor prod has the migration applied yet — gated on the wave
+   choreography in QUEUE.md (A1 migration + seed must land first).
 
 ## Other branches floating around
 
