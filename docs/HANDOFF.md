@@ -1,5 +1,40 @@
 # HANDOFF — current state
 
+**Updated:** July 7, 2026 latest+1 (Sonnet — STAGING MIGRATED: A1 + A4 both
+now live on staging; CORRECTS a wrong historical claim below.)** Ran the
+staging migration choreography and found ground truth did not match this
+file: **the May 27 catalog migration (`20260527120000_add_exercise_catalog`,
+from the abandoned pre-A1 branch) was never wiped from staging** — it has
+been applied and the `Exercise` table has held all 873 rows, fully seeded,
+continuously since May 27. The July 6 entry below claiming "test resets
+wiped it from staging, 14 migrations, zero drift" was simply wrong (verified
+directly via `_prisma_migrations` + row count query, not inferred). On top
+of that, an earlier `prisma migrate deploy` attempt today against staging
+(pre-dating this fix) tried to apply the new re-timestamped
+`20260707120000_add_exercise_catalog` migration, hit `relation "Exercise"
+already exists`, and left a FAILED migration record blocking all further
+deploys. **Fix applied (Seth approved all 3 steps):** (1)
+`prisma migrate resolve --applied 20260707120000_add_exercise_catalog` to
+baseline the bookkeeping onto the schema state that already existed, (2)
+`npx prisma db seed` (idempotent — refreshed muscleWeights curation to the
+current A2-cleaned 30-key set; row count unchanged at 873, confirmed against
+`exercises.json`), (3) `npx prisma migrate deploy` applied A4's
+`20260707130000_add_exercise_fk_linkage` cleanly. **Verified directly by SQL
+query** (not just `migrate status`): `exerciseId`/`userExerciseId` present on
+TemplateExercise/SessionExercise/BlockWorkoutExercise, `blockWorkoutSetId` on
+WorkoutSet, all three `_one_identity_chk` CHECK constraints present. The
+orphan `20260527120000_add_exercise_catalog` row stays in `_prisma_migrations`
+harmlessly (not present locally, but not blocking — matches no local
+migration name so `migrate status` will always flag it as drift; low-priority
+cleanup candidate, not urgent). **Open question for whoever does the prod
+migration:** confirm the SAME old-migration situation isn't also true on
+prod before assuming the choreography there starts from a clean slate — this
+session did not check prod. **Next: verify whether Render's staging service
+is actually pointed at `catalog-fk-wave`** (RUNBOOK step 2 - it normally
+tracks `main` and needs manual repointing) before assuming the already-pushed
+A4 code is live; confirm deploy SHA in Events either way. Then A5/A6b dispatch.
+Previous entry retained below for continuity.
+
 **Updated:** July 7, 2026 latest (Sonnet — A4 LANDED `0743070`; L-wave prod
 smoke closed.)** Seth confirmed the L-wave prod smoke (Open TODO #1) is
 complete — no issues reported. **A4 (`a4-exercise-fk-linkage.md`) audited and
@@ -26,81 +61,6 @@ yet.** Next: Seth's staging migration choreography (RUNBOOK, gated) — (1)
 then staging Render redeploy, then dispatch A5/A6b.
 Previous entry retained below for continuity.
 
-**Updated:** July 7, 2026 (Fable — A-WAVE OPENED: Track A structural
-exercise identity. A1 landed direct; A4/A5/A6b authored and queued.)**
-New branch `catalog-fk-wave` (off `logging-ux-wave` HEAD `80373e1` = main
-`3767840` + one docs commit). **A1 LANDED `3a6bc25` (Fable direct):** the
-stale `exercise-catalog-seed` branch (`c27a6de`, May 27) reconciled by
-hand, NOT merged - its package.json predated `test:unit` (a blind merge
-would have deleted it) and its prisma.config.ts seed shape predated Prisma
-6.19 (`migrations.seed` is the current location; the deprecated
-package.json `prisma` block was deliberately skipped). Exercise model added
-standalone (no FKs), migration re-timestamped `20260527120000` ->
-`20260707120000_add_exercise_catalog` (safe: never applied to prod, and
-test resets wiped it from staging - July 6 verification showed 14
-migrations, zero drift), seed.js verbatim (idempotent upserts,
-`assertSafeForReset` guard), `server/data/README.md` updated for the
-curated muscle-weights/aliases reality. `exercises.json` was already
-byte-identical on main - data shipped with the engine, only the table
-never landed. Unit lane 119/119 + `prisma validate` green; deploy-safe
-before its migration (nothing queries the table). **Wave blocks authored
-(contract-first): `a4-exercise-fk-linkage.md`** (nullable
-exerciseId String? / userExerciseId Int? on TemplateExercise /
-SessionExercise / BlockWorkoutExercise + CHECK at-most-one + WorkoutSet.
-blockWorkoutSetId groundwork for block plan-vs-actual; write-path stamping
-helper; engine gains a stored-userExerciseId tier; schema snippet in the
-block IS the contract - L3's wrong-FK-type lesson), **`a5-exercise-picker.
-md`** (pure searchCatalog + GET /exercises/search + live-session typeahead
-writing ids on commit; free text stays first-class), **`a6b-exercise-id-
-backfill.md`** (dry-run-default script stamping historical rows; unresolved
-report feeds alias curation). **Migration choreography (Seth, RUNBOOK,
-gated): after A4 lands - staging gets catalog migration, then `npx prisma
-db seed`, then the A4 linkage migration, in that order (stamped FK values
-need catalog rows), then Render redeploy, then A5/A6b.** A4's sequencing
-flag is app-wide (regenerated client selects new columns on every
-template/session/block read). Housekeeping this session: stale TODO #0
-closed (reps `step="1"` verified at SessionDetailPage.jsx:934 - L6 fixed
-it), moot `prod-migrate-l1-l3-prep.md` task file deleted (prod migrations
-were applied by hand July 6), QUEUE rewritten for the A-wave. **Next:
-dispatch A4 to Cursor; Seth's prod smoke of the L-wave on `3767840` is
-still outstanding (list below).**
-Previous entry retained below for continuity.
-
-**Updated:** July 6, 2026 latest+1 (Opus — T3B "basic" cold-start lifter
-loader MERGED TO MAIN; Gemini sprite upgrade queued.)** `logging-ux-wave`
-fast-forwarded onto `origin/main` again — clean ff `451a3d6..3767840`, two
-commits only: `73becdc` (feat: animated lifter mark on the cold-start boot
-loader) + `3767840` (QUEUE doc). No migrations, no schema, no server change —
-client CSS + docs only; **prod DB untouched**, deploys the client to prod
-Vercel. Local + origin `main` both at `3767840` (local ref fast-forwarded to
-match; ff push straight to `origin/main`, no checkout — avoids the OneDrive
-lock hang). **What shipped:** the page-tone `LoadingState` (ProtectedRoute's
-sole `tone="page"` user — the boot screen shown while `/auth/me` wakes a cold
-Render server) swapped its breathing ring for an accent-tinted pixel-lifter
-mask (`client/src/assets/brand/lifter.png`) doing a CSS-transform "rep"
-(translateY + scaleY, `coldstart-lift`/`coldstart-glow` keyframes, lockout
-glow, reduced-motion static, label cross-fade + delayed reveal untouched).
-**This is a deliberate PLACEHOLDER** — Seth judged the single-silhouette bob
-"not professional" (no articulation, no face). **Queued upgrade (decided this
-session):** replace it with a real 3-frame full-color expressive pixel sprite —
-Rack (bar at shoulders, elbows bent) / Drive (mid, gritted-teeth effort) /
-Lockout (bar overhead, arms straight) — looped **A-B-C-B** via CSS `steps()`.
-Art direction settled: full-color expressive mascot, ONE master character
-recolored per palette (unique-per-theme, like the scene rasters). **Seth
-generates the 3 frames in Gemini** (hero-then-image-edit workflow; prompts
-handed off this session — flat limited palette, neutral skin / chalk-gray
-singlet / steel bar so recolor is clean, feet+hips locked across frames to
-prevent jump), drops the transparent PNGs in `claudefiledrop/`; then Claude
-Code slices+aligns into a sheet, builds the `steps()` A-B-C-B animation,
-generates the 4 palette recolors, wires it into `LoadingState`/`index.css`,
-refreshes the preview harness. **Preview harness exists:** a standalone
-Artifact (real sprite mask + real per-palette tokens + exact keyframes, with
-palette/theme/motion/size controls) to judge the loader without a cold-start
-wait or deploy — reuse/refresh it when the real sprite lands. **Verify (Seth,
-browser):** Vercel prod Events show `3767840` deployed. Next: Gemini frames ->
-sprite upgrade.
-Previous entry retained below for continuity.
-
 Older session entries (incl. the July 6 off-queue login-UX fixes, the
 relay-v4 restructuring, and the L3 staging-migration verification): moved
 verbatim to `docs/HANDOFF-ARCHIVE.md`.
@@ -117,13 +77,20 @@ trusting it.
 
 ## Repo / deploy state
 
-- **Active branch: `catalog-fk-wave` at `0743070`** (July 7 Sonnet) — A1 +
-  A4 landed, pushed, origin confirmed. Branched off `logging-ux-wave` HEAD
-  `80373e1` (= main + one HANDOFF docs commit). Carries TWO unapplied
-  migrations (`20260707120000_add_exercise_catalog`,
-  `20260707130000_add_exercise_fk_linkage`) — A1's is deploy-safe alone
-  (standalone table), but A4's is NOT (every template/session/block read
-  selects the new columns); see the wave choreography in QUEUE.md.
+- **Active branch: `catalog-fk-wave` at `39e7d7e`** (code) — A1 + A4 landed,
+  pushed, origin confirmed. Branched off `logging-ux-wave` HEAD `80373e1`
+  (= main + one HANDOFF docs commit). **Both migrations are now APPLIED ON
+  STAGING** (`ep-bitter-breeze-am81izlh` / noisy-surf) as of July 7 (Sonnet):
+  `20260707120000_add_exercise_catalog` was baselined via `prisma migrate
+  resolve --applied` (the table already existed under the old May-27
+  migration name — see the July 7 latest+1 HANDOFF entry above for the
+  full story) and `20260707130000_add_exercise_fk_linkage` applied clean via
+  `prisma migrate deploy`. Columns + CHECK constraints verified by direct
+  SQL query, not just `migrate status`. **Prod has NEITHER migration** — do
+  not assume prod's catalog migration situation mirrors staging's without
+  checking; this session did not touch prod. **Still open: confirm whether
+  Render's staging service is pointed at this branch** (see RUNBOOK step 2)
+  and check the deploy SHA in Events before assuming the code is live.
 - **`main` is at `3767840` (July 6 Opus)** — T3B basic cold-start
   lifter loader, clean ff from `logging-ux-wave` (`451a3d6..3767840`). Client
   CSS + docs only, no migration/schema/server. Prod Vercel/Render track `main`
@@ -188,12 +155,15 @@ trusting it.
 
 ## Next up (the active task)
 
-0. **A-wave on `catalog-fk-wave` (`0743070`).** A1 + A4 landed. Next: Seth's
-   staging migration choreography (catalog migration -> `npx prisma db seed`
-   -> A4 linkage migration, in that order - see QUEUE.md), then staging
-   Render redeploy, then dispatch A5 + A6b (disjoint files, batchable).
-   Then combined smoke -> Fable pre-main branch-diff review -> merge, with
-   the SAME choreography on prod first.
+0. **A-wave on `catalog-fk-wave` (`39e7d7e`).** A1 + A4 landed AND staging
+   migration choreography is DONE (both migrations applied + verified on
+   staging, July 7). Next: confirm Render's staging service is pointed at
+   this branch and the deploy SHA is current (RUNBOOK step 2), then
+   dispatch A5 + A6b (disjoint files, batchable). Then combined smoke ->
+   Fable pre-main branch-diff review -> merge, with the SAME migration
+   choreography on prod first (unverified whether prod has the same
+   old-migration-name situation staging did - check before assuming a
+   clean slate).
 1. **T3C sprite loader upgrade** unblocks whenever Seth drops the Gemini
    frames in `claudefiledrop/` (art direction + prompts settled July 6).
    Note: `claudefiledrop/` currently holds two `.url` shortcut files
@@ -210,7 +180,8 @@ rationale: `analytics-engine-direction` memory. Full B1-B9 build history:
 
 **Track B v1 (B1-B9) is code-complete and MERGED TO MAIN (`e9ce82c`, July 4).**
 **Track A is the ACTIVE WAVE (July 7)** — A1 + A4 landed on `catalog-fk-wave`
-(`0743070`), A5/A6b queued (see QUEUE.md). Track C (AI coach) stays dead-last.
+(`39e7d7e`) and BOTH migrations are applied + verified on staging, A5/A6b
+queued (see QUEUE.md). Track C (AI coach) stays dead-last.
 
 **State / open items:**
 1. **A2 DONE + committed (`48c1e91`):** muscle-weights curation cleaned (3 bad IDs
@@ -219,11 +190,13 @@ rationale: `analytics-engine-direction` memory. Full B1-B9 build history:
    sums valid). `scripts/validate-catalog.mjs` disk-only validator included.
 2. **A1 DONE (`3a6bc25`, July 7)** — the old `exercise-catalog-seed` branch
    (`c27a6de`) is now fully SUPERSEDED (reconciled by hand, migration
-   re-timestamped) and deletable (gated op, ask Seth). Its migration was
-   NOT still on staging (test resets wiped it; July 6 verification showed
-   14 migrations, zero drift) — the July 5-era note claiming staging had it
-   was stale. Neither staging nor prod has the catalog table yet; the wave
-   choreography in QUEUE.md covers both.
+   re-timestamped) and deletable (gated op, ask Seth). **CORRECTION (July 7
+   latest+1):** the July 6 claim that "test resets wiped it from staging"
+   was WRONG — the old-named migration was applied May 27 and never left
+   staging; the table has held all 873 rows since. Bookkeeping was
+   reconciled via `prisma migrate resolve --applied` (see the newest
+   HANDOFF entry). **Prod's catalog-table status is still genuinely
+   unverified** — do not assume prod mirrors staging's history here.
 3. **Validator surfaced 29 secondary-less compounds** in the 675-exercise lifting
    subset (mostly ab/isolation, not loaded compounds) — attribution gaps to skim
    during a later curation pass (A3 candidate), not urgent.
@@ -231,9 +204,10 @@ rationale: `analytics-engine-direction` memory. Full B1-B9 build history:
    Worth a look before the staging seed runs.
 5. **A4 DONE (`0743070`, July 7)** — structural exercise identity (nullable
    exerciseId/userExerciseId FKs) landed on TemplateExercise, SessionExercise,
-   BlockWorkoutExercise + blockWorkoutSetId groundwork on WorkoutSet. Neither
-   staging nor prod has the migration applied yet — gated on the wave
-   choreography in QUEUE.md (A1 migration + seed must land first).
+   BlockWorkoutExercise + blockWorkoutSetId groundwork on WorkoutSet.
+   **Migration applied to staging July 7** (verified by direct SQL query).
+   Prod does NOT have this migration yet — separate gated op when the wave
+   merges.
 
 ## Other branches floating around
 

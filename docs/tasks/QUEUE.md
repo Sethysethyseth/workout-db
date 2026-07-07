@@ -27,14 +27,23 @@ QUEUED | a6b-exercise-id-backfill.md | dry-run-default script stamping ids
 onto historical rows; unresolved-names report feeds alias curation | same
 gate as A5; disjoint files from A5 - batchable per v4
 
-**Migration choreography for the wave (Seth, RUNBOOK "Schema-change
-deploy", ask-first gate):** after A4 lands on the branch, apply to STAGING
-in this order: (1) `20260707120000_add_exercise_catalog`, (2) `npx prisma
-db seed` from server/ (FK values need catalog rows to exist), (3) A4's
-`20260707130000_add_exercise_fk_linkage`. Only then: staging Render
-redeploy, A5/A6b dispatch, integration lanes. PROD gets the same sequence
-before the eventual main merge deploys (plus prod seed - a prod data op,
-Seth by hand).
+**STAGING migration choreography: DONE (Sonnet, July 7).** Ran into a real
+snag worth knowing about before the prod pass: staging's `_prisma_migrations`
+table still had the OLD `20260527120000_add_exercise_catalog` migration
+applied from the abandoned pre-A1 branch (never actually wiped, contrary to
+what earlier HANDOFF entries claimed) - the `Exercise` table + all 873 rows
+already existed. A stray `migrate deploy` attempt against the new
+re-timestamped name hit "relation already exists" and left a FAILED
+migration record blocking further deploys. Fix: `prisma migrate resolve
+--applied 20260707120000_add_exercise_catalog` to baseline the bookkeeping,
+then `npx prisma db seed` (idempotent, refreshed muscleWeights to the A2-
+cleaned set), then `npx prisma migrate deploy` applied A4's
+`20260707130000_add_exercise_fk_linkage` clean. All FK columns + CHECK
+constraints verified on staging by direct SQL query. **PROD's migration
+history has NOT been checked for the same old-migration situation** -
+before running the prod choreography, query prod's `_prisma_migrations`
+directly rather than assuming a clean slate (full detail: HANDOFF.md, July 7
+latest+1 entry).
 
 ## Candidates (next units, not yet authored as blocks)
 

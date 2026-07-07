@@ -13,6 +13,91 @@ context) and the git history of `docs/HANDOFF.md`.
 
 ---
 
+## Superseded current-state entries (July 7, 2026 latest+1)
+
+**Updated:** July 7, 2026 (Fable — A-WAVE OPENED: Track A structural
+exercise identity. A1 landed direct; A4/A5/A6b authored and queued.)**
+New branch `catalog-fk-wave` (off `logging-ux-wave` HEAD `80373e1` = main
+`3767840` + one docs commit). **A1 LANDED `3a6bc25` (Fable direct):** the
+stale `exercise-catalog-seed` branch (`c27a6de`, May 27) reconciled by
+hand, NOT merged - its package.json predated `test:unit` (a blind merge
+would have deleted it) and its prisma.config.ts seed shape predated Prisma
+6.19 (`migrations.seed` is the current location; the deprecated
+package.json `prisma` block was deliberately skipped). Exercise model added
+standalone (no FKs), migration re-timestamped `20260527120000` ->
+`20260707120000_add_exercise_catalog` (safe: never applied to prod, and
+test resets wiped it from staging - July 6 verification showed 14
+migrations, zero drift), seed.js verbatim (idempotent upserts,
+`assertSafeForReset` guard), `server/data/README.md` updated for the
+curated muscle-weights/aliases reality. `exercises.json` was already
+byte-identical on main - data shipped with the engine, only the table
+never landed. Unit lane 119/119 + `prisma validate` green; deploy-safe
+before its migration (nothing queries the table). **Wave blocks authored
+(contract-first): `a4-exercise-fk-linkage.md`** (nullable
+exerciseId String? / userExerciseId Int? on TemplateExercise /
+SessionExercise / BlockWorkoutExercise + CHECK at-most-one + WorkoutSet.
+blockWorkoutSetId groundwork for block plan-vs-actual; write-path stamping
+helper; engine gains a stored-userExerciseId tier; schema snippet in the
+block IS the contract - L3's wrong-FK-type lesson), **`a5-exercise-picker.
+md`** (pure searchCatalog + GET /exercises/search + live-session typeahead
+writing ids on commit; free text stays first-class), **`a6b-exercise-id-
+backfill.md`** (dry-run-default script stamping historical rows; unresolved
+report feeds alias curation). **Migration choreography (Seth, RUNBOOK,
+gated): after A4 lands - staging gets catalog migration, then `npx prisma
+db seed`, then the A4 linkage migration, in that order (stamped FK values
+need catalog rows), then Render redeploy, then A5/A6b.** A4's sequencing
+flag is app-wide (regenerated client selects new columns on every
+template/session/block read). Housekeeping this session: stale TODO #0
+closed (reps `step="1"` verified at SessionDetailPage.jsx:934 - L6 fixed
+it), moot `prod-migrate-l1-l3-prep.md` task file deleted (prod migrations
+were applied by hand July 6), QUEUE rewritten for the A-wave. **Next:
+dispatch A4 to Cursor; Seth's prod smoke of the L-wave on `3767840` is
+still outstanding (list below).**
+(Superseded: its claim that staging's May 27 catalog migration was "wiped"
+by test resets was WRONG - see the July 7 latest+1 HANDOFF entry that
+corrects this from a direct DB query. Also superseded by A4 landing and
+the staging migration choreography completing.)
+
+## Superseded current-state entries (July 7, 2026 latest+2)
+
+**Updated:** July 6, 2026 latest+1 (Opus — T3B "basic" cold-start lifter
+loader MERGED TO MAIN; Gemini sprite upgrade queued.)** `logging-ux-wave`
+fast-forwarded onto `origin/main` again — clean ff `451a3d6..3767840`, two
+commits only: `73becdc` (feat: animated lifter mark on the cold-start boot
+loader) + `3767840` (QUEUE doc). No migrations, no schema, no server change —
+client CSS + docs only; **prod DB untouched**, deploys the client to prod
+Vercel. Local + origin `main` both at `3767840` (local ref fast-forwarded to
+match; ff push straight to `origin/main`, no checkout — avoids the OneDrive
+lock hang). **What shipped:** the page-tone `LoadingState` (ProtectedRoute's
+sole `tone="page"` user — the boot screen shown while `/auth/me` wakes a cold
+Render server) swapped its breathing ring for an accent-tinted pixel-lifter
+mask (`client/src/assets/brand/lifter.png`) doing a CSS-transform "rep"
+(translateY + scaleY, `coldstart-lift`/`coldstart-glow` keyframes, lockout
+glow, reduced-motion static, label cross-fade + delayed reveal untouched).
+**This is a deliberate PLACEHOLDER** — Seth judged the single-silhouette bob
+"not professional" (no articulation, no face). **Queued upgrade (decided this
+session):** replace it with a real 3-frame full-color expressive pixel sprite —
+Rack (bar at shoulders, elbows bent) / Drive (mid, gritted-teeth effort) /
+Lockout (bar overhead, arms straight) — looped **A-B-C-B** via CSS `steps()`.
+Art direction settled: full-color expressive mascot, ONE master character
+recolored per palette (unique-per-theme, like the scene rasters). **Seth
+generates the 3 frames in Gemini** (hero-then-image-edit workflow; prompts
+handed off this session — flat limited palette, neutral skin / chalk-gray
+singlet / steel bar so recolor is clean, feet+hips locked across frames to
+prevent jump), drops the transparent PNGs in `claudefiledrop/`; then Claude
+Code slices+aligns into a sheet, builds the `steps()` A-B-C-B animation,
+generates the 4 palette recolors, wires it into `LoadingState`/`index.css`,
+refreshes the preview harness. **Preview harness exists:** a standalone
+Artifact (real sprite mask + real per-palette tokens + exact keyframes, with
+palette/theme/motion/size controls) to judge the loader without a cold-start
+wait or deploy — reuse/refresh it when the real sprite lands. **Verify (Seth,
+browser):** Vercel prod Events show `3767840` deployed. Next: Gemini frames ->
+sprite upgrade.
+(Superseded: still the current plan for T3C, just archived for HANDOFF
+capping - see the "Next up" section in HANDOFF.md for the live pointer.
+Note as of this archiving: the two files dropped in `claudefiledrop/` are
+Discord CDN `.url` shortcuts, not yet the expected transparent PNG frames.)
+
 ## Superseded current-state entries (July 7, 2026)
 
 **Updated:** July 6, 2026 latest (Opus — L-wave MERGED TO MAIN; prod migrations
