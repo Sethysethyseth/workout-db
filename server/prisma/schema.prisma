@@ -61,6 +61,10 @@ model TemplateExercise {
   id                Int               @id @default(autoincrement())
   order             Int
   exerciseName      String
+  exerciseId        String?
+  exercise          Exercise?         @relation(fields: [exerciseId], references: [id], onDelete: SetNull)
+  userExerciseId    Int?
+  userExercise      UserExercise?     @relation(fields: [userExerciseId], references: [id], onDelete: SetNull)
   targetSets        Int?
   targetReps        String?
   notes             String?
@@ -72,6 +76,8 @@ model TemplateExercise {
 
   @@unique([workoutTemplateId, order])
   @@index([workoutTemplateId])
+  @@index([exerciseId])
+  @@index([userExerciseId])
 }
 
 model TemplateSet {
@@ -124,17 +130,24 @@ model WorkoutSet {
   templateExercise   TemplateExercise? @relation(fields: [templateExerciseId], references: [id], onDelete: SetNull)
   sessionExerciseId  Int?
   sessionExercise    SessionExercise?  @relation(fields: [sessionExerciseId], references: [id], onDelete: SetNull)
+  blockWorkoutSetId  Int?
+  blockWorkoutSet    BlockWorkoutSet?  @relation(fields: [blockWorkoutSetId], references: [id], onDelete: SetNull)
 
   @@unique([workoutSessionId, order])
   @@index([workoutSessionId])
   @@index([templateExerciseId])
   @@index([sessionExerciseId])
+  @@index([blockWorkoutSetId])
 }
 
 model SessionExercise {
   id                 Int               @id @default(autoincrement())
   order              Int
   exerciseName       String
+  exerciseId         String?
+  exercise           Exercise?         @relation(fields: [exerciseId], references: [id], onDelete: SetNull)
+  userExerciseId     Int?
+  userExercise       UserExercise?     @relation(fields: [userExerciseId], references: [id], onDelete: SetNull)
   targetSets         Int?
   targetReps         String?
   notes              String?
@@ -147,6 +160,8 @@ model SessionExercise {
   @@unique([workoutSessionId, order])
   @@index([workoutSessionId])
   @@index([templateExerciseId])
+  @@index([exerciseId])
+  @@index([userExerciseId])
 }
 
 model BlockTemplate {
@@ -195,6 +210,10 @@ model BlockWorkoutExercise {
   id               Int               @id @default(autoincrement())
   order            Int
   exerciseName     String
+  exerciseId       String?
+  exercise         Exercise?         @relation(fields: [exerciseId], references: [id], onDelete: SetNull)
+  userExerciseId   Int?
+  userExercise     UserExercise?     @relation(fields: [userExerciseId], references: [id], onDelete: SetNull)
   targetSets       Int?
   targetReps       String?
   notes            String?
@@ -204,16 +223,21 @@ model BlockWorkoutExercise {
 
   @@unique([blockWorkoutId, order])
   @@index([blockWorkoutId])
+  @@index([exerciseId])
+  @@index([userExerciseId])
 }
 
 model UserExercise {
-  id             Int      @id @default(autoincrement())
-  userId         String
-  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name           String
-  normalizedName String
-  muscles        Json
-  createdAt      DateTime @default(now())
+  id                    Int                    @id @default(autoincrement())
+  userId                String
+  user                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name                  String
+  normalizedName        String
+  muscles               Json
+  createdAt             DateTime               @default(now())
+  templateExercises     TemplateExercise[]
+  sessionExercises      SessionExercise[]
+  blockWorkoutExercises BlockWorkoutExercise[]
 
   @@unique([userId, normalizedName])
   @@index([userId])
@@ -223,20 +247,23 @@ model UserExercise {
 /// prisma/seed.js (idempotent upserts). Standalone in A1 - FK linkage from the
 /// exerciseName-carrying models is the separate A4 unit.
 model Exercise {
-  id                String   @id
-  name              String
-  force             String?
-  level             String?
-  mechanic          String?
-  equipment         String?
-  category          String?
-  primaryMuscles    String[]
-  secondaryMuscles  String[]
-  instructions      String[]
-  images            String[]
-  muscleWeights     Json?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id                    String                 @id
+  name                  String
+  force                 String?
+  level                 String?
+  mechanic              String?
+  equipment             String?
+  category              String?
+  primaryMuscles        String[]
+  secondaryMuscles      String[]
+  instructions          String[]
+  images                String[]
+  muscleWeights         Json?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  templateExercises     TemplateExercise[]
+  sessionExercises      SessionExercise[]
+  blockWorkoutExercises BlockWorkoutExercise[]
 
   @@index([name])
 }
@@ -251,6 +278,7 @@ model BlockWorkoutSet {
   notes                  String?
   blockWorkoutExerciseId Int
   blockWorkoutExercise   BlockWorkoutExercise @relation(fields: [blockWorkoutExerciseId], references: [id], onDelete: Cascade)
+  workoutSets            WorkoutSet[]
 
   @@unique([blockWorkoutExerciseId, order])
   @@index([blockWorkoutExerciseId])

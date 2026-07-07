@@ -66,6 +66,22 @@ describe("buildUserExerciseIndex", () => {
       name: "Good Morning",
       muscles: { hamstrings: "primary" },
     });
+    expect(index.byId.get(1)).toEqual({
+      id: 1,
+      name: "Pendlay Row",
+      muscles: { lats: "primary" },
+    });
+    expect(index.byId.get(3)).toEqual({
+      id: 3,
+      name: "Good Morning",
+      muscles: { hamstrings: "primary" },
+    });
+  });
+
+  test("returns empty byId for non-array input", () => {
+    const index = buildUserExerciseIndex(null);
+    expect(index.size).toBe(0);
+    expect(index.byId.size).toBe(0);
   });
 });
 

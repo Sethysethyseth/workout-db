@@ -24,7 +24,9 @@ function userExerciseWeights(designations) {
 
 function buildUserExerciseIndex(rows) {
   const index = new Map();
+  const byId = new Map();
   if (!Array.isArray(rows)) {
+    index.byId = byId;
     return index;
   }
 
@@ -51,9 +53,12 @@ function buildUserExerciseIndex(rows) {
       continue;
     }
 
-    index.set(normalizedName, { id, name, muscles });
+    const entry = { id, name, muscles };
+    index.set(normalizedName, entry);
+    byId.set(id, entry);
   }
 
+  index.byId = byId;
   return index;
 }
 

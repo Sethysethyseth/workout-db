@@ -5,6 +5,7 @@ const {
   parseOptionalDurationWeeks,
   parsePositiveInt,
 } = require("../lib/templateExerciseNormalize");
+const { stampBlockWeeksArray } = require("../lib/exerciseIdentity");
 
 function blockWeeksDurationConflictMessage(weekCount, durationEnabled, durationWeeksValue) {
   if (!durationEnabled || durationWeeksValue == null) return null;
@@ -114,13 +115,18 @@ async function createBlockTemplate(req, res, next) {
       return res.status(400).json({ error: durationConflict });
     }
 
+    const userExerciseRows = await prisma.userExercise.findMany({
+      where: { userId },
+    });
+    const stampedWeeks = stampBlockWeeksArray(norm.value, userExerciseRows);
+
     const data = {
       name: trimmedName,
       description: trimmedDescription,
       isPublic: Boolean(isPublic),
       userId,
       weeks: {
-        create: norm.value,
+        create: stampedWeeks,
       },
       useDuration: durationEnabled,
       durationWeeks: durationEnabled ? weeksValue : null,
@@ -381,10 +387,13 @@ async function updateBlockTemplate(req, res, next) {
       if (!norm.ok) {
         return res.status(norm.status).json({ error: norm.error });
       }
-      normalizedWeeksForCount = norm.value;
+      const userExerciseRows = await prisma.userExercise.findMany({
+        where: { userId },
+      });
+      normalizedWeeksForCount = stampBlockWeeksArray(norm.value, userExerciseRows);
       data.weeks = {
         deleteMany: {},
-        create: norm.value,
+        create: normalizedWeeksForCount,
       };
     }
 
@@ -536,6 +545,8 @@ async function cloneBlockTemplate(req, res, next) {
                     const base = {
                       order: exercise.order,
                       exerciseName: exercise.exerciseName,
+                      exerciseId: exercise.exerciseId,
+                      userExerciseId: exercise.userExerciseId,
                       targetSets: exercise.targetSets,
                       targetReps: exercise.targetReps,
                       notes: exercise.notes,

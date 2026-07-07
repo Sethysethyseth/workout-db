@@ -8,6 +8,7 @@ function enrichSet(rawSet, userIndex = new Map()) {
     {
       exerciseName: rawSet.exerciseName,
       exerciseId: rawSet.exerciseId,
+      userExerciseId: rawSet.userExerciseId,
     },
     undefined,
     userIndex
@@ -15,7 +16,8 @@ function enrichSet(rawSet, userIndex = new Map()) {
 
   if (
     resolution.resolved &&
-    resolution.source === "userExercise" &&
+    (resolution.source === "userExercise" ||
+      resolution.source === "userExerciseId") &&
     resolution.userExercise
   ) {
     resolution = {

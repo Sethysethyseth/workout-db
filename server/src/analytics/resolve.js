@@ -5,13 +5,23 @@ const {
 } = require("./normalize");
 
 function resolveExercise(input, catalog = loadCatalog(), userIndex = new Map()) {
-  const { exerciseName, exerciseId } = input || {};
+  const { exerciseName, exerciseId, userExerciseId } = input || {};
+  const byId = userIndex.byId || new Map();
 
   if (exerciseId && catalog.byId.has(exerciseId)) {
     return {
       resolved: true,
       source: "exerciseId",
       catalogEntry: catalog.byId.get(exerciseId),
+    };
+  }
+
+  if (userExerciseId != null && byId.has(userExerciseId)) {
+    return {
+      resolved: true,
+      source: "userExerciseId",
+      catalogEntry: null,
+      userExercise: byId.get(userExerciseId),
     };
   }
 

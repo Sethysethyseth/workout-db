@@ -4,6 +4,7 @@ const {
   parseOptionalBoolean,
   parsePositiveInt,
 } = require("../lib/templateExerciseNormalize");
+const { stampExercisesArray } = require("../lib/exerciseIdentity");
 
 const exerciseInclude = {
   orderBy: {
@@ -47,13 +48,18 @@ async function createTemplate(req, res, next) {
       return res.status(norm.status).json({ error: norm.error });
     }
 
+    const userExerciseRows = await prisma.userExercise.findMany({
+      where: { userId },
+    });
+    const stampedExercises = stampExercisesArray(norm.value, userExerciseRows);
+
     const createData = {
       name: trimmedName,
       description: trimmedDescription,
       isPublic: Boolean(isPublic),
       userId,
       exercises: {
-        create: norm.value,
+        create: stampedExercises,
       },
     };
 
@@ -273,9 +279,13 @@ async function updateTemplate(req, res, next) {
       if (!norm.ok) {
         return res.status(norm.status).json({ error: norm.error });
       }
+      const userExerciseRows = await prisma.userExercise.findMany({
+        where: { userId },
+      });
+      const stampedExercises = stampExercisesArray(norm.value, userExerciseRows);
       data.exercises = {
         deleteMany: {},
-        create: norm.value,
+        create: stampedExercises,
       };
     }
 
@@ -395,6 +405,8 @@ async function cloneTemplate(req, res, next) {
             const base = {
               order: exercise.order,
               exerciseName: exercise.exerciseName,
+              exerciseId: exercise.exerciseId,
+              userExerciseId: exercise.userExerciseId,
               targetSets: exercise.targetSets,
               targetReps: exercise.targetReps,
               notes: exercise.notes,

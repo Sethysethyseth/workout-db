@@ -1,6 +1,8 @@
 const prisma = require("../lib/prisma");
 const { defaultWorkoutSessionName } = require("../lib/defaultWorkoutSessionName");
 const { validateOptionalNonNegDecimal } = require("../lib/numericValidators");
+const { buildUserExerciseIndex } = require("../analytics/userExercises");
+const { stampExerciseIdentityWithIndex } = require("../lib/exerciseIdentity");
 
 const FULL_SESSION_RELATIONS = {
   workoutTemplate: {
@@ -124,6 +126,8 @@ async function startSession(req, res, next) {
           data: template.exercises.map((exercise) => ({
             order: exercise.order,
             exerciseName: exercise.exerciseName,
+            exerciseId: exercise.exerciseId,
+            userExerciseId: exercise.userExerciseId,
             targetSets: exercise.targetSets,
             targetReps: exercise.targetReps,
             notes: exercise.notes,
@@ -322,11 +326,19 @@ async function addSessionExercise(req, res, next) {
 
       const nextOrder = (agg._max.order ?? 0) + 1;
 
+      const userExerciseRows = await tx.userExercise.findMany({
+        where: { userId },
+      });
+      const userIndex = buildUserExerciseIndex(userExerciseRows);
+      const identity = stampExerciseIdentityWithIndex(exerciseName, userIndex);
+
       return tx.sessionExercise.create({
         data: {
           workoutSessionId: sessionId,
           order: nextOrder,
           exerciseName,
+          exerciseId: identity.exerciseId,
+          userExerciseId: identity.userExerciseId,
           notes,
           targetSets,
           targetReps,
@@ -442,6 +454,19 @@ async function updateSessionExercise(req, res, next) {
           statusCode: 400,
           code: "SESSION_COMPLETED",
         });
+      }
+
+      if (data.exerciseName !== undefined) {
+        const userExerciseRows = await tx.userExercise.findMany({
+          where: { userId },
+        });
+        const userIndex = buildUserExerciseIndex(userExerciseRows);
+        const identity = stampExerciseIdentityWithIndex(
+          data.exerciseName,
+          userIndex
+        );
+        data.exerciseId = identity.exerciseId;
+        data.userExerciseId = identity.userExerciseId;
       }
 
       return tx.sessionExercise.update({

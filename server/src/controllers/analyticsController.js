@@ -72,6 +72,8 @@ async function getSummary(req, res, next) {
               sessionExercise: {
                 select: {
                   exerciseName: true,
+                  exerciseId: true,
+                  userExerciseId: true,
                   templateExerciseId: true,
                   templateExercise: {
                     select: {
@@ -88,6 +90,8 @@ async function getSummary(req, res, next) {
                 select: {
                   id: true,
                   exerciseName: true,
+                  exerciseId: true,
+                  userExerciseId: true,
                   templateSets: {
                     select: { order: true, reps: true, weight: true, rir: true, rpe: true },
                     orderBy: { order: "asc" },
@@ -124,10 +128,14 @@ async function getSummary(req, res, next) {
                 set.sessionExercise?.exerciseName ??
                 set.templateExercise?.exerciseName ??
                 null,
-              // No exercise FK exists yet (A4 pending), so resolution is
-              // name-only. Null weight/reps/rir and unresolvable names are
-              // handled by the engine - pass them through unfiltered.
-              exerciseId: null,
+              exerciseId:
+                set.sessionExercise?.exerciseId ??
+                set.templateExercise?.exerciseId ??
+                null,
+              userExerciseId:
+                set.sessionExercise?.userExerciseId ??
+                set.templateExercise?.userExerciseId ??
+                null,
               weight: set.weight,
               reps: set.reps,
               rir: set.rir,

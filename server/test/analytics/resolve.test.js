@@ -1,4 +1,5 @@
 const { loadCatalog, resolveExercise } = require("../../src/analytics");
+const { buildUserExerciseIndex } = require("../../src/analytics/userExercises");
 
 describe("resolveExercise", () => {
   const catalog = loadCatalog();
@@ -142,5 +143,95 @@ describe("resolveExercise - alias layer (A6)", () => {
     expect(
       resolveExercise({ exerciseName: "Sheghdjksishbe" }).resolved
     ).toBe(false);
+  });
+});
+
+describe("resolveExercise - stored identity tiers (A4)", () => {
+  const catalog = loadCatalog();
+
+  test("stored exerciseId beats a conflicting exerciseName", () => {
+    const result = resolveExercise({
+      exerciseName: "totally different free text",
+      exerciseId: "Barbell_Bench_Press_-_Medium_Grip",
+    });
+    expect(result).toEqual({
+      resolved: true,
+      source: "exerciseId",
+      catalogEntry: catalog.byId.get("Barbell_Bench_Press_-_Medium_Grip"),
+    });
+  });
+
+  test("stored userExerciseId beats a conflicting exerciseName", () => {
+    const userIndex = buildUserExerciseIndex([
+      {
+        id: 7,
+        name: "Pendlay Row",
+        normalizedName: "pendlay row",
+        muscles: { lats: "primary" },
+      },
+    ]);
+
+    const result = resolveExercise(
+      {
+        exerciseName: "bench press",
+        userExerciseId: 7,
+      },
+      catalog,
+      userIndex
+    );
+
+    expect(result.resolved).toBe(true);
+    expect(result.source).toBe("userExerciseId");
+    expect(result.userExercise.id).toBe(7);
+    expect(result.catalogEntry).toBe(null);
+  });
+
+  test("unknown stored ids fall through to name tiers", () => {
+    const userIndex = buildUserExerciseIndex([
+      {
+        id: 42,
+        name: "Pendlay Row",
+        normalizedName: "pendlay row",
+        muscles: { lats: "primary" },
+      },
+    ]);
+
+    const byCatalogName = resolveExercise(
+      {
+        exerciseName: "bench press",
+        exerciseId: "bogus_catalog_id",
+        userExerciseId: 999,
+      },
+      catalog,
+      userIndex
+    );
+    expect(byCatalogName.resolved).toBe(true);
+    expect(byCatalogName.source).toBe("alias");
+    expect(byCatalogName.catalogEntry.id).toBe("Barbell_Bench_Press_-_Medium_Grip");
+
+    const byUserName = resolveExercise(
+      {
+        exerciseName: "Pendlay Row",
+        exerciseId: "bogus_catalog_id",
+        userExerciseId: 999,
+      },
+      catalog,
+      userIndex
+    );
+    expect(byUserName.resolved).toBe(true);
+    expect(byUserName.source).toBe("userExercise");
+    expect(byUserName.userExercise.id).toBe(42);
+  });
+
+  test("null stored ids behave exactly as before (byte-identical fixture)", () => {
+    const baseline = resolveExercise({
+      exerciseName: "Barbell Bench Press - Medium Grip",
+    });
+    const withNullIds = resolveExercise({
+      exerciseName: "Barbell Bench Press - Medium Grip",
+      exerciseId: null,
+      userExerciseId: null,
+    });
+    expect(withNullIds).toEqual(baseline);
   });
 });
