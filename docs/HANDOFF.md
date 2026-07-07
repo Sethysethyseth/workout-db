@@ -1,5 +1,22 @@
 # HANDOFF — current state
 
+**Updated:** July 7, 2026 latest+2 (Fable — workflow-docs side session, NO
+code, NO A-wave movement).** The poor-mans-workflow tracking doc
+(`docs/specs/poor-mans-agentic-workflow.md`) gained three sections at
+Seth's direction: 6 steering layer (keep-human-on-task + anti-loop
+mechanisms, "erosion-resistant not foolproof"), 7 adopter setup interview,
+8 measured pilot receipts (~24 units/6 days, zero bounces, 2 prod-breaking
+defects caught; old sections 6/7 renumbered 9/10). The public shell repo
+(`C:\dev\the-poor-mans-agentic-workflow`) was refreshed in the same
+session: source-material re-scrubbed to current v4 files (+ QUEUE and
+HANDOFF-ARCHIVE snapshots added as receipts ground truth), BRIEF rewritten
+to the v4 story with Seth's publishing decisions settled and written in
+(MIT, named-tools-first, provenance-only receipts, on-ramp tone) - it is
+now READY for the claude.ai/code buildout. One docs commit here on
+`catalog-fk-wave`; the Render staging-service check in the entry below is
+STILL the next A-wave action.
+Previous entry retained below for continuity.
+
 **Updated:** July 7, 2026 latest+1 (Sonnet — STAGING MIGRATED: A1 + A4 both
 now live on staging; CORRECTS a wrong historical claim below.)** Ran the
 staging migration choreography and found ground truth did not match this
