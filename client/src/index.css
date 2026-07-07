@@ -910,8 +910,8 @@ html[data-theme="dark"] .loading-state {
 
 .loading-page__mark {
   position: relative;
-  width: 48px;
-  height: 48px;
+  width: auto;
+  height: auto;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -957,6 +957,64 @@ html[data-theme="dark"] .loading-state {
   50% {
     opacity: 0.75;
     transform: scale(1);
+  }
+}
+
+.loading-page__lifter {
+  display: block;
+  width: 120px;
+  height: 92px;
+  background-color: var(--color-interactive);
+  -webkit-mask-image: url("./assets/brand/lifter.png");
+  mask-image: url("./assets/brand/lifter.png");
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-position: center;
+  mask-position: center;
+  transform-origin: center;
+  animation: coldstart-lift 1.8s ease-in-out infinite,
+    coldstart-glow 1.8s ease-in-out infinite;
+  will-change: transform, filter;
+}
+
+@keyframes coldstart-lift {
+  0% {
+    transform: translateY(6%) scaleY(0.97);
+  }
+
+  10% {
+    transform: translateY(6%) scaleY(0.96);
+  }
+
+  38% {
+    transform: translateY(-8%) scaleY(1.03);
+  }
+
+  55% {
+    transform: translateY(-8%) scaleY(1.02);
+  }
+
+  100% {
+    transform: translateY(6%) scaleY(0.97);
+  }
+}
+
+@keyframes coldstart-glow {
+  0%,
+  100% {
+    filter: drop-shadow(0 2px 4px color-mix(in srgb, var(--color-interactive) 0%, transparent));
+  }
+
+  46% {
+    filter: drop-shadow(0 4px 12px color-mix(in srgb, var(--color-interactive) 38%, transparent));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loading-page__lifter {
+    animation: none;
   }
 }
 

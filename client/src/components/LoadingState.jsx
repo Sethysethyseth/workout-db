@@ -35,7 +35,7 @@ export function LoadingState({ label = "Loading…", slowLabel, tone = "soft", d
       <div className="loading-page" role="status" aria-live="polite">
         <div className="loading-page__content">
           <div className="loading-page__mark" aria-hidden="true">
-            <span className="loading-page__ring" />
+            <span className="loading-page__lifter" />
           </div>
           <div className="loading-page__text-wrap">
             <span
