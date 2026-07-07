@@ -33,6 +33,11 @@ session did not check prod. **Next: verify whether Render's staging service
 is actually pointed at `catalog-fk-wave`** (RUNBOOK step 2 - it normally
 tracks `main` and needs manual repointing) before assuming the already-pushed
 A4 code is live; confirm deploy SHA in Events either way. Then A5/A6b dispatch.
+**Session closed here (Seth, July 7, EOD).** Nothing else in flight - working
+tree clean except `.claude/settings.json` (local permissions, untracked
+elsewhere) and `claudefiledrop/` (two Discord CDN `.url` shortcuts, not yet
+the expected Gemini sprite PNGs). Pick up next session with the Render
+check above.
 Previous entry retained below for continuity.
 
 **Updated:** July 7, 2026 latest (Sonnet — A4 LANDED `0743070`; L-wave prod
