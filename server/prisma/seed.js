@@ -3,7 +3,7 @@ require("dotenv/config");
 const fs = require("fs");
 const path = require("path");
 const { PrismaClient } = require("@prisma/client");
-const { assertSafeForReset } = require("../src/lib/dbHostGuard");
+const { assertRecognizedHost } = require("../src/lib/dbHostGuard");
 
 const prisma = new PrismaClient();
 
@@ -35,7 +35,9 @@ function mapExerciseRecord(exercise, muscleWeightsById) {
 }
 
 async function main() {
-  assertSafeForReset(process.env.DATABASE_URL);
+  // Idempotent catalog upserts are non-destructive and must run on prod too,
+  // so this uses the recognized-host guard, not the reset (staging-only) guard.
+  assertRecognizedHost(process.env.DATABASE_URL);
 
   const exercises = loadJson("exercises.json");
   const muscleWeightsById = loadJson("muscle-weights.json");

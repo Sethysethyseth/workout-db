@@ -8,13 +8,20 @@ module.exports = {
     {
       displayName: "unit",
       testEnvironment: "node",
-      testMatch: ["<rootDir>/test/analytics/**/*.test.js"],
+      testMatch: [
+        "<rootDir>/test/analytics/**/*.test.js",
+        "<rootDir>/test/lib/**/*.test.js",
+      ],
     },
     {
       displayName: "integration",
       testEnvironment: "node",
       testMatch: ["<rootDir>/test/**/*.test.js"],
-      testPathIgnorePatterns: ["/node_modules/", "<rootDir>/test/analytics/"],
+      testPathIgnorePatterns: [
+        "/node_modules/",
+        "<rootDir>/test/analytics/",
+        "<rootDir>/test/lib/",
+      ],
       setupFilesAfterEnv: ["<rootDir>/test/jest.setup.js"],
     },
   ],

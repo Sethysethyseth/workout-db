@@ -8,7 +8,7 @@ const require = createRequire(path.join(serverRoot, "package.json"));
 
 require("dotenv").config({ path: path.join(serverRoot, ".env") });
 const { PrismaClient } = require("@prisma/client");
-const { assertSafeForReset } = require("./src/lib/dbHostGuard");
+const { assertRecognizedHost } = require("./src/lib/dbHostGuard");
 const { loadCatalog } = require("./src/analytics");
 const { buildUserExerciseIndex } = require("./src/analytics/userExercises");
 const { stampExerciseIdentityWithIndex } = require("./src/lib/exerciseIdentity");
@@ -355,7 +355,10 @@ function printSummary(reports) {
 }
 
 async function main() {
-  assertSafeForReset(process.env.DATABASE_URL);
+  // Backfill only fills null-identity rows (never overwrites) and must run on
+  // prod for historical rows, so it uses the recognized-host guard, not the
+  // reset (staging-only) guard.
+  assertRecognizedHost(process.env.DATABASE_URL);
 
   const catalog = loadCatalog();
   const userRowsByUserId = await loadUserRowsByUserId();

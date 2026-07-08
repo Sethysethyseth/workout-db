@@ -1,3 +1,10 @@
+// Two host guards with deliberately different strictness:
+//   - assertSafeForReset  : DESTRUCTIVE ops (DB wipe/reset). Staging + localhost
+//     ONLY. Prod is denylisted; unknown hosts are rejected. This is the guard
+//     against the May 2026 wipe pattern - do NOT loosen it.
+//   - assertRecognizedHost: NON-DESTRUCTIVE, prod-eligible ops (idempotent seed,
+//     null-only FK backfill). Permits prod deliberately, but still rejects any
+//     host we don't recognize, so a typo'd/wrong DATABASE_URL cannot connect.
 const DENYLIST = ["ep-solitary-sea-an56mioq"];
 const ALLOWLIST = ["ep-bitter-breeze-am81izlh", "localhost", "127.0.0.1"];
 
@@ -25,6 +32,10 @@ function matchesAllowlist(hostname) {
   });
 }
 
+function matchesKnownHost(hostname) {
+  return matchesDenylist(hostname) || matchesAllowlist(hostname);
+}
+
 function assertSafeForReset(databaseUrl) {
   const hostname = parseHostname(databaseUrl);
 
@@ -37,6 +48,16 @@ function assertSafeForReset(databaseUrl) {
   if (!matchesAllowlist(hostname)) {
     throw new Error(
       `dbHostGuard: refusing to reset DB — hostname '${hostname}' is not on the safe allowlist. Add it to ALLOWLIST in server/src/lib/dbHostGuard.js if intentional.`,
+    );
+  }
+}
+
+function assertRecognizedHost(databaseUrl) {
+  const hostname = parseHostname(databaseUrl);
+
+  if (!matchesKnownHost(hostname)) {
+    throw new Error(
+      `dbHostGuard: refusing to connect - hostname '${hostname}' is not a recognized workout-db host (prod, staging, or localhost). Add it to a list in server/src/lib/dbHostGuard.js if intentional.`,
     );
   }
 }
@@ -70,4 +91,4 @@ function assertSafeForBoot(databaseUrl, nodeEnv) {
   }
 }
 
-module.exports = { assertSafeForReset, assertSafeForBoot };
+module.exports = { assertSafeForReset, assertRecognizedHost, assertSafeForBoot };
