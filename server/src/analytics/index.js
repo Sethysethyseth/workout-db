@@ -21,6 +21,7 @@ const {
   toDate,
 } = require("./aggregate");
 const { buildSummary } = require("./summary");
+const { searchCatalog } = require("./searchCatalog");
 
 module.exports = {
   loadCatalog,
@@ -42,4 +43,5 @@ module.exports = {
   filterInRange,
   toDate,
   buildSummary,
+  searchCatalog,
 };

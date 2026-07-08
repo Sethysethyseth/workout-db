@@ -1,5 +1,5 @@
 const prisma = require("../lib/prisma");
-const { loadCatalog, resolveExercise, normalizeExerciseName } = require("../analytics");
+const { loadCatalog, resolveExercise, normalizeExerciseName, searchCatalog } = require("../analytics");
 const { buildUserExerciseIndex } = require("../analytics/userExercises");
 
 const MAX_NAMES = 100;
@@ -284,10 +284,52 @@ async function resolveExerciseNames(req, res, next) {
   }
 }
 
+async function searchExercises(req, res, next) {
+  try {
+    const userId = req.authUserId;
+
+    if (!userId) {
+      return res.status(401).json({
+        error: "Authentication required",
+      });
+    }
+
+    const q = req.query && req.query.q;
+
+    if (typeof q !== "string") {
+      return res.status(400).json({
+        error: "q is required",
+      });
+    }
+
+    let limit = 10;
+    if (req.query && req.query.limit !== undefined && req.query.limit !== "") {
+      const parsed = Number.parseInt(String(req.query.limit), 10);
+      if (!Number.isInteger(parsed)) {
+        return res.status(400).json({
+          error: "limit must be an integer",
+        });
+      }
+      limit = Math.min(25, Math.max(1, parsed));
+    }
+
+    const userRows = await prisma.userExercise.findMany({
+      where: { userId },
+    });
+    const userIndex = buildUserExerciseIndex(userRows);
+    const results = searchCatalog(loadCatalog(), userIndex, q, { limit });
+
+    return res.json({ results });
+  } catch (err) {
+    return next(err);
+  }
+}
+
 module.exports = {
   getMuscles,
   createCustomExercise,
   listCustomExercises,
   deleteCustomExercise,
   resolveExerciseNames,
+  searchExercises,
 };

@@ -2,6 +2,7 @@ const prisma = require("../lib/prisma");
 const { defaultWorkoutSessionName } = require("../lib/defaultWorkoutSessionName");
 const { validateOptionalNonNegDecimal } = require("../lib/numericValidators");
 const { buildUserExerciseIndex } = require("../analytics/userExercises");
+const { loadCatalog } = require("../analytics");
 const { stampExerciseIdentityWithIndex } = require("../lib/exerciseIdentity");
 
 const FULL_SESSION_RELATIONS = {
@@ -61,6 +62,85 @@ function validateOptionalSide(value) {
     return { ok: true, value };
   }
   return { ok: false, error: 'side must be "L", "R", or null when provided' };
+}
+
+function parseOptionalExerciseIdentity(body) {
+  const raw = body || {};
+  const hasExerciseId =
+    raw.exerciseId !== undefined && raw.exerciseId !== null && raw.exerciseId !== "";
+  const hasUserExerciseId =
+    raw.userExerciseId !== undefined &&
+    raw.userExerciseId !== null &&
+    raw.userExerciseId !== "";
+
+  let exerciseId = null;
+  let userExerciseId = null;
+
+  if (hasExerciseId) {
+    if (typeof raw.exerciseId !== "string" || !raw.exerciseId.trim()) {
+      return { ok: false, error: "exerciseId must be a non-empty string when provided" };
+    }
+    exerciseId = raw.exerciseId.trim();
+  }
+
+  if (hasUserExerciseId) {
+    userExerciseId = parsePositiveInt(raw.userExerciseId);
+    if (!userExerciseId) {
+      return {
+        ok: false,
+        error: "userExerciseId must be a positive integer when provided",
+      };
+    }
+  }
+
+  if (exerciseId && userExerciseId) {
+    return {
+      ok: false,
+      error: "exerciseId and userExerciseId cannot both be set",
+    };
+  }
+
+  return {
+    ok: true,
+    provided: hasExerciseId || hasUserExerciseId,
+    exerciseId,
+    userExerciseId,
+  };
+}
+
+async function validateOptionalExerciseIdentity(identity, userId, tx) {
+  if (!identity.provided) {
+    return { ok: true, exerciseId: null, userExerciseId: null };
+  }
+
+  if (identity.exerciseId) {
+    const catalog = loadCatalog();
+    if (!catalog.byId.has(identity.exerciseId)) {
+      return { ok: false, error: "exerciseId is not a known catalog exercise" };
+    }
+    return {
+      ok: true,
+      exerciseId: identity.exerciseId,
+      userExerciseId: null,
+    };
+  }
+
+  const owned = await tx.userExercise.findFirst({
+    where: {
+      id: identity.userExerciseId,
+      userId,
+    },
+  });
+
+  if (!owned) {
+    return { ok: false, error: "userExerciseId not found for this user" };
+  }
+
+  return {
+    ok: true,
+    exerciseId: null,
+    userExerciseId: identity.userExerciseId,
+  };
 }
 
 async function startSession(req, res, next) {
@@ -246,6 +326,11 @@ async function addSessionExercise(req, res, next) {
       targetReps: rawTargetReps,
     } = req.body || {};
 
+    const identityParse = parseOptionalExerciseIdentity(req.body);
+    if (!identityParse.ok) {
+      return res.status(400).json({ error: identityParse.error });
+    }
+
     const exerciseName =
       typeof rawName === "string" && rawName.trim() ? rawName.trim() : null;
 
@@ -330,15 +415,37 @@ async function addSessionExercise(req, res, next) {
         where: { userId },
       });
       const userIndex = buildUserExerciseIndex(userExerciseRows);
-      const identity = stampExerciseIdentityWithIndex(exerciseName, userIndex);
+
+      let exerciseId = null;
+      let userExerciseId = null;
+
+      if (identityParse.provided) {
+        const identityCheck = await validateOptionalExerciseIdentity(
+          identityParse,
+          userId,
+          tx
+        );
+        if (!identityCheck.ok) {
+          throw Object.assign(new Error(identityCheck.error), {
+            statusCode: 400,
+            code: "INVALID_EXERCISE_IDENTITY",
+          });
+        }
+        exerciseId = identityCheck.exerciseId;
+        userExerciseId = identityCheck.userExerciseId;
+      } else {
+        const identity = stampExerciseIdentityWithIndex(exerciseName, userIndex);
+        exerciseId = identity.exerciseId;
+        userExerciseId = identity.userExerciseId;
+      }
 
       return tx.sessionExercise.create({
         data: {
           workoutSessionId: sessionId,
           order: nextOrder,
           exerciseName,
-          exerciseId: identity.exerciseId,
-          userExerciseId: identity.userExerciseId,
+          exerciseId,
+          userExerciseId,
           notes,
           targetSets,
           targetReps,
@@ -368,6 +475,12 @@ async function addSessionExercise(req, res, next) {
       });
     }
 
+    if (err && err.statusCode === 400 && err.code === "INVALID_EXERCISE_IDENTITY") {
+      return res.status(400).json({
+        error: err.message,
+      });
+    }
+
     return next(err);
   }
 }
@@ -392,6 +505,11 @@ async function updateSessionExercise(req, res, next) {
     }
 
     const { exerciseName: rawName, notes: rawNotes } = req.body || {};
+
+    const identityParse = parseOptionalExerciseIdentity(req.body);
+    if (!identityParse.ok) {
+      return res.status(400).json({ error: identityParse.error });
+    }
 
     const data = {};
 
@@ -461,12 +579,29 @@ async function updateSessionExercise(req, res, next) {
           where: { userId },
         });
         const userIndex = buildUserExerciseIndex(userExerciseRows);
-        const identity = stampExerciseIdentityWithIndex(
-          data.exerciseName,
-          userIndex
-        );
-        data.exerciseId = identity.exerciseId;
-        data.userExerciseId = identity.userExerciseId;
+
+        if (identityParse.provided) {
+          const identityCheck = await validateOptionalExerciseIdentity(
+            identityParse,
+            userId,
+            tx
+          );
+          if (!identityCheck.ok) {
+            throw Object.assign(new Error(identityCheck.error), {
+              statusCode: 400,
+              code: "INVALID_EXERCISE_IDENTITY",
+            });
+          }
+          data.exerciseId = identityCheck.exerciseId;
+          data.userExerciseId = identityCheck.userExerciseId;
+        } else {
+          const identity = stampExerciseIdentityWithIndex(
+            data.exerciseName,
+            userIndex
+          );
+          data.exerciseId = identity.exerciseId;
+          data.userExerciseId = identity.userExerciseId;
+        }
       }
 
       return tx.sessionExercise.update({
@@ -496,6 +631,12 @@ async function updateSessionExercise(req, res, next) {
     if (err && err.statusCode === 400 && err.code === "SESSION_COMPLETED") {
       return res.status(400).json({
         error: "Completed sessions cannot be modified",
+      });
+    }
+
+    if (err && err.statusCode === 400 && err.code === "INVALID_EXERCISE_IDENTITY") {
+      return res.status(400).json({
+        error: err.message,
       });
     }
 

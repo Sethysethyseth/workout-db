@@ -12,7 +12,7 @@ import * as exerciseApi from "../api/exerciseApi.js";
 import * as sessionApi from "../api/sessionApi.js";
 import { ErrorMessage } from "../components/ErrorMessage.jsx";
 import { LoadingState } from "../components/LoadingState.jsx";
-import { ExerciseNameInput } from "../components/templates/ExerciseNameInput.jsx";
+import { ExercisePickerSuggestions } from "../components/workout/ExercisePickerSuggestions.jsx";
 import { PlanningSetCountControl } from "../components/templates/PlanningSetCountControl.jsx";
 import { RirRpeToggleRow } from "../components/templates/RirRpeToggleRow.jsx";
 import { ViewModeToggle } from "../components/templates/ViewModeToggle.jsx";
@@ -364,18 +364,78 @@ function SessionExerciseFields({
   /** Live session: mark this exercise active when user focuses name/notes. */
   onInteractStart,
 }) {
+  const nameInputId = `session-ex-name-${sessionExercise.id}`;
+  const suggestionsListId = `${nameInputId}-suggestions`;
+  const nameWrapRef = useRef(null);
+  const pendingIdentityRef = useRef(null);
+  const skipBlurCommitRef = useRef(false);
+  const searchSeqRef = useRef(0);
+
   const [name, setName] = useState(() =>
     sessionExerciseNameForInput(sessionExercise.exerciseName)
   );
   const [notes, setNotes] = useState(sessionExercise.notes ?? "");
   const [fieldError, setFieldError] = useState(null);
+  const [suggestions, setSuggestions] = useState([]);
+  const [suggestionsOpen, setSuggestionsOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(-1);
 
   useEffect(() => {
     /* eslint-disable react-hooks/set-state-in-effect -- sync local inputs when server exercise row changes */
     setName(sessionExerciseNameForInput(sessionExercise.exerciseName));
     setNotes(sessionExercise.notes ?? "");
+    pendingIdentityRef.current = null;
+    setSuggestions([]);
+    setSuggestionsOpen(false);
+    setActiveIndex(-1);
     /* eslint-enable react-hooks/set-state-in-effect */
   }, [sessionExercise.id, sessionExercise.exerciseName, sessionExercise.notes]);
+
+  useEffect(() => {
+    if (disabled) return undefined;
+
+    const trimmed = String(name ?? "").trim();
+    if (trimmed.length < 2) {
+      /* eslint-disable react-hooks/set-state-in-effect -- clear stale suggestions when query is too short */
+      setSuggestions([]);
+      setSuggestionsOpen(false);
+      setActiveIndex(-1);
+      /* eslint-enable react-hooks/set-state-in-effect */
+      return undefined;
+    }
+
+    const seq = searchSeqRef.current + 1;
+    searchSeqRef.current = seq;
+    const timer = window.setTimeout(async () => {
+      try {
+        const data = await exerciseApi.searchExercises(trimmed, { limit: 10 });
+        if (seq !== searchSeqRef.current) return;
+        const results = Array.isArray(data?.results) ? data.results : [];
+        setSuggestions(results);
+        setSuggestionsOpen(results.length > 0);
+        setActiveIndex(results.length > 0 ? 0 : -1);
+      } catch {
+        if (seq !== searchSeqRef.current) return;
+        setSuggestions([]);
+        setSuggestionsOpen(false);
+        setActiveIndex(-1);
+      }
+    }, 200);
+
+    return () => window.clearTimeout(timer);
+  }, [disabled, name]);
+
+  useEffect(() => {
+    if (disabled) return undefined;
+
+    function onDocDown(e) {
+      if (!nameWrapRef.current || nameWrapRef.current.contains(e.target)) return;
+      setSuggestionsOpen(false);
+    }
+
+    document.addEventListener("mousedown", onDocDown);
+    return () => document.removeEventListener("mousedown", onDocDown);
+  }, [disabled]);
 
   async function commitExercise(patch) {
     if (disabled) return;
@@ -391,14 +451,53 @@ function SessionExerciseFields({
     } catch (err) {
       setName(sessionExerciseNameForInput(sessionExercise.exerciseName));
       setNotes(sessionExercise.notes ?? "");
+      pendingIdentityRef.current = null;
       setFieldError(err);
     }
   }
 
+  function applySuggestion(row) {
+    setName(row.name);
+    pendingIdentityRef.current = {
+      exerciseId: row.exerciseId ?? undefined,
+      userExerciseId: row.userExerciseId ?? undefined,
+    };
+    setSuggestionsOpen(false);
+    setActiveIndex(-1);
+  }
+
+  function buildNamePatch(storedName, identity = pendingIdentityRef.current) {
+    const patch = { exerciseName: storedName };
+    if (identity?.exerciseId) {
+      patch.exerciseId = identity.exerciseId;
+    } else if (identity?.userExerciseId) {
+      patch.userExerciseId = identity.userExerciseId;
+    }
+    return patch;
+  }
+
+  async function commitSelectedName(storedName, identity) {
+    skipBlurCommitRef.current = true;
+    pendingIdentityRef.current = null;
+    try {
+      await commitExercise(buildNamePatch(storedName, identity));
+    } finally {
+      skipBlurCommitRef.current = false;
+    }
+  }
+
   async function commitName() {
+    if (skipBlurCommitRef.current) return;
+    setSuggestionsOpen(false);
     const nextStored = inputToSessionExerciseName(name);
-    if (nextStored === sessionExercise.exerciseName) return;
-    await commitExercise({ exerciseName: nextStored });
+    if (nextStored === sessionExercise.exerciseName) {
+      pendingIdentityRef.current = null;
+      return;
+    }
+
+    const patch = buildNamePatch(nextStored);
+    pendingIdentityRef.current = null;
+    await commitExercise(patch);
   }
 
   async function commitNotes() {
@@ -406,6 +505,56 @@ function SessionExerciseFields({
     const prev = (sessionExercise.notes ?? "").trim();
     if (n === prev) return;
     await commitExercise({ notes: n ? n : null });
+  }
+
+  function handleNameKeyDown(e) {
+    if (e.key === "Escape") {
+      setSuggestionsOpen(false);
+      setActiveIndex(-1);
+      return;
+    }
+
+    if (!suggestionsOpen || suggestions.length === 0) {
+      if (e.key === "Enter") {
+        e.currentTarget.blur();
+      }
+      return;
+    }
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setActiveIndex((prev) => (prev + 1) % suggestions.length);
+      return;
+    }
+
+    if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setActiveIndex((prev) => (prev <= 0 ? suggestions.length - 1 : prev - 1));
+      return;
+    }
+
+    if (e.key === "Enter" && activeIndex >= 0 && suggestions[activeIndex]) {
+      e.preventDefault();
+      const row = suggestions[activeIndex];
+      applySuggestion(row);
+      void commitSelectedName(inputToSessionExerciseName(row.name), {
+        exerciseId: row.exerciseId ?? undefined,
+        userExerciseId: row.userExerciseId ?? undefined,
+      });
+    }
+  }
+
+  async function selectSuggestion(row) {
+    applySuggestion(row);
+    const storedName = inputToSessionExerciseName(row.name);
+    if (storedName === sessionExercise.exerciseName) {
+      pendingIdentityRef.current = null;
+      return;
+    }
+    await commitSelectedName(storedName, {
+      exerciseId: row.exerciseId ?? undefined,
+      userExerciseId: row.userExerciseId ?? undefined,
+    });
   }
 
   if (disabled) {
@@ -456,18 +605,40 @@ function SessionExerciseFields({
   const nameField = (
     <label>
       Exercise name
-      <ExerciseNameInput
-        id={`session-ex-name-${sessionExercise.id}`}
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        onBlur={() => {
-          void commitName();
-        }}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") e.currentTarget.blur();
-        }}
-        placeholder="Type or pick a suggestion"
-      />
+      <div className="exercise-picker-input-wrap" ref={nameWrapRef}>
+        <input
+          id={nameInputId}
+          value={name}
+          autoComplete="off"
+          placeholder="Type or pick a suggestion"
+          aria-expanded={suggestionsOpen && suggestions.length > 0}
+          aria-controls={suggestions.length > 0 ? suggestionsListId : undefined}
+          aria-autocomplete="list"
+          onChange={(e) => {
+            pendingIdentityRef.current = null;
+            setName(e.target.value);
+            setSuggestionsOpen(true);
+          }}
+          onFocus={() => {
+            if (suggestions.length > 0) {
+              setSuggestionsOpen(true);
+            }
+          }}
+          onBlur={() => {
+            void commitName();
+          }}
+          onKeyDown={handleNameKeyDown}
+        />
+        <ExercisePickerSuggestions
+          id={suggestionsListId}
+          open={suggestionsOpen}
+          results={suggestions}
+          activeIndex={activeIndex}
+          onSelect={(row) => {
+            void selectSuggestion(row);
+          }}
+        />
+      </div>
     </label>
   );
 
