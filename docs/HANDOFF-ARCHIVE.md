@@ -13,6 +13,61 @@ context) and the git history of `docs/HANDOFF.md`.
 
 ---
 
+**Updated:** July 7, 2026 latest+5 (Opus — EOD; prod choreography PREPPED,
+handoff for next session. Seth done for the day.)** No prod writes happened
+this session — the whole prod rollout is teed up for the next session to
+execute WITH Seth. Decisions locked here:
+- **NEW RULE (Seth, this session):** during **Opus/Fable review sessions**
+  the reviewing agent gets a **READ-ONLY prod DB connection** for diagnostics
+  (dedicated `readonly_agent` Neon role, SELECT-only); **all prod WRITES
+  (migrations, seed) still stay with Seth.** Does NOT extend to Sonnet/Cursor.
+  Rationale: the May-2026 wipe was a *different, non-frontier* model. Saved to
+  memory (`opus-fable-review-prod-access`). **TODO next session: codify this
+  scoped exception into AGENTS.md invariant #9 + gate item 2 (get Seth's exact
+  wording — do NOT unilaterally rewrite the safety invariants).**
+- **Read-only access NOT yet stood up.** To do the agent-side Step-0 read,
+  Seth creates the `readonly_agent` role on prod (SELECT-only CREATE ROLE +
+  GRANTs) and drops the real conn string in an OFF-TRANSCRIPT scratchpad file;
+  OR just pastes the Step-0 query output from the Neon editor and skips the
+  role entirely (both queries are in Next-up item 0). Placeholder string Seth
+  first pasted had a template password (`choose-a-strong-password-here`) — not
+  usable; real creds go via file, never chat.
+- **Seed method LOCKED = Option A:** `npx prisma db seed` against prod (tested,
+  idempotent, no hand-written SQL, identical 873-row result). It's a WRITE, so
+  **Seth runs it** with the write-capable prod owner URL (NOT `readonly_agent`).
+  Today's `assertRecognizedHost` guard split is what lets seed run on prod.
+- **State unchanged on prod:** prod still has NEITHER catalog nor FK migration;
+  `origin/main` still `3767840`; branch `catalog-fk-wave` `6331647` is
+  review-clean and pushed. NOT merged. Full ordered choreography = Next-up
+  item 0.
+
+**Updated:** July 7, 2026 latest+4 (Opus — PRE-MAIN REVIEW DONE + guard-split
+fix landed `0e6f32a`.)** Ran the mandated Fable/Opus pre-main branch-diff
+review of the whole A-wave (`catalog-fk-wave` vs `main`), with the archived
+session logs in hand. **Verdict: code is clean and mergeable** — schema/
+migrations additive and consistent (nullable FKs, SET NULL, one-identity
+CHECKs, indexed), the `userExerciseId` tier correctly threaded resolve ->
+enrichSet -> attribution (the `0d2118e` regression fix holds and is pinned),
+write-path controllers enforce cross-user ownership on `userExerciseId` and
+reject both-set, backfill is idempotent/dry-run-default/`--apply`-gated, client
+picker is debounced+seq-guarded+no-portal+a11y, CSS token-clean. Fresh lanes:
+unit 129/129 then 137/137 after the fix, client build green.
+**One finding, fixed this session (direct-fix, diagnosis was the work):** the
+prod migration choreography needs `npx prisma db seed` (873 catalog rows) and
+the A6b backfill `--apply` on prod, but BOTH called `assertSafeForReset`, which
+denylists the prod host — the prod rollout would have been blocked by its own
+guard at the seed step. Split the guard: new `assertRecognizedHost` (permits
+prod deliberately, still rejects unknown/typo'd hosts) now guards seed.js +
+backfill; `assertSafeForReset` (staging/localhost only) still guards the
+destructive test-reset path (`jest.setup.js`) unchanged. Added first-ever
+`dbHostGuard` unit tests (137 total now) routed into the fast unit lane
+(`test/lib/**`). Committed `0e6f32a`, pushed, origin confirmed.
+**Minor note (not fixed, non-blocking):** `updateSessionExercise` silently
+drops a provided identity when the patch carries no `exerciseName` — harmless,
+the picker always sends both.
+
+---
+
 **Updated:** July 7, 2026 latest+3 (Sonnet — A5 + A6b LANDED, both audited
 and committed same session; ALSO fixed a real A4 regression found during
 the audit.)** Render confirmed pointed at `catalog-fk-wave` on the latest

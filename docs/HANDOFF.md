@@ -1,63 +1,48 @@
 # HANDOFF — current state
 
-**Updated:** July 7, 2026 latest+5 (Opus — EOD; prod choreography PREPPED,
-handoff for next session. Seth done for the day.)** No prod writes happened
-this session — the whole prod rollout is teed up for the next session to
-execute WITH Seth. Decisions locked here:
-- **NEW RULE (Seth, this session):** during **Opus/Fable review sessions**
-  the reviewing agent gets a **READ-ONLY prod DB connection** for diagnostics
-  (dedicated `readonly_agent` Neon role, SELECT-only); **all prod WRITES
-  (migrations, seed) still stay with Seth.** Does NOT extend to Sonnet/Cursor.
-  Rationale: the May-2026 wipe was a *different, non-frontier* model. Saved to
-  memory (`opus-fable-review-prod-access`). **TODO next session: codify this
-  scoped exception into AGENTS.md invariant #9 + gate item 2 (get Seth's exact
-  wording — do NOT unilaterally rewrite the safety invariants).**
-- **Read-only access NOT yet stood up.** To do the agent-side Step-0 read,
-  Seth creates the `readonly_agent` role on prod (SELECT-only CREATE ROLE +
-  GRANTs) and drops the real conn string in an OFF-TRANSCRIPT scratchpad file;
-  OR just pastes the Step-0 query output from the Neon editor and skips the
-  role entirely (both queries are in Next-up item 0). Placeholder string Seth
-  first pasted had a template password (`choose-a-strong-password-here`) — not
-  usable; real creds go via file, never chat.
-- **Seed method LOCKED = Option A:** `npx prisma db seed` against prod (tested,
-  idempotent, no hand-written SQL, identical 873-row result). It's a WRITE, so
-  **Seth runs it** with the write-capable prod owner URL (NOT `readonly_agent`).
-  Today's `assertRecognizedHost` guard split is what lets seed run on prod.
-- **State unchanged on prod:** prod still has NEITHER catalog nor FK migration;
-  `origin/main` still `3767840`; branch `catalog-fk-wave` `6331647` is
-  review-clean and pushed. NOT merged. Full ordered choreography = Next-up
-  item 0.
-Previous entry retained below for continuity.
-
-**Updated:** July 7, 2026 latest+4 (Opus — PRE-MAIN REVIEW DONE + guard-split
-fix landed `0e6f32a`.)** Ran the mandated Fable/Opus pre-main branch-diff
-review of the whole A-wave (`catalog-fk-wave` vs `main`), with the archived
-session logs in hand. **Verdict: code is clean and mergeable** — schema/
-migrations additive and consistent (nullable FKs, SET NULL, one-identity
-CHECKs, indexed), the `userExerciseId` tier correctly threaded resolve ->
-enrichSet -> attribution (the `0d2118e` regression fix holds and is pinned),
-write-path controllers enforce cross-user ownership on `userExerciseId` and
-reject both-set, backfill is idempotent/dry-run-default/`--apply`-gated, client
-picker is debounced+seq-guarded+no-portal+a11y, CSS token-clean. Fresh lanes:
-unit 129/129 then 137/137 after the fix, client build green.
-**One finding, fixed this session (direct-fix, diagnosis was the work):** the
-prod migration choreography needs `npx prisma db seed` (873 catalog rows) and
-the A6b backfill `--apply` on prod, but BOTH called `assertSafeForReset`, which
-denylists the prod host — the prod rollout would have been blocked by its own
-guard at the seed step. Split the guard: new `assertRecognizedHost` (permits
-prod deliberately, still rejects unknown/typo'd hosts) now guards seed.js +
-backfill; `assertSafeForReset` (staging/localhost only) still guards the
-destructive test-reset path (`jest.setup.js`) unchanged. Added first-ever
-`dbHostGuard` unit tests (137 total now) routed into the fast unit lane
-(`test/lib/**`). Committed `0e6f32a`, pushed, origin confirmed.
-**Minor note (not fixed, non-blocking):** `updateSessionExercise` silently
-drops a provided identity when the patch carries no `exerciseName` — harmless,
-the picker always sends both. **Next: the branch is review-clean — decide
-prod-choreography go, run it (seed + linkage migrations + optional backfill;
-check prod's `_prisma_migrations` for the old May-27 catalog-migration-name
-situation FIRST, still unverified on prod), then "push to main" (gated
-trigger).**
-Previous entry retained below for continuity.
+**Updated:** July 8, 2026 (Opus — A-WAVE PROD ROLLOUT COMPLETE, MERGED TO MAIN,
+SMOKED LIVE.)** Executed the full prod choreography WITH Seth (agent did
+reads/prep only; Seth ran every prod write). All steps verified:
+- **Step 0 (read):** prod had 14 healthy migrations, NO `Exercise` table, NO
+  failed records — the CLEAN case (unlike staging's old May-27 collision). No
+  `readonly_agent` role was stood up; Seth ran the Step-0 reads in the Neon
+  editor and pasted output.
+- **Steps 1 + 3 (migrations, Seth hand-applied in Neon editor):** catalog
+  `20260707120000_add_exercise_catalog` and FK-linkage
+  `20260707130000_add_exercise_fk_linkage`, each as one transactional block
+  (DDL + hand-inserted `_prisma_migrations` row). Checksums derived from the
+  migration files via **LF-normalized sha256** — proven correct against two
+  existing prod rows FIRST; the working tree is CRLF so a raw `sha256sum` is
+  wrong, must `tr -d '\r'` before hashing. Values: catalog `85908f0e…a6d5a`,
+  fk-linkage `1cb43415…dfc63`, both == staging's stored rows.
+- **Step 2 (seed, Seth ran):** `npm run prisma:seed` against prod via
+  shell-set `$env:DATABASE_URL` — dotenv does NOT override an already-set
+  shell var, which is the mechanism that lets prod win while `.env` stays on
+  staging. Two false starts, both instructive: (a) the `<PLACEHOLDER>` URL
+  pasted verbatim → guard "unparseable" (which PROVED dotenv wasn't
+  clobbering); (b) a non-owner role → `42501 permission denied for table
+  Exercise`. Fixed by using the **`neondb_owner`** connection string (it owns
+  the table). Result `Seeded 873 exercises (30 with muscleWeights
+  overrides)`; verified `count = 873` / `30`.
+- **Step 4 (diff):** prod ledger = 16 rows, all `finished_at` set, last two
+  checksums canonical → prod == staging == code, no drift. (Closes old Open
+  TODOs #2 migration-diff and #3 username-checksum — prod's
+  `add_user_username` checksum matched the canonical file exactly.)
+- **Step 5 (merge, gated "push to main"):** clean fast-forward
+  `3767840 → 13a1e59`, done via `git branch -f main` (no-checkout, to dodge
+  the OneDrive lock + the dirty working tree; true ff so safe). Pushed;
+  `origin/main` confirmed `13a1e59`.
+- **Step 6 (smoke):** Seth smoked prod LIVE — login + exercise typeahead +
+  existing sessions + analytics/attribution all work. **Confirmed working.**
+DB-before-code ordering held throughout; zero code-ahead-of-DB window.
+**Remaining, non-urgent:** (1) repoint staging Render back to `main`
+(RUNBOOK §2 step 6; staging still on `catalog-fk-wave`); (2) optional Step-7
+historical backfill (`scripts/backfill-exercise-ids.mjs`, dry-run then
+`--apply`) — historical rows carry valid NULL identity until then. **Still
+open from the prior EOD:** codify the read-only-prod-review exception into
+AGENTS.md invariant #9 + gate item 2 (needs Seth's exact wording — do NOT
+unilaterally rewrite the safety invariants).
+Previous entries archived verbatim in `docs/HANDOFF-ARCHIVE.md`.
 
 Older session entries (incl. the July 7 A4-landed entry, the July 6
 off-queue login-UX fixes, the relay-v4 restructuring, and the L3
@@ -76,10 +61,10 @@ trusting it.
 
 ## Repo / deploy state
 
-- **Active branch: `catalog-fk-wave` at `0e6f32a`** (code) — A1 + A4 + A5 +
-  A6b all landed, plus the `0e6f32a` db-host-guard split (prod seed/backfill
-  now permitted; see newest HANDOFF entry). Pushed, origin confirmed.
-  Pre-main review DONE and clean. A-wave is code-complete + review-clean.
+- **A-wave MERGED to `main` (`13a1e59`), July 8.** `catalog-fk-wave`
+  (`13a1e59`) — A1 + A4 + A5 + A6b + the `0e6f32a` db-host-guard split — is now
+  fully contained in `main`; prod DB migrated + seeded + smoked. Branch is a
+  deletion candidate (gated). Pre-main review was DONE and clean.
   Branched off `logging-ux-wave` HEAD `80373e1` (= main + one HANDOFF docs
   commit). **Both catalog/linkage migrations are APPLIED ON STAGING**
   (`ep-bitter-breeze-am81izlh` / noisy-surf) as of July 7 (Sonnet):
@@ -93,11 +78,16 @@ trusting it.
   checking; no session has touched prod yet. **Render's staging service is
   confirmed pointed at `catalog-fk-wave` on the latest commit** (Seth
   verified July 7 latest+3) — no longer an open question.
-- **`main` is at `3767840` (July 6 Opus)** — T3B basic cold-start
+- **`main` is at `13a1e59` (July 8 Opus)** — A-wave merged (clean ff
+  `3767840..13a1e59`, `origin/main` confirmed). Prod DB fully migrated +
+  seeded + smoked BEFORE the merge (both catalog/FK migrations applied by
+  hand, 873 rows seeded, 16-row ledger drift-free). Prod Vercel/Render track
+  `main` and auto-deployed `13a1e59` on push — Seth smoked prod live and
+  confirmed working. `catalog-fk-wave` (`13a1e59`) is now fully contained in
+  `main` and is a deletion candidate (gated op).
+- **`main` was at `3767840` (July 6 Opus)** — T3B basic cold-start
   lifter loader, clean ff from `logging-ux-wave` (`451a3d6..3767840`). Client
-  CSS + docs only, no migration/schema/server. Prod Vercel/Render track `main`
-  and auto-deploy on push — **verify Events show `3767840`** before treating it
-  as live. This entry supersedes the historical merge notes below.
+  CSS + docs only, no migration/schema/server.
 - **`main` was at `d927fb8`** — L-wave (L1-L6 + A6) + login-UX/resume-hero
   fixes + relay-v4 docs, merged July 6 (clean ff, prod migrations applied +
   verified first). `451a3d6` was a HANDOFF doc commit on top.
@@ -136,8 +126,11 @@ trusting it.
    used ad hoc this session, not seeded with fixture data).
 1. ~~Prod smoke of the L-wave on `main`~~ **DONE — confirmed by Seth July
    7**, no issues reported.
-2. **Diff `_prisma_migrations` prod vs staging** (RUNBOOK -> "Migration history diff"). Unresolved, predates the UI work.
-3. **Verify the manually inserted prod `_prisma_migrations` row's `checksum` matches staging's** for `20260603140000_add_user_username`. Latent hazard — check once, fix if mismatched.
+2. ~~**Diff `_prisma_migrations` prod vs staging**~~ **DONE July 8** — prod
+   ledger = 16 rows, no drift, shared-name checksums match staging.
+3. ~~**Verify the prod `20260603140000_add_user_username` checksum**~~ **DONE
+   July 8** — prod's `1c7d13f7…4b9502f` matches the canonical LF-normalized
+   file hash exactly. No mismatch.
 4. Confirm prod Render serving cleanly post-recovery.
 5. Low-priority: redundant spare stash on `ui-palettes-v2` (`WIP unrelated to ui-palettes-v2 merge`, July 1) — `git stash drop` once confirmed unneeded.
 6. Low-priority: branch graveyard has grown — `ui-palettes-v2`,
@@ -157,60 +150,17 @@ trusting it.
 
 ## Next up (the active task)
 
-0. **PROD CHOREOGRAPHY for the A-wave — teed up, execute WITH Seth.** Branch
-   `catalog-fk-wave` (`6331647`) is code-complete + review-clean. Generic
-   ritual: RUNBOOK section 3 (DB-before-code). Agent is READ-ONLY on prod
-   (Step 0 only); **Seth runs every write.** Ordered steps:
-
-   **Step 0 — read prod state (agent read-only OK, or Seth pastes).** In the
-   Neon editor (confirm host `ep-solitary-sea-an56mioq`) or via the read-only
-   role, run:
-   ```sql
-   SELECT migration_name, checksum FROM "_prisma_migrations" ORDER BY migration_name;
-   SELECT to_regclass('public."Exercise"') AS exercise_table;
-   -- if exercise_table non-null: SELECT count(*) AS exercise_rows FROM "Exercise";
-   ```
-   This decides Step 1's branch. (On STAGING the `Exercise` table already
-   existed from an abandoned May-27 migration, which collided with the new
-   catalog migration and left a FAILED `_prisma_migrations` record blocking
-   deploys — see archived July 7 latest+1 entry. Prod may or may not have the
-   same; Step 0 tells us.)
-
-   **Step 1 — catalog migration `20260707120000_add_exercise_catalog` (Seth):**
-   - If `Exercise` does NOT exist: apply it (RUNBOOK 3 - Neon-editor DDL +
-     hand-insert the `_prisma_migrations` row with the checksum copied from
-     STAGING's row for the same migration; OR `prisma migrate deploy` with the
-     prod URL).
-   - If `Exercise` ALREADY exists (staging's case): first clear any FAILED
-     migration record, then baseline via
-     `prisma migrate resolve --applied 20260707120000_add_exercise_catalog`.
-
-   **Step 2 — seed (Seth):** `npx prisma db seed` against prod (write-capable
-   owner URL; NOT `readonly_agent`). Idempotent upserts. Verify `count(*) = 873`
-   and muscleWeights present. (This is the LOCKED Option-A seed method.)
-
-   **Step 3 — FK linkage migration `20260707130000_add_exercise_fk_linkage`
-   (Seth):** apply (Neon-editor DDL + `_prisma_migrations` row, or
-   `prisma migrate deploy`). Verify by SQL: `exerciseId`/`userExerciseId` on
-   TemplateExercise/SessionExercise/BlockWorkoutExercise, `blockWorkoutSetId`
-   on WorkoutSet, all three `_one_identity_chk` CHECK constraints present.
-
-   **Step 4 — verify prod == staging schema** (RUNBOOK 4 migration diff; no
-   drift, checksums match on shared names).
-
-   **Step 5 — merge to main (gated "push to main" trigger):** `git merge
-   --ff-only catalog-fk-wave`, one command at a time, prod auto-deploys.
-   Ordering is load-bearing: DB migrated BEFORE code merges (code-ahead-of-DB
-   crashes prod login).
-
-   **Step 6 — post-merge:** repoint staging Render back to `main` (RUNBOOK 2
-   step 6), verify prod deploy SHA in Render/Vercel Events == new main HEAD,
-   smoke prod login + a session/analytics surface that touches `exerciseId`.
-
-   **Step 7 (optional) — historical backfill:** `node
-   scripts/backfill-exercise-ids.mjs` (DRY-RUN first) then `--apply` against
-   prod for pre-A4 historical rows (now unblocked by the guard split; Seth
-   runs the write). Idempotent; safe to defer.
+0. ~~**PROD CHOREOGRAPHY for the A-wave**~~ **DONE July 8** — Steps 0-6 all
+   executed WITH Seth and verified; A-wave merged to `main` (`13a1e59`) and
+   smoked live on prod. Full play-by-play in the newest HANDOFF entry above.
+   **Two follow-ups remain, both non-urgent:**
+   - **Repoint staging Render back to `main`** (RUNBOOK §2 step 6). Staging is
+     still pointed at `catalog-fk-wave` from this wave.
+   - **Step 7 (optional) historical backfill:** `node
+     scripts/backfill-exercise-ids.mjs` (DRY-RUN first) then `--apply` against
+     prod for pre-A4 historical rows (unblocked by the guard split; Seth runs
+     the write). Idempotent; safe to defer — historical rows carry valid NULL
+     identity until then.
 1. **T3C sprite loader upgrade** unblocks whenever Seth drops the Gemini
    frames in `claudefiledrop/` (art direction + prompts settled July 6).
    Note: `claudefiledrop/` currently holds two `.url` shortcut files
