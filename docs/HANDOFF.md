@@ -35,10 +35,10 @@ reads/prep only; Seth ran every prod write). All steps verified:
 - **Step 6 (smoke):** Seth smoked prod LIVE — login + exercise typeahead +
   existing sessions + analytics/attribution all work. **Confirmed working.**
 DB-before-code ordering held throughout; zero code-ahead-of-DB window.
-**Remaining, non-urgent:** (1) repoint staging Render back to `main`
-(RUNBOOK §2 step 6; staging still on `catalog-fk-wave`); (2) optional Step-7
-historical backfill (`scripts/backfill-exercise-ids.mjs`, dry-run then
-`--apply`) — historical rows carry valid NULL identity until then. **Still
+**Remaining, non-urgent:** optional Step-7 historical backfill
+(`scripts/backfill-exercise-ids.mjs`, dry-run then `--apply`) — historical
+rows carry valid NULL identity until then. (Staging Render already repointed
+to `main` — Seth confirmed July 8.) **Still
 open from the prior EOD:** codify the read-only-prod-review exception into
 AGENTS.md invariant #9 + gate item 2 (needs Seth's exact wording — do NOT
 unilaterally rewrite the safety invariants).
@@ -153,9 +153,8 @@ trusting it.
 0. ~~**PROD CHOREOGRAPHY for the A-wave**~~ **DONE July 8** — Steps 0-6 all
    executed WITH Seth and verified; A-wave merged to `main` (`13a1e59`) and
    smoked live on prod. Full play-by-play in the newest HANDOFF entry above.
-   **Two follow-ups remain, both non-urgent:**
-   - **Repoint staging Render back to `main`** (RUNBOOK §2 step 6). Staging is
-     still pointed at `catalog-fk-wave` from this wave.
+   **Follow-up remaining (non-urgent):** (staging Render already repointed to
+   `main`, Seth confirmed July 8.)
    - **Step 7 (optional) historical backfill:** `node
      scripts/backfill-exercise-ids.mjs` (DRY-RUN first) then `--apply` against
      prod for pre-A4 historical rows (unblocked by the guard split; Seth runs
