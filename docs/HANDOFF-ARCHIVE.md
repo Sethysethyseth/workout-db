@@ -13,6 +13,33 @@ context) and the git history of `docs/HANDOFF.md`.
 
 ---
 
+**Updated:** July 7, 2026 latest (Sonnet — A4 LANDED `0743070`; L-wave prod
+smoke closed.)** Seth confirmed the L-wave prod smoke (Open TODO #1) is
+complete — no issues reported. **A4 (`a4-exercise-fk-linkage.md`) audited and
+committed `0743070`, pushed, origin confirmed on `catalog-fk-wave`.** Nullable
+`exerciseId`/`userExerciseId` on TemplateExercise/SessionExercise/
+BlockWorkoutExercise (+ at-most-one CHECK per model), `blockWorkoutSetId`
+groundwork on WorkoutSet, write-path stamping helper
+(`server/src/lib/exerciseIdentity.js`, catalog beats userExercise, mirrors
+`resolveExercise` tier order), `resolve.js` gains a stored-`userExerciseId`
+tier ahead of name resolution. Audit re-ran both lanes fresh (unit 124/124,
+`prisma validate` clean — matches `DELIVERY.md`'s claims), confirmed scope
+exact against FILES TO TOUCH (13 files, no client touch), verified the
+migration SQL by hand (7 ADD COLUMN / 7 indexes / 7 SET-NULL FKs / 3 CHECK,
+no DROP/NOT NULL/DEFAULT), confirmed schema types match the block's exact
+spec (String? on the Exercise FK, Int? on the UserExercise FK — avoids L3's
+wrong-FK-type mistake), and spot-checked `analyticsController.js`'s id
+precedence against the pre-existing `exerciseName` derivation precedence
+(`sessionExercise ?? templateExercise ?? null`) — identical shape, not
+invented. Integration lane written (4 tests) but deliberately NOT run per
+the block's sequencing flag. **Migration is NOT applied to any environment
+yet.** Next: Seth's staging migration choreography (RUNBOOK, gated) — (1)
+`20260707120000_add_exercise_catalog`, (2) `npx prisma db seed` from
+`server/`, (3) `20260707130000_add_exercise_fk_linkage`, in that order —
+then staging Render redeploy, then dispatch A5/A6b.
+
+---
+
 ## Superseded current-state entries (July 7, 2026 latest+1)
 
 **Updated:** July 7, 2026 (Fable — A-WAVE OPENED: Track A structural

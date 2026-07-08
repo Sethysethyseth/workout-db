@@ -20,12 +20,9 @@ shape, NOT the deprecated package.json block; main's `test:unit` script
 preserved). Unit lane 119/119 + `prisma validate` green. Standalone model,
 no FKs - deploy-safe before its migration.
 
-QUEUED | a5-exercise-picker.md | GET /exercises/search (pure searchCatalog
-module) + live-session typeahead that writes ids on commit; free text stays
-first-class | GATED on A4 landed + staging migration choreography done
-QUEUED | a6b-exercise-id-backfill.md | dry-run-default script stamping ids
-onto historical rows; unresolved-names report feeds alias curation | same
-gate as A5; disjoint files from A5 - batchable per v4
+Both A5 and A6b LANDED July 7 (Sonnet) - see Landed section below. A-wave
+code is now feature-complete on this branch; next up is the Fable/Opus
+pre-main branch-diff review before merge.
 
 **STAGING migration choreography: DONE (Sonnet, July 7).** Ran into a real
 snag worth knowing about before the prod pass: staging's `_prisma_migrations`
@@ -65,6 +62,35 @@ latest+1 entry).
 
 ## Landed
 
+- LANDED eeaa30c | a6b-exercise-id-backfill.md | idempotent dry-run-default
+  backfill script stamping exerciseId/userExerciseId onto historical
+  Template/Session/BlockWorkoutExercise rows | scope exact (1 file); dry-run
+  against staging re-run fresh twice, identical both times, all three tables
+  report zero null-identity rows (A4's write-path stamping already covers
+  current staging data); assertSafeForReset guard + --apply-gating verified
+  by direct grep, not just the delivery report; --apply not run anywhere per
+  RUN RULES
+- LANDED c7c8ca6 | a5-exercise-picker.md | GET /exercises/search (pure
+  searchCatalog module, no Prisma/fs) + live-session typeahead writing
+  exerciseId/userExerciseId on commit; free text stays first-class | scope
+  exact (11 files, matches FILES TO TOUCH); full suite re-run fresh 185/185
+  (not the 129-unit number alone - see the attribution-fix note below for
+  why the full run mattered here); searchCatalog fixture tests independently
+  read, not just trusted - all 5 pin real behavior (exact>prefix>substring,
+  userExercise-before-catalog, alias with matchedAlias, stretching-category
+  exclusion, limit); purity grep clean; no portal; no hex in CSS diff
+- LANDED 0d2118e | (no task block - Sonnet direct, direct-fix exception) |
+  fixed a real A4 regression surfaced while auditing A5/A6b: attribution.js's
+  source check only matched "userExercise", never learned the
+  "userExerciseId" tier A4 added to resolve.js/enrichSet.js, so any session
+  exercise resolved via stored id (the normal case post-A4) silently got
+  zero muscle attribution | root-caused by tracing resolve.js -> enrichSet.js
+  -> attribution.js after `exercises.integration.test.js`'s custom-exercise
+  analytics test failed on the first full suite run since staging's
+  migration made the tier reachable; one-line fix, diagnosis was the bulk of
+  the work so shipped directly per the stated exception rather than a
+  Cursor diagnosis-block round trip; not in A5/A6b's FILES TO TOUCH, kept as
+  its own commit
 - LANDED 0743070 | a4-exercise-fk-linkage.md | nullable exerciseId/
   userExerciseId on TemplateExercise/SessionExercise/BlockWorkoutExercise
   (+ at-most-one CHECK), blockWorkoutSetId groundwork on WorkoutSet,

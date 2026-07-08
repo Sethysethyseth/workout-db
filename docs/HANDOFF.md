@@ -1,5 +1,52 @@
 # HANDOFF — current state
 
+**Updated:** July 7, 2026 latest+3 (Sonnet — A5 + A6b LANDED, both audited
+and committed same session; ALSO fixed a real A4 regression found during
+the audit.)** Render confirmed pointed at `catalog-fk-wave` on the latest
+commit (Seth verified), so the A-wave code is confirmed live on staging.
+Dispatched A5 (`a5-exercise-picker.md`) and A6b
+(`a6b-exercise-id-backfill.md`) to Cursor back-to-back per the v4
+batchable-disjoint-files rule; Cursor delivered both, but overwrote its own
+`DELIVERY.md` running the second task, so A5's per-criterion evidence
+report was lost — audited A5 directly against the tree instead (re-ran
+every lane fresh, read the fixture tests to confirm they pin real
+behavior rather than trusting the report). **Worth flagging for future
+dispatches: DELIVERY.md is single-file, so back-to-back units on the same
+task file will clobber each other's report - review right after each stops,
+or expect to reconstruct the first unit's evidence by hand.**
+
+Audit surfaced a real bug, not caused by this session's diff: A4's
+`resolve.js` added a `userExerciseId` stored-id resolution tier, but
+`attribution.js`'s source check was never updated to recognize it (only
+matched `"userExercise"`) - so any session exercise resolved via the new
+tier (the normal case once A4 stamps ids at write time) silently lost its
+muscle attribution entirely. Surfaced because this was the first full
+`npm test` run since staging's migration made the tier actually reachable
+(`exercises.integration.test.js`'s custom-exercise analytics test failed
+with an undefined quadriceps bucket). Root-caused by tracing resolve.js ->
+enrichSet.js -> attribution.js; one-line fix, shipped directly per the
+direct-fix exception (diagnosis was the bulk of the work) rather than a
+Cursor diagnosis-block round trip. **Committed separately from A5/A6b**
+since it's outside their FILES TO TOUCH.
+
+Three commits, in order: `0d2118e` (attribution fix), `c7c8ca6` (A5),
+`eeaa30c` (A6b) - all pushed, origin confirmed. Full suite re-run fresh
+after the fix: 185/185 green (20 suites). Client build green, no hex in
+CSS diff, searchCatalog purity/no-portal greps clean, A6b's
+`assertSafeForReset` guard + `--apply` gating verified directly (not
+trusted from the report). **A-wave is now feature-complete on
+`catalog-fk-wave`.** Given the whole wave is backend/script-shaped except
+A5's live-session typeahead, and very little of it is visually smoke-able,
+Seth explicitly opted to skip his own visual sign-off on A5 and rely on
+the mandated Fable/Opus pre-main branch-diff review as the sole gate
+before merge. **Next: kick off that review** (it should grep
+`HANDOFF-ARCHIVE.md` for the wave's full session history per the standing
+rule) - then, if clean, the prod migration choreography (same choreography
+as staging, but check prod's `_prisma_migrations` for the same
+old-migration-name situation first - unverified) - then "push to main"
+(Seth's trigger phrase, gated).
+Previous entry retained below for continuity.
+
 **Updated:** July 7, 2026 latest+2 (Fable — workflow-docs side session, NO
 code, NO A-wave movement).** The poor-mans-workflow tracking doc
 (`docs/specs/poor-mans-agentic-workflow.md`) gained three sections at
@@ -57,35 +104,10 @@ the expected Gemini sprite PNGs). Pick up next session with the Render
 check above.
 Previous entry retained below for continuity.
 
-**Updated:** July 7, 2026 latest (Sonnet — A4 LANDED `0743070`; L-wave prod
-smoke closed.)** Seth confirmed the L-wave prod smoke (Open TODO #1) is
-complete — no issues reported. **A4 (`a4-exercise-fk-linkage.md`) audited and
-committed `0743070`, pushed, origin confirmed on `catalog-fk-wave`.** Nullable
-`exerciseId`/`userExerciseId` on TemplateExercise/SessionExercise/
-BlockWorkoutExercise (+ at-most-one CHECK per model), `blockWorkoutSetId`
-groundwork on WorkoutSet, write-path stamping helper
-(`server/src/lib/exerciseIdentity.js`, catalog beats userExercise, mirrors
-`resolveExercise` tier order), `resolve.js` gains a stored-`userExerciseId`
-tier ahead of name resolution. Audit re-ran both lanes fresh (unit 124/124,
-`prisma validate` clean — matches `DELIVERY.md`'s claims), confirmed scope
-exact against FILES TO TOUCH (13 files, no client touch), verified the
-migration SQL by hand (7 ADD COLUMN / 7 indexes / 7 SET-NULL FKs / 3 CHECK,
-no DROP/NOT NULL/DEFAULT), confirmed schema types match the block's exact
-spec (String? on the Exercise FK, Int? on the UserExercise FK — avoids L3's
-wrong-FK-type mistake), and spot-checked `analyticsController.js`'s id
-precedence against the pre-existing `exerciseName` derivation precedence
-(`sessionExercise ?? templateExercise ?? null`) — identical shape, not
-invented. Integration lane written (4 tests) but deliberately NOT run per
-the block's sequencing flag. **Migration is NOT applied to any environment
-yet.** Next: Seth's staging migration choreography (RUNBOOK, gated) — (1)
-`20260707120000_add_exercise_catalog`, (2) `npx prisma db seed` from
-`server/`, (3) `20260707130000_add_exercise_fk_linkage`, in that order —
-then staging Render redeploy, then dispatch A5/A6b.
-Previous entry retained below for continuity.
-
-Older session entries (incl. the July 6 off-queue login-UX fixes, the
-relay-v4 restructuring, and the L3 staging-migration verification): moved
-verbatim to `docs/HANDOFF-ARCHIVE.md`.
+Older session entries (incl. the July 7 A4-landed entry, the July 6
+off-queue login-UX fixes, the relay-v4 restructuring, and the L3
+staging-migration verification): moved verbatim to
+`docs/HANDOFF-ARCHIVE.md`.
 
 **Rule:** rewritten in place at the end of every working session; kept
 CAPPED (~300 lines: current state, repo/deploy, latest 1-2 session entries,
@@ -99,20 +121,21 @@ trusting it.
 
 ## Repo / deploy state
 
-- **Active branch: `catalog-fk-wave` at `39e7d7e`** (code) — A1 + A4 landed,
-  pushed, origin confirmed. Branched off `logging-ux-wave` HEAD `80373e1`
-  (= main + one HANDOFF docs commit). **Both migrations are now APPLIED ON
-  STAGING** (`ep-bitter-breeze-am81izlh` / noisy-surf) as of July 7 (Sonnet):
+- **Active branch: `catalog-fk-wave` at `eeaa30c`** (code) — A1 + A4 + A5 +
+  A6b all landed, pushed, origin confirmed. A-wave is now code-complete.
+  Branched off `logging-ux-wave` HEAD `80373e1` (= main + one HANDOFF docs
+  commit). **Both catalog/linkage migrations are APPLIED ON STAGING**
+  (`ep-bitter-breeze-am81izlh` / noisy-surf) as of July 7 (Sonnet):
   `20260707120000_add_exercise_catalog` was baselined via `prisma migrate
   resolve --applied` (the table already existed under the old May-27
-  migration name — see the July 7 latest+1 HANDOFF entry above for the
-  full story) and `20260707130000_add_exercise_fk_linkage` applied clean via
+  migration name — see the archived July 7 HANDOFF entry for the full
+  story) and `20260707130000_add_exercise_fk_linkage` applied clean via
   `prisma migrate deploy`. Columns + CHECK constraints verified by direct
   SQL query, not just `migrate status`. **Prod has NEITHER migration** — do
   not assume prod's catalog migration situation mirrors staging's without
-  checking; this session did not touch prod. **Still open: confirm whether
-  Render's staging service is pointed at this branch** (see RUNBOOK step 2)
-  and check the deploy SHA in Events before assuming the code is live.
+  checking; no session has touched prod yet. **Render's staging service is
+  confirmed pointed at `catalog-fk-wave` on the latest commit** (Seth
+  verified July 7 latest+3) — no longer an open question.
 - **`main` is at `3767840` (July 6 Opus)** — T3B basic cold-start
   lifter loader, clean ff from `logging-ux-wave` (`451a3d6..3767840`). Client
   CSS + docs only, no migration/schema/server. Prod Vercel/Render track `main`
@@ -177,15 +200,17 @@ trusting it.
 
 ## Next up (the active task)
 
-0. **A-wave on `catalog-fk-wave` (`39e7d7e`).** A1 + A4 landed AND staging
-   migration choreography is DONE (both migrations applied + verified on
-   staging, July 7). Next: confirm Render's staging service is pointed at
-   this branch and the deploy SHA is current (RUNBOOK step 2), then
-   dispatch A5 + A6b (disjoint files, batchable). Then combined smoke ->
-   Fable pre-main branch-diff review -> merge, with the SAME migration
-   choreography on prod first (unverified whether prod has the same
-   old-migration-name situation staging did - check before assuming a
-   clean slate).
+0. **A-wave on `catalog-fk-wave` (`eeaa30c`) is code-complete.** A1 + A4 +
+   A5 + A6b all landed, staging migration choreography done, Render
+   confirmed pointed at this branch. Seth opted to skip his own visual
+   sign-off on A5's typeahead (little to smoke under the hood) and rely on
+   the Fable/Opus pre-main review as the sole gate. **Next: kick off that
+   review** (grep `HANDOFF-ARCHIVE.md` for the wave's full session history
+   per the standing rule - includes the attribution.js regression found
+   and fixed this session). If clean: prod migration choreography (same
+   steps as staging, but check prod's `_prisma_migrations` for the same
+   old-migration-name situation first - unverified) - then "push to main"
+   (Seth's trigger phrase, gated).
 1. **T3C sprite loader upgrade** unblocks whenever Seth drops the Gemini
    frames in `claudefiledrop/` (art direction + prompts settled July 6).
    Note: `claudefiledrop/` currently holds two `.url` shortcut files
@@ -201,9 +226,10 @@ rationale: `analytics-engine-direction` memory. Full B1-B9 build history:
 `docs/HANDOFF-ARCHIVE.md`.*
 
 **Track B v1 (B1-B9) is code-complete and MERGED TO MAIN (`e9ce82c`, July 4).**
-**Track A is the ACTIVE WAVE (July 7)** — A1 + A4 landed on `catalog-fk-wave`
-(`39e7d7e`) and BOTH migrations are applied + verified on staging, A5/A6b
-queued (see QUEUE.md). Track C (AI coach) stays dead-last.
+**Track A is CODE-COMPLETE on `catalog-fk-wave` (`eeaa30c`, July 7)** — A1,
+A4, A5, A6b all landed, both migrations applied + verified on staging (see
+QUEUE.md). Awaiting the Fable/Opus pre-main review before merge. Track C
+(AI coach) stays dead-last.
 
 **State / open items:**
 1. **A2 DONE + committed (`48c1e91`):** muscle-weights curation cleaned (3 bad IDs
@@ -230,6 +256,22 @@ queued (see QUEUE.md). Track C (AI coach) stays dead-last.
    **Migration applied to staging July 7** (verified by direct SQL query).
    Prod does NOT have this migration yet — separate gated op when the wave
    merges.
+6. **A5 DONE (`c7c8ca6`, July 7)** — `GET /api/exercises/search` (pure
+   `searchCatalog` module) + live-session typeahead; selecting a suggestion
+   commits `exerciseId`/`userExerciseId`, free text still commits none.
+   No schema/migration coupling.
+7. **A6b DONE (`eeaa30c`, July 7)** — idempotent dry-run-default backfill
+   script for historical rows. Dry-run against staging: all three tables
+   already at zero null-identity rows (A4's write-path stamping already
+   covers current data) — nothing to `--apply` on staging right now, but
+   the script stays useful for prod once its migration lands.
+8. **Bug found + fixed same session (`0d2118e`, July 7, not a task-block
+   unit):** `attribution.js` never learned A4's `userExerciseId` resolution
+   tier, so custom-exercise volume silently lost all muscle attribution
+   once a session resolved via stored id (the normal case post-A4). Caught
+   by the first full `npm test` run since staging's migration made the
+   tier reachable. Fixed directly (one-line source check), full suite
+   re-verified 185/185 after.
 
 ## Other branches floating around
 
