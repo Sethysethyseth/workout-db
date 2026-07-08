@@ -1,5 +1,34 @@
 # HANDOFF — current state
 
+**Updated:** July 7, 2026 latest+5 (Opus — EOD; prod choreography PREPPED,
+handoff for next session. Seth done for the day.)** No prod writes happened
+this session — the whole prod rollout is teed up for the next session to
+execute WITH Seth. Decisions locked here:
+- **NEW RULE (Seth, this session):** during **Opus/Fable review sessions**
+  the reviewing agent gets a **READ-ONLY prod DB connection** for diagnostics
+  (dedicated `readonly_agent` Neon role, SELECT-only); **all prod WRITES
+  (migrations, seed) still stay with Seth.** Does NOT extend to Sonnet/Cursor.
+  Rationale: the May-2026 wipe was a *different, non-frontier* model. Saved to
+  memory (`opus-fable-review-prod-access`). **TODO next session: codify this
+  scoped exception into AGENTS.md invariant #9 + gate item 2 (get Seth's exact
+  wording — do NOT unilaterally rewrite the safety invariants).**
+- **Read-only access NOT yet stood up.** To do the agent-side Step-0 read,
+  Seth creates the `readonly_agent` role on prod (SELECT-only CREATE ROLE +
+  GRANTs) and drops the real conn string in an OFF-TRANSCRIPT scratchpad file;
+  OR just pastes the Step-0 query output from the Neon editor and skips the
+  role entirely (both queries are in Next-up item 0). Placeholder string Seth
+  first pasted had a template password (`choose-a-strong-password-here`) — not
+  usable; real creds go via file, never chat.
+- **Seed method LOCKED = Option A:** `npx prisma db seed` against prod (tested,
+  idempotent, no hand-written SQL, identical 873-row result). It's a WRITE, so
+  **Seth runs it** with the write-capable prod owner URL (NOT `readonly_agent`).
+  Today's `assertRecognizedHost` guard split is what lets seed run on prod.
+- **State unchanged on prod:** prod still has NEITHER catalog nor FK migration;
+  `origin/main` still `3767840`; branch `catalog-fk-wave` `6331647` is
+  review-clean and pushed. NOT merged. Full ordered choreography = Next-up
+  item 0.
+Previous entry retained below for continuity.
+
 **Updated:** July 7, 2026 latest+4 (Opus — PRE-MAIN REVIEW DONE + guard-split
 fix landed `0e6f32a`.)** Ran the mandated Fable/Opus pre-main branch-diff
 review of the whole A-wave (`catalog-fk-wave` vs `main`), with the archived
@@ -28,70 +57,6 @@ prod-choreography go, run it (seed + linkage migrations + optional backfill;
 check prod's `_prisma_migrations` for the old May-27 catalog-migration-name
 situation FIRST, still unverified on prod), then "push to main" (gated
 trigger).**
-Previous entry retained below for continuity.
-
-**Updated:** July 7, 2026 latest+3 (Sonnet — A5 + A6b LANDED, both audited
-and committed same session; ALSO fixed a real A4 regression found during
-the audit.)** Render confirmed pointed at `catalog-fk-wave` on the latest
-commit (Seth verified), so the A-wave code is confirmed live on staging.
-Dispatched A5 (`a5-exercise-picker.md`) and A6b
-(`a6b-exercise-id-backfill.md`) to Cursor back-to-back per the v4
-batchable-disjoint-files rule; Cursor delivered both, but overwrote its own
-`DELIVERY.md` running the second task, so A5's per-criterion evidence
-report was lost — audited A5 directly against the tree instead (re-ran
-every lane fresh, read the fixture tests to confirm they pin real
-behavior rather than trusting the report). **Worth flagging for future
-dispatches: DELIVERY.md is single-file, so back-to-back units on the same
-task file will clobber each other's report - review right after each stops,
-or expect to reconstruct the first unit's evidence by hand.**
-
-Audit surfaced a real bug, not caused by this session's diff: A4's
-`resolve.js` added a `userExerciseId` stored-id resolution tier, but
-`attribution.js`'s source check was never updated to recognize it (only
-matched `"userExercise"`) - so any session exercise resolved via the new
-tier (the normal case once A4 stamps ids at write time) silently lost its
-muscle attribution entirely. Surfaced because this was the first full
-`npm test` run since staging's migration made the tier actually reachable
-(`exercises.integration.test.js`'s custom-exercise analytics test failed
-with an undefined quadriceps bucket). Root-caused by tracing resolve.js ->
-enrichSet.js -> attribution.js; one-line fix, shipped directly per the
-direct-fix exception (diagnosis was the bulk of the work) rather than a
-Cursor diagnosis-block round trip. **Committed separately from A5/A6b**
-since it's outside their FILES TO TOUCH.
-
-Three commits, in order: `0d2118e` (attribution fix), `c7c8ca6` (A5),
-`eeaa30c` (A6b) - all pushed, origin confirmed. Full suite re-run fresh
-after the fix: 185/185 green (20 suites). Client build green, no hex in
-CSS diff, searchCatalog purity/no-portal greps clean, A6b's
-`assertSafeForReset` guard + `--apply` gating verified directly (not
-trusted from the report). **A-wave is now feature-complete on
-`catalog-fk-wave`.** Given the whole wave is backend/script-shaped except
-A5's live-session typeahead, and very little of it is visually smoke-able,
-Seth explicitly opted to skip his own visual sign-off on A5 and rely on
-the mandated Fable/Opus pre-main branch-diff review as the sole gate
-before merge. **Next: kick off that review** (it should grep
-`HANDOFF-ARCHIVE.md` for the wave's full session history per the standing
-rule) - then, if clean, the prod migration choreography (same choreography
-as staging, but check prod's `_prisma_migrations` for the same
-old-migration-name situation first - unverified) - then "push to main"
-(Seth's trigger phrase, gated).
-Previous entry retained below for continuity.
-
-**Updated:** July 7, 2026 latest+2 (Fable — workflow-docs side session, NO
-code, NO A-wave movement).** The poor-mans-workflow tracking doc
-(`docs/specs/poor-mans-agentic-workflow.md`) gained three sections at
-Seth's direction: 6 steering layer (keep-human-on-task + anti-loop
-mechanisms, "erosion-resistant not foolproof"), 7 adopter setup interview,
-8 measured pilot receipts (~24 units/6 days, zero bounces, 2 prod-breaking
-defects caught; old sections 6/7 renumbered 9/10). The public shell repo
-(`C:\dev\the-poor-mans-agentic-workflow`) was refreshed in the same
-session: source-material re-scrubbed to current v4 files (+ QUEUE and
-HANDOFF-ARCHIVE snapshots added as receipts ground truth), BRIEF rewritten
-to the v4 story with Seth's publishing decisions settled and written in
-(MIT, named-tools-first, provenance-only receipts, on-ramp tone) - it is
-now READY for the claude.ai/code buildout. One docs commit here on
-`catalog-fk-wave`; the Render staging-service check in the entry below is
-STILL the next A-wave action.
 Previous entry retained below for continuity.
 
 Older session entries (incl. the July 7 A4-landed entry, the July 6
@@ -192,18 +157,60 @@ trusting it.
 
 ## Next up (the active task)
 
-0. **A-wave on `catalog-fk-wave` (`0e6f32a`) is code-complete AND
-   review-clean.** A1 + A4 + A5 + A6b landed, staging migration choreography
-   done, Render on this branch, and the Fable/Opus pre-main review is DONE
-   (verdict clean; guard-split fix `0e6f32a` shipped from it — see newest
-   HANDOFF entry). **Next: prod migration choreography** (same steps as
-   staging: catalog migration + `npx prisma db seed` + linkage migration;
-   `db seed` and the optional A6b backfill now run on prod thanks to the
-   guard split). **First check prod's `_prisma_migrations` for the May-27
-   old-catalog-migration-name situation — still unverified on prod.** Then
-   "push to main" (Seth's trigger phrase, gated). Ordering: prod migrate
-   BEFORE the main merge (prod deploy tracks main; code-ahead-of-DB crashes
-   login).
+0. **PROD CHOREOGRAPHY for the A-wave — teed up, execute WITH Seth.** Branch
+   `catalog-fk-wave` (`6331647`) is code-complete + review-clean. Generic
+   ritual: RUNBOOK section 3 (DB-before-code). Agent is READ-ONLY on prod
+   (Step 0 only); **Seth runs every write.** Ordered steps:
+
+   **Step 0 — read prod state (agent read-only OK, or Seth pastes).** In the
+   Neon editor (confirm host `ep-solitary-sea-an56mioq`) or via the read-only
+   role, run:
+   ```sql
+   SELECT migration_name, checksum FROM "_prisma_migrations" ORDER BY migration_name;
+   SELECT to_regclass('public."Exercise"') AS exercise_table;
+   -- if exercise_table non-null: SELECT count(*) AS exercise_rows FROM "Exercise";
+   ```
+   This decides Step 1's branch. (On STAGING the `Exercise` table already
+   existed from an abandoned May-27 migration, which collided with the new
+   catalog migration and left a FAILED `_prisma_migrations` record blocking
+   deploys — see archived July 7 latest+1 entry. Prod may or may not have the
+   same; Step 0 tells us.)
+
+   **Step 1 — catalog migration `20260707120000_add_exercise_catalog` (Seth):**
+   - If `Exercise` does NOT exist: apply it (RUNBOOK 3 - Neon-editor DDL +
+     hand-insert the `_prisma_migrations` row with the checksum copied from
+     STAGING's row for the same migration; OR `prisma migrate deploy` with the
+     prod URL).
+   - If `Exercise` ALREADY exists (staging's case): first clear any FAILED
+     migration record, then baseline via
+     `prisma migrate resolve --applied 20260707120000_add_exercise_catalog`.
+
+   **Step 2 — seed (Seth):** `npx prisma db seed` against prod (write-capable
+   owner URL; NOT `readonly_agent`). Idempotent upserts. Verify `count(*) = 873`
+   and muscleWeights present. (This is the LOCKED Option-A seed method.)
+
+   **Step 3 — FK linkage migration `20260707130000_add_exercise_fk_linkage`
+   (Seth):** apply (Neon-editor DDL + `_prisma_migrations` row, or
+   `prisma migrate deploy`). Verify by SQL: `exerciseId`/`userExerciseId` on
+   TemplateExercise/SessionExercise/BlockWorkoutExercise, `blockWorkoutSetId`
+   on WorkoutSet, all three `_one_identity_chk` CHECK constraints present.
+
+   **Step 4 — verify prod == staging schema** (RUNBOOK 4 migration diff; no
+   drift, checksums match on shared names).
+
+   **Step 5 — merge to main (gated "push to main" trigger):** `git merge
+   --ff-only catalog-fk-wave`, one command at a time, prod auto-deploys.
+   Ordering is load-bearing: DB migrated BEFORE code merges (code-ahead-of-DB
+   crashes prod login).
+
+   **Step 6 — post-merge:** repoint staging Render back to `main` (RUNBOOK 2
+   step 6), verify prod deploy SHA in Render/Vercel Events == new main HEAD,
+   smoke prod login + a session/analytics surface that touches `exerciseId`.
+
+   **Step 7 (optional) — historical backfill:** `node
+   scripts/backfill-exercise-ids.mjs` (DRY-RUN first) then `--apply` against
+   prod for pre-A4 historical rows (now unblocked by the guard split; Seth
+   runs the write). Idempotent; safe to defer.
 1. **T3C sprite loader upgrade** unblocks whenever Seth drops the Gemini
    frames in `claudefiledrop/` (art direction + prompts settled July 6).
    Note: `claudefiledrop/` currently holds two `.url` shortcut files

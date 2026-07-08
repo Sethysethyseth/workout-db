@@ -13,6 +13,68 @@ context) and the git history of `docs/HANDOFF.md`.
 
 ---
 
+**Updated:** July 7, 2026 latest+3 (Sonnet — A5 + A6b LANDED, both audited
+and committed same session; ALSO fixed a real A4 regression found during
+the audit.)** Render confirmed pointed at `catalog-fk-wave` on the latest
+commit (Seth verified), so the A-wave code is confirmed live on staging.
+Dispatched A5 (`a5-exercise-picker.md`) and A6b
+(`a6b-exercise-id-backfill.md`) to Cursor back-to-back per the v4
+batchable-disjoint-files rule; Cursor delivered both, but overwrote its own
+`DELIVERY.md` running the second task, so A5's per-criterion evidence
+report was lost — audited A5 directly against the tree instead (re-ran
+every lane fresh, read the fixture tests to confirm they pin real
+behavior rather than trusting the report). **Worth flagging for future
+dispatches: DELIVERY.md is single-file, so back-to-back units on the same
+task file will clobber each other's report - review right after each stops,
+or expect to reconstruct the first unit's evidence by hand.**
+
+Audit surfaced a real bug, not caused by this session's diff: A4's
+`resolve.js` added a `userExerciseId` stored-id resolution tier, but
+`attribution.js`'s source check was never updated to recognize it (only
+matched `"userExercise"`) - so any session exercise resolved via the new
+tier (the normal case once A4 stamps ids at write time) silently lost its
+muscle attribution entirely. Surfaced because this was the first full
+`npm test` run since staging's migration made the tier actually reachable
+(`exercises.integration.test.js`'s custom-exercise analytics test failed
+with an undefined quadriceps bucket). Root-caused by tracing resolve.js ->
+enrichSet.js -> attribution.js; one-line fix, shipped directly per the
+direct-fix exception (diagnosis was the bulk of the work) rather than a
+Cursor diagnosis-block round trip. **Committed separately from A5/A6b**
+since it's outside their FILES TO TOUCH.
+
+Three commits, in order: `0d2118e` (attribution fix), `c7c8ca6` (A5),
+`eeaa30c` (A6b) - all pushed, origin confirmed. Full suite re-run fresh
+after the fix: 185/185 green (20 suites). Client build green, no hex in
+CSS diff, searchCatalog purity/no-portal greps clean, A6b's
+`assertSafeForReset` guard + `--apply` gating verified directly (not
+trusted from the report). **A-wave is now feature-complete on
+`catalog-fk-wave`.** Given the whole wave is backend/script-shaped except
+A5's live-session typeahead, and very little of it is visually smoke-able,
+Seth explicitly opted to skip his own visual sign-off on A5 and rely on
+the mandated Fable/Opus pre-main branch-diff review as the sole gate
+before merge. **Next: kick off that review** (it should grep
+`HANDOFF-ARCHIVE.md` for the wave's full session history per the standing
+rule) - then, if clean, the prod migration choreography (same choreography
+as staging, but check prod's `_prisma_migrations` for the same
+old-migration-name situation first - unverified) - then "push to main"
+(Seth's trigger phrase, gated).
+
+**Updated:** July 7, 2026 latest+2 (Fable — workflow-docs side session, NO
+code, NO A-wave movement).** The poor-mans-workflow tracking doc
+(`docs/specs/poor-mans-agentic-workflow.md`) gained three sections at
+Seth's direction: 6 steering layer (keep-human-on-task + anti-loop
+mechanisms, "erosion-resistant not foolproof"), 7 adopter setup interview,
+8 measured pilot receipts (~24 units/6 days, zero bounces, 2 prod-breaking
+defects caught; old sections 6/7 renumbered 9/10). The public shell repo
+(`C:\dev\the-poor-mans-agentic-workflow`) was refreshed in the same
+session: source-material re-scrubbed to current v4 files (+ QUEUE and
+HANDOFF-ARCHIVE snapshots added as receipts ground truth), BRIEF rewritten
+to the v4 story with Seth's publishing decisions settled and written in
+(MIT, named-tools-first, provenance-only receipts, on-ramp tone) - it is
+now READY for the claude.ai/code buildout. One docs commit here on
+`catalog-fk-wave`; the Render staging-service check in the entry below is
+STILL the next A-wave action.
+
 **Updated:** July 7, 2026 latest+1 (Sonnet — STAGING MIGRATED: A1 + A4 both
 now live on staging; CORRECTS a wrong historical claim below.)** Ran the
 staging migration choreography and found ground truth did not match this
