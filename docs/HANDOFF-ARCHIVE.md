@@ -13,6 +13,45 @@ context) and the git history of `docs/HANDOFF.md`.
 
 ---
 
+**Updated:** July 7, 2026 latest+1 (Sonnet — STAGING MIGRATED: A1 + A4 both
+now live on staging; CORRECTS a wrong historical claim below.)** Ran the
+staging migration choreography and found ground truth did not match this
+file: **the May 27 catalog migration (`20260527120000_add_exercise_catalog`,
+from the abandoned pre-A1 branch) was never wiped from staging** — it has
+been applied and the `Exercise` table has held all 873 rows, fully seeded,
+continuously since May 27. The July 6 entry below claiming "test resets
+wiped it from staging, 14 migrations, zero drift" was simply wrong (verified
+directly via `_prisma_migrations` + row count query, not inferred). On top
+of that, an earlier `prisma migrate deploy` attempt today against staging
+(pre-dating this fix) tried to apply the new re-timestamped
+`20260707120000_add_exercise_catalog` migration, hit `relation "Exercise"
+already exists`, and left a FAILED migration record blocking all further
+deploys. **Fix applied (Seth approved all 3 steps):** (1)
+`prisma migrate resolve --applied 20260707120000_add_exercise_catalog` to
+baseline the bookkeeping onto the schema state that already existed, (2)
+`npx prisma db seed` (idempotent — refreshed muscleWeights curation to the
+current A2-cleaned 30-key set; row count unchanged at 873, confirmed against
+`exercises.json`), (3) `npx prisma migrate deploy` applied A4's
+`20260707130000_add_exercise_fk_linkage` cleanly. **Verified directly by SQL
+query** (not just `migrate status`): `exerciseId`/`userExerciseId` present on
+TemplateExercise/SessionExercise/BlockWorkoutExercise, `blockWorkoutSetId` on
+WorkoutSet, all three `_one_identity_chk` CHECK constraints present. The
+orphan `20260527120000_add_exercise_catalog` row stays in `_prisma_migrations`
+harmlessly (not present locally, but not blocking — matches no local
+migration name so `migrate status` will always flag it as drift; low-priority
+cleanup candidate, not urgent). **Open question for whoever does the prod
+migration:** confirm the SAME old-migration situation isn't also true on
+prod before assuming the choreography there starts from a clean slate — this
+session did not check prod. **Next: verify whether Render's staging service
+is actually pointed at `catalog-fk-wave`** (RUNBOOK step 2 - it normally
+tracks `main` and needs manual repointing) before assuming the already-pushed
+A4 code is live; confirm deploy SHA in Events either way. Then A5/A6b dispatch.
+**Session closed here (Seth, July 7, EOD).** Nothing else in flight - working
+tree clean except `.claude/settings.json` (local permissions, untracked
+elsewhere) and `claudefiledrop/` (two Discord CDN `.url` shortcuts, not yet
+the expected Gemini sprite PNGs). Pick up next session with the Render
+check above.
+
 **Updated:** July 7, 2026 latest (Sonnet — A4 LANDED `0743070`; L-wave prod
 smoke closed.)** Seth confirmed the L-wave prod smoke (Open TODO #1) is
 complete — no issues reported. **A4 (`a4-exercise-fk-linkage.md`) audited and

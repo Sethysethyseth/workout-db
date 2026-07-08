@@ -1,5 +1,35 @@
 # HANDOFF — current state
 
+**Updated:** July 7, 2026 latest+4 (Opus — PRE-MAIN REVIEW DONE + guard-split
+fix landed `0e6f32a`.)** Ran the mandated Fable/Opus pre-main branch-diff
+review of the whole A-wave (`catalog-fk-wave` vs `main`), with the archived
+session logs in hand. **Verdict: code is clean and mergeable** — schema/
+migrations additive and consistent (nullable FKs, SET NULL, one-identity
+CHECKs, indexed), the `userExerciseId` tier correctly threaded resolve ->
+enrichSet -> attribution (the `0d2118e` regression fix holds and is pinned),
+write-path controllers enforce cross-user ownership on `userExerciseId` and
+reject both-set, backfill is idempotent/dry-run-default/`--apply`-gated, client
+picker is debounced+seq-guarded+no-portal+a11y, CSS token-clean. Fresh lanes:
+unit 129/129 then 137/137 after the fix, client build green.
+**One finding, fixed this session (direct-fix, diagnosis was the work):** the
+prod migration choreography needs `npx prisma db seed` (873 catalog rows) and
+the A6b backfill `--apply` on prod, but BOTH called `assertSafeForReset`, which
+denylists the prod host — the prod rollout would have been blocked by its own
+guard at the seed step. Split the guard: new `assertRecognizedHost` (permits
+prod deliberately, still rejects unknown/typo'd hosts) now guards seed.js +
+backfill; `assertSafeForReset` (staging/localhost only) still guards the
+destructive test-reset path (`jest.setup.js`) unchanged. Added first-ever
+`dbHostGuard` unit tests (137 total now) routed into the fast unit lane
+(`test/lib/**`). Committed `0e6f32a`, pushed, origin confirmed.
+**Minor note (not fixed, non-blocking):** `updateSessionExercise` silently
+drops a provided identity when the patch carries no `exerciseName` — harmless,
+the picker always sends both. **Next: the branch is review-clean — decide
+prod-choreography go, run it (seed + linkage migrations + optional backfill;
+check prod's `_prisma_migrations` for the old May-27 catalog-migration-name
+situation FIRST, still unverified on prod), then "push to main" (gated
+trigger).**
+Previous entry retained below for continuity.
+
 **Updated:** July 7, 2026 latest+3 (Sonnet — A5 + A6b LANDED, both audited
 and committed same session; ALSO fixed a real A4 regression found during
 the audit.)** Render confirmed pointed at `catalog-fk-wave` on the latest
@@ -64,46 +94,6 @@ now READY for the claude.ai/code buildout. One docs commit here on
 STILL the next A-wave action.
 Previous entry retained below for continuity.
 
-**Updated:** July 7, 2026 latest+1 (Sonnet — STAGING MIGRATED: A1 + A4 both
-now live on staging; CORRECTS a wrong historical claim below.)** Ran the
-staging migration choreography and found ground truth did not match this
-file: **the May 27 catalog migration (`20260527120000_add_exercise_catalog`,
-from the abandoned pre-A1 branch) was never wiped from staging** — it has
-been applied and the `Exercise` table has held all 873 rows, fully seeded,
-continuously since May 27. The July 6 entry below claiming "test resets
-wiped it from staging, 14 migrations, zero drift" was simply wrong (verified
-directly via `_prisma_migrations` + row count query, not inferred). On top
-of that, an earlier `prisma migrate deploy` attempt today against staging
-(pre-dating this fix) tried to apply the new re-timestamped
-`20260707120000_add_exercise_catalog` migration, hit `relation "Exercise"
-already exists`, and left a FAILED migration record blocking all further
-deploys. **Fix applied (Seth approved all 3 steps):** (1)
-`prisma migrate resolve --applied 20260707120000_add_exercise_catalog` to
-baseline the bookkeeping onto the schema state that already existed, (2)
-`npx prisma db seed` (idempotent — refreshed muscleWeights curation to the
-current A2-cleaned 30-key set; row count unchanged at 873, confirmed against
-`exercises.json`), (3) `npx prisma migrate deploy` applied A4's
-`20260707130000_add_exercise_fk_linkage` cleanly. **Verified directly by SQL
-query** (not just `migrate status`): `exerciseId`/`userExerciseId` present on
-TemplateExercise/SessionExercise/BlockWorkoutExercise, `blockWorkoutSetId` on
-WorkoutSet, all three `_one_identity_chk` CHECK constraints present. The
-orphan `20260527120000_add_exercise_catalog` row stays in `_prisma_migrations`
-harmlessly (not present locally, but not blocking — matches no local
-migration name so `migrate status` will always flag it as drift; low-priority
-cleanup candidate, not urgent). **Open question for whoever does the prod
-migration:** confirm the SAME old-migration situation isn't also true on
-prod before assuming the choreography there starts from a clean slate — this
-session did not check prod. **Next: verify whether Render's staging service
-is actually pointed at `catalog-fk-wave`** (RUNBOOK step 2 - it normally
-tracks `main` and needs manual repointing) before assuming the already-pushed
-A4 code is live; confirm deploy SHA in Events either way. Then A5/A6b dispatch.
-**Session closed here (Seth, July 7, EOD).** Nothing else in flight - working
-tree clean except `.claude/settings.json` (local permissions, untracked
-elsewhere) and `claudefiledrop/` (two Discord CDN `.url` shortcuts, not yet
-the expected Gemini sprite PNGs). Pick up next session with the Render
-check above.
-Previous entry retained below for continuity.
-
 Older session entries (incl. the July 7 A4-landed entry, the July 6
 off-queue login-UX fixes, the relay-v4 restructuring, and the L3
 staging-migration verification): moved verbatim to
@@ -121,8 +111,10 @@ trusting it.
 
 ## Repo / deploy state
 
-- **Active branch: `catalog-fk-wave` at `eeaa30c`** (code) — A1 + A4 + A5 +
-  A6b all landed, pushed, origin confirmed. A-wave is now code-complete.
+- **Active branch: `catalog-fk-wave` at `0e6f32a`** (code) — A1 + A4 + A5 +
+  A6b all landed, plus the `0e6f32a` db-host-guard split (prod seed/backfill
+  now permitted; see newest HANDOFF entry). Pushed, origin confirmed.
+  Pre-main review DONE and clean. A-wave is code-complete + review-clean.
   Branched off `logging-ux-wave` HEAD `80373e1` (= main + one HANDOFF docs
   commit). **Both catalog/linkage migrations are APPLIED ON STAGING**
   (`ep-bitter-breeze-am81izlh` / noisy-surf) as of July 7 (Sonnet):
@@ -200,17 +192,18 @@ trusting it.
 
 ## Next up (the active task)
 
-0. **A-wave on `catalog-fk-wave` (`eeaa30c`) is code-complete.** A1 + A4 +
-   A5 + A6b all landed, staging migration choreography done, Render
-   confirmed pointed at this branch. Seth opted to skip his own visual
-   sign-off on A5's typeahead (little to smoke under the hood) and rely on
-   the Fable/Opus pre-main review as the sole gate. **Next: kick off that
-   review** (grep `HANDOFF-ARCHIVE.md` for the wave's full session history
-   per the standing rule - includes the attribution.js regression found
-   and fixed this session). If clean: prod migration choreography (same
-   steps as staging, but check prod's `_prisma_migrations` for the same
-   old-migration-name situation first - unverified) - then "push to main"
-   (Seth's trigger phrase, gated).
+0. **A-wave on `catalog-fk-wave` (`0e6f32a`) is code-complete AND
+   review-clean.** A1 + A4 + A5 + A6b landed, staging migration choreography
+   done, Render on this branch, and the Fable/Opus pre-main review is DONE
+   (verdict clean; guard-split fix `0e6f32a` shipped from it — see newest
+   HANDOFF entry). **Next: prod migration choreography** (same steps as
+   staging: catalog migration + `npx prisma db seed` + linkage migration;
+   `db seed` and the optional A6b backfill now run on prod thanks to the
+   guard split). **First check prod's `_prisma_migrations` for the May-27
+   old-catalog-migration-name situation — still unverified on prod.** Then
+   "push to main" (Seth's trigger phrase, gated). Ordering: prod migrate
+   BEFORE the main merge (prod deploy tracks main; code-ahead-of-DB crashes
+   login).
 1. **T3C sprite loader upgrade** unblocks whenever Seth drops the Gemini
    frames in `claudefiledrop/` (art direction + prompts settled July 6).
    Note: `claudefiledrop/` currently holds two `.url` shortcut files
