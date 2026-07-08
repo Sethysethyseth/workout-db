@@ -6,7 +6,11 @@ function attributeSet(resolution, catalog = loadCatalog()) {
     return { attributed: false, source: null, muscles: {} };
   }
 
-  if (resolution.source === "userExercise" && resolution.userExercise) {
+  if (
+    (resolution.source === "userExercise" ||
+      resolution.source === "userExerciseId") &&
+    resolution.userExercise
+  ) {
     const muscles = userExerciseWeights(resolution.userExercise.muscles);
     if (Object.keys(muscles).length === 0) {
       return { attributed: false, source: null, muscles: {} };
