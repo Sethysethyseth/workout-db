@@ -14,6 +14,18 @@
 > checklist (below), formatting fixes folded into N1, mechanical traps named
 > in N3, plate rounding in N5, and a new final polish unit N6.
 >
+> **Fable amendment (July 9, 2nd pass) — chart forms SIGNED OFF via mock:**
+> Seth approved the side-by-side mock artifact (title "LogChamp — Analytics
+> chart-form proposals"; rendered + verified light/dark/phone-width): the
+> Muscles Trend view becomes a binned volume HEATMAP, the Table twin is
+> de-noised, and the Strength sparklines get the full mark-spec treatment.
+> These land as new unit N7 + an N4 visual spec. Seth's follow-up ask
+> (10/15/20-day periods for non-weekly splits; rethink 4/8/12 presets) was
+> held against the F-test per his own instruction: custom bucket LENGTHS
+> are REJECTED (nonstandard denominators fail goal 1 — nobody can benchmark
+> "sets per 10 days"); the accepted mechanism is DAY GRANULARITY at a new
+> 2-week preset (no split assumption at all). Details in N7.
+>
 > **Opus amendment (July 8) — what the data audit changed vs. Fable's v1:**
 > (1) `perExercise[].bestSet` is selected by highest *Epley e1RM*, NOT by
 > weight (`aggregate.js:154-170`) — so "Top set" cannot reuse it honestly;
@@ -142,14 +154,17 @@ differentiator — is under-promoted. Goals:
 
 ## Unit breakdown
 
-Sequencing: N1 → N2 → N4 → (N5 → N3) → N6. N1 and N2 each carry a SMALL
-engine serialization/compute tail (not client-only — see each). N4 is
-genuinely client-only. N3 depends on N5's server data, so N5 lands first and
-N3 is its client shell. N6 (frontier polish) runs LAST — its tile deep-links
-need N3/N5 in place, and it is the F-test's cleanup net for anything the
-earlier audits flagged as "N6". N1 and N4 have disjoint files and may run
-back-to-back before one audit; N2 must land before the StatTiles work it
-feeds.
+Sequencing: N1 → N2 → N4 → N7 → (N5 → N3) → N6. N1 and N2 each carry a
+SMALL engine serialization/compute tail (not client-only — see each). N4 is
+genuinely client-only. N7 (muscles heatmap + table de-noise + 2W preset)
+carries its own small engine tail (day-bucket series) and runs after N2
+(it shares N2's adaptive-metric constant and N1's formatters); N4 and N7
+both touch `AnalyticsPage.jsx`, so they run sequentially, not batched. N3
+depends on N5's server data, so N5 lands first and N3 is its client shell.
+N6 (frontier polish) runs LAST — its tile deep-links need N3/N5 in place,
+and it is the F-test's cleanup net for anything the earlier audits flagged
+as "N6". N1 and N4 have disjoint files and may run back-to-back before one
+audit; N2 must land before the StatTiles work it feeds.
 
 ### N1 — Effort-neutral display + number-formatting layer (client + small engine serialization)
 
@@ -259,6 +274,17 @@ Files: `AnalyticsPage.jsx` (`PerExerciseSection`),
 - `StrengthTrendChart` re-anchors to the same metrics (matched-effort
   where unlocked, top-set weight otherwise) — dataviz skill applies when
   the implementing block touches the chart.
+- **Sparkline visual spec (SIGNED OFF via the July 9 mock — implement as
+  drawn):** plotted series = top-set weight per session (real whole
+  numbers via N1's `formatWeight`, e.g. "225 → 245", never decimal e1RM).
+  Marks: 2px accent line (round join/cap), area wash under the line at
+  ~10% accent opacity (`color-mix(in srgb, var(--chart-accent) 10%,
+  transparent)`), latest-point end dot ~9px with a 2px surface-color ring,
+  40px plot height (up from 28px). Single series per row → no legend box;
+  the flanking first/last endpoint values are the labels. Delta chip
+  gains the top set itself as context ("+20 lbs · top set 245 × 3").
+  Keep the existing zero-length round-cap dot technique under
+  `preserveAspectRatio="none"`.
 - Copy: intro sub no longer leads with "Estimated 1RM".
 - Acceptance: no e1RM value rendered in the strength view; unlock/
   insufficient-data states for matched effort preserved.
@@ -324,6 +350,60 @@ precisely so the block is mechanical.**
   reviewed assertion that neither query can return another user's sets;
   client renders honest empty states.
 
+### N7 — Muscles view: volume heatmap + table de-noise + 2W preset (client + small engine day-bucket tail)
+
+All three SIGNED OFF by Seth via the July 9 mock artifact ("LogChamp —
+Analytics chart-form proposals") — implement as drawn, both granularities.
+Files: `MuscleVolumeTrend.jsx` (replaced by the heatmap component),
+`AnalyticsPage.jsx` (Trend toggle wiring, table view, range presets),
+`server/src/analytics/aggregate.js` (+ `summary.js`) for the day-bucket
+series, `index.css`.
+
+- **Trend view = binned heatmap** (replaces the weekly small multiples,
+  which fail two dataviz anti-patterns: unreadable micro-marks and a
+  shared scale burying low-volume muscles). Rows = muscles (sorted by
+  volume desc), columns = periods, cell = the volume headline metric
+  binned into 4 steps + a distinct EMPTY state. One printed number per
+  row: the avg/wk column at the right. Hover/focus tooltip per cell with
+  exact numbers; the Table twin stays the dependable value channel.
+- **Granularity derives from the RANGE — never a second knob:** a NEW
+  2-week range preset renders one cell per DAY (14 columns — the honest
+  answer for non-7-day splits: shows the actual training rhythm, assumes
+  nothing); 4/8/12 weeks render one cell per WEEK. Custom bucket lengths
+  (10/15/20 days) are REJECTED (see the July 9 header note) — sets/week
+  stays the only volume denominator anywhere in the app. Engine tail:
+  parametrize the series bucketing (week|day) and serialize the day
+  series for short ranges; fixture test both bucket modes.
+- **Ramp, tokens-only and VALIDATED:** 4 steps via `color-mix(in srgb,
+  var(--chart-accent) P%, var(--color-surface-2))`; champ-validated P =
+  50/67/84/100 (light) and 40/60/80/100 (dark) — run the dataviz
+  `validate_palette.js --ordinal` check for EVERY palette × mode and
+  adjust the per-mode P constants until the worst palette passes (iron
+  light is the known risk; same relief rules as the `index.css` emphasis
+  note). Empty cell = faint neutral fill (`color-mix` off `--color-border`),
+  deliberately NOT ramp step 1 — "didn't train" must never read as
+  "trained a little" — and legend-keyed as "not trained".
+- **Day-cell hit targets:** ~9px day cells cannot be individual 24px+
+  targets; tooltip hover/focus is a desktop enhancement there. Mobile
+  reads values from the avg column + Table twin (F-test item 5 holds:
+  nothing is hover-gated). Weekly cells (≥25px) keep per-cell focus.
+- **Table de-noise (as drawn):** numeric columns right-aligned with
+  `tabular-nums`; locked stimulating cells = em-dash with ONE footnote
+  under the table (the per-cell "log RIR or RPE to unlock" sentence
+  repetition is removed); "Last trained" values compact ("3d") with the
+  warn-text tint at >= 14 days (does not punish 10-day cycles); "?"
+  explainer buttons leave the column headers (the card sub already
+  carries them).
+- **2W preset ripple check:** StatTiles/headline math at a 2-week range
+  must stay honest (averages over 2 weeks, comparison copy unchanged);
+  the WeeklyReport home card is untouched.
+- Acceptance: heatmap renders both granularities from the range chips
+  alone; ramp validator output pasted per palette × mode; empty != step-1
+  visually and in the legend; no unlock sentence inside table cells; all
+  numeric table columns right-aligned tabular; recency tint threshold
+  14d; Bars view and its value labels unchanged; day-series fixture test
+  green; tooltips + Table twin carry every value (nothing hover-only).
+
 ### N6 — Frontier polish (client-only, runs last)
 
 The F-test's dedicated unit: the detail-level failures found in the July 9
@@ -339,7 +419,7 @@ audit that belong to no earlier unit's files-to-touch. All client, no engine.
   with the range chips as the implied action. Honest, not cheerleading.
 - **Range choice persists** across visits: device-local accessor module in
   the `weightUnitPref.js` pattern (`analyticsRangePref.js`, localStorage
-  key `workoutdb-analytics-weeks`, values 4|8|12, default 4). URL is NOT
+  key `workoutdb-analytics-weeks`, values 2|4|8|12, default 4). URL is NOT
   the channel (range is a lens, not an address); the accessor pattern
   keeps account-level promotion a one-swap change later.
 - **KPI tiles gain tap-through where a destination exists:** Top set and
@@ -365,6 +445,25 @@ audit that belong to no earlier unit's files-to-touch. All client, no engine.
   view; e1RM becomes its engine rather than a standalone number.
 - **e1RM ranked leaderboard is OUT** — the Exercises list is an
   alphabetical searchable lookup, not a scoreboard.
+
+## Decisions settled July 9 (3rd pass — chart forms, via mock sign-off)
+
+- **Muscles Trend = binned volume heatmap** (Seth, via mock). N7.
+- **Muscles Table de-noised** (Seth, via mock). N7.
+- **Strength sparklines get the full mark spec** — top-set series, 2px
+  accent line, 10% wash, ringed endpoint, whole numbers (Seth, via mock).
+  Folded into N4.
+- **New 2-week range preset with DAY granularity** — the accepted answer
+  to non-weekly splits (Seth raised 10/15/20-day periods; held against
+  the F-test at his instruction). N7.
+- **Custom bucket lengths (10/15/20 days) REJECTED** — nonstandard
+  denominators fail "the user understands their stats"; sets/week is the
+  app-wide volume unit. Granularity derives from the range; no per-chart
+  period knobs (dataviz rule: one filter row, no per-chart filters).
+- **Custom date-range picker REJECTED for this wave** — preset chips are
+  the frontier mobile pattern; the genuinely missing horizon is a LONGER
+  preset (6M/all), parked post-N with its perf question (open item 5).
+- **4/8/12-week presets KEPT** (now 2/4/8/12).
 
 ## Still open / to confirm with Seth
 
