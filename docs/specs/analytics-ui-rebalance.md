@@ -2,10 +2,17 @@
 
 > Authored by Fable, July 8 2026, from a design session with Seth; amended
 > by Opus same day after a data audit + a second design pass with Seth. This
-> is the contract source for the N-wave. Opus lifts units N1–N5 into task
+> is the contract source for the N-wave. Opus lifts units N1–N6 into task
 > blocks (`cursor-task-block-template.md`, unit-scale variant) — the
 > contracts below are written to transfer nearly verbatim. Do not start N5
 > without re-reading its security note.
+>
+> **Fable amendment (July 9) — the F-test:** Seth set the wave's exit
+> criteria: the skeleton is complete only when the tab passes as a
+> professional frontier weightlifting app in look/feel/ease of use, down to
+> every detail. A code-level audit against that bar produced the F-test
+> checklist (below), formatting fixes folded into N1, mechanical traps named
+> in N3, plate rounding in N5, and a new final polish unit N6.
 >
 > **Opus amendment (July 8) — what the data audit changed vs. Fable's v1:**
 > (1) `perExercise[].bestSet` is selected by highest *Epley e1RM*, NOT by
@@ -41,6 +48,39 @@ differentiator — is under-promoted. Goals:
    stats as a whole"), both pooled ONLY from exercises the user has done.
 4. RIR/RPE neutrality: copy mostly says "RIR or RPE" already, but value
    displays hardcode RIR (`@ 2 RIR`). Keep the display neutral.
+
+## Frontier-bar test (F-test) — the wave's exit criteria
+
+> Added by Fable, July 9, from Seth's directive: the analytics skeleton is
+> not "complete" until it passes as a professional frontier weightlifting
+> app in look/feel/ease of use, DOWN TO EVERY DETAIL. This checklist is that
+> test made checkable. It runs twice: each unit's audit checks the items its
+> files touch; the pre-main Fable review runs the whole list against the
+> staging deploy. A miss is a bounce, not a note.
+
+1. **No trailing `.0` on weights.** "225 lbs", never "225.0 lbs". Halves
+   keep their decimal ("102.5 lbs"). One shared formatter (N1).
+2. **Estimates carry estimate precision.** Displayed e1RM rounds to a whole
+   unit — "287.3 lbs" is false precision on an Epley output. Rep targets
+   round to plate-loadable increments (N5). Every estimate is labeled one.
+3. **No hardcoded effort unit in a value position** outside
+   `effortDisplay.js` (N1's existing criterion, promoted here).
+4. **Every metric has an insufficient-data state** (standing ask), and every
+   *empty state is actionable* — names what to do and links there, never a
+   bare "no data" (N6).
+5. **No value gated behind hover-only.** Tooltips enhance; direct labels or
+   the table twin always carry the number (already the pattern — hold it).
+6. **State feels remembered.** Range choice and view survive a tab flip and
+   a revisit; deep links keep working; no state is silently dropped by
+   another control's navigation (N3 param-merge, N6 range persistence).
+7. **Touch first.** Interactive targets >= 44px; 4 tabs fit a 360px viewport
+   without truncation (N3); charts legible at phone width.
+8. **All 8 palette x mode combos, tokens only** (standing rule — the F-test
+   makes it an explicit per-unit check for every new surface).
+9. **Motion restraint holds**: one ~180ms grow/fade per surface, ease-out,
+   `prefers-reduced-motion` respected (the existing `chart-grow` pattern).
+10. **Copy has one voice**: sentence-case labels, honest hedges ("estimated",
+    "not enough data"), the existing HOW_* explainer tone for anything new.
 
 ## Design decisions (settled — do not re-litigate in blocks)
 
@@ -102,13 +142,16 @@ differentiator — is under-promoted. Goals:
 
 ## Unit breakdown
 
-Sequencing: N1 → N2 → N4 → (N5 → N3). N1 and N2 each carry a SMALL engine
-serialization/compute tail (not client-only — see each). N4 is genuinely
-client-only. N3 depends on N5's server data, so N5 lands first and N3 is its
-client shell. N1 and N4 have disjoint files and may run back-to-back before
-one audit; N2 must land before the StatTiles work it feeds.
+Sequencing: N1 → N2 → N4 → (N5 → N3) → N6. N1 and N2 each carry a SMALL
+engine serialization/compute tail (not client-only — see each). N4 is
+genuinely client-only. N3 depends on N5's server data, so N5 lands first and
+N3 is its client shell. N6 (frontier polish) runs LAST — its tile deep-links
+need N3/N5 in place, and it is the F-test's cleanup net for anything the
+earlier audits flagged as "N6". N1 and N4 have disjoint files and may run
+back-to-back before one audit; N2 must land before the StatTiles work it
+feeds.
 
-### N1 — Effort-neutral display layer (client + small engine serialization)
+### N1 — Effort-neutral display + number-formatting layer (client + small engine serialization)
 
 - New `client/src/lib/effortDisplay.js`: `formatEffort({ rir, rpe }, userPref)`.
   Per-set unit is HONEST, not guessed: `WorkoutSet` stores both `rir` and
@@ -127,9 +170,23 @@ one audit; N2 must land before the StatTiles work it feeds.
   `EffortDriftCompact` (`+N RIR`). Label copy ("RIR or RPE") is already
   neutral — leave the HOW_* strings alone except where they present RIR
   as the only unit of display.
+- **Weight/number formatting joins this sweep (F-test items 1–2; same
+  files, one pass):** new `client/src/lib/weightDisplay.js` with
+  `formatWeight(n)` — strips a trailing `.0` ("225 lbs", "102.5 lbs") —
+  and `formatEstimate(n)` — rounds to a whole unit before formatting, for
+  e1RM and any Epley-derived display. Replace the FOUR duplicated local
+  `formatWeight` copies (`AnalyticsPage`, `StatTiles`, `WeeklyReport`,
+  `StrengthTrendChart`) and route every displayed e1RM through
+  `formatEstimate`. The duplicated `formatRir` copies collapse into
+  `effortDisplay.js` in the same pass. (Today "Sets" on the weekly report
+  strips `.0` while "Best lift" two tiles over shows "225.0 lbs" — the
+  inconsistency is the bug.)
 - Acceptance: no hardcoded "RIR" string in a *value* position outside
-  `effortDisplay.js`; unit-lane test for the engine serialization; client
-  formatter checked via grep + build + visual (client has no test lane).
+  `effortDisplay.js`; no local `formatWeight`/`formatRir` definitions
+  remain in analytics components (grep); no rendered weight carries a
+  trailing `.0`; displayed e1RM values are whole units; unit-lane test for
+  the engine serialization; client formatter checked via grep + build +
+  visual (client has no test lane).
 
 ### N2 — Headline stat rebalance (client + small engine `topSet`)
 
@@ -175,9 +232,19 @@ Lands AFTER N5 so it consumes the all-time exercise index + detail endpoint.
   stats." NOT a ranked e1RM leaderboard (a leaderboard is just the scoreboard
   we're moving away from). Selecting an exercise opens the N5 detail inline.
 - Empty state honest copy for a user with no logged exercises.
+- **Mechanical traps this block must name (found in the July 9 F-test
+  audit):** (a) `.analytics-view-tabs` hardcodes `repeat(3, minmax(0, 1fr))`
+  — becomes 4; verify all four labels fit a 360px viewport untruncated
+  (Execution is the long one; shrink font before wrapping). (b) `setView`
+  calls `setSearchParams({ view: nextView })`, which CLOBBERS every other
+  query param — N3 adds a selected-exercise param, so this must become a
+  merge (read current params, spread, set). Deep link
+  `?view=exercises&exercise=…` must survive a tab flip away and back is NOT
+  required, but the exercise param must survive range-chip clicks.
 - Acceptance: `?view=exercises` deep-links; roster is stable across range-
   chip changes (all-time); list membership is not e1RM-gated; empty state
-  present.
+  present AND actionable (F-test item 4); 4 tabs fit 360px; no query param
+  is dropped by view/range navigation.
 
 ### N4 — Strength tab rework (client-only)
 
@@ -230,6 +297,13 @@ precisely so the block is mechanical.**
   the client can mark out-of-range targets as lower-confidence; (c) label
   the whole card an estimate. v1 uses Epley for consistency with existing
   e1RM; a per-user fitted load-rep curve is a v2 note, not scope.
+- **Plate rounding (F-test item 2):** the server sends raw computed target
+  weights; the CLIENT rounds each displayed target to a loadable increment
+  — 2.5 for `lbs`, 1.25 for `kg` (the increment depends on the display-unit
+  pref, which is client-local; that is why rounding is a client concern).
+  A rep target of "183.7 lbs" fails the frontier bar — nobody can load it.
+  Rounding lives next to `formatWeight` in `weightDisplay.js` (N1) as
+  `roundToPlate(n, unit)`; single named constant per unit.
 - Identity resolution mirrors the summary engine's tiers so legacy
   name-only rows still aggregate with resolved rows for the same exercise.
 - Client (in N3's shell): detail panel — totals row, the **rep-target
@@ -249,6 +323,35 @@ precisely so the block is mechanical.**
   e1RM rows, rep-target extrapolation flags); isolation test or explicit
   reviewed assertion that neither query can return another user's sets;
   client renders honest empty states.
+
+### N6 — Frontier polish (client-only, runs last)
+
+The F-test's dedicated unit: the detail-level failures found in the July 9
+audit that belong to no earlier unit's files-to-touch. All client, no engine.
+
+- **Page-level empty state becomes actionable** (`AnalyticsPage`, the
+  `isEmpty` card): today it is a bare "No logged sets in this range." —
+  for a new user this page is the product's sell. Two distinct states,
+  same card: (a) genuinely new user → warm copy + a "Log your first
+  workout" CTA linking to the logging flow; (b) data exists but not in
+  range (detectable once N5's all-time index is loaded: index non-empty +
+  summary empty) → "No sets in the last N weeks — try a longer range,"
+  with the range chips as the implied action. Honest, not cheerleading.
+- **Range choice persists** across visits: device-local accessor module in
+  the `weightUnitPref.js` pattern (`analyticsRangePref.js`, localStorage
+  key `workoutdb-analytics-weeks`, values 4|8|12, default 4). URL is NOT
+  the channel (range is a lens, not an address); the accessor pattern
+  keeps account-level promotion a one-swap change later.
+- **KPI tiles gain tap-through where a destination exists:** Top set and
+  Top gain tiles link to the winning exercise's detail
+  (`?view=exercises&exercise=…`); the volume headline tile links to
+  `?view=muscles`. Whole tile is the target (>= 44px), visible
+  focus-visible ring, hover treatment via the existing
+  `--color-interactive` color-mix pattern. Tiles with no data render
+  as today, not as dead links.
+- Acceptance: both empty-state variants reachable and correct; range
+  survives a reload (verify via localStorage key); tile links carry the
+  right identity param; no new colors outside tokens; targets >= 44px.
 
 ## Decisions settled July 8 (2nd pass)
 
@@ -272,3 +375,19 @@ precisely so the block is mechanical.**
 3. Whether N4's Strength tab and the N5 Exercises detail overlap enough
    that Strength should eventually fold into Exercises. Not for this wave;
    flag for post-N review.
+4. Plate increments (N6/N5): proposed 2.5 lbs / 1.25 kg for rep targets.
+   Fine-tune if Seth wants 5-lb jumps for big compounds.
+5. Range presets top out at 12 weeks — a lifter with a year of history has
+   no long view outside the N5 detail (which IS all-time). Proposed: leave
+   for this wave (the Exercises tab covers the long-horizon need); revisit
+   a "6 months / all" preset post-N with the perf question it drags in.
+
+## Deferred by the F-test audit (explicitly NOT this wave)
+
+- Per-muscle drill-down (tap a muscle row → the exercises that drove its
+  volume). Real frontier feature; needs its own design pass. Post-N.
+- Weekly-report double summary fetch on Home (current + prior window) —
+  invisible to the user today; fold into any later summary-endpoint work.
+- Chart/table sort mismatch in Strength (chart delta-sorted, table
+  alphabetical) — defensible as-is (chart tells the story, table is the
+  lookup); N4 rework may moot it.
