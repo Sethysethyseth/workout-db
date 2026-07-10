@@ -4,6 +4,7 @@
  * matched-effort trend over the raw e1RM trend - it is the honest metric.
  */
 
+import { Link } from "react-router-dom";
 import { pickTopGain } from "../../lib/topGain.js";
 import { formatEffort } from "../../lib/effortDisplay.js";
 import { formatEstimate, formatWeight } from "../../lib/weightDisplay.js";
@@ -13,16 +14,26 @@ import { formatEstimate, formatWeight } from "../../lib/weightDisplay.js";
     definition - an N2 acceptance criterion). */
 export const EFFORT_COVERAGE_HEADLINE_THRESHOLD = 0.6;
 
-function StatTile({ label, value, sub, tone = null }) {
-  return (
-    <div className="card stat-tile">
+function StatTile({ label, value, sub, tone = null, to = null }) {
+  const body = (
+    <>
       <span className="stat-tile-label muted small">{label}</span>
       <span className={`stat-tile-value${tone ? ` stat-tile-value--${tone}` : ""}`}>
         {value}
       </span>
       {sub ? <span className="stat-tile-sub muted small">{sub}</span> : null}
-    </div>
+    </>
   );
+
+  if (to) {
+    return (
+      <Link to={to} className="card stat-tile stat-tile--link">
+        {body}
+      </Link>
+    );
+  }
+
+  return <div className="card stat-tile">{body}</div>;
 }
 
 function pickTopSet(perExercise) {
@@ -35,10 +46,15 @@ function pickTopSet(perExercise) {
       ts.weight > top.weight ||
       (ts.weight === top.weight && (ts.reps ?? 0) > (top.reps ?? 0))
     ) {
-      top = { weight: ts.weight, reps: ts.reps, name: ex.name };
+      top = { weight: ts.weight, reps: ts.reps, name: ex.name, exerciseId: ex.exerciseId };
     }
   }
   return top;
+}
+
+function exerciseDetailTo(exerciseId) {
+  if (!exerciseId) return null;
+  return `?view=exercises&exercise=${encodeURIComponent(exerciseId)}`;
 }
 
 export function StatTiles({ summary }) {
@@ -59,11 +75,14 @@ export function StatTiles({ summary }) {
     effortCoverage >= EFFORT_COVERAGE_HEADLINE_THRESHOLD &&
     stimulatingComputable;
 
+  const hasVolumeData = perMuscle.length > 0 && weeklySets > 0;
+
   const setsTile = (
     <StatTile
       label="Sets / week"
       value={weeklySets.toFixed(1)}
       sub={`effective sets across ${perMuscle.length} muscle${perMuscle.length === 1 ? "" : "s"}`}
+      to={hasVolumeData ? "?view=muscles" : null}
     />
   );
   const stimulatingTile = stimulatingComputable ? (
@@ -82,6 +101,9 @@ export function StatTiles({ summary }) {
 
   const topSet = pickTopSet(perExercise);
   const topGain = pickTopGain(perExercise);
+  const topGainExerciseId = topGain
+    ? perExercise.find((ex) => ex.name === topGain.name)?.exerciseId
+    : null;
 
   return (
     <div className="analytics-kpis">
@@ -106,6 +128,7 @@ export function StatTiles({ summary }) {
             : "—"
         }
         sub={topSet ? topSet.name : "not enough data"}
+        to={topSet ? exerciseDetailTo(topSet.exerciseId) : null}
       />
       <StatTile
         label="Top gain"
@@ -118,6 +141,7 @@ export function StatTiles({ summary }) {
               : `${topGain.name} · estimated 1RM`
             : "no measured gain in range yet"
         }
+        to={topGain ? exerciseDetailTo(topGainExerciseId) : null}
       />
     </div>
   );

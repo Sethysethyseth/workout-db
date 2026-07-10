@@ -16,6 +16,7 @@ import { BalanceScale } from "../components/analytics/BalanceScale.jsx";
 import { toDateOnlyString } from "../lib/dateOnly.js";
 import { formatEffort } from "../lib/effortDisplay.js";
 import { loadWeightUnit } from "../lib/weightUnitPref.js";
+import { loadAnalyticsWeeks, saveAnalyticsWeeks } from "../lib/analyticsRangePref.js";
 import { formatEstimate, formatWeight } from "../lib/weightDisplay.js";
 import { buildExecutionVerdict, formatPlanActual, formatPlannedSummary, formatActualSummary } from "../lib/executionVerdict.js";
 
@@ -498,11 +499,18 @@ function DataQualitySection({ meta }) {
 
 export function AnalyticsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [weeks, setWeeks] = useState(4);
+  const [weeks, setWeeks] = useState(() => loadAnalyticsWeeks());
   const [summary, setSummary] = useState(null);
+  const [exerciseIndex, setExerciseIndex] = useState(null);
+  const [indexReady, setIndexReady] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const view = parseAnalyticsView(searchParams);
+
+  function selectWeeks(nextWeeks) {
+    setWeeks(nextWeeks);
+    saveAnalyticsWeeks(nextWeeks);
+  }
 
   function setView(nextView) {
     if (!ANALYTICS_VIEWS.includes(nextView)) return;
@@ -532,6 +540,26 @@ export function AnalyticsPage() {
   useEffect(() => {
     let cancelled = false;
 
+    async function loadIndex() {
+      try {
+        const data = await analyticsApi.getExerciseIndex();
+        if (!cancelled) setExerciseIndex(data);
+      } catch {
+        if (!cancelled) setExerciseIndex(null);
+      } finally {
+        if (!cancelled) setIndexReady(true);
+      }
+    }
+
+    loadIndex();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
     async function load() {
       setLoading(true);
       setError(null);
@@ -557,6 +585,9 @@ export function AnalyticsPage() {
     (summary.perMuscle?.length ?? 0) === 0 &&
     (summary.perExercise?.length ?? 0) === 0;
 
+  const indexExerciseCount = exerciseIndex?.exercises?.length ?? 0;
+  const isNewUser = indexReady && exerciseIndex != null && indexExerciseCount === 0;
+
   return (
     <div className="stack analytics-page">
       <div>
@@ -573,7 +604,7 @@ export function AnalyticsPage() {
             type="button"
             className={`range-chip${preset.weeks === weeks ? " is-active" : ""}`}
             aria-pressed={preset.weeks === weeks}
-            onClick={() => setWeeks(preset.weeks)}
+            onClick={() => selectWeeks(preset.weeks)}
           >
             {preset.label}
           </button>
@@ -587,10 +618,26 @@ export function AnalyticsPage() {
 
       {!error && summary ? (
         isEmpty && view !== "exercises" ? (
-          <div className="card stack">
-            <p className="muted" style={{ margin: 0 }}>
-              No logged sets in this range.
-            </p>
+          <div className="card stack analytics-page-empty">
+            {!indexReady ? (
+              <p className="muted small" style={{ margin: 0 }}>
+                Checking your history…
+              </p>
+            ) : isNewUser ? (
+              <>
+                <p className="muted" style={{ margin: 0 }}>
+                  You haven&apos;t logged any sets yet. Once you record a workout, volume and
+                  strength trends will show up here.
+                </p>
+                <p className="small" style={{ margin: 0 }}>
+                  <Link to="/log-workout">Log your first workout →</Link>
+                </p>
+              </>
+            ) : (
+              <p className="muted" style={{ margin: 0 }}>
+                No sets in the last {weeks} weeks — try a longer range with the chips above.
+              </p>
+            )}
           </div>
         ) : (
           <div className={`stack analytics-content${loading ? " is-refreshing" : ""}`}>

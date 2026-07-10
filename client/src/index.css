@@ -5488,6 +5488,26 @@ html[data-theme="dark"] .auth-page .auth-form.card {
   align-content: start;
 }
 
+.stat-tile--link {
+  min-height: 44px;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  transition:
+    border-color var(--motion-fast) var(--ease-standard),
+    box-shadow var(--motion-fast) var(--ease-standard);
+}
+
+.stat-tile--link:hover {
+  border-color: color-mix(in srgb, var(--color-interactive) 45%, var(--color-border));
+  box-shadow: var(--shadow-ring-accent);
+}
+
+.stat-tile--link:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--color-interactive) 55%, transparent);
+  outline-offset: 2px;
+}
+
 .stat-tile-label {
   font-weight: 600;
   letter-spacing: 0.02em;
