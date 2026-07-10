@@ -118,12 +118,15 @@ trusting it.
    reps input at SessionDetailPage.jsx:934 now has `step="1"` (L6 shipped
    the step fix; `4d82311` killed the wheel-scroll path). Weight keeps its
    correct `step="0.01"` (line 908).
-0b. **Re-seed the staging smoke account**: `smoke_b8` / `SmokeTest-B8-2026`
-   (documented in the July 3 session log below) now 401s — wiped by a
-   later `npm test` run resetting staging's DB (expected AGENTS.md
-   behavior, easy to forget). Either re-run `scripts/seed-staging-smoke.mjs`
-   or document whatever throwaway account replaces it (`smoke_lwave` was
-   used ad hoc this session, not seeded with fixture data).
+0b. ~~Re-seed the staging smoke account~~ **DONE July 10 (Sonnet)**:
+   `scripts/seed-staging-smoke.mjs` re-run clean against staging (HTTP
+   API only, no direct DB conn) — `smoke_b8` / `SmokeTest-B8-2026`, 8
+   weeks Upper A/Lower/Upper B, template-linked execution rows for
+   weeks 6-8. Verified live: 12 muscles, 11 exercises, execution rows
+   4, bench matchedEffort trend present. Note: the script's own
+   verification log reads `s.meta.rirCoverage`, which was renamed to
+   `effortCoverage` (B8 pooling) — stale log line only, seed itself is
+   correct; not fixed, out of scope.
 1. ~~Prod smoke of the L-wave on `main`~~ **DONE — confirmed by Seth July
    7**, no issues reported.
 2. ~~**Diff `_prisma_migrations` prod vs staging**~~ **DONE July 8** — prod
