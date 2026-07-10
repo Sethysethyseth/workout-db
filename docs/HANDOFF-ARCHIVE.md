@@ -13,6 +13,68 @@ context) and the git history of `docs/HANDOFF.md`.
 
 ---
 
+Previous entry (July 10, fifth session, Sonnet — N6 LANDED
+`28efeba`, the LAST N-wave unit: Cursor's delivery audited, committed +
+pushed to `origin/analytics-rebalance-wave` (`5778bae..28efeba`). Unit
+lane 167/167 (tripwire, no server touch) + client build re-run fresh;
+scope exact (4 files, matches FILES TO TOUCH). Page empty state now
+splits new-user (all-time index empty -> warm copy + "Log your first
+workout" CTA) from data-exists-but-not-in-range (range chips as the
+implied action), verified by direct read of the `isNewUser` gate; range
+choice (2/4/8/12 weeks) now persists via `analyticsRangePref.js`,
+confirmed byte-for-byte the `weightUnitPref.js` accessor pattern; Top
+set / Top gain KPI tiles link to `?view=exercises&exercise=...`, volume
+headline links to `?view=muscles`, empty-data tiles confirmed staying
+plain (non-link) divs; `.stat-tile--link` >=44px with focus-visible +
+color-mix hover, no hex in CSS diff. No deviations. **The N-wave
+(analytics UI rebalance) is now CODE-COMPLETE on
+`analytics-rebalance-wave` — N1/N5/N2/N4/N7/N3/N6 all landed. Next:
+the wave's pre-main Fable review of the full branch diff (grep
+`HANDOFF-ARCHIVE.md` for the full session history first), then Seth's
+"push to main" trigger.** Visual smoke of N3/N6 together (exercises tab
++ new empty states + tile tap-through) still owed to Seth on staging —
+repoint check below still applies before that smoke.
+
+**Seth's note this session (not yet actioned — no task block written):**
+the What's New modal/page currently has NO environment gate (`WhatsNewGate.jsx`
+shows to any logged-in user regardless of host) - Seth wants it PROD-ONLY,
+never on staging. Content-authoring process (prepend an entry to
+`client/src/data/whatsNew.js`, the token-efficient data-file-edit pattern
+already in use) is fine as-is and should continue. Standing copy
+requirement for future releases: keep it non-technical and straight to
+the point (no implementation jargon, no internal metric names - user-facing
+outcomes only). Worth a small task block (env check in `WhatsNewGate.jsx` -
+likely `import.meta.env.MODE` or a prod-hostname check, same family as
+`dbHostGuard`'s prod/staging split) whenever Seth wants it queued; not
+part of the N-wave.
+
+Previous entry (July 10, third session, Fable — N4 LANDED `4f37361`
+AND N7 LANDED `d1b2871`, both Fable-direct in the main working tree, no
+worktree needed since Cursor is idle. **N4:** strength tab reframed
+progression-first — table columns Exercise | Top set | Top-set trend |
+Matched effort, e1RM columns + HOW_BEST_E1RM removed, footer link
+"Estimated 1RM has its own view →" targets `?view=exercises` (muscles
+fallback until N3, by design — now landed); sparklines re-anchored to
+whole-number top-set weights via N2's `topSetSeries`, marks per the
+signed July 9 mock (re-fetched and checked against its actual source:
+2px accent line, 10% wash, single ringed 9px end dot, no intermediate
+dots, 40px plot, bare-number endpoint labels, delta chip "+20 lbs ·
+top set 245 × 3"). Unit lane 162/162 + build fresh, scope exact 3
+files, e1rm grep clean, no hex. **N7:** Trend view replaced by the
+binned 4-step volume heatmap; engine series bucketing parametrized
+week|day (granularity derives from range, <= 14 days -> day cells;
+series keys now periodStart/periodEnd; meta.seriesGranularity added);
+2-weeks range chip added and rangeForWeeks fixed to span exactly N*7
+calendar days inclusive (kills a latent 5th-bucket artifact); volume
+table de-noised (right-aligned tabular-nums, em-dash + one footnote,
+"3d" recency with warn tint at >= 14d, ? buttons out of headers); ramp
+validated with the dataviz ordinal checks for all TEN palette x mode
+combos — iron light anchors toward text ink (accent-vs-surface can
+never clear 2:1 there), everything else on shared per-mode P constants
+(light 51/66/81/100, dark 40/60/80/100). Unit lane 167/167 (5 new
+fixtures, both bucket modes) + build fresh. Full evidence per unit in
+QUEUE.md. Seth's on-device smoke still owed for N4/N7/N3 together.)
+
 Session log (July 10, Fable — N-WAVE SKELETON BUILT + N5 SHIPPED +
 N1 LANDED): all 7 unit blocks authored + queued on new branch
 `analytics-rebalance-wave` (off catalog-fk-wave HEAD `3d4e874` = main +

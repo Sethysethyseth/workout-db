@@ -1,7 +1,27 @@
 # HANDOFF — current state
 
-**Updated:** July 10, 2026, sixth session (Opus — weekly-volume graph
-rebuild + pre-main review). Seth smoked the N-wave on staging: passed,
+**Updated:** July 10, 2026, seventh session (Fable — not-tracked flow
+brainstorm, NO code). Next addition chosen by Seth: rework the
+"not tracked" custom-exercise UI (the `AddExerciseToLibrarySheet`
+bottom sheet + its "Not tracked - add?" pill entry in
+`SessionDetailPage.jsx`) — current sheet's three-state cycling muscle
+chips + build-from-zero curation flow judged not user friendly. Full
+brainstorm written to
+**`docs/design/not-tracked-add-flow-brainstorm.md`** (diagnosis, three
+directions, recommendation: catalog-seeded stepped flow A with
+explicit-role picker B as its final step, body-map C parked; verified
+mechanism: name-based resolution makes custom-exercise creation
+RETROACTIVE over past sessions — a copy moment to use). **Session
+stopped BEFORE Seth answered the doc's three open questions — the next
+Fable session starts there, then authors the wave skeleton** (candidate
+unit split is in the doc). Committed on new branch `not-tracked-ux-wave` off
+`analytics-rebalance-wave` HEAD `e960645` (= `main` `57b1fc8` + one
+docs bookkeeping commit); the rebalance branch itself stays a clean
+deletion candidate. No task blocks authored, no QUEUE
+change.
+
+Previous entry (July 10, sixth session, Opus — weekly-volume graph
+rebuild + pre-main review): Seth smoked the N-wave on staging: passed,
 one critique — the per-exercise "Weekly volume" mini read as odd (bare
 bars, no values/dates/baseline, 8% min-height floor flattening small
 weeks + hiding rest weeks). **Rebuilt + LANDED `2bcb6e9`** (client-only:
@@ -45,68 +65,6 @@ the modal is first visible on PROD after this deploy lands — verify the
 "Every exercise, in one place" modal fires there for a logged-in user.**
 `main` and `analytics-rebalance-wave` are now identical (`57b1fc8`) — the
 branch is a clean deletion candidate (gated).
-
-Previous entry (July 10, fifth session, Sonnet — N6 LANDED
-`28efeba`, the LAST N-wave unit: Cursor's delivery audited, committed +
-pushed to `origin/analytics-rebalance-wave` (`5778bae..28efeba`). Unit
-lane 167/167 (tripwire, no server touch) + client build re-run fresh;
-scope exact (4 files, matches FILES TO TOUCH). Page empty state now
-splits new-user (all-time index empty -> warm copy + "Log your first
-workout" CTA) from data-exists-but-not-in-range (range chips as the
-implied action), verified by direct read of the `isNewUser` gate; range
-choice (2/4/8/12 weeks) now persists via `analyticsRangePref.js`,
-confirmed byte-for-byte the `weightUnitPref.js` accessor pattern; Top
-set / Top gain KPI tiles link to `?view=exercises&exercise=...`, volume
-headline links to `?view=muscles`, empty-data tiles confirmed staying
-plain (non-link) divs; `.stat-tile--link` >=44px with focus-visible +
-color-mix hover, no hex in CSS diff. No deviations. **The N-wave
-(analytics UI rebalance) is now CODE-COMPLETE on
-`analytics-rebalance-wave` — N1/N5/N2/N4/N7/N3/N6 all landed. Next:
-the wave's pre-main Fable review of the full branch diff (grep
-`HANDOFF-ARCHIVE.md` for the full session history first), then Seth's
-"push to main" trigger.** Visual smoke of N3/N6 together (exercises tab
-+ new empty states + tile tap-through) still owed to Seth on staging —
-repoint check below still applies before that smoke.
-
-**Seth's note this session (not yet actioned — no task block written):**
-the What's New modal/page currently has NO environment gate (`WhatsNewGate.jsx`
-shows to any logged-in user regardless of host) - Seth wants it PROD-ONLY,
-never on staging. Content-authoring process (prepend an entry to
-`client/src/data/whatsNew.js`, the token-efficient data-file-edit pattern
-already in use) is fine as-is and should continue. Standing copy
-requirement for future releases: keep it non-technical and straight to
-the point (no implementation jargon, no internal metric names - user-facing
-outcomes only). Worth a small task block (env check in `WhatsNewGate.jsx` -
-likely `import.meta.env.MODE` or a prod-hostname check, same family as
-`dbHostGuard`'s prod/staging split) whenever Seth wants it queued; not
-part of the N-wave.
-
-Previous entry (July 10, third session, Fable — N4 LANDED `4f37361`
-AND N7 LANDED `d1b2871`, both Fable-direct in the main working tree, no
-worktree needed since Cursor is idle. **N4:** strength tab reframed
-progression-first — table columns Exercise | Top set | Top-set trend |
-Matched effort, e1RM columns + HOW_BEST_E1RM removed, footer link
-"Estimated 1RM has its own view →" targets `?view=exercises` (muscles
-fallback until N3, by design — now landed); sparklines re-anchored to
-whole-number top-set weights via N2's `topSetSeries`, marks per the
-signed July 9 mock (re-fetched and checked against its actual source:
-2px accent line, 10% wash, single ringed 9px end dot, no intermediate
-dots, 40px plot, bare-number endpoint labels, delta chip "+20 lbs ·
-top set 245 × 3"). Unit lane 162/162 + build fresh, scope exact 3
-files, e1rm grep clean, no hex. **N7:** Trend view replaced by the
-binned 4-step volume heatmap; engine series bucketing parametrized
-week|day (granularity derives from range, <= 14 days -> day cells;
-series keys now periodStart/periodEnd; meta.seriesGranularity added);
-2-weeks range chip added and rangeForWeeks fixed to span exactly N*7
-calendar days inclusive (kills a latent 5th-bucket artifact); volume
-table de-noised (right-aligned tabular-nums, em-dash + one footnote,
-"3d" recency with warn tint at >= 14d, ? buttons out of headers); ramp
-validated with the dataviz ordinal checks for all TEN palette x mode
-combos — iron light anchors toward text ink (accent-vs-surface can
-never clear 2:1 there), everything else on shared per-mode P constants
-(light 51/66/81/100, dark 40/60/80/100). Unit lane 167/167 (5 new
-fixtures, both bucket modes) + build fresh. Full evidence per unit in
-QUEUE.md. Seth's on-device smoke still owed for N4/N7/N3 together.)
 
 - **Wave loose ends still open:** staging Render must be REPOINTED from
   `main` to `analytics-rebalance-wave` before Seth smokes any
@@ -220,14 +178,15 @@ trusting it.
 
 ## Next up (the active task)
 
-0. **N-WAVE CODE-COMPLETE** (blocks authored July 10, QUEUE.md is the
-   index): N1, N5, N2, N4, N7, N3, N6 all LANDED - no units left to
-   dispatch. **Next: the wave's pre-main Fable review of the whole
-   branch diff, then Seth's "push to main" trigger.** Repoint staging
-   Render to `analytics-rebalance-wave` before Seth's first smoke
-   (N1/N2/N7/N3 all carry engine tails — the heatmap needs the new
-   series shape from the API and the exercises tab needs N5's
-   endpoints, so the repoint is REQUIRED before smoking either).
+00. **NEXT ADDITION (Seth-chosen, July 10): not-tracked custom-exercise
+   flow rework.** Brainstorm DONE, skeleton NOT started — resume from
+   `docs/design/not-tracked-add-flow-brainstorm.md`: settle its three
+   open questions with Seth, then author the wave's unit blocks
+   (candidate split in the doc). Branch: `not-tracked-ux-wave`.
+0. ~~N-WAVE~~ **DONE end-to-end**: code-complete, pre-main Fable review
+   clean, MERGED TO MAIN `8068ffb` + What's New `57b1fc8` — see the
+   top entries. Remaining follow-ups are the three listed there (prod
+   deploy SHA check, prod smoke, staging repoint back to `main`).
 0b. **A-wave follow-up (non-urgent):** optional Step-7 historical backfill:
    `node scripts/backfill-exercise-ids.mjs` (DRY-RUN first) then `--apply`
    against prod for pre-A4 historical rows (Seth runs the write).
