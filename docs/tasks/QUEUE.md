@@ -64,12 +64,21 @@ other AND with N3 - strictly sequential: N4 -> N7 -> N3.
   weeklyVolume (default trailing 12w); totals.effectiveSets = attributed
   count. N3 unblocked on the server side (still waits on n7 for
   AnalyticsPage)
-- QUEUED (FABLE-DIRECT) | n4-strength-tab-rework.md | strength tab
-  progression-first + mock-signed sparkline mark spec | UNBLOCKED now
-  that n2 landed (topSetSeries is in the payload)
+- LANDED 4f37361 (FABLE-DIRECT) | n4-strength-tab-rework.md | strength
+  tab progression-first + mock-signed top-set sparklines | built in the
+  main working tree (Cursor idle, no worktree race); scope exact (3
+  files); client build green; unit lane 162/162 fresh (tripwire only,
+  no server touch); implementation checked against the July 9 mock
+  artifact's actual source (bare-number endpoint labels, no
+  intermediate dots, 2px line + 10% wash + ringed 9px end dot + 40px
+  plot, delta chip "+20 lbs · top set 245 × 3"); e1rm grep clean in the
+  strength view, HOW_BEST_E1RM removed; no hex in CSS diff, all new
+  colors token-derived; footer link ?view=exercises (muscles fallback
+  until n3 - by design). Visual smoke owed to Seth on staging. N7
+  unblocked (AnalyticsPage.jsx now free)
 - QUEUED (FABLE-DIRECT) | n7-muscles-heatmap.md | binned volume heatmap +
-  table de-noise + 2W day-granularity preset | after n4 (shares
-  AnalyticsPage.jsx)
+  table de-noise + 2W day-granularity preset | UNBLOCKED now that n4
+  landed (shares AnalyticsPage.jsx)
 - QUEUED | n3-exercises-tab-shell.md | 4th tab: all-time lookup + inline
   detail with rep-target hero | do NOT dispatch before n5 AND n7 land
 - QUEUED | n6-frontier-polish.md | two-variant empty state, range

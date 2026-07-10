@@ -13,6 +13,38 @@ context) and the git history of `docs/HANDOFF.md`.
 
 ---
 
+Session log (July 10, Fable — N-WAVE SKELETON BUILT + N5 SHIPPED +
+N1 LANDED): all 7 unit blocks authored + queued on new branch
+`analytics-rebalance-wave` (off catalog-fk-wave HEAD `3d4e874` = main +
+docs + a settings commit); N5 implemented Fable-direct same session
+(`c4e3ba8` — exercise index/detail endpoints + rep-target engine, unit
+lane 153/153, isolation+purity greps clean, built in worktree
+`C:\dev\worktrees\n5`, kept for N4/N7); N1 landed Cursor-relay same day
+(`11b9c71` — shared weight/effort formatters + component sweep, unit
+lane 157/157, Fable-audited deeper than the standard pass since Fable
+authored the block, no deviations).
+- Blocks: `docs/tasks/n{1,2,3,4,5,6,7}-*.md` (see QUEUE.md Active for the
+  index). **Filename collision marked:** the June nav-wave's landed
+  n1/n2/n3 task files still exist — dispatch by FULL filename only.
+- **Division settled with Seth:** Cursor lane N1 → N2 → N3 → N6
+  (mechanical/relay); Fable-direct N5 → N4 → N7 (isolation surface +
+  the two mock-signed visual units). N4/N7/N3 all touch
+  `AnalyticsPage.jsx` — strictly sequential N4 → N7 → N3.
+- Spec open items SETTLED during authoring: rep ladder 1/3/5/8/10/12/15
+  (20 rejected: Epley error > plate increment that far out); adaptive
+  coverage threshold 0.6 (named constant, landed in N2); plate
+  increments 2.5 lbs / 1.25 kg (N1 `roundToPlate`). Spec gap found +
+  fixed in-block: N4's sparklines need a per-session top-set weight
+  series the payload lacked — `topSetSeries` added to N2's engine tail
+  (now landed) so N4 stays client-only.
+- **Loose ends for this wave:** (a) staging Render must be REPOINTED
+  from `main` to `analytics-rebalance-wave` before Seth smokes any
+  server-touching unit (N1 and N2 both carry engine tails, both now
+  landed); (b) re-seed the staging smoke account before visual sign-off
+  (TODO 0b).
+
+---
+
 Session log (July 9, Fable — N-wave spec complete): criteria + chart
 forms signed off via mock. Docs-only session, no code.) Seth set the
 wave's completion bar ("passes as a professional frontier weightlifting
