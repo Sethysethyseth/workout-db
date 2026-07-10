@@ -17,9 +17,16 @@ single-point (both new exercise endpoints route through
 `fetchAllTimeEnrichedSets(userId)`, same doctrine as `getSummary`; a
 foreign `userExerciseId` filters to 404, no leak); NO migration coupling
 in the diff (catalog/FK migrations were the A-wave, already on main);
-unit lane 167/167. **Merge is GATED on Seth's on-device smoke of the new
-graph on staging + his verbatim "push to main" trigger.** Repoint staging
-Render to `analytics-rebalance-wave` first (engine tails) if not already.
+unit lane 167/167. **N-WAVE MERGED TO MAIN `8068ffb`** (July 10, clean
+ff `13a1e59..8068ffb`, 26 commits, `origin/main` confirmed == branch
+tip; done via throwaway worktree per the merge-to-main ritual, no
+OneDrive churn). No migration coupling, so no prod DB step. Prod
+Vercel/Render track `main` and auto-deploy on push. **Open follow-ups:**
+(1) verify prod deploy SHA == `8068ffb` in Render/Vercel Events (push !=
+live); (2) prod smoke of the exercises tab + new weekly-volume graph;
+(3) RUNBOOK step 6 — repoint staging Render from `analytics-rebalance-wave`
+back to `main`, verify redeploy SHA. `analytics-rebalance-wave` is now
+fully contained in `main` and is a deletion candidate (gated).
 
 Previous entry (July 10, fifth session, Sonnet — N6 LANDED
 `28efeba`, the LAST N-wave unit: Cursor's delivery audited, committed +
