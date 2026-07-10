@@ -4,6 +4,7 @@ import * as analyticsApi from "../../api/analyticsApi.js";
 import { ErrorMessage } from "../ErrorMessage.jsx";
 import { LoadingState } from "../LoadingState.jsx";
 import { HowCalculatedButton } from "./HowCalculatedButton.jsx";
+import { niceScale } from "../../lib/chartScale.js";
 import { formatEffort } from "../../lib/effortDisplay.js";
 import { loadWeightUnit } from "../../lib/weightUnitPref.js";
 import { formatEstimate, formatWeight, roundToPlate } from "../../lib/weightDisplay.js";
@@ -127,6 +128,32 @@ function E1rmSparkline({ history }) {
   );
 }
 
+function fmtSets(n) {
+  return Number.isInteger(n) ? String(n) : n.toFixed(1);
+}
+
+function formatWeekLabel(iso) {
+  return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+function weekTip(w) {
+  const label = `Week of ${formatWeekLabel(w.weekStart)}`;
+  if (w.effectiveSets <= 0) return `${label}: no sets`;
+  const eff = `${fmtSets(w.effectiveSets)} effective set${w.effectiveSets === 1 ? "" : "s"}`;
+  return w.stimulatingSets != null
+    ? `${label}: ${eff} · ${fmtSets(w.stimulatingSets)} stimulating`
+    : `${label}: ${eff}`;
+}
+
+/**
+ * Mini weekly bar chart for one exercise. Bars are the honest mark for
+ * discrete weekly set counts (a line would imply continuity across weeks);
+ * zero-based `niceScale` keeps heights proportional, a baseline plus faint
+ * empty-week stubs make rest weeks read as gaps rather than missing data,
+ * and the peak label + first/last week dates carry the scale and time
+ * context directly - matching the panel's other charts, which never gate a
+ * value behind height alone.
+ */
 function WeeklyVolumeMini({ weeklyVolume, weeks }) {
   if (!Array.isArray(weeklyVolume) || weeklyVolume.length === 0) {
     return <p className="muted small">not enough data</p>;
@@ -143,21 +170,40 @@ function WeeklyVolumeMini({ weeklyVolume, weeks }) {
     );
   }
 
-  const max = Math.max(...weeklyVolume.map((w) => w.effectiveSets), 0.1);
+  const dataMax = Math.max(...weeklyVolume.map((w) => w.effectiveSets));
+  const { max } = niceScale(dataMax);
+  const first = weeklyVolume[0];
+  const last = weeklyVolume[weeklyVolume.length - 1];
 
   return (
-    <div className="ex-weekly-volume-mini" role="img" aria-label="Weekly effective sets">
-      {weeklyVolume.map((w) => {
-        const frac = Math.min(w.effectiveSets / max, 1);
-        return (
-          <div key={w.weekStart} className="ex-weekly-volume-cell">
-            <span
-              className="ex-weekly-volume-bar"
-              style={{ height: `${Math.max(frac * 100, w.effectiveSets > 0 ? 8 : 0)}%` }}
-            />
-          </div>
-        );
-      })}
+    <div
+      className="ex-weekly-volume"
+      role="img"
+      aria-label={`Weekly effective sets over the last ${weeks} weeks, peak ${fmtSets(dataMax)}`}
+    >
+      <div className="ex-weekly-volume-plot">
+        <span className="ex-weekly-volume-peak" aria-hidden="true">
+          {fmtSets(dataMax)} sets
+        </span>
+        <div className="ex-weekly-volume-bars">
+          {weeklyVolume.map((w) => {
+            const empty = w.effectiveSets <= 0;
+            const frac = max > 0 ? Math.min(w.effectiveSets / max, 1) : 0;
+            return (
+              <span
+                key={w.weekStart}
+                className={`ex-weekly-volume-bar${empty ? " ex-weekly-volume-bar--empty" : ""}`}
+                style={empty ? undefined : { height: `max(${frac * 100}%, 6%)` }}
+                title={weekTip(w)}
+              />
+            );
+          })}
+        </div>
+      </div>
+      <div className="ex-weekly-volume-axis" aria-hidden="true">
+        <span>{formatWeekLabel(first.weekStart)}</span>
+        <span>{formatWeekLabel(last.weekStart)}</span>
+      </div>
     </div>
   );
 }
