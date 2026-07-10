@@ -1,32 +1,39 @@
 # HANDOFF — current state
 
-**Updated:** July 10, 2026, fourth session (Sonnet — N3 LANDED
-`537309c`: Cursor's delivery audited, committed + pushed to
-`origin/analytics-rebalance-wave` (`fa2c704..537309c`). Unit lane
-167/167 + client build re-run fresh; scope exact (5 files, matches
-FILES TO TOUCH). Both mandatory F-test traps from the block verified
-fixed by direct read: `.analytics-view-tabs` grid `repeat(3,...)` ->
-`repeat(4,...)` with shrunk font/padding so all four labels fit 360px;
-`setView`/`setExerciseParam` both merge via functional
-`setSearchParams((prev) => ...)` instead of clobbering (grep for bare
-`setSearchParams({ view` = no matches), so `?exercise=` survives
-range-chip clicks and view switches. Client `getExerciseIndex`/
-`getExerciseDetail` confirmed calling the exact routes N5 already
-landed server-side (`/analytics/exercises`, `/analytics/exercise`),
-detail sending exactly one identity param. Rep-target rows verified
-using `roundToPlate` + a muted `--extrapolated` class + shared
-footnote; both empty states (no-exercises-ever links to
-`/log-workout`, no-data-in-range names a longer-range action) read as
-actionable. No hex in the CSS diff. Two sensible documented
-deviations (exercise param encodes user exercises as `user:<id>`;
-`AnalyticsPage` renders the exercises view even when the range summary
-is empty, so all-time lookup keeps working ahead of N6's empty-state
-work) plus one un-bounced addition (re-tapping the selected roster row
-toggles the detail closed). Visual smoke (4 tabs at 360px, roster +
-detail flow) still owed to Seth on staging — repoint check below still
-applies. **Next: Cursor N6 (`n6-frontier-polish.md`) — last N-wave
-unit, unblocked now that N3 landed; then the wave's pre-main Fable
-review of the full branch diff.**)
+**Updated:** July 10, 2026, fifth session (Sonnet — N6 LANDED
+`28efeba`, the LAST N-wave unit: Cursor's delivery audited, committed +
+pushed to `origin/analytics-rebalance-wave` (`5778bae..28efeba`). Unit
+lane 167/167 (tripwire, no server touch) + client build re-run fresh;
+scope exact (4 files, matches FILES TO TOUCH). Page empty state now
+splits new-user (all-time index empty -> warm copy + "Log your first
+workout" CTA) from data-exists-but-not-in-range (range chips as the
+implied action), verified by direct read of the `isNewUser` gate; range
+choice (2/4/8/12 weeks) now persists via `analyticsRangePref.js`,
+confirmed byte-for-byte the `weightUnitPref.js` accessor pattern; Top
+set / Top gain KPI tiles link to `?view=exercises&exercise=...`, volume
+headline links to `?view=muscles`, empty-data tiles confirmed staying
+plain (non-link) divs; `.stat-tile--link` >=44px with focus-visible +
+color-mix hover, no hex in CSS diff. No deviations. **The N-wave
+(analytics UI rebalance) is now CODE-COMPLETE on
+`analytics-rebalance-wave` — N1/N5/N2/N4/N7/N3/N6 all landed. Next:
+the wave's pre-main Fable review of the full branch diff (grep
+`HANDOFF-ARCHIVE.md` for the full session history first), then Seth's
+"push to main" trigger.** Visual smoke of N3/N6 together (exercises tab
++ new empty states + tile tap-through) still owed to Seth on staging —
+repoint check below still applies before that smoke.
+
+**Seth's note this session (not yet actioned — no task block written):**
+the What's New modal/page currently has NO environment gate (`WhatsNewGate.jsx`
+shows to any logged-in user regardless of host) - Seth wants it PROD-ONLY,
+never on staging. Content-authoring process (prepend an entry to
+`client/src/data/whatsNew.js`, the token-efficient data-file-edit pattern
+already in use) is fine as-is and should continue. Standing copy
+requirement for future releases: keep it non-technical and straight to
+the point (no implementation jargon, no internal metric names - user-facing
+outcomes only). Worth a small task block (env check in `WhatsNewGate.jsx` -
+likely `import.meta.env.MODE` or a prod-hostname check, same family as
+`dbHostGuard`'s prod/staging split) whenever Seth wants it queued; not
+part of the N-wave.
 
 Previous entry (July 10, third session, Fable — N4 LANDED `4f37361`
 AND N7 LANDED `d1b2871`, both Fable-direct in the main working tree, no
@@ -167,14 +174,14 @@ trusting it.
 
 ## Next up (the active task)
 
-0. **EXECUTE THE N-WAVE** (blocks authored July 10, QUEUE.md is the
-   index): N1, N5, N2, N4, N7, N3 all LANDED. **Next: dispatch Cursor
-   N6 (`n6-frontier-polish.md`, unblocked, LAST unit), then the
-   pre-main Fable review of the whole branch.** Repoint staging Render
-   to `analytics-rebalance-wave` before Seth's first smoke (N1/N2/N7/N3
-   all carry engine tails — the heatmap needs the new series shape from
-   the API and the exercises tab needs N5's endpoints, so the repoint
-   is REQUIRED before smoking either).
+0. **N-WAVE CODE-COMPLETE** (blocks authored July 10, QUEUE.md is the
+   index): N1, N5, N2, N4, N7, N3, N6 all LANDED - no units left to
+   dispatch. **Next: the wave's pre-main Fable review of the whole
+   branch diff, then Seth's "push to main" trigger.** Repoint staging
+   Render to `analytics-rebalance-wave` before Seth's first smoke
+   (N1/N2/N7/N3 all carry engine tails — the heatmap needs the new
+   series shape from the API and the exercises tab needs N5's
+   endpoints, so the repoint is REQUIRED before smoking either).
 0b. **A-wave follow-up (non-urgent):** optional Step-7 historical backfill:
    `node scripts/backfill-exercise-ids.mjs` (DRY-RUN first) then `--apply`
    against prod for pre-A4 historical rows (Seth runs the write).

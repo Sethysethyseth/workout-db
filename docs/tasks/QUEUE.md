@@ -127,9 +127,25 @@ other AND with N3 - strictly sequential: N4 -> N7 -> N3.
   already-selected roster row toggles the detail closed (inline-expand
   consistency, not specified but harmless). Visual smoke (4 tabs at
   360px) still owed to Seth on staging. N6 unblocked (last N-wave unit)
-- QUEUED | n6-frontier-polish.md | two-variant empty state, range
-  persistence, KPI tap-through | UNBLOCKED (n3 landed) - ready for
-  Cursor dispatch, LAST unit before the pre-main Fable review
+- LANDED 28efeba | n6-frontier-polish.md | two-variant empty state,
+  range persistence, KPI tap-through | Cursor delivery, Sonnet-audited:
+  unit lane 167/167 (tripwire, no server touch) + client build re-run
+  fresh; scope exact (4 files, matches FILES TO TOUCH, `analyticsRangePref.js`
+  is the one NEW file). New-user vs out-of-range empty-state matrix
+  verified by direct read (`isNewUser` gated on `indexReady && exerciseIndex
+  != null && indexExerciseCount === 0`, rides N3's `getExerciseIndex` as
+  instructed, no new endpoint added); range accessor confirmed byte-for-byte
+  the `weightUnitPref.js` pattern (key `workoutdb-analytics-weeks`, Set of
+  2/4/8/12, invalid/missing falls back to 4, try/catch on both read and
+  write); KPI tile tap-through verified - Top set and Top gain resolve
+  `exerciseId` and link to `?view=exercises&exercise=...`, volume headline
+  links to `?view=muscles`, `StatTile` only wraps in `<Link>` when `to` is
+  truthy so the empty-stimulating tile (`to` omitted) stays a plain div, no
+  dead links; `.stat-tile--link` verified >=44px with `:focus-visible` and
+  `:hover` both via `color-mix(var(--color-interactive) ...)`, same idiom
+  as `.range-chip`; no hex in CSS diff. No deviations. **This was the LAST
+  N-wave unit - the wave is now code-complete on `analytics-rebalance-wave`,
+  next gate is the pre-main Fable review of the full branch diff.**
 
 Settled during authoring (were "still open" in the spec): rep ladder =
 1/3/5/8/10/12/15 (20 rejected - Epley error exceeds a plate increment
