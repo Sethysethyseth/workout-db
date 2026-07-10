@@ -1,6 +1,27 @@
 # HANDOFF — current state
 
-**Updated:** July 10, 2026, fifth session (Sonnet — N6 LANDED
+**Updated:** July 10, 2026, sixth session (Opus — weekly-volume graph
+rebuild + pre-main review). Seth smoked the N-wave on staging: passed,
+one critique — the per-exercise "Weekly volume" mini read as odd (bare
+bars, no values/dates/baseline, 8% min-height floor flattening small
+weeks + hiding rest weeks). **Rebuilt + LANDED `2bcb6e9`** (client-only:
+`ExercisesView.jsx` `WeeklyVolumeMini` + its `index.css` block): zero-based
+`niceScale` heights (floor hack gone), visible baseline + faint empty-week
+stubs (rest weeks read as gaps not missing data), direct peak-value label +
+first/last week dates, accent fill matching sparkline/heatmap, per-bar
+`title` tips. Client build green fresh; unit lane 167/167 fresh (no server
+touch); tokens-only, no hex. Pushed to `origin/analytics-rebalance-wave`
+(`4d89a06..2bcb6e9`). **Pre-main Opus review of the full branch diff DONE
+and CLEAN** (36 files, ~4.4k insertions): cross-user isolation verified
+single-point (both new exercise endpoints route through
+`fetchAllTimeEnrichedSets(userId)`, same doctrine as `getSummary`; a
+foreign `userExerciseId` filters to 404, no leak); NO migration coupling
+in the diff (catalog/FK migrations were the A-wave, already on main);
+unit lane 167/167. **Merge is GATED on Seth's on-device smoke of the new
+graph on staging + his verbatim "push to main" trigger.** Repoint staging
+Render to `analytics-rebalance-wave` first (engine tails) if not already.
+
+Previous entry (July 10, fifth session, Sonnet — N6 LANDED
 `28efeba`, the LAST N-wave unit: Cursor's delivery audited, committed +
 pushed to `origin/analytics-rebalance-wave` (`5778bae..28efeba`). Unit
 lane 167/167 (tripwire, no server touch) + client build re-run fresh;
