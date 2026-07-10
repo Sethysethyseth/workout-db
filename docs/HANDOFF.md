@@ -1,53 +1,44 @@
 # HANDOFF — current state
 
-**Updated:** July 8, 2026 (Opus — A-WAVE PROD ROLLOUT COMPLETE, MERGED TO MAIN,
-SMOKED LIVE.)** Executed the full prod choreography WITH Seth (agent did
-reads/prep only; Seth ran every prod write). All steps verified:
-- **Step 0 (read):** prod had 14 healthy migrations, NO `Exercise` table, NO
-  failed records — the CLEAN case (unlike staging's old May-27 collision). No
-  `readonly_agent` role was stood up; Seth ran the Step-0 reads in the Neon
-  editor and pasted output.
-- **Steps 1 + 3 (migrations, Seth hand-applied in Neon editor):** catalog
-  `20260707120000_add_exercise_catalog` and FK-linkage
-  `20260707130000_add_exercise_fk_linkage`, each as one transactional block
-  (DDL + hand-inserted `_prisma_migrations` row). Checksums derived from the
-  migration files via **LF-normalized sha256** — proven correct against two
-  existing prod rows FIRST; the working tree is CRLF so a raw `sha256sum` is
-  wrong, must `tr -d '\r'` before hashing. Values: catalog `85908f0e…a6d5a`,
-  fk-linkage `1cb43415…dfc63`, both == staging's stored rows.
-- **Step 2 (seed, Seth ran):** `npm run prisma:seed` against prod via
-  shell-set `$env:DATABASE_URL` — dotenv does NOT override an already-set
-  shell var, which is the mechanism that lets prod win while `.env` stays on
-  staging. Two false starts, both instructive: (a) the `<PLACEHOLDER>` URL
-  pasted verbatim → guard "unparseable" (which PROVED dotenv wasn't
-  clobbering); (b) a non-owner role → `42501 permission denied for table
-  Exercise`. Fixed by using the **`neondb_owner`** connection string (it owns
-  the table). Result `Seeded 873 exercises (30 with muscleWeights
-  overrides)`; verified `count = 873` / `30`.
-- **Step 4 (diff):** prod ledger = 16 rows, all `finished_at` set, last two
-  checksums canonical → prod == staging == code, no drift. (Closes old Open
-  TODOs #2 migration-diff and #3 username-checksum — prod's
-  `add_user_username` checksum matched the canonical file exactly.)
-- **Step 5 (merge, gated "push to main"):** clean fast-forward
-  `3767840 → 13a1e59`, done via `git branch -f main` (no-checkout, to dodge
-  the OneDrive lock + the dirty working tree; true ff so safe). Pushed;
-  `origin/main` confirmed `13a1e59`.
-- **Step 6 (smoke):** Seth smoked prod LIVE — login + exercise typeahead +
-  existing sessions + analytics/attribution all work. **Confirmed working.**
-DB-before-code ordering held throughout; zero code-ahead-of-DB window.
-**Remaining, non-urgent:** optional Step-7 historical backfill
-(`scripts/backfill-exercise-ids.mjs`, dry-run then `--apply`) — historical
-rows carry valid NULL identity until then. (Staging Render already repointed
-to `main` — Seth confirmed July 8.) **Still
-open from the prior EOD:** codify the read-only-prod-review exception into
-AGENTS.md invariant #9 + gate item 2 (needs Seth's exact wording — do NOT
-unilaterally rewrite the safety invariants).
-Previous entries archived verbatim in `docs/HANDOFF-ARCHIVE.md`.
-
-Older session entries (incl. the July 7 A4-landed entry, the July 6
-off-queue login-UX fixes, the relay-v4 restructuring, and the L3
-staging-migration verification): moved verbatim to
-`docs/HANDOFF-ARCHIVE.md`.
+**Updated:** July 9, 2026 (Fable — N-WAVE SPEC COMPLETE: F-test exit
+criteria + chart forms signed off via mock. Docs-only session, no code.)
+Seth set the wave's completion bar ("passes as a professional frontier
+weightlifting app, down to every detail") and the session turned that into
+contract material in `docs/specs/analytics-ui-rebalance.md`:
+- **3rd pass (`2929579`):** code-level audit of the whole analytics tab
+  against the bar → the **F-test** (10-item exit checklist; runs per-unit
+  on touched files + in full at pre-main review). Findings folded into
+  units: weight/estimate formatting into N1 (four duplicated `formatWeight`
+  copies all print "225.0 lbs"; new `weightDisplay.js`, estimates rounded
+  whole), two mechanical traps named in N3 (4th tab breaks the hardcoded
+  3-col tabs grid; `setView`'s `setSearchParams` CLOBBERS other query
+  params), plate rounding added to N5 rep targets (client-side, 2.5 lbs /
+  1.25 kg), and a new **N6 frontier-polish unit** (actionable two-variant
+  page empty state, range persistence via `analyticsRangePref.js`, KPI
+  tile deep-links).
+- **4th pass (`fa3b4f8`):** chart-form design pass (dataviz method) on
+  Seth's "trend and table are a mash" feedback. Built a side-by-side mock
+  artifact ("LogChamp — Analytics chart-form proposals",
+  claude.ai/code/artifact/2470c620-b4d9-47aa-a301-0a14181162f5), rendered +
+  verified light/dark/390px. **Seth SIGNED OFF:** Muscles Trend becomes a
+  binned volume HEATMAP (4-step accent-derived ramp, validator-passed for
+  champ both modes; empty cell = faint neutral, deliberately NOT ramp
+  step 1), Table de-noised (right-aligned tabular nums, ONE unlock
+  footnote replacing per-cell sentences, 14d recency warn tint), Strength
+  sparklines get the full mark spec (top-set series, 2px accent line, 10%
+  wash, ringed endpoint — folded into N4). All landed as new unit **N7**.
+- **Seth's period question, tested against the bar at his instruction
+  ("don't take my word as absolute"):** 10/15/20-day bucket lengths
+  REJECTED (nonstandard denominators — nobody can benchmark "sets per 10
+  days"); accepted mechanism = **new 2-week preset rendering DAY
+  granularity** (14 cells; the honest non-weekly-split answer — mock
+  section 1b, phone-width verified). Custom date picker rejected for the
+  wave; presets now 2/4/8/12; granularity derives from range, never a
+  second knob. Rationale written into the spec so it isn't re-litigated.
+- **Wave shape now: N1 → N2 → N4 → N7 → (N5 → N3) → N6**, spec-complete.
+  N4+N7 both touch `AnalyticsPage.jsx` — sequential, don't batch.
+Previous entries (incl. the July 8 A-wave prod rollout) archived verbatim
+in `docs/HANDOFF-ARCHIVE.md`.
 
 **Rule:** rewritten in place at the end of every working session; kept
 CAPPED (~300 lines: current state, repo/deploy, latest 1-2 session entries,
@@ -150,16 +141,19 @@ trusting it.
 
 ## Next up (the active task)
 
-0. ~~**PROD CHOREOGRAPHY for the A-wave**~~ **DONE July 8** — Steps 0-6 all
-   executed WITH Seth and verified; A-wave merged to `main` (`13a1e59`) and
-   smoked live on prod. Full play-by-play in the newest HANDOFF entry above.
-   **Follow-up remaining (non-urgent):** (staging Render already repointed to
-   `main`, Seth confirmed July 8.)
-   - **Step 7 (optional) historical backfill:** `node
-     scripts/backfill-exercise-ids.mjs` (DRY-RUN first) then `--apply` against
-     prod for pre-A4 historical rows (unblocked by the guard split; Seth runs
-     the write). Idempotent; safe to defer — historical rows carry valid NULL
-     identity until then.
+0. **AUTHOR THE N-WAVE TASK BLOCKS** (Fable/Opus session): spec is complete
+   (`docs/specs/analytics-ui-rebalance.md`, passes 1-4). Lift N1 first
+   (effort-neutral display + number formatting — everything downstream uses
+   its formatters), then N2. Order: N1 → N2 → N4 → N7 → (N5 → N3) → N6.
+   N1+N4 disjoint (may batch); N4+N7 share `AnalyticsPage.jsx` (sequential).
+   Spec still-open items to settle during block authoring or with Seth:
+   rep ladder (1/3/5/8/10/12 +15/20?), adaptive-coverage threshold (~0.6),
+   plate-increment fine-tune.
+0b. **A-wave follow-up (non-urgent):** optional Step-7 historical backfill:
+   `node scripts/backfill-exercise-ids.mjs` (DRY-RUN first) then `--apply`
+   against prod for pre-A4 historical rows (Seth runs the write).
+   Idempotent; safe to defer — historical rows carry valid NULL identity
+   until then.
 1. **T3C sprite loader upgrade** unblocks whenever Seth drops the Gemini
    frames in `claudefiledrop/` (art direction + prompts settled July 6).
    Note: `claudefiledrop/` currently holds two `.url` shortcut files

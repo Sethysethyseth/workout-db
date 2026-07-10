@@ -13,6 +13,51 @@ context) and the git history of `docs/HANDOFF.md`.
 
 ---
 
+**Updated:** July 8, 2026 (Opus — A-WAVE PROD ROLLOUT COMPLETE, MERGED TO MAIN,
+SMOKED LIVE.)** Executed the full prod choreography WITH Seth (agent did
+reads/prep only; Seth ran every prod write). All steps verified:
+- **Step 0 (read):** prod had 14 healthy migrations, NO `Exercise` table, NO
+  failed records — the CLEAN case (unlike staging's old May-27 collision). No
+  `readonly_agent` role was stood up; Seth ran the Step-0 reads in the Neon
+  editor and pasted output.
+- **Steps 1 + 3 (migrations, Seth hand-applied in Neon editor):** catalog
+  `20260707120000_add_exercise_catalog` and FK-linkage
+  `20260707130000_add_exercise_fk_linkage`, each as one transactional block
+  (DDL + hand-inserted `_prisma_migrations` row). Checksums derived from the
+  migration files via **LF-normalized sha256** — proven correct against two
+  existing prod rows FIRST; the working tree is CRLF so a raw `sha256sum` is
+  wrong, must `tr -d '\r'` before hashing. Values: catalog `85908f0e…a6d5a`,
+  fk-linkage `1cb43415…dfc63`, both == staging's stored rows.
+- **Step 2 (seed, Seth ran):** `npm run prisma:seed` against prod via
+  shell-set `$env:DATABASE_URL` — dotenv does NOT override an already-set
+  shell var, which is the mechanism that lets prod win while `.env` stays on
+  staging. Two false starts, both instructive: (a) the `<PLACEHOLDER>` URL
+  pasted verbatim → guard "unparseable" (which PROVED dotenv wasn't
+  clobbering); (b) a non-owner role → `42501 permission denied for table
+  Exercise`. Fixed by using the **`neondb_owner`** connection string (it owns
+  the table). Result `Seeded 873 exercises (30 with muscleWeights
+  overrides)`; verified `count = 873` / `30`.
+- **Step 4 (diff):** prod ledger = 16 rows, all `finished_at` set, last two
+  checksums canonical → prod == staging == code, no drift. (Closes old Open
+  TODOs #2 migration-diff and #3 username-checksum — prod's
+  `add_user_username` checksum matched the canonical file exactly.)
+- **Step 5 (merge, gated "push to main"):** clean fast-forward
+  `3767840 → 13a1e59`, done via `git branch -f main` (no-checkout, to dodge
+  the OneDrive lock + the dirty working tree; true ff so safe). Pushed;
+  `origin/main` confirmed `13a1e59`.
+- **Step 6 (smoke):** Seth smoked prod LIVE — login + exercise typeahead +
+  existing sessions + analytics/attribution all work. **Confirmed working.**
+DB-before-code ordering held throughout; zero code-ahead-of-DB window.
+**Remaining, non-urgent:** optional Step-7 historical backfill
+(`scripts/backfill-exercise-ids.mjs`, dry-run then `--apply`) — historical
+rows carry valid NULL identity until then. (Staging Render already repointed
+to `main` — Seth confirmed July 8.) **Still
+open from the prior EOD:** codify the read-only-prod-review exception into
+AGENTS.md invariant #9 + gate item 2 (needs Seth's exact wording — do NOT
+unilaterally rewrite the safety invariants).
+
+---
+
 **Updated:** July 7, 2026 latest+5 (Opus — EOD; prod choreography PREPPED,
 handoff for next session. Seth done for the day.)** No prod writes happened
 this session — the whole prod rollout is teed up for the next session to
