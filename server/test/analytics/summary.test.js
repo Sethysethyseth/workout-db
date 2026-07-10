@@ -75,6 +75,22 @@ describe("buildSummary", () => {
     }
   });
 
+  test("perExercise topSet.performedAt and topSetSeries dates are ISO strings", () => {
+    const summary = buildSummary(resolvedFixtures(), { from, to });
+    const withTop = summary.perExercise.filter((e) => e.topSet !== null);
+    expect(withTop.length).toBeGreaterThan(0);
+    for (const entry of withTop) {
+      expect(typeof entry.topSet.performedAt).toBe("string");
+      expect(entry.topSet.performedAt instanceof Date).toBe(false);
+      expect(Array.isArray(entry.topSetSeries)).toBe(true);
+      for (const p of entry.topSetSeries) {
+        expect(typeof p.performedAt).toBe("string");
+        expect(p).toHaveProperty("weight");
+        expect(p).toHaveProperty("reps");
+      }
+    }
+  });
+
   test("perExercise entries carry matchedEffortTrend through buildSummary", () => {
     // Two bench sessions at the same RIR so the trend is non-null.
     const fixtures = resolvedFixtures().concat(
@@ -189,7 +205,11 @@ describe("buildSummary", () => {
     }
     for (const entry of summary.perExercise) {
       expect(collectDates(entry.e1rmSeries)).toEqual([]);
+      expect(collectDates(entry.topSetSeries)).toEqual([]);
       for (const p of entry.e1rmSeries) {
+        expect(typeof p.performedAt).toBe("string");
+      }
+      for (const p of entry.topSetSeries) {
         expect(typeof p.performedAt).toBe("string");
       }
     }

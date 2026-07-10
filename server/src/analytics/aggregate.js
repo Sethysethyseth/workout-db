@@ -196,12 +196,61 @@ function aggregateExerciseMetrics(enrichedSets, { from, to }) {
       );
     }
 
+    // Heaviest weight actually lifted - independent of e1RM / validSets.
+    // Null only when no set carries a weight. Tie-break: higher reps.
+    let topSet = null;
+    let topSetEnriched = null;
+    for (const s of sorted) {
+      if (s.input.weight == null) continue;
+      if (
+        topSetEnriched === null ||
+        s.input.weight > topSetEnriched.input.weight ||
+        (s.input.weight === topSetEnriched.input.weight &&
+          (s.input.reps ?? 0) > (topSetEnriched.input.reps ?? 0))
+      ) {
+        topSetEnriched = s;
+      }
+    }
+    if (topSetEnriched) {
+      topSet = {
+        weight: topSetEnriched.input.weight,
+        reps: topSetEnriched.input.reps,
+        performedAt: topSetEnriched.performedAt,
+      };
+    }
+
+    // One entry per session: heaviest weight (same tie-break), chronological.
+    // Weight-carrying sets only - not filtered by validSets/e1RM.
+    const sessionTop = new Map();
+    for (const s of sorted) {
+      if (s.input.weight == null) continue;
+      const performedMs = s.performedAt.getTime();
+      const current = sessionTop.get(performedMs);
+      if (
+        current === undefined ||
+        s.input.weight > current.weight ||
+        (s.input.weight === current.weight &&
+          (s.input.reps ?? 0) > (current.reps ?? 0))
+      ) {
+        sessionTop.set(performedMs, {
+          performedAt: s.performedAt,
+          weight: s.input.weight,
+          reps: s.input.reps,
+        });
+      }
+    }
+    const topSetSeries = Array.from(sessionTop.values()).sort(
+      (a, b) => a.performedAt.getTime() - b.performedAt.getTime()
+    );
+
     result.push({
       exerciseId,
       name: g.name,
       e1rmTrend,
       e1rmSeries,
       bestSet,
+      topSet,
+      topSetSeries,
       matchedEffortTrend: computeMatchedEffortTrend(sorted),
     });
   }

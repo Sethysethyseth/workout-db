@@ -5,7 +5,7 @@ import { useActiveSession } from "../../context/ActiveSessionContext.jsx";
 import { toDateOnlyString } from "../../lib/dateOnly.js";
 import { pickTopGain } from "../../lib/topGain.js";
 import { formatEffort } from "../../lib/effortDisplay.js";
-import { formatEstimate } from "../../lib/weightDisplay.js";
+import { formatEstimate, formatWeight } from "../../lib/weightDisplay.js";
 
 function addDays(date, days) {
   const d = new Date(date);
@@ -52,15 +52,20 @@ function sumEffectiveSets(summary) {
   return (summary?.perMuscle ?? []).reduce((sum, m) => sum + m.effectiveSets, 0);
 }
 
-function findBestLift(perExercise) {
-  let best = null;
+function pickTopSet(perExercise) {
+  let top = null;
   for (const ex of perExercise ?? []) {
-    const e1rm = ex.bestSet?.e1rm?.epley;
-    if (e1rm != null && (!best || e1rm > best.e1rm)) {
-      best = { e1rm, name: ex.name };
+    const ts = ex.topSet;
+    if (!ts || ts.weight == null) continue;
+    if (
+      !top ||
+      ts.weight > top.weight ||
+      (ts.weight === top.weight && (ts.reps ?? 0) > (top.reps ?? 0))
+    ) {
+      top = { weight: ts.weight, reps: ts.reps, name: ex.name };
     }
   }
-  return best;
+  return top;
 }
 
 function formatSetCount(n) {
@@ -185,7 +190,7 @@ export function WeeklyReport() {
 
   const currentSets = sumEffectiveSets(currentSummary);
   const priorSets = sumEffectiveSets(priorSummary);
-  const bestLift = findBestLift(currentSummary?.perExercise);
+  const topSet = pickTopSet(currentSummary?.perExercise);
   const topGain = pickTopGain(currentSummary?.perExercise ?? []);
 
   const workoutDelta = formatCountDelta(currentWorkouts, priorWorkouts, priorEmpty);
@@ -216,9 +221,15 @@ export function WeeklyReport() {
           deltaTone={deltaTone(setsDeltaValue ?? 0, priorEmpty)}
         />
         <ReportStat
-          label="Best lift"
-          value={bestLift ? formatEstimate(bestLift.e1rm) : "—"}
-          delta={bestLift ? bestLift.name : "not enough data"}
+          label="Top set"
+          value={
+            topSet
+              ? topSet.reps != null
+                ? `${formatWeight(topSet.weight)} × ${Math.round(topSet.reps)}`
+                : formatWeight(topSet.weight)
+              : "—"
+          }
+          delta={topSet ? topSet.name : "not enough data"}
           deltaTone={null}
         />
         <ReportStat
@@ -228,7 +239,7 @@ export function WeeklyReport() {
             topGain
               ? topGain.matched
                 ? `${topGain.name} @ ${formatEffort({ rir: topGain.matched.rir, effortUnit: topGain.matched.effortUnit })}`
-                : `${topGain.name} e1RM`
+                : `${topGain.name} · estimated 1RM`
               : "not enough data"
           }
           deltaTone={topGain ? "up" : null}

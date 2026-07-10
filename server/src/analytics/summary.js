@@ -41,16 +41,32 @@ function buildSummary(enrichedSets, { from, to, planLookup, userExercises }) {
         ...p,
         performedAt: p.performedAt.toISOString(),
       })),
+      topSetSeries: (entry.topSetSeries ?? []).map((p) => ({
+        ...p,
+        performedAt: p.performedAt.toISOString(),
+      })),
     };
-    if (!entry.bestSet) return serialized;
+    const withBest = entry.bestSet
+      ? {
+          ...serialized,
+          bestSet: {
+            ...entry.bestSet,
+            performedAt:
+              entry.bestSet.performedAt === null
+                ? null
+                : entry.bestSet.performedAt.toISOString(),
+          },
+        }
+      : serialized;
+    if (!entry.topSet) return withBest;
     return {
-      ...serialized,
-      bestSet: {
-        ...entry.bestSet,
+      ...withBest,
+      topSet: {
+        ...entry.topSet,
         performedAt:
-          entry.bestSet.performedAt === null
+          entry.topSet.performedAt === null
             ? null
-            : entry.bestSet.performedAt.toISOString(),
+            : entry.topSet.performedAt.toISOString(),
       },
     };
   });

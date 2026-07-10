@@ -6,7 +6,10 @@
 
 import { pickTopGain } from "../../lib/topGain.js";
 import { formatEffort } from "../../lib/effortDisplay.js";
-import { formatEstimate } from "../../lib/weightDisplay.js";
+import { formatEstimate, formatWeight } from "../../lib/weightDisplay.js";
+
+/** When effort coverage clears this, stimulating sets lead the volume pair. */
+const EFFORT_COVERAGE_HEADLINE_THRESHOLD = 0.6;
 
 function StatTile({ label, value, sub, tone = null }) {
   return (
@@ -20,9 +23,26 @@ function StatTile({ label, value, sub, tone = null }) {
   );
 }
 
+function pickTopSet(perExercise) {
+  let top = null;
+  for (const ex of perExercise) {
+    const ts = ex.topSet;
+    if (!ts || ts.weight == null) continue;
+    if (
+      !top ||
+      ts.weight > top.weight ||
+      (ts.weight === top.weight && (ts.reps ?? 0) > (top.reps ?? 0))
+    ) {
+      top = { weight: ts.weight, reps: ts.reps, name: ex.name };
+    }
+  }
+  return top;
+}
+
 export function StatTiles({ summary }) {
   const perMuscle = summary.perMuscle ?? [];
   const perExercise = summary.perExercise ?? [];
+  const effortCoverage = summary.meta?.effortCoverage ?? null;
 
   const weeklySets = perMuscle.reduce((sum, m) => sum + m.effectiveSets, 0);
   const stimulatingKnown = perMuscle.filter((m) => m.stimulatingSets !== null);
@@ -31,40 +51,59 @@ export function StatTiles({ summary }) {
     0
   );
 
-  let bestLift = null;
-  for (const ex of perExercise) {
-    const e1rm = ex.bestSet?.e1rm?.epley;
-    if (e1rm != null && (!bestLift || e1rm > bestLift.e1rm)) {
-      bestLift = { e1rm, name: ex.name };
-    }
-  }
+  const stimulatingComputable = stimulatingKnown.length > 0;
+  const stimulatingLeads =
+    effortCoverage != null &&
+    effortCoverage >= EFFORT_COVERAGE_HEADLINE_THRESHOLD &&
+    stimulatingComputable;
 
+  const setsTile = (
+    <StatTile
+      label="Sets / week"
+      value={weeklySets.toFixed(1)}
+      sub={`effective sets across ${perMuscle.length} muscle${perMuscle.length === 1 ? "" : "s"}`}
+    />
+  );
+  const stimulatingTile = stimulatingComputable ? (
+    <StatTile
+      label="Stimulating / week"
+      value={weeklyStimulating.toFixed(1)}
+      sub="effort-weighted sets (RIR or RPE)"
+    />
+  ) : (
+    <StatTile
+      label="Stimulating / week"
+      value="—"
+      sub="log RIR or RPE to unlock"
+    />
+  );
+
+  const topSet = pickTopSet(perExercise);
   const topGain = pickTopGain(perExercise);
 
   return (
     <div className="analytics-kpis">
-      <StatTile
-        label="Sets / week"
-        value={weeklySets.toFixed(1)}
-        sub={`effective sets across ${perMuscle.length} muscle${perMuscle.length === 1 ? "" : "s"}`}
-      />
-      {stimulatingKnown.length > 0 ? (
-        <StatTile
-          label="Stimulating / week"
-          value={weeklyStimulating.toFixed(1)}
-          sub="effort-weighted sets (RIR or RPE)"
-        />
+      {stimulatingLeads ? (
+        <>
+          {stimulatingTile}
+          {setsTile}
+        </>
       ) : (
-        <StatTile
-          label="Stimulating / week"
-          value="—"
-          sub="log RIR or RPE to unlock"
-        />
+        <>
+          {setsTile}
+          {stimulatingTile}
+        </>
       )}
       <StatTile
-        label="Best lift"
-        value={bestLift ? formatEstimate(bestLift.e1rm) : "—"}
-        sub={bestLift ? `estimated 1RM · ${bestLift.name}` : "not enough data"}
+        label="Top set"
+        value={
+          topSet
+            ? topSet.reps != null
+              ? `${formatWeight(topSet.weight)} × ${Math.round(topSet.reps)}`
+              : formatWeight(topSet.weight)
+            : "—"
+        }
+        sub={topSet ? topSet.name : "not enough data"}
       />
       <StatTile
         label="Top gain"
@@ -74,7 +113,7 @@ export function StatTiles({ summary }) {
           topGain
             ? topGain.matched
               ? `${topGain.name} @ ${formatEffort({ rir: topGain.matched.rir, effortUnit: topGain.matched.effortUnit })}`
-              : `${topGain.name} e1RM`
+              : `${topGain.name} · estimated 1RM`
             : "no measured gain in range yet"
         }
       />

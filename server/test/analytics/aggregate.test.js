@@ -401,6 +401,8 @@ describe("aggregateExerciseMetrics", () => {
       delta: null,
     });
     expect(result[0].bestSet).toBeNull();
+    expect(result[0].topSet).toBeNull();
+    expect(result[0].topSetSeries).toEqual([]);
   });
 
   test("e1rmSeries dedupes same-session sets to max epley", () => {
@@ -475,6 +477,124 @@ describe("aggregateExerciseMetrics", () => {
 
     const result = aggregateExerciseMetrics(sets, { from, to });
     expect(result[0].e1rmSeries).toEqual([]);
+  });
+
+  test("topSet is the heaviest-weight set when highest-e1RM is a different set", () => {
+    // 225x3 e1RM ≈ 247.5; 185x10 e1RM ≈ 246.7 — so bestSet is 225x3,
+    // but topSet must be the heavier bar (225), not the higher-e1RM set.
+    // Flip: make heaviest weight LOSE on e1RM so topSet != bestSet.
+    // 200x10 e1RM ≈ 266.7; 225x3 e1RM ≈ 247.5 → bestSet = 200x10, topSet = 225x3.
+    const sets = [
+      enrichSet({
+        exerciseName: BENCH,
+        weight: 200,
+        reps: 10,
+        rir: 2,
+        performedAt: "2026-06-02T10:00:00Z",
+      }),
+      enrichSet({
+        exerciseName: BENCH,
+        weight: 225,
+        reps: 3,
+        rir: 1,
+        performedAt: "2026-06-09T10:00:00Z",
+      }),
+    ];
+
+    const result = aggregateExerciseMetrics(sets, { from, to });
+    const bench = result[0];
+    expect(bench.bestSet.weight).toBe(200);
+    expect(bench.bestSet.reps).toBe(10);
+    expect(bench.topSet.weight).toBe(225);
+    expect(bench.topSet.reps).toBe(3);
+    expect(bench.topSet.performedAt.toISOString()).toBe(
+      "2026-06-09T10:00:00.000Z"
+    );
+  });
+
+  test("topSet exists when every set lacks a computable e1RM", () => {
+    // weight without reps -> epley null, but topSet still picks the weight.
+    const sets = [
+      enrichSet({
+        exerciseName: BENCH,
+        weight: 135,
+        performedAt: "2026-06-02T10:00:00Z",
+      }),
+      enrichSet({
+        exerciseName: BENCH,
+        weight: 185,
+        performedAt: "2026-06-09T10:00:00Z",
+      }),
+    ];
+
+    const result = aggregateExerciseMetrics(sets, { from, to });
+    const bench = result[0];
+    expect(bench.bestSet).toBeNull();
+    expect(bench.e1rmSeries).toEqual([]);
+    expect(bench.topSet).toEqual({
+      weight: 185,
+      reps: null,
+      performedAt: new Date("2026-06-09T10:00:00.000Z"),
+    });
+  });
+
+  test("topSet tie-break picks higher reps at the same weight", () => {
+    const sets = [
+      enrichSet({
+        exerciseName: BENCH,
+        weight: 185,
+        reps: 5,
+        rir: 2,
+        performedAt: "2026-06-02T10:00:00Z",
+      }),
+      enrichSet({
+        exerciseName: BENCH,
+        weight: 185,
+        reps: 8,
+        rir: 2,
+        performedAt: "2026-06-09T10:00:00Z",
+      }),
+    ];
+
+    const result = aggregateExerciseMetrics(sets, { from, to });
+    expect(result[0].topSet.weight).toBe(185);
+    expect(result[0].topSet.reps).toBe(8);
+  });
+
+  test("topSetSeries is one chronological heaviest-per-session entry, even without e1RM", () => {
+    const shared = "2026-06-02T10:00:00Z";
+    const sets = [
+      enrichSet({
+        exerciseName: BENCH,
+        weight: 135,
+        performedAt: shared,
+      }),
+      enrichSet({
+        exerciseName: BENCH,
+        weight: 155,
+        performedAt: shared,
+      }),
+      enrichSet({
+        exerciseName: BENCH,
+        weight: 145,
+        performedAt: "2026-06-09T10:00:00Z",
+      }),
+    ];
+
+    const result = aggregateExerciseMetrics(sets, { from, to });
+    const series = result[0].topSetSeries;
+    expect(result[0].bestSet).toBeNull();
+    expect(series).toHaveLength(2);
+    expect(series[0]).toEqual({
+      performedAt: new Date(shared),
+      weight: 155,
+      reps: null,
+    });
+    expect(series[1]).toEqual({
+      performedAt: new Date("2026-06-09T10:00:00.000Z"),
+      weight: 145,
+      reps: null,
+    });
   });
 });
 
