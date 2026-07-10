@@ -6,41 +6,49 @@ Statuses: DRAFT / QUEUED / DISPATCHED / AWAITING-REVIEW / LANDED <sha> / BOUNCED
 
 ## Active
 
-A-wave (Track A: structural exercise identity), authored July 7 (Fable),
-branch `catalog-fk-wave` (off logging-ux-wave HEAD `80373e1`, which is
-main `3767840` + one docs commit). Everything prior (L-wave, T3B) is
-MERGED TO MAIN - see Landed.
+N-wave (analytics UI rebalance), authored July 10 (Fable), branch
+`analytics-rebalance-wave` (off catalog-fk-wave HEAD `3d4e874`, which is
+main `13a1e59` + N-wave spec docs + one settings commit). Spec/contract
+source: `docs/specs/analytics-ui-rebalance.md` (passes 1-4 + F-test).
+A-wave is fully MERGED TO MAIN + prod-rolled (July 8) - see Landed.
 
-**A1 LANDED `3a6bc25` (Fable direct, July 7):** Exercise catalog table +
-idempotent seed, reconciled by hand from the stale `exercise-catalog-seed`
-branch (migration re-timestamped 20260527 -> `20260707120000_add_exercise_
-catalog` - the old row was never on prod and test resets wiped it from
-staging; seed wired via prisma.config.ts `migrations.seed`, Prisma 6.19
-shape, NOT the deprecated package.json block; main's `test:unit` script
-preserved). Unit lane 119/119 + `prisma validate` green. Standalone model,
-no FKs - deploy-safe before its migration.
+**FILENAME COLLISION NOTE:** the June nav-wave shipped task files named
+`n1-bottom-tab-bar.md` / `n2-profile-hub.md` / `n3-analytics-subviews.md`
+(all LANDED, see below). The N-wave's n1/n2/n3 are DIFFERENT units with
+different slugs - always dispatch by full filename, never by bare "n1".
 
-Both A5 and A6b LANDED July 7 (Sonnet) - see Landed section below. A-wave
-code is now feature-complete on this branch; next up is the Fable/Opus
-pre-main branch-diff review before merge.
+**Split (settled with Seth July 10): Cursor takes the relay lane, Fable
+implements the judgment-heavy/security units directly.** Cursor lane:
+N1 -> N2 -> N3 -> N6. Fable-direct: N5 -> N4 -> N7 (N5 is the isolation
+surface; N4/N7 are the mock-signed visual units). Parallel-safe pairs:
+N1 (Cursor) with N5 (Fable) are file-disjoint by design; N2 (Cursor) may
+run while Fable finishes N5. N4/N7 share `AnalyticsPage.jsx` with each
+other AND with N3 - strictly sequential: N4 -> N7 -> N3.
 
-**STAGING migration choreography: DONE (Sonnet, July 7).** Ran into a real
-snag worth knowing about before the prod pass: staging's `_prisma_migrations`
-table still had the OLD `20260527120000_add_exercise_catalog` migration
-applied from the abandoned pre-A1 branch (never actually wiped, contrary to
-what earlier HANDOFF entries claimed) - the `Exercise` table + all 873 rows
-already existed. A stray `migrate deploy` attempt against the new
-re-timestamped name hit "relation already exists" and left a FAILED
-migration record blocking further deploys. Fix: `prisma migrate resolve
---applied 20260707120000_add_exercise_catalog` to baseline the bookkeeping,
-then `npx prisma db seed` (idempotent, refreshed muscleWeights to the A2-
-cleaned set), then `npx prisma migrate deploy` applied A4's
-`20260707130000_add_exercise_fk_linkage` clean. All FK columns + CHECK
-constraints verified on staging by direct SQL query. **PROD's migration
-history has NOT been checked for the same old-migration situation** -
-before running the prod choreography, query prod's `_prisma_migrations`
-directly rather than assuming a clean slate (full detail: HANDOFF.md, July 7
-latest+1 entry).
+- QUEUED | n1-effort-neutral-formatting.md | shared weight/effort
+  formatters + component sweep + engine effort-unit serialization |
+  dispatch FIRST - everything downstream consumes it
+- QUEUED | n2-headline-stat-rebalance.md | engine topSet + topSetSeries,
+  adaptive volume headline, Top set replaces Best lift | dispatch after
+  n1 LANDS
+- QUEUED (FABLE-DIRECT) | n5-exercise-detail-endpoint.md | all-time
+  exercise index + detail endpoint + rep-target engine | isolation
+  surface - Fable implements; parallel-safe with n1
+- QUEUED (FABLE-DIRECT) | n4-strength-tab-rework.md | strength tab
+  progression-first + mock-signed sparkline mark spec | after n2
+- QUEUED (FABLE-DIRECT) | n7-muscles-heatmap.md | binned volume heatmap +
+  table de-noise + 2W day-granularity preset | after n4 (shares
+  AnalyticsPage.jsx)
+- QUEUED | n3-exercises-tab-shell.md | 4th tab: all-time lookup + inline
+  detail with rep-target hero | do NOT dispatch before n5 AND n7 land
+- QUEUED | n6-frontier-polish.md | two-variant empty state, range
+  persistence, KPI tap-through | LAST - do not dispatch before n3 lands
+
+Settled during authoring (were "still open" in the spec): rep ladder =
+1/3/5/8/10/12/15 (20 rejected - Epley error exceeds a plate increment
+that far out); coverage threshold = 0.6 named constant; plate increments
+2.5 lbs / 1.25 kg. Spec open item 3 (Strength folding into Exercises)
+stays a post-N flag.
 
 ## Candidates (next units, not yet authored as blocks)
 

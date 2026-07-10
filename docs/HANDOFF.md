@@ -1,6 +1,30 @@
 # HANDOFF — current state
 
-**Updated:** July 9, 2026 (Fable — N-WAVE SPEC COMPLETE: F-test exit
+**Updated:** July 10, 2026 (Fable — N-WAVE SKELETON BUILT: all 7 unit
+blocks authored + queued on new branch `analytics-rebalance-wave`, off
+catalog-fk-wave HEAD `3d4e874` = main + docs + a settings commit).
+- Blocks: `docs/tasks/n{1,2,3,4,5,6,7}-*.md` (see QUEUE.md Active for the
+  index). **Filename collision marked:** the June nav-wave's landed
+  n1/n2/n3 task files still exist — dispatch by FULL filename only.
+- **Division settled with Seth:** Cursor lane N1 → N2 → N3 → N6
+  (mechanical/relay); Fable-direct N5 → N4 → N7 (isolation surface +
+  the two mock-signed visual units). N1(Cursor) ∥ N5(Fable) are
+  file-disjoint and may run in parallel; N4/N7/N3 all touch
+  `AnalyticsPage.jsx` — strictly sequential N4 → N7 → N3.
+- Spec open items SETTLED during authoring: rep ladder 1/3/5/8/10/12/15
+  (20 rejected: Epley error > plate increment that far out); adaptive
+  coverage threshold 0.6 (named constant, N2); plate increments 2.5 lbs
+  / 1.25 kg (N1 `roundToPlate`). Spec gap found + fixed in-block: N4's
+  sparklines need a per-session top-set weight series the payload lacked
+  — `topSetSeries` added to N2's engine tail so N4 stays client-only.
+- **Loose ends marked for this wave:** (a) staging Render must be
+  REPOINTED from `main` to `analytics-rebalance-wave` before Seth smokes
+  any server-touching unit (N1 and N2 both carry engine tails); (b)
+  re-seed the staging smoke account before visual sign-off (TODO 0b);
+  (c) baseline verified green July 10 — unit lane 137/137 + client build
+  fresh on the branch point.
+
+Previous entry (July 9, Fable — N-wave spec complete):
 criteria + chart forms signed off via mock. Docs-only session, no code.)
 Seth set the wave's completion bar ("passes as a professional frontier
 weightlifting app, down to every detail") and the session turned that into
@@ -141,14 +165,11 @@ trusting it.
 
 ## Next up (the active task)
 
-0. **AUTHOR THE N-WAVE TASK BLOCKS** (Fable/Opus session): spec is complete
-   (`docs/specs/analytics-ui-rebalance.md`, passes 1-4). Lift N1 first
-   (effort-neutral display + number formatting — everything downstream uses
-   its formatters), then N2. Order: N1 → N2 → N4 → N7 → (N5 → N3) → N6.
-   N1+N4 disjoint (may batch); N4+N7 share `AnalyticsPage.jsx` (sequential).
-   Spec still-open items to settle during block authoring or with Seth:
-   rep ladder (1/3/5/8/10/12 +15/20?), adaptive-coverage threshold (~0.6),
-   plate-increment fine-tune.
+0. **EXECUTE THE N-WAVE** (blocks authored July 10, QUEUE.md is the
+   index): dispatch `n1-effort-neutral-formatting.md` to Cursor now;
+   Fable implements N5 directly in parallel (file-disjoint). Then Cursor
+   N2 → (Fable N4 → N7) → Cursor N3 → Cursor N6. Repoint staging Render
+   to `analytics-rebalance-wave` before Seth's first smoke.
 0b. **A-wave follow-up (non-urgent):** optional Step-7 historical backfill:
    `node scripts/backfill-exercise-ids.mjs` (DRY-RUN first) then `--apply`
    against prod for pre-A4 historical rows (Seth runs the write).
