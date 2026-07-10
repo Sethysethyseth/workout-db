@@ -105,11 +105,31 @@ other AND with N3 - strictly sequential: N4 -> N7 -> N3.
   focus + aria labels; execution table's unlock cells deliberately
   untouched (this block de-noised the muscles table only). Visual smoke
   owed to Seth on staging. N3 unblocked (n5 + n7 both landed)
-- QUEUED | n3-exercises-tab-shell.md | 4th tab: all-time lookup + inline
-  detail with rep-target hero | UNBLOCKED (n5 and n7 both landed) -
-  ready for Cursor dispatch
+- LANDED 537309c | n3-exercises-tab-shell.md | 4th tab: all-time lookup +
+  inline detail with rep-target hero | Cursor delivery, Sonnet-audited:
+  unit lane 167/167 + client build re-run fresh; scope exact (5 files,
+  matches FILES TO TOUCH); both mandatory F-test traps verified fixed by
+  direct read - tabs grid repeat(3,...) -> repeat(4,...) with shrunk
+  font/padding, setView/setExerciseParam both use the functional
+  URLSearchParams-merge pattern (grep for bare `setSearchParams({ view`
+  = no matches); client endpoints (`/analytics/exercises`,
+  `/analytics/exercise`) confirmed matching n5's landed server routes;
+  getExerciseDetail sends exactly one identity param (exerciseId else
+  userExerciseId); rep-target rows verified using roundToPlate + muted
+  `--extrapolated` class + shared footnote; both empty states
+  (no-exercises-ever links to /log-workout, no-data-in-range names a
+  longer-range action) read as actionable, not bare; no hex in CSS diff.
+  Two documented deviations, both sensible: exercise param encodes user
+  exercises as `user:<id>` (mirrors server identity key, block named the
+  param not the exact encoding); AnalyticsPage renders the exercises
+  view even when the range summary is empty (so all-time lookup still
+  works pre-N6 empty-state work). One un-bounced addition: tapping an
+  already-selected roster row toggles the detail closed (inline-expand
+  consistency, not specified but harmless). Visual smoke (4 tabs at
+  360px) still owed to Seth on staging. N6 unblocked (last N-wave unit)
 - QUEUED | n6-frontier-polish.md | two-variant empty state, range
-  persistence, KPI tap-through | LAST - do not dispatch before n3 lands
+  persistence, KPI tap-through | UNBLOCKED (n3 landed) - ready for
+  Cursor dispatch, LAST unit before the pre-main Fable review
 
 Settled during authoring (were "still open" in the spec): rep ladder =
 1/3/5/8/10/12/15 (20 rejected - Epley error exceeds a plate increment

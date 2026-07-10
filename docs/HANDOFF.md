@@ -1,48 +1,59 @@
 # HANDOFF — current state
 
-**Updated:** July 10, 2026, third session (Fable — N4 LANDED `4f37361`
+**Updated:** July 10, 2026, fourth session (Sonnet — N3 LANDED
+`537309c`: Cursor's delivery audited, committed + pushed to
+`origin/analytics-rebalance-wave` (`fa2c704..537309c`). Unit lane
+167/167 + client build re-run fresh; scope exact (5 files, matches
+FILES TO TOUCH). Both mandatory F-test traps from the block verified
+fixed by direct read: `.analytics-view-tabs` grid `repeat(3,...)` ->
+`repeat(4,...)` with shrunk font/padding so all four labels fit 360px;
+`setView`/`setExerciseParam` both merge via functional
+`setSearchParams((prev) => ...)` instead of clobbering (grep for bare
+`setSearchParams({ view` = no matches), so `?exercise=` survives
+range-chip clicks and view switches. Client `getExerciseIndex`/
+`getExerciseDetail` confirmed calling the exact routes N5 already
+landed server-side (`/analytics/exercises`, `/analytics/exercise`),
+detail sending exactly one identity param. Rep-target rows verified
+using `roundToPlate` + a muted `--extrapolated` class + shared
+footnote; both empty states (no-exercises-ever links to
+`/log-workout`, no-data-in-range names a longer-range action) read as
+actionable. No hex in the CSS diff. Two sensible documented
+deviations (exercise param encodes user exercises as `user:<id>`;
+`AnalyticsPage` renders the exercises view even when the range summary
+is empty, so all-time lookup keeps working ahead of N6's empty-state
+work) plus one un-bounced addition (re-tapping the selected roster row
+toggles the detail closed). Visual smoke (4 tabs at 360px, roster +
+detail flow) still owed to Seth on staging — repoint check below still
+applies. **Next: Cursor N6 (`n6-frontier-polish.md`) — last N-wave
+unit, unblocked now that N3 landed; then the wave's pre-main Fable
+review of the full branch diff.**)
+
+Previous entry (July 10, third session, Fable — N4 LANDED `4f37361`
 AND N7 LANDED `d1b2871`, both Fable-direct in the main working tree, no
 worktree needed since Cursor is idle. **N4:** strength tab reframed
 progression-first — table columns Exercise | Top set | Top-set trend |
 Matched effort, e1RM columns + HOW_BEST_E1RM removed, footer link
 "Estimated 1RM has its own view →" targets `?view=exercises` (muscles
-fallback until N3, by design); sparklines re-anchored to whole-number
-top-set weights via N2's `topSetSeries`, marks per the signed July 9
-mock (re-fetched and checked against its actual source: 2px accent
-line, 10% wash, single ringed 9px end dot, no intermediate dots, 40px
-plot, bare-number endpoint labels, delta chip "+20 lbs · top set 245 ×
-3"). Unit lane 162/162 + build fresh, scope exact 3 files, e1rm grep
-clean, no hex. **N7:** Trend view replaced by the binned 4-step volume
-heatmap; engine series bucketing parametrized week|day (granularity
-derives from range, <= 14 days -> day cells; series keys now
-periodStart/periodEnd; meta.seriesGranularity added); 2-weeks range
-chip added and rangeForWeeks fixed to span exactly N*7 calendar days
-inclusive (kills a latent 5th-bucket artifact); volume table de-noised
-(right-aligned tabular-nums, em-dash + one footnote, "3d" recency with
-warn tint at >= 14d, ? buttons out of headers); ramp validated with
-the dataviz ordinal checks for all TEN palette x mode combos — iron
-light anchors toward text ink (accent-vs-surface can never clear 2:1
-there), everything else on shared per-mode P constants (light
-51/66/81/100, dark 40/60/80/100). Unit lane 167/167 (5 new fixtures,
-both bucket modes) + build fresh. Full evidence per unit in QUEUE.md.
-Seth's on-device smoke still owed for BOTH units. **Next: Cursor N3
-(`n3-exercises-tab-shell.md`) — n5 + n7 both landed, dispatch is
-clear; then Cursor N6, then the wave's pre-main Fable review.**)
-
-Previous entry (July 10, later session, Sonnet — N2 LANDED `46b8736`:
-Cursor's delivery audited, committed + pushed to
-`origin/analytics-rebalance-wave`. Unit lane 162/162 + client build
-re-run fresh; scope exact (6 files, matches FILES TO TOUCH); topSet
-tie-break and topSetSeries session-bucketing verified by direct read
-against e1rmSeries's existing pattern (same performedMs grouping key);
-all 4 new fixture tests read, substantive; grep clean for e1rm access
-in StatTiles/WeeklyReport, single EFFORT_COVERAGE_HEADLINE_THRESHOLD
-definition; stat order verified in both components. One documented
-deviation (Top set omits "× reps" for weight-only sets), accepted; one
-un-bounced nit (pickTopSet duplicated verbatim between StatTiles.jsx
-and WeeklyReport.jsx, not factored to a shared lib — minor, outside the
-block's scope). Working tree still holds Seth's two untracked
-`claudefiledrop/*.url` shortcuts — not part of any unit, left alone.)
+fallback until N3, by design — now landed); sparklines re-anchored to
+whole-number top-set weights via N2's `topSetSeries`, marks per the
+signed July 9 mock (re-fetched and checked against its actual source:
+2px accent line, 10% wash, single ringed 9px end dot, no intermediate
+dots, 40px plot, bare-number endpoint labels, delta chip "+20 lbs ·
+top set 245 × 3"). Unit lane 162/162 + build fresh, scope exact 3
+files, e1rm grep clean, no hex. **N7:** Trend view replaced by the
+binned 4-step volume heatmap; engine series bucketing parametrized
+week|day (granularity derives from range, <= 14 days -> day cells;
+series keys now periodStart/periodEnd; meta.seriesGranularity added);
+2-weeks range chip added and rangeForWeeks fixed to span exactly N*7
+calendar days inclusive (kills a latent 5th-bucket artifact); volume
+table de-noised (right-aligned tabular-nums, em-dash + one footnote,
+"3d" recency with warn tint at >= 14d, ? buttons out of headers); ramp
+validated with the dataviz ordinal checks for all TEN palette x mode
+combos — iron light anchors toward text ink (accent-vs-surface can
+never clear 2:1 there), everything else on shared per-mode P constants
+(light 51/66/81/100, dark 40/60/80/100). Unit lane 167/167 (5 new
+fixtures, both bucket modes) + build fresh. Full evidence per unit in
+QUEUE.md. Seth's on-device smoke still owed for N4/N7/N3 together.)
 
 - **Wave loose ends still open:** staging Render must be REPOINTED from
   `main` to `analytics-rebalance-wave` before Seth smokes any
@@ -157,12 +168,13 @@ trusting it.
 ## Next up (the active task)
 
 0. **EXECUTE THE N-WAVE** (blocks authored July 10, QUEUE.md is the
-   index): N1, N5, N2, N4, N7 all LANDED. **Next: dispatch Cursor N3
-   (`n3-exercises-tab-shell.md`, unblocked), then Cursor N6, then the
+   index): N1, N5, N2, N4, N7, N3 all LANDED. **Next: dispatch Cursor
+   N6 (`n6-frontier-polish.md`, unblocked, LAST unit), then the
    pre-main Fable review of the whole branch.** Repoint staging Render
-   to `analytics-rebalance-wave` before Seth's first smoke (N1/N2/N7
+   to `analytics-rebalance-wave` before Seth's first smoke (N1/N2/N7/N3
    all carry engine tails — the heatmap needs the new series shape from
-   the API, so the repoint is REQUIRED before the muscles-tab smoke).
+   the API and the exercises tab needs N5's endpoints, so the repoint
+   is REQUIRED before smoking either).
 0b. **A-wave follow-up (non-urgent):** optional Step-7 historical backfill:
    `node scripts/backfill-exercise-ids.mjs` (DRY-RUN first) then `--apply`
    against prod for pre-A4 historical rows (Seth runs the write).
