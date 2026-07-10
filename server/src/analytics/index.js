@@ -22,6 +22,11 @@ const {
 } = require("./aggregate");
 const { buildSummary } = require("./summary");
 const { searchCatalog } = require("./searchCatalog");
+const {
+  buildExerciseIndex,
+  buildExerciseDetail,
+  REP_TARGET_LADDER,
+} = require("./exerciseDetail");
 
 module.exports = {
   loadCatalog,
@@ -44,4 +49,7 @@ module.exports = {
   toDate,
   buildSummary,
   searchCatalog,
+  buildExerciseIndex,
+  buildExerciseDetail,
+  REP_TARGET_LADDER,
 };
