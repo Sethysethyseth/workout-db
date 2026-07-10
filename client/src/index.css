@@ -5387,6 +5387,18 @@ html[data-theme="dark"] .auth-page .auth-form.card {
   margin: 0;
 }
 
+/* Card footer link (e.g. "Estimated 1RM has its own view") - the table
+   card itself has no padding, so the footer carries its own. */
+.analytics-card-footlink {
+  margin: 0;
+  padding: 10px 14px 12px;
+  border-top: 1px solid var(--color-border);
+}
+
+.analytics-card-footlink a {
+  color: var(--color-interactive);
+}
+
 .analytics-muscle-name {
   text-transform: capitalize;
 }
@@ -5852,31 +5864,46 @@ html[data-theme="dark"] .auth-page .auth-form.card {
 .st-sparkline-svg {
   display: block;
   width: 100%;
-  height: 28px;
+  height: 40px;
   overflow: visible;
-  color: var(--chart-context);
+  color: var(--chart-accent);
 }
 
 .st-sparkline-line {
   fill: none;
   stroke: currentColor;
-  stroke-width: 1.5;
-  vector-effect: non-scaling-stroke;
-}
-
-/* Dots are zero-length round-cap strokes (see StrengthTrendChart) so they
-   stay circular under the sparkline's preserveAspectRatio="none" stretch. */
-.st-sparkline-dot {
-  fill: none;
-  stroke: var(--chart-context);
-  stroke-width: 5;
+  stroke-width: 2;
+  stroke-linejoin: round;
   stroke-linecap: round;
   vector-effect: non-scaling-stroke;
 }
 
-.st-sparkline-dot--accent {
+/* Area wash under the line - fills stretch fine under
+   preserveAspectRatio="none", only strokes need non-scaling. */
+.st-sparkline-area {
+  fill: color-mix(in srgb, var(--chart-accent) 10%, transparent);
+  stroke: none;
+}
+
+/* The latest-point end dot is a zero-length round-cap stroke (see
+   StrengthTrendChart) so it stays circular under the sparkline's
+   preserveAspectRatio="none" stretch; the ring is a wider surface-color
+   stroke layered beneath it. */
+.st-sparkline-dot,
+.st-sparkline-dot-ring {
+  fill: none;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.st-sparkline-dot {
   stroke: var(--chart-accent);
-  stroke-width: 7;
+  stroke-width: 9;
+}
+
+.st-sparkline-dot-ring {
+  stroke: var(--color-surface-1);
+  stroke-width: 13;
 }
 
 /* -- Meters (execution adherence, effort coverage) -- */

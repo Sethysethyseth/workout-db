@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import * as analyticsApi from "../api/analyticsApi.js";
 import { ErrorMessage } from "../components/ErrorMessage.jsx";
 import { LoadingState } from "../components/LoadingState.jsx";
@@ -37,8 +37,6 @@ const HOW_EFFECTIVE_SETS =
   "Each set counts toward a muscle by its fractional attribution from the exercise catalog (a bench set is mostly chest, partly triceps and shoulders). Counted for every set, with or without RIR (RPE counts too: RIR = 10 − RPE).";
 const HOW_STIMULATING_SETS =
   "Attribution fraction × a stimulus multiplier from the set's RIR (RPE counts too: RIR = 10 − RPE) — sets closer to failure count for more. Sets logged without RIR or RPE are excluded from this number.";
-const HOW_BEST_E1RM =
-  "Estimated 1-rep max from weight × reps using the Epley formula. It's an estimate of strength, not a tested max.";
 const HOW_MATCHED_EFFORT =
   "Compares your estimated 1RM only across sets you took at the same RIR (RPE counts too: RIR = 10 − RPE), so progress shows up even when you never max out. Uses the RIR you log most often for this exercise; needs 2 or more sessions at the same RIR.";
 const HOW_EXECUTION =
@@ -54,18 +52,33 @@ function rangeForWeeks(weeks) {
   return { from: toDateOnlyString(fromDate), to: toDateOnlyString(today) };
 }
 
-function E1rmTrendCell({ trend }) {
-  if (!trend || trend.first === null) {
+function TopSetCell({ topSet }) {
+  if (!topSet) {
     return <span className="muted small">not enough data</span>;
   }
-  if (trend.delta === 0) {
+  return (
+    <span>
+      {topSet.reps != null
+        ? `${formatWeight(topSet.weight)} × ${Math.round(topSet.reps)}`
+        : formatWeight(topSet.weight)}
+    </span>
+  );
+}
+
+/** First vs. latest session top-set weight over the range (topSetSeries endpoints). */
+function TopSetTrendCell({ series }) {
+  if (!Array.isArray(series) || series.length < 2) {
+    return <span className="muted small">not enough data</span>;
+  }
+  const delta = series[series.length - 1].weight - series[0].weight;
+  if (delta === 0) {
     return <span>no change</span>;
   }
-  const sign = trend.delta > 0 ? "+" : "-";
+  const sign = delta > 0 ? "+" : "-";
   return (
     <span>
       {sign}
-      {formatEstimate(Math.abs(trend.delta))}
+      {formatWeight(Math.abs(delta))}
     </span>
   );
 }
@@ -191,10 +204,9 @@ function PerExerciseSection({ perExercise }) {
         cardName="Strength trends"
         sub={
           <>
-            Estimated 1RM <HowCalculatedButton title="Best e1RM" copy={HOW_BEST_E1RM} /> first
-            vs. latest session per exercise, with the matched-effort{" "}
-            <HowCalculatedButton title="Matched effort" copy={HOW_MATCHED_EFFORT} /> trend where
-            unlocked.
+            Matched-effort <HowCalculatedButton title="Matched effort" copy={HOW_MATCHED_EFFORT} />{" "}
+            trend per exercise where unlocked, with each session's top set — the weight you
+            actually lifted — as the evidence.
           </>
         }
         view={view}
@@ -210,12 +222,8 @@ function PerExerciseSection({ perExercise }) {
             <thead>
               <tr>
                 <th scope="col">Exercise</th>
-                <th scope="col">Best set</th>
-                <th scope="col">
-                  <span>Best e1RM</span>{" "}
-                  <HowCalculatedButton title="Best e1RM" copy={HOW_BEST_E1RM} />
-                </th>
-                <th scope="col">e1RM trend</th>
+                <th scope="col">Top set</th>
+                <th scope="col">Top-set trend</th>
                 <th scope="col">
                   <span>Matched effort</span>{" "}
                   <HowCalculatedButton title="Matched effort" copy={HOW_MATCHED_EFFORT} />
@@ -227,21 +235,10 @@ function PerExerciseSection({ perExercise }) {
                 <tr key={ex.exerciseId}>
                   <td>{ex.name}</td>
                   <td>
-                    {ex.bestSet ? (
-                      `${formatWeight(ex.bestSet.weight)} × ${Math.round(ex.bestSet.reps)}`
-                    ) : (
-                      <span className="muted small">not enough data</span>
-                    )}
+                    <TopSetCell topSet={ex.topSet} />
                   </td>
                   <td>
-                    {ex.bestSet && ex.bestSet.e1rm?.epley != null ? (
-                      formatEstimate(ex.bestSet.e1rm.epley)
-                    ) : (
-                      <span className="muted small">not enough data</span>
-                    )}
-                  </td>
-                  <td>
-                    <E1rmTrendCell trend={ex.e1rmTrend} />
+                    <TopSetTrendCell series={ex.topSetSeries} />
                   </td>
                   <td>
                     <MatchedEffortCell trend={ex.matchedEffortTrend} />
@@ -252,6 +249,11 @@ function PerExerciseSection({ perExercise }) {
           </table>
         </div>
       )}
+      {/* Until N3 lands, ?view=exercises falls back to muscles via
+          parseAnalyticsView - acceptable, this ships before N3 by design. */}
+      <p className="small analytics-card-footlink">
+        <Link to="?view=exercises">Estimated 1RM has its own view →</Link>
+      </p>
     </section>
   );
 }
