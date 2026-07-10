@@ -151,4 +151,37 @@ describe("computeMatchedEffortTrend", () => {
     expect(trend).not.toBeNull();
     expect(trend.rir).toBe(0);
   });
+
+  test("RPE-only bucket yields effortUnit: rpe", () => {
+    const sets = [
+      benchSet({ weight: 100, reps: 8, rpe: 8, performedAt: "2026-05-01T10:00:00Z" }),
+      benchSet({ weight: 102.5, reps: 8, rpe: 8, performedAt: "2026-05-08T10:00:00Z" }),
+    ];
+    const trend = computeMatchedEffortTrend(sets);
+    expect(trend).not.toBeNull();
+    expect(trend.rir).toBe(2);
+    expect(trend.effortUnit).toBe("rpe");
+    expect(trend.sessions).toBe(2);
+  });
+
+  test("mixed RIR+RPE bucket yields effortUnit: rir", () => {
+    const sets = [
+      benchSet({ weight: 100, reps: 8, rir: 2, performedAt: "2026-05-01T10:00:00Z" }),
+      benchSet({ weight: 102.5, reps: 8, rpe: 8, performedAt: "2026-05-08T10:00:00Z" }),
+    ];
+    const trend = computeMatchedEffortTrend(sets);
+    expect(trend).not.toBeNull();
+    expect(trend.rir).toBe(2);
+    expect(trend.effortUnit).toBe("rir");
+  });
+
+  test("RIR-only bucket yields effortUnit: rir", () => {
+    const sets = [
+      benchSet({ weight: 100, reps: 8, rir: 2, performedAt: "2026-05-01T10:00:00Z" }),
+      benchSet({ weight: 102.5, reps: 8, rir: 2, performedAt: "2026-05-08T10:00:00Z" }),
+    ];
+    const trend = computeMatchedEffortTrend(sets);
+    expect(trend).not.toBeNull();
+    expect(trend.effortUnit).toBe("rir");
+  });
 });

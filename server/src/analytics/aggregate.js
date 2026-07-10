@@ -174,6 +174,7 @@ function aggregateExerciseMetrics(enrichedSets, { from, to }) {
         weight: bestSetEnriched.input.weight,
         reps: bestSetEnriched.input.reps,
         rir: bestSetEnriched.input.rir,
+        rpe: bestSetEnriched.input.rpe,
         performedAt: bestSetEnriched.performedAt,
         e1rm: bestSetEnriched.metrics.e1rm,
       };

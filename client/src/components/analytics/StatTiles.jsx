@@ -5,16 +5,8 @@
  */
 
 import { pickTopGain } from "../../lib/topGain.js";
-import { loadWeightUnit } from "../../lib/weightUnitPref.js";
-
-/* Display-only unit label (what the user logs in); weights are never converted. */
-function formatWeightValue(n) {
-  return `${Number(n).toFixed(1)} ${loadWeightUnit()}`;
-}
-
-function formatRir(r) {
-  return Number.isInteger(r) ? String(r) : r.toFixed(1);
-}
+import { formatEffort } from "../../lib/effortDisplay.js";
+import { formatEstimate } from "../../lib/weightDisplay.js";
 
 function StatTile({ label, value, sub, tone = null }) {
   return (
@@ -71,17 +63,17 @@ export function StatTiles({ summary }) {
       )}
       <StatTile
         label="Best lift"
-        value={bestLift ? formatWeightValue(bestLift.e1rm) : "—"}
+        value={bestLift ? formatEstimate(bestLift.e1rm) : "—"}
         sub={bestLift ? `estimated 1RM · ${bestLift.name}` : "not enough data"}
       />
       <StatTile
         label="Top gain"
-        value={topGain ? `+${formatWeightValue(topGain.delta)}` : "—"}
+        value={topGain ? `+${formatEstimate(topGain.delta)}` : "—"}
         tone={topGain ? "up" : null}
         sub={
           topGain
             ? topGain.matched
-              ? `${topGain.name} @ ${formatRir(topGain.matched.rir)} RIR`
+              ? `${topGain.name} @ ${formatEffort({ rir: topGain.matched.rir, effortUnit: topGain.matched.effortUnit })}`
               : `${topGain.name} e1RM`
             : "no measured gain in range yet"
         }

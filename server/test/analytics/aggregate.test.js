@@ -302,10 +302,37 @@ describe("aggregateExerciseMetrics", () => {
     expect(bench.bestSet.weight).toBe(110);
     expect(bench.bestSet.reps).toBe(5);
     expect(bench.bestSet.rir).toBe(1);
+    expect(bench.bestSet.rpe).toBeNull();
 
     // Both sessions are at different RIRs (2 then 1), so no bucket reaches
     // 2 sessions -> matched-effort trend honestly degrades to null.
     expect(bench.matchedEffortTrend).toBeNull();
+  });
+
+  test("bestSet carries both rir and rpe for an RPE-logged best set", () => {
+    const sets = [
+      enrichSet({
+        exerciseName: BENCH,
+        weight: 100,
+        reps: 5,
+        rpe: 8,
+        performedAt: "2026-06-02T10:00:00Z",
+      }),
+      enrichSet({
+        exerciseName: BENCH,
+        weight: 110,
+        reps: 5,
+        rpe: 9,
+        performedAt: "2026-06-09T10:00:00Z",
+      }),
+    ];
+
+    const result = aggregateExerciseMetrics(sets, { from, to });
+    const best = result[0].bestSet;
+    expect(best.weight).toBe(110);
+    expect(best.reps).toBe(5);
+    expect(best.rir).toBeNull();
+    expect(best.rpe).toBe(9);
   });
 
   test("matchedEffortTrend is computed per exercise from same-RIR sessions", () => {

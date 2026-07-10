@@ -13,7 +13,9 @@ import { StrengthTrendChart } from "../components/analytics/StrengthTrendChart.j
 import { Meter } from "../components/analytics/Meter.jsx";
 import { BalanceScale } from "../components/analytics/BalanceScale.jsx";
 import { toDateOnlyString } from "../lib/dateOnly.js";
+import { formatEffort } from "../lib/effortDisplay.js";
 import { loadWeightUnit } from "../lib/weightUnitPref.js";
+import { formatEstimate, formatWeight } from "../lib/weightDisplay.js";
 import { buildExecutionVerdict, formatPlanActual, formatPlannedSummary, formatActualSummary } from "../lib/executionVerdict.js";
 
 const RANGE_PRESETS = [
@@ -52,12 +54,6 @@ function rangeForWeeks(weeks) {
   return { from: toDateOnlyString(fromDate), to: toDateOnlyString(today) };
 }
 
-/* Display-only unit label (what the user logs in); read per call so an
-   in-session toggle in the live-log prefs is picked up without a reload. */
-function formatWeight(n) {
-  return `${Number(n).toFixed(1)} ${loadWeightUnit()}`;
-}
-
 function E1rmTrendCell({ trend }) {
   if (!trend || trend.first === null) {
     return <span className="muted small">not enough data</span>;
@@ -69,7 +65,7 @@ function E1rmTrendCell({ trend }) {
   return (
     <span>
       {sign}
-      {formatWeight(Math.abs(trend.delta))}
+      {formatEstimate(Math.abs(trend.delta))}
     </span>
   );
 }
@@ -82,9 +78,10 @@ function MatchedEffortCell({ trend }) {
   return (
     <span>
       {sign}
-      {formatWeight(Math.abs(trend.delta))}{" "}
+      {formatEstimate(Math.abs(trend.delta))}{" "}
       <span className="muted small">
-        @ {trend.rir} RIR · {trend.sessions} sessions
+        @ {formatEffort({ rir: trend.rir, effortUnit: trend.effortUnit })} ·{" "}
+        {trend.sessions} sessions
       </span>
     </span>
   );
@@ -238,7 +235,7 @@ function PerExerciseSection({ perExercise }) {
                   </td>
                   <td>
                     {ex.bestSet && ex.bestSet.e1rm?.epley != null ? (
-                      formatWeight(ex.bestSet.e1rm.epley)
+                      formatEstimate(ex.bestSet.e1rm.epley)
                     ) : (
                       <span className="muted small">not enough data</span>
                     )}
@@ -303,7 +300,7 @@ function EffortDriftCell({ value }) {
   return (
     <span className="exec-drift--off">
       {sign}
-      {Math.abs(value)} RIR{" "}
+      {formatEffort({ rir: Math.abs(value), effortUnit: "rir" })}{" "}
       <span className="muted small">{value > 0 ? "sandbagging" : "overreaching"}</span>
     </span>
   );
@@ -320,7 +317,10 @@ function EffortDriftCompact({ value }) {
     const exact = Math.round(Math.abs(value) * 10) / 10;
     return (
       <span className="exec-drift--on-target muted small">
-        on target{exact > 0 ? ` (${value > 0 ? "+" : "-"}${exact} RIR)` : ""}
+        on target
+        {exact > 0
+          ? ` (${value > 0 ? "+" : "-"}${formatEffort({ rir: exact, effortUnit: "rir" })})`
+          : ""}
       </span>
     );
   }

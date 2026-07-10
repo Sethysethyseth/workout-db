@@ -4,7 +4,8 @@ import * as analyticsApi from "../../api/analyticsApi.js";
 import { useActiveSession } from "../../context/ActiveSessionContext.jsx";
 import { toDateOnlyString } from "../../lib/dateOnly.js";
 import { pickTopGain } from "../../lib/topGain.js";
-import { loadWeightUnit } from "../../lib/weightUnitPref.js";
+import { formatEffort } from "../../lib/effortDisplay.js";
+import { formatEstimate } from "../../lib/weightDisplay.js";
 
 function addDays(date, days) {
   const d = new Date(date);
@@ -60,14 +61,6 @@ function findBestLift(perExercise) {
     }
   }
   return best;
-}
-
-function formatWeight(n) {
-  return `${Number(n).toFixed(1)} ${loadWeightUnit()}`;
-}
-
-function formatRir(r) {
-  return Number.isInteger(r) ? String(r) : r.toFixed(1);
 }
 
 function formatSetCount(n) {
@@ -224,17 +217,17 @@ export function WeeklyReport() {
         />
         <ReportStat
           label="Best lift"
-          value={bestLift ? formatWeight(bestLift.e1rm) : "—"}
+          value={bestLift ? formatEstimate(bestLift.e1rm) : "—"}
           delta={bestLift ? bestLift.name : "not enough data"}
           deltaTone={null}
         />
         <ReportStat
           label="Top gain"
-          value={topGain ? `+${formatWeight(topGain.delta)}` : "—"}
+          value={topGain ? `+${formatEstimate(topGain.delta)}` : "—"}
           delta={
             topGain
               ? topGain.matched
-                ? `${topGain.name} @ ${formatRir(topGain.matched.rir)} RIR`
+                ? `${topGain.name} @ ${formatEffort({ rir: topGain.matched.rir, effortUnit: topGain.matched.effortUnit })}`
                 : `${topGain.name} e1RM`
               : "not enough data"
           }

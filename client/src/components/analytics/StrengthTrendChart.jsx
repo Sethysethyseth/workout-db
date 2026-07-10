@@ -1,4 +1,5 @@
-import { loadWeightUnit } from "../../lib/weightUnitPref.js";
+import { formatEffort } from "../../lib/effortDisplay.js";
+import { formatEstimate } from "../../lib/weightDisplay.js";
 
 /**
  * Sparkline chart: estimated 1RM per session via e1rmSeries. Emphasis form -
@@ -8,22 +9,13 @@ import { loadWeightUnit } from "../../lib/weightUnitPref.js";
  * the drawn line.
  */
 
-/* Display-only unit label (what the user logs in); weights are never converted. */
-function formatWeight(n) {
-  return `${Number(n).toFixed(1)} ${loadWeightUnit()}`;
-}
-
-function formatRir(r) {
-  return Number.isInteger(r) ? String(r) : r.toFixed(1);
-}
-
 function DeltaChip({ delta }) {
   if (delta === 0) return <span className="muted small">no change</span>;
   const up = delta > 0;
   return (
     <span className={`st-delta${up ? " st-delta--up" : ""}`}>
       {up ? "+" : "−"}
-      {formatWeight(Math.abs(delta))}
+      {formatEstimate(Math.abs(delta))}
     </span>
   );
 }
@@ -64,7 +56,7 @@ function SparklinePlot({ series }) {
     return `${xOf(t)},${yOf(p.epley)}`;
   });
 
-  const tip = `${series.length} sessions: e1RM ${formatWeight(first.epley)} → ${formatWeight(last.epley)}`;
+  const tip = `${series.length} sessions: e1RM ${formatEstimate(first.epley)} → ${formatEstimate(last.epley)}`;
 
   return (
     <div
@@ -74,7 +66,7 @@ function SparklinePlot({ series }) {
       data-tip={tip}
     >
       <span className="st-sparkline-val st-sparkline-val--first">
-        {series.length > 1 ? formatWeight(first.epley) : null}
+        {series.length > 1 ? formatEstimate(first.epley) : null}
       </span>
       <svg
         className="st-sparkline-svg"
@@ -102,7 +94,7 @@ function SparklinePlot({ series }) {
           );
         })}
       </svg>
-      <span className="st-sparkline-val st-sparkline-val--last">{formatWeight(last.epley)}</span>
+      <span className="st-sparkline-val st-sparkline-val--last">{formatEstimate(last.epley)}</span>
     </div>
   );
 }
@@ -154,8 +146,8 @@ export function StrengthTrendChart({ perExercise }) {
 
           const tip =
             series.length === 1
-              ? `${ex.name}: e1RM ${formatWeight(series[0].epley)} · 1 session in range`
-              : `${ex.name}: e1RM ${formatWeight(series[0].epley)} → ${formatWeight(series[series.length - 1].epley)} · ${series.length} sessions`;
+              ? `${ex.name}: e1RM ${formatEstimate(series[0].epley)} · 1 session in range`
+              : `${ex.name}: e1RM ${formatEstimate(series[0].epley)} → ${formatEstimate(series[series.length - 1].epley)} · ${series.length} sessions`;
 
           return (
             <div key={ex.exerciseId} className="st-row" aria-label={tip}>
@@ -172,9 +164,12 @@ export function StrengthTrendChart({ perExercise }) {
                   className={`st-matched small${ex.matchedEffortTrend.delta > 0 ? " st-matched--up" : " muted"}`}
                 >
                   matched effort {ex.matchedEffortTrend.delta >= 0 ? "+" : "−"}
-                  {formatWeight(Math.abs(ex.matchedEffortTrend.delta))} @{" "}
-                  {formatRir(ex.matchedEffortTrend.rir)} RIR ·{" "}
-                  {ex.matchedEffortTrend.sessions} sessions
+                  {formatEstimate(Math.abs(ex.matchedEffortTrend.delta))} @{" "}
+                  {formatEffort({
+                    rir: ex.matchedEffortTrend.rir,
+                    effortUnit: ex.matchedEffortTrend.effortUnit,
+                  })}{" "}
+                  · {ex.matchedEffortTrend.sessions} sessions
                 </span>
               ) : null}
               <SparklinePlot series={series} />
