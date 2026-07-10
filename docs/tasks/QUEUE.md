@@ -31,9 +31,16 @@ other AND with N3 - strictly sequential: N4 -> N7 -> N3.
 - QUEUED | n2-headline-stat-rebalance.md | engine topSet + topSetSeries,
   adaptive volume headline, Top set replaces Best lift | dispatch after
   n1 LANDS
-- QUEUED (FABLE-DIRECT) | n5-exercise-detail-endpoint.md | all-time
-  exercise index + detail endpoint + rep-target engine | isolation
-  surface - Fable implements; parallel-safe with n1
+- LANDED c4e3ba8 (FABLE-DIRECT) | n5-exercise-detail-endpoint.md |
+  all-time exercise index + detail endpoint + rep-target engine | built
+  in worktree C:\dev\worktrees\n5 (branch unit/n5-exercise-detail,
+  merged ff); unit lane 153/153 (16 new fixture tests) run fresh in BOTH
+  trees; isolation verified by grep (userId in every findMany where);
+  purity grep clean; routes/controller load-checked. Documented
+  deviations: detail core stats ALL-TIME, from/to bounds only
+  weeklyVolume (default trailing 12w); totals.effectiveSets = attributed
+  count. N3 unblocked on the server side (still waits on n7 for
+  AnalyticsPage)
 - QUEUED (FABLE-DIRECT) | n4-strength-tab-rework.md | strength tab
   progression-first + mock-signed sparkline mark spec | after n2
 - QUEUED (FABLE-DIRECT) | n7-muscles-heatmap.md | binned volume heatmap +

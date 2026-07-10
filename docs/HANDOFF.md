@@ -1,8 +1,14 @@
 # HANDOFF — current state
 
-**Updated:** July 10, 2026 (Fable — N-WAVE SKELETON BUILT: all 7 unit
-blocks authored + queued on new branch `analytics-rebalance-wave`, off
-catalog-fk-wave HEAD `3d4e874` = main + docs + a settings commit).
+**Updated:** July 10, 2026 (Fable — N-WAVE SKELETON BUILT + N5 SHIPPED:
+all 7 unit blocks authored + queued on new branch
+`analytics-rebalance-wave` (off catalog-fk-wave HEAD `3d4e874` = main +
+docs + a settings commit), then N5 implemented Fable-direct same session:
+`c4e3ba8` — exercise index/detail endpoints + rep-target engine, unit
+lane 153/153, isolation+purity greps clean. Built in worktree
+`C:\dev\worktrees\n5` (kept for N4/N7 — reuse it if Cursor holds the main
+tree; branch `unit/n5-exercise-detail` is merged, deletable when Seth
+clears gated deletions).
 - Blocks: `docs/tasks/n{1,2,3,4,5,6,7}-*.md` (see QUEUE.md Active for the
   index). **Filename collision marked:** the June nav-wave's landed
   n1/n2/n3 task files still exist — dispatch by FULL filename only.
