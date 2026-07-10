@@ -28,8 +28,9 @@ live); (2) prod smoke of the exercises tab + new weekly-volume graph;
 back to `main`, verify redeploy SHA. `analytics-rebalance-wave` is now
 fully contained in `main` and is a deletion candidate (gated).
 
-**What's New — DONE this session (`26e04d2`, on staging branch, not yet
-on main).** Seth's standing not-yet-actioned note is closed: the whole
+**What's New — DONE + MERGED TO MAIN (`57b1fc8`, July 10; clean ff
+`8068ffb..57b1fc8`, 3 commits, no migration).** Seth's standing
+not-yet-actioned note is closed: the whole
 What's New surface is now PROD-ONLY via new `client/src/lib/appEnv.js`
 `isProdEnv()` (keys off the API host `workout-db-l3gc`, NOT Vite build
 mode — a staging Vercel build also reads PROD; same doctrine as server
@@ -40,8 +41,10 @@ staging + local dev show no release notes. New release entry
 (non-technical copy, outcomes only); its new id re-fires the modal on
 prod. Build green. **Note: because the surface is prod-only by design,
 there is NOTHING to smoke on staging except confirming it stays HIDDEN;
-the modal itself is first visible on prod after the next main merge +
-deploy.** This commit needs a fresh "push to main" to actually publish.
+the modal is first visible on PROD after this deploy lands — verify the
+"Every exercise, in one place" modal fires there for a logged-in user.**
+`main` and `analytics-rebalance-wave` are now identical (`57b1fc8`) — the
+branch is a clean deletion candidate (gated).
 
 Previous entry (July 10, fifth session, Sonnet — N6 LANDED
 `28efeba`, the LAST N-wave unit: Cursor's delivery audited, committed +
