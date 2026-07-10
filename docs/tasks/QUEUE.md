@@ -76,11 +76,38 @@ other AND with N3 - strictly sequential: N4 -> N7 -> N3.
   colors token-derived; footer link ?view=exercises (muscles fallback
   until n3 - by design). Visual smoke owed to Seth on staging. N7
   unblocked (AnalyticsPage.jsx now free)
-- QUEUED (FABLE-DIRECT) | n7-muscles-heatmap.md | binned volume heatmap +
-  table de-noise + 2W day-granularity preset | UNBLOCKED now that n4
-  landed (shares AnalyticsPage.jsx)
+- LANDED d1b2871 (FABLE-DIRECT) | n7-muscles-heatmap.md | binned volume
+  heatmap + table de-noise + 2W day-granularity preset | unit lane
+  167/167 (5 new fixtures: 14 day cells for a 2W range incl. inclusive
+  range-end cell + per-week averages preserved, weekly-unchanged at 28d,
+  granularity rule day<=14d/week>14d, summary day-mirror + meta key) +
+  client build re-run fresh after all edits. Ramp validated with the
+  dataviz ordinal validator for ALL TEN palette x mode combos (block
+  asked for 8; chill exists too): shared light P 51/66/81/100 and dark P
+  40/60/80/100 vs surface-2 all PASS (light-end contrast 2.01-2.94:1,
+  all gaps >= 0.06, single hue); iron light is unfixable by P constants
+  (raw amber = 2.12:1 ceiling on its near-white card, total dL span <
+  3 gaps) so its ramp anchors DOWN toward --color-text (accent
+  100/74/49/25) - PASSES (gaps >= 0.13, hue spread 6deg), same relief
+  precedent as the index.css chart-emphasis note. Empty cell = border-
+  token neutral, legend-keyed "not trained", not ramp step 1. In-scope
+  fix: rangeForWeeks now spans exactly N*7 calendar days inclusive
+  (before this the end-of-day `to` produced a 5th mostly-empty weekly
+  bucket on a "4 weeks" chip and would have made 2W = 15 day cells,
+  violating the 14-cell criterion). perMuscle series keys renamed
+  periodStart/periodEnd (only consumer was the replaced Trend
+  component). Two documented deviations outside FILES TO TOUCH, both
+  export wiring: analytics/index.js re-exports the new helpers;
+  StatTiles.jsx gains ONE export keyword so
+  EFFORT_COVERAGE_HEADLINE_THRESHOLD stays single-definition (N2's
+  landed criterion) instead of being duplicated. Day cells are hover-
+  enhancement only (no focus targets), weekly cells keep per-cell
+  focus + aria labels; execution table's unlock cells deliberately
+  untouched (this block de-noised the muscles table only). Visual smoke
+  owed to Seth on staging. N3 unblocked (n5 + n7 both landed)
 - QUEUED | n3-exercises-tab-shell.md | 4th tab: all-time lookup + inline
-  detail with rep-target hero | do NOT dispatch before n5 AND n7 land
+  detail with rep-target hero | UNBLOCKED (n5 and n7 both landed) -
+  ready for Cursor dispatch
 - QUEUED | n6-frontier-polish.md | two-variant empty state, range
   persistence, KPI tap-through | LAST - do not dispatch before n3 lands
 
