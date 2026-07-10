@@ -17,6 +17,8 @@ const {
   aggregateExerciseMetrics,
   computeBalanceRatios,
   computeWeeksInRange,
+  computeDaysInRange,
+  seriesGranularityForRange,
   filterInRange,
   toDate,
 } = require("./aggregate");
@@ -45,6 +47,8 @@ module.exports = {
   aggregateExerciseMetrics,
   computeBalanceRatios,
   computeWeeksInRange,
+  computeDaysInRange,
+  seriesGranularityForRange,
   filterInRange,
   toDate,
   buildSummary,

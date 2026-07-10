@@ -8,8 +8,10 @@ import { pickTopGain } from "../../lib/topGain.js";
 import { formatEffort } from "../../lib/effortDisplay.js";
 import { formatEstimate, formatWeight } from "../../lib/weightDisplay.js";
 
-/** When effort coverage clears this, stimulating sets lead the volume pair. */
-const EFFORT_COVERAGE_HEADLINE_THRESHOLD = 0.6;
+/** When effort coverage clears this, stimulating sets lead the volume pair.
+    Exported so the muscles heatmap reuses the SAME adaptive rule (single
+    definition - an N2 acceptance criterion). */
+export const EFFORT_COVERAGE_HEADLINE_THRESHOLD = 0.6;
 
 function StatTile({ label, value, sub, tone = null }) {
   return (

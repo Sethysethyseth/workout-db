@@ -4,6 +4,7 @@ const {
   aggregateExerciseMetrics,
   computeBalanceRatios,
   computeWeeksInRange,
+  seriesGranularityForRange,
 } = require("../../src/analytics");
 
 const BENCH = "Barbell Bench Press - Medium Grip";
@@ -37,6 +38,26 @@ describe("computeWeeksInRange", () => {
     expect(
       computeWeeksInRange("2026-06-08T00:00:00Z", "2026-06-01T00:00:00Z")
     ).toBe(1);
+  });
+});
+
+describe("seriesGranularityForRange", () => {
+  test("14 days or less -> day", () => {
+    expect(
+      seriesGranularityForRange("2026-01-01T00:00:00Z", "2026-01-15T00:00:00Z")
+    ).toBe("day");
+    expect(
+      seriesGranularityForRange("2026-01-01T00:00:00Z", "2026-01-08T00:00:00Z")
+    ).toBe("day");
+  });
+
+  test("more than 14 days -> week", () => {
+    expect(
+      seriesGranularityForRange("2026-01-01T00:00:00Z", "2026-01-16T00:00:00Z")
+    ).toBe("week");
+    expect(
+      seriesGranularityForRange("2026-01-01T00:00:00Z", "2026-01-29T00:00:00Z")
+    ).toBe("week");
   });
 });
 
@@ -199,10 +220,10 @@ describe("aggregateMuscleVolume", () => {
       chest.series[0].effectiveSets * 2,
       2
     );
-    expect(chest.series[0].weekStart.toISOString()).toBe(
+    expect(chest.series[0].periodStart.toISOString()).toBe(
       "2026-01-01T00:00:00.000Z"
     );
-    expect(chest.series[1].weekEnd.toISOString()).toBe(
+    expect(chest.series[1].periodEnd.toISOString()).toBe(
       "2026-01-15T00:00:00.000Z"
     );
   });
@@ -225,11 +246,70 @@ describe("aggregateMuscleVolume", () => {
     const chest = result.find((r) => r.muscle === "chest");
     expect(chest.series[0].effectiveSets).toBeGreaterThan(0);
     expect(chest.series[1]).toEqual({
-      weekStart: new Date("2026-01-08T00:00:00.000Z"),
-      weekEnd: new Date("2026-01-15T00:00:00.000Z"),
+      periodStart: new Date("2026-01-08T00:00:00.000Z"),
+      periodEnd: new Date("2026-01-15T00:00:00.000Z"),
       effectiveSets: 0,
       stimulatingSets: null,
     });
+  });
+
+  test("day granularity: 2-week range yields 14 day cells with per-day buckets", () => {
+    const from = "2026-01-01T00:00:00Z";
+    const to = "2026-01-15T00:00:00Z"; // 14 days
+    const sets = [
+      enrichSet({
+        exerciseName: BENCH,
+        weight: 100,
+        reps: 5,
+        rir: 2,
+        performedAt: "2026-01-03T10:00:00Z", // day cell 2
+      }),
+      enrichSet({
+        exerciseName: BENCH,
+        weight: 100,
+        reps: 5,
+        rir: 2,
+        performedAt: to, // exact range end -> inclusive last cell
+      }),
+    ];
+
+    const result = aggregateMuscleVolume(sets, { from, to, granularity: "day" });
+    const chest = result.find((r) => r.muscle === "chest");
+    expect(chest.series).toHaveLength(14);
+    expect(chest.series[2].periodStart).toEqual(
+      new Date("2026-01-03T00:00:00.000Z")
+    );
+    expect(chest.series[2].periodEnd).toEqual(
+      new Date("2026-01-04T00:00:00.000Z")
+    );
+    expect(chest.series[2].effectiveSets).toBeGreaterThan(0);
+    expect(chest.series[13].effectiveSets).toBeGreaterThan(0);
+    // Every other day cell is empty.
+    const nonEmpty = chest.series.filter((d) => d.effectiveSets > 0);
+    expect(nonEmpty).toHaveLength(2);
+    // Averages keep the per-WEEK denominator even in day mode.
+    const round2 = (n) => Math.round(n * 100) / 100;
+    expect(chest.effectiveSets).toBe(round2((benchMuscles.chest * 2) / 2));
+  });
+
+  test("day granularity leaves weekly series unchanged when not requested", () => {
+    const from = "2026-01-01T00:00:00Z";
+    const to = "2026-01-29T00:00:00Z"; // 28 days -> 4 weekly buckets
+    const sets = [
+      enrichSet({
+        exerciseName: BENCH,
+        weight: 100,
+        reps: 5,
+        rir: 2,
+        performedAt: "2026-01-02T10:00:00Z",
+      }),
+    ];
+    const result = aggregateMuscleVolume(sets, { from, to });
+    const chest = result.find((r) => r.muscle === "chest");
+    expect(chest.series).toHaveLength(4);
+    expect(chest.series[0].periodEnd.getTime() - chest.series[0].periodStart.getTime()).toBe(
+      7 * 24 * 60 * 60 * 1000
+    );
   });
 
   test("series effectiveSets sum equals effectiveSets * weeks within rounding", () => {

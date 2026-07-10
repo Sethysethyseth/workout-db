@@ -25,6 +25,22 @@ function computeWeeksInRange(from, to) {
   return Math.max(1, Math.ceil((toDate_ - fromDate) / MS_PER_WEEK));
 }
 
+function computeDaysInRange(from, to) {
+  const fromDate = toDate(from);
+  const toDate_ = toDate(to);
+  return Math.max(1, Math.ceil((toDate_ - fromDate) / MS_PER_DAY));
+}
+
+// Series granularity DERIVES FROM THE RANGE - never a second knob (custom
+// bucket lengths were rejected July 9: "sets per 10 days" is a number no
+// lifter can benchmark). Short ranges show the actual training rhythm day
+// by day; sets/week stays the only volume denominator everywhere.
+const DAY_SERIES_MAX_DAYS = 14;
+
+function seriesGranularityForRange(from, to) {
+  return computeDaysInRange(from, to) <= DAY_SERIES_MAX_DAYS ? "day" : "week";
+}
+
 function filterInRange(enrichedSets, { from, to }) {
   const fromMs = toDate(from).getTime();
   const toMs = toDate(to).getTime();
@@ -34,32 +50,38 @@ function filterInRange(enrichedSets, { from, to }) {
   });
 }
 
-function getWeekBucketIndex(performedMs, toMs, weeks) {
-  for (let k = 0; k < weeks; k++) {
-    const weekStart = toMs - (weeks - k) * MS_PER_WEEK;
-    const weekEnd = toMs - (weeks - k - 1) * MS_PER_WEEK;
-    if (k === weeks - 1) {
-      if (performedMs >= weekStart && performedMs <= weekEnd) return k;
-    } else if (performedMs >= weekStart && performedMs < weekEnd) {
+// Buckets are anchored at the range end and walk backwards; the last bucket
+// is inclusive of `to` so a set logged at the exact range end still counts.
+function getBucketIndex(performedMs, toMs, count, bucketMs) {
+  for (let k = 0; k < count; k++) {
+    const bucketStart = toMs - (count - k) * bucketMs;
+    const bucketEnd = toMs - (count - k - 1) * bucketMs;
+    if (k === count - 1) {
+      if (performedMs >= bucketStart && performedMs <= bucketEnd) return k;
+    } else if (performedMs >= bucketStart && performedMs < bucketEnd) {
       return k;
     }
   }
   return null;
 }
 
-function emptyWeekBucket() {
+function emptyBucket() {
   return { effectiveSetsTotal: 0, stimulatingSetsTotal: 0, hasRirData: false };
 }
 
-function aggregateMuscleVolume(enrichedSets, { from, to }) {
+function aggregateMuscleVolume(enrichedSets, { from, to, granularity = "week" }) {
   const fromDate = toDate(from);
   const toDate_ = toDate(to);
   const toMs = toDate_.getTime();
 
   const inRange = filterInRange(enrichedSets, { from: fromDate, to: toDate_ });
 
-  // muscle -> accumulator
+  // muscle -> accumulator. Averages ALWAYS divide by weeks (sets/week is the
+  // only volume denominator anywhere); granularity only shapes the series.
   const weeks = computeWeeksInRange(fromDate, toDate_);
+  const bucketMs = granularity === "day" ? MS_PER_DAY : MS_PER_WEEK;
+  const bucketCount =
+    granularity === "day" ? computeDaysInRange(fromDate, toDate_) : weeks;
 
   const acc = new Map();
   const getAcc = (muscle) => {
@@ -71,7 +93,7 @@ function aggregateMuscleVolume(enrichedSets, { from, to }) {
         hasRirData: false,
         sessions: new Set(),
         lastPerformedMs: null,
-        weekBuckets: Array.from({ length: weeks }, emptyWeekBucket),
+        buckets: Array.from({ length: bucketCount }, emptyBucket),
       };
       acc.set(muscle, a);
     }
@@ -83,7 +105,7 @@ function aggregateMuscleVolume(enrichedSets, { from, to }) {
     if (!eff) continue;
     const stim = set.metrics.stimulatingContribution;
     const performedMs = set.performedAt.getTime();
-    const bucketIdx = getWeekBucketIndex(performedMs, toMs, weeks);
+    const bucketIdx = getBucketIndex(performedMs, toMs, bucketCount, bucketMs);
 
     for (const [muscle, fraction] of Object.entries(eff)) {
       if (!fraction) continue; // nonzero fractions only
@@ -98,7 +120,7 @@ function aggregateMuscleVolume(enrichedSets, { from, to }) {
         a.hasRirData = true;
       }
       if (bucketIdx !== null) {
-        const bucket = a.weekBuckets[bucketIdx];
+        const bucket = a.buckets[bucketIdx];
         bucket.effectiveSetsTotal += fraction;
         if (stim !== null) {
           bucket.stimulatingSetsTotal += stim[muscle];
@@ -118,9 +140,9 @@ function aggregateMuscleVolume(enrichedSets, { from, to }) {
         : null,
       frequency: round2(a.sessions.size / weeks),
       daysSinceLast: Math.round((toMs - a.lastPerformedMs) / MS_PER_DAY),
-      series: a.weekBuckets.map((bucket, k) => ({
-        weekStart: new Date(toMs - (weeks - k) * MS_PER_WEEK),
-        weekEnd: new Date(toMs - (weeks - k - 1) * MS_PER_WEEK),
+      series: a.buckets.map((bucket, k) => ({
+        periodStart: new Date(toMs - (bucketCount - k) * bucketMs),
+        periodEnd: new Date(toMs - (bucketCount - k - 1) * bucketMs),
         effectiveSets: round2(bucket.effectiveSetsTotal),
         stimulatingSets: bucket.hasRirData
           ? round2(bucket.stimulatingSetsTotal)
@@ -286,6 +308,9 @@ function computeBalanceRatios(perMuscle) {
 
 module.exports = {
   computeWeeksInRange,
+  computeDaysInRange,
+  seriesGranularityForRange,
+  DAY_SERIES_MAX_DAYS,
   aggregateMuscleVolume,
   aggregateExerciseMetrics,
   computeBalanceRatios,

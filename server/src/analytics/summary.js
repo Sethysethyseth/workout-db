@@ -1,5 +1,6 @@
 const {
   computeWeeksInRange,
+  seriesGranularityForRange,
   aggregateMuscleVolume,
   aggregateExerciseMetrics,
   computeBalanceRatios,
@@ -19,16 +20,21 @@ const HONESTY_PR_DETECTION =
 
 function buildSummary(enrichedSets, { from, to, planLookup, userExercises }) {
   const weeks = computeWeeksInRange(from, to);
-  const perMuscle = aggregateMuscleVolume(enrichedSets, { from, to }).map(
-    (row) => ({
-      ...row,
-      series: row.series.map((w) => ({
-        ...w,
-        weekStart: w.weekStart.toISOString(),
-        weekEnd: w.weekEnd.toISOString(),
-      })),
-    })
-  );
+  // Granularity derives from the range (<= 14 days -> day cells), never a
+  // second knob. Averages stay per-week regardless.
+  const seriesGranularity = seriesGranularityForRange(from, to);
+  const perMuscle = aggregateMuscleVolume(enrichedSets, {
+    from,
+    to,
+    granularity: seriesGranularity,
+  }).map((row) => ({
+    ...row,
+    series: row.series.map((p) => ({
+      ...p,
+      periodStart: p.periodStart.toISOString(),
+      periodEnd: p.periodEnd.toISOString(),
+    })),
+  }));
 
   const perExercisePartial = aggregateExerciseMetrics(enrichedSets, {
     from,
@@ -107,7 +113,7 @@ function buildSummary(enrichedSets, { from, to, planLookup, userExercises }) {
     prs: [],
     balance,
     execution,
-    meta: { effortCoverage, honestyNotes },
+    meta: { effortCoverage, seriesGranularity, honestyNotes },
   };
 }
 

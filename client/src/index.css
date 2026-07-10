@@ -5403,6 +5403,28 @@ html[data-theme="dark"] .auth-page .auth-form.card {
   text-transform: capitalize;
 }
 
+/* De-noised volume table: numerals scan as columns (right-aligned, tabular
+   figures); locked cells are an em-dash with ONE footnote under the table;
+   a muscle untrained past the stale threshold wears the warn tint. */
+.analytics-volume-table th.num,
+.analytics-volume-table td.num {
+  text-align: right;
+}
+
+.analytics-volume-table td.num {
+  font-variant-numeric: tabular-nums;
+}
+
+.analytics-stale {
+  color: var(--color-warn-text);
+  font-weight: 600;
+}
+
+.analytics-table-footnote {
+  margin: 0;
+  padding: 8px 14px 12px;
+}
+
 /* Graceful-degradation tier: quiet unlock hint, deliberately NOT an error. */
 .analytics-unlock {
   color: var(--color-text-secondary);
@@ -5721,23 +5743,88 @@ html[data-theme="dark"] .auth-page .auth-form.card {
   white-space: nowrap;
 }
 
-/* -- Muscle volume trend (weekly small multiples) -- */
+/* -- Muscle volume heatmap (Trend view) --
+   Ordinal 4-step ramp derived tokens-only from the palette accent. The
+   per-mode mix constants below were validated with the dataviz ordinal
+   checks (monotone L, adjacent dL >= 0.06, light end >= 2:1 on the card
+   surface, single hue) for EVERY palette x mode; iron light is the one
+   accent that can never pass against its near-white surface (the raw
+   amber is barely 2.1:1), so its ramp anchors DOWN toward text ink
+   instead - raw accent as the lightest step, bronze as the darkest.
+   Empty cell is a faint neutral off the border token, deliberately NOT
+   ramp step 1: "didn't train" must never read as "trained a little." */
 
-.mvt-rows {
-  display: grid;
-  gap: 7px;
+.analytics-page {
+  --hm-step-1: color-mix(in srgb, var(--chart-accent) 51%, var(--color-surface-2));
+  --hm-step-2: color-mix(in srgb, var(--chart-accent) 66%, var(--color-surface-2));
+  --hm-step-3: color-mix(in srgb, var(--chart-accent) 81%, var(--color-surface-2));
+  --hm-step-4: var(--chart-accent);
+  --hm-empty: color-mix(in srgb, var(--color-border) 38%, transparent);
 }
 
-/* Third column reserves fixed room for the last-week value on every row so
-   the week grids stay horizontally aligned across the small multiples. */
-.mvt-row {
+html[data-theme="dark"] .analytics-page {
+  --hm-step-1: color-mix(in srgb, var(--chart-accent) 40%, var(--color-surface-2));
+  --hm-step-2: color-mix(in srgb, var(--chart-accent) 60%, var(--color-surface-2));
+  --hm-step-3: color-mix(in srgb, var(--chart-accent) 80%, var(--color-surface-2));
+  --hm-step-4: var(--chart-accent);
+}
+
+html[data-palette="iron"] .analytics-page {
+  --hm-step-1: var(--chart-accent);
+  --hm-step-2: color-mix(in srgb, var(--chart-accent) 74%, var(--color-text));
+  --hm-step-3: color-mix(in srgb, var(--chart-accent) 49%, var(--color-text));
+  --hm-step-4: color-mix(in srgb, var(--chart-accent) 25%, var(--color-text));
+}
+
+/* Iron dark passes on the shared surface formula - restore it. */
+html[data-theme="dark"][data-palette="iron"] .analytics-page {
+  --hm-step-1: color-mix(in srgb, var(--chart-accent) 40%, var(--color-surface-2));
+  --hm-step-2: color-mix(in srgb, var(--chart-accent) 60%, var(--color-surface-2));
+  --hm-step-3: color-mix(in srgb, var(--chart-accent) 80%, var(--color-surface-2));
+  --hm-step-4: var(--chart-accent);
+}
+
+.hm-legend {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.hm-legend-empty {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.hm-cellkey {
+  width: 14px;
+  height: 10px;
+  border-radius: 3px;
+  display: inline-block;
+}
+
+.hm-rows {
   display: grid;
-  grid-template-columns: minmax(74px, 108px) 1fr 34px;
-  align-items: end;
+  gap: 4px;
+}
+
+/* Third column reserves fixed room for the avg/wk value on every row so the
+   cell grids stay horizontally aligned (same idiom as the old multiples). */
+.hm-row {
+  display: grid;
+  grid-template-columns: minmax(74px, 108px) 1fr 36px;
+  align-items: center;
   gap: 10px;
 }
 
-.mvt-name {
+.hm-head-row,
+.hm-x-caption {
+  align-items: baseline;
+}
+
+.hm-name {
   font-size: 13px;
   font-weight: 600;
   text-transform: capitalize;
@@ -5746,58 +5833,65 @@ html[data-theme="dark"] .auth-page .auth-form.card {
   white-space: nowrap;
 }
 
-.mvt-cols {
+.hm-cells {
   display: grid;
-  gap: 2px;
-  align-items: end;
+  gap: 3px;
 }
 
-.mvt-col {
+.hm-cell {
+  height: 21px;
+  border-radius: 4px;
   min-width: 0;
 }
 
-.mvt-col-track {
-  position: relative;
-  height: 48px;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
+/* Day cells (14 columns at the 2W range) are smaller and are not focus
+   targets - their tips are a desktop hover enhancement; the avg column and
+   the Table twin carry every value. */
+.hm-cells--day .hm-cell {
+  height: 13px;
+  border-radius: 3px;
 }
 
-.mvt-bar {
-  border-radius: 4px 4px 0 0;
-  min-height: 0;
+.hm-cell--0,
+.hm-cellkey--0 {
+  background: var(--hm-empty);
 }
 
-.mvt-bar--effective {
-  width: 100%;
-  background: var(--chart-context);
+.hm-cell--1,
+.hm-cellkey--1 {
+  background: var(--hm-step-1);
 }
 
-.mvt-bar--stimulating {
-  position: absolute;
-  bottom: 0;
-  width: 55%;
-  background: var(--chart-accent);
+.hm-cell--2,
+.hm-cellkey--2 {
+  background: var(--hm-step-2);
 }
 
-.mvt-val {
-  align-self: end;
-  padding-bottom: 1px;
+.hm-cell--3,
+.hm-cellkey--3 {
+  background: var(--hm-step-3);
+}
+
+.hm-cell--4,
+.hm-cellkey--4 {
+  background: var(--hm-step-4);
+}
+
+.hm-avg,
+.hm-avg-head {
   font-size: 11px;
-  line-height: 1.2;
+  text-align: right;
   font-variant-numeric: tabular-nums;
-  color: var(--color-text-secondary);
   white-space: nowrap;
 }
 
-.mvt-x-caption {
-  display: grid;
-  grid-template-columns: minmax(74px, 108px) 1fr 34px;
-  gap: 10px;
+.hm-avg-head {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
-.mvt-x-labels {
+.hm-x-labels {
   justify-content: space-between;
 }
 
@@ -6113,7 +6207,6 @@ html[data-theme="dark"] .auth-page .auth-form.card {
 /* Restrained entrance: bars/fills grow once, ~180ms ease-out. */
 @media (prefers-reduced-motion: no-preference) {
   .mv-bar,
-  .mvt-bar,
   .meter-fill,
   .balance-fill {
     animation: chart-grow var(--motion-base) var(--ease-standard);

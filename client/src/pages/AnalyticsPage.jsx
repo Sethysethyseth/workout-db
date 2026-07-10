@@ -8,7 +8,7 @@ import { ChartTableToggle } from "../components/analytics/ChartTableToggle.jsx";
 import { AnalyticsViewTabs } from "../components/analytics/AnalyticsViewTabs.jsx";
 import { StatTiles } from "../components/analytics/StatTiles.jsx";
 import { MuscleVolumeChart } from "../components/analytics/MuscleVolumeChart.jsx";
-import { MuscleVolumeTrend } from "../components/analytics/MuscleVolumeTrend.jsx";
+import { MuscleVolumeHeatmap } from "../components/analytics/MuscleVolumeHeatmap.jsx";
 import { StrengthTrendChart } from "../components/analytics/StrengthTrendChart.jsx";
 import { Meter } from "../components/analytics/Meter.jsx";
 import { BalanceScale } from "../components/analytics/BalanceScale.jsx";
@@ -19,10 +19,16 @@ import { formatEstimate, formatWeight } from "../lib/weightDisplay.js";
 import { buildExecutionVerdict, formatPlanActual, formatPlannedSummary, formatActualSummary } from "../lib/executionVerdict.js";
 
 const RANGE_PRESETS = [
+  { weeks: 2, label: "2 weeks" },
   { weeks: 4, label: "4 weeks" },
   { weeks: 8, label: "8 weeks" },
   { weeks: 12, label: "12 weeks" },
 ];
+
+/** A muscle untrained this many days gets the warn tint in the volume
+    table - two missed weekly slots, deliberately lenient enough not to
+    punish a 10-day rotation. */
+const STALE_MUSCLE_DAYS = 14;
 
 const ANALYTICS_VIEWS = ["muscles", "strength", "execution"];
 
@@ -44,11 +50,14 @@ const HOW_EXECUTION =
 const HOW_BALANCE =
   "Push vs. pull and quad vs. hamstring ratios use effective sets summed over the engine's muscle groups (push: chest, shoulders, triceps; pull: lats, middle back, traps, biceps; quads and hamstrings each stand alone). The shaded band is a rough 0.8–1.25 guide, not a prescription.";
 
-/** to = today (date-only; the endpoint treats it as inclusive end-of-day), from = to minus N*7 days. */
+/** to = today (date-only; the endpoint treats it as inclusive end-of-day),
+    from = to minus (N*7 - 1) days so the range covers exactly N*7 calendar
+    days INCLUDING today - "2 weeks" is 14 day cells, "4 weeks" is 4 week
+    buckets, with no partial extra bucket at the range start. */
 function rangeForWeeks(weeks) {
   const today = new Date();
   const fromDate = new Date(today);
-  fromDate.setDate(fromDate.getDate() - weeks * 7);
+  fromDate.setDate(fromDate.getDate() - (weeks * 7 - 1));
   return { from: toDateOnlyString(fromDate), to: toDateOnlyString(today) };
 }
 
@@ -126,8 +135,9 @@ function ChartCardHead({ title, cardName, sub, view, onViewChange, toggleOptions
   );
 }
 
-function PerMuscleSection({ perMuscle }) {
+function PerMuscleSection({ perMuscle, granularity, effortCoverage }) {
   const [view, setView] = useState("chart");
+  const anyLocked = perMuscle.some((m) => m.stimulatingSets === null);
   return (
     <section className="card analytics-table-card">
       <ChartCardHead
@@ -151,45 +161,54 @@ function PerMuscleSection({ perMuscle }) {
         </div>
       ) : view === "trend" ? (
         <div className="analytics-chart-body">
-          <MuscleVolumeTrend perMuscle={perMuscle} />
+          <MuscleVolumeHeatmap
+            perMuscle={perMuscle}
+            granularity={granularity}
+            effortCoverage={effortCoverage}
+          />
         </div>
       ) : (
-        <div className="table-scroll">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th scope="col">Muscle</th>
-                <th scope="col">
-                  <span>Effective sets/wk</span>{" "}
-                  <HowCalculatedButton title="Effective sets/wk" copy={HOW_EFFECTIVE_SETS} />
-                </th>
-                <th scope="col">
-                  <span>Stimulating sets/wk</span>{" "}
-                  <HowCalculatedButton title="Stimulating sets/wk" copy={HOW_STIMULATING_SETS} />
-                </th>
-                <th scope="col">Sessions/wk</th>
-                <th scope="col">Last trained</th>
-              </tr>
-            </thead>
-            <tbody>
-              {perMuscle.map((m) => (
-                <tr key={m.muscle}>
-                  <td className="analytics-muscle-name">{m.muscle}</td>
-                  <td>{m.effectiveSets}</td>
-                  <td>
-                    {m.stimulatingSets === null ? (
-                      <span className="analytics-unlock">log RIR or RPE to unlock</span>
-                    ) : (
-                      m.stimulatingSets
-                    )}
-                  </td>
-                  <td>{m.frequency}</td>
-                  <td>{m.daysSinceLast}d ago</td>
+        <>
+          <div className="table-scroll">
+            <table className="data-table analytics-volume-table">
+              <thead>
+                <tr>
+                  <th scope="col">Muscle</th>
+                  <th scope="col" className="num">Effective/wk</th>
+                  <th scope="col" className="num">Stimulating/wk</th>
+                  <th scope="col" className="num">Sessions/wk</th>
+                  <th scope="col" className="num">Last trained</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {perMuscle.map((m) => (
+                  <tr key={m.muscle}>
+                    <td className="analytics-muscle-name">{m.muscle}</td>
+                    <td className="num">{m.effectiveSets}</td>
+                    <td className="num">
+                      {m.stimulatingSets === null ? (
+                        <span className="muted">—</span>
+                      ) : (
+                        m.stimulatingSets
+                      )}
+                    </td>
+                    <td className="num">{m.frequency}</td>
+                    <td
+                      className={`num${m.daysSinceLast >= STALE_MUSCLE_DAYS ? " analytics-stale" : ""}`}
+                    >
+                      {m.daysSinceLast}d
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {anyLocked ? (
+            <p className="muted small analytics-table-footnote">
+              — stimulating needs RIR or RPE logged for that muscle.
+            </p>
+          ) : null}
+        </>
       )}
     </section>
   );
@@ -558,7 +577,11 @@ export function AnalyticsPage() {
             <AnalyticsViewTabs value={view} onChange={setView} />
             {view === "muscles" ? (
               <>
-                <PerMuscleSection perMuscle={summary.perMuscle} />
+                <PerMuscleSection
+                  perMuscle={summary.perMuscle}
+                  granularity={summary.meta?.seriesGranularity}
+                  effortCoverage={summary.meta?.effortCoverage}
+                />
                 <BalanceSection balance={summary.balance} />
               </>
             ) : null}

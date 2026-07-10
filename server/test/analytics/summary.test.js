@@ -52,17 +52,32 @@ describe("buildSummary", () => {
   test("perMuscle matches a direct aggregateMuscleVolume call with ISO series dates", () => {
     const fixtures = resolvedFixtures();
     const summary = buildSummary(fixtures, { from, to });
-    const raw = aggregateMuscleVolume(fixtures, { from, to });
+    // The 14-day fixture range derives day granularity - mirror it.
+    const raw = aggregateMuscleVolume(fixtures, { from, to, granularity: "day" });
     expect(summary.perMuscle).toEqual(
       raw.map((row) => ({
         ...row,
-        series: row.series.map((w) => ({
-          ...w,
-          weekStart: w.weekStart.toISOString(),
-          weekEnd: w.weekEnd.toISOString(),
+        series: row.series.map((p) => ({
+          ...p,
+          periodStart: p.periodStart.toISOString(),
+          periodEnd: p.periodEnd.toISOString(),
         })),
       }))
     );
+  });
+
+  test("meta.seriesGranularity derives from the range: 14 days day, longer week", () => {
+    const fixtures = resolvedFixtures();
+    const shortSummary = buildSummary(fixtures, { from, to }); // 14 days
+    expect(shortSummary.meta.seriesGranularity).toBe("day");
+    expect(shortSummary.perMuscle[0].series).toHaveLength(14);
+
+    const longSummary = buildSummary(fixtures, {
+      from: "2026-05-18T00:00:00Z",
+      to, // 28 days
+    });
+    expect(longSummary.meta.seriesGranularity).toBe("week");
+    expect(longSummary.perMuscle[0].series).toHaveLength(4);
   });
 
   test("perExercise bestSet.performedAt is an ISO string, not a Date", () => {
@@ -168,6 +183,7 @@ describe("buildSummary", () => {
     expect(Object.keys(summary.meta).sort()).toEqual([
       "effortCoverage",
       "honestyNotes",
+      "seriesGranularity",
     ]);
   });
 
@@ -198,9 +214,9 @@ describe("buildSummary", () => {
     const summary = buildSummary(resolvedFixtures(), { from, to });
     for (const row of summary.perMuscle) {
       expect(collectDates(row.series)).toEqual([]);
-      for (const w of row.series) {
-        expect(typeof w.weekStart).toBe("string");
-        expect(typeof w.weekEnd).toBe("string");
+      for (const p of row.series) {
+        expect(typeof p.periodStart).toBe("string");
+        expect(typeof p.periodEnd).toBe("string");
       }
     }
     for (const entry of summary.perExercise) {
