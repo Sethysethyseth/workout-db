@@ -1,18 +1,22 @@
 import { useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { WhatsNewContent } from "../../components/whatsnew/WhatsNewContent.jsx";
 import { LATEST_RELEASE, RELEASES } from "../../data/whatsNew.js";
 import { saveLastSeenRelease } from "../../lib/whatsNewStorage.js";
+import { isProdEnv } from "../../lib/appEnv.js";
 
 /**
  * Profile > What's new: the full release-notes archive, newest first.
  * Visiting it counts as having seen the latest release, so the modal
- * doesn't re-fire afterward.
+ * doesn't re-fire afterward. Prod-only, same as the modal - redirects to
+ * Profile on staging/local dev.
  */
 export function WhatsNewPage() {
   useEffect(() => {
-    if (LATEST_RELEASE) saveLastSeenRelease(LATEST_RELEASE.id);
+    if (isProdEnv() && LATEST_RELEASE) saveLastSeenRelease(LATEST_RELEASE.id);
   }, []);
+
+  if (!isProdEnv()) return <Navigate to="/profile" replace />;
 
   return (
     <div className="settings-page whats-new-page stack">

@@ -8,12 +8,37 @@
  * is the release date as YYYY-MM-DD (rendered via formatReleaseDate).
  *
  * Copy is display-layer: say "LogChamp" in text. Identifiers/keys keep the
- * workoutdb- prefix (rename boundary - see AGENTS.md).
+ * workoutdb- prefix (rename boundary - see AGENTS.md). Keep copy
+ * non-technical - user-facing outcomes, no internal metric names.
  *
- * NOTE: the entry below is DRAFT copy for the upcoming logging-ux-wave /
- * ui-nav-overhaul merge train. Seth finalizes wording + date at merge time.
+ * The modal + archive page are PROD-ONLY (gated via isProdEnv); publishing
+ * a release still just means prepend an entry here and merge to main.
  */
 export const RELEASES = [
+  {
+    id: "2026-07-exercises-tab",
+    date: "2026-07-10",
+    title: "Every exercise, in one place",
+    tagline: "Look up any lift and see how it's really going.",
+    sections: [
+      {
+        heading: "New Exercises tab",
+        items: [
+          "Search any exercise you've logged and open its own page.",
+          "Working-weight targets for any rep goal - what to load for a heavy triple, a set of eight, and everything between.",
+          "Your best sets, week-by-week volume, and how your strength is trending, together in one view.",
+        ],
+      },
+      {
+        heading: "Sharper analytics",
+        items: [
+          "Strength now leads with your progress on each lift's top set, session over session.",
+          "Volume by muscle reads at a glance with a new color-graded heatmap.",
+          "Your headline numbers highlight what actually moved - your biggest set and your biggest gain.",
+        ],
+      },
+    ],
+  },
   {
     id: "2026-07-logging-analytics",
     date: "2026-07-05",

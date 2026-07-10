@@ -5,6 +5,7 @@ import { useActiveSession } from "../context/ActiveSessionContext.jsx";
 import { ApiError } from "../api/http.js";
 import { ErrorMessage } from "../components/ErrorMessage.jsx";
 import { canReviewFeedback } from "../lib/reviewerEmails.js";
+import { isProdEnv } from "../lib/appEnv.js";
 import { countCompleted, countThisWeek, weekStreak } from "../lib/profileStats.js";
 
 function getInitials(user) {
@@ -129,14 +130,16 @@ export function ProfilePage() {
               ›
             </span>
           </Link>
-          <Link className="settings-row settings-row--link" to="/profile/whats-new">
-            <span className="settings-row__main">
-              <span className="settings-row__value">What&apos;s new</span>
-            </span>
-            <span className="settings-row__chevron" aria-hidden="true">
-              ›
-            </span>
-          </Link>
+          {isProdEnv() ? (
+            <Link className="settings-row settings-row--link" to="/profile/whats-new">
+              <span className="settings-row__main">
+                <span className="settings-row__value">What&apos;s new</span>
+              </span>
+              <span className="settings-row__chevron" aria-hidden="true">
+                ›
+              </span>
+            </Link>
+          ) : null}
           {showDevFeedback ? (
             <Link className="settings-row settings-row--link" to="/dev/feedback">
               <span className="settings-row__main">
