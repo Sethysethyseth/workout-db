@@ -5319,7 +5319,7 @@ html[data-theme="dark"] .auth-page .auth-form.card {
 
 .analytics-view-tabs {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   width: 100%;
   gap: 4px;
   padding: 4px;
@@ -5331,13 +5331,13 @@ html[data-theme="dark"] .auth-page .auth-form.card {
 .analytics-view-tab {
   min-height: 44px;
   margin: 0;
-  padding: 10px 8px;
+  padding: 10px 4px;
   border: 1px solid transparent;
   border-radius: 9px;
   background: transparent;
   color: var(--color-text-secondary);
   font: inherit;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 700;
   line-height: 1.2;
   cursor: pointer;
@@ -6222,3 +6222,220 @@ html[data-theme="dark"][data-palette="iron"] .analytics-page {
     transform: scaleX(1);
   }
 }
+
+/* -- Exercises tab (N3) -- */
+
+.exercises-view {
+  gap: 12px;
+}
+
+.exercises-search-wrap > input,
+.exercises-search-input {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+}
+
+.exercises-search-wrap > input:focus-visible,
+.exercises-search-input:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--color-interactive) 55%, transparent);
+  outline-offset: 2px;
+}
+
+.exercise-roster {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.exercise-roster-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color var(--motion-fast) var(--ease-standard),
+    background var(--motion-fast) var(--ease-standard);
+}
+
+.exercise-roster-row:hover {
+  border-color: color-mix(in srgb, var(--color-interactive) 40%, var(--color-border));
+  background: color-mix(in srgb, var(--color-surface-2) 60%, var(--color-surface));
+}
+
+.exercise-roster-row.is-selected {
+  border-color: var(--color-interactive);
+  background: var(--color-nav-active-bg);
+  box-shadow: var(--shadow-ring-accent);
+}
+
+.exercise-roster-row:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--color-interactive) 55%, transparent);
+  outline-offset: 2px;
+}
+
+.exercise-roster-name {
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.exercise-roster-meta {
+  line-height: 1.3;
+}
+
+.ex-empty-roster {
+  gap: 10px;
+}
+
+.ex-detail-panel {
+  gap: 14px;
+  padding: 14px;
+}
+
+.ex-detail-title-row {
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.ex-detail-title {
+  margin: 0;
+  flex: 1;
+  line-height: 1.25;
+}
+
+.ex-detail-close {
+  min-height: 44px;
+  flex-shrink: 0;
+}
+
+.ex-totals-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+@media (min-width: 400px) {
+  .ex-totals-row {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.ex-total {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 44px;
+  justify-content: center;
+}
+
+.ex-total-val {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.ex-rep-targets-card {
+  padding: 12px 14px;
+  gap: 10px;
+}
+
+.ex-rep-targets-table td {
+  min-height: 44px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.ex-rep-target-row--extrapolated td {
+  color: var(--color-text-secondary);
+  opacity: 0.75;
+}
+
+.ex-rep-targets-footnote {
+  margin: 0;
+}
+
+.ex-detail-support {
+  padding: 12px 14px;
+  gap: 8px;
+}
+
+.ex-top-sets-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.ex-top-set-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  min-height: 44px;
+  padding: 8px 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-border) 50%, transparent);
+}
+
+.ex-top-set-row:last-child {
+  border-bottom: none;
+}
+
+.ex-weekly-volume-mini {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  min-height: 56px;
+  padding-top: 4px;
+}
+
+.ex-weekly-volume-cell {
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  height: 48px;
+}
+
+.ex-weekly-volume-bar {
+  display: block;
+  width: 100%;
+  min-height: 0;
+  border-radius: 3px 3px 0 0;
+  background: color-mix(in srgb, var(--color-interactive) 55%, var(--color-surface-3));
+}
+
+.ex-detail-range-empty {
+  margin: 0;
+}
+
+.ex-matched-effort {
+  margin: 0;
+}
+
+.ex-pr-slot {
+  padding: 12px 14px;
+  gap: 6px;
+  border-style: dashed;
+  background: color-mix(in srgb, var(--color-surface-2) 50%, transparent);
+}
+
+.ex-pr-slot .analytics-section-title {
+  margin: 0;
+}
+

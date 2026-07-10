@@ -10,6 +10,7 @@ import { StatTiles } from "../components/analytics/StatTiles.jsx";
 import { MuscleVolumeChart } from "../components/analytics/MuscleVolumeChart.jsx";
 import { MuscleVolumeHeatmap } from "../components/analytics/MuscleVolumeHeatmap.jsx";
 import { StrengthTrendChart } from "../components/analytics/StrengthTrendChart.jsx";
+import { ExercisesView } from "../components/analytics/ExercisesView.jsx";
 import { Meter } from "../components/analytics/Meter.jsx";
 import { BalanceScale } from "../components/analytics/BalanceScale.jsx";
 import { toDateOnlyString } from "../lib/dateOnly.js";
@@ -30,11 +31,11 @@ const RANGE_PRESETS = [
     punish a 10-day rotation. */
 const STALE_MUSCLE_DAYS = 14;
 
-const ANALYTICS_VIEWS = ["muscles", "strength", "execution"];
+const ANALYTICS_VIEWS = ["muscles", "strength", "exercises", "execution"];
 
 function parseAnalyticsView(searchParams) {
   const raw = searchParams.get("view");
-  if (raw === "strength" || raw === "execution") return raw;
+  if (raw === "strength" || raw === "execution" || raw === "exercises") return raw;
   return "muscles";
 }
 
@@ -505,7 +506,27 @@ export function AnalyticsPage() {
 
   function setView(nextView) {
     if (!ANALYTICS_VIEWS.includes(nextView)) return;
-    setSearchParams({ view: nextView }, { replace: true });
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.set("view", nextView);
+        return next;
+      },
+      { replace: true }
+    );
+  }
+
+  function setExerciseParam(nextExercise) {
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.set("view", "exercises");
+        if (nextExercise) next.set("exercise", nextExercise);
+        else next.delete("exercise");
+        return next;
+      },
+      { replace: true }
+    );
   }
 
   useEffect(() => {
@@ -565,7 +586,7 @@ export function AnalyticsPage() {
       {loading && !summary ? <LoadingState slowLabel="Waking up the server…" /> : null}
 
       {!error && summary ? (
-        isEmpty ? (
+        isEmpty && view !== "exercises" ? (
           <div className="card stack">
             <p className="muted" style={{ margin: 0 }}>
               No logged sets in this range.
@@ -588,10 +609,18 @@ export function AnalyticsPage() {
             {view === "strength" ? (
               <PerExerciseSection perExercise={summary.perExercise} />
             ) : null}
+            {view === "exercises" ? (
+              <ExercisesView
+                weeks={weeks}
+                range={rangeForWeeks(weeks)}
+                exerciseParam={searchParams.get("exercise")}
+                onExerciseParamChange={setExerciseParam}
+              />
+            ) : null}
             {view === "execution" ? (
               <ExecutionSection execution={summary.execution ?? []} />
             ) : null}
-            <DataQualitySection meta={summary.meta} />
+            {view !== "exercises" ? <DataQualitySection meta={summary.meta} /> : null}
           </div>
         )
       ) : null}
