@@ -36,9 +36,24 @@ other AND with N3 - strictly sequential: N4 -> N7 -> N3.
   spot-checked (logged weights use formatWeight, e1RMs formatEstimate);
   AnalyticsPage's kept loadWeightUnit import verified live (execution
   verdict formatters). No deviations
-- QUEUED | n2-headline-stat-rebalance.md | engine topSet + topSetSeries,
-  adaptive volume headline, Top set replaces Best lift | UNBLOCKED -
-  dispatch to Cursor NOW
+- LANDED 46b8736 | n2-headline-stat-rebalance.md | engine topSet +
+  topSetSeries, adaptive volume headline, Top set replaces Best lift |
+  Cursor delivery, Sonnet-audited: unit lane 162/162 + client build
+  re-run fresh; scope exact (6 files, matches FILES TO TOUCH); topSet
+  tie-break (weight then reps) and topSetSeries session-bucketing
+  verified by direct read against e1rmSeries's existing pattern - same
+  performedMs grouping key, confirmed mirrored as required; new fixture
+  tests read (not just trusted): topSet != bestSet case, no-e1RM case,
+  tie-break case, topSetSeries chronological-without-e1RM case, all 4
+  substantive; grep clean for e1rm access in StatTiles/WeeklyReport and
+  single EFFORT_COVERAGE_HEADLINE_THRESHOLD definition; stat order
+  verified in both components (adaptive headline pair, then Top set,
+  then Top gain / Workouts-Sets-Top set-Top gain). One documented
+  deviation: Top set omits "x reps" when reps is null (weight-only
+  sets) instead of printing "x 0" - sensible, not bounced. pickTopSet
+  helper duplicated verbatim between StatTiles.jsx and WeeklyReport.jsx
+  (not factored to a shared lib) - minor, not in the block's scope, not
+  worth a bounce. N4 (Fable-direct) is next per the wave order
 - LANDED c4e3ba8 (FABLE-DIRECT) | n5-exercise-detail-endpoint.md |
   all-time exercise index + detail endpoint + rep-target engine | built
   in worktree C:\dev\worktrees\n5 (branch unit/n5-exercise-detail,
@@ -50,7 +65,8 @@ other AND with N3 - strictly sequential: N4 -> N7 -> N3.
   count. N3 unblocked on the server side (still waits on n7 for
   AnalyticsPage)
 - QUEUED (FABLE-DIRECT) | n4-strength-tab-rework.md | strength tab
-  progression-first + mock-signed sparkline mark spec | after n2
+  progression-first + mock-signed sparkline mark spec | UNBLOCKED now
+  that n2 landed (topSetSeries is in the payload)
 - QUEUED (FABLE-DIRECT) | n7-muscles-heatmap.md | binned volume heatmap +
   table de-noise + 2W day-granularity preset | after n4 (shares
   AnalyticsPage.jsx)

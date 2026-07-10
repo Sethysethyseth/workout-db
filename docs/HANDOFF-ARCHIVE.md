@@ -13,6 +13,46 @@ context) and the git history of `docs/HANDOFF.md`.
 
 ---
 
+Session log (July 9, Fable — N-wave spec complete): criteria + chart
+forms signed off via mock. Docs-only session, no code.) Seth set the
+wave's completion bar ("passes as a professional frontier weightlifting
+app, down to every detail") and the session turned that into contract
+material in `docs/specs/analytics-ui-rebalance.md`:
+- **3rd pass (`2929579`):** code-level audit of the whole analytics tab
+  against the bar → the **F-test** (10-item exit checklist; runs per-unit
+  on touched files + in full at pre-main review). Findings folded into
+  units: weight/estimate formatting into N1 (four duplicated `formatWeight`
+  copies all print "225.0 lbs"; new `weightDisplay.js`, estimates rounded
+  whole), two mechanical traps named in N3 (4th tab breaks the hardcoded
+  3-col tabs grid; `setView`'s `setSearchParams` CLOBBERS other query
+  params), plate rounding added to N5 rep targets (client-side, 2.5 lbs /
+  1.25 kg), and a new **N6 frontier-polish unit** (actionable two-variant
+  page empty state, range persistence via `analyticsRangePref.js`, KPI
+  tile deep-links).
+- **4th pass (`fa3b4f8`):** chart-form design pass (dataviz method) on
+  Seth's "trend and table are a mash" feedback. Built a side-by-side mock
+  artifact ("LogChamp — Analytics chart-form proposals",
+  claude.ai/code/artifact/2470c620-b4d9-47aa-a301-0a14181162f5), rendered +
+  verified light/dark/390px. **Seth SIGNED OFF:** Muscles Trend becomes a
+  binned volume HEATMAP (4-step accent-derived ramp, validator-passed for
+  champ both modes; empty cell = faint neutral, deliberately NOT ramp
+  step 1), Table de-noised (right-aligned tabular nums, ONE unlock
+  footnote replacing per-cell sentences, 14d recency warn tint), Strength
+  sparklines get the full mark spec (top-set series, 2px accent line, 10%
+  wash, ringed endpoint — folded into N4). All landed as new unit **N7**.
+- **Seth's period question, tested against the bar at his instruction
+  ("don't take my word as absolute"):** 10/15/20-day bucket lengths
+  REJECTED (nonstandard denominators — nobody can benchmark "sets per 10
+  days"); accepted mechanism = **new 2-week preset rendering DAY
+  granularity** (14 cells; the honest non-weekly-split answer — mock
+  section 1b, phone-width verified). Custom date picker rejected for the
+  wave; presets now 2/4/8/12; granularity derives from range, never a
+  second knob. Rationale written into the spec so it isn't re-litigated.
+- **Wave shape now: N1 → N2 → N4 → N7 → (N5 → N3) → N6**, spec-complete.
+  N4+N7 both touch `AnalyticsPage.jsx` — sequential, don't batch.
+
+---
+
 **Updated:** July 8, 2026 (Opus — A-WAVE PROD ROLLOUT COMPLETE, MERGED TO MAIN,
 SMOKED LIVE.)** Executed the full prod choreography WITH Seth (agent did
 reads/prep only; Seth ran every prod write). All steps verified:

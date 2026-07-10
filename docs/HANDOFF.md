@@ -1,86 +1,53 @@
 # HANDOFF — current state
 
-**Updated:** July 10, 2026, later session (Fable — N1 LANDED `11b9c71`:
-Cursor's delivery audited Fable-deep (block author advantage) and
-committed + pushed to `origin/analytics-rebalance-wave`. Unit lane
-157/157 + client build re-run fresh; node-eval contracts re-verified
-independently; greps clean; no deviations. **N2 is UNBLOCKED — dispatch
-`n2-headline-stat-rebalance.md` to Cursor next** (full filename per the
-collision note). After N2
-lands, Fable returns for N4 → N7 back-to-back in the kept
-`C:\dev\worktrees\n5` worktree. Working tree still holds Seth's two
-untracked `claudefiledrop/*.url` shortcuts — not part of any unit, left
-alone.)
+**Updated:** July 10, 2026, later session (Sonnet — N2 LANDED `46b8736`:
+Cursor's delivery audited, committed + pushed to
+`origin/analytics-rebalance-wave`. Unit lane 162/162 + client build
+re-run fresh; scope exact (6 files, matches FILES TO TOUCH); topSet
+tie-break and topSetSeries session-bucketing verified by direct read
+against e1rmSeries's existing pattern (same performedMs grouping key);
+all 4 new fixture tests read, substantive; grep clean for e1rm access
+in StatTiles/WeeklyReport, single EFFORT_COVERAGE_HEADLINE_THRESHOLD
+definition; stat order verified in both components. One documented
+deviation (Top set omits "× reps" for weight-only sets), accepted; one
+un-bounced nit (pickTopSet duplicated verbatim between StatTiles.jsx
+and WeeklyReport.jsx, not factored to a shared lib — minor, outside the
+block's scope). **N4 is UNBLOCKED (Fable-direct) — `topSetSeries` is
+now in the payload.** Working tree still holds Seth's two untracked
+`claudefiledrop/*.url` shortcuts — not part of any unit, left alone.)
 
-Previous entry (July 10, Fable — N-WAVE SKELETON BUILT + N5 SHIPPED:
-all 7 unit blocks authored + queued on new branch
+Previous entry (July 10, Fable — N-WAVE SKELETON BUILT + N5 SHIPPED +
+N1 LANDED): all 7 unit blocks authored + queued on new branch
 `analytics-rebalance-wave` (off catalog-fk-wave HEAD `3d4e874` = main +
-docs + a settings commit), then N5 implemented Fable-direct same session:
-`c4e3ba8` — exercise index/detail endpoints + rep-target engine, unit
-lane 153/153, isolation+purity greps clean. Built in worktree
-`C:\dev\worktrees\n5` (kept for N4/N7 — reuse it if Cursor holds the main
-tree; branch `unit/n5-exercise-detail` is merged, deletable when Seth
-clears gated deletions).
+docs + a settings commit); N5 implemented Fable-direct same session
+(`c4e3ba8` — exercise index/detail endpoints + rep-target engine, unit
+lane 153/153, isolation+purity greps clean, built in worktree
+`C:\dev\worktrees\n5`, kept for N4/N7); N1 landed Cursor-relay same day
+(`11b9c71` — shared weight/effort formatters + component sweep, unit
+lane 157/157, Fable-audited deeper than the standard pass since Fable
+authored the block, no deviations).
 - Blocks: `docs/tasks/n{1,2,3,4,5,6,7}-*.md` (see QUEUE.md Active for the
   index). **Filename collision marked:** the June nav-wave's landed
   n1/n2/n3 task files still exist — dispatch by FULL filename only.
 - **Division settled with Seth:** Cursor lane N1 → N2 → N3 → N6
   (mechanical/relay); Fable-direct N5 → N4 → N7 (isolation surface +
-  the two mock-signed visual units). N1(Cursor) ∥ N5(Fable) are
-  file-disjoint and may run in parallel; N4/N7/N3 all touch
+  the two mock-signed visual units). N4/N7/N3 all touch
   `AnalyticsPage.jsx` — strictly sequential N4 → N7 → N3.
 - Spec open items SETTLED during authoring: rep ladder 1/3/5/8/10/12/15
   (20 rejected: Epley error > plate increment that far out); adaptive
-  coverage threshold 0.6 (named constant, N2); plate increments 2.5 lbs
-  / 1.25 kg (N1 `roundToPlate`). Spec gap found + fixed in-block: N4's
-  sparklines need a per-session top-set weight series the payload lacked
-  — `topSetSeries` added to N2's engine tail so N4 stays client-only.
-- **Loose ends marked for this wave:** (a) staging Render must be
-  REPOINTED from `main` to `analytics-rebalance-wave` before Seth smokes
-  any server-touching unit (N1 and N2 both carry engine tails); (b)
-  re-seed the staging smoke account before visual sign-off (TODO 0b);
-  (c) baseline verified green July 10 — unit lane 137/137 + client build
-  fresh on the branch point.
-
-Previous entry (July 9, Fable — N-wave spec complete):
-criteria + chart forms signed off via mock. Docs-only session, no code.)
-Seth set the wave's completion bar ("passes as a professional frontier
-weightlifting app, down to every detail") and the session turned that into
-contract material in `docs/specs/analytics-ui-rebalance.md`:
-- **3rd pass (`2929579`):** code-level audit of the whole analytics tab
-  against the bar → the **F-test** (10-item exit checklist; runs per-unit
-  on touched files + in full at pre-main review). Findings folded into
-  units: weight/estimate formatting into N1 (four duplicated `formatWeight`
-  copies all print "225.0 lbs"; new `weightDisplay.js`, estimates rounded
-  whole), two mechanical traps named in N3 (4th tab breaks the hardcoded
-  3-col tabs grid; `setView`'s `setSearchParams` CLOBBERS other query
-  params), plate rounding added to N5 rep targets (client-side, 2.5 lbs /
-  1.25 kg), and a new **N6 frontier-polish unit** (actionable two-variant
-  page empty state, range persistence via `analyticsRangePref.js`, KPI
-  tile deep-links).
-- **4th pass (`fa3b4f8`):** chart-form design pass (dataviz method) on
-  Seth's "trend and table are a mash" feedback. Built a side-by-side mock
-  artifact ("LogChamp — Analytics chart-form proposals",
-  claude.ai/code/artifact/2470c620-b4d9-47aa-a301-0a14181162f5), rendered +
-  verified light/dark/390px. **Seth SIGNED OFF:** Muscles Trend becomes a
-  binned volume HEATMAP (4-step accent-derived ramp, validator-passed for
-  champ both modes; empty cell = faint neutral, deliberately NOT ramp
-  step 1), Table de-noised (right-aligned tabular nums, ONE unlock
-  footnote replacing per-cell sentences, 14d recency warn tint), Strength
-  sparklines get the full mark spec (top-set series, 2px accent line, 10%
-  wash, ringed endpoint — folded into N4). All landed as new unit **N7**.
-- **Seth's period question, tested against the bar at his instruction
-  ("don't take my word as absolute"):** 10/15/20-day bucket lengths
-  REJECTED (nonstandard denominators — nobody can benchmark "sets per 10
-  days"); accepted mechanism = **new 2-week preset rendering DAY
-  granularity** (14 cells; the honest non-weekly-split answer — mock
-  section 1b, phone-width verified). Custom date picker rejected for the
-  wave; presets now 2/4/8/12; granularity derives from range, never a
-  second knob. Rationale written into the spec so it isn't re-litigated.
-- **Wave shape now: N1 → N2 → N4 → N7 → (N5 → N3) → N6**, spec-complete.
-  N4+N7 both touch `AnalyticsPage.jsx` — sequential, don't batch.
-Previous entries (incl. the July 8 A-wave prod rollout) archived verbatim
-in `docs/HANDOFF-ARCHIVE.md`.
+  coverage threshold 0.6 (named constant, landed in N2); plate
+  increments 2.5 lbs / 1.25 kg (N1 `roundToPlate`). Spec gap found +
+  fixed in-block: N4's sparklines need a per-session top-set weight
+  series the payload lacked — `topSetSeries` added to N2's engine tail
+  (now landed) so N4 stays client-only.
+- **Loose ends for this wave:** (a) staging Render must be REPOINTED
+  from `main` to `analytics-rebalance-wave` before Seth smokes any
+  server-touching unit (N1 and N2 both carry engine tails, both now
+  landed); (b) re-seed the staging smoke account before visual sign-off
+  (TODO 0b).
+Previous entries (incl. the July 9 N-wave spec-complete session and the
+July 8 A-wave prod rollout) archived verbatim in
+`docs/HANDOFF-ARCHIVE.md`.
 
 **Rule:** rewritten in place at the end of every working session; kept
 CAPPED (~300 lines: current state, repo/deploy, latest 1-2 session entries,
@@ -184,10 +151,10 @@ trusting it.
 ## Next up (the active task)
 
 0. **EXECUTE THE N-WAVE** (blocks authored July 10, QUEUE.md is the
-   index): dispatch `n1-effort-neutral-formatting.md` to Cursor now;
-   Fable implements N5 directly in parallel (file-disjoint). Then Cursor
-   N2 → (Fable N4 → N7) → Cursor N3 → Cursor N6. Repoint staging Render
-   to `analytics-rebalance-wave` before Seth's first smoke.
+   index): N1, N5, N2 all LANDED. **Next: Fable-direct N4
+   (`n4-strength-tab-rework.md`), then N7, then Cursor N3, then Cursor
+   N6.** Repoint staging Render to `analytics-rebalance-wave` before
+   Seth's first smoke (N1 and N2 both carry engine tails).
 0b. **A-wave follow-up (non-urgent):** optional Step-7 historical backfill:
    `node scripts/backfill-exercise-ids.mjs` (DRY-RUN first) then `--apply`
    against prod for pre-A4 historical rows (Seth runs the write).
