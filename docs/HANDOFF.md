@@ -1,6 +1,18 @@
 # HANDOFF — current state
 
-**Updated:** July 10, 2026 (Fable — N-WAVE SKELETON BUILT + N5 SHIPPED:
+**Updated:** July 10, 2026, later session (Fable — N1 LANDED `11b9c71`:
+Cursor's delivery audited Fable-deep (block author advantage) and
+committed + pushed to `origin/analytics-rebalance-wave`. Unit lane
+157/157 + client build re-run fresh; node-eval contracts re-verified
+independently; greps clean; no deviations. **N2 is UNBLOCKED — dispatch
+`n2-headline-stat-rebalance.md` to Cursor next** (full filename per the
+collision note). After N2
+lands, Fable returns for N4 → N7 back-to-back in the kept
+`C:\dev\worktrees\n5` worktree. Working tree still holds Seth's two
+untracked `claudefiledrop/*.url` shortcuts — not part of any unit, left
+alone.)
+
+Previous entry (July 10, Fable — N-WAVE SKELETON BUILT + N5 SHIPPED:
 all 7 unit blocks authored + queued on new branch
 `analytics-rebalance-wave` (off catalog-fk-wave HEAD `3d4e874` = main +
 docs + a settings commit), then N5 implemented Fable-direct same session:

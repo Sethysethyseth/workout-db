@@ -25,12 +25,20 @@ N1 (Cursor) with N5 (Fable) are file-disjoint by design; N2 (Cursor) may
 run while Fable finishes N5. N4/N7 share `AnalyticsPage.jsx` with each
 other AND with N3 - strictly sequential: N4 -> N7 -> N3.
 
-- QUEUED | n1-effort-neutral-formatting.md | shared weight/effort
+- LANDED 11b9c71 | n1-effort-neutral-formatting.md | shared weight/effort
   formatters + component sweep + engine effort-unit serialization |
-  dispatch FIRST - everything downstream consumes it
+  Cursor delivery, FABLE-audited (deeper than the standard pass - Fable
+  authored the block): unit lane 157/157 + client build re-run fresh;
+  both node-eval contracts re-run independently incl. extra formatEffort
+  cases (10-rir RPE display conversion, fractional, null "- RIR");
+  format-definition grep = only the shared module; remaining RIR hits
+  all label/HOW_*/unlock copy; formatWeight-vs-formatEstimate semantics
+  spot-checked (logged weights use formatWeight, e1RMs formatEstimate);
+  AnalyticsPage's kept loadWeightUnit import verified live (execution
+  verdict formatters). No deviations
 - QUEUED | n2-headline-stat-rebalance.md | engine topSet + topSetSeries,
-  adaptive volume headline, Top set replaces Best lift | dispatch after
-  n1 LANDS
+  adaptive volume headline, Top set replaces Best lift | UNBLOCKED -
+  dispatch to Cursor NOW
 - LANDED c4e3ba8 (FABLE-DIRECT) | n5-exercise-detail-endpoint.md |
   all-time exercise index + detail endpoint + rep-target engine | built
   in worktree C:\dev\worktrees\n5 (branch unit/n5-exercise-detail,
