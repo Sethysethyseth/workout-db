@@ -1,6 +1,36 @@
 # HANDOFF — current state
 
-**Updated:** July 11, 2026, eighth session (Fable — NT-WAVE SKELETON
+**Updated:** July 11, 2026, ninth session (Opus — NT1 + NT2 LANDED on
+`not-tracked-ux-wave`, pushed to staging). **NT1** (`f4baee3`) already on
+staging: searchCatalog rows carry `secondaryMuscles` (additive, pure;
+170/170 unit lane). **NT2** (`f26e783`) — the wave centerpiece — landed
+this session: `AddExerciseToLibrarySheet` rebuilt as the suggest -> seed
+-> curate -> done stepped flow (catalog-seeded, segmented Main/Assists
+picker replacing the old 3-state cycling chip; `CHIP_CYCLE`/`nextChipRole`
+deleted), with LINK wiring into `SessionDetailPage` via the
+`updateSessionExercise` + `buildNamePatch` idiom and a `userExerciseId`
+stamp on create-in-live-context. Delivered by **Composer** (Cursor was out
+of Opus tokens) and audited by **Opus in Claude Code instead of Sonnet**
+per Seth: both lanes re-run fresh green (client `npm run build`; server
+`test:unit` 170/170 tripwire), all 11 acceptance criteria independently
+verified, and the runtime-invisible things a build can't catch checked —
+search-row + `resolveExerciseNames` shapes match the sheet's reads exactly,
+every CSS `var()` token resolves, no dangling refs, scope limited to the 3
+FILES TO TOUCH. **One reviewer fix folded into the commit:** dropped a
+vestigial `getMuscles` fetch whose payload was discarded but whose
+loading/error state gated the picker (chips render from the hardcoded
+17-muscle constant = the server vocab). **Open findings logged for the
+pre-main Fable gate (non-blocking):** (B) dead ternary in `goBack`
+(`hadSuggestStep ? "seed" : "seed"`); (C) create-succeeds-but-stamp-fails
+edge shows an error though the exercise was created (recoverable via the
+already-tracked path; stamp is best-effort, retroactivity still works by
+name); (D) `role="tablist"`/`"tab"` on the Main/Assists segmented control
+has no tabpanel/roving-tabindex (minor a11y). **NT3 flipped DRAFT ->
+QUEUED** (unblocked — shares both client files with NT2). Smoke NT2 on the
+staging Vercel preview once Render/Vercel track this branch (see the
+staging-repoint follow-up below).
+
+Previous entry (July 11, eighth session, Fable — NT-WAVE SKELETON
 AUTHORED, no product code). Seth settled the brainstorm doc's three open
 questions: (1) variant-of seeding IS in scope this wave; (2) the
 retroactive-attribution message lives in the sheet's success moment ONLY
@@ -176,12 +206,16 @@ trusting it.
 
 ## Next up (the active task)
 
-00. **NT-WAVE (the active wave): skeleton AUTHORED July 11, dispatch is
-   next.** Seth dispatches `nt1-search-secondary-muscles.md` to Cursor
-   (MODEL auto), then `nt2-add-exercise-stepped-sheet.md` (MODEL opus)
-   — file-disjoint, may run back-to-back before one review session.
-   Sonnet audits + lands per unit. NT3 flips DRAFT -> QUEUED when NT2
-   lands. Design source: `docs/design/not-tracked-add-flow-brainstorm.md`;
+00. **NT-WAVE (the active wave): NT1 + NT2 LANDED on staging, NT3 is
+   next.** NT1 (`f4baee3`) and NT2 (`f26e783`) both audited clean and
+   pushed to `not-tracked-ux-wave`. **NT3 (`nt3-entry-deferability-polish.md`)
+   is now QUEUED** (MODEL auto) — completed-session pill goes interactive
+   in create-only context (completed sessions are locked server-side, so
+   link/rename is live-only); shares both client files with NT2, so it runs
+   strictly after. NT3 is the last unit of the wave; after it lands, the
+   accumulated branch diff goes to the **pre-main Fable/Opus gate** (with
+   the B/C/D findings above as review fuel) before any merge to main.
+   Design source: `docs/design/not-tracked-add-flow-brainstorm.md`;
    decisions log in the top HANDOFF entry. Branch: `not-tracked-ux-wave`.
 0. ~~N-WAVE~~ **DONE end-to-end**: code-complete, pre-main Fable review
    clean, MERGED TO MAIN `8068ffb` + What's New `57b1fc8` — see the

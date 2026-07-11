@@ -1,6 +1,6 @@
 # TASK NT3: not-tracked entry pill - completed-session path + deferability polish
 
-STATUS: DRAFT   <!-- flips to QUEUED once NT2 lands; shares both files with NT2 -->
+STATUS: QUEUED   <!-- NT2 landed f26e783; shares both client files with NT2 -->
 MODEL: auto
 MODE: 1-relay
 

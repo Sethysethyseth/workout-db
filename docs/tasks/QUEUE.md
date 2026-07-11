@@ -24,19 +24,27 @@ file-disjoint (server-only vs client-only) and may be dispatched
 back-to-back for one review session per the batching rule. NT3 stays
 DRAFT until NT2 lands.
 
-- QUEUED | nt1-search-secondary-muscles.md | searchCatalog rows gain
-  secondaryMuscles (additive, pure) so the client gets the full seeding
-  profile from the existing search endpoint | MODEL auto, mechanical
-- QUEUED | nt2-add-exercise-stepped-sheet.md | rebuild
+- LANDED f4baee3 | nt1-search-secondary-muscles.md | searchCatalog rows
+  gain secondaryMuscles (additive, pure) so the client gets the full
+  seeding profile from the existing search endpoint | MODEL auto,
+  mechanical - audited clean (170/170 unit lane fresh, no scope creep),
+  pushed to staging
+- LANDED f26e783 | nt2-add-exercise-stepped-sheet.md | rebuild
   AddExerciseToLibrarySheet as the stepped flow (suggest-link / seed /
   curate with segmented Main-Assists picker / done with retroactive
   line) + link wiring into SessionDetailPage | MODEL opus (Seth's call
-  July 11; Fable withheld for the pre-main gate), judgment-heavy visual -
-  fuller spec detail per the CLAUDE.md carve-out
-- DRAFT | nt3-entry-deferability-polish.md | completed-session pill goes
+  July 11; Fable withheld for the pre-main gate). Delivered by Composer
+  (Cursor out of Opus tokens), audited by Opus in Claude Code instead of
+  Sonnet: both lanes re-run fresh green (client build; server 170/170
+  tripwire), all 11 acceptance criteria verified, API row/resolve shapes
+  and CSS tokens confirmed against source. One reviewer fix folded in
+  (dropped a vestigial getMuscles fetch that gated the picker on discarded
+  data). Findings B-D (dead ternary, create-succeeds/stamp-fails edge,
+  tablist a11y) logged for the pre-main Fable gate. Pushed to staging.
+- QUEUED | nt3-entry-deferability-polish.md | completed-session pill goes
   interactive (create-only context - completed sessions are locked
   server-side, so link/rename is live-only), deferability polish | MODEL
-  auto; flips to QUEUED when NT2 lands
+  auto; NT2 landed, so NT3 is unblocked
 
 ## Landed - N-wave (analytics UI rebalance)
 
