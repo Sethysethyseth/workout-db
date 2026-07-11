@@ -90,6 +90,16 @@ function invalidateExerciseResolution(name) {
   if (key) exerciseResolutionCache.delete(key);
 }
 
+function buildSessionExerciseNamePatch(storedName, identity = {}) {
+  const patch = { exerciseName: storedName };
+  if (identity.exerciseId) {
+    patch.exerciseId = identity.exerciseId;
+  } else if (identity.userExerciseId) {
+    patch.userExerciseId = identity.userExerciseId;
+  }
+  return patch;
+}
+
 function lookupExerciseTrackedStatus(exerciseName) {
   const key = exerciseResolutionCacheKey(exerciseName);
   if (!key) return null;
@@ -1721,24 +1731,18 @@ export function SessionDetailPage() {
     setResolutionTick((t) => t + 1);
   }, []);
 
-  const openAddToLibrarySheet = useCallback((exerciseName) => {
+  const openAddToLibrarySheet = useCallback((exerciseName, sessionExerciseId) => {
     const trimmed = String(exerciseName ?? "").trim();
     if (!trimmed || isBlankSessionExerciseName(trimmed)) return;
-    setAddToLibrarySheet({ exerciseName: trimmed });
+    setAddToLibrarySheet({
+      exerciseName: trimmed,
+      sessionExerciseId: sessionExerciseId ?? null,
+    });
   }, []);
 
   const closeAddToLibrarySheet = useCallback(() => {
     setAddToLibrarySheet(null);
   }, []);
-
-  const handleAddToLibrarySuccess = useCallback(
-    (name) => {
-      invalidateExerciseResolution(name);
-      void refreshExerciseResolution(name, bumpResolutions);
-      setAddToLibrarySheet(null);
-    },
-    [bumpResolutions]
-  );
 
   const mergeSessionExerciseRow = useCallback(
     (row) => {
@@ -1753,6 +1757,45 @@ export function SessionDetailPage() {
       }
     },
     [bumpResolutions]
+  );
+
+  const handleAddToLibraryLink = useCallback(
+    async ({ sessionExerciseId, name, exerciseId, userExerciseId }) => {
+      const oldName = addToLibrarySheet?.exerciseName;
+      const storedName = inputToSessionExerciseName(name);
+      const patch = buildSessionExerciseNamePatch(storedName, { exerciseId, userExerciseId });
+      const data = await sessionApi.updateSessionExercise(sessionId, sessionExerciseId, patch);
+      const row = data?.sessionExercise;
+      if (row) mergeSessionExerciseRow(row);
+      if (oldName) invalidateExerciseResolution(oldName);
+      invalidateExerciseResolution(storedName);
+      void refreshExerciseResolution(storedName, bumpResolutions);
+      if (oldName && oldName !== storedName) {
+        void refreshExerciseResolution(oldName, bumpResolutions);
+      }
+    },
+    [addToLibrarySheet?.exerciseName, sessionId, mergeSessionExerciseRow, bumpResolutions]
+  );
+
+  const handleAddToLibraryCreateCommitted = useCallback(
+    async ({ name, userExerciseId }) => {
+      const sessionExerciseId = addToLibrarySheet?.sessionExerciseId;
+      const oldName = addToLibrarySheet?.exerciseName;
+      if (sessionExerciseId && userExerciseId) {
+        const data = await sessionApi.updateSessionExercise(sessionId, sessionExerciseId, {
+          userExerciseId,
+        });
+        const row = data?.sessionExercise;
+        if (row) mergeSessionExerciseRow(row);
+      }
+      invalidateExerciseResolution(name);
+      if (oldName && oldName !== name) invalidateExerciseResolution(oldName);
+      void refreshExerciseResolution(name, bumpResolutions);
+      if (oldName && oldName !== name) {
+        void refreshExerciseResolution(oldName, bumpResolutions);
+      }
+    },
+    [addToLibrarySheet, sessionId, mergeSessionExerciseRow, bumpResolutions]
   );
 
   const appendSessionExerciseRow = useCallback((row) => {
@@ -2645,7 +2688,7 @@ export function SessionDetailPage() {
                       useSetNotes={isFromTemplate && liveUseSetNotes}
                       isQuickLog={isQuickLog}
                       trackedStatus={trackedStatusByExerciseId.get(se.id) ?? null}
-                      onOpenAddToLibrary={() => openAddToLibrarySheet(se.exerciseName)}
+                      onOpenAddToLibrary={() => openAddToLibrarySheet(se.exerciseName, se.id)}
                       onExerciseCommitted={mergeSessionExerciseRow}
                       onSaved={load}
                       onCreateSet={onCreateSetForExercise}
@@ -2751,8 +2794,10 @@ export function SessionDetailPage() {
       <AddExerciseToLibrarySheet
         open={Boolean(addToLibrarySheet)}
         initialName={addToLibrarySheet?.exerciseName ?? ""}
+        sessionExerciseId={addToLibrarySheet?.sessionExerciseId ?? null}
         onClose={closeAddToLibrarySheet}
-        onSuccess={handleAddToLibrarySuccess}
+        onLink={handleAddToLibraryLink}
+        onCreateCommitted={handleAddToLibraryCreateCommitted}
       />
     </div>
   );

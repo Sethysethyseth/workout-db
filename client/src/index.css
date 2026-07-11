@@ -4604,38 +4604,176 @@ html[data-theme="dark"] .start-workout-picker__sheet {
   border-radius: 20px 20px 0 0;
   padding: 16px 16px calc(16px + env(safe-area-inset-bottom, 0px));
   display: grid;
-  gap: 12px;
+  gap: 14px;
   max-height: min(85vh, 36rem);
   overflow-y: auto;
   box-shadow: var(--shadow-card-hover);
 }
 
 .add-exercise-library-sheet__header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
+  display: grid;
+  grid-template-columns: 44px 1fr 44px;
+  align-items: center;
+  gap: 8px;
+}
+
+.add-exercise-library-sheet__back-spacer {
+  width: 44px;
+  height: 44px;
+}
+
+.add-exercise-library-sheet__back,
+.add-exercise-library-sheet__close {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  font-size: 1.25rem;
+  line-height: 1;
+  justify-self: center;
+}
+
+.add-exercise-library-sheet__close {
+  font-size: 1.35rem;
 }
 
 .add-exercise-library-sheet__title {
   margin: 0;
-  font-size: 1.2rem;
+  font-size: 1.15rem;
   font-weight: 800;
   letter-spacing: -0.02em;
+  text-align: center;
+  line-height: 1.25;
 }
 
-.add-exercise-library-sheet__close {
-  min-width: 36px;
-  min-height: 36px;
-  padding: 0;
-  font-size: 1.35rem;
-  line-height: 1;
+.add-exercise-library-sheet__step {
+  display: grid;
+  gap: 12px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .add-exercise-library-sheet__step {
+    animation: add-exercise-library-sheet-step-in var(--motion-base) var(--ease-standard);
+  }
+}
+
+@keyframes add-exercise-library-sheet-step-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .add-exercise-library-sheet__step {
+    animation: none;
+  }
 }
 
 .add-exercise-library-sheet__lead {
-  margin: -4px 0 0;
+  margin: 0;
+  line-height: 1.45;
 }
 
+.add-exercise-library-sheet__loading {
+  margin: 0;
+  text-align: center;
+  padding: 8px 0;
+}
+
+.add-exercise-library-sheet__matches {
+  display: grid;
+  gap: 8px;
+}
+
+.add-exercise-library-sheet__match {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto auto;
+  gap: 2px 8px;
+  align-items: center;
+  min-height: 44px;
+  padding: 10px 14px;
+  border-radius: var(--radius-control);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-2);
+  color: var(--color-text);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color var(--motion-base) var(--ease-standard),
+    background var(--motion-base) var(--ease-standard),
+    box-shadow var(--motion-base) var(--ease-standard);
+}
+
+.add-exercise-library-sheet__match:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--color-interactive) 45%, var(--color-border));
+  background: color-mix(in srgb, var(--color-interactive) 6%, var(--color-surface-2));
+}
+
+.add-exercise-library-sheet__match:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--color-interactive) 55%, transparent);
+  outline-offset: 2px;
+}
+
+.add-exercise-library-sheet__match:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.add-exercise-library-sheet__match-name {
+  grid-column: 1;
+  grid-row: 1;
+  font-weight: 700;
+  font-size: 0.95rem;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.add-exercise-library-sheet__match-tag {
+  grid-column: 2;
+  grid-row: 1;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-interactive) 14%, var(--color-surface-2));
+  color: var(--color-interactive);
+}
+
+.add-exercise-library-sheet__match-meta {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.add-exercise-library-sheet__escape {
+  min-height: 44px;
+  padding: 10px 4px;
+  border: none;
+  background: none;
+  color: var(--color-interactive);
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-align: center;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.add-exercise-library-sheet__escape:hover {
+  color: var(--color-interactive-hover);
+}
+
+.add-exercise-library-sheet__search-field,
 .add-exercise-library-sheet__name-field {
   display: grid;
   gap: 6px;
@@ -4644,11 +4782,67 @@ html[data-theme="dark"] .start-workout-picker__sheet {
 }
 
 .add-exercise-library-sheet__already-tracked {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
   margin: 0;
-  padding: 8px 10px;
+  padding: 10px 12px;
   border-radius: var(--radius-control);
   background: color-mix(in srgb, var(--color-interactive) 10%, var(--color-surface-2));
   border: 1px solid color-mix(in srgb, var(--color-interactive) 25%, var(--color-border));
+}
+
+.add-exercise-library-sheet__already-tracked-text {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+}
+
+.add-exercise-library-sheet__use-name-btn {
+  min-height: 44px;
+  flex-shrink: 0;
+}
+
+.add-exercise-library-sheet__role-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 4px;
+  border-radius: var(--radius-control);
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+}
+
+.add-exercise-library-sheet__role-btn {
+  min-height: 44px;
+  padding: 8px 12px;
+  border: none;
+  border-radius: calc(var(--radius-control) - 2px);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition:
+    background var(--motion-base) var(--ease-standard),
+    color var(--motion-base) var(--ease-standard),
+    box-shadow var(--motion-base) var(--ease-standard);
+}
+
+.add-exercise-library-sheet__role-btn--active {
+  background: var(--color-surface-1);
+  color: var(--color-text);
+  box-shadow: var(--shadow-ring-accent);
+}
+
+.add-exercise-library-sheet__role-btn:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--color-interactive) 55%, transparent);
+  outline-offset: 1px;
+}
+
+.add-exercise-library-sheet__role-hint {
+  margin: -4px 0 0;
 }
 
 .add-exercise-library-sheet__picker {
@@ -4678,7 +4872,8 @@ html[data-theme="dark"] .start-workout-picker__sheet {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 12px;
+  min-height: 44px;
+  padding: 8px 14px;
   border-radius: 999px;
   border: 1px solid var(--color-border);
   background: var(--color-surface-2);
@@ -4686,6 +4881,10 @@ html[data-theme="dark"] .start-workout-picker__sheet {
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
+  transition:
+    border-color var(--motion-base) var(--ease-standard),
+    background var(--motion-base) var(--ease-standard),
+    box-shadow var(--motion-base) var(--ease-standard);
 }
 
 .add-exercise-library-sheet__chip:hover:not(:disabled) {
@@ -4723,10 +4922,36 @@ html[data-theme="dark"] .start-workout-picker__sheet {
   line-height: 1.4;
 }
 
+.add-exercise-library-sheet__helper {
+  margin: -4px 0 0;
+  color: var(--color-text-secondary);
+}
+
 .add-exercise-library-sheet__footer {
   display: grid;
   gap: 8px;
   padding-top: 4px;
+}
+
+.add-exercise-library-sheet__footer .btn {
+  min-height: 44px;
+}
+
+.add-exercise-library-sheet__done {
+  display: grid;
+  gap: 10px;
+  padding: 8px 0 4px;
+}
+
+.add-exercise-library-sheet__done-name {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.45;
+}
+
+.add-exercise-library-sheet__done-detail {
+  margin: 0;
+  line-height: 1.45;
 }
 
 @media (min-width: 640px) {
@@ -4739,6 +4964,10 @@ html[data-theme="dark"] .start-workout-picker__sheet {
     border-radius: var(--radius-card);
     padding: 20px;
     max-height: min(85vh, 36rem);
+  }
+
+  .add-exercise-library-sheet__title {
+    font-size: 1.2rem;
   }
 }
 
