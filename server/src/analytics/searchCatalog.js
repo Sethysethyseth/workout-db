@@ -34,6 +34,16 @@ function primaryMusclesFromUserEntry(entry) {
     .sort();
 }
 
+function secondaryMusclesFromUserEntry(entry) {
+  if (!entry.muscles || typeof entry.muscles !== "object") {
+    return [];
+  }
+  return Object.entries(entry.muscles)
+    .filter(([, designation]) => designation === "secondary")
+    .map(([muscle]) => muscle)
+    .sort();
+}
+
 function makeCatalogRow(entry, matchedAlias = null) {
   return {
     source: "catalog",
@@ -42,6 +52,7 @@ function makeCatalogRow(entry, matchedAlias = null) {
     name: entry.name,
     matchedAlias,
     primaryMuscles: entry.primaryMuscles || [],
+    secondaryMuscles: entry.secondaryMuscles || [],
     equipment: entry.equipment ?? null,
   };
 }
@@ -54,6 +65,7 @@ function makeUserRow(entry) {
     name: entry.name,
     matchedAlias: null,
     primaryMuscles: primaryMusclesFromUserEntry(entry),
+    secondaryMuscles: secondaryMusclesFromUserEntry(entry),
     equipment: null,
   };
 }

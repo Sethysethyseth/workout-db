@@ -114,6 +114,64 @@ describe("searchCatalog", () => {
     );
   });
 
+  test("catalog row returns secondaryMuscles verbatim when present", () => {
+    const catalog = makeCatalog([
+      {
+        id: "bench-press-powerlifting",
+        name: "Bench Press - Powerlifting",
+        category: "powerlifting",
+        primaryMuscles: ["triceps"],
+        secondaryMuscles: ["chest", "forearms", "lats", "shoulders"],
+        equipment: "barbell",
+      },
+    ]);
+
+    const results = searchCatalog(catalog, new Map(), "bench press", { limit: 5 });
+
+    expect(results[0]).toMatchObject({
+      source: "catalog",
+      exerciseId: "bench-press-powerlifting",
+      primaryMuscles: ["triceps"],
+      secondaryMuscles: ["chest", "forearms", "lats", "shoulders"],
+    });
+  });
+
+  test("catalog row with no secondary muscles returns secondaryMuscles: []", () => {
+    const catalog = makeCatalog([
+      {
+        id: "no-secondary",
+        name: "Cable Fly",
+        category: "strength",
+        primaryMuscles: ["chest"],
+        equipment: "cable",
+      },
+    ]);
+
+    const results = searchCatalog(catalog, new Map(), "cable fly", { limit: 5 });
+
+    expect(results[0].secondaryMuscles).toEqual([]);
+  });
+
+  test("userExercise row derives secondaryMuscles from muscles map", () => {
+    const userIndex = buildUserExerciseIndex([
+      {
+        id: 7,
+        name: "Custom Press",
+        normalizedName: "custom press",
+        muscles: { chest: "primary", triceps: "secondary", shoulders: "secondary" },
+      },
+    ]);
+
+    const results = searchCatalog(makeCatalog([]), userIndex, "custom press", { limit: 5 });
+
+    expect(results[0]).toMatchObject({
+      source: "userExercise",
+      userExerciseId: 7,
+      primaryMuscles: ["chest"],
+      secondaryMuscles: ["shoulders", "triceps"],
+    });
+  });
+
   test("respects limit", () => {
     const catalog = makeCatalog(
       Array.from({ length: 12 }, (_, index) => ({
