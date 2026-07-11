@@ -12,7 +12,8 @@ visual bar, not a styling pass. Three task blocks authored on
 rows gain `secondaryMuscles`, additive + pure, so the existing search
 endpoint carries the full seeding profile; NO new endpoint, no schema, no
 migration anywhere in the wave), **`nt2-add-exercise-stepped-sheet.md`**
-(QUEUED, MODEL fable — the centerpiece: sheet rebuilt as suggest-link /
+(QUEUED, MODEL opus — Seth's July 11 call, Fable withheld for the
+pre-main gate — the centerpiece: sheet rebuilt as suggest-link /
 seed / curate / done stepped flow; cycling chip replaced by a segmented
 Main/Assists explicit-role picker; link wiring into SessionDetailPage via
 the existing `updateSessionExercise` + `buildNamePatch` idiom; create in
@@ -177,7 +178,7 @@ trusting it.
 
 00. **NT-WAVE (the active wave): skeleton AUTHORED July 11, dispatch is
    next.** Seth dispatches `nt1-search-secondary-muscles.md` to Cursor
-   (MODEL auto), then `nt2-add-exercise-stepped-sheet.md` (MODEL fable)
+   (MODEL auto), then `nt2-add-exercise-stepped-sheet.md` (MODEL opus)
    — file-disjoint, may run back-to-back before one review session.
    Sonnet audits + lands per unit. NT3 flips DRAFT -> QUEUED when NT2
    lands. Design source: `docs/design/not-tracked-add-flow-brainstorm.md`;

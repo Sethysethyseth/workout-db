@@ -30,8 +30,9 @@ DRAFT until NT2 lands.
 - QUEUED | nt2-add-exercise-stepped-sheet.md | rebuild
   AddExerciseToLibrarySheet as the stepped flow (suggest-link / seed /
   curate with segmented Main-Assists picker / done with retroactive
-  line) + link wiring into SessionDetailPage | MODEL fable,
-  judgment-heavy visual - fuller spec detail per the CLAUDE.md carve-out
+  line) + link wiring into SessionDetailPage | MODEL opus (Seth's call
+  July 11; Fable withheld for the pre-main gate), judgment-heavy visual -
+  fuller spec detail per the CLAUDE.md carve-out
 - DRAFT | nt3-entry-deferability-polish.md | completed-session pill goes
   interactive (create-only context - completed sessions are locked
   server-side, so link/rename is live-only), deferability polish | MODEL

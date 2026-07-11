@@ -1,7 +1,10 @@
 # TASK NT2: rebuild AddExerciseToLibrarySheet as the catalog-seeded stepped flow
 
 STATUS: QUEUED
-MODEL: fable
+MODEL: opus   <!-- Seth's call July 11: Opus, not Fable - precedent: the
+                   July 10 weekly-volume visual rebuild (Opus) landed
+                   clean; this block's fuller spec detail closes the rest
+                   of the gap. Fable reserved for the pre-main review. -->
 MODE: 1-relay
 
 CONTEXT:
