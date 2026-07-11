@@ -6,7 +6,40 @@ Statuses: DRAFT / QUEUED / DISPATCHED / AWAITING-REVIEW / LANDED <sha> / BOUNCED
 
 ## Active
 
-N-wave (analytics UI rebalance), authored July 10 (Fable), branch
+NT-wave (not-tracked custom-exercise flow rework), authored July 11
+(Fable), branch `not-tracked-ux-wave` (off `e960645` = main `57b1fc8` +
+one docs commit). Design/contract source:
+`docs/design/not-tracked-add-flow-brainstorm.md` - direction A (catalog-
+seeded stepped flow) with direction B's explicit-role picker as its final
+step; body-map C parked. Seth settled the doc's three open questions July
+11: (1) variant-of seeding IS in scope, (2) the retroactive-attribution
+message lives in the sheet's success moment only - brief, every time,
+(3) the pain is BOTH structural and visual, so NT2 carries a visual bar,
+not just flow criteria. No schema change, no migration anywhere in the
+wave.
+
+Dispatch order: NT1 -> NT2 -> NT3, strictly in that order (NT2 depends on
+NT1's payload; NT3 shares both client files with NT2). NT1 and NT2 are
+file-disjoint (server-only vs client-only) and may be dispatched
+back-to-back for one review session per the batching rule. NT3 stays
+DRAFT until NT2 lands.
+
+- QUEUED | nt1-search-secondary-muscles.md | searchCatalog rows gain
+  secondaryMuscles (additive, pure) so the client gets the full seeding
+  profile from the existing search endpoint | MODEL auto, mechanical
+- QUEUED | nt2-add-exercise-stepped-sheet.md | rebuild
+  AddExerciseToLibrarySheet as the stepped flow (suggest-link / seed /
+  curate with segmented Main-Assists picker / done with retroactive
+  line) + link wiring into SessionDetailPage | MODEL fable,
+  judgment-heavy visual - fuller spec detail per the CLAUDE.md carve-out
+- DRAFT | nt3-entry-deferability-polish.md | completed-session pill goes
+  interactive (create-only context - completed sessions are locked
+  server-side, so link/rename is live-only), deferability polish | MODEL
+  auto; flips to QUEUED when NT2 lands
+
+## Landed - N-wave (analytics UI rebalance)
+
+N-wave, authored July 10 (Fable), branch
 `analytics-rebalance-wave` (off catalog-fk-wave HEAD `3d4e874`, which is
 main `13a1e59` + N-wave spec docs + one settings commit). Spec/contract
 source: `docs/specs/analytics-ui-rebalance.md` (passes 1-4 + F-test).
@@ -146,6 +179,8 @@ other AND with N3 - strictly sequential: N4 -> N7 -> N3.
   as `.range-chip`; no hex in CSS diff. No deviations. **This was the LAST
   N-wave unit - the wave is now code-complete on `analytics-rebalance-wave`,
   next gate is the pre-main Fable review of the full branch diff.**
+  (Gate since passed: pre-main Opus review clean July 10, N-wave MERGED TO
+  MAIN `8068ffb`, What's New follow-up `57b1fc8` - see HANDOFF.)
 
 Settled during authoring (were "still open" in the spec): rep ladder =
 1/3/5/8/10/12/15 (20 rejected - Epley error exceeds a plate increment

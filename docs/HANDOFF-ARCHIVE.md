@@ -13,6 +13,57 @@ context) and the git history of `docs/HANDOFF.md`.
 
 ---
 
+Previous entry (July 10, sixth session, Opus — weekly-volume graph
+rebuild + pre-main review): Seth smoked the N-wave on staging: passed,
+one critique — the per-exercise "Weekly volume" mini read as odd (bare
+bars, no values/dates/baseline, 8% min-height floor flattening small
+weeks + hiding rest weeks). **Rebuilt + LANDED `2bcb6e9`** (client-only:
+`ExercisesView.jsx` `WeeklyVolumeMini` + its `index.css` block): zero-based
+`niceScale` heights (floor hack gone), visible baseline + faint empty-week
+stubs (rest weeks read as gaps not missing data), direct peak-value label +
+first/last week dates, accent fill matching sparkline/heatmap, per-bar
+`title` tips. Client build green fresh; unit lane 167/167 fresh (no server
+touch); tokens-only, no hex. Pushed to `origin/analytics-rebalance-wave`
+(`4d89a06..2bcb6e9`). **Pre-main Opus review of the full branch diff DONE
+and CLEAN** (36 files, ~4.4k insertions): cross-user isolation verified
+single-point (both new exercise endpoints route through
+`fetchAllTimeEnrichedSets(userId)`, same doctrine as `getSummary`; a
+foreign `userExerciseId` filters to 404, no leak); NO migration coupling
+in the diff (catalog/FK migrations were the A-wave, already on main);
+unit lane 167/167. **N-WAVE MERGED TO MAIN `8068ffb`** (July 10, clean
+ff `13a1e59..8068ffb`, 26 commits, `origin/main` confirmed == branch
+tip; done via throwaway worktree per the merge-to-main ritual, no
+OneDrive churn). No migration coupling, so no prod DB step. Prod
+Vercel/Render track `main` and auto-deploy on push. **Open follow-ups:**
+(1) verify prod deploy SHA == `8068ffb` in Render/Vercel Events (push !=
+live); (2) prod smoke of the exercises tab + new weekly-volume graph;
+(3) RUNBOOK step 6 — repoint staging Render from `analytics-rebalance-wave`
+back to `main`, verify redeploy SHA. `analytics-rebalance-wave` is now
+fully contained in `main` and is a deletion candidate (gated).
+
+**What's New — DONE + MERGED TO MAIN (`57b1fc8`, July 10; clean ff
+`8068ffb..57b1fc8`, 3 commits, no migration).** Seth's standing
+not-yet-actioned note is closed: the whole
+What's New surface is now PROD-ONLY via new `client/src/lib/appEnv.js`
+`isProdEnv()` (keys off the API host `workout-db-l3gc`, NOT Vite build
+mode — a staging Vercel build also reads PROD; same doctrine as server
+`dbHostGuard`). Modal (`WhatsNewGate`) returns null off prod, archive
+page (`WhatsNewPage`) redirects to `/profile`, Profile link hidden —
+staging + local dev show no release notes. New release entry
+`2026-07-exercises-tab` (2026-07-10) prepended to `whatsNew.js`
+(non-technical copy, outcomes only); its new id re-fires the modal on
+prod. Build green. **Note: because the surface is prod-only by design,
+there is NOTHING to smoke on staging except confirming it stays HIDDEN;
+the modal is first visible on PROD after this deploy lands — verify the
+"Every exercise, in one place" modal fires there for a logged-in user.**
+`main` and `analytics-rebalance-wave` are now identical (`57b1fc8`) — the
+branch is a clean deletion candidate (gated).
+
+- **Wave loose ends still open:** staging Render must be REPOINTED from
+  `main` to `analytics-rebalance-wave` before Seth smokes any
+  server-touching unit (N1/N2 carry engine tails). Smoke account was
+  re-seeded July 10 (TODO 0b done).
+
 Previous entry (July 10, fifth session, Sonnet — N6 LANDED
 `28efeba`, the LAST N-wave unit: Cursor's delivery audited, committed +
 pushed to `origin/analytics-rebalance-wave` (`5778bae..28efeba`). Unit

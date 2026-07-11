@@ -1,7 +1,38 @@
 # HANDOFF — current state
 
-**Updated:** July 10, 2026, seventh session (Fable — not-tracked flow
-brainstorm, NO code). Next addition chosen by Seth: rework the
+**Updated:** July 11, 2026, eighth session (Fable — NT-WAVE SKELETON
+AUTHORED, no product code). Seth settled the brainstorm doc's three open
+questions: (1) variant-of seeding IS in scope this wave; (2) the
+retroactive-attribution message lives in the sheet's success moment ONLY
+— brief, informative, fires every time; no What's New copy asked for;
+(3) the pain is BOTH structural and visual — full flow rebuild AND a
+visual bar, not a styling pass. Three task blocks authored on
+`not-tracked-ux-wave` per the relay v4 template:
+**`nt1-search-secondary-muscles.md`** (QUEUED, MODEL auto — searchCatalog
+rows gain `secondaryMuscles`, additive + pure, so the existing search
+endpoint carries the full seeding profile; NO new endpoint, no schema, no
+migration anywhere in the wave), **`nt2-add-exercise-stepped-sheet.md`**
+(QUEUED, MODEL fable — the centerpiece: sheet rebuilt as suggest-link /
+seed / curate / done stepped flow; cycling chip replaced by a segmented
+Main/Assists explicit-role picker; link wiring into SessionDetailPage via
+the existing `updateSessionExercise` + `buildNamePatch` idiom; create in
+live context also stamps `userExerciseId` on the row; judgment-heavy
+visual, so the block carries fuller design detail per the CLAUDE.md
+carve-out), and **`nt3-entry-deferability-polish.md`** (DRAFT until NT2
+lands — shares both client files with NT2). Facts verified during
+authoring, load-bearing: catalog entries' `primaryMuscles`/
+`secondaryMuscles` are ALREADY the 17-muscle picker vocabulary
+(`deriveMuscleVocabulary` derives it from those fields — no translation
+layer needed); completed sessions are LOCKED server-side (every
+sessionController mutation guards `completedAt`), so LINK/rename is
+live-only while CREATE works from completed sessions too and
+retroactively lights them up via name-based resolution — that asymmetry
+is NT3's whole design. Dispatch: NT1 then NT2 (file-disjoint, batchable
+back-to-back, one review session), NT3 strictly after NT2. QUEUE.md
+restructured: N-wave section moved under Landed, NT-wave now Active.
+
+Previous entry (July 10, seventh session, Fable — not-tracked flow
+brainstorm, NO code): Next addition chosen by Seth: rework the
 "not tracked" custom-exercise UI (the `AddExerciseToLibrarySheet`
 bottom sheet + its "Not tracked - add?" pill entry in
 `SessionDetailPage.jsx`) — current sheet's three-state cycling muscle
@@ -11,68 +42,34 @@ brainstorm written to
 directions, recommendation: catalog-seeded stepped flow A with
 explicit-role picker B as its final step, body-map C parked; verified
 mechanism: name-based resolution makes custom-exercise creation
-RETROACTIVE over past sessions — a copy moment to use). **Session
-stopped BEFORE Seth answered the doc's three open questions — the next
-Fable session starts there, then authors the wave skeleton** (candidate
-unit split is in the doc). Committed on new branch `not-tracked-ux-wave` off
+RETROACTIVE over past sessions — a copy moment to use). Session stopped
+before Seth answered the doc's three open questions (settled July 11 —
+see top entry). Committed on new branch `not-tracked-ux-wave` off
 `analytics-rebalance-wave` HEAD `e960645` (= `main` `57b1fc8` + one
 docs bookkeeping commit); the rebalance branch itself stays a clean
-deletion candidate. No task blocks authored, no QUEUE
-change.
+deletion candidate.
 
-Previous entry (July 10, sixth session, Opus — weekly-volume graph
-rebuild + pre-main review): Seth smoked the N-wave on staging: passed,
-one critique — the per-exercise "Weekly volume" mini read as odd (bare
-bars, no values/dates/baseline, 8% min-height floor flattening small
-weeks + hiding rest weeks). **Rebuilt + LANDED `2bcb6e9`** (client-only:
-`ExercisesView.jsx` `WeeklyVolumeMini` + its `index.css` block): zero-based
-`niceScale` heights (floor hack gone), visible baseline + faint empty-week
-stubs (rest weeks read as gaps not missing data), direct peak-value label +
-first/last week dates, accent fill matching sparkline/heatmap, per-bar
-`title` tips. Client build green fresh; unit lane 167/167 fresh (no server
-touch); tokens-only, no hex. Pushed to `origin/analytics-rebalance-wave`
-(`4d89a06..2bcb6e9`). **Pre-main Opus review of the full branch diff DONE
-and CLEAN** (36 files, ~4.4k insertions): cross-user isolation verified
-single-point (both new exercise endpoints route through
-`fetchAllTimeEnrichedSets(userId)`, same doctrine as `getSummary`; a
-foreign `userExerciseId` filters to 404, no leak); NO migration coupling
-in the diff (catalog/FK migrations were the A-wave, already on main);
-unit lane 167/167. **N-WAVE MERGED TO MAIN `8068ffb`** (July 10, clean
-ff `13a1e59..8068ffb`, 26 commits, `origin/main` confirmed == branch
-tip; done via throwaway worktree per the merge-to-main ritual, no
-OneDrive churn). No migration coupling, so no prod DB step. Prod
-Vercel/Render track `main` and auto-deploy on push. **Open follow-ups:**
-(1) verify prod deploy SHA == `8068ffb` in Render/Vercel Events (push !=
-live); (2) prod smoke of the exercises tab + new weekly-volume graph;
-(3) RUNBOOK step 6 — repoint staging Render from `analytics-rebalance-wave`
-back to `main`, verify redeploy SHA. `analytics-rebalance-wave` is now
-fully contained in `main` and is a deletion candidate (gated).
+Aged out this rewrite, moved verbatim to `docs/HANDOFF-ARCHIVE.md`
+(newest first): the July 10 sixth session (Opus — weekly-volume graph
+rebuild, pre-main Opus review CLEAN, N-WAVE MERGED TO MAIN `8068ffb`)
+and its What's New follow-up (prod-only gate via `appEnv.js`
+`isProdEnv()`, release entry `2026-07-exercises-tab`, MERGED TO MAIN
+`57b1fc8` — `main` and `analytics-rebalance-wave` now identical, branch
+a gated deletion candidate).
 
-**What's New — DONE + MERGED TO MAIN (`57b1fc8`, July 10; clean ff
-`8068ffb..57b1fc8`, 3 commits, no migration).** Seth's standing
-not-yet-actioned note is closed: the whole
-What's New surface is now PROD-ONLY via new `client/src/lib/appEnv.js`
-`isProdEnv()` (keys off the API host `workout-db-l3gc`, NOT Vite build
-mode — a staging Vercel build also reads PROD; same doctrine as server
-`dbHostGuard`). Modal (`WhatsNewGate`) returns null off prod, archive
-page (`WhatsNewPage`) redirects to `/profile`, Profile link hidden —
-staging + local dev show no release notes. New release entry
-`2026-07-exercises-tab` (2026-07-10) prepended to `whatsNew.js`
-(non-technical copy, outcomes only); its new id re-fires the modal on
-prod. Build green. **Note: because the surface is prod-only by design,
-there is NOTHING to smoke on staging except confirming it stays HIDDEN;
-the modal is first visible on PROD after this deploy lands — verify the
-"Every exercise, in one place" modal fires there for a logged-in user.**
-`main` and `analytics-rebalance-wave` are now identical (`57b1fc8`) — the
-branch is a clean deletion candidate (gated).
+- **N-wave follow-ups still open (carried from the archived sixth
+  session):** (1) verify prod deploy SHA == `57b1fc8` in Render/Vercel
+  Events (push != live); (2) prod smoke — exercises tab, weekly-volume
+  graph, and the "Every exercise, in one place" What's New modal firing
+  for a logged-in user (prod is the ONLY place it renders); (3) RUNBOOK
+  step 6 — repoint staging Render off `analytics-rebalance-wave`; point
+  it at `not-tracked-ux-wave` when NT units start landing, verify
+  redeploy SHA in Events.
 
-- **Wave loose ends still open:** staging Render must be REPOINTED from
-  `main` to `analytics-rebalance-wave` before Seth smokes any
-  server-touching unit (N1/N2 carry engine tails). Smoke account was
-  re-seeded July 10 (TODO 0b done).
-Previous entries (incl. the July 10 Fable N-wave skeleton session, the
-July 9 spec-complete session and the July 8 A-wave prod rollout)
-archived verbatim in `docs/HANDOFF-ARCHIVE.md`.
+Previous entries (incl. the July 10 sixth session in full, the July 10
+Fable N-wave skeleton session, the July 9 spec-complete session and the
+July 8 A-wave prod rollout) archived verbatim in
+`docs/HANDOFF-ARCHIVE.md`.
 
 **Rule:** rewritten in place at the end of every working session; kept
 CAPPED (~300 lines: current state, repo/deploy, latest 1-2 session entries,
@@ -178,11 +175,13 @@ trusting it.
 
 ## Next up (the active task)
 
-00. **NEXT ADDITION (Seth-chosen, July 10): not-tracked custom-exercise
-   flow rework.** Brainstorm DONE, skeleton NOT started — resume from
-   `docs/design/not-tracked-add-flow-brainstorm.md`: settle its three
-   open questions with Seth, then author the wave's unit blocks
-   (candidate split in the doc). Branch: `not-tracked-ux-wave`.
+00. **NT-WAVE (the active wave): skeleton AUTHORED July 11, dispatch is
+   next.** Seth dispatches `nt1-search-secondary-muscles.md` to Cursor
+   (MODEL auto), then `nt2-add-exercise-stepped-sheet.md` (MODEL fable)
+   — file-disjoint, may run back-to-back before one review session.
+   Sonnet audits + lands per unit. NT3 flips DRAFT -> QUEUED when NT2
+   lands. Design source: `docs/design/not-tracked-add-flow-brainstorm.md`;
+   decisions log in the top HANDOFF entry. Branch: `not-tracked-ux-wave`.
 0. ~~N-WAVE~~ **DONE end-to-end**: code-complete, pre-main Fable review
    clean, MERGED TO MAIN `8068ffb` + What's New `57b1fc8` — see the
    top entries. Remaining follow-ups are the three listed there (prod
