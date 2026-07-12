@@ -18,11 +18,13 @@ message lives in the sheet's success moment only - brief, every time,
 not just flow criteria. No schema change, no migration anywhere in the
 wave.
 
-Dispatch order: NT1 -> NT2 -> NT3, strictly in that order (NT2 depends on
-NT1's payload; NT3 shares both client files with NT2). NT1 and NT2 are
-file-disjoint (server-only vs client-only) and may be dispatched
-back-to-back for one review session per the batching rule. NT3 stays
-DRAFT until NT2 lands.
+Dispatch order: NT1 -> NT2 -> NTFIX1 -> NT3, strictly in that order (NT2
+depends on NT1's payload; NTFIX1 fixes NT2's smoke findings and NT3 shares
+both client files with NTFIX1 and NT2). NT1 and NT2 are file-disjoint
+(server-only vs client-only) and may be dispatched back-to-back for one
+review session per the batching rule. NTFIX1 and NT3 both touch
+AddExerciseToLibrarySheet.jsx + SessionDetailPage.jsx, so they are NOT
+disjoint - serialize: NTFIX1 lands, then NT3.
 
 - LANDED f4baee3 | nt1-search-secondary-muscles.md | searchCatalog rows
   gain secondaryMuscles (additive, pure) so the client gets the full
@@ -41,10 +43,17 @@ DRAFT until NT2 lands.
   (dropped a vestigial getMuscles fetch that gated the picker on discarded
   data). Findings B-D (dead ternary, create-succeeds/stamp-fails edge,
   tablist a11y) logged for the pre-main Fable gate. Pushed to staging.
-- QUEUED | nt3-entry-deferability-polish.md | completed-session pill goes
-  interactive (create-only context - completed sessions are locked
-  server-side, so link/rename is live-only), deferability polish | MODEL
-  auto; NT2 landed, so NT3 is unblocked
+- QUEUED | ntfix1-nt2-smoke-bugs.md | NT2 smoke-test fixes: (B) dead ternary
+  in goBack, (C) create-succeeds/stamp-fails false error, (D) broken tablist
+  ARIA -> aria-pressed toggle, (E) as-you-type tracked feedback in
+  SessionDetailPage decoupled from commit-on-blur; plus (F) "Failed to fetch"
+  on create-from-scratch as a DIAGNOSE-FIRST item (repro + report, fix only
+  if a clear client defect) | MODEL opus (E wiring + F diagnosis are
+  judgment-heavy). Lands BEFORE NT3 - shares both client files with it
+- QUEUED (blocked behind NTFIX1) | nt3-entry-deferability-polish.md |
+  completed-session pill goes interactive (create-only context - completed
+  sessions are locked server-side, so link/rename is live-only), deferability
+  polish | MODEL auto; runs strictly after NTFIX1 (shares both client files)
 
 ## Landed - N-wave (analytics UI rebalance)
 
