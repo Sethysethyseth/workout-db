@@ -4,7 +4,14 @@ STATUS: QUEUED
 MODEL: opus            <!-- Part 2 (as-you-type resolution wiring) and Part 3
                            (Failed-to-fetch diagnosis) are judgment-heavy;
                            Parts 1a/1b/1c are mechanical. -->
-MODE: 1-relay
+MODE: cloud-branch     <!-- Cursor runs in a cloud workspace synced from
+                           GitHub, NOT in the reviewer's local tree. Commit to
+                           a NEW branch `cursor/ntfix1-nt2-smoke-bugs` off
+                           `not-tracked-ux-wave` and push it; open a PR into
+                           `not-tracked-ux-wave`. Do NOT push to or merge
+                           `not-tracked-ux-wave` directly - the reviewer
+                           fetches your branch, audits, and lands it. Full
+                           handoff steps in the STOP CONDITION footer. -->
 
 CONTEXT:
 Fixes the five findings Seth's staging smoke of NT2 (`f26e783`,
@@ -221,16 +228,28 @@ Part 3 (F):
   is a client-code defect in the allowed files; otherwise no F code change and
   DELIVERY.md says why.
 
-STOP CONDITION (standing footer - keep verbatim in every block):
+STOP CONDITION (cloud-branch handoff - read carefully, this differs from the
+usual "don't touch git" footer because you run in a cloud workspace, not the
+reviewer's local tree):
 Stop when the acceptance criteria are met. If a criterion cannot be met,
 stop and explain why instead of guessing.
 - Before stopping, run every lane this block allows and write the delivery
   report to DELIVERY.md at the repo root (files touched; verbatim test
-  output; each acceptance criterion with the evidence that proved it; any
-  deviations from this block, with reasons). Do not commit it.
-- Do NOT commit, push, or touch git in any way - leave the working tree
-  for review.
-- Do NOT edit docs/HANDOFF.md, AGENTS.md, CLAUDE.md, this task file, or
-  anything under docs/tasks/ - state is the reviewer's job.
+  output; each acceptance criterion with the evidence that proved it; the
+  Part 3 (F) diagnosis in full; any deviations from this block, with reasons).
+- HANDOFF: commit ALL your code changes to a NEW branch
+  `cursor/ntfix1-nt2-smoke-bugs` created off `not-tracked-ux-wave`, and push
+  that branch to origin. Do NOT commit to, push to, or merge
+  `not-tracked-ux-wave` itself - the reviewer fetches your branch, audits,
+  and lands it.
+- Open a PR from `cursor/ntfix1-nt2-smoke-bugs` into `not-tracked-ux-wave`
+  and paste the FULL delivery report into the PR description. DELIVERY.md is
+  gitignored and will NOT travel with the branch push, so the report - and
+  especially the Part 3 (F) diagnosis, which may be text-only with no code -
+  MUST live in the PR body. If you cannot open a PR, put the full report in
+  your final message instead.
+- Do NOT edit docs/HANDOFF.md, docs/tasks/QUEUE.md, AGENTS.md, CLAUDE.md,
+  this task file, or anything else under docs/tasks/ - state is the
+  reviewer's job.
 - Do NOT add dependencies or refactor unrelated code.
 - Do NOT start another task file when done - end your turn.
