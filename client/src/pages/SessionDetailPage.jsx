@@ -373,6 +373,8 @@ function SessionExerciseFields({
   onSaved,
   /** Live session: mark this exercise active when user focuses name/notes. */
   onInteractStart,
+  /** Live session: report draft tracked/untracked status while typing (write-free). */
+  onDraftTrackedStatusChange,
 }) {
   const nameInputId = `session-ex-name-${sessionExercise.id}`;
   const suggestionsListId = `${nameInputId}-suggestions`;
@@ -380,6 +382,7 @@ function SessionExerciseFields({
   const pendingIdentityRef = useRef(null);
   const skipBlurCommitRef = useRef(false);
   const searchSeqRef = useRef(0);
+  const resolveSeqRef = useRef(0);
 
   const [name, setName] = useState(() =>
     sessionExerciseNameForInput(sessionExercise.exerciseName)
@@ -398,8 +401,48 @@ function SessionExerciseFields({
     setSuggestions([]);
     setSuggestionsOpen(false);
     setActiveIndex(-1);
+    onDraftTrackedStatusChange?.(null);
     /* eslint-enable react-hooks/set-state-in-effect */
-  }, [sessionExercise.id, sessionExercise.exerciseName, sessionExercise.notes]);
+  }, [sessionExercise.id, sessionExercise.exerciseName, sessionExercise.notes, onDraftTrackedStatusChange]);
+
+  useEffect(() => {
+    if (disabled || !onDraftTrackedStatusChange) return undefined;
+
+    const trimmed = String(name ?? "").trim();
+    if (trimmed.length < 2) {
+      onDraftTrackedStatusChange(null);
+      return undefined;
+    }
+
+    const storedName = inputToSessionExerciseName(name);
+    if (storedName === sessionExercise.exerciseName) {
+      onDraftTrackedStatusChange(null);
+      return undefined;
+    }
+
+    let cancelled = false;
+    const seq = resolveSeqRef.current + 1;
+    resolveSeqRef.current = seq;
+    const timer = window.setTimeout(() => {
+      exerciseApi
+        .resolveExerciseNames([storedName])
+        .then((data) => {
+          if (cancelled || seq !== resolveSeqRef.current) return;
+          const row = data?.results?.[0];
+          onDraftTrackedStatusChange(row?.resolved ? "resolved" : "unresolved");
+        })
+        .catch(() => {
+          if (!cancelled && seq === resolveSeqRef.current) {
+            onDraftTrackedStatusChange(null);
+          }
+        });
+    }, 300);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [disabled, name, sessionExercise.exerciseName, onDraftTrackedStatusChange]);
 
   useEffect(() => {
     if (disabled) return undefined;
@@ -1233,12 +1276,14 @@ function SessionExerciseBlock({
   onOpenAddToLibrary,
 }) {
   const [draftResumeVersion, setDraftResumeVersion] = useState(0);
+  const [draftTrackedStatus, setDraftTrackedStatus] = useState(null);
   const [perSideOverride, setPerSideOverride] = useState(null);
   const prevSetsLenRef = useRef(null);
   const [confirmRemove, setConfirmRemove] = useState(false);
 
   useEffect(() => {
     setPerSideOverride(null);
+    setDraftTrackedStatus(null);
   }, [se.id]);
 
   useEffect(() => {
@@ -1333,6 +1378,8 @@ function SessionExerciseBlock({
     .filter(Boolean)
     .join(" ");
 
+  const displayTrackedStatus = draftTrackedStatus ?? trackedStatus;
+
   const headingInner = (
     <>
       {collapsible && !isCompleted ? (
@@ -1347,10 +1394,10 @@ function SessionExerciseBlock({
           · {setCountLabel}
         </span>
         <ExerciseTrackedIndicator
-          status={trackedStatus}
-          interactive={!isCompleted && trackedStatus === "unresolved"}
+          status={displayTrackedStatus}
+          interactive={!isCompleted && displayTrackedStatus === "unresolved"}
           onOpenAddToLibrary={
-            !isCompleted && trackedStatus === "unresolved" ? onOpenAddToLibrary : undefined
+            !isCompleted && displayTrackedStatus === "unresolved" ? onOpenAddToLibrary : undefined
           }
         />
         {summaryLine ? (
@@ -1442,6 +1489,7 @@ function SessionExerciseBlock({
             onExerciseCommitted={exerciseCommitted}
             onSaved={onSaved}
             onInteractStart={!isCompleted ? onActivateExercise : undefined}
+            onDraftTrackedStatusChange={!isCompleted ? setDraftTrackedStatus : undefined}
           />
 
           {showPlannedTargets ? (

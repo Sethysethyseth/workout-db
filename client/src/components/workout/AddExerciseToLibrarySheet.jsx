@@ -407,7 +407,11 @@ export function AddExerciseToLibrarySheet({
       const data = await exerciseApi.createCustomExercise({ name: trimmedName, muscles });
       const userExerciseId = data?.userExercise?.id ?? null;
       if (onCreateCommitted) {
-        await onCreateCommitted({ name: trimmedName, userExerciseId });
+        try {
+          await onCreateCommitted({ name: trimmedName, userExerciseId });
+        } catch {
+          // Stamp is best-effort; library entry exists and name-based resolution still works.
+        }
       }
       setDoneVariant("create");
       setStep("done");
@@ -421,7 +425,7 @@ export function AddExerciseToLibrarySheet({
     setLinkError(null);
     setSubmitError(null);
     if (step === "curate") {
-      setStep(hadSuggestStep ? "seed" : "seed");
+      setStep("seed");
       return;
     }
     if (step === "seed" && hadSuggestStep) {
@@ -601,13 +605,11 @@ export function AddExerciseToLibrarySheet({
 
               <div
                 className="add-exercise-library-sheet__role-toggle"
-                role="tablist"
                 aria-label="Muscle role"
               >
                 <button
                   type="button"
-                  role="tab"
-                  aria-selected={pickerMode === "main"}
+                  aria-pressed={pickerMode === "main"}
                   className={`add-exercise-library-sheet__role-btn${
                     pickerMode === "main" ? " add-exercise-library-sheet__role-btn--active" : ""
                   }`}
@@ -617,8 +619,7 @@ export function AddExerciseToLibrarySheet({
                 </button>
                 <button
                   type="button"
-                  role="tab"
-                  aria-selected={pickerMode === "assist"}
+                  aria-pressed={pickerMode === "assist"}
                   className={`add-exercise-library-sheet__role-btn${
                     pickerMode === "assist" ? " add-exercise-library-sheet__role-btn--active" : ""
                   }`}
