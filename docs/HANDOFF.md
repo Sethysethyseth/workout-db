@@ -1,6 +1,41 @@
 # HANDOFF — current state
 
-**Updated:** July 11, 2026, ninth session (Opus — NT1 + NT2 LANDED on
+**Updated:** July 12, 2026, eleventh session (Sonnet — NTFIX1 AUDITED +
+LANDED on `not-tracked-ux-wave`, pushed to staging). Cursor's cloud-branch
+delivery (`cursor/ntfix1-nt2-smoke-bugs-1341`, PR #3) for the five NT2
+smoke findings was fetched, audited, and ff-merged as **`e0ba383`**
+(`804b65b..e0ba383`, `origin/not-tracked-ux-wave` confirmed; PR #3 now
+MERGED). Both lanes re-run FRESH green (client `npm run build`; server
+`test:unit` 170/170 tripwire), diff stays inside the two allowed client
+files, and the runtime-invisible checks a build can't catch all hold:
+`resolveExerciseNames` response shape (`data.results[0].resolved`) matches
+how the sheet already reads it, `inputToSessionExerciseName` is imported in
+`SessionDetailPage`, and the name-input `onChange` (~line 627) fires NO
+mutation (write stays commit-on-blur). **Landed fixes: (B)** dead `goBack`
+ternary collapsed; **(C)** post-create stamp made best-effort (inner
+try/catch swallows a stamp failure so create still reaches `done`; only a
+`createCustomExercise` throw surfaces an error); **(D)** Main/Assists toggle
+converted from broken `role="tablist"` to `aria-pressed` toggle semantics;
+**(E)** as-you-type tracked pill — new debounced (300ms, seq-guarded),
+WRITE-FREE `resolveExerciseNames` in `SessionExerciseFields` reports a draft
+status up to `SessionExerciseBlock`, which renders
+`displayTrackedStatus = draftTrackedStatus ?? trackedStatus`; live-only
+(`!isCompleted`), no commit-on-blur regression. **(F) STILL OPEN — diagnosed,
+NOT fixed (no client defect found):** "Failed to fetch" creating an exercise
+from scratch. Cursor could not do a full-stack local repro (cloud workspace
+had no `DATABASE_URL`), so it curl-probed staging instead: `/exercises/custom`
+preflight + unauthed POST behave identically to `/exercises/resolve`
+(204 preflight w/ correct CORS headers, 401 on POST), which CONTRADICTS
+"CORS blocks all POSTs" / "wrong API origin." `createCustomExercise` builds
+the request correctly via the same `http()` wrapper as the working calls; a
+raw `Failed to fetch` is a native fetch `TypeError` (no response), not an
+`ApiError`. Ranked candidate: **Render cold-start / transient 502 on the
+heavier POST** (staging-repoint caveat applies) — needs a live device/Network
+-tab repro or the pre-main gate to confirm. No F code change (correct per the
+diagnose-first contract). Deviation logged: F local browser repro not run
+(no DB in cloud), curl probe used as supplementary evidence.
+
+Previous entry (July 11, ninth session, Opus — NT1 + NT2 LANDED on
 `not-tracked-ux-wave`, pushed to staging). **NT1** (`f4baee3`) already on
 staging: searchCatalog rows carry `secondaryMuscles` (additive, pure;
 170/170 unit lane). **NT2** (`f26e783`) — the wave centerpiece — landed
@@ -206,17 +241,23 @@ trusting it.
 
 ## Next up (the active task)
 
-00. **NT-WAVE (the active wave): NT1 + NT2 LANDED on staging, NT3 is
-   next.** NT1 (`f4baee3`) and NT2 (`f26e783`) both audited clean and
-   pushed to `not-tracked-ux-wave`. **NT3 (`nt3-entry-deferability-polish.md`)
+00. **NT-WAVE (the active wave): NT1 + NT2 + NTFIX1 LANDED on staging, NT3
+   is next.** NT1 (`f4baee3`), NT2 (`f26e783`), and the NTFIX1 smoke-fix
+   pass (`e0ba383` — B/C/D/E) all audited clean and pushed to
+   `not-tracked-ux-wave`. **NT3 (`nt3-entry-deferability-polish.md`)
    is now QUEUED** (MODEL auto) — completed-session pill goes interactive
    in create-only context (completed sessions are locked server-side, so
-   link/rename is live-only); shares both client files with NT2, so it runs
-   strictly after. NT3 is the last unit of the wave; after it lands, the
-   accumulated branch diff goes to the **pre-main Fable/Opus gate** (with
-   the B/C/D findings above as review fuel) before any merge to main.
-   Design source: `docs/design/not-tracked-add-flow-brainstorm.md`;
-   decisions log in the top HANDOFF entry. Branch: `not-tracked-ux-wave`.
+   link/rename is live-only); shares both client files with NT2/NTFIX1, so
+   it runs strictly after. NT3 is the last unit of the wave; after it lands,
+   the accumulated branch diff goes to the **pre-main Fable/Opus gate**
+   before any merge to main. **Two things for that gate / next session:**
+   (1) **finding F is still OPEN** — "Failed to fetch" on create-from-scratch,
+   diagnosed as no client defect (Render cold-start/502 the ranked candidate),
+   needs a live Network-tab repro on the staging preview to confirm; (2) a
+   **staging smoke of the NTFIX1 fixes** (B/C/D/E) on the Vercel preview once
+   Render/Vercel track this branch. Design source:
+   `docs/design/not-tracked-add-flow-brainstorm.md`; decisions log in the
+   top HANDOFF entry. Branch: `not-tracked-ux-wave`.
 0. ~~N-WAVE~~ **DONE end-to-end**: code-complete, pre-main Fable review
    clean, MERGED TO MAIN `8068ffb` + What's New `57b1fc8` — see the
    top entries. Remaining follow-ups are the three listed there (prod

@@ -1,6 +1,11 @@
 # TASK NTFIX1: NT2 smoke-test bug fixes (E/F/B/C/D) + one diagnosis
 
-STATUS: QUEUED
+STATUS: DONE - landed on not-tracked-ux-wave (ff-merge e0ba383, July 12,
+        eleventh session, Sonnet). B/C/D/E fixed + audited clean (client
+        build + test:unit 170/170 re-run fresh); F diagnosed only, NO client
+        defect confirmed - still needs a live Network-tab repro (Render
+        cold-start/502 is the ranked candidate). PR #3 MERGED. F carried
+        open to the pre-main gate / a device repro.
 MODEL: opus            <!-- Part 2 (as-you-type resolution wiring) and Part 3
                            (Failed-to-fetch diagnosis) are judgment-heavy;
                            Parts 1a/1b/1c are mechanical. -->
