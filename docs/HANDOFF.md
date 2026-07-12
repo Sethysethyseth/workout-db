@@ -35,6 +35,43 @@ heavier POST** (staging-repoint caveat applies) — needs a live device/Network
 diagnose-first contract). Deviation logged: F local browser repro not run
 (no DB in cloud), curl probe used as supplementary evidence.
 
+**LIVE BROWSER TEST OF F (same eleventh session, Sonnet — Playwright, local
+`not-tracked-ux-wave` client via inline `VITE_API_URL` override -> STAGING
+Render API `workout-db-staging.onrender.com`, smoke acct `smoke_b8`; NEVER
+prod).** Drove the full flow: live session 342 -> typed novel name
+`Zzz Cable Thruster Xyz` (pill flipped to "Not tracked" — E confirmed via
+multiple write-free `/exercises/resolve -> 200`) -> "Not tracked - add?" ->
+"Start from scratch" -> chest Main -> submit. **Results:** (1) **F did NOT
+reproduce on the warm backend** — `POST /exercises/custom -> 201`, sheet
+reached "Added to your library". Confirms no deterministic client defect;
+consistent with the cold-start diagnosis, and directly corroborated by a
+measured **22.5s cold-start** on the staging Render `GET /` earlier this
+session (that spin-up window is exactly when a POST gets an edge 502 w/o CORS
+headers -> `TypeError: Failed to fetch`). (2) **Finding C's fix VERIFIED LIVE:**
+the post-create stamp `PATCH /sessions/342/exercises/510` returned **400**,
+was swallowed, and the flow still completed — the exact create-succeeds/
+stamp-fails path C was written for. (3) **D confirmed** — Main/Assists render
+`aria-pressed`/`[pressed]`. **NEW CONFIRMED BUG for the pre-main gate (call it
+G — pre-existing NT2, non-fatal, NOT NTFIX1's regression):** the
+`userExerciseId` stamp on create-in-live-context 400s EVERY time. Client sends
+id-only `{ userExerciseId }` (`SessionDetailPage.jsx:1833`
+`handleAddToLibraryCreateCommitted`); server `updateSessionExercise`
+(`sessionController.js`) only merges identity into `data` INSIDE the
+`if (data.exerciseName !== undefined)` block (~line 577-605) and otherwise trips
+"No fields to update" (line 531) — so a stamp-only PATCH can never persist.
+Response body confirmed: `400 {"error":"No fields to update"}` for body
+`{"userExerciseId":37}`. Net effect: the session_exercise row keeps
+`userExerciseId = null`; attribution still works purely by name-based
+resolution (why C made the stamp best-effort), but NT2/A4's structural id-link
+on this path silently no-ops. Fix is a client/server contract reconciliation
+(server accept id-only identity PATCH, OR client send name+id together) — a
+new task block, NOT in NTFIX1 scope. **Also observed (pre-existing, not
+NTFIX1):** React DOM-nesting warning — the "Not tracked - add?" pill `<button>`
+is nested inside the heading-toggle `<button>` in `SessionExerciseBlock`
+(invalid HTML / hydration warning). **Test residue on staging smoke acct:**
+live session 342 (no sets) + custom exercise `Zzz Cable Thruster Xyz`
+(userExercise 37) left behind — harmless staging pollution, not cleaned up.
+
 Previous entry (July 11, ninth session, Opus — NT1 + NT2 LANDED on
 `not-tracked-ux-wave`, pushed to staging). **NT1** (`f4baee3`) already on
 staging: searchCatalog rows carry `secondaryMuscles` (additive, pure;
