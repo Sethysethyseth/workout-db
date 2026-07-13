@@ -1,6 +1,27 @@
 # HANDOFF — current state
 
-**Updated:** July 12, 2026, eleventh session (Sonnet — NTFIX1 AUDITED +
+**Updated:** July 13, 2026, twelfth session (Fable — AUTONOMOUS-DISPATCH
+WORKFLOW PROPOSAL, no product code). Seth green-lit the relay v5 design:
+Claude Code dispatches task blocks to Cursor itself instead of Seth
+relaying them - Channel A = Cloud Agents API (`POST api.cursor.com
+/v1/agents`, delivery stays the accepted `cursor/` branch + PR-body
+pattern), Channel B = headless CLI (`agent -p`) in a persistent lane
+worktree at `C:\dev\worktrees\cursor-lane` (outside OneDrive, n5
+precedent), with a quota fallback ladder A-named -> B-named -> B-auto
+and a Sonnet-seat relay loop (dispatch -> poll -> land-unit -> next).
+Gate, one-writer rule, land-unit, escalation triggers, and the pre-main
+Fable gate all unchanged. **Status PROPOSED, nothing adopted yet** -
+blocked on Seth's one-time setup (mint CURSOR_API_KEY, install the
+Cursor CLI) + a pricing probe of cloud-agent credit burn (the single
+blocking unknown; routing defaults flip on it). Spec:
+`docs/specs/autonomous-cursor-dispatch.md`; dispatch ritual:
+`.claude/skills/dispatch-unit/SKILL.md`. AGENTS.md/CLAUDE.md still
+describe relay v4 by design - amend only after the probe validates and
+the first autonomous unit lands clean. (This file is over its ~300-line
+cap; aging pass owed at the next state rewrite - not done this session
+to keep the workflow commit clean.)
+
+Previous entry (July 12, eleventh session, Sonnet — NTFIX1 AUDITED +
 LANDED on `not-tracked-ux-wave`, pushed to staging). Cursor's cloud-branch
 delivery (`cursor/ntfix1-nt2-smoke-bugs-1341`, PR #3) for the five NT2
 smoke findings was fetched, audited, and ff-merged as **`e0ba383`**
