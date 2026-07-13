@@ -18,21 +18,16 @@ Decided July 3, 2026 (v3, token-efficiency rebalance); amended July 6, 2026
 (v4: Cursor rebalance + two-tier state channel). Three roles:
 
 - **Sonnet in Claude Code = the resident driver.** Runs the day-to-day
-  relay: per-unit AUDIT of each Cursor delivery - re-run the cheap lanes
-  fresh (unit tests + client build; never trust `DELIVERY.md` for green
-  tests), audit the delivery report against the working tree (scope vs
-  FILES TO TOUCH, spot-check 1-2 acceptance criteria, verify claimed
-  deviations are real and sane) - then commits with SHA verification,
-  pushes to staging, HANDOFF + QUEUE upkeep (aged session logs move
-  verbatim to `docs/HANDOFF-ARCHIVE.md`), dispatch bookkeeping. Sonnet
-  does NOT author task blocks and does NOT settle contract ambiguity - it
-  bounces up instead of guessing (escalation triggers below).
+  relay: per-unit AUDIT of each Cursor delivery, then commit / push /
+  state upkeep. The exact ritual is the **`land-unit` skill** - invoke
+  it at review time rather than reciting from memory. Sonnet does NOT
+  author task blocks and does NOT settle contract ambiguity - it bounces
+  up instead of guessing (escalation triggers below).
 - **Fable/Opus in Claude Code = the architect + final gate.** Short, rare,
   high-leverage sessions: (a) authors the unit-scale task blocks
-  CONTRACT-FIRST (files, patterns by name, machine-checkable acceptance
-  criteria - not line-level implementation; full detail only for
-  judgment-heavy visual units where the design IS the spec), architecture
-  and planning with the repo in hand; (b) ONE thorough review of the
+  CONTRACT-FIRST - the ritual is the **`author-task-block` skill** -
+  plus architecture and planning with the repo in hand; (b) ONE thorough
+  review of the
   accumulated branch diff before any merge to main - nothing ships to main
   without a Fable/Opus pass; it greps `HANDOFF-ARCHIVE.md` for the wave's
   full session history (accepted deviations, sequencing flags, reviewer
@@ -64,21 +59,18 @@ precision, not spec prose density.
 Fable plans / Cursor executes and self-verifies / Sonnet audits and lands.
 The loop per unit:
 
-1. Fable (Claude Code) emits a **unit-scale task block** (template:
-   `cursor-task-block-template.md`, "Unit-scale variant", contract-first) -
-   one coherent roadmap unit with a testable contract, not a 1-3 file
-   slice. Fable typically authors a wave of blocks in one session, then
-   drops out.
+1. Fable (Claude Code) emits a **unit-scale task block** (ritual: the
+   `author-task-block` skill) - one coherent roadmap unit with a testable
+   contract, not a 1-3 file slice. Fable typically authors a wave of
+   blocks in one session, then drops out.
 2. Cursor implements it, gets tests green, writes `DELIVERY.md` (files
    touched, verbatim lane output, per-criterion evidence, deviations),
    stops without committing. Two blocks with fully disjoint FILES TO TOUCH
    may run back-to-back before one review session.
-3. Sonnet (Claude Code) runs the per-unit audit: re-runs the unit lane and
-   client build fresh, audits `DELIVERY.md` against the tree and the block,
-   fixes trivia or bounces (to Cursor for rework, to Fable for ambiguity),
-   commits with SHA verification (one commit per unit, even in a batch),
-   pushes to staging, updates HANDOFF (aging logs out to the archive),
-   dispatches the next block.
+3. Sonnet (Claude Code) audits and lands the unit via the `land-unit`
+   skill (fresh lanes, report-vs-tree audit, fix-or-bounce, one commit
+   per unit, push to staging, QUEUE/HANDOFF upkeep), then dispatches the
+   next block.
 4. Bugs: Seth's report becomes a **diagnosis block** for Cursor first
    (no code); Sonnet verifies the reasoning and green-lights the fix
    block. Direct-fix exception: when diagnosis was ~95% of the work and
@@ -102,3 +94,11 @@ history - only Fable reads it, when planning or gating.
 - `.claude/settings.local.json` is per-machine (gitignored). Destructive ops
   are deliberately NOT allowlisted there - they must always prompt, matching
   gate item 4.
+- Project skills (`.claude/skills/`) carry the repeated rituals so they
+  load on demand at full fidelity instead of sitting always-on:
+  `land-unit` (per-unit audit + land) and `author-task-block` (block
+  authoring). Cursor never loads skills - anything Cursor needs stays in
+  AGENTS.md. Deliberately NOT skills: merge-to-main and schema-deploy
+  stay as copy-paste RUNBOOK rituals - their friction is a feature.
+  `scripts/check-hex.mjs` is the tokens-only tripwire `land-unit` runs
+  on UI units.

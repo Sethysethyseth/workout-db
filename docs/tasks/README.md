@@ -13,7 +13,9 @@ public-repo tracking live in `docs/specs/poor-mans-agentic-workflow.md`.
 ## The loop
 
 1. **Author (Claude Code, planning session):** writes `docs/tasks/<unit>.md`
-   from `_TEMPLATE.md`, adds it to `QUEUE.md` as `QUEUED`, commits.
+   from `_TEMPLATE.md`, adds it to `QUEUE.md` as `QUEUED`, commits AND
+   pushes (Cursor runs in the cloud from GitHub - an unpushed block is
+   invisible). Ritual: the `author-task-block` skill.
 2. **Dispatch (Seth, one line in Cursor):**
 
    > Read `docs/tasks/<unit>.md` and execute it exactly. It is the complete
@@ -29,7 +31,7 @@ public-repo tracking live in `docs/specs/poor-mans-agentic-workflow.md`.
    the unit lane + client build fresh (the report is never trusted for green
    tests), fixes-or-bounces, commits with SHA verification, flips the unit's
    status in `QUEUE.md`, updates `docs/HANDOFF.md` (moving aged session logs
-   to `docs/HANDOFF-ARCHIVE.md`).
+   to `docs/HANDOFF-ARCHIVE.md`). Ritual: the `land-unit` skill.
 
 Bugs enter the queue as DIAGNOSIS blocks first (root cause + evidence +
 proposed fix in `DELIVERY.md`, no code changes); the fix block dispatches

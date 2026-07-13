@@ -115,7 +115,9 @@ Rebrand text lives in: rendered UI, `<title>`, PWA manifest name fields.
   the working tree and the block (re-running the unit lane + client build
   fresh - the report is never trusted for green tests), commits with SHA
   verification, pushes to staging, and keeps HANDOFF current (aged session
-  logs move verbatim to `docs/HANDOFF-ARCHIVE.md`).
+  logs move verbatim to `docs/HANDOFF-ARCHIVE.md`). Exact ritual: the
+  `land-unit` skill in `.claude/skills/` - Claude Code only; Cursor does
+  not load skills, which is why this summary stays here.
 - **Bugs get a Cursor diagnosis block first:** root cause with evidence
   (file:line, mechanism, why it explains the exact symptom) + proposed fix
   in `DELIVERY.md`, NO code changes; the reviewer verifies the reasoning,

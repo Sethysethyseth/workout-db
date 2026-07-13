@@ -11,7 +11,10 @@
       "Bash(npm run test:unit*)",
       "Bash(git add *)",
       "Bash(git commit *)",
-      "Bash(git checkout -b *)"
+      "Bash(git checkout -b *)",
+      "Bash(node scripts/check-hex.mjs*)",
+      "Skill(land-unit)",
+      "Skill(author-task-block)"
     ]
   }
 }
