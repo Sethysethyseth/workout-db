@@ -17,9 +17,26 @@ blocking unknown; routing defaults flip on it). Spec:
 `docs/specs/autonomous-cursor-dispatch.md`; dispatch ritual:
 `.claude/skills/dispatch-unit/SKILL.md`. AGENTS.md/CLAUDE.md still
 describe relay v4 by design - amend only after the probe validates and
-the first autonomous unit lands clean. (This file is over its ~300-line
-cap; aging pass owed at the next state rewrite - not done this session
-to keep the workflow commit clean.)
+the first autonomous unit lands clean. **Billing settled with Seth:**
+everything rides the Pro plan's included usage (CLI-auto rung is free;
+cloud agents + named models draw the ~$20/mo included pool) PROVIDED
+on-demand/usage-based overage is toggled OFF or capped in the Cursor
+dashboard - Seth must verify that toggle during setup so exhaustion
+means refusals (which the ladder absorbs), never surprise charges.
+**Resume sequence for the next session, in order:** (1) Seth's setup -
+mint CURSOR_API_KEY (dashboard -> API Keys, set as User env var; does
+NOT conflict with the ANTHROPIC_API_KEY rule, that one is Claude-auth
+only), install the Cursor CLI + `agent login`, verify the overage
+toggle; (2) Claude Code runs the spec's pricing probe (read-only cloud
+agent -> `GET /v1/agents/{id}/usage`, plus the CLI-auto rung) and
+records the numbers in the spec; (3) routing defaults confirmed or
+flipped from the probe; (4) first live trial = dispatch NT3
+(`nt3-entry-deferability-polish.md`, QUEUED, MODEL auto -> Channel B
+auto rung per the spec's defaults) via `dispatch-unit`, land it via
+`land-unit`, and only after that clean landing amend AGENTS.md/
+CLAUDE.md to relay v5. (This file is over its ~300-line cap; aging
+pass owed at the next state rewrite - not done this session to keep
+the workflow commit clean.)
 
 Previous entry (July 12, eleventh session, Sonnet — NTFIX1 AUDITED +
 LANDED on `not-tracked-ux-wave`, pushed to staging). Cursor's cloud-branch
