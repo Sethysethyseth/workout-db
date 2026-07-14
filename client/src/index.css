@@ -3059,6 +3059,21 @@ html[data-theme="dark"] .session-finish-dock {
   justify-self: start;
 }
 
+@media (prefers-reduced-motion: no-preference) {
+  .session-exercise-tracked-slot-pill {
+    animation: session-exercise-tracked-pill-in var(--motion-base) var(--ease-standard);
+  }
+}
+
+@keyframes session-exercise-tracked-pill-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 .session-exercise-tracked-pill {
   display: inline-flex;
   align-items: center;

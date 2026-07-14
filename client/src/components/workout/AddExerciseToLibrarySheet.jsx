@@ -111,10 +111,12 @@ export function AddExerciseToLibrarySheet({
   open,
   initialName = "",
   sessionExerciseId = null,
+  context = "live",
   onClose,
   onLink,
   onCreateCommitted,
 }) {
+  const isCompletedContext = context === "completed";
   const titleId = useId();
   const nameInputRef = useRef(null);
   const seedInputRef = useRef(null);
@@ -168,6 +170,13 @@ export function AddExerciseToLibrarySheet({
     initialSearchSeqRef.current = seq;
 
     async function runInitialSearch() {
+      // Completed sessions are locked server-side (no rename/link) - create-only
+      // flow opens at seed and never enters suggest.
+      if (isCompletedContext) {
+        setStep("seed");
+        setInitialSearchLoading(false);
+        return;
+      }
       if (!trimmed) {
         setStep("seed");
         setInitialSearchLoading(false);
@@ -195,7 +204,7 @@ export function AddExerciseToLibrarySheet({
     return () => {
       cancelled = true;
     };
-  }, [open, initialName]);
+  }, [open, initialName, isCompletedContext]);
 
   useEffect(() => {
     if (!open) return;
@@ -408,7 +417,13 @@ export function AddExerciseToLibrarySheet({
       const userExerciseId = data?.userExercise?.id ?? null;
       if (onCreateCommitted) {
         try {
-          await onCreateCommitted({ name: trimmedName, userExerciseId });
+          if (isCompletedContext) {
+            // Locked session: skip userExerciseId stamp (PATCH would 4xx). Name-based
+            // resolution alone flips the pill after invalidate + refresh.
+            await onCreateCommitted({ name: trimmedName });
+          } else {
+            await onCreateCommitted({ name: trimmedName, userExerciseId });
+          }
         } catch {
           // Stamp is best-effort; library entry exists and name-based resolution still works.
         }
@@ -419,7 +434,7 @@ export function AddExerciseToLibrarySheet({
       setSubmitError(err);
       setSubmitting(false);
     }
-  }, [canSubmit, muscleRoles, trimmedName, onCreateCommitted]);
+  }, [canSubmit, muscleRoles, trimmedName, onCreateCommitted, isCompletedContext]);
 
   const goBack = useCallback(() => {
     setLinkError(null);
@@ -488,7 +503,7 @@ export function AddExerciseToLibrarySheet({
           key={step}
           className={`add-exercise-library-sheet__step add-exercise-library-sheet__step--${step}`}
         >
-          {step === "suggest" ? (
+          {step === "suggest" && !isCompletedContext ? (
             <>
               <p className="add-exercise-library-sheet__lead muted small">
                 Pick a match to link this set row, or say it is its own thing.
@@ -590,14 +605,16 @@ export function AddExerciseToLibrarySheet({
                   <p className="add-exercise-library-sheet__already-tracked-text muted small">
                     Already tracked as {alreadyTracked}
                   </p>
-                  <button
-                    type="button"
-                    className="btn btn-secondary add-exercise-library-sheet__use-name-btn"
-                    disabled={linking || !sessionExerciseId}
-                    onClick={() => void handleUseThatName()}
-                  >
-                    Use that name
-                  </button>
+                  {!isCompletedContext ? (
+                    <button
+                      type="button"
+                      className="btn btn-secondary add-exercise-library-sheet__use-name-btn"
+                      disabled={linking || !sessionExerciseId}
+                      onClick={() => void handleUseThatName()}
+                    >
+                      Use that name
+                    </button>
+                  ) : null}
                 </div>
               ) : null}
 

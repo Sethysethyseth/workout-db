@@ -1395,9 +1395,9 @@ function SessionExerciseBlock({
         </span>
         <ExerciseTrackedIndicator
           status={displayTrackedStatus}
-          interactive={!isCompleted && displayTrackedStatus === "unresolved"}
+          interactive={displayTrackedStatus === "unresolved"}
           onOpenAddToLibrary={
-            !isCompleted && displayTrackedStatus === "unresolved" ? onOpenAddToLibrary : undefined
+            displayTrackedStatus === "unresolved" ? onOpenAddToLibrary : undefined
           }
         />
         {summaryLine ? (
@@ -2802,6 +2802,7 @@ export function SessionDetailPage() {
                   useSetNotes={isFromTemplate && liveUseSetNotes}
                   isQuickLog={isQuickLog}
                   trackedStatus={trackedStatusByExerciseId.get(se.id) ?? null}
+                  onOpenAddToLibrary={() => openAddToLibrarySheet(se.exerciseName, se.id)}
                   onSaved={load}
                   onCreateSet={onCreateSetForExercise}
                   onUpdateSet={onUpdateSet}
@@ -2843,6 +2844,7 @@ export function SessionDetailPage() {
         open={Boolean(addToLibrarySheet)}
         initialName={addToLibrarySheet?.exerciseName ?? ""}
         sessionExerciseId={addToLibrarySheet?.sessionExerciseId ?? null}
+        context={isCompleted ? "completed" : "live"}
         onClose={closeAddToLibrarySheet}
         onLink={handleAddToLibraryLink}
         onCreateCommitted={handleAddToLibraryCreateCommitted}
