@@ -63,7 +63,11 @@ here is staging-side).
   `agent -p "<dispatch line + 'write the report to DELIVERY.md in this
   directory and make NO git operations'>" --force --output-format text`
   with cwd = the lane worktree. Model: named for plan-credit rung,
-  `auto` for the free rung.
+  `auto` for the free rung. ALWAYS pass `--model` EXPLICITLY - the CLI
+  remembers the last-used model, so a flagless run silently inherits
+  whatever the previous invocation used (July 14: a flagless dispatch
+  inherited an exhausted named model and quota-refused while
+  `--model auto` worked fine).
 - On hang/timeout: kill, retry once, then descend or escalate.
 - On exit: delivery = uncommitted changes + DELIVERY.md in the
   worktree -> flip AWAITING-REVIEW, hand to `land-unit` (local-relay
