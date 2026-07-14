@@ -1,6 +1,40 @@
 # HANDOFF — current state
 
-**Updated:** July 13, 2026, twelfth session (Fable — AUTONOMOUS-DISPATCH
+**Updated:** July 14, 2026, thirteenth session (Sonnet — MANUAL SETUP FOR
+RELAY v5 COMPLETE, no product code). Walked Seth through the four-item
+one-time setup checklist from `docs/specs/autonomous-cursor-dispatch.md`
+("One-time setup" section) in chat: (1) **`CURSOR_API_KEY` minted +
+set as a User env var** — confirmed present in the registry
+(`[Environment]::GetEnvironmentVariable('CURSOR_API_KEY','User')` ->
+truthy); (2) **Cursor CLI installed** via `irm
+'https://cursor.com/install?win32=true' | iex` (Windows installer, not
+the Unix curl form the spec's prose implied — worth a spec correction
+whenever Fable next touches that doc) — **`agent login` completion is
+UNCONFIRMED**, Seth moved to step 4 before answering; not necessarily
+blocking since the spec allows relying on `CURSOR_API_KEY` alone in CI
+mode, but verify explicitly before the first dispatch; (3) worktree
+root `C:\dev\worktrees\` already existed (n5 precedent), nothing to do;
+(4) **overage toggle confirmed OFF** — dashboard screenshot showed
+"On-Demand Spending: Disabled" and "Monthly Limit: Disabled" under Pro
+($20/mo, 33% of included usage consumed, resets Jul 17) — matches the
+billing precondition exactly (exhaustion means refusals, never a
+surprise charge). **Known environment gotcha hit twice this session:**
+neither the env var nor the newly-installed CLI (`agent` / `cursor-agent`
+on PATH) were visible to this Claude Code session's own shell after
+Seth set/installed them in a separate terminal window — Windows only
+hands updated env/PATH to processes spawned after the change reaches
+whatever launched the session, not to an already-running one. **Session
+was restarted specifically to pick these up; next session should verify
+first** (`Get-Command agent`, `$env:CURSOR_API_KEY` truthy) before
+attempting anything else. **Next up per the resume sequence: skip
+straight to step (2)** — run the spec's pricing probe (read-only cloud
+agent -> `GET /v1/agents/{id}/usage`, plus the CLI-auto rung), record
+the numbers in the spec, then confirm/flip routing defaults, then the
+NT3 live dispatch trial. Status still PROPOSED — nothing adopted into
+AGENTS.md/CLAUDE.md until the probe validates and NT3 lands clean via
+the new channels.
+
+Previous entry (July 13, twelfth session, Fable — AUTONOMOUS-DISPATCH
 WORKFLOW PROPOSAL, no product code). Seth green-lit the relay v5 design:
 Claude Code dispatches task blocks to Cursor itself instead of Seth
 relaying them - Channel A = Cloud Agents API (`POST api.cursor.com
