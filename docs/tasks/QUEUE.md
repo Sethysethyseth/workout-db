@@ -43,17 +43,25 @@ disjoint - serialize: NTFIX1 lands, then NT3.
   (dropped a vestigial getMuscles fetch that gated the picker on discarded
   data). Findings B-D (dead ternary, create-succeeds/stamp-fails edge,
   tablist a11y) logged for the pre-main Fable gate. Pushed to staging.
-- QUEUED | ntfix1-nt2-smoke-bugs.md | NT2 smoke-test fixes: (B) dead ternary
-  in goBack, (C) create-succeeds/stamp-fails false error, (D) broken tablist
-  ARIA -> aria-pressed toggle, (E) as-you-type tracked feedback in
-  SessionDetailPage decoupled from commit-on-blur; plus (F) "Failed to fetch"
-  on create-from-scratch as a DIAGNOSE-FIRST item (repro + report, fix only
-  if a clear client defect) | MODEL opus (E wiring + F diagnosis are
-  judgment-heavy). Lands BEFORE NT3 - shares both client files with it
-- QUEUED (blocked behind NTFIX1) | nt3-entry-deferability-polish.md |
+- LANDED e0ba383 | ntfix1-nt2-smoke-bugs.md | NT2 smoke-test fixes B/C/D/E
+  landed July 12 (Sonnet audit): cloud-branch delivery
+  `cursor/ntfix1-nt2-smoke-bugs-1341` (PR #3, now MERGED) ff-merged
+  `804b65b..e0ba383`; both lanes re-run fresh green (client build; server
+  170/170 tripwire). (F) "Failed to fetch" = DIAGNOSED, no client defect
+  (Render cold-start/502 ranked cause; did NOT reproduce on a warm backend
+  in the live Playwright test) - stays open for the pre-main gate. NEW
+  finding G from the live test (pre-existing NT2, for the gate): the
+  id-only `{ userExerciseId }` stamp PATCH 400s every time (server merges
+  identity only inside the exerciseName branch) - needs a client/server
+  contract reconciliation block. (This entry was stale-QUEUED until July
+  14 - the landing session updated HANDOFF but not QUEUE.)
+- DISPATCHED July 14 | nt3-entry-deferability-polish.md |
   completed-session pill goes interactive (create-only context - completed
   sessions are locked server-side, so link/rename is live-only), deferability
-  polish | MODEL auto; runs strictly after NTFIX1 (shares both client files)
+  polish | MODEL auto -> Channel B AUTO rung (CLI headless in
+  C:\dev\worktrees\cursor-lane off wave HEAD d00eda6). FIRST AUTONOMOUS
+  DISPATCH (relay v5 trial); A rung dead (usage-based-only, overage OFF),
+  B-named exhausted until 7/17 - see the July 14 probe results in the spec
 
 ## Landed - N-wave (analytics UI rebalance)
 
