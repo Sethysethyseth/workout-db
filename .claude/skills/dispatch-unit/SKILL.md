@@ -58,6 +58,8 @@ here is staging-side).
   install). Per dispatch: `git status` MUST be clean in it (dirty =
   stop, a prior delivery wasn't landed), then
   `git checkout -B cursor/<unit> <wave-branch>`.
+- Flip the unit DISPATCHED in QUEUE.md (channel, rung, model in the
+  notes) before the run - same bookkeeping as Channel A.
 - Run as a BACKGROUND task with a hard timeout (print mode has a known
   indefinite-hang bug - never foreground-wait):
   `agent -p "<dispatch line + 'write the report to DELIVERY.md in this

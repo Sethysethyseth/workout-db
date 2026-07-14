@@ -14,18 +14,27 @@ green tests.
 
 - Read the task block (`docs/tasks/<unit>.md`) and `DELIVERY.md` (the
   `## <unit-id>` section when units were batched).
-- Delivery arrives one of two ways:
-  - **Mode 1 (local relay):** changes sit uncommitted in this working tree.
-  - **Cloud branch:** Cursor pushed a `cursor/<slug>` branch + PR, report
-    in the PR body (the NTFIX1 / PR #3 pattern). `git fetch`, audit the
-    PR diff, ff-merge onto the wave branch after the audit passes.
+- Delivery arrives one of three ways:
+  - **Lane worktree (the v5 backbone):** `dispatch-unit` ran the headless
+    CLI in `C:\dev\worktrees\cursor-lane` - uncommitted changes +
+    DELIVERY.md sit in THAT tree, not this one. Audit and run the lanes
+    THERE; land per the lane variant in section 4.
+  - **Local relay (hand-relay fallback):** Seth pointed Cursor at the
+    block himself - changes sit uncommitted in this working tree.
+  - **Cloud branch (Channel A exception):** Cursor pushed a `cursor/<slug>`
+    branch + PR, report in the PR body (the NTFIX1 / PR #3 pattern).
+    `git fetch`, audit the PR diff, ff-merge onto the wave branch after
+    the audit passes.
 - Two-agents check: `git status --untracked-files=all` immediately before
-  any commit - untracked DIRECTORIES collapse to one line and hide new
-  files. OneDrive lags: a stale-looking file is usually sync lag; let
-  writes settle.
+  any commit, in whichever tree the commit happens - untracked DIRECTORIES
+  collapse to one line and hide new files. OneDrive lags (main tree only;
+  the lane worktree lives outside OneDrive): a stale-looking file is
+  usually sync lag; let writes settle.
 
 ## 1. Re-run the cheap lanes FRESH
 
+- Run them in the tree that holds the delivery (the lane worktree for
+  dispatched units, this tree otherwise).
 - `npm run test:unit` from `server/` (DB-free lane).
 - `npm run build` from `client/`.
 - NEVER `npm test` on a migration-carrying block (`pretest` runs
@@ -63,6 +72,10 @@ green tests.
 - Stage files INDIVIDUALLY - never `git add .` (untracked junk exists).
 - ASCII-only commit message; hyphens, never em-dashes.
 - One commit per unit, even in a batch.
+- Lane-worktree deliveries (NT3 precedent): commit in the LANE on its
+  `cursor/<unit>` branch, then ff-merge onto the wave branch (rebase the
+  lane branch first if the wave moved) and push from the main tree. One
+  commit per unit still holds.
 - SHA verify: `git log --oneline -1`.
 - Push to the staging branch (allowed without asking; prod-bound pushes
   and main are gated). Confirm arrival:
@@ -78,3 +91,6 @@ green tests.
 - Give Seth a short bullet smoke-test list for the staging deploy
   (standing ask - he tests on the staging-branch Vercel deploy, never
   local dev).
+- Relay loop: nothing left in flight and QUEUE.md has a QUEUED unit whose
+  serialization notes allow it -> dispatch it via `dispatch-unit`. Wave
+  complete -> stop; the pre-main gate is Fable + Seth, never the loop.

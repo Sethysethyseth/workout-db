@@ -1,6 +1,36 @@
 # HANDOFF — current state
 
-**Updated:** July 14, 2026, fourteenth session (Fable — RELAY v5 ADOPTED:
+**Updated:** July 14, 2026, fifteenth session (Fable — relay v5 DOC
+ALIGNMENT: skills + task-queue protocol swept for the v4 remnants the
+adoption left behind; no product code). Four files. **`author-task-block`**
+now frames the dispatch line as channel-agnostic, marks the contract-first
+rules carried unchanged into v5, notes MODEL doubles as the
+dispatch-routing lever (`auto` -> free CLI rung), pins that MODE governs
+only the hand-relay fallback (autonomous dispatch always uses the lane
+worktree), adds the DB-free-lanes-only constraint on dispatched blocks
+(no `server/.env` in the lane worktree or the cloud — a block needing
+the integration lane is a hand-relay flag), and ends by invoking
+`dispatch-unit` instead of "hand Seth the dispatch line" (the line
+survives as the documented fallback). **`land-unit`** now names the lane
+worktree as the primary of THREE delivery modes (audit + lanes run in
+`C:\dev\worktrees\cursor-lane`; commit in the lane on `cursor/<unit>`,
+ff-merge onto the wave branch, push — the NT3 precedent), scopes the
+OneDrive sync-lag caveat to the main tree, and closes with the
+relay-loop continuation (idle + QUEUED unit -> `dispatch-unit`; wave
+complete -> stop, the gate is Fable + Seth). **`dispatch-unit`** gains
+its one missing beat: Channel B flips DISPATCHED in QUEUE.md before the
+run (bookkeeping parity with Channel A). **`docs/tasks/README.md`**
+rewritten from the v4 "Seth dispatches" loop to v5 (dispatch step =
+`dispatch-unit` with the hand-relay line kept as fallback, DELIVERY.md
+lands at the root of whichever tree the block runs in, DISPATCHED
+flipped by the dispatcher, "Two modes" demoted to hand-relay paths,
+Seth's job = go-aheads / bug reports / smoke sign-off / gate items,
+MODEL guidance aligned with the Fable-withheld rule). `_TEMPLATE.md`
+untouched DELIBERATELY — the standing footer is verbatim-standing and
+"repo root" already reads correctly in whichever tree the block runs.
+Next up unchanged: the pre-main gate (NEXT UP paragraph below).
+
+Previous entry (July 14, fourteenth session, Fable — RELAY v5 ADOPTED:
 pricing probe run + NT3 landed as the FIRST AUTONOMOUS DISPATCH; NT-WAVE
 NOW CODE-COMPLETE). Resume sequence executed end-to-end this session:
 **(1) Setup verified from ground truth** — the session restart still did
@@ -62,42 +92,10 @@ client/server contract-reconciliation block), and the React DOM-nesting
 warning (pill button inside heading button). Merge stays behind Seth's
 "push to main" trigger phrase.
 
-Previous entry (July 14, thirteenth session, Sonnet — MANUAL SETUP FOR
-RELAY v5 COMPLETE, no product code). Walked Seth through the four-item
-one-time setup checklist from `docs/specs/autonomous-cursor-dispatch.md`
-("One-time setup" section) in chat: (1) **`CURSOR_API_KEY` minted +
-set as a User env var** — confirmed present in the registry
-(`[Environment]::GetEnvironmentVariable('CURSOR_API_KEY','User')` ->
-truthy); (2) **Cursor CLI installed** via `irm
-'https://cursor.com/install?win32=true' | iex` (Windows installer, not
-the Unix curl form the spec's prose implied — worth a spec correction
-whenever Fable next touches that doc) — **`agent login` completion is
-UNCONFIRMED**, Seth moved to step 4 before answering; not necessarily
-blocking since the spec allows relying on `CURSOR_API_KEY` alone in CI
-mode, but verify explicitly before the first dispatch; (3) worktree
-root `C:\dev\worktrees\` already existed (n5 precedent), nothing to do;
-(4) **overage toggle confirmed OFF** — dashboard screenshot showed
-"On-Demand Spending: Disabled" and "Monthly Limit: Disabled" under Pro
-($20/mo, 33% of included usage consumed, resets Jul 17) — matches the
-billing precondition exactly (exhaustion means refusals, never a
-surprise charge). **Known environment gotcha hit twice this session:**
-neither the env var nor the newly-installed CLI (`agent` / `cursor-agent`
-on PATH) were visible to this Claude Code session's own shell after
-Seth set/installed them in a separate terminal window — Windows only
-hands updated env/PATH to processes spawned after the change reaches
-whatever launched the session, not to an already-running one. **Session
-was restarted specifically to pick these up; next session should verify
-first** (`Get-Command agent`, `$env:CURSOR_API_KEY` truthy) before
-attempting anything else. **Next up per the resume sequence: skip
-straight to step (2)** — run the spec's pricing probe (read-only cloud
-agent -> `GET /v1/agents/{id}/usage`, plus the CLI-auto rung), record
-the numbers in the spec, then confirm/flip routing defaults, then the
-NT3 live dispatch trial. Status still PROPOSED — nothing adopted into
-AGENTS.md/CLAUDE.md until the probe validates and NT3 lands clean via
-the new channels.
-
 Aged out this rewrite, moved verbatim to `docs/HANDOFF-ARCHIVE.md`
-(newest first): the July 13 twelfth session (Fable — relay v5 proposal),
+(newest first): the July 14 thirteenth session (Sonnet — relay v5
+one-time manual setup complete; env/PATH staleness gotcha). The prior
+rewrite aged the July 13 twelfth session (Fable — relay v5 proposal),
 the July 12 eleventh session (Sonnet — NTFIX1 landed `e0ba383` + the
 live browser test of F that produced finding G), the July 11 ninth
 session (Opus — NT1 + NT2 landed), the July 11 eighth session (Fable —
