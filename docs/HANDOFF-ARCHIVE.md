@@ -13,6 +13,196 @@ context) and the git history of `docs/HANDOFF.md`.
 
 ---
 
+Previous entry (July 13, twelfth session, Fable — AUTONOMOUS-DISPATCH
+WORKFLOW PROPOSAL, no product code). Seth green-lit the relay v5 design:
+Claude Code dispatches task blocks to Cursor itself instead of Seth
+relaying them - Channel A = Cloud Agents API (`POST api.cursor.com
+/v1/agents`, delivery stays the accepted `cursor/` branch + PR-body
+pattern), Channel B = headless CLI (`agent -p`) in a persistent lane
+worktree at `C:\dev\worktrees\cursor-lane` (outside OneDrive, n5
+precedent), with a quota fallback ladder A-named -> B-named -> B-auto
+and a Sonnet-seat relay loop (dispatch -> poll -> land-unit -> next).
+Gate, one-writer rule, land-unit, escalation triggers, and the pre-main
+Fable gate all unchanged. **Status PROPOSED, nothing adopted yet** -
+blocked on Seth's one-time setup (mint CURSOR_API_KEY, install the
+Cursor CLI) + a pricing probe of cloud-agent credit burn (the single
+blocking unknown; routing defaults flip on it). Spec:
+`docs/specs/autonomous-cursor-dispatch.md`; dispatch ritual:
+`.claude/skills/dispatch-unit/SKILL.md`. AGENTS.md/CLAUDE.md still
+describe relay v4 by design - amend only after the probe validates and
+the first autonomous unit lands clean. **Billing settled with Seth:**
+everything rides the Pro plan's included usage (CLI-auto rung is free;
+cloud agents + named models draw the ~$20/mo included pool) PROVIDED
+on-demand/usage-based overage is toggled OFF or capped in the Cursor
+dashboard - Seth must verify that toggle during setup so exhaustion
+means refusals (which the ladder absorbs), never surprise charges.
+**Resume sequence for the next session, in order:** (1) Seth's setup -
+mint CURSOR_API_KEY (dashboard -> API Keys, set as User env var; does
+NOT conflict with the ANTHROPIC_API_KEY rule, that one is Claude-auth
+only), install the Cursor CLI + `agent login`, verify the overage
+toggle; (2) Claude Code runs the spec's pricing probe (read-only cloud
+agent -> `GET /v1/agents/{id}/usage`, plus the CLI-auto rung) and
+records the numbers in the spec; (3) routing defaults confirmed or
+flipped from the probe; (4) first live trial = dispatch NT3
+(`nt3-entry-deferability-polish.md`, QUEUED, MODEL auto -> Channel B
+auto rung per the spec's defaults) via `dispatch-unit`, land it via
+`land-unit`, and only after that clean landing amend AGENTS.md/
+CLAUDE.md to relay v5. (This file is over its ~300-line cap; aging
+pass owed at the next state rewrite - not done this session to keep
+the workflow commit clean.)
+
+Previous entry (July 12, eleventh session, Sonnet — NTFIX1 AUDITED +
+LANDED on `not-tracked-ux-wave`, pushed to staging). Cursor's cloud-branch
+delivery (`cursor/ntfix1-nt2-smoke-bugs-1341`, PR #3) for the five NT2
+smoke findings was fetched, audited, and ff-merged as **`e0ba383`**
+(`804b65b..e0ba383`, `origin/not-tracked-ux-wave` confirmed; PR #3 now
+MERGED). Both lanes re-run FRESH green (client `npm run build`; server
+`test:unit` 170/170 tripwire), diff stays inside the two allowed client
+files, and the runtime-invisible checks a build can't catch all hold:
+`resolveExerciseNames` response shape (`data.results[0].resolved`) matches
+how the sheet already reads it, `inputToSessionExerciseName` is imported in
+`SessionDetailPage`, and the name-input `onChange` (~line 627) fires NO
+mutation (write stays commit-on-blur). **Landed fixes: (B)** dead `goBack`
+ternary collapsed; **(C)** post-create stamp made best-effort (inner
+try/catch swallows a stamp failure so create still reaches `done`; only a
+`createCustomExercise` throw surfaces an error); **(D)** Main/Assists toggle
+converted from broken `role="tablist"` to `aria-pressed` toggle semantics;
+**(E)** as-you-type tracked pill — new debounced (300ms, seq-guarded),
+WRITE-FREE `resolveExerciseNames` in `SessionExerciseFields` reports a draft
+status up to `SessionExerciseBlock`, which renders
+`displayTrackedStatus = draftTrackedStatus ?? trackedStatus`; live-only
+(`!isCompleted`), no commit-on-blur regression. **(F) STILL OPEN — diagnosed,
+NOT fixed (no client defect found):** "Failed to fetch" creating an exercise
+from scratch. Cursor could not do a full-stack local repro (cloud workspace
+had no `DATABASE_URL`), so it curl-probed staging instead: `/exercises/custom`
+preflight + unauthed POST behave identically to `/exercises/resolve`
+(204 preflight w/ correct CORS headers, 401 on POST), which CONTRADICTS
+"CORS blocks all POSTs" / "wrong API origin." `createCustomExercise` builds
+the request correctly via the same `http()` wrapper as the working calls; a
+raw `Failed to fetch` is a native fetch `TypeError` (no response), not an
+`ApiError`. Ranked candidate: **Render cold-start / transient 502 on the
+heavier POST** (staging-repoint caveat applies) — needs a live device/Network
+-tab repro or the pre-main gate to confirm. No F code change (correct per the
+diagnose-first contract). Deviation logged: F local browser repro not run
+(no DB in cloud), curl probe used as supplementary evidence.
+
+**LIVE BROWSER TEST OF F (same eleventh session, Sonnet — Playwright, local
+`not-tracked-ux-wave` client via inline `VITE_API_URL` override -> STAGING
+Render API `workout-db-staging.onrender.com`, smoke acct `smoke_b8`; NEVER
+prod).** Drove the full flow: live session 342 -> typed novel name
+`Zzz Cable Thruster Xyz` (pill flipped to "Not tracked" — E confirmed via
+multiple write-free `/exercises/resolve -> 200`) -> "Not tracked - add?" ->
+"Start from scratch" -> chest Main -> submit. **Results:** (1) **F did NOT
+reproduce on the warm backend** — `POST /exercises/custom -> 201`, sheet
+reached "Added to your library". Confirms no deterministic client defect;
+consistent with the cold-start diagnosis, and directly corroborated by a
+measured **22.5s cold-start** on the staging Render `GET /` earlier this
+session (that spin-up window is exactly when a POST gets an edge 502 w/o CORS
+headers -> `TypeError: Failed to fetch`). (2) **Finding C's fix VERIFIED LIVE:**
+the post-create stamp `PATCH /sessions/342/exercises/510` returned **400**,
+was swallowed, and the flow still completed — the exact create-succeeds/
+stamp-fails path C was written for. (3) **D confirmed** — Main/Assists render
+`aria-pressed`/`[pressed]`. **NEW CONFIRMED BUG for the pre-main gate (call it
+G — pre-existing NT2, non-fatal, NOT NTFIX1's regression):** the
+`userExerciseId` stamp on create-in-live-context 400s EVERY time. Client sends
+id-only `{ userExerciseId }` (`SessionDetailPage.jsx:1833`
+`handleAddToLibraryCreateCommitted`); server `updateSessionExercise`
+(`sessionController.js`) only merges identity into `data` INSIDE the
+`if (data.exerciseName !== undefined)` block (~line 577-605) and otherwise trips
+"No fields to update" (line 531) — so a stamp-only PATCH can never persist.
+Response body confirmed: `400 {"error":"No fields to update"}` for body
+`{"userExerciseId":37}`. Net effect: the session_exercise row keeps
+`userExerciseId = null`; attribution still works purely by name-based
+resolution (why C made the stamp best-effort), but NT2/A4's structural id-link
+on this path silently no-ops. Fix is a client/server contract reconciliation
+(server accept id-only identity PATCH, OR client send name+id together) — a
+new task block, NOT in NTFIX1 scope. **Also observed (pre-existing, not
+NTFIX1):** React DOM-nesting warning — the "Not tracked - add?" pill `<button>`
+is nested inside the heading-toggle `<button>` in `SessionExerciseBlock`
+(invalid HTML / hydration warning). **Test residue on staging smoke acct:**
+live session 342 (no sets) + custom exercise `Zzz Cable Thruster Xyz`
+(userExercise 37) left behind — harmless staging pollution, not cleaned up.
+
+Previous entry (July 11, ninth session, Opus — NT1 + NT2 LANDED on
+`not-tracked-ux-wave`, pushed to staging). **NT1** (`f4baee3`) already on
+staging: searchCatalog rows carry `secondaryMuscles` (additive, pure;
+170/170 unit lane). **NT2** (`f26e783`) — the wave centerpiece — landed
+this session: `AddExerciseToLibrarySheet` rebuilt as the suggest -> seed
+-> curate -> done stepped flow (catalog-seeded, segmented Main/Assists
+picker replacing the old 3-state cycling chip; `CHIP_CYCLE`/`nextChipRole`
+deleted), with LINK wiring into `SessionDetailPage` via the
+`updateSessionExercise` + `buildNamePatch` idiom and a `userExerciseId`
+stamp on create-in-live-context. Delivered by **Composer** (Cursor was out
+of Opus tokens) and audited by **Opus in Claude Code instead of Sonnet**
+per Seth: both lanes re-run fresh green (client `npm run build`; server
+`test:unit` 170/170 tripwire), all 11 acceptance criteria independently
+verified, and the runtime-invisible things a build can't catch checked —
+search-row + `resolveExerciseNames` shapes match the sheet's reads exactly,
+every CSS `var()` token resolves, no dangling refs, scope limited to the 3
+FILES TO TOUCH. **One reviewer fix folded into the commit:** dropped a
+vestigial `getMuscles` fetch whose payload was discarded but whose
+loading/error state gated the picker (chips render from the hardcoded
+17-muscle constant = the server vocab). **Open findings logged for the
+pre-main Fable gate (non-blocking):** (B) dead ternary in `goBack`
+(`hadSuggestStep ? "seed" : "seed"`); (C) create-succeeds-but-stamp-fails
+edge shows an error though the exercise was created (recoverable via the
+already-tracked path; stamp is best-effort, retroactivity still works by
+name); (D) `role="tablist"`/`"tab"` on the Main/Assists segmented control
+has no tabpanel/roving-tabindex (minor a11y). **NT3 flipped DRAFT ->
+QUEUED** (unblocked — shares both client files with NT2). Smoke NT2 on the
+staging Vercel preview once Render/Vercel track this branch (see the
+staging-repoint follow-up below).
+
+Previous entry (July 11, eighth session, Fable — NT-WAVE SKELETON
+AUTHORED, no product code). Seth settled the brainstorm doc's three open
+questions: (1) variant-of seeding IS in scope this wave; (2) the
+retroactive-attribution message lives in the sheet's success moment ONLY
+— brief, informative, fires every time; no What's New copy asked for;
+(3) the pain is BOTH structural and visual — full flow rebuild AND a
+visual bar, not a styling pass. Three task blocks authored on
+`not-tracked-ux-wave` per the relay v4 template:
+**`nt1-search-secondary-muscles.md`** (QUEUED, MODEL auto — searchCatalog
+rows gain `secondaryMuscles`, additive + pure, so the existing search
+endpoint carries the full seeding profile; NO new endpoint, no schema, no
+migration anywhere in the wave), **`nt2-add-exercise-stepped-sheet.md`**
+(QUEUED, MODEL opus — Seth's July 11 call, Fable withheld for the
+pre-main gate — the centerpiece: sheet rebuilt as suggest-link /
+seed / curate / done stepped flow; cycling chip replaced by a segmented
+Main/Assists explicit-role picker; link wiring into SessionDetailPage via
+the existing `updateSessionExercise` + `buildNamePatch` idiom; create in
+live context also stamps `userExerciseId` on the row; judgment-heavy
+visual, so the block carries fuller design detail per the CLAUDE.md
+carve-out), and **`nt3-entry-deferability-polish.md`** (DRAFT until NT2
+lands — shares both client files with NT2). Facts verified during
+authoring, load-bearing: catalog entries' `primaryMuscles`/
+`secondaryMuscles` are ALREADY the 17-muscle picker vocabulary
+(`deriveMuscleVocabulary` derives it from those fields — no translation
+layer needed); completed sessions are LOCKED server-side (every
+sessionController mutation guards `completedAt`), so LINK/rename is
+live-only while CREATE works from completed sessions too and
+retroactively lights them up via name-based resolution — that asymmetry
+is NT3's whole design. Dispatch: NT1 then NT2 (file-disjoint, batchable
+back-to-back, one review session), NT3 strictly after NT2. QUEUE.md
+restructured: N-wave section moved under Landed, NT-wave now Active.
+
+Previous entry (July 10, seventh session, Fable — not-tracked flow
+brainstorm, NO code): Next addition chosen by Seth: rework the
+"not tracked" custom-exercise UI (the `AddExerciseToLibrarySheet`
+bottom sheet + its "Not tracked - add?" pill entry in
+`SessionDetailPage.jsx`) — current sheet's three-state cycling muscle
+chips + build-from-zero curation flow judged not user friendly. Full
+brainstorm written to
+**`docs/design/not-tracked-add-flow-brainstorm.md`** (diagnosis, three
+directions, recommendation: catalog-seeded stepped flow A with
+explicit-role picker B as its final step, body-map C parked; verified
+mechanism: name-based resolution makes custom-exercise creation
+RETROACTIVE over past sessions — a copy moment to use). Session stopped
+before Seth answered the doc's three open questions (settled July 11 —
+see top entry). Committed on new branch `not-tracked-ux-wave` off
+`analytics-rebalance-wave` HEAD `e960645` (= `main` `57b1fc8` + one
+docs bookkeeping commit); the rebalance branch itself stays a clean
+deletion candidate.
+
 Previous entry (July 10, sixth session, Opus — weekly-volume graph
 rebuild + pre-main review): Seth smoked the N-wave on staging: passed,
 one critique — the per-exercise "Weekly volume" mini read as odd (bare

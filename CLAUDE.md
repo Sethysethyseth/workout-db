@@ -12,10 +12,15 @@
 
 ---
 
-## Model selection / division of labor (v4 - Sonnet resident, Fable gated, Cursor rebalanced)
+## Model selection / division of labor (v5 - Sonnet resident, Fable gated, Cursor rebalanced, dispatch autonomous)
 
 Decided July 3, 2026 (v3, token-efficiency rebalance); amended July 6, 2026
-(v4: Cursor rebalance + two-tier state channel). Three roles:
+(v4: Cursor rebalance + two-tier state channel); amended July 14, 2026
+(v5: autonomous Cursor dispatch - Claude Code dispatches task blocks to
+Cursor itself via the **`dispatch-unit` skill** instead of Seth relaying
+them; adopted after the pricing probe validated the cost model and NT3
+landed clean as the first autonomous unit. Design + channel/ladder
+details: `docs/specs/autonomous-cursor-dispatch.md`). Three roles:
 
 - **Sonnet in Claude Code = the resident driver.** Runs the day-to-day
   relay: per-unit AUDIT of each Cursor delivery, then commit / push /
@@ -54,28 +59,36 @@ that bounce cost is the price of moving implementation thinking off the
 frontier seat; the acceptance criteria and review lane are what protect
 precision, not spec prose density.
 
-## Workflow (the relay, v4)
+## Workflow (the relay, v5)
 
-Fable plans / Cursor executes and self-verifies / Sonnet audits and lands.
-The loop per unit:
+Fable plans / Claude Code dispatches / Cursor executes and self-verifies /
+Sonnet audits and lands. The loop per unit:
 
 1. Fable (Claude Code) emits a **unit-scale task block** (ritual: the
    `author-task-block` skill) - one coherent roadmap unit with a testable
    contract, not a 1-3 file slice. Fable typically authors a wave of
    blocks in one session, then drops out.
-2. Cursor implements it, gets tests green, writes `DELIVERY.md` (files
-   touched, verbatim lane output, per-criterion evidence, deviations),
+2. Claude Code dispatches the block itself (ritual: the **`dispatch-unit`
+   skill**): backbone is Channel B - headless Cursor CLI in the lane
+   worktree `C:\dev\worktrees\cursor-lane`, `--model` ALWAYS explicit
+   (auto rung for MODEL-auto blocks, named for judgment tier); Channel A
+   (Cloud Agents API) exists but requires usage-based pricing Seth keeps
+   OFF, so it refuses cleanly unless he deliberately enables it. Quota
+   refusals descend the ladder (B named -> B auto -> page Seth), never
+   stall.
+3. Cursor implements it, gets tests green, writes the delivery report
+   (`DELIVERY.md` in the lane worktree; PR body on the cloud channel),
    stops without committing. Two blocks with fully disjoint FILES TO TOUCH
    may run back-to-back before one review session.
-3. Sonnet (Claude Code) audits and lands the unit via the `land-unit`
+4. Sonnet (Claude Code) audits and lands the unit via the `land-unit`
    skill (fresh lanes, report-vs-tree audit, fix-or-bounce, one commit
    per unit, push to staging, QUEUE/HANDOFF upkeep), then dispatches the
    next block.
-4. Bugs: Seth's report becomes a **diagnosis block** for Cursor first
+5. Bugs: Seth's report becomes a **diagnosis block** for Cursor first
    (no code); Sonnet verifies the reasoning and green-lights the fix
    block. Direct-fix exception: when diagnosis was ~95% of the work and
    the fix is trivial, the diagnosing agent ships it directly.
-5. Before merge to main: Fable/Opus reviews the full accumulated branch
+6. Before merge to main: Fable/Opus reviews the full accumulated branch
    diff against the specs, with the wave's archived session logs in hand
    (the review lane caught a real shipped-contract bug on day one - it is
    not optional ceremony; it has moved gates, not disappeared). Merge
@@ -96,9 +109,10 @@ history - only Fable reads it, when planning or gating.
   gate item 4.
 - Project skills (`.claude/skills/`) carry the repeated rituals so they
   load on demand at full fidelity instead of sitting always-on:
-  `land-unit` (per-unit audit + land) and `author-task-block` (block
-  authoring). Cursor never loads skills - anything Cursor needs stays in
-  AGENTS.md. Deliberately NOT skills: merge-to-main and schema-deploy
+  `land-unit` (per-unit audit + land), `author-task-block` (block
+  authoring), and `dispatch-unit` (autonomous hand-to-Cursor, channels +
+  fallback ladder). Cursor never loads skills - anything Cursor needs
+  stays in AGENTS.md. Deliberately NOT skills: merge-to-main and schema-deploy
   stay as copy-paste RUNBOOK rituals - their friction is a feature.
   `scripts/check-hex.mjs` is the tokens-only tripwire `land-unit` runs
   on UI units.

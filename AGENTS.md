@@ -75,8 +75,12 @@ Rebrand text lives in: rendered UI, `<title>`, PWA manifest name fields.
   first. Fable/Opus greps it for pre-main review and big-picture planning;
   Sonnet and Cursor never load it. Same single writer as HANDOFF.
 - `docs/tasks/` - file-dispatched task queue: Claude Code authors unit blocks
-  as files, Seth points Cursor at one, Cursor executes it verbatim. Protocol
-  in its README; Cursor never edits anything under `docs/tasks/`.
+  as files and dispatches them to Cursor itself (relay v5, July 14 - headless
+  CLI in a lane worktree as the backbone, Cloud Agents API as the gated
+  exception; design in `docs/specs/autonomous-cursor-dispatch.md`). Seth
+  pointing Cursor at a block by hand still works - both paths execute the
+  same block verbatim. Protocol in its README; Cursor never edits anything
+  under `docs/tasks/`.
 - `docs/RUNBOOK.md` - copy-paste command rituals (schema deploys, merges, etc.)
 - `docs/specs/` - architecture specs (analytics engine, schema sentinel)
 - `WORKOUTDB_MASTER_PROMPT_17.md` - full stable context for planning work
@@ -108,7 +112,11 @@ Rebrand text lives in: rendered UI, `<title>`, PWA manifest name fields.
   gets tests green, writes the delivery report to `DELIVERY.md` at the repo
   root (gitignored; files touched, verbatim test output, per-criterion
   evidence, deviations - format in `cursor-task-block-template.md`), and
-  ends its turn. (The gate below says local commits are *permitted* without
+  ends its turn. This holds identically when the block arrives via the
+  autonomous dispatch channel (headless CLI in the lane worktree) - the
+  block's STOP CONDITION footer governs; the cloud-agent channel's
+  `cursor/<slug>` branch + PR-body report is the one accepted delivery
+  exception. (The gate below says local commits are *permitted* without
   asking; this rule says committing is *Claude Code's job*, so two agents
   never race one working tree - see the two-agents gotcha.)
 - **Claude Code owns git and state:** audits each delivery report against

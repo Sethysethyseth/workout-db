@@ -1,6 +1,68 @@
 # HANDOFF — current state
 
-**Updated:** July 14, 2026, thirteenth session (Sonnet — MANUAL SETUP FOR
+**Updated:** July 14, 2026, fourteenth session (Fable — RELAY v5 ADOPTED:
+pricing probe run + NT3 landed as the FIRST AUTONOMOUS DISPATCH; NT-WAVE
+NOW CODE-COMPLETE). Resume sequence executed end-to-end this session:
+**(1) Setup verified from ground truth** — the session restart still did
+NOT propagate env/PATH to the Claude Code shell (parent process chain
+holds the stale environment; durable workaround now in the spec + skill:
+read `CURSOR_API_KEY` from the registry inline, invoke
+`C:\Users\Sethy\AppData\Local\cursor-agent\cursor-agent.ps1` by full
+path); CLI `2026.07.09-a3815c0` responds and `cursor-agent status` ->
+logged in as Seth (the item last session couldn't confirm). **(2)
+Pricing probe, all three rungs, $0 spent — verdict decisive:** Channel A
+(cloud agents) requires usage-based pricing ON with >=$2 headroom and
+NEVER draws the included Pro pool -> with Seth's overage toggle OFF it
+refuses cleanly at dispatch (`400 usage_limit_exceeded`), so the
+per-unit cost question is MOOT and **Channel B is the backbone for ALL
+blocks**; B-named is exhausted this cycle ("saved $64 on API model
+usage", resets 7/17 — the July 13 "33% consumed" dashboard reading was
+evidently a different meter); B-auto works. Routing defaults flipped in
+the spec + `dispatch-unit`. **(3) NT3 dispatched autonomously and LANDED
+`98963f6`** — Channel B auto rung, lane worktree
+`C:\dev\worktrees\cursor-lane` (created off wave HEAD, deps installed,
+persists for future dispatches), 45-min hard-timeout wrapper. One
+dispatch hiccup, lesson pinned in the skill: **the CLI remembers the
+last-used `--model`** — the first flagless dispatch inherited the
+exhausted haiku from a probe and quota-refused; ALWAYS pass `--model`
+explicitly. Delivery audited per `land-unit`: lanes re-run fresh (unit
+170/170, client build green), scope exact (3 files = FILES TO TOUCH),
+all 7 criteria verified incl. by direct read (completed-context sheet
+opens at seed with name prefilled + hadSuggestStep cleared; parent
+create handler skips the stamp PATCH without `userExerciseId` — also
+sidesteps bug G on this path — but still invalidates + refreshes name
+resolution; live path is a no-op change; check-hex clean; slot-pill
+fade-in targets a real class, `prefers-reduced-motion` gated,
+tokens-only). Committed in the lane, rebased onto the wave branch,
+ff-merged, pushed. **(4) Doctrine amended:** AGENTS.md + CLAUDE.md now
+describe relay v5 (autonomous dispatch via `dispatch-unit`; Seth
+hand-relaying still works), spec flipped ADOPTED. Also this session:
+QUEUE.md had NTFIX1 stale-QUEUED — flipped to LANDED `e0ba383`; HANDOFF
+aging pass done (five entries July 10-13 moved verbatim to the
+archive). **Leftover (gated deletion candidates):** lane branches
+`cursor/pricing-probe` and `cursor/nt3-entry-deferability-polish` (the
+latter == wave HEAD; both get re-pointed by `checkout -B` on the next
+dispatch anyway).
+
+**NEXT UP — the pre-main gate.** NT3 was the last unit: the NT-wave is
+code-complete on `not-tracked-ux-wave` (`98963f6`). Before any merge to
+main: (a) Seth smokes NTFIX1 (B/C/D/E) + NT3 on the staging Vercel
+preview — RUNBOOK step 6 staging repoint to this branch may still be
+owed first; smoke list: [1] completed session with an unresolved
+exercise -> pill is tappable, sheet opens straight at the muscle-seed
+step, no "Use that name" anywhere, create succeeds, pill flips to
+Tracked with a soft fade; [2] live session -> unchanged NT2 stepped
+flow incl. suggest step and as-you-type pill; [3] Main/Assists toggle
+reads pressed-state (D); [4] close the sheet mid-flow any way — no
+confirm, no nag (deferability); (b) Fable/Opus full-branch-diff review
+with the archive in hand — open findings for it: **F** ("Failed to
+fetch" = Render cold-start candidate, needs a live Network-tab repro),
+**G** (id-only `userExerciseId` stamp PATCH 400s every time — needs a
+client/server contract-reconciliation block), and the React DOM-nesting
+warning (pill button inside heading button). Merge stays behind Seth's
+"push to main" trigger phrase.
+
+Previous entry (July 14, thirteenth session, Sonnet — MANUAL SETUP FOR
 RELAY v5 COMPLETE, no product code). Walked Seth through the four-item
 one-time setup checklist from `docs/specs/autonomous-cursor-dispatch.md`
 ("One-time setup" section) in chat: (1) **`CURSOR_API_KEY` minted +
@@ -34,203 +96,13 @@ NT3 live dispatch trial. Status still PROPOSED — nothing adopted into
 AGENTS.md/CLAUDE.md until the probe validates and NT3 lands clean via
 the new channels.
 
-Previous entry (July 13, twelfth session, Fable — AUTONOMOUS-DISPATCH
-WORKFLOW PROPOSAL, no product code). Seth green-lit the relay v5 design:
-Claude Code dispatches task blocks to Cursor itself instead of Seth
-relaying them - Channel A = Cloud Agents API (`POST api.cursor.com
-/v1/agents`, delivery stays the accepted `cursor/` branch + PR-body
-pattern), Channel B = headless CLI (`agent -p`) in a persistent lane
-worktree at `C:\dev\worktrees\cursor-lane` (outside OneDrive, n5
-precedent), with a quota fallback ladder A-named -> B-named -> B-auto
-and a Sonnet-seat relay loop (dispatch -> poll -> land-unit -> next).
-Gate, one-writer rule, land-unit, escalation triggers, and the pre-main
-Fable gate all unchanged. **Status PROPOSED, nothing adopted yet** -
-blocked on Seth's one-time setup (mint CURSOR_API_KEY, install the
-Cursor CLI) + a pricing probe of cloud-agent credit burn (the single
-blocking unknown; routing defaults flip on it). Spec:
-`docs/specs/autonomous-cursor-dispatch.md`; dispatch ritual:
-`.claude/skills/dispatch-unit/SKILL.md`. AGENTS.md/CLAUDE.md still
-describe relay v4 by design - amend only after the probe validates and
-the first autonomous unit lands clean. **Billing settled with Seth:**
-everything rides the Pro plan's included usage (CLI-auto rung is free;
-cloud agents + named models draw the ~$20/mo included pool) PROVIDED
-on-demand/usage-based overage is toggled OFF or capped in the Cursor
-dashboard - Seth must verify that toggle during setup so exhaustion
-means refusals (which the ladder absorbs), never surprise charges.
-**Resume sequence for the next session, in order:** (1) Seth's setup -
-mint CURSOR_API_KEY (dashboard -> API Keys, set as User env var; does
-NOT conflict with the ANTHROPIC_API_KEY rule, that one is Claude-auth
-only), install the Cursor CLI + `agent login`, verify the overage
-toggle; (2) Claude Code runs the spec's pricing probe (read-only cloud
-agent -> `GET /v1/agents/{id}/usage`, plus the CLI-auto rung) and
-records the numbers in the spec; (3) routing defaults confirmed or
-flipped from the probe; (4) first live trial = dispatch NT3
-(`nt3-entry-deferability-polish.md`, QUEUED, MODEL auto -> Channel B
-auto rung per the spec's defaults) via `dispatch-unit`, land it via
-`land-unit`, and only after that clean landing amend AGENTS.md/
-CLAUDE.md to relay v5. (This file is over its ~300-line cap; aging
-pass owed at the next state rewrite - not done this session to keep
-the workflow commit clean.)
-
-Previous entry (July 12, eleventh session, Sonnet — NTFIX1 AUDITED +
-LANDED on `not-tracked-ux-wave`, pushed to staging). Cursor's cloud-branch
-delivery (`cursor/ntfix1-nt2-smoke-bugs-1341`, PR #3) for the five NT2
-smoke findings was fetched, audited, and ff-merged as **`e0ba383`**
-(`804b65b..e0ba383`, `origin/not-tracked-ux-wave` confirmed; PR #3 now
-MERGED). Both lanes re-run FRESH green (client `npm run build`; server
-`test:unit` 170/170 tripwire), diff stays inside the two allowed client
-files, and the runtime-invisible checks a build can't catch all hold:
-`resolveExerciseNames` response shape (`data.results[0].resolved`) matches
-how the sheet already reads it, `inputToSessionExerciseName` is imported in
-`SessionDetailPage`, and the name-input `onChange` (~line 627) fires NO
-mutation (write stays commit-on-blur). **Landed fixes: (B)** dead `goBack`
-ternary collapsed; **(C)** post-create stamp made best-effort (inner
-try/catch swallows a stamp failure so create still reaches `done`; only a
-`createCustomExercise` throw surfaces an error); **(D)** Main/Assists toggle
-converted from broken `role="tablist"` to `aria-pressed` toggle semantics;
-**(E)** as-you-type tracked pill — new debounced (300ms, seq-guarded),
-WRITE-FREE `resolveExerciseNames` in `SessionExerciseFields` reports a draft
-status up to `SessionExerciseBlock`, which renders
-`displayTrackedStatus = draftTrackedStatus ?? trackedStatus`; live-only
-(`!isCompleted`), no commit-on-blur regression. **(F) STILL OPEN — diagnosed,
-NOT fixed (no client defect found):** "Failed to fetch" creating an exercise
-from scratch. Cursor could not do a full-stack local repro (cloud workspace
-had no `DATABASE_URL`), so it curl-probed staging instead: `/exercises/custom`
-preflight + unauthed POST behave identically to `/exercises/resolve`
-(204 preflight w/ correct CORS headers, 401 on POST), which CONTRADICTS
-"CORS blocks all POSTs" / "wrong API origin." `createCustomExercise` builds
-the request correctly via the same `http()` wrapper as the working calls; a
-raw `Failed to fetch` is a native fetch `TypeError` (no response), not an
-`ApiError`. Ranked candidate: **Render cold-start / transient 502 on the
-heavier POST** (staging-repoint caveat applies) — needs a live device/Network
--tab repro or the pre-main gate to confirm. No F code change (correct per the
-diagnose-first contract). Deviation logged: F local browser repro not run
-(no DB in cloud), curl probe used as supplementary evidence.
-
-**LIVE BROWSER TEST OF F (same eleventh session, Sonnet — Playwright, local
-`not-tracked-ux-wave` client via inline `VITE_API_URL` override -> STAGING
-Render API `workout-db-staging.onrender.com`, smoke acct `smoke_b8`; NEVER
-prod).** Drove the full flow: live session 342 -> typed novel name
-`Zzz Cable Thruster Xyz` (pill flipped to "Not tracked" — E confirmed via
-multiple write-free `/exercises/resolve -> 200`) -> "Not tracked - add?" ->
-"Start from scratch" -> chest Main -> submit. **Results:** (1) **F did NOT
-reproduce on the warm backend** — `POST /exercises/custom -> 201`, sheet
-reached "Added to your library". Confirms no deterministic client defect;
-consistent with the cold-start diagnosis, and directly corroborated by a
-measured **22.5s cold-start** on the staging Render `GET /` earlier this
-session (that spin-up window is exactly when a POST gets an edge 502 w/o CORS
-headers -> `TypeError: Failed to fetch`). (2) **Finding C's fix VERIFIED LIVE:**
-the post-create stamp `PATCH /sessions/342/exercises/510` returned **400**,
-was swallowed, and the flow still completed — the exact create-succeeds/
-stamp-fails path C was written for. (3) **D confirmed** — Main/Assists render
-`aria-pressed`/`[pressed]`. **NEW CONFIRMED BUG for the pre-main gate (call it
-G — pre-existing NT2, non-fatal, NOT NTFIX1's regression):** the
-`userExerciseId` stamp on create-in-live-context 400s EVERY time. Client sends
-id-only `{ userExerciseId }` (`SessionDetailPage.jsx:1833`
-`handleAddToLibraryCreateCommitted`); server `updateSessionExercise`
-(`sessionController.js`) only merges identity into `data` INSIDE the
-`if (data.exerciseName !== undefined)` block (~line 577-605) and otherwise trips
-"No fields to update" (line 531) — so a stamp-only PATCH can never persist.
-Response body confirmed: `400 {"error":"No fields to update"}` for body
-`{"userExerciseId":37}`. Net effect: the session_exercise row keeps
-`userExerciseId = null`; attribution still works purely by name-based
-resolution (why C made the stamp best-effort), but NT2/A4's structural id-link
-on this path silently no-ops. Fix is a client/server contract reconciliation
-(server accept id-only identity PATCH, OR client send name+id together) — a
-new task block, NOT in NTFIX1 scope. **Also observed (pre-existing, not
-NTFIX1):** React DOM-nesting warning — the "Not tracked - add?" pill `<button>`
-is nested inside the heading-toggle `<button>` in `SessionExerciseBlock`
-(invalid HTML / hydration warning). **Test residue on staging smoke acct:**
-live session 342 (no sets) + custom exercise `Zzz Cable Thruster Xyz`
-(userExercise 37) left behind — harmless staging pollution, not cleaned up.
-
-Previous entry (July 11, ninth session, Opus — NT1 + NT2 LANDED on
-`not-tracked-ux-wave`, pushed to staging). **NT1** (`f4baee3`) already on
-staging: searchCatalog rows carry `secondaryMuscles` (additive, pure;
-170/170 unit lane). **NT2** (`f26e783`) — the wave centerpiece — landed
-this session: `AddExerciseToLibrarySheet` rebuilt as the suggest -> seed
--> curate -> done stepped flow (catalog-seeded, segmented Main/Assists
-picker replacing the old 3-state cycling chip; `CHIP_CYCLE`/`nextChipRole`
-deleted), with LINK wiring into `SessionDetailPage` via the
-`updateSessionExercise` + `buildNamePatch` idiom and a `userExerciseId`
-stamp on create-in-live-context. Delivered by **Composer** (Cursor was out
-of Opus tokens) and audited by **Opus in Claude Code instead of Sonnet**
-per Seth: both lanes re-run fresh green (client `npm run build`; server
-`test:unit` 170/170 tripwire), all 11 acceptance criteria independently
-verified, and the runtime-invisible things a build can't catch checked —
-search-row + `resolveExerciseNames` shapes match the sheet's reads exactly,
-every CSS `var()` token resolves, no dangling refs, scope limited to the 3
-FILES TO TOUCH. **One reviewer fix folded into the commit:** dropped a
-vestigial `getMuscles` fetch whose payload was discarded but whose
-loading/error state gated the picker (chips render from the hardcoded
-17-muscle constant = the server vocab). **Open findings logged for the
-pre-main Fable gate (non-blocking):** (B) dead ternary in `goBack`
-(`hadSuggestStep ? "seed" : "seed"`); (C) create-succeeds-but-stamp-fails
-edge shows an error though the exercise was created (recoverable via the
-already-tracked path; stamp is best-effort, retroactivity still works by
-name); (D) `role="tablist"`/`"tab"` on the Main/Assists segmented control
-has no tabpanel/roving-tabindex (minor a11y). **NT3 flipped DRAFT ->
-QUEUED** (unblocked — shares both client files with NT2). Smoke NT2 on the
-staging Vercel preview once Render/Vercel track this branch (see the
-staging-repoint follow-up below).
-
-Previous entry (July 11, eighth session, Fable — NT-WAVE SKELETON
-AUTHORED, no product code). Seth settled the brainstorm doc's three open
-questions: (1) variant-of seeding IS in scope this wave; (2) the
-retroactive-attribution message lives in the sheet's success moment ONLY
-— brief, informative, fires every time; no What's New copy asked for;
-(3) the pain is BOTH structural and visual — full flow rebuild AND a
-visual bar, not a styling pass. Three task blocks authored on
-`not-tracked-ux-wave` per the relay v4 template:
-**`nt1-search-secondary-muscles.md`** (QUEUED, MODEL auto — searchCatalog
-rows gain `secondaryMuscles`, additive + pure, so the existing search
-endpoint carries the full seeding profile; NO new endpoint, no schema, no
-migration anywhere in the wave), **`nt2-add-exercise-stepped-sheet.md`**
-(QUEUED, MODEL opus — Seth's July 11 call, Fable withheld for the
-pre-main gate — the centerpiece: sheet rebuilt as suggest-link /
-seed / curate / done stepped flow; cycling chip replaced by a segmented
-Main/Assists explicit-role picker; link wiring into SessionDetailPage via
-the existing `updateSessionExercise` + `buildNamePatch` idiom; create in
-live context also stamps `userExerciseId` on the row; judgment-heavy
-visual, so the block carries fuller design detail per the CLAUDE.md
-carve-out), and **`nt3-entry-deferability-polish.md`** (DRAFT until NT2
-lands — shares both client files with NT2). Facts verified during
-authoring, load-bearing: catalog entries' `primaryMuscles`/
-`secondaryMuscles` are ALREADY the 17-muscle picker vocabulary
-(`deriveMuscleVocabulary` derives it from those fields — no translation
-layer needed); completed sessions are LOCKED server-side (every
-sessionController mutation guards `completedAt`), so LINK/rename is
-live-only while CREATE works from completed sessions too and
-retroactively lights them up via name-based resolution — that asymmetry
-is NT3's whole design. Dispatch: NT1 then NT2 (file-disjoint, batchable
-back-to-back, one review session), NT3 strictly after NT2. QUEUE.md
-restructured: N-wave section moved under Landed, NT-wave now Active.
-
-Previous entry (July 10, seventh session, Fable — not-tracked flow
-brainstorm, NO code): Next addition chosen by Seth: rework the
-"not tracked" custom-exercise UI (the `AddExerciseToLibrarySheet`
-bottom sheet + its "Not tracked - add?" pill entry in
-`SessionDetailPage.jsx`) — current sheet's three-state cycling muscle
-chips + build-from-zero curation flow judged not user friendly. Full
-brainstorm written to
-**`docs/design/not-tracked-add-flow-brainstorm.md`** (diagnosis, three
-directions, recommendation: catalog-seeded stepped flow A with
-explicit-role picker B as its final step, body-map C parked; verified
-mechanism: name-based resolution makes custom-exercise creation
-RETROACTIVE over past sessions — a copy moment to use). Session stopped
-before Seth answered the doc's three open questions (settled July 11 —
-see top entry). Committed on new branch `not-tracked-ux-wave` off
-`analytics-rebalance-wave` HEAD `e960645` (= `main` `57b1fc8` + one
-docs bookkeeping commit); the rebalance branch itself stays a clean
-deletion candidate.
-
 Aged out this rewrite, moved verbatim to `docs/HANDOFF-ARCHIVE.md`
-(newest first): the July 10 sixth session (Opus — weekly-volume graph
-rebuild, pre-main Opus review CLEAN, N-WAVE MERGED TO MAIN `8068ffb`)
-and its What's New follow-up (prod-only gate via `appEnv.js`
-`isProdEnv()`, release entry `2026-07-exercises-tab`, MERGED TO MAIN
-`57b1fc8` — `main` and `analytics-rebalance-wave` now identical, branch
-a gated deletion candidate).
+(newest first): the July 13 twelfth session (Fable — relay v5 proposal),
+the July 12 eleventh session (Sonnet — NTFIX1 landed `e0ba383` + the
+live browser test of F that produced finding G), the July 11 ninth
+session (Opus — NT1 + NT2 landed), the July 11 eighth session (Fable —
+NT-wave skeleton authored), and the July 10 seventh session (Fable —
+not-tracked flow brainstorm).
 
 - **N-wave follow-ups still open (carried from the archived sixth
   session):** (1) verify prod deploy SHA == `57b1fc8` in Render/Vercel
@@ -238,8 +110,8 @@ a gated deletion candidate).
   graph, and the "Every exercise, in one place" What's New modal firing
   for a logged-in user (prod is the ONLY place it renders); (3) RUNBOOK
   step 6 — repoint staging Render off `analytics-rebalance-wave`; point
-  it at `not-tracked-ux-wave` when NT units start landing, verify
-  redeploy SHA in Events.
+  it at `not-tracked-ux-wave` NOW that the NT wave is code-complete,
+  verify redeploy SHA in Events.
 
 Previous entries (incl. the July 10 sixth session in full, the July 10
 Fable N-wave skeleton session, the July 9 spec-complete session and the
@@ -258,200 +130,107 @@ trusting it.
 
 ## Repo / deploy state
 
+- **`not-tracked-ux-wave` is at `98963f6` (July 14)** — NT1 + NT2 +
+  NTFIX1 + NT3 + the relay v5 docs (spec, skills, QUEUE, doctrine
+  amendment) all on `origin/not-tracked-ux-wave`. Wave code-complete;
+  pre-main gate pending. Branched off `analytics-rebalance-wave` HEAD
+  `e960645` (= `main` `57b1fc8` + one docs bookkeeping commit).
 - **A-wave MERGED to `main` (`13a1e59`), July 8.** `catalog-fk-wave`
   (`13a1e59`) — A1 + A4 + A5 + A6b + the `0e6f32a` db-host-guard split — is now
   fully contained in `main`; prod DB migrated + seeded + smoked. Branch is a
   deletion candidate (gated). Pre-main review was DONE and clean.
-  Branched off `logging-ux-wave` HEAD `80373e1` (= main + one HANDOFF docs
-  commit). **Both catalog/linkage migrations are APPLIED ON STAGING**
-  (`ep-bitter-breeze-am81izlh` / noisy-surf) as of July 7 (Sonnet):
-  `20260707120000_add_exercise_catalog` was baselined via `prisma migrate
-  resolve --applied` (the table already existed under the old May-27
-  migration name — see the archived July 7 HANDOFF entry for the full
-  story) and `20260707130000_add_exercise_fk_linkage` applied clean via
-  `prisma migrate deploy`. Columns + CHECK constraints verified by direct
-  SQL query, not just `migrate status`. **Prod has NEITHER migration** — do
-  not assume prod's catalog migration situation mirrors staging's without
-  checking; no session has touched prod yet. **Render's staging service is
-  confirmed pointed at `catalog-fk-wave` on the latest commit** (Seth
-  verified July 7 latest+3) — no longer an open question.
-- **`main` is at `13a1e59` (July 8 Opus)** — A-wave merged (clean ff
-  `3767840..13a1e59`, `origin/main` confirmed). Prod DB fully migrated +
-  seeded + smoked BEFORE the merge (both catalog/FK migrations applied by
-  hand, 873 rows seeded, 16-row ledger drift-free). Prod Vercel/Render track
-  `main` and auto-deployed `13a1e59` on push — Seth smoked prod live and
-  confirmed working. `catalog-fk-wave` (`13a1e59`) is now fully contained in
-  `main` and is a deletion candidate (gated op).
-- **`main` was at `3767840` (July 6 Opus)** — T3B basic cold-start
-  lifter loader, clean ff from `logging-ux-wave` (`451a3d6..3767840`). Client
-  CSS + docs only, no migration/schema/server.
-- **`main` was at `d927fb8`** — L-wave (L1-L6 + A6) + login-UX/resume-hero
-  fixes + relay-v4 docs, merged July 6 (clean ff, prod migrations applied +
-  verified first). `451a3d6` was a HANDOFF doc commit on top.
-- **`main` was at `750c42b`** (fast-forward: `ui-loading-screens` -> `main`,
-  T3 dynamic loading screens), confirmed on `origin/main`. Merged + pushed
-  July 4 (Sonnet session). `main` had not moved since the branch point, so
-  `git merge --ff-only` applied cleanly - no worktree, no conflicts.
-  Seth confirmed the Vercel preview of `ui-loading-screens` looked right
-  (pulsing dots / breathing ring / label cross-fade) before triggering
-  "push to main" - matches the standing visual-sign-off-before-merge rule.
-  No schema/migration coupling (client + docs only, 15 files).
-  Render/Vercel prod both track `main` and auto-deploy on push - **verify
-  the prod deploy SHA is `750c42b` in Render/Vercel Events before assuming
-  it's live.**
-- **`main` was previously at `e9ce82c`** (merge: `analytics-engine` -> `main`, "analytics wedge (B1-B9) + UI polish wave (U6-U10)"). Merged July 4 (Sonnet session) via scratch `git worktree` (not stash+checkout — see the worktree-merge gotcha), pushed same session.
-  - `git merge --ff-only` was NOT possible — `main`'s `ccd0829` (the ui-palettes-v2 merge commit) postdates `analytics-engine`'s branch point, so the branches had genuinely diverged. Did `git merge --no-ff analytics-engine` instead, matching how `ccd0829` itself was created.
-  - **Two conflicts, both resolved by taking `analytics-engine`'s version whole:** `AGENTS.md` and `CLAUDE.md` (add/add — main still had the stale PRE-consolidation duplicated-gate versions of both files from before the July 1 single-source consolidation; `analytics-engine`'s versions are the current v3 ones and fully supersede them, no unique content lost).
-  - Verified before committing the merge: server unit lane 103/103 green, client `npm run build` green, both run fresh in the worktree (had to `npm install` there — worktrees don't carry `node_modules`).
-  - Pre-merge sign-off (Seth, July 4): smoke test on the d21608c UI wave passed; `analyticsController.js` `findMany` where-clause reviewed and confirmed as the single cross-user isolation point (sets reached only through a session scoped to `{ userId, performedAt }`); the two open forks below settled. **The Fable/Opus pre-main branch-diff review (mandated by the v3 workflow) was explicitly skipped this one time at Seth's instruction** — noted here so it isn't silently treated as having happened.
-  - `ui-palettes-v2` (`ec3d85a`) was already fully contained in `analytics-engine` and is now merged too; deletable (branch deletion is gated — ask first).
-  - No schema changes rode along — `analytics-engine`'s merge has no migration coupling. The separate `exercise-catalog-seed` branch (A1) still has its own gated migration track.
-- **Render/Vercel not yet repointed from the `analytics-engine` staging deploy back to `main`** — RUNBOOK step 6 ("Repoint staging Render back to main. Verify redeploy SHA in Events.") is still open; do this before smoking prod.
+  **Both catalog/linkage migrations are APPLIED ON STAGING**
+  (`ep-bitter-breeze-am81izlh` / noisy-surf) as of July 7; columns + CHECK
+  constraints verified by direct SQL. **Prod HAS both as of July 8** (applied
+  by hand pre-merge, 873 rows seeded, 16-row ledger drift-free).
+- **`main` is at `57b1fc8` (July 10)** — N-wave (`8068ffb`) + What's New
+  prod-gate follow-up. Prod Vercel/Render track `main` and auto-deploy on
+  push; the deploy-SHA verification is still an open follow-up (above).
 - Username feature LIVE and verified on both environments (unchanged).
 
 ## Open TODOs (do at next session start)
 
-0. ~~Fix the pre-existing decimal-reps bug~~ **DONE — verified July 7**:
-   reps input at SessionDetailPage.jsx:934 now has `step="1"` (L6 shipped
-   the step fix; `4d82311` killed the wheel-scroll path). Weight keeps its
-   correct `step="0.01"` (line 908).
-0b. ~~Re-seed the staging smoke account~~ **DONE July 10 (Sonnet)**:
-   `scripts/seed-staging-smoke.mjs` re-run clean against staging (HTTP
-   API only, no direct DB conn) — `smoke_b8` / `SmokeTest-B8-2026`, 8
-   weeks Upper A/Lower/Upper B, template-linked execution rows for
-   weeks 6-8. Verified live: 12 muscles, 11 exercises, execution rows
-   4, bench matchedEffort trend present. Note: the script's own
-   verification log reads `s.meta.rirCoverage`, which was renamed to
-   `effortCoverage` (B8 pooling) — stale log line only, seed itself is
-   correct; not fixed, out of scope.
-1. ~~Prod smoke of the L-wave on `main`~~ **DONE — confirmed by Seth July
-   7**, no issues reported.
-2. ~~**Diff `_prisma_migrations` prod vs staging**~~ **DONE July 8** — prod
-   ledger = 16 rows, no drift, shared-name checksums match staging.
-3. ~~**Verify the prod `20260603140000_add_user_username` checksum**~~ **DONE
-   July 8** — prod's `1c7d13f7…4b9502f` matches the canonical LF-normalized
-   file hash exactly. No mismatch.
-4. Confirm prod Render serving cleanly post-recovery.
-5. Low-priority: redundant spare stash on `ui-palettes-v2` (`WIP unrelated to ui-palettes-v2 merge`, July 1) — `git stash drop` once confirmed unneeded.
-6. Low-priority: branch graveyard has grown — `ui-palettes-v2`,
-   `analytics-engine`, `ui-loading-screens`, `ui-nav-overhaul` (all merged
-   to `main`), `exercise-catalog-seed` (superseded by `3a6bc25`), and
-   `origin/cursor/prod-migrate-l1-l3-prep-0b4a` (moot; prod migrated by
-   hand July 6) are all deletion candidates whenever Seth wants to ask for
-   that gated op.
+1. Confirm prod Render serving cleanly post-recovery.
+2. Low-priority: redundant spare stash on `ui-palettes-v2` (`WIP unrelated
+   to ui-palettes-v2 merge`, July 1) — `git stash drop` once confirmed
+   unneeded.
+3. Low-priority: branch graveyard has grown — `ui-palettes-v2`,
+   `analytics-engine`, `ui-loading-screens`, `ui-nav-overhaul`,
+   `analytics-rebalance-wave`, `catalog-fk-wave` (all merged to `main`),
+   `exercise-catalog-seed` (superseded by `3a6bc25`),
+   `origin/cursor/prod-migrate-l1-l3-prep-0b4a` (moot), and now the local
+   lane branches `cursor/pricing-probe` + `cursor/nt3-entry-deferability-
+   polish` — all deletion candidates whenever Seth wants to ask for that
+   gated op.
 
 ## U5 — UI overhaul (T1/T2/T3 MERGED TO MAIN, T4 not started)
 
 **Plan:** T1 tokens -> T2 palettes -> T3 dynamic loading screens -> T4 motion.
 
-- **T1 DONE**, **T2 DONE and merged to main** (`ccd0829`, July 1): all 5 palettes (champ, iron, chill, forest, crimson) on real raster scenes; shared pixel-art chrome; fade-mask band generalized to all palettes; dead-zone glow fix; navbar bleed-through fix. 5-palette x dark/Home smoke matrix closed (`docs/smoke-tests/SCENE-SMOKE-CRITIQUE.md`); light mode + non-Home routes not covered (unchanged by fixes, lower risk). Card chrome + trimmed Home reviewed against mocks July 1 and kept as-is (deliberate decisions, not gaps). Merge done via temp `git worktree`, not stash+checkout (Windows/OneDrive file-lock hang on `git stash`).
-- **T3 DONE and merged to main** (`750c42b`, July 4). T4 (motion) not started; no design work done yet.
-- Full T2 fix-by-fix history: see the July 1 morning HANDOFF in git history (`ec3d85a`).
+- **T1 DONE**, **T2 DONE and merged to main** (`ccd0829`, July 1): all 5
+  palettes on real raster scenes. **T3 DONE and merged to main** (`750c42b`,
+  July 4). T4 (motion) not started; needs a Fable design pass first.
+- Full T2 fix-by-fix history: the July 1 morning HANDOFF in git history
+  (`ec3d85a`).
 
 ## Next up (the active task)
 
-00. **NT-WAVE (the active wave): NT1 + NT2 + NTFIX1 LANDED on staging, NT3
-   is next.** NT1 (`f4baee3`), NT2 (`f26e783`), and the NTFIX1 smoke-fix
-   pass (`e0ba383` — B/C/D/E) all audited clean and pushed to
-   `not-tracked-ux-wave`. **NT3 (`nt3-entry-deferability-polish.md`)
-   is now QUEUED** (MODEL auto) — completed-session pill goes interactive
-   in create-only context (completed sessions are locked server-side, so
-   link/rename is live-only); shares both client files with NT2/NTFIX1, so
-   it runs strictly after. NT3 is the last unit of the wave; after it lands,
-   the accumulated branch diff goes to the **pre-main Fable/Opus gate**
-   before any merge to main. **Two things for that gate / next session:**
-   (1) **finding F is still OPEN** — "Failed to fetch" on create-from-scratch,
-   diagnosed as no client defect (Render cold-start/502 the ranked candidate),
-   needs a live Network-tab repro on the staging preview to confirm; (2) a
-   **staging smoke of the NTFIX1 fixes** (B/C/D/E) on the Vercel preview once
-   Render/Vercel track this branch. Design source:
-   `docs/design/not-tracked-add-flow-brainstorm.md`; decisions log in the
-   top HANDOFF entry. Branch: `not-tracked-ux-wave`.
-0. ~~N-WAVE~~ **DONE end-to-end**: code-complete, pre-main Fable review
-   clean, MERGED TO MAIN `8068ffb` + What's New `57b1fc8` — see the
-   top entries. Remaining follow-ups are the three listed there (prod
-   deploy SHA check, prod smoke, staging repoint back to `main`).
+00. **NT-WAVE CODE-COMPLETE — pre-main gate is the active task.** NT1
+   (`f4baee3`), NT2 (`f26e783`), NTFIX1 (`e0ba383`), NT3 (`98963f6`) all
+   audited + pushed to `not-tracked-ux-wave`. Sequence: staging repoint
+   (RUNBOOK step 6) -> Seth smokes NTFIX1 + NT3 on the Vercel preview
+   (list in the top entry) -> Fable/Opus full-branch-diff review (open
+   findings F, G, DOM-nesting — see top entry) -> Seth's "push to main"
+   trigger. Design source: `docs/design/not-tracked-add-flow-brainstorm.md`.
 0b. **A-wave follow-up (non-urgent):** optional Step-7 historical backfill:
    `node scripts/backfill-exercise-ids.mjs` (DRY-RUN first) then `--apply`
    against prod for pre-A4 historical rows (Seth runs the write).
-   Idempotent; safe to defer — historical rows carry valid NULL identity
-   until then.
+   Idempotent; safe to defer.
 1. **T3C sprite loader upgrade** unblocks whenever Seth drops the Gemini
-   frames in `claudefiledrop/` (art direction + prompts settled July 6).
-   Note: `claudefiledrop/` currently holds two `.url` shortcut files
-   pointing at a Discord CDN, not the transparent PNG frames themselves -
-   not yet the expected drop.
-2. T4 motion (last unstarted U5 unit) — needs a Fable design pass first;
-   queued behind the A-wave.
+   frames in `claudefiledrop/` (currently holds two `.url` Discord-CDN
+   shortcuts, not the expected transparent PNGs).
+2. T4 motion (last unstarted U5 unit) — needs a Fable design pass first.
 
 ## Analytics/catalog track — state
 
 *Full architecture spec: `docs/specs/analytics-engine.md`. Product-direction
-rationale: `analytics-engine-direction` memory. Full B1-B9 build history:
-`docs/HANDOFF-ARCHIVE.md`.*
+rationale: `analytics-engine-direction` memory. Full B1-B9 and A-wave build
+history: `docs/HANDOFF-ARCHIVE.md` and QUEUE.md's Landed section.*
 
-**Track B v1 (B1-B9) is code-complete and MERGED TO MAIN (`e9ce82c`, July 4).**
-**Track A is CODE-COMPLETE on `catalog-fk-wave` (`eeaa30c`, July 7)** — A1,
-A4, A5, A6b all landed, both migrations applied + verified on staging (see
-QUEUE.md). Awaiting the Fable/Opus pre-main review before merge. Track C
-(AI coach) stays dead-last.
+**Track B v1 (B1-B9) MERGED TO MAIN (`e9ce82c`, July 4). Track A MERGED TO
+MAIN (`13a1e59`, July 8), prod migrated + seeded.** Track C (AI coach)
+stays dead-last. Residual open items:
 
-**State / open items:**
-1. **A2 DONE + committed (`48c1e91`):** muscle-weights curation cleaned (3 bad IDs
-   fixed: `Incline_Bench_Press` -> `Barbell_Incline_Bench_Press_-_Medium_Grip`,
-   dropped `Bulgarian_Split_Squat` + `Pendlay_Row`; 32 -> 30, all keys resolve,
-   sums valid). `scripts/validate-catalog.mjs` disk-only validator included.
-2. **A1 DONE (`3a6bc25`, July 7)** — the old `exercise-catalog-seed` branch
-   (`c27a6de`) is now fully SUPERSEDED (reconciled by hand, migration
-   re-timestamped) and deletable (gated op, ask Seth). **CORRECTION (July 7
-   latest+1):** the July 6 claim that "test resets wiped it from staging"
-   was WRONG — the old-named migration was applied May 27 and never left
-   staging; the table has held all 873 rows since. Bookkeeping was
-   reconciled via `prisma migrate resolve --applied` (see the newest
-   HANDOFF entry). **Prod's catalog-table status is still genuinely
-   unverified** — do not assume prod mirrors staging's history here.
-3. **Validator surfaced 29 secondary-less compounds** in the 675-exercise lifting
-   subset (mostly ab/isolation, not loaded compounds) — attribution gaps to skim
-   during a later curation pass (A3 candidate), not urgent.
-4. **Integration test step-6 output (malformed-key seed behavior) still UNVIEWED.**
-   Worth a look before the staging seed runs.
-5. **A4 DONE (`0743070`, July 7)** — structural exercise identity (nullable
-   exerciseId/userExerciseId FKs) landed on TemplateExercise, SessionExercise,
-   BlockWorkoutExercise + blockWorkoutSetId groundwork on WorkoutSet.
-   **Migration applied to staging July 7** (verified by direct SQL query).
-   Prod does NOT have this migration yet — separate gated op when the wave
-   merges.
-6. **A5 DONE (`c7c8ca6`, July 7)** — `GET /api/exercises/search` (pure
-   `searchCatalog` module) + live-session typeahead; selecting a suggestion
-   commits `exerciseId`/`userExerciseId`, free text still commits none.
-   No schema/migration coupling.
-7. **A6b DONE (`eeaa30c`, July 7)** — idempotent dry-run-default backfill
-   script for historical rows. Dry-run against staging: all three tables
-   already at zero null-identity rows (A4's write-path stamping already
-   covers current data) — nothing to `--apply` on staging right now, but
-   the script stays useful for prod once its migration lands.
-8. **Bug found + fixed same session (`0d2118e`, July 7, not a task-block
-   unit):** `attribution.js` never learned A4's `userExerciseId` resolution
-   tier, so custom-exercise volume silently lost all muscle attribution
-   once a session resolved via stored id (the normal case post-A4). Caught
-   by the first full `npm test` run since staging's migration made the
-   tier reachable. Fixed directly (one-line source check), full suite
-   re-verified 185/185 after.
+1. Validator surfaced 29 secondary-less compounds in the 675-exercise
+   lifting subset — curation-skim candidate (A3), not urgent.
+2. Integration test step-6 output (malformed-key seed behavior) still
+   UNVIEWED.
 
 ## Other branches floating around
 
-- `round-7-unify-set-row` (`f6c2a6f`) — set-row unification, parked, decision pending.
+- `round-7-unify-set-row` (`f6c2a6f`) — set-row unification, parked,
+  decision pending.
 
 ## Issues to open
 
-1. Resolve connect-pg-simple `session` table drift (proposed: option (b) `@@ignore` soon).
-2. Integration-suite isolation on shared staging — **Neon supports instant copy-on-write DB branches; a branch-per-test-run would kill the FK-pollution flake entirely. Worth a spike.**
-3. ~~Gitignore export/junk artifacts~~ **DONE July 1** (`bf24b46`).
-4. User-defined exercise support for movements absent upstream (Bulgarian split squat, Pendlay row).
-5. Favicon/PWA icon swap for LogChamp (needs an asset).
-6. Long-term call on migration automation vs manual discipline.
-7. Schema sentinel — see spec (`docs/specs/schema-sentinel.md`).
-8. **NEW: repo lives inside OneDrive** — already caused a `git stash` hang (worktree workaround exists) plus file-lock/sync-lag risk. Decision for Seth: move the repo out of OneDrive (e.g. `C:\dev\workout-db`) or exclude it from sync. Everything is committed+pushed now, so the move is low-risk whenever chosen.
+1. Resolve connect-pg-simple `session` table drift (proposed: option (b)
+   `@@ignore` soon).
+2. Integration-suite isolation on shared staging — Neon copy-on-write DB
+   branches would kill the FK-pollution flake; worth a spike.
+3. User-defined exercise support for movements absent upstream (Bulgarian
+   split squat, Pendlay row).
+4. Favicon/PWA icon swap for LogChamp (needs an asset).
+5. Long-term call on migration automation vs manual discipline.
+6. Schema sentinel — see spec (`docs/specs/schema-sentinel.md`).
+7. **Repo lives inside OneDrive** — already caused a `git stash` hang
+   (worktree workaround exists) plus file-lock/sync-lag risk. Decision for
+   Seth: move the repo out of OneDrive (e.g. `C:\dev\workout-db`) or
+   exclude it from sync. Everything is committed+pushed, so the move is
+   low-risk whenever chosen.
+8. **NEW (July 14, from finding G):** client/server contract
+   reconciliation for the id-only `userExerciseId` stamp PATCH (server
+   accepts id-only identity PATCH, OR client sends name+id together) —
+   needs a task block after the pre-main gate weighs in.
 
 ## Known tech debt (queued, not blocking)
 
@@ -462,11 +241,31 @@ QUEUE.md). Awaiting the Fable/Opus pre-main review before merge. Track C
 
 ## Notes / gotchas discovered
 
-- **Two agents, one working tree (July 1):** Cursor wrote B2/B3a files while Claude Code was committing B1 in the same checkout — an in-flight `index.js` edit got swept into the B1 commit (`e4c96be` doesn't build alone; fixed by `cd72e9c`), and HANDOFF was overwritten mid-rewrite twice. When both agents are active: check `git status --untracked-files=all` immediately before every commit (untracked DIRECTORIES collapse to one line and hide new files), wait for writes to settle (check mtimes), and prefer only ONE agent committing at a time.
-- Scene mock PNGs are design references with fake UI ghosted in — they now live in `docs/design/mocks/` (`ChampMock`, `IronMock`, `ChillMock`; Forest/Crimson mocks deleted June 30 after crops verified). Never ship from `client/src/`; only ever crop the bottom scene band. `CrimsonMock` had a gray phone-frame surround (inset crop), not full-bleed like the others.
-- A commit can land locally while a redeploy rebuilds the OLD HEAD until the push lands. Push, confirm origin HEAD, THEN smoke.
-- Build-passing + diff-looking-right do NOT prove the visual — smoke on device.
-- When bumping a value produces near-zero visible change, it's not a tuning problem — something is suppressing it. Diagnose, don't tune.
-- Migrations are a separate manual track — pushing code does not migrate any DB.
-- `server/.env` only ever points at staging or localhost, never prod. `dbHostGuard` enforces this two ways: `assertSafeForBoot()` runs automatically at server boot (`server.js`); `assertSafeForReset()` covers the test/reset path (`test/jest.setup.js`) and must be called explicitly by any new DB-connecting script at the top of `main()`.
-- `npm run test:unit` is DB-free by construction; `npm test` still requires (and resets) the staging DB.
+- **Two agents, one working tree (July 1):** when Cursor and Claude Code
+  share a checkout: check `git status --untracked-files=all` immediately
+  before every commit (untracked DIRECTORIES collapse to one line), wait
+  for writes to settle, one agent commits at a time. (Relay v5's lane
+  worktree sidesteps this for dispatched units — Cursor works in
+  `C:\dev\worktrees\cursor-lane`, never the main tree.)
+- **Windows env/PATH staleness (July 14):** a Claude Code session may not
+  see User env-var/PATH changes even after a restart — read values from
+  the registry inline and invoke new CLIs by full path.
+- **Cursor CLI remembers the last-used `--model` (July 14):** a flagless
+  `agent -p` run inherits the previous invocation's model. Always pass
+  `--model` explicitly.
+- Scene mock PNGs are design references with fake UI ghosted in — they live
+  in `docs/design/mocks/`; never ship from `client/src/`.
+- A commit can land locally while a redeploy rebuilds the OLD HEAD until
+  the push lands. Push, confirm origin HEAD, THEN smoke.
+- Build-passing + diff-looking-right do NOT prove the visual — smoke on
+  device.
+- When bumping a value produces near-zero visible change, something is
+  suppressing it. Diagnose, don't tune.
+- Migrations are a separate manual track — pushing code does not migrate
+  any DB.
+- `server/.env` only ever points at staging or localhost, never prod.
+  `dbHostGuard` enforces this two ways: `assertSafeForBoot()` at server
+  boot; `assertSafeForReset()` on the test/reset path, called explicitly
+  by any new DB-connecting script at the top of `main()`.
+- `npm run test:unit` is DB-free by construction; `npm test` still
+  requires (and resets) the staging DB.

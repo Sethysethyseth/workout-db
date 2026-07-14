@@ -55,13 +55,27 @@ disjoint - serialize: NTFIX1 lands, then NT3.
   identity only inside the exerciseName branch) - needs a client/server
   contract reconciliation block. (This entry was stale-QUEUED until July
   14 - the landing session updated HANDOFF but not QUEUE.)
-- DISPATCHED July 14 | nt3-entry-deferability-polish.md |
-  completed-session pill goes interactive (create-only context - completed
-  sessions are locked server-side, so link/rename is live-only), deferability
-  polish | MODEL auto -> Channel B AUTO rung (CLI headless in
-  C:\dev\worktrees\cursor-lane off wave HEAD d00eda6). FIRST AUTONOMOUS
-  DISPATCH (relay v5 trial); A rung dead (usage-based-only, overage OFF),
-  B-named exhausted until 7/17 - see the July 14 probe results in the spec
+- LANDED 98963f6 | nt3-entry-deferability-polish.md | completed-session
+  pill goes interactive, create-only sheet context (skip suggest, hide
+  "Use that name", no userExerciseId stamp on locked rows - which also
+  sidesteps bug G on this path), tokens-only tracked-pill fade-in |
+  FIRST AUTONOMOUS DISPATCH LANDED (relay v5 trial, July 14): MODEL auto
+  -> Channel B auto rung, CLI headless in C:\dev\worktrees\cursor-lane,
+  Fable-audited per land-unit: both lanes re-run fresh (unit 170/170,
+  client build green), scope exact (3 files = FILES TO TOUCH), all 7
+  criteria verified incl. by direct read (open-reset seeds name +
+  clears hadSuggestStep before the completed branch forces seed; parent
+  create handler skips the stamp PATCH without userExerciseId but still
+  invalidates + refreshes name resolution; live path a no-op change;
+  check-hex clean, motion tokens defined, slot-pill class real on both
+  crossfade variants). Declared addition (fade-in) within the block's
+  pill-polish allowance. One dispatch hiccup, lesson pinned in
+  dispatch-unit: the CLI remembers the last-used --model, so the first
+  flagless dispatch inherited the exhausted haiku and quota-refused -
+  ALWAYS pass --model explicitly. **NT-WAVE IS NOW CODE-COMPLETE - next
+  gate is the pre-main Fable/Opus review of the full branch diff**
+  (open items for it: finding F cold-start confirmation, finding G
+  stamp-contract reconciliation, NTFIX1 + NT3 staging smoke)
 
 ## Landed - N-wave (analytics UI rebalance)
 

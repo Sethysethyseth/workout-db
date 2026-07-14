@@ -1,12 +1,12 @@
 # Autonomous Cursor dispatch (relay v5 proposal)
 
-**Status: PROPOSED - setup COMPLETE, probe COMPLETE (July 14).** One
-step left before adoption: the NT3 live dispatch trial landing clean.
-Probe verdict: Channel A is unavailable under the overage-OFF billing
-precondition (see "Probe results"), so **Channel B is the backbone for
-ALL blocks**, not just MODEL-auto ones. Authored July 13, 2026 (Fable
-session, Seth's go-ahead on the brainstormed design); probe run July 14
-(Fable).
+**Status: ADOPTED (July 14, 2026)** - setup complete, probe complete,
+and NT3 landed clean (`98963f6`) as the first autonomous unit, all the
+same day. AGENTS.md/CLAUDE.md now describe relay v5. Probe verdict:
+Channel A is unavailable under the overage-OFF billing precondition
+(see "Probe results"), so **Channel B is the backbone for ALL blocks**,
+not just MODEL-auto ones. Authored July 13, 2026 (Fable session, Seth's
+go-ahead on the brainstormed design); probe + trial July 14 (Fable).
 
 ## What this changes, in one sentence
 
