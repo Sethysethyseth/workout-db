@@ -18,10 +18,18 @@ here is staging-side).
 - The block file is COMMITTED AND PUSHED (Channel A reads from GitHub;
   an unpushed block is invisible).
 - Pick the channel from the MODEL header: `auto` -> Channel B auto rung;
-  judgment tier (`opus` etc.) -> Channel A with that model id.
-- Health check the rung first: Channel A needs `$env:CURSOR_API_KEY`;
-  Channel B needs the CLI on PATH (`Get-Command agent, cursor-agent`).
-  Rung unavailable -> descend the ladder (section 3), never stall.
+  judgment tier (`opus` etc.) -> **Channel B named rung** with that
+  model id. Channel A is OFF by default - the July 14 probe showed
+  cloud agents require usage-based pricing (never the included pool),
+  which the standing billing precondition keeps disabled; use A only
+  if Seth has deliberately enabled capped usage-based pricing.
+- Health check the rung first: the key lives in the User registry -
+  read it inline (`[Environment]::GetEnvironmentVariable(
+  'CURSOR_API_KEY','User')`; `$env:` may be stale in a Claude Code
+  shell) - and invoke the CLI by full path
+  (`C:\Users\Sethy\AppData\Local\cursor-agent\cursor-agent.ps1`;
+  PATH may be stale the same way). Rung unavailable -> descend the
+  ladder (section 3), never stall.
 
 ## 1. Channel A - cloud agent
 

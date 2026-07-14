@@ -1,9 +1,12 @@
 # Autonomous Cursor dispatch (relay v5 proposal)
 
-**Status: PROPOSED** - blocked on the one-time setup checklist (bottom)
-and the pricing probe. Nothing in the relay changes until Seth runs
-setup and the probe validates the cost model. Authored July 13, 2026
-(Fable session, Seth's go-ahead on the brainstormed design).
+**Status: PROPOSED - setup COMPLETE, probe COMPLETE (July 14).** One
+step left before adoption: the NT3 live dispatch trial landing clean.
+Probe verdict: Channel A is unavailable under the overage-OFF billing
+precondition (see "Probe results"), so **Channel B is the backbone for
+ALL blocks**, not just MODEL-auto ones. Authored July 13, 2026 (Fable
+session, Seth's go-ahead on the brainstormed design); probe run July 14
+(Fable).
 
 ## What this changes, in one sentence
 
@@ -104,11 +107,21 @@ Rules of the lane:
 ## The fallback ladder (token exhaustion -> seamless descent)
 
 ```
-A: cloud agent, named model     (usage-based credit)
+A: cloud agent, named model     (usage-based credit ONLY - see below)
 B: CLI, named model             (plan included credit)
 B: CLI, auto                    (included at no extra cost on Pro)
 STOP: page Seth                 (auth broken / all rungs refused)
 ```
+
+**Probe finding (July 14): rung A is DEAD under the standing billing
+precondition.** Cloud agents require usage-based pricing enabled with
+>= $2 headroom before they will even accept a dispatch - they never
+draw the included Pro pool. With Seth's overage toggle OFF (the agreed
+precondition: exhaustion means refusals, never charges), `POST
+/v1/agents` returns `400 usage_limit_exceeded` at dispatch time,
+before any token spend. Rung A only exists if Seth deliberately
+enables usage-based pricing with a spend cap - a billing decision,
+not a routing one; do not flip that toggle from an agent seat.
 
 Descend when: pre-dispatch health check fails (no CURSOR_API_KEY / API
 unreachable); POST /v1/agents returns a quota or payment error (402/429
@@ -118,9 +131,18 @@ self-contained contracts, so the unit re-dispatches from scratch on the
 next rung. Composer-delivered NT2 ("Cursor out of Opus tokens") is the
 manual prototype of exactly this descent.
 
-Routing defaults until the probe says otherwise: MODEL `auto` blocks ->
+Routing defaults, FLIPPED by the July 14 probe: MODEL `auto` blocks ->
 Channel B auto rung directly (free); judgment-tier blocks (`opus` etc.)
--> Channel A. The block's MODEL header stays the single cost lever.
+-> **Channel B named rung** (plan included credit), NOT Channel A.
+Channel A is the exception, used only if Seth has deliberately enabled
+capped usage-based pricing for a specific need. The block's MODEL
+header stays the single cost lever. Note the B-named rung shares its
+pool with Seth's interactive Cursor IDE usage and can be exhausted
+mid-cycle (it was on July 14 - "$64 saved on API model usage" refusal,
+resets with the billing cycle, currently the 17th) - when refused,
+descend to B-auto or hold the unit for the reset per the block's
+urgency; don't silently downgrade a block whose MODEL header was a
+deliberate quality call without noting it in the QUEUE entry.
 
 ## The relay loop (what makes it autonomous, not just scriptable)
 
@@ -151,26 +173,65 @@ smoke sign-off, and every gate item - exactly the judgment surface.
    ANTHROPIC_API_KEY rule - that rule is about Claude Code's own auth
    billing; Cursor's key is how its API authenticates at all.) Never
    commit it anywhere.
-2. Install the Cursor CLI (cursor.com/docs/cli, Windows stable) and run
-   `agent login` once - or rely on CURSOR_API_KEY in CI mode.
+2. Install the Cursor CLI - on Windows the installer is
+   `irm 'https://cursor.com/install?win32=true' | iex` (the docs' curl
+   form is Unix-only) - and run `agent login` once, or rely on
+   CURSOR_API_KEY in CI mode. Verify with `cursor-agent status`
+   (installs to `C:\Users\<user>\AppData\Local\cursor-agent\`; expect
+   `agent.ps1`/`cursor-agent.ps1` wrappers, no `.exe`).
 3. Confirm `C:\dev\worktrees\` exists (n5 already used it).
 4. Say the word and Claude Code runs the pricing probe (below).
 
-## Pricing probe (ready to run once the key exists)
+Setup was COMPLETED and verified July 14: key in the User registry,
+CLI `2026.07.09-a3815c0` responding, `cursor-agent status` -> logged
+in as Seth, lane worktree created, overage toggle confirmed OFF.
+Known gotcha: a Claude Code session's shell may still not see the
+User env var or PATH update even after a session restart (the parent
+process chain holds the stale environment) - read the key from the
+registry inline (`[Environment]::GetEnvironmentVariable(
+'CURSOR_API_KEY','User')`) and invoke the CLI by full path instead of
+relying on `$env:` / PATH.
 
-1. `POST /v1/agents` with a read-only prompt ("open docs/tasks/README.md
-   and reply with its first heading; change nothing"), `autoCreatePR:
-   false`, cheapest named model.
-2. On FINISHED: `GET /v1/agents/{id}/usage` + eyeball the dashboard's
-   usage page. That number, extrapolated to an NT2-sized unit, decides
-   whether Channel A is the backbone or the exception.
-3. Same probe through the CLI auto rung to confirm the "included at no
-   extra cost" claim.
+## Pricing probe - RESULTS (run July 14, 2026, Fable session)
+
+The probe as designed (read-only prompt, cheapest named model,
+`autoCreatePR: false`) was run against all three rungs. Verdicts:
+
+1. **Channel A: blocked at dispatch, $0 spent.** `POST /v1/agents`
+   (valid request shape - see API notes below) returned `400
+   usage_limit_exceeded`: "Usage-based pricing required. Background
+   Agent requires at least $2 remaining until your hard limit."
+   Cloud agents are usage-based-only; the included Pro pool never
+   covers them. Under the overage-OFF precondition this rung always
+   refuses cleanly at dispatch time. The per-unit token-cost question
+   the probe was designed to answer is therefore MOOT until Seth ever
+   chooses to enable capped usage-based pricing.
+2. **B named (`--model claude-haiku-4-5`): refused this cycle.**
+   `ActionRequiredError: You've hit your usage limit... saved $64 on
+   API model usage this month with Pro... resets 7/17/2026.` The
+   included named-model pool was already exhausted by IDE usage -
+   note this contradicts the "33% consumed" dashboard reading from
+   July 13; the meter that gates named-model CLI calls is evidently
+   the API-model-usage pool, not that one.
+3. **B auto: WORKS, free.** Headless `agent -p` print-mode run in the
+   lane worktree returned the correct answer (README's first heading),
+   no hang, no files changed, no git operations. This is the backbone
+   rung.
+
+API shape corrections learned while probing (the original sketch above
+was close but not exact): `model` must be an OBJECT `{ "id": "..." }`
+(a bare string is rejected); `repos: [{ url, startingRef }]` and
+top-level `autoCreatePR` are correct as sketched (`source`/`target`
+keys are rejected). `GET /v1/models` works and lists ~33 model ids.
 
 ## Risks / open items
 
-- Cloud-agent credit burn unknown until the probe runs (the single
-  blocking unknown; the whole routing default flips on it).
+- ~~Cloud-agent credit burn unknown~~ RESOLVED July 14: moot - cloud
+  agents require usage-based pricing outright, so Channel A is off
+  under the standing billing precondition (see "Probe results").
+- B-named rung shares the included pool with Seth's IDE usage and can
+  be exhausted mid-cycle; the loop must treat a named-model refusal as
+  routine ladder descent, not an incident.
 - CLI print-mode hang (mitigated: timeout + retry + ladder).
 - `.cursor/environment.json` for cloud lane setup - unspecified, tune
   later.
