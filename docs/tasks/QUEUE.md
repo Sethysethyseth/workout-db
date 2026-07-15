@@ -6,6 +6,21 @@ Statuses: DRAFT / QUEUED / DISPATCHED / AWAITING-REVIEW / LANDED <sha> / BOUNCED
 
 ## Active
 
+Off-wave dev-tooling unit, authored July 15 (Fable, Seth's go-ahead after
+the build-path question). Rides `not-tracked-ux-wave` for landing (one
+standalone new file added to the pending pre-main gate diff - flagged
+here so the gate expects it); dev tooling only, never enters the client
+build or server runtime.
+
+- QUEUED | cw1-cursor-watch-dashboard.md | zero-dependency local dashboard
+  (`scripts/cursor-watch.mjs`, Node built-ins only, 127.0.0.1) for
+  watching Channel B Cursor runs live: fs.watch + git-diff polling of the
+  lane worktree, SSE to an embedded dark mission-control page (activity
+  feed, diff-stat bars, typing pane, DELIVERY.md flips DELIVERY READY);
+  zero tokens to run by design | MODEL auto -> B-auto rung (free);
+  file-disjoint from everything (single new file), no serialization
+  constraints
+
 NT-wave (not-tracked custom-exercise flow rework), authored July 11
 (Fable), branch `not-tracked-ux-wave` (off `e960645` = main `57b1fc8` +
 one docs commit). Design/contract source:
