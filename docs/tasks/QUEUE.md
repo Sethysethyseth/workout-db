@@ -38,15 +38,23 @@ build or server runtime.
   spot-checked (atStart=False, afterFirst=1, afterSecond=1,
   afterRearmWrite=2), no deviations. Watcher now runs persistent via a
   Startup shortcut with --open-on-activity (Seth's "anything ever" ask)
-- DISPATCHED | cw3-cursor-watch-frontier-visuals.md | frontier-agent
+- LANDED 6907d4a | cw3-cursor-watch-frontier-visuals.md | frontier-agent
   visual overhaul (phase-driven accent system, agent-presence orb,
   tool-call card feed, event-rate sparkline) + the unmissable DONE
   moment (page sweep + title/favicon state + --notify OS toast with
   --notify-cmd test override); design fully specified in the block -
   MODEL auto is DELIBERATE, named rung exhausted until 7/17 reset |
   SAME FILE as CW1/CW2 - serialized after CW2 landed a26a2c8;
-  dispatched July 15, Channel B auto rung, lane branch
-  cursor/cw3-cursor-watch-frontier-visuals
+  dispatched + LANDED July 15 same day, Channel B auto rung,
+  Fable-audited per land-unit: lanes fresh (170/170, Vite 128), page
+  driven in a REAL browser (Playwright: WAITING/WORKING/DELIVERY all
+  render, titles flip, zero console errors), notify contract live
+  (afterDelivery=1, afterMoreWrites=1), scope exact, no deviations;
+  papercut logged (non-git watch dir lets git walk up to an enclosing
+  repo - totals chip can count foreign files; real lane is always a
+  worktree, unaffected). Seth's visual sign-off owed on the next live
+  run. Resident watcher + Startup shortcut now run
+  --open-on-activity --notify
 
 NT-wave — **COMPLETE: MERGED TO MAIN `c473e21`, July 15** (gate passed,
 smoke passed, ff-only `57b1fc8..c473e21`, 28 commits, no migration). All
