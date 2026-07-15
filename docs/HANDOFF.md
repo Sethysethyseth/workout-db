@@ -1,6 +1,56 @@
 # HANDOFF — current state
 
-**Updated:** July 14, 2026, fifteenth session (Fable — relay v5 DOC
+**Updated:** July 15, 2026, seventeenth session (Opus — orphaned
+findings-fix work traced, parked pending audit; no product code landed).
+A pre-gate tree check found `AddExerciseToLibrarySheet.jsx` +
+`SessionDetailPage.jsx` modified and uncommitted, mtimes July 14 15:09,
+unstaged by a bare `git reset` at reflog `HEAD@{0}`. Seth did not write
+them and no `DELIVERY.md` or QUEUE entry claims them. **PROVENANCE NOW
+TRACED (do not re-litigate):** Claude Code session
+`ee60a330-d305-49c3-b2dc-0ec82b2fe35f`, July 14 **14:47-15:10 local**
+(18:47-19:10Z — the window brackets the 15:09 mtimes), prompt **"fix all
+findings and test to see if everything works"**. It fixed FOUR findings,
+ran the lanes green, reported in full, ended by asking *"I haven't
+committed - want me to land this?"* — **and never got an answer.** The
+session closed and the work sat in the tree. Not a rogue writer, not a
+lane-isolation breach; Cursor is exonerated (every recorded cursor-agent
+session that day ended by 10:11, and all NT3 relay activity clusters
+10:00-10:53). **Its self-reported four fixes:** (1) **finding G / HIGH** —
+stamp PATCH sent id-only, server 400s, and because `http()` throws the
+throw ALSO skipped the cache invalidate/refresh, so the pill stayed stale
+after a mid-session create; now sends name+id in a `try/catch` so
+resolution always runs; (2) **MEDIUM** — `seedSearchLoading` stuck on
+"Searching..." because the `<2 chars` early-return skipped clearing the
+flag; (3) **MEDIUM** — pill went interactive on a stale committed name
+mid-edit (visual keys off the draft, click now keys off the committed
+name; NT3's completed-session interactivity preserved); (4) **LOW** —
+duplicate search on the suggest->seed hop, deduped via
+`seedFetchedTermRef`. Self-reported evidence: unit 170/170, ESLint no new
+issues, Vite build 128 modules. **Parked verbatim on
+`parked/unattributed-g-fix` (`532125d`)**; `not-tracked-ux-wave` restored
+to exactly the audited `98963f6` tree. **Status: a DELIVERY AWAITING
+AUDIT, not junk and not landed.** It is legitimate, tested, on-request
+work whose only real gap is that green is still SELF-reported (AGENTS.md:
+the report is never trusted for green tests) and it was authored in the
+main tree outside a block. Next actor should run it through `land-unit`
+(re-run lanes fresh, audit tree vs report) rather than either
+cherry-picking it or leaving it to rot. **NOTE: the parked commit
+message's own framing is superseded by this entry** — it was written
+before the provenance was traced and calls the work unattributed,
+unaudited and partly scope creep. **Finding G root cause CONFIRMED
+independently** by direct source read (issue 8 below).
+
+Previous entry (July 14, sixteenth session, Sonnet — smoke sign-off).
+Seth smoked NTFIX1 + NT3 on the staging preview against the four-item list
+from the prior entry (completed-session pill interactive/create-only
+context, live-session NT2 flow unchanged, Main/Assists toggle pressed-state,
+mid-flow close with no nag) — **PASSED, all four.** No code changes.
+**NEXT UP is now solely the pre-main Fable/Opus full-branch-diff review**
+(open items: finding F cold-start confirmation, finding G stamp-contract
+reconciliation, DOM-nesting warning) — the dispatch queue is empty (NT3 was
+the last unit, no other block is QUEUED per `docs/tasks/QUEUE.md`).
+
+Previous entry (July 14, fifteenth session, Fable — relay v5 DOC
 ALIGNMENT: skills + task-queue protocol swept for the v4 remnants the
 adoption left behind; no product code). Four files. **`author-task-block`**
 now frames the dispatch line as channel-agnostic, marks the contract-first
@@ -87,9 +137,14 @@ reads pressed-state (D); [4] close the sheet mid-flow any way — no
 confirm, no nag (deferability); (b) Fable/Opus full-branch-diff review
 with the archive in hand — open findings for it: **F** ("Failed to
 fetch" = Render cold-start candidate, needs a live Network-tab repro),
-**G** (id-only `userExerciseId` stamp PATCH 400s every time — needs a
-client/server contract-reconciliation block), and the React DOM-nesting
-warning (pill button inside heading button). Merge stays behind Seth's
+**G** (id-only `userExerciseId` stamp PATCH 400s every time — root cause
+now CONFIRMED, see issue 8; still needs a client/server
+contract-reconciliation block, and a candidate patch awaiting audit is
+parked on `parked/unattributed-g-fix` that the gate may adopt or reject
+in favour of the server-side option), and the React DOM-nesting warning
+(pill button inside heading button). The branch tree is restored to the
+audited `98963f6` — **the gate reviews only audited units; the parked
+branch is deliberately NOT in that diff.** Merge stays behind Seth's
 "push to main" trigger phrase.
 
 Aged out this rewrite, moved verbatim to `docs/HANDOFF-ARCHIVE.md`
@@ -175,11 +230,11 @@ trusting it.
 
 00. **NT-WAVE CODE-COMPLETE — pre-main gate is the active task.** NT1
    (`f4baee3`), NT2 (`f26e783`), NTFIX1 (`e0ba383`), NT3 (`98963f6`) all
-   audited + pushed to `not-tracked-ux-wave`. Sequence: staging repoint
-   (RUNBOOK step 6) -> Seth smokes NTFIX1 + NT3 on the Vercel preview
-   (list in the top entry) -> Fable/Opus full-branch-diff review (open
-   findings F, G, DOM-nesting — see top entry) -> Seth's "push to main"
-   trigger. Design source: `docs/design/not-tracked-add-flow-brainstorm.md`.
+   audited + pushed to `not-tracked-ux-wave`. Seth's smoke PASSED (all
+   four items, see top entry). Remaining sequence: Fable/Opus
+   full-branch-diff review (open findings F, G, DOM-nesting — see top
+   entry) -> Seth's "push to main" trigger. Design source:
+   `docs/design/not-tracked-add-flow-brainstorm.md`.
 0b. **A-wave follow-up (non-urgent):** optional Step-7 historical backfill:
    `node scripts/backfill-exercise-ids.mjs` (DRY-RUN first) then `--apply`
    against prod for pre-A4 historical rows (Seth runs the write).
@@ -208,6 +263,14 @@ stays dead-last. Residual open items:
 
 - `round-7-unify-set-row` (`f6c2a6f`) — set-row unification, parked,
   decision pending.
+- **`parked/unattributed-g-fix` (`532125d`, July 15) — NOT a deletion
+  candidate; it holds the ONLY copy of the parked work.** Local-only
+  (unpushed: unaudited code should not reach origin until it clears
+  `land-unit` or a block claims it). Four findings-fixes authored July 14
+  by session `ee60a330`; see the top entry for traced provenance — the
+  COMMIT MESSAGE's "unattributed / no lanes run / scope creep" framing
+  predates the trace and is superseded. Feeds the finding-G block
+  (issue 8).
 
 ## Issues to open
 
@@ -225,10 +288,28 @@ stays dead-last. Residual open items:
    Seth: move the repo out of OneDrive (e.g. `C:\dev\workout-db`) or
    exclude it from sync. Everything is committed+pushed, so the move is
    low-risk whenever chosen.
-8. **NEW (July 14, from finding G):** client/server contract
-   reconciliation for the id-only `userExerciseId` stamp PATCH (server
-   accepts id-only identity PATCH, OR client sends name+id together) —
-   needs a task block after the pre-main gate weighs in.
+8. **NEW (July 14, from finding G); ROOT CAUSE CONFIRMED July 15:**
+   client/server contract reconciliation for the id-only `userExerciseId`
+   stamp PATCH (server accepts id-only identity PATCH, OR client sends
+   name+id together) — needs a task block after the pre-main gate weighs
+   in. **Mechanism, read directly from `server/src/controllers/
+   sessionController.js`:** the empty-patch guard at **:531** counts only
+   `exerciseName` and `notes`, so an id-only body yields
+   `400 "No fields to update"`; and identity stamping at **:575** is
+   nested inside `if (data.exerciseName !== undefined)`, so the id never
+   applies without a name alongside it — meaning the server-side option
+   must fix BOTH, not just the guard. Note **:570** rejects completed
+   sessions outright, so the live path is the only one in scope (NT3
+   already skips the stamp on completed rows by passing no
+   `userExerciseId`). A candidate client-side patch is parked on
+   `parked/unattributed-g-fix` (`532125d`), authored July 14 by session
+   `ee60a330` at Seth's "fix all findings" request and self-reported green
+   (unit 170/170, ESLint, Vite build) — **but green is self-reported and
+   the work never went through a block, so audit it via `land-unit`
+   before adopting; do not cherry-pick blind.** It also found that
+   `http()` throwing on the 400 skips the cache invalidate/refresh, which
+   is the part that actually keeps the pill stale — the block must fix
+   that too, not just the patch shape.
 
 ## Known tech debt (queued, not blocking)
 
