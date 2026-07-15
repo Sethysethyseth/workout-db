@@ -26,15 +26,27 @@ build or server runtime.
   write -> WORKING event, DELIVERY.md -> DELIVERY READY, missing lane
   exits 1), imports all node: built-ins, no external URLs, scope exactly
   the 1 new file, no deviations
-- DISPATCHED | cw2-cursor-watch-autoopen.md | auto-open flags for the CW1
+- LANDED a26a2c8 | cw2-cursor-watch-autoopen.md | auto-open flags for the CW1
   watcher (--open at startup, --open-on-activity with once-per-run
   re-arm on DELIVERY.md removal/branch change, --open-cmd test override)
   so the dashboard POPS the moment Cursor starts working; dispatch-unit
   skill amended same day to start/open the watcher at dispatch time |
   MODEL auto -> B-auto rung; SAME FILE as CW1 - serialized after CW1
-  landed 018a6ae; dispatched July 15, Channel B auto rung, headless CLI
-  in C:\dev\worktrees\cursor-lane on cursor/cw2-cursor-watch-autoopen
-  off 018a6ae, watched live via CW1's own dashboard
+  landed 018a6ae; dispatched + LANDED July 15 same day, Channel B auto
+  rung, Fable-audited per land-unit: lanes re-run fresh (unit 170/170,
+  Vite 128 modules), full diff read, live once-per-run + re-arm cycle
+  spot-checked (atStart=False, afterFirst=1, afterSecond=1,
+  afterRearmWrite=2), no deviations. Watcher now runs persistent via a
+  Startup shortcut with --open-on-activity (Seth's "anything ever" ask)
+- DISPATCHED | cw3-cursor-watch-frontier-visuals.md | frontier-agent
+  visual overhaul (phase-driven accent system, agent-presence orb,
+  tool-call card feed, event-rate sparkline) + the unmissable DONE
+  moment (page sweep + title/favicon state + --notify OS toast with
+  --notify-cmd test override); design fully specified in the block -
+  MODEL auto is DELIBERATE, named rung exhausted until 7/17 reset |
+  SAME FILE as CW1/CW2 - serialized after CW2 landed a26a2c8;
+  dispatched July 15, Channel B auto rung, lane branch
+  cursor/cw3-cursor-watch-frontier-visuals
 
 NT-wave — **COMPLETE: MERGED TO MAIN `c473e21`, July 15** (gate passed,
 smoke passed, ff-only `57b1fc8..c473e21`, 28 commits, no migration). All
