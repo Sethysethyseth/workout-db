@@ -7,6 +7,10 @@ Channel A is unavailable under the overage-OFF billing precondition
 (see "Probe results"), so **Channel B is the backbone for ALL blocks**,
 not just MODEL-auto ones. Authored July 13, 2026 (Fable session, Seth's
 go-ahead on the brainstormed design); probe + trial July 14 (Fable).
+Amended July 15, 2026 (Fable, Seth's go-ahead): one RESIDENT Sonnet
+session per wave is the stated norm for the relay loop, and Seth's
+smoke sign-off is one consolidated checklist at wave end - see "The
+relay loop".
 
 ## What this changes, in one sentence
 
@@ -147,7 +151,19 @@ deliberate quality call without noting it in the QUEUE entry.
 ## The relay loop (what makes it autonomous, not just scriptable)
 
 A Sonnet Claude Code session runs the loop (Fable stays withheld per
-the standing rule). Per tick:
+the standing rule). **One RESIDENT session per wave is the norm**
+(amended July 15, 2026): the SAME Sonnet session runs every tick -
+dispatch, monitor (scheduled wakeups while Cursor executes, never
+spinning), land, dispatch-next - from "run the relay" until a stop
+condition. Opening a fresh Sonnet session per unit is the degraded
+fallback (session crash, hand-relay), not the design. What batches at
+wave scale is SETH'S attention (one smoke, one gate), never the
+machine checkpoints - per-unit audit, one commit per unit, and
+bisectable history are unchanged; do not "extend" this amendment into
+batching Cursor execution across units. Skills load fresh at
+execution time, so a long resident session still runs the exact
+`land-unit`/`dispatch-unit` checklists, not a degraded memory of them.
+Per tick:
 
 1. In-flight unit? Poll it (API run status, or the CLI background
    task). Not terminal -> schedule the next wake (~10-15 min for cloud
@@ -164,6 +180,11 @@ the standing rule). Per tick:
 
 Seth's remaining touchpoints: authoring go-ahead, bug reports, staging
 smoke sign-off, and every gate item - exactly the judgment surface.
+Smoke sign-off is ONE consolidated checklist per wave: the resident
+session carries each landed unit's smoke items forward and hands Seth
+the full list at wave end (the NT-wave July 14 sign-off - NTFIX1 + NT3
+smoked together against one four-item list - is the precedent), not a
+list after every unit.
 
 ## One-time setup (Seth, ~10 minutes)
 

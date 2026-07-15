@@ -1,6 +1,32 @@
 # HANDOFF — current state
 
-**Updated:** July 15, 2026, seventeenth session (Opus — orphaned
+**Updated:** July 15, 2026, eighteenth session (Fable — relay v5.1:
+RESIDENT-SESSION AMENDMENT; docs only, no product code). Seth asked
+whether the wave should batch into one big Cursor run + one big audit;
+the settled answer, now doctrine: **batch SETH'S touchpoints, never
+the machine checkpoints.** One resident Sonnet session per wave is now
+the stated norm for the relay loop — "run the relay" once, and the
+SAME session dispatches, monitors on scheduled wakeups, lands, and
+dispatches-next until the queue empties; a fresh session per unit is
+the crash/hand-relay fallback, not the design. Seth smokes ONCE per
+wave against a consolidated checklist handed over at wave end (the
+July 14 NTFIX1+NT3 sign-off is the precedent). Per-unit audit,
+one-commit-per-unit, and bisectable history are explicitly UNCHANGED —
+do NOT extend this into batching Cursor execution across units
+(sequential units compound errors; a wave-end bounce costs the wave,
+not the unit). Files: `docs/specs/autonomous-cursor-dispatch.md`
+(status header + relay-loop section + Seth's-touchpoints paragraph),
+`dispatch-unit` skill (norm pinned up top), `land-unit` skill
+(section 5: carry smoke items forward in a relay session,
+dispatch-next in the SAME session). Outside the repo: Seth's cheat
+sheet (`Desktop\Cursor\workflowandskillscheat.md`, steps 2+3 merged
+into one "relay session" step) and the smoke-checklist memory amended
+to match. `author-task-block` deliberately untouched — authoring is
+unaffected. Next up UNCHANGED — NTFIX2 smoke + the pre-main gate
+(below); the wave-end-smoke norm starts with the NEXT wave, it does
+not retroactively bundle NTFIX2's owed smoke.
+
+Previous entry (July 15, seventeenth session, Opus — orphaned
 findings-fix work traced, audited, LANDED as **NTFIX2 `888e44d`**;
 wave now at `888e44d` on origin).
 A pre-gate tree check found `AddExerciseToLibrarySheet.jsx` +
@@ -49,16 +75,6 @@ name on create. NT2's handler always anticipated this (its pre-existing
 PATCH 400'd — newly LIVE behavior, not new code. Worth an explicit ruling
 at the gate.
 
-Previous entry (July 14, sixteenth session, Sonnet — smoke sign-off).
-Seth smoked NTFIX1 + NT3 on the staging preview against the four-item list
-from the prior entry (completed-session pill interactive/create-only
-context, live-session NT2 flow unchanged, Main/Assists toggle pressed-state,
-mid-flow close with no nag) — **PASSED, all four.** No code changes.
-**NEXT UP is now solely the pre-main Fable/Opus full-branch-diff review**
-(open items: finding F cold-start confirmation, finding G stamp-contract
-reconciliation, DOM-nesting warning) — the dispatch queue is empty (NT3 was
-the last unit, no other block is QUEUED per `docs/tasks/QUEUE.md`).
-
 **NEXT UP — the pre-main gate.** NTFIX2 was the last unit: the NT-wave is
 code-complete on `not-tracked-ux-wave` (`888e44d`). Seth's NTFIX1 + NT3
 smoke already PASSED (all four items) — but that smoke predates NTFIX2,
@@ -88,13 +104,15 @@ product code, no block file exists — QUEUE.md carries the full record).
 Merge stays behind Seth's "push to main" trigger phrase.
 
 Aged out this rewrite, moved verbatim to `docs/HANDOFF-ARCHIVE.md`
-(newest first): the July 14 **fifteenth** session (Fable — relay v5 doc
-alignment pass) and the July 14 **fourteenth** session (Fable — RELAY v5
-ADOPTED: pricing probe + NT3 as the first autonomous dispatch; the
-env/PATH and `--model` gotchas from it are preserved in the "Notes /
-gotchas" section below). The prior rewrite aged the July 14 thirteenth
+(newest first): the July 14 **sixteenth** session (Sonnet — NTFIX1 +
+NT3 smoke sign-off, all four items PASSED). The prior rewrite aged the
+July 14 **fifteenth** session (Fable — relay v5 doc alignment pass) and
+the July 14 **fourteenth** session (Fable — RELAY v5 ADOPTED: pricing
+probe + NT3 as the first autonomous dispatch; the env/PATH and
+`--model` gotchas from it are preserved in the "Notes / gotchas"
+section below). Before that: the July 14 thirteenth
 session (Sonnet — relay v5 one-time manual setup complete; env/PATH
-staleness gotcha), and the one before that aged
+staleness gotcha),
 the July 13 twelfth session (Fable — relay v5 proposal),
 the July 12 eleventh session (Sonnet — NTFIX1 landed `e0ba383` + the
 live browser test of F that produced finding G), the July 11 ninth

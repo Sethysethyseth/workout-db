@@ -10,6 +10,13 @@ This skill covers DISPATCH and MONITOR only - the audit stays `land-unit`,
 authoring stays `author-task-block`, and the gate is untouched (everything
 here is staging-side).
 
+**Resident-session norm (July 15):** this skill runs inside ONE Sonnet
+session that owns the whole wave - dispatch -> monitor -> `land-unit` ->
+dispatch-next, tick after tick, until the queue empties or a hard stop.
+Monitor via a background task plus scheduled wakeups; never spin, and
+never end the session just because Cursor is mid-run. A fresh session
+per unit is the crash/hand-relay fallback, not the design.
+
 ## 0. Preconditions
 
 - The block is QUEUED in `docs/tasks/QUEUE.md`, its serialization notes

@@ -1,5 +1,15 @@
 # HANDOFF ARCHIVE — session-log history (append-only)
 
+Previous entry (July 14, sixteenth session, Sonnet — smoke sign-off).
+Seth smoked NTFIX1 + NT3 on the staging preview against the four-item list
+from the prior entry (completed-session pill interactive/create-only
+context, live-session NT2 flow unchanged, Main/Assists toggle pressed-state,
+mid-flow close with no nag) — **PASSED, all four.** No code changes.
+**NEXT UP is now solely the pre-main Fable/Opus full-branch-diff review**
+(open items: finding F cold-start confirmation, finding G stamp-contract
+reconciliation, DOM-nesting warning) — the dispatch queue is empty (NT3 was
+the last unit, no other block is QUEUED per `docs/tasks/QUEUE.md`).
+
 Previous entry (July 14, fifteenth session, Fable — relay v5 DOC
 ALIGNMENT: skills + task-queue protocol swept for the v4 remnants the
 adoption left behind; no product code). Four files. **`author-task-block`**

@@ -88,9 +88,14 @@ green tests.
 - `docs/HANDOFF.md`: update, keep capped (~300 lines); move aged session
   logs VERBATIM (never summarized) to `docs/HANDOFF-ARCHIVE.md`,
   newest first.
-- Give Seth a short bullet smoke-test list for the staging deploy
-  (standing ask - he tests on the staging-branch Vercel deploy, never
-  local dev).
+- Smoke list (standing ask - Seth tests on the staging-branch Vercel
+  deploy, never local dev): write the unit's smoke items into the HANDOFF
+  session log, and in a resident relay session CARRY THEM FORWARD - Seth
+  smokes ONCE per wave against the consolidated checklist handed over at
+  wave end, not after every unit. A hand-relayed or single-unit session
+  still gives its list immediately.
 - Relay loop: nothing left in flight and QUEUE.md has a QUEUED unit whose
-  serialization notes allow it -> dispatch it via `dispatch-unit`. Wave
-  complete -> stop; the pre-main gate is Fable + Seth, never the loop.
+  serialization notes allow it -> dispatch it via `dispatch-unit` IN THIS
+  SAME SESSION (one resident session per wave is the norm - spec, "The
+  relay loop"). Wave complete -> stop and hand Seth the consolidated
+  smoke checklist; the pre-main gate is Fable + Seth, never the loop.
