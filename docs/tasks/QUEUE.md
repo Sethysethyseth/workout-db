@@ -76,6 +76,36 @@ disjoint - serialize: NTFIX1 lands, then NT3.
   gate is the pre-main Fable/Opus review of the full branch diff**
   (open items for it: finding F cold-start confirmation, finding G
   stamp-contract reconciliation, NTFIX1 + NT3 staging smoke)
+- LANDED 888e44d | (NO BLOCK FILE - see notes) | NTFIX2: four
+  not-tracked findings-fixes - (1) finding G/HIGH stamp-contract fix,
+  (2) stuck seed spinner, (3) pill interactive on a stale committed name
+  mid-edit, (4) suggest->seed duplicate-search dedupe | **UNUSUAL
+  PROVENANCE, recorded so it is not mistaken for a normal unit.**
+  Authored July 14 by Claude Code session ee60a330 at Seth's "fix all
+  findings" request - NOT by Cursor, NOT from a task block, so there is
+  no block file and no DELIVERY.md (the session's own final report stood
+  in for one). It fixed the four findings, ran its lanes, asked "want me
+  to land this?", got no answer, and closed - leaving the work
+  uncommitted in the main tree, where a pre-gate check found it July 15.
+  Parked verbatim on parked/unattributed-g-fix (532125d), then audited
+  per land-unit BEFORE landing: lanes re-run FRESH in the lane worktree
+  (unit 170/170 in 14 suites, client build green 128 modules), never
+  trusted from the report; check-hex clean; scope exactly the 2 claimed
+  files, nothing unexpected; all four criteria verified by direct read,
+  incl. finding G's mechanism confirmed independently against
+  sessionController.js:531 (empty-patch guard counts only
+  exerciseName/notes) and :575 (identity stamping nested inside the
+  name-change branch). Deviations stated, not hidden: Claude Code
+  authoring product code (covered by the AGENTS.md direct-fix exception
+  + Seth's explicit ask, but a deviation), and fix 4 being an
+  optimization beyond the findings. Behavior note for the gate: the
+  stamp PATCH now carries exerciseName, so the row RENAMES to the
+  sheet's name on create - NT2's handler always anticipated this
+  (pre-existing oldName !== name invalidation) but the rename never
+  fired while the PATCH 400'd, so it is newly LIVE behavior, not new
+  code. Cursor exonerated for the orphaned work: every recorded
+  cursor-agent session July 14 ended by 10:11 and all NT3 relay activity
+  clusters 10:00-10:53 - no lane-isolation breach.
 
 ## Landed - N-wave (analytics UI rebalance)
 

@@ -1,7 +1,8 @@
 # HANDOFF — current state
 
 **Updated:** July 15, 2026, seventeenth session (Opus — orphaned
-findings-fix work traced, parked pending audit; no product code landed).
+findings-fix work traced, audited, LANDED as **NTFIX2 `888e44d`**;
+wave now at `888e44d` on origin).
 A pre-gate tree check found `AddExerciseToLibrarySheet.jsx` +
 `SessionDetailPage.jsx` modified and uncommitted, mtimes July 14 15:09,
 unstaged by a bare `git reset` at reflog `HEAD@{0}`. Seth did not write
@@ -25,20 +26,28 @@ flag; (3) **MEDIUM** — pill went interactive on a stale committed name
 mid-edit (visual keys off the draft, click now keys off the committed
 name; NT3's completed-session interactivity preserved); (4) **LOW** —
 duplicate search on the suggest->seed hop, deduped via
-`seedFetchedTermRef`. Self-reported evidence: unit 170/170, ESLint no new
-issues, Vite build 128 modules. **Parked verbatim on
-`parked/unattributed-g-fix` (`532125d`)**; `not-tracked-ux-wave` restored
-to exactly the audited `98963f6` tree. **Status: a DELIVERY AWAITING
-AUDIT, not junk and not landed.** It is legitimate, tested, on-request
-work whose only real gap is that green is still SELF-reported (AGENTS.md:
-the report is never trusted for green tests) and it was authored in the
-main tree outside a block. Next actor should run it through `land-unit`
-(re-run lanes fresh, audit tree vs report) rather than either
-cherry-picking it or leaving it to rot. **NOTE: the parked commit
-message's own framing is superseded by this entry** — it was written
-before the provenance was traced and calls the work unattributed,
-unaudited and partly scope creep. **Finding G root cause CONFIRMED
-independently** by direct source read (issue 8 below).
+`seedFetchedTermRef`. **AUDITED AND LANDED as NTFIX2 `888e44d`**, pushed to
+staging. Sequence: parked verbatim on `parked/unattributed-g-fix`
+(`532125d`) -> wave restored to the audited `98963f6` tree -> full
+`land-unit` audit -> landed as one unit with an accurate message.
+**Audit evidence (lanes re-run FRESH in the lane worktree, never trusted
+from the report):** server unit 170/170 in 14 suites, client Vite build
+green 128 modules, `check-hex` clean, scope exactly the 2 claimed files
+with nothing unexpected, all four criteria verified by direct read, and
+G's mechanism confirmed independently against source (issue 8).
+**Deviations stated, not hidden:** Claude Code authored product code
+(covered by the AGENTS.md direct-fix exception + Seth's explicit ask, but
+a deviation); fix 4 is an optimization beyond the findings; no block file
+or `DELIVERY.md` exists, so the session's final report stood in for one
+and QUEUE.md carries the record instead. **NOTE: `532125d`'s own commit
+message is superseded** — written before the trace, it calls the work
+unattributed, unaudited and partly scope creep; all three are wrong.
+**BEHAVIOR NOTE FOR THE GATE:** the stamp PATCH now carries
+`exerciseName`, so the session-exercise row **renames** to the sheet's
+name on create. NT2's handler always anticipated this (its pre-existing
+`oldName !== name` invalidation) but the rename never fired while the
+PATCH 400'd — newly LIVE behavior, not new code. Worth an explicit ruling
+at the gate.
 
 Previous entry (July 14, sixteenth session, Sonnet — smoke sign-off).
 Seth smoked NTFIX1 + NT3 on the staging preview against the four-item list
@@ -50,107 +59,43 @@ mid-flow close with no nag) — **PASSED, all four.** No code changes.
 reconciliation, DOM-nesting warning) — the dispatch queue is empty (NT3 was
 the last unit, no other block is QUEUED per `docs/tasks/QUEUE.md`).
 
-Previous entry (July 14, fifteenth session, Fable — relay v5 DOC
-ALIGNMENT: skills + task-queue protocol swept for the v4 remnants the
-adoption left behind; no product code). Four files. **`author-task-block`**
-now frames the dispatch line as channel-agnostic, marks the contract-first
-rules carried unchanged into v5, notes MODEL doubles as the
-dispatch-routing lever (`auto` -> free CLI rung), pins that MODE governs
-only the hand-relay fallback (autonomous dispatch always uses the lane
-worktree), adds the DB-free-lanes-only constraint on dispatched blocks
-(no `server/.env` in the lane worktree or the cloud — a block needing
-the integration lane is a hand-relay flag), and ends by invoking
-`dispatch-unit` instead of "hand Seth the dispatch line" (the line
-survives as the documented fallback). **`land-unit`** now names the lane
-worktree as the primary of THREE delivery modes (audit + lanes run in
-`C:\dev\worktrees\cursor-lane`; commit in the lane on `cursor/<unit>`,
-ff-merge onto the wave branch, push — the NT3 precedent), scopes the
-OneDrive sync-lag caveat to the main tree, and closes with the
-relay-loop continuation (idle + QUEUED unit -> `dispatch-unit`; wave
-complete -> stop, the gate is Fable + Seth). **`dispatch-unit`** gains
-its one missing beat: Channel B flips DISPATCHED in QUEUE.md before the
-run (bookkeeping parity with Channel A). **`docs/tasks/README.md`**
-rewritten from the v4 "Seth dispatches" loop to v5 (dispatch step =
-`dispatch-unit` with the hand-relay line kept as fallback, DELIVERY.md
-lands at the root of whichever tree the block runs in, DISPATCHED
-flipped by the dispatcher, "Two modes" demoted to hand-relay paths,
-Seth's job = go-aheads / bug reports / smoke sign-off / gate items,
-MODEL guidance aligned with the Fable-withheld rule). `_TEMPLATE.md`
-untouched DELIBERATELY — the standing footer is verbatim-standing and
-"repo root" already reads correctly in whichever tree the block runs.
-Next up unchanged: the pre-main gate (NEXT UP paragraph below).
-
-Previous entry (July 14, fourteenth session, Fable — RELAY v5 ADOPTED:
-pricing probe run + NT3 landed as the FIRST AUTONOMOUS DISPATCH; NT-WAVE
-NOW CODE-COMPLETE). Resume sequence executed end-to-end this session:
-**(1) Setup verified from ground truth** — the session restart still did
-NOT propagate env/PATH to the Claude Code shell (parent process chain
-holds the stale environment; durable workaround now in the spec + skill:
-read `CURSOR_API_KEY` from the registry inline, invoke
-`C:\Users\Sethy\AppData\Local\cursor-agent\cursor-agent.ps1` by full
-path); CLI `2026.07.09-a3815c0` responds and `cursor-agent status` ->
-logged in as Seth (the item last session couldn't confirm). **(2)
-Pricing probe, all three rungs, $0 spent — verdict decisive:** Channel A
-(cloud agents) requires usage-based pricing ON with >=$2 headroom and
-NEVER draws the included Pro pool -> with Seth's overage toggle OFF it
-refuses cleanly at dispatch (`400 usage_limit_exceeded`), so the
-per-unit cost question is MOOT and **Channel B is the backbone for ALL
-blocks**; B-named is exhausted this cycle ("saved $64 on API model
-usage", resets 7/17 — the July 13 "33% consumed" dashboard reading was
-evidently a different meter); B-auto works. Routing defaults flipped in
-the spec + `dispatch-unit`. **(3) NT3 dispatched autonomously and LANDED
-`98963f6`** — Channel B auto rung, lane worktree
-`C:\dev\worktrees\cursor-lane` (created off wave HEAD, deps installed,
-persists for future dispatches), 45-min hard-timeout wrapper. One
-dispatch hiccup, lesson pinned in the skill: **the CLI remembers the
-last-used `--model`** — the first flagless dispatch inherited the
-exhausted haiku from a probe and quota-refused; ALWAYS pass `--model`
-explicitly. Delivery audited per `land-unit`: lanes re-run fresh (unit
-170/170, client build green), scope exact (3 files = FILES TO TOUCH),
-all 7 criteria verified incl. by direct read (completed-context sheet
-opens at seed with name prefilled + hadSuggestStep cleared; parent
-create handler skips the stamp PATCH without `userExerciseId` — also
-sidesteps bug G on this path — but still invalidates + refreshes name
-resolution; live path is a no-op change; check-hex clean; slot-pill
-fade-in targets a real class, `prefers-reduced-motion` gated,
-tokens-only). Committed in the lane, rebased onto the wave branch,
-ff-merged, pushed. **(4) Doctrine amended:** AGENTS.md + CLAUDE.md now
-describe relay v5 (autonomous dispatch via `dispatch-unit`; Seth
-hand-relaying still works), spec flipped ADOPTED. Also this session:
-QUEUE.md had NTFIX1 stale-QUEUED — flipped to LANDED `e0ba383`; HANDOFF
-aging pass done (five entries July 10-13 moved verbatim to the
-archive). **Leftover (gated deletion candidates):** lane branches
-`cursor/pricing-probe` and `cursor/nt3-entry-deferability-polish` (the
-latter == wave HEAD; both get re-pointed by `checkout -B` on the next
-dispatch anyway).
-
-**NEXT UP — the pre-main gate.** NT3 was the last unit: the NT-wave is
-code-complete on `not-tracked-ux-wave` (`98963f6`). Before any merge to
-main: (a) Seth smokes NTFIX1 (B/C/D/E) + NT3 on the staging Vercel
-preview — RUNBOOK step 6 staging repoint to this branch may still be
-owed first; smoke list: [1] completed session with an unresolved
-exercise -> pill is tappable, sheet opens straight at the muscle-seed
-step, no "Use that name" anywhere, create succeeds, pill flips to
-Tracked with a soft fade; [2] live session -> unchanged NT2 stepped
-flow incl. suggest step and as-you-type pill; [3] Main/Assists toggle
-reads pressed-state (D); [4] close the sheet mid-flow any way — no
-confirm, no nag (deferability); (b) Fable/Opus full-branch-diff review
-with the archive in hand — open findings for it: **F** ("Failed to
-fetch" = Render cold-start candidate, needs a live Network-tab repro),
-**G** (id-only `userExerciseId` stamp PATCH 400s every time — root cause
-now CONFIRMED, see issue 8; still needs a client/server
-contract-reconciliation block, and a candidate patch awaiting audit is
-parked on `parked/unattributed-g-fix` that the gate may adopt or reject
-in favour of the server-side option), and the React DOM-nesting warning
-(pill button inside heading button). The branch tree is restored to the
-audited `98963f6` — **the gate reviews only audited units; the parked
-branch is deliberately NOT in that diff.** Merge stays behind Seth's
-"push to main" trigger phrase.
+**NEXT UP — the pre-main gate.** NTFIX2 was the last unit: the NT-wave is
+code-complete on `not-tracked-ux-wave` (`888e44d`). Seth's NTFIX1 + NT3
+smoke already PASSED (all four items) — but that smoke predates NTFIX2,
+so (a) **NTFIX2 needs its own smoke** on the staging Vercel preview
+(RUNBOOK step 6 staging repoint to this branch may still be owed first):
+[1] **live session, the headline fix** — add an exercise with an
+off-catalog name, tap the "not tracked" pill, create it -> pill flips to
+Tracked immediately (this was BROKEN before NTFIX2; it is the whole point
+of the unit); [2] **live session, edited name** — change the name in the
+sheet before saving -> the set row renames to the new name AND shows
+Tracked (**newly live behavior — if the rename is unwanted, say so, it is
+a deliberate open question for the gate**); [3] **completed session** —
+NT3's create-only flow still adds to library and flips the pill
+(regression check on the path NTFIX2 did not intend to touch); [4] **seed
+step** — clear the search to 1 char -> "Searching..." disappears, no
+stuck spinner; "None of these" -> seed hop shows results with no visible
+second fetch; [5] **mid-edit pill** — start editing an exercise name in a
+live session -> the pill must not be tappable while the draft is
+uncommitted. Then (b) Fable/Opus full-branch-diff review with the archive
+in hand — open items for it: **F** ("Failed to fetch" = Render cold-start
+candidate, needs a live Network-tab repro), **G** (client-side fix LANDED
+in NTFIX2; the open question is whether the SERVER should also accept an
+id-only identity PATCH — see issue 8), **the NTFIX2 rename behavior**
+(above), the React DOM-nesting warning (pill button inside heading
+button), and **NTFIX2's own relay deviations** (Claude Code authored the
+product code, no block file exists — QUEUE.md carries the full record).
+Merge stays behind Seth's "push to main" trigger phrase.
 
 Aged out this rewrite, moved verbatim to `docs/HANDOFF-ARCHIVE.md`
-(newest first): the July 14 thirteenth session (Sonnet — relay v5
-one-time manual setup complete; env/PATH staleness gotcha). The prior
-rewrite aged the July 13 twelfth session (Fable — relay v5 proposal),
+(newest first): the July 14 **fifteenth** session (Fable — relay v5 doc
+alignment pass) and the July 14 **fourteenth** session (Fable — RELAY v5
+ADOPTED: pricing probe + NT3 as the first autonomous dispatch; the
+env/PATH and `--model` gotchas from it are preserved in the "Notes /
+gotchas" section below). The prior rewrite aged the July 14 thirteenth
+session (Sonnet — relay v5 one-time manual setup complete; env/PATH
+staleness gotcha), and the one before that aged
+the July 13 twelfth session (Fable — relay v5 proposal),
 the July 12 eleventh session (Sonnet — NTFIX1 landed `e0ba383` + the
 live browser test of F that produced finding G), the July 11 ninth
 session (Opus — NT1 + NT2 landed), the July 11 eighth session (Fable —
@@ -183,11 +128,12 @@ trusting it.
 
 ## Repo / deploy state
 
-- **`not-tracked-ux-wave` is at `98963f6` (July 14)** — NT1 + NT2 +
-  NTFIX1 + NT3 + the relay v5 docs (spec, skills, QUEUE, doctrine
-  amendment) all on `origin/not-tracked-ux-wave`. Wave code-complete;
-  pre-main gate pending. Branched off `analytics-rebalance-wave` HEAD
-  `e960645` (= `main` `57b1fc8` + one docs bookkeeping commit).
+- **`not-tracked-ux-wave` is at `888e44d` (July 15)** — NT1 + NT2 +
+  NTFIX1 + NT3 + **NTFIX2** + the relay v5 docs (spec, skills, QUEUE,
+  doctrine amendment) all on `origin/not-tracked-ux-wave`. Wave
+  code-complete; pre-main gate pending. Branched off
+  `analytics-rebalance-wave` HEAD `e960645` (= `main` `57b1fc8` + one
+  docs bookkeeping commit).
 - **A-wave MERGED to `main` (`13a1e59`), July 8.** `catalog-fk-wave`
   (`13a1e59`) — A1 + A4 + A5 + A6b + the `0e6f32a` db-host-guard split — is now
   fully contained in `main`; prod DB migrated + seeded + smoked. Branch is a
@@ -229,11 +175,14 @@ trusting it.
 ## Next up (the active task)
 
 00. **NT-WAVE CODE-COMPLETE — pre-main gate is the active task.** NT1
-   (`f4baee3`), NT2 (`f26e783`), NTFIX1 (`e0ba383`), NT3 (`98963f6`) all
-   audited + pushed to `not-tracked-ux-wave`. Seth's smoke PASSED (all
-   four items, see top entry). Remaining sequence: Fable/Opus
-   full-branch-diff review (open findings F, G, DOM-nesting — see top
-   entry) -> Seth's "push to main" trigger. Design source:
+   (`f4baee3`), NT2 (`f26e783`), NTFIX1 (`e0ba383`), NT3 (`98963f6`),
+   NTFIX2 (`888e44d`) all audited + pushed to `not-tracked-ux-wave`.
+   Seth's NTFIX1 + NT3 smoke PASSED (all four items) but PREDATES NTFIX2.
+   Remaining sequence: **Seth smokes NTFIX2 (5-item list in the top
+   entry)** -> Fable/Opus full-branch-diff review (open items F, G's
+   server-side question, the NTFIX2 rename behavior, DOM-nesting, and
+   NTFIX2's relay deviations — see top entry) -> Seth's "push to main"
+   trigger. Design source:
    `docs/design/not-tracked-add-flow-brainstorm.md`.
 0b. **A-wave follow-up (non-urgent):** optional Step-7 historical backfill:
    `node scripts/backfill-exercise-ids.mjs` (DRY-RUN first) then `--apply`
@@ -263,14 +212,13 @@ stays dead-last. Residual open items:
 
 - `round-7-unify-set-row` (`f6c2a6f`) — set-row unification, parked,
   decision pending.
-- **`parked/unattributed-g-fix` (`532125d`, July 15) — NOT a deletion
-  candidate; it holds the ONLY copy of the parked work.** Local-only
-  (unpushed: unaudited code should not reach origin until it clears
-  `land-unit` or a block claims it). Four findings-fixes authored July 14
-  by session `ee60a330`; see the top entry for traced provenance — the
-  COMMIT MESSAGE's "unattributed / no lanes run / scope creep" framing
-  predates the trace and is superseded. Feeds the finding-G block
-  (issue 8).
+- `parked/unattributed-g-fix` (`532125d`, July 15) — local-only holding
+  branch for the orphaned July 14 findings-fix work. **Its content is now
+  LANDED as NTFIX2 (`888e44d`), so this branch is a deletion candidate**
+  (gated) — it is no longer the only copy. Its commit message's
+  "unattributed / no lanes run / scope creep" framing predates the
+  provenance trace and is wrong; the QUEUE.md NTFIX2 entry and the top
+  HANDOFF entry are the accurate record.
 
 ## Issues to open
 
@@ -301,15 +249,14 @@ stays dead-last. Residual open items:
    must fix BOTH, not just the guard. Note **:570** rejects completed
    sessions outright, so the live path is the only one in scope (NT3
    already skips the stamp on completed rows by passing no
-   `userExerciseId`). A candidate client-side patch is parked on
-   `parked/unattributed-g-fix` (`532125d`), authored July 14 by session
-   `ee60a330` at Seth's "fix all findings" request and self-reported green
-   (unit 170/170, ESLint, Vite build) — **but green is self-reported and
-   the work never went through a block, so audit it via `land-unit`
-   before adopting; do not cherry-pick blind.** It also found that
-   `http()` throwing on the 400 skips the cache invalidate/refresh, which
-   is the part that actually keeps the pill stale — the block must fix
-   that too, not just the patch shape.
+   `userExerciseId`). **FIXED client-side and LANDED in NTFIX2
+   (`888e44d`)** — the client now sends name+id together, and the PATCH is
+   wrapped in `try/catch` so the cache invalidate/refresh always runs
+   (`http()` throwing on the 400 was skipping it, which is what actually
+   left the pill stale — the 400 alone was only half the bug). **Still
+   open for the gate to rule on:** whether the SERVER should also accept
+   an id-only identity PATCH. If yes, it must fix BOTH :531 and :575, not
+   just the guard. Not blocking — the client path works without it.
 
 ## Known tech debt (queued, not blocking)
 

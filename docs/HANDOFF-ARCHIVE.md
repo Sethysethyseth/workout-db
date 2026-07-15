@@ -1,5 +1,81 @@
 # HANDOFF ARCHIVE — session-log history (append-only)
 
+Previous entry (July 14, fifteenth session, Fable — relay v5 DOC
+ALIGNMENT: skills + task-queue protocol swept for the v4 remnants the
+adoption left behind; no product code). Four files. **`author-task-block`**
+now frames the dispatch line as channel-agnostic, marks the contract-first
+rules carried unchanged into v5, notes MODEL doubles as the
+dispatch-routing lever (`auto` -> free CLI rung), pins that MODE governs
+only the hand-relay fallback (autonomous dispatch always uses the lane
+worktree), adds the DB-free-lanes-only constraint on dispatched blocks
+(no `server/.env` in the lane worktree or the cloud — a block needing
+the integration lane is a hand-relay flag), and ends by invoking
+`dispatch-unit` instead of "hand Seth the dispatch line" (the line
+survives as the documented fallback). **`land-unit`** now names the lane
+worktree as the primary of THREE delivery modes (audit + lanes run in
+`C:\dev\worktrees\cursor-lane`; commit in the lane on `cursor/<unit>`,
+ff-merge onto the wave branch, push — the NT3 precedent), scopes the
+OneDrive sync-lag caveat to the main tree, and closes with the
+relay-loop continuation (idle + QUEUED unit -> `dispatch-unit`; wave
+complete -> stop, the gate is Fable + Seth). **`dispatch-unit`** gains
+its one missing beat: Channel B flips DISPATCHED in QUEUE.md before the
+run (bookkeeping parity with Channel A). **`docs/tasks/README.md`**
+rewritten from the v4 "Seth dispatches" loop to v5 (dispatch step =
+`dispatch-unit` with the hand-relay line kept as fallback, DELIVERY.md
+lands at the root of whichever tree the block runs in, DISPATCHED
+flipped by the dispatcher, "Two modes" demoted to hand-relay paths,
+Seth's job = go-aheads / bug reports / smoke sign-off / gate items,
+MODEL guidance aligned with the Fable-withheld rule). `_TEMPLATE.md`
+untouched DELIBERATELY — the standing footer is verbatim-standing and
+"repo root" already reads correctly in whichever tree the block runs.
+Next up unchanged: the pre-main gate (NEXT UP paragraph below).
+
+Previous entry (July 14, fourteenth session, Fable — RELAY v5 ADOPTED:
+pricing probe run + NT3 landed as the FIRST AUTONOMOUS DISPATCH; NT-WAVE
+NOW CODE-COMPLETE). Resume sequence executed end-to-end this session:
+**(1) Setup verified from ground truth** — the session restart still did
+NOT propagate env/PATH to the Claude Code shell (parent process chain
+holds the stale environment; durable workaround now in the spec + skill:
+read `CURSOR_API_KEY` from the registry inline, invoke
+`C:\Users\Sethy\AppData\Local\cursor-agent\cursor-agent.ps1` by full
+path); CLI `2026.07.09-a3815c0` responds and `cursor-agent status` ->
+logged in as Seth (the item last session couldn't confirm). **(2)
+Pricing probe, all three rungs, $0 spent — verdict decisive:** Channel A
+(cloud agents) requires usage-based pricing ON with >=$2 headroom and
+NEVER draws the included Pro pool -> with Seth's overage toggle OFF it
+refuses cleanly at dispatch (`400 usage_limit_exceeded`), so the
+per-unit cost question is MOOT and **Channel B is the backbone for ALL
+blocks**; B-named is exhausted this cycle ("saved $64 on API model
+usage", resets 7/17 — the July 13 "33% consumed" dashboard reading was
+evidently a different meter); B-auto works. Routing defaults flipped in
+the spec + `dispatch-unit`. **(3) NT3 dispatched autonomously and LANDED
+`98963f6`** — Channel B auto rung, lane worktree
+`C:\dev\worktrees\cursor-lane` (created off wave HEAD, deps installed,
+persists for future dispatches), 45-min hard-timeout wrapper. One
+dispatch hiccup, lesson pinned in the skill: **the CLI remembers the
+last-used `--model`** — the first flagless dispatch inherited the
+exhausted haiku from a probe and quota-refused; ALWAYS pass `--model`
+explicitly. Delivery audited per `land-unit`: lanes re-run fresh (unit
+170/170, client build green), scope exact (3 files = FILES TO TOUCH),
+all 7 criteria verified incl. by direct read (completed-context sheet
+opens at seed with name prefilled + hadSuggestStep cleared; parent
+create handler skips the stamp PATCH without `userExerciseId` — also
+sidesteps bug G on this path — but still invalidates + refreshes name
+resolution; live path is a no-op change; check-hex clean; slot-pill
+fade-in targets a real class, `prefers-reduced-motion` gated,
+tokens-only). Committed in the lane, rebased onto the wave branch,
+ff-merged, pushed. **(4) Doctrine amended:** AGENTS.md + CLAUDE.md now
+describe relay v5 (autonomous dispatch via `dispatch-unit`; Seth
+hand-relaying still works), spec flipped ADOPTED. Also this session:
+QUEUE.md had NTFIX1 stale-QUEUED — flipped to LANDED `e0ba383`; HANDOFF
+aging pass done (five entries July 10-13 moved verbatim to the
+archive). **Leftover (gated deletion candidates):** lane branches
+`cursor/pricing-probe` and `cursor/nt3-entry-deferability-polish` (the
+latter == wave HEAD; both get re-pointed by `checkout -B` on the next
+dispatch anyway).
+
+---
+
 **What this is:** the big-picture tier of the two-tier state channel
 (relay v4, July 6, 2026). When `docs/HANDOFF.md` is rewritten at the end
 of a session, aged session logs move HERE verbatim — newest first, nothing
