@@ -1,5 +1,31 @@
 # HANDOFF ARCHIVE — session-log history (append-only)
 
+Previous entry (July 15, eighteenth session, Fable — relay v5.1:
+RESIDENT-SESSION AMENDMENT; docs only, no product code). Seth asked
+whether the wave should batch into one big Cursor run + one big audit;
+the settled answer, now doctrine: **batch SETH'S touchpoints, never
+the machine checkpoints.** One resident Sonnet session per wave is now
+the stated norm for the relay loop — "run the relay" once, and the
+SAME session dispatches, monitors on scheduled wakeups, lands, and
+dispatches-next until the queue empties; a fresh session per unit is
+the crash/hand-relay fallback, not the design. Seth smokes ONCE per
+wave against a consolidated checklist handed over at wave end (the
+July 14 NTFIX1+NT3 sign-off is the precedent). Per-unit audit,
+one-commit-per-unit, and bisectable history are explicitly UNCHANGED —
+do NOT extend this into batching Cursor execution across units
+(sequential units compound errors; a wave-end bounce costs the wave,
+not the unit). Files: `docs/specs/autonomous-cursor-dispatch.md`
+(status header + relay-loop section + Seth's-touchpoints paragraph),
+`dispatch-unit` skill (norm pinned up top), `land-unit` skill
+(section 5: carry smoke items forward in a relay session,
+dispatch-next in the SAME session). Outside the repo: Seth's cheat
+sheet (`Desktop\Cursor\workflowandskillscheat.md`, steps 2+3 merged
+into one "relay session" step) and the smoke-checklist memory amended
+to match. `author-task-block` deliberately untouched — authoring is
+unaffected. Next up UNCHANGED — NTFIX2 smoke + the pre-main gate
+(below); the wave-end-smoke norm starts with the NEXT wave, it does
+not retroactively bundle NTFIX2's owed smoke.
+
 Previous entry (July 15, seventeenth session, Opus — orphaned
 findings-fix work traced, audited, LANDED as **NTFIX2 `888e44d`**;
 wave now at `888e44d` on origin).

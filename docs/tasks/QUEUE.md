@@ -12,23 +12,29 @@ standalone new file added to the pending pre-main gate diff - flagged
 here so the gate expects it); dev tooling only, never enters the client
 build or server runtime.
 
-- DISPATCHED | cw1-cursor-watch-dashboard.md | zero-dependency local dashboard
+- LANDED 018a6ae | cw1-cursor-watch-dashboard.md | zero-dependency local dashboard
   (`scripts/cursor-watch.mjs`, Node built-ins only, 127.0.0.1) for
   watching Channel B Cursor runs live: fs.watch + git-diff polling of the
   lane worktree, SSE to an embedded dark mission-control page (activity
   feed, diff-stat bars, typing pane, DELIVERY.md flips DELIVERY READY);
   zero tokens to run by design | MODEL auto -> B-auto rung (free);
   file-disjoint from everything (single new file), no serialization
-  constraints; dispatched July 15, Channel B auto rung, headless CLI in
-  C:\dev\worktrees\cursor-lane on cursor/cw1-cursor-watch-dashboard off
-  38119e3
-- QUEUED | cw2-cursor-watch-autoopen.md | auto-open flags for the CW1
+  constraints; dispatched + LANDED July 15 same day, Channel B auto rung
+  (headless CLI in the lane worktree), Fable-audited per land-unit:
+  lanes re-run fresh in the lane (unit 170/170, Vite build 128 modules),
+  live contract spot-checked against a scratch dir (200 text/html, file
+  write -> WORKING event, DELIVERY.md -> DELIVERY READY, missing lane
+  exits 1), imports all node: built-ins, no external URLs, scope exactly
+  the 1 new file, no deviations
+- DISPATCHED | cw2-cursor-watch-autoopen.md | auto-open flags for the CW1
   watcher (--open at startup, --open-on-activity with once-per-run
   re-arm on DELIVERY.md removal/branch change, --open-cmd test override)
   so the dashboard POPS the moment Cursor starts working; dispatch-unit
   skill amended same day to start/open the watcher at dispatch time |
-  MODEL auto -> B-auto rung; SAME FILE as CW1 - serialize strictly
-  after CW1 lands
+  MODEL auto -> B-auto rung; SAME FILE as CW1 - serialized after CW1
+  landed 018a6ae; dispatched July 15, Channel B auto rung, headless CLI
+  in C:\dev\worktrees\cursor-lane on cursor/cw2-cursor-watch-autoopen
+  off 018a6ae, watched live via CW1's own dashboard
 
 NT-wave — **COMPLETE: MERGED TO MAIN `c473e21`, July 15** (gate passed,
 smoke passed, ff-only `57b1fc8..c473e21`, 28 commits, no migration). All

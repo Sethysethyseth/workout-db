@@ -1,6 +1,37 @@
 # HANDOFF — current state
 
-**Updated:** July 15, 2026, nineteenth session (Opus — **PRE-MAIN GATE
+**Updated:** July 15, 2026, twentieth session (Fable — **CW1 LANDED
+`018a6ae`: the cursor-watch dashboard**; CW2 authored + dispatched).
+Seth asked for a live visual of Cursor working, token cost weighed.
+Shipped as dev tooling: `scripts/cursor-watch.mjs` — zero-dependency
+(Node built-ins only), binds 127.0.0.1 only; run
+`node scripts/cursor-watch.mjs`, open `http://127.0.0.1:4646`.
+Recursive fs.watch + 3s git poll of the lane worktree, SSE to an
+embedded dark mission-control page: live activity feed, per-file +/-
+diff bars, typing-reveal pane on the newest diff, WAITING -> CURSOR IS
+WORKING -> DELIVERY READY keyed off `DELIVERY.md`, optional
+`cursor-run.log` tail. **Zero tokens to watch** — no LLM in the loop;
+built by Cursor on the free B-auto rung (the tool that visualizes
+Cursor was itself an autonomous dispatch). Audited per `land-unit`:
+lanes re-run fresh in the lane (unit 170/170 in 14 suites, Vite build
+128 modules); live contract spot-checked against a scratch dir (200
+text/html; file write -> WORKING event; DELIVERY.md -> DELIVERY READY;
+missing lane exits 1); imports all `node:` built-ins; no external URLs
+in the page; no deviations. **CW2 dispatched same session** (auto-open:
+`--open`, `--open-on-activity` with once-per-run re-arm on DELIVERY.md
+removal/branch change, `--open-cmd` test override) so the dashboard
+POPS the moment Cursor starts working; `dispatch-unit` amended with
+the pop-the-visual step (ensure watcher serving + open browser at
+dispatch; skip gracefully where the script doesn't exist). Two-agents
+note, a precedent that WORKED: this session interleaved with the
+nineteenth (gate/merge) in the SAME tree — the gate session
+deliberately carried this session's uncommitted CW2 QUEUE entry in
+`2318a87` and left its in-flight skill edit unstaged; this session
+committed those in `1b9174b`; status checks before every commit, zero
+collisions. No staging smoke owed — dev tooling, never in the client
+build; Seth verifies by watching the dashboard during a live run.
+
+Previous entry (July 15, nineteenth session, Opus — **PRE-MAIN GATE
 PASSED + NT-WAVE MERGED TO MAIN `c473e21`**). The gate ran on the full
 `main...not-tracked-ux-wave` diff with the archive in hand, then Seth
 gave the trigger phrase and the merge went ff-only via a scratch
@@ -59,32 +90,6 @@ main — this wave introduced it when NT2 turned the pill into a button.
 Fix: lift the pill out of `headingInner` so it renders as a SIBLING of
 the toggle. Seth chose to ship and follow up.
 
-Previous entry (July 15, eighteenth session, Fable — relay v5.1:
-RESIDENT-SESSION AMENDMENT; docs only, no product code). Seth asked
-whether the wave should batch into one big Cursor run + one big audit;
-the settled answer, now doctrine: **batch SETH'S touchpoints, never
-the machine checkpoints.** One resident Sonnet session per wave is now
-the stated norm for the relay loop — "run the relay" once, and the
-SAME session dispatches, monitors on scheduled wakeups, lands, and
-dispatches-next until the queue empties; a fresh session per unit is
-the crash/hand-relay fallback, not the design. Seth smokes ONCE per
-wave against a consolidated checklist handed over at wave end (the
-July 14 NTFIX1+NT3 sign-off is the precedent). Per-unit audit,
-one-commit-per-unit, and bisectable history are explicitly UNCHANGED —
-do NOT extend this into batching Cursor execution across units
-(sequential units compound errors; a wave-end bounce costs the wave,
-not the unit). Files: `docs/specs/autonomous-cursor-dispatch.md`
-(status header + relay-loop section + Seth's-touchpoints paragraph),
-`dispatch-unit` skill (norm pinned up top), `land-unit` skill
-(section 5: carry smoke items forward in a relay session,
-dispatch-next in the SAME session). Outside the repo: Seth's cheat
-sheet (`Desktop\Cursor\workflowandskillscheat.md`, steps 2+3 merged
-into one "relay session" step) and the smoke-checklist memory amended
-to match. `author-task-block` deliberately untouched — authoring is
-unaffected. Next up UNCHANGED — NTFIX2 smoke + the pre-main gate
-(below); the wave-end-smoke norm starts with the NEXT wave, it does
-not retroactively bundle NTFIX2's owed smoke.
-
 **NEXT UP — post-merge verification (Seth's, all three).** The NT-wave
 is DONE: gate passed, NTFIX2 smoke passed (all five items incl. the
 rename), merged to main `c473e21`. Owed now, none of which an agent can
@@ -103,7 +108,10 @@ the **G server-side question** (issue 8 — client fix already shipped), and
 (issue 9).
 
 Aged out this rewrite, moved verbatim to `docs/HANDOFF-ARCHIVE.md`
-(newest first): the July 15 **seventeenth** session (Opus — the orphaned
+(newest first): the July 15 **eighteenth** session (Fable — relay v5.1
+resident-session amendment: batch Seth's touchpoints, never the machine
+checkpoints). The prior rewrite aged the July 15 **seventeenth** session
+(Opus — the orphaned
 July 14 findings-fix work traced, audited and landed as NTFIX2
 `888e44d`; full provenance trace of session `ee60a330` lives there).
 The prior rewrite aged the July 14 **sixteenth** session (Sonnet —
