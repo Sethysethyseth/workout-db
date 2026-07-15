@@ -6,6 +6,7 @@
 // Usage:
 //   node scripts/cursor-watch.mjs [--lane <dir>] [--port <n>] [--log <file>]
 //     [--open] [--open-on-activity] [--open-cmd <command>]
+//     [--notify] [--notify-cmd <command>]
 //
 // Defaults: lane C:\dev\worktrees\cursor-lane, port 4646.
 // Binds 127.0.0.1 only. Node built-ins only.
@@ -51,6 +52,8 @@ function parseArgs(argv) {
     open: false,
     openOnActivity: false,
     openCmd: null,
+    notify: false,
+    notifyCmd: null,
   };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
@@ -74,6 +77,11 @@ function parseArgs(argv) {
     } else if (a === '--open-cmd') {
       out.openCmd = argv[++i];
       if (!out.openCmd) throw new Error('--open-cmd requires a command');
+    } else if (a === '--notify') {
+      out.notify = true;
+    } else if (a === '--notify-cmd') {
+      out.notifyCmd = argv[++i];
+      if (!out.notifyCmd) throw new Error('--notify-cmd requires a command');
     } else if (a === '--help' || a === '-h') {
       out.help = true;
     } else {
@@ -86,13 +94,18 @@ function parseArgs(argv) {
 function printHelp() {
   console.log(`Usage: node scripts/cursor-watch.mjs [--lane <dir>] [--port <n>] [--log <file>]
                         [--open] [--open-on-activity] [--open-cmd <command>]
+                        [--notify] [--notify-cmd <command>]
 Defaults: lane ${DEFAULT_LANE}, port ${DEFAULT_PORT}
 Binds 127.0.0.1 only. Open the printed URL in a browser.
   --open              Launch the default browser once after the server binds
   --open-on-activity  Launch on first run activity (re-arms when DELIVERY.md
                       disappears or the lane branch changes)
   --open-cmd <cmd>    Override opener; <cmd> runs with the dashboard URL as
-                      the final argument (for tests / custom browsers)`);
+                      the final argument (for tests / custom browsers)
+  --notify            OS notify once when phase becomes DELIVERY (re-arms when
+                      DELIVERY.md disappears or the lane branch changes)
+  --notify-cmd <cmd>  Override notifier; <cmd> runs with a short message as
+                      the final argument (for tests / custom notifiers)`);
 }
 
 // ---------------------------------------------------------------------------
@@ -187,6 +200,115 @@ function rearmAutoOpen(ctrl, reason) {
   if (ctrl.armed) return;
   ctrl.armed = true;
   console.log(`cursor-watch: auto-open re-armed (${reason})`);
+}
+
+// ---------------------------------------------------------------------------
+// OS notify on DELIVERY (non-blocking; failure never kills the server)
+// ---------------------------------------------------------------------------
+
+function createNotifyController(opts) {
+  // armed: may fire on the next WAITING/WORKING -> DELIVERY transition.
+  // Re-arm resets this (DELIVERY.md removal or branch change), mirroring CW2.
+  return {
+    enabled: Boolean(opts.notify),
+    notifyCmd: opts.notifyCmd,
+    armed: true,
+  };
+}
+
+/**
+ * Fire an OS notification (or --notify-cmd override). Never throws into the
+ * caller; logs and resolves on failure.
+ */
+function fireDeliveryNotify(message, notifyCmd) {
+  let child;
+  try {
+    if (notifyCmd) {
+      child = spawn(`${notifyCmd} ${quoteShellArg(message)}`, {
+        shell: true,
+        detached: true,
+        stdio: 'ignore',
+        windowsHide: true,
+      });
+    } else if (process.platform === 'win32') {
+      // Tray balloon via System.Windows.Forms - no deps, no files written.
+      const ps = [
+        "Add-Type -AssemblyName System.Windows.Forms;",
+        "$n = New-Object System.Windows.Forms.NotifyIcon;",
+        "$n.Icon = [System.Drawing.SystemIcons]::Information;",
+        "$n.Visible = $true;",
+        "$n.BalloonTipTitle = 'Cursor Watch';",
+        `$n.BalloonTipText = ${JSON.stringify(message)};`,
+        "$n.ShowBalloonTip(4000);",
+        "Start-Sleep -Seconds 5;",
+        "$n.Dispose();",
+      ].join(' ');
+      child = spawn(
+        'powershell',
+        ['-NoProfile', '-WindowStyle', 'Hidden', '-Command', ps],
+        {
+          detached: true,
+          stdio: 'ignore',
+          windowsHide: true,
+        },
+      );
+    } else if (process.platform === 'darwin') {
+      const script = `display notification ${JSON.stringify(message)} with title "Cursor Watch"`;
+      child = spawn('osascript', ['-e', script], {
+        detached: true,
+        stdio: 'ignore',
+      });
+    } else {
+      child = spawn('notify-send', ['Cursor Watch', message], {
+        detached: true,
+        stdio: 'ignore',
+      });
+    }
+  } catch (err) {
+    console.error(`cursor-watch: failed to notify: ${err.message}`);
+    return;
+  }
+
+  child.on('error', (err) => {
+    console.error(`cursor-watch: failed to notify: ${err.message}`);
+  });
+  child.on('close', (code) => {
+    if (code && code !== 0) {
+      console.error(
+        `cursor-watch: notify command exited with code ${code}`,
+      );
+    }
+  });
+  try {
+    child.unref();
+  } catch {
+    /* ignore */
+  }
+}
+
+function unitLabelFromBranch(branch) {
+  if (!branch || branch === '(unknown)' || branch === '(no-git)') return 'run';
+  if (branch.startsWith('cursor/')) return branch.slice('cursor/'.length);
+  return branch;
+}
+
+function tryNotifyOnDelivery(ctrl, prevPhase, state) {
+  if (!ctrl || !ctrl.enabled) return;
+  if (!ctrl.armed) return;
+  if (state.phase !== 'DELIVERY') return;
+  if (prevPhase === 'DELIVERY') return;
+  ctrl.armed = false;
+  const unit = unitLabelFromBranch(state.branch);
+  const msg = `DELIVERY READY - ${unit} is done`;
+  console.log(`cursor-watch: notifying (${msg})`);
+  fireDeliveryNotify(msg, ctrl.notifyCmd);
+}
+
+function rearmNotify(ctrl, reason) {
+  if (!ctrl || !ctrl.enabled) return;
+  if (ctrl.armed) return;
+  ctrl.armed = true;
+  console.log(`cursor-watch: notify re-armed (${reason})`);
 }
 
 // ---------------------------------------------------------------------------
@@ -361,6 +483,7 @@ function createState(lane, logPath) {
     logLines: [],
     clients: new Set(),
     autoOpen: null, // set in main when --open-on-activity
+    notify: null, // set in main when --notify
   };
 }
 
@@ -432,6 +555,7 @@ function noteActivity(state, now = Date.now()) {
       serverNow: Date.now(),
       branch: state.branch,
     });
+    tryNotifyOnDelivery(state.notify, prev, state);
   }
   // Open-on-activity: fire once per run while not DELIVERY READY.
   tryOpenOnActivity(state.autoOpen, state);
@@ -473,6 +597,7 @@ function startFileWatch(state) {
     noteActivity(state, now);
     if (deliveryRemoved) {
       rearmAutoOpen(state.autoOpen, 'DELIVERY.md removed');
+      rearmNotify(state.notify, 'DELIVERY.md removed');
     }
     // Refresh excerpt for the most recent path asynchronously
     const target = state.lastChangedPath;
@@ -548,6 +673,7 @@ function startGitPoll(state) {
       const branchChanged = snap.branch !== state.branch;
       if (branchChanged) {
         rearmAutoOpen(state.autoOpen, `branch -> ${snap.branch}`);
+        rearmNotify(state.notify, `branch -> ${snap.branch}`);
       }
       state.branch = snap.branch;
 
@@ -567,6 +693,7 @@ function startGitPoll(state) {
       // Leaving DELIVERY (e.g. DELIVERY.md removed without a watch event) re-arms
       if (prevPhase === 'DELIVERY' && state.phase !== 'DELIVERY') {
         rearmAutoOpen(state.autoOpen, 'left DELIVERY phase');
+        rearmNotify(state.notify, 'left DELIVERY phase');
       }
 
       if (filesChanged || branchChanged || prevPhase !== state.phase) {
@@ -589,6 +716,7 @@ function startGitPoll(state) {
           serverNow: Date.now(),
           branch: state.branch,
         });
+        tryNotifyOnDelivery(state.notify, prevPhase, state);
       }
     } finally {
       running = false;
@@ -679,26 +807,43 @@ function dashboardHtml() {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>CURSOR WATCH</title>
+<title>CURSOR WATCH - waiting</title>
+<link rel="icon" id="favicon" href="">
 <style>
   :root {
-    --bg: #0b0f14;
-    --bg-elev: #121820;
-    --bg-panel: #0e141c;
-    --line: #1e2a38;
-    --text: #d7e0ea;
-    --muted: #7a8b9c;
-    --dim: #4a5a6a;
-    --cursor: #3dff9a;
-    --cursor-dim: #1a4d35;
+    --bg: #07090d;
+    --bg-elev: #0e131a;
+    --bg-panel: #0b1016;
+    --stroke: rgba(255, 255, 255, 0.06);
+    --shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+    --text: #e4ebf2;
+    --muted: #8494a6;
+    --dim: #525e6c;
     --add: #3dff9a;
     --del: #ff5c7a;
     --warn: #ffc14a;
-    --delivery: #5cc8ff;
-    --delivery-bg: #0a2030;
-    --hl: rgba(61, 255, 154, 0.18);
+    --accent: #6b7a8a;
+    --accent-rgb: 107, 122, 138;
+    --accent-glow: rgba(107, 122, 138, 0.28);
+    --ease: ease-out;
     --mono: "Cascadia Code", "JetBrains Mono", "Fira Code", "SF Mono", Consolas, monospace;
     --sans: "Segoe UI", system-ui, sans-serif;
+    --radius: 8px;
+  }
+  html[data-phase="WAITING"] {
+    --accent: #6b7a8a;
+    --accent-rgb: 107, 122, 138;
+    --accent-glow: rgba(107, 122, 138, 0.22);
+  }
+  html[data-phase="WORKING"] {
+    --accent: #3dff9a;
+    --accent-rgb: 61, 255, 154;
+    --accent-glow: rgba(61, 255, 154, 0.28);
+  }
+  html[data-phase="DELIVERY"] {
+    --accent: #5cc8ff;
+    --accent-rgb: 92, 200, 255;
+    --accent-glow: rgba(92, 200, 255, 0.32);
   }
   * { box-sizing: border-box; }
   html, body {
@@ -708,183 +853,369 @@ function dashboardHtml() {
   }
   body {
     background:
-      radial-gradient(1200px 600px at 10% -10%, #132218 0%, transparent 55%),
-      radial-gradient(900px 500px at 100% 0%, #0e1a28 0%, transparent 50%),
+      radial-gradient(980px 520px at 12% -8%, color-mix(in srgb, var(--accent) 14%, transparent) 0%, transparent 58%),
+      radial-gradient(820px 460px at 100% 0%, rgba(40, 70, 110, 0.18) 0%, transparent 52%),
+      radial-gradient(700px 400px at 50% 120%, rgba(20, 30, 45, 0.5) 0%, transparent 60%),
       var(--bg);
+    background-attachment: fixed;
+    transition: background 250ms var(--ease);
   }
   .shell {
     display: grid;
     grid-template-rows: auto 1fr;
     height: 100vh;
     max-height: 100vh;
+    position: relative;
+  }
+  .wash {
+    pointer-events: none;
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    opacity: 0;
+    background: radial-gradient(circle at 50% 30%,
+      rgba(var(--accent-rgb), 0.55) 0%,
+      rgba(var(--accent-rgb), 0.18) 35%,
+      transparent 70%);
+  }
+  .wash.go {
+    animation: washSweep 600ms var(--ease) forwards;
+  }
+  @keyframes washSweep {
+    0% { opacity: 0; }
+    35% { opacity: 1; }
+    100% { opacity: 0; }
   }
   header.bar {
     display: flex;
     align-items: center;
-    gap: 1.25rem;
-    padding: 0.85rem 1.25rem;
-    border-bottom: 1px solid var(--line);
-    background: linear-gradient(180deg, #101820, #0b1016);
-    transition: background 200ms ease-out, border-color 200ms ease-out;
+    gap: 16px;
+    padding: 14px 20px;
+    margin: 12px 12px 0;
+    border-radius: var(--radius);
+    background: var(--bg-elev);
+    box-shadow: var(--shadow), inset 0 0 0 1px var(--stroke);
+    transition: background 250ms var(--ease), box-shadow 250ms var(--ease);
+    position: relative;
+    z-index: 2;
   }
-  header.bar.delivery {
+  header.bar.delivery-lockup {
+    flex-wrap: wrap;
+    padding: 20px 24px;
+    gap: 12px 20px;
     background: linear-gradient(180deg, #0f2433, #0a1822);
-    border-bottom-color: #1e4a66;
+    box-shadow: var(--shadow), inset 0 0 0 1px rgba(92, 200, 255, 0.22),
+      0 0 40px rgba(92, 200, 255, 0.12);
   }
   .brand {
     display: flex;
-    align-items: baseline;
-    gap: 0.45rem;
-    min-width: 11rem;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
   }
+  .presence {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    position: relative;
+    flex-shrink: 0;
+  }
+  .presence .orb {
+    position: absolute; inset: 4px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 12px var(--accent-glow);
+    transition: background 250ms var(--ease), box-shadow 250ms var(--ease);
+  }
+  .presence .ring {
+    position: absolute; inset: 0;
+    border-radius: 50%;
+    border: 1px solid rgba(var(--accent-rgb), 0.45);
+    opacity: 0.7;
+  }
+  html[data-phase="WORKING"] .presence .orb {
+    animation: orbPulse var(--pulse-ms, 1800ms) ease-in-out infinite;
+  }
+  html[data-phase="WORKING"] .presence .ring {
+    animation: ringPulse var(--pulse-ms, 1800ms) ease-in-out infinite;
+  }
+  @keyframes orbPulse {
+    0%, 100% { transform: scale(1); opacity: 0.85; }
+    50% { transform: scale(1.12); opacity: 1; }
+  }
+  @keyframes ringPulse {
+    0%, 100% { transform: scale(1); opacity: 0.35; }
+    50% { transform: scale(1.35); opacity: 0; }
+  }
+  .brand-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
   .brand .who {
     font-family: var(--mono);
     font-weight: 700;
-    font-size: 1.15rem;
-    letter-spacing: 0.08em;
-    color: var(--cursor);
-    text-shadow: 0 0 18px rgba(61, 255, 154, 0.35);
+    font-size: 1.05rem;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    text-shadow: 0 0 18px var(--accent-glow);
+    transition: color 250ms var(--ease), text-shadow 250ms var(--ease);
   }
-  header.bar.delivery .brand .who {
-    color: var(--delivery);
-    text-shadow: 0 0 18px rgba(92, 200, 255, 0.35);
-  }
-  .brand .tag {
+  .brand .unit {
     font-family: var(--mono);
     font-size: 0.7rem;
     color: var(--muted);
-    letter-spacing: 0.12em;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
-  .phase {
+  .delivery-hero {
+    display: none;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+  header.bar.delivery-lockup .brand { display: none; }
+  header.bar.delivery-lockup .delivery-hero { display: flex; }
+  .delivery-hero .ready {
     font-family: var(--mono);
-    font-size: 0.78rem;
-    letter-spacing: 0.14em;
-    padding: 0.35rem 0.7rem;
-    border-radius: 4px;
-    border: 1px solid var(--cursor-dim);
-    color: var(--cursor);
-    background: rgba(61, 255, 154, 0.06);
-    transition: color 200ms ease-out, border-color 200ms ease-out, background 200ms ease-out;
+    font-weight: 700;
+    font-size: 1.35rem;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    text-shadow: 0 0 22px var(--accent-glow);
   }
-  .phase.waiting { color: var(--muted); border-color: var(--line); background: transparent; }
-  .phase.working {
-    color: var(--cursor);
-    border-color: var(--cursor-dim);
-    animation: pulsePhase 2.2s ease-in-out infinite;
+  .delivery-hero .summary {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    color: var(--muted);
   }
-  .phase.delivery {
-    color: var(--delivery);
-    border-color: #2a6a8a;
-    background: rgba(92, 200, 255, 0.1);
-    animation: none;
+  .delivery-hero .summary strong { color: var(--text); font-weight: 500; }
+  .phase {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(var(--accent-rgb), 0.35);
+    color: var(--accent);
+    background: rgba(var(--accent-rgb), 0.08);
+    transition: color 250ms var(--ease), border-color 250ms var(--ease), background 250ms var(--ease);
   }
-  @keyframes pulsePhase {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(61, 255, 154, 0); }
-    50% { box-shadow: 0 0 12px 0 rgba(61, 255, 154, 0.25); }
+  .phase .dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent-glow);
+  }
+  html[data-phase="WORKING"] .phase .dot {
+    animation: dotBlink var(--pulse-ms, 1800ms) ease-in-out infinite;
+  }
+  @keyframes dotBlink {
+    0%, 100% { opacity: 0.45; transform: scale(0.9); }
+    50% { opacity: 1; transform: scale(1.15); }
   }
   .meta {
     display: flex;
     flex-wrap: wrap;
-    gap: 1rem;
+    align-items: center;
+    gap: 12px;
     margin-left: auto;
     font-family: var(--mono);
     font-size: 0.72rem;
     color: var(--muted);
   }
   .meta strong { color: var(--text); font-weight: 500; }
-  .meta .branch strong { color: var(--warn); }
+  .meta .elapsed strong { font-variant-numeric: tabular-nums; }
+  .chip {
+    display: inline-flex;
+    gap: 6px;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.03);
+    box-shadow: inset 0 0 0 1px var(--stroke);
+  }
+  .chip .a { color: var(--add); }
+  .chip .d { color: var(--del); }
+  .spark {
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 22px;
+    width: 96px;
+    padding: 2px 4px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.03);
+    box-shadow: inset 0 0 0 1px var(--stroke);
+  }
+  .spark i {
+    display: block;
+    flex: 1;
+    min-width: 2px;
+    border-radius: 1px 1px 0 0;
+    background: var(--accent);
+    opacity: 0.7;
+    height: 2px;
+    transition: height 200ms var(--ease), background 250ms var(--ease);
+  }
+  .mute-btn {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    background: transparent;
+    border: 1px solid var(--stroke);
+    border-radius: 6px;
+    padding: 4px 8px;
+    cursor: pointer;
+  }
+  .mute-btn:hover { color: var(--text); border-color: rgba(var(--accent-rgb), 0.35); }
+  .conn {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--dim);
+    transition: background 200ms var(--ease), box-shadow 200ms var(--ease);
+  }
+  .conn.on { background: var(--accent); box-shadow: 0 0 8px var(--accent-glow); }
+  .conn.bad { background: var(--del); box-shadow: none; }
   .grid {
     display: grid;
     grid-template-columns: 1.1fr 1fr 1.15fr;
     grid-template-rows: 1fr auto;
-    gap: 0;
+    gap: 12px;
+    padding: 12px;
     min-height: 0;
   }
   @media (max-width: 1100px) {
     .grid { grid-template-columns: 1fr; grid-template-rows: auto; overflow: auto; }
   }
   .panel {
-    border-right: 1px solid var(--line);
     display: flex;
     flex-direction: column;
     min-height: 0;
     background: var(--bg-panel);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow), inset 0 0 0 1px var(--stroke);
+    overflow: hidden;
   }
-  .panel:last-of-type { border-right: none; }
   .panel h2 {
     margin: 0;
-    padding: 0.65rem 1rem;
+    padding: 12px 16px;
     font-family: var(--mono);
     font-size: 0.68rem;
     letter-spacing: 0.16em;
     text-transform: uppercase;
     color: var(--muted);
-    border-bottom: 1px solid var(--line);
-    background: var(--bg-elev);
+    border-bottom: 1px solid var(--stroke);
+    background: rgba(255, 255, 255, 0.02);
   }
   .panel-body {
     flex: 1;
     overflow: auto;
-    padding: 0.5rem 0;
+    padding: 8px;
     min-height: 0;
   }
-  .feed-item {
+  .feed-card {
     display: grid;
-    grid-template-columns: 4.5rem 3.5rem 1fr;
-    gap: 0.5rem;
-    padding: 0.4rem 1rem;
+    grid-template-columns: 28px 1fr auto;
+    gap: 8px 10px;
+    align-items: start;
+    padding: 10px 12px;
+    margin-bottom: 6px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.025);
+    box-shadow: inset 0 0 0 1px var(--stroke);
     font-family: var(--mono);
     font-size: 0.78rem;
-    border-left: 2px solid transparent;
-    transition: background 220ms ease-out, border-color 220ms ease-out;
   }
-  .feed-item.flash {
-    background: var(--hl);
-    border-left-color: var(--cursor);
+  .feed-card.enter {
+    animation: cardIn 180ms var(--ease) both;
+    box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb), 0.45),
+      0 0 16px rgba(var(--accent-rgb), 0.12);
   }
-  .feed-item .t { color: var(--dim); }
-  .feed-item .k {
-    color: var(--muted);
-    text-transform: uppercase;
+  @keyframes cardIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .feed-card .glyph {
+    width: 28px; height: 28px;
+    border-radius: 6px;
+    display: grid; place-items: center;
+    font-size: 0.85rem;
+    color: var(--accent);
+    background: rgba(var(--accent-rgb), 0.1);
+    box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb), 0.2);
+  }
+  .feed-card .glyph.unlink { color: var(--del); background: rgba(255, 92, 122, 0.1);
+    box-shadow: inset 0 0 0 1px rgba(255, 92, 122, 0.25); }
+  .feed-card .glyph.add { color: var(--add); background: rgba(61, 255, 154, 0.1);
+    box-shadow: inset 0 0 0 1px rgba(61, 255, 154, 0.25); }
+  .feed-card .glyph.delivery { color: #5cc8ff; background: rgba(92, 200, 255, 0.1);
+    box-shadow: inset 0 0 0 1px rgba(92, 200, 255, 0.25); }
+  .feed-card .name { color: var(--text); word-break: break-all; font-weight: 600; }
+  .feed-card .name .base { color: var(--accent); }
+  .feed-card .meta-line {
+    grid-column: 2 / 3;
     font-size: 0.65rem;
-    letter-spacing: 0.06em;
-    padding-top: 0.12rem;
+    color: var(--dim);
   }
-  .feed-item .k.delivery { color: var(--delivery); }
-  .feed-item .k.add { color: var(--add); }
-  .feed-item .k.unlink { color: var(--del); }
-  .feed-item .p {
-    color: var(--text);
-    word-break: break-all;
+  .feed-card .ts {
+    font-size: 0.65rem;
+    color: var(--dim);
+    font-variant-numeric: tabular-nums;
   }
-  .feed-item .p .base { color: var(--cursor); font-weight: 600; }
   .empty {
-    padding: 1.25rem 1rem;
+    padding: 20px 12px;
     color: var(--dim);
     font-family: var(--mono);
     font-size: 0.78rem;
   }
+  .stat-totals {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    margin-bottom: 6px;
+    border-radius: 6px;
+    background: rgba(var(--accent-rgb), 0.06);
+    box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb), 0.18);
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    color: var(--muted);
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    backdrop-filter: blur(6px);
+  }
+  .stat-totals .a { color: var(--add); }
+  .stat-totals .d { color: var(--del); }
   .stat-row {
-    padding: 0.45rem 1rem 0.55rem;
-    border-bottom: 1px solid rgba(30, 42, 56, 0.6);
+    padding: 10px 12px;
+    margin-bottom: 4px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.02);
+    box-shadow: inset 0 0 0 1px var(--stroke);
   }
   .stat-row .name {
     font-family: var(--mono);
     font-size: 0.75rem;
-    margin-bottom: 0.3rem;
+    margin-bottom: 6px;
     word-break: break-all;
   }
-  .stat-row .name .base { color: var(--cursor); font-weight: 600; }
+  .stat-row .name .base { color: var(--accent); font-weight: 600; }
   .bars {
     display: flex;
     height: 6px;
     border-radius: 3px;
     overflow: hidden;
-    background: #16202a;
-    margin-bottom: 0.25rem;
+    background: rgba(255, 255, 255, 0.04);
+    margin-bottom: 4px;
   }
-  .bars .a { background: var(--add); height: 100%; transition: width 220ms ease-out; }
-  .bars .d { background: var(--del); height: 100%; transition: width 220ms ease-out; }
+  .bars .a, .bars .d {
+    height: 100%;
+    width: 0;
+    transition: width 200ms var(--ease);
+  }
+  .bars .a { background: var(--add); }
+  .bars .d { background: var(--del); }
   .counts {
     font-family: var(--mono);
     font-size: 0.68rem;
@@ -892,33 +1223,57 @@ function dashboardHtml() {
   }
   .counts .a { color: var(--add); }
   .counts .d { color: var(--del); }
+  .file-tab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    color: var(--muted);
+    border-bottom: 1px solid var(--stroke);
+    background: rgba(255, 255, 255, 0.02);
+    min-height: 40px;
+  }
+  .file-tab .tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 6px 6px 0 0;
+    background: rgba(var(--accent-rgb), 0.08);
+    box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb), 0.2);
+    color: var(--text);
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .file-tab .tab .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--accent); flex-shrink: 0;
+  }
   .excerpt-wrap {
     font-family: var(--mono);
     font-size: 0.74rem;
     line-height: 1.45;
-    padding: 0.75rem 1rem;
+    padding: 12px 14px;
     white-space: pre-wrap;
     word-break: break-word;
   }
-  .excerpt-path {
-    font-family: var(--mono);
-    font-size: 0.7rem;
-    color: var(--muted);
-    padding: 0.5rem 1rem 0;
-  }
-  .excerpt-path span { color: var(--warn); }
   .ln-add { color: #9dffc4; }
   .ln-del { color: #ff9aab; }
   .ln-meta { color: var(--dim); }
-  .ln-hunk { color: var(--delivery); }
+  .ln-hunk { color: #5cc8ff; }
   .caret {
     display: inline-block;
     width: 0.55ch;
     margin-left: 1px;
-    background: var(--cursor);
+    background: var(--accent);
     animation: blink 1s steps(1) infinite;
     vertical-align: -1px;
     height: 1em;
+    transition: background 250ms var(--ease);
   }
   @keyframes blink {
     0%, 50% { opacity: 1; }
@@ -926,43 +1281,54 @@ function dashboardHtml() {
   }
   .log-panel {
     grid-column: 1 / -1;
-    border-top: 1px solid var(--line);
-    border-right: none;
     max-height: 22vh;
-    background: #080c11;
   }
   .log-body {
     font-family: var(--mono);
     font-size: 0.7rem;
-    padding: 0.4rem 1rem 0.7rem;
+    padding: 8px 14px 12px;
     color: var(--muted);
     overflow: auto;
-    max-height: calc(22vh - 2rem);
+    max-height: calc(22vh - 2.5rem);
   }
   .log-body div { white-space: pre-wrap; word-break: break-all; }
   .log-body .fresh { color: var(--text); }
-  .conn {
-    width: 8px; height: 8px; border-radius: 50%;
-    background: var(--dim);
-    transition: background 200ms ease-out;
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+    .wash.go { animation: none; opacity: 0; }
+    .feed-card.enter { animation: none; }
   }
-  .conn.on { background: var(--cursor); box-shadow: 0 0 8px var(--cursor); }
-  .conn.bad { background: var(--del); }
 </style>
 </head>
 <body>
+<div class="wash" id="wash"></div>
 <div class="shell">
   <header class="bar" id="bar">
     <div class="brand">
-      <span class="who">CURSOR</span>
-      <span class="tag">WATCH</span>
+      <div class="presence" id="presence" aria-hidden="true">
+        <span class="ring"></span>
+        <span class="orb"></span>
+      </div>
+      <div class="brand-text">
+        <span class="who">CURSOR</span>
+        <span class="unit" id="unitName">WATCH</span>
+      </div>
     </div>
-    <div class="phase waiting" id="phase">WAITING</div>
+    <div class="delivery-hero" id="deliveryHero">
+      <div class="ready">DELIVERY READY</div>
+      <div class="summary" id="deliverySummary"></div>
+    </div>
+    <div class="phase" id="phase"><span class="dot"></span><span id="phaseText">WAITING</span></div>
     <div class="conn" id="conn" title="SSE"></div>
     <div class="meta">
-      <div class="branch">branch <strong id="branch">—</strong></div>
-      <div>lane <strong id="lane">—</strong></div>
-      <div>elapsed <strong id="elapsed">0:00</strong></div>
+      <div class="spark" id="spark" title="Activity (last 2 min)" aria-hidden="true"></div>
+      <div class="chip" id="totalsChip"><span class="a">+0</span> / <span class="d">-0</span> · 0 files</div>
+      <div class="elapsed">elapsed <strong id="elapsed">0:00</strong></div>
+      <button type="button" class="mute-btn" id="muteBtn" title="Toggle delivery chime">CHIME OFF</button>
     </div>
   </header>
   <div class="grid">
@@ -974,10 +1340,10 @@ function dashboardHtml() {
       <h2>Diff stats</h2>
       <div class="panel-body" id="stats"><div class="empty">No uncommitted changes yet.</div></div>
     </section>
-    <section class="panel">
+    <section class="panel" id="writePanel">
       <h2>Now writing</h2>
-      <div class="excerpt-path" id="excerptPath"></div>
-      <div class="panel-body"><div class="excerpt-wrap" id="excerpt"><span class="ln-meta">Idle — watching the lane.</span><span class="caret"></span></div></div>
+      <div class="file-tab" id="fileTab"><span class="ln-meta">Idle</span></div>
+      <div class="panel-body" id="excerptScroll"><div class="excerpt-wrap" id="excerpt"><span class="ln-meta">Idle — watching the lane.</span><span class="caret"></span></div></div>
     </section>
     <section class="panel log-panel" id="logPanel" hidden>
       <h2>CLI log</h2>
@@ -988,25 +1354,52 @@ function dashboardHtml() {
 <script>
 (function () {
   const phaseEl = document.getElementById('phase');
+  const phaseText = document.getElementById('phaseText');
   const barEl = document.getElementById('bar');
-  const branchEl = document.getElementById('branch');
-  const laneEl = document.getElementById('lane');
+  const unitEl = document.getElementById('unitName');
   const elapsedEl = document.getElementById('elapsed');
   const feedEl = document.getElementById('feed');
   const statsEl = document.getElementById('stats');
   const excerptEl = document.getElementById('excerpt');
-  const excerptPathEl = document.getElementById('excerptPath');
+  const excerptScroll = document.getElementById('excerptScroll');
+  const fileTab = document.getElementById('fileTab');
   const logPanel = document.getElementById('logPanel');
   const logBody = document.getElementById('logBody');
   const connEl = document.getElementById('conn');
+  const sparkEl = document.getElementById('spark');
+  const totalsChip = document.getElementById('totalsChip');
+  const washEl = document.getElementById('wash');
+  const muteBtn = document.getElementById('muteBtn');
+  const deliverySummary = document.getElementById('deliverySummary');
+  const faviconEl = document.getElementById('favicon');
+  const root = document.documentElement;
+
+  const LS_MUTE = 'cursor-watch-chime-muted';
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: no-preference)');
+  const SPARK_BARS = 24;
+  const SPARK_WINDOW_MS = 120000;
 
   let phase = 'WAITING';
+  let branch = '';
+  let unitName = 'WATCH';
   let firstActivityAt = null;
   let deliveryAt = null;
   let clockSkew = 0;
   let revealTimer = null;
   let revealTarget = '';
   let revealPos = 0;
+  let files = [];
+  /** @type {number[]} */
+  let eventTimes = [];
+  /** @type {Map<string, number>} */
+  const lastTouched = new Map();
+  let sweepPlayed = false;
+  let userInteracted = false;
+  let chimeMuted = true;
+  try {
+    chimeMuted = localStorage.getItem(LS_MUTE) !== '0';
+  } catch (e) { chimeMuted = true; }
+  let audioCtx = null;
 
   function fmtElapsed(ms) {
     if (ms == null || ms < 0) ms = 0;
@@ -1020,22 +1413,223 @@ function dashboardHtml() {
 
   function now() { return Date.now() + clockSkew; }
 
-  function setPhase(p) {
-    phase = p;
-    phaseEl.className = 'phase';
-    barEl.classList.remove('delivery');
-    if (p === 'WAITING') {
-      phaseEl.classList.add('waiting');
-      phaseEl.textContent = 'WAITING';
-    } else if (p === 'WORKING') {
-      phaseEl.classList.add('working');
-      phaseEl.textContent = 'CURSOR IS WORKING';
+  function esc(s) {
+    return String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function parseUnit(b) {
+    if (!b || b === '(unknown)' || b === '(no-git)') return 'WATCH';
+    if (b.indexOf('cursor/') === 0) return b.slice(7) || 'WATCH';
+    return b;
+  }
+
+  function fileParts(p) {
+    if (!p) return { dir: '', base: '' };
+    const parts = p.split('/');
+    const base = parts.pop();
+    return { dir: parts.join('/'), base: base };
+  }
+
+  function fileLabel(p) {
+    const parts = fileParts(p);
+    return (parts.dir ? '<span class="dir">' + esc(parts.dir) + '/</span>' : '') +
+      '<span class="base">' + esc(parts.base) + '</span>';
+  }
+
+  function fmtTime(ts) {
+    const d = new Date(ts);
+    return String(d.getHours()).padStart(2, '0') + ':' +
+      String(d.getMinutes()).padStart(2, '0') + ':' +
+      String(d.getSeconds()).padStart(2, '0');
+  }
+
+  function glyphFor(kind) {
+    if (kind === 'add' || kind === 'rename') return '+';
+    if (kind === 'unlink') return '×';
+    if (kind === 'delivery') return '✓';
+    return '✎';
+  }
+
+  function updateMuteBtn() {
+    muteBtn.textContent = chimeMuted ? 'CHIME OFF' : 'CHIME ON';
+  }
+  updateMuteBtn();
+
+  muteBtn.addEventListener('click', function () {
+    userInteracted = true;
+    chimeMuted = !chimeMuted;
+    try { localStorage.setItem(LS_MUTE, chimeMuted ? '1' : '0'); } catch (e) {}
+    updateMuteBtn();
+  });
+  document.addEventListener('pointerdown', function () { userInteracted = true; }, { once: false });
+  document.addEventListener('keydown', function () { userInteracted = true; }, { once: false });
+
+  function setFavicon(kind) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 32; canvas.height = 32;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.clearRect(0, 0, 32, 32);
+    if (kind === 'delivery') {
+      ctx.fillStyle = '#5cc8ff';
+      ctx.beginPath();
+      ctx.arc(16, 16, 12, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#07090d';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(9, 16);
+      ctx.lineTo(14, 21);
+      ctx.lineTo(23, 11);
+      ctx.stroke();
+    } else if (kind === 'working') {
+      ctx.fillStyle = '#3dff9a';
+      ctx.beginPath();
+      ctx.arc(16, 16, 10, 0, Math.PI * 2);
+      ctx.fill();
     } else {
-      phaseEl.classList.add('delivery');
-      phaseEl.textContent = 'DELIVERY READY';
-      barEl.classList.add('delivery');
+      ctx.fillStyle = '#6b7a8a';
+      ctx.beginPath();
+      ctx.arc(16, 16, 10, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    faviconEl.href = canvas.toDataURL('image/png');
+  }
+
+  function updateTitle() {
+    if (phase === 'WORKING') {
+      document.title = '● CURSOR WORKING - ' + unitName;
+    } else if (phase === 'DELIVERY') {
+      document.title = '✓ DELIVERY READY - ' + unitName;
+    } else {
+      document.title = 'CURSOR WATCH - waiting';
     }
   }
+
+  function playChime() {
+    if (chimeMuted || !userInteracted) return;
+    if (!reduceMotion.matches) {
+      /* still allow chime under reduced motion - audio is not visual */
+    }
+    try {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const t0 = audioCtx.currentTime;
+      const notes = [523.25, 659.25, 783.99];
+      notes.forEach(function (freq, i) {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.0001, t0);
+        gain.gain.exponentialRampToValueAtTime(0.08, t0 + 0.02 + i * 0.08);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.35 + i * 0.08);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(t0 + i * 0.08);
+        osc.stop(t0 + 0.4 + i * 0.08);
+      });
+    } catch (e) { /* ignore */ }
+  }
+
+  function triggerSweepOnce() {
+    if (sweepPlayed) return;
+    sweepPlayed = true;
+    if (reduceMotion.matches) {
+      washEl.classList.remove('go');
+      void washEl.offsetWidth;
+      washEl.classList.add('go');
+    }
+    playChime();
+  }
+
+  function setPhase(p) {
+    const prev = phase;
+    phase = p;
+    root.setAttribute('data-phase', p);
+    barEl.classList.toggle('delivery-lockup', p === 'DELIVERY');
+    if (p === 'WAITING') {
+      phaseText.textContent = 'WAITING';
+      setFavicon('waiting');
+    } else if (p === 'WORKING') {
+      phaseText.textContent = 'WORKING';
+      setFavicon('working');
+    } else {
+      phaseText.textContent = 'DELIVERY';
+      setFavicon('delivery');
+      updateDeliverySummary();
+      if (prev !== 'DELIVERY') triggerSweepOnce();
+    }
+    updateTitle();
+  }
+
+  function updateDeliverySummary() {
+    const tot = sumFiles(files);
+    const el = firstActivityAt
+      ? fmtElapsed((deliveryAt || now()) - firstActivityAt)
+      : '0:00';
+    deliverySummary.innerHTML =
+      'elapsed <strong>' + esc(el) + '</strong> · ' +
+      '<strong>' + tot.n + '</strong> files · ' +
+      '<span class="a">+' + tot.a + '</span> / <span class="d">-' + tot.d + '</span>';
+  }
+
+  function sumFiles(list) {
+    let a = 0, d = 0, n = (list && list.length) || 0;
+    (list || []).forEach(function (f) {
+      a += f.additions || 0;
+      d += f.deletions || 0;
+    });
+    return { a: a, d: d, n: n };
+  }
+
+  function updateTotalsChip() {
+    const tot = sumFiles(files);
+    totalsChip.innerHTML =
+      '<span class="a">+' + tot.a + '</span> / <span class="d">-' + tot.d + '</span> · ' +
+      tot.n + ' file' + (tot.n === 1 ? '' : 's');
+    if (phase === 'DELIVERY') updateDeliverySummary();
+  }
+
+  function noteEventTs(ts) {
+    const t = ts || now();
+    eventTimes.push(t);
+    const cutoff = now() - SPARK_WINDOW_MS;
+    while (eventTimes.length && eventTimes[0] < cutoff) eventTimes.shift();
+    updateSparkAndPulse();
+  }
+
+  function updateSparkAndPulse() {
+    const cutoff = now() - SPARK_WINDOW_MS;
+    const bucket = SPARK_WINDOW_MS / SPARK_BARS;
+    const counts = new Array(SPARK_BARS).fill(0);
+    for (let i = 0; i < eventTimes.length; i++) {
+      const t = eventTimes[i];
+      if (t < cutoff) continue;
+      let idx = Math.floor((t - cutoff) / bucket);
+      if (idx < 0) idx = 0;
+      if (idx >= SPARK_BARS) idx = SPARK_BARS - 1;
+      counts[idx]++;
+    }
+    const max = Math.max(1, ...counts);
+    let html = '';
+    for (let i = 0; i < SPARK_BARS; i++) {
+      const h = Math.max(2, Math.round((counts[i] / max) * 18));
+      html += '<i style="height:' + h + 'px"></i>';
+    }
+    sparkEl.innerHTML = html;
+
+    const recent = eventTimes.filter(function (t) { return t >= now() - 8000; }).length;
+    // Idle ~1800ms pulse; busy down toward ~500ms
+    const pulseMs = Math.max(500, 1800 - recent * 180);
+    root.style.setProperty('--pulse-ms', pulseMs + 'ms');
+  }
+
+  // Seed empty sparkline
+  updateSparkAndPulse();
 
   function tickElapsed() {
     if (!firstActivityAt) {
@@ -1046,72 +1640,74 @@ function dashboardHtml() {
     elapsedEl.textContent = fmtElapsed(end - firstActivityAt);
   }
   setInterval(tickElapsed, 250);
+  setInterval(updateSparkAndPulse, 1000);
 
-  function fileLabel(p) {
-    if (!p) return '';
-    const parts = p.split('/');
-    const base = parts.pop();
-    const dir = parts.join('/');
-    return (dir ? '<span class="dir">' + esc(dir) + '/</span>' : '') +
-      '<span class="base">' + esc(base) + '</span>';
-  }
-
-  function esc(s) {
-    return String(s)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
-  }
-
-  function fmtTime(ts) {
-    const d = new Date(ts);
-    return String(d.getHours()).padStart(2, '0') + ':' +
-      String(d.getMinutes()).padStart(2, '0') + ':' +
-      String(d.getSeconds()).padStart(2, '0');
-  }
-
-  function prependFeed(item, flash) {
+  function prependFeed(item, animate) {
     const empty = feedEl.querySelector('.empty');
     if (empty) empty.remove();
+    if (item.path) lastTouched.set(item.path, item.ts || now());
+    noteEventTs(item.ts);
     const row = document.createElement('div');
-    row.className = 'feed-item' + (flash ? ' flash' : '');
     const k = item.kind || 'change';
+    row.className = 'feed-card' + (animate && reduceMotion.matches ? ' enter' : '');
+    const parts = fileParts(item.path);
     row.innerHTML =
-      '<span class="t">' + esc(fmtTime(item.ts)) + '</span>' +
-      '<span class="k ' + esc(k) + '">' + esc(k) + '</span>' +
-      '<span class="p">' + fileLabel(item.path) + '</span>';
+      '<span class="glyph ' + esc(k) + '">' + esc(glyphFor(k)) + '</span>' +
+      '<span class="name">' + (parts.base ? esc(parts.base) : esc(item.path || '')) + '</span>' +
+      '<span class="ts">' + esc(fmtTime(item.ts)) + '</span>' +
+      '<span class="meta-line">' +
+        (parts.dir ? esc(parts.dir) + ' · ' : '') + esc(k) +
+      '</span>';
     feedEl.insertBefore(row, feedEl.firstChild);
-    if (flash) {
-      setTimeout(function () { row.classList.remove('flash'); }, 700);
+    if (animate && reduceMotion.matches) {
+      setTimeout(function () { row.classList.remove('enter'); }, 220);
     }
     while (feedEl.children.length > 80) {
       feedEl.removeChild(feedEl.lastChild);
     }
+    if (files.length) renderStats(files);
   }
 
-  function renderStats(files) {
-    if (!files || !files.length) {
+  function renderStats(list) {
+    files = list || [];
+    updateTotalsChip();
+    if (!files.length) {
       statsEl.innerHTML = '<div class="empty">No uncommitted changes yet.</div>';
       return;
     }
+    const sorted = files.slice().sort(function (a, b) {
+      const ta = lastTouched.get(a.path) || 0;
+      const tb = lastTouched.get(b.path) || 0;
+      if (tb !== ta) return tb - ta;
+      return a.path.localeCompare(b.path);
+    });
     const max = Math.max(
       1,
-      ...files.map(function (f) { return (f.additions || 0) + (f.deletions || 0); })
+      ...sorted.map(function (f) { return (f.additions || 0) + (f.deletions || 0); })
     );
-    statsEl.innerHTML = files.map(function (f) {
+    const tot = sumFiles(files);
+    let html = '<div class="stat-totals"><span>Totals</span><span>' +
+      '<span class="a">+' + tot.a + '</span> / <span class="d">-' + tot.d + '</span> · ' +
+      tot.n + ' files</span></div>';
+    html += sorted.map(function (f) {
       const a = f.additions || 0;
       const d = f.deletions || 0;
-      const tot = a + d;
-      const aw = tot ? (a / max) * 100 : 0;
-      const dw = tot ? (d / max) * 100 : 0;
+      const totLines = a + d;
+      const aw = totLines ? (a / max) * 100 : 0;
+      const dw = totLines ? (d / max) * 100 : 0;
       return '<div class="stat-row">' +
         '<div class="name">' + fileLabel(f.path) + '</div>' +
-        '<div class="bars"><div class="a" style="width:' + aw + '%"></div>' +
-        '<div class="d" style="width:' + dw + '%"></div></div>' +
+        '<div class="bars"><div class="a" data-w="' + aw + '"></div>' +
+        '<div class="d" data-w="' + dw + '"></div></div>' +
         '<div class="counts"><span class="a">+' + a + '</span> / <span class="d">-' + d + '</span>' +
         (f.untracked ? ' · untracked' : '') + '</div></div>';
     }).join('');
+    statsEl.innerHTML = html;
+    requestAnimationFrame(function () {
+      statsEl.querySelectorAll('.bars .a, .bars .d').forEach(function (el) {
+        el.style.width = (el.getAttribute('data-w') || '0') + '%';
+      });
+    });
   }
 
   function colorizeDiff(text) {
@@ -1132,6 +1728,10 @@ function dashboardHtml() {
     }).join('\\n');
   }
 
+  function scrollToCaret() {
+    excerptScroll.scrollTop = excerptScroll.scrollHeight;
+  }
+
   function startReveal(text) {
     revealTarget = text || '';
     revealPos = 0;
@@ -1140,12 +1740,17 @@ function dashboardHtml() {
       excerptEl.innerHTML = '<span class="ln-meta">No diff yet for this file.</span><span class="caret"></span>';
       return;
     }
-    // Reveal in chunks for a typing feel without being sluggish on large diffs
+    if (!reduceMotion.matches) {
+      excerptEl.innerHTML = colorizeDiff(revealTarget) + '<span class="caret"></span>';
+      scrollToCaret();
+      return;
+    }
     const chunk = Math.max(8, Math.floor(revealTarget.length / 60));
     revealTimer = setInterval(function () {
       revealPos = Math.min(revealTarget.length, revealPos + chunk);
       const slice = revealTarget.slice(0, revealPos);
       excerptEl.innerHTML = colorizeDiff(slice) + '<span class="caret"></span>';
+      scrollToCaret();
       if (revealPos >= revealTarget.length) {
         clearInterval(revealTimer);
         revealTimer = null;
@@ -1155,12 +1760,14 @@ function dashboardHtml() {
 
   function applyExcerpt(excerpt) {
     if (!excerpt || !excerpt.path) {
-      excerptPathEl.textContent = '';
+      fileTab.innerHTML = '<span class="ln-meta">Idle</span>';
       excerptEl.innerHTML = '<span class="ln-meta">Idle — watching the lane.</span><span class="caret"></span>';
       return;
     }
-    excerptPathEl.innerHTML = 'file <span>' + esc(excerpt.path) + '</span>' +
-      (excerpt.kind ? ' · ' + esc(excerpt.kind) : '');
+    const parts = fileParts(excerpt.path);
+    fileTab.innerHTML = '<span class="tab"><span class="dot"></span>' +
+      esc(parts.base || excerpt.path) +
+      (excerpt.kind ? ' · ' + esc(excerpt.kind) : '') + '</span>';
     startReveal(excerpt.text || '');
   }
 
@@ -1176,22 +1783,31 @@ function dashboardHtml() {
     logBody.scrollTop = logBody.scrollHeight;
   }
 
+  function setBranch(b) {
+    branch = b || '';
+    unitName = parseUnit(branch);
+    unitEl.textContent = unitName;
+    updateTitle();
+  }
+
   function applySnapshot(s) {
     if (s.serverNow) clockSkew = s.serverNow - Date.now();
-    laneEl.textContent = s.lane || '—';
-    branchEl.textContent = s.branch || '—';
+    setBranch(s.branch);
     firstActivityAt = s.firstActivityAt;
     deliveryAt = s.deliveryAt;
+    if (s.phase === 'DELIVERY') sweepPlayed = true; // mid-attach: no sweep replay
     setPhase(s.phase || 'WAITING');
     tickElapsed();
     feedEl.innerHTML = '';
+    eventTimes = [];
+    lastTouched.clear();
     if (s.activity && s.activity.length) {
-      // activity is newest-first
       for (let i = s.activity.length - 1; i >= 0; i--) {
         prependFeed(s.activity[i], false);
       }
     } else {
       feedEl.innerHTML = '<div class="empty">Waiting for file events…</div>';
+      updateSparkAndPulse();
     }
     renderStats(s.files || []);
     applyExcerpt(s.excerpt);
@@ -1215,7 +1831,7 @@ function dashboardHtml() {
       return;
     }
     if (ev.type === 'diff') {
-      if (ev.branch) branchEl.textContent = ev.branch;
+      if (ev.branch) setBranch(ev.branch);
       renderStats(ev.files || []);
       if (ev.firstActivityAt) firstActivityAt = ev.firstActivityAt;
       if (ev.deliveryAt) deliveryAt = ev.deliveryAt;
@@ -1223,7 +1839,7 @@ function dashboardHtml() {
       return;
     }
     if (ev.type === 'state') {
-      if (ev.branch) branchEl.textContent = ev.branch;
+      if (ev.branch) setBranch(ev.branch);
       firstActivityAt = ev.firstActivityAt;
       deliveryAt = ev.deliveryAt;
       setPhase(ev.phase);
@@ -1252,6 +1868,9 @@ function dashboardHtml() {
       } catch (e) { /* ignore */ }
     };
   }
+  root.setAttribute('data-phase', 'WAITING');
+  setFavicon('waiting');
+  updateTitle();
   connect();
 })();
 </script>
@@ -1355,6 +1974,13 @@ async function main() {
       openOnActivity: true,
       openCmd: args.openCmd,
       url,
+    });
+  }
+
+  if (args.notify) {
+    state.notify = createNotifyController({
+      notify: true,
+      notifyCmd: args.notifyCmd,
     });
   }
 
