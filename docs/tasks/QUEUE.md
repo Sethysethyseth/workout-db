@@ -12,14 +12,16 @@ standalone new file added to the pending pre-main gate diff - flagged
 here so the gate expects it); dev tooling only, never enters the client
 build or server runtime.
 
-- QUEUED | cw1-cursor-watch-dashboard.md | zero-dependency local dashboard
+- DISPATCHED | cw1-cursor-watch-dashboard.md | zero-dependency local dashboard
   (`scripts/cursor-watch.mjs`, Node built-ins only, 127.0.0.1) for
   watching Channel B Cursor runs live: fs.watch + git-diff polling of the
   lane worktree, SSE to an embedded dark mission-control page (activity
   feed, diff-stat bars, typing pane, DELIVERY.md flips DELIVERY READY);
   zero tokens to run by design | MODEL auto -> B-auto rung (free);
   file-disjoint from everything (single new file), no serialization
-  constraints
+  constraints; dispatched July 15, Channel B auto rung, headless CLI in
+  C:\dev\worktrees\cursor-lane on cursor/cw1-cursor-watch-dashboard off
+  38119e3
 
 NT-wave (not-tracked custom-exercise flow rework), authored July 11
 (Fable), branch `not-tracked-ux-wave` (off `e960645` = main `57b1fc8` +
