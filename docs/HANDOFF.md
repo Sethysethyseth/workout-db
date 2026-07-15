@@ -1,6 +1,65 @@
 # HANDOFF — current state
 
-**Updated:** July 15, 2026, eighteenth session (Fable — relay v5.1:
+**Updated:** July 15, 2026, nineteenth session (Opus — **PRE-MAIN GATE
+PASSED + NT-WAVE MERGED TO MAIN `c473e21`**). The gate ran on the full
+`main...not-tracked-ux-wave` diff with the archive in hand, then Seth
+gave the trigger phrase and the merge went ff-only via a scratch
+worktree outside OneDrive (`C:\dev\worktrees\main-merge`, removed
+after — the `ui-palettes-v2` precedent; never stash+checkout on this
+repo). **`origin/main` CONFIRMED at `c473e21`**, fast-forwarded
+`57b1fc8..c473e21`, 28 commits, no merge commit, history still linear.
+Product units in it: NT1 `f4baee3`, NT2 `f26e783`, NTFIX1 `e0ba383`,
+NT3 `98963f6`, NTFIX2 `888e44d`; the rest are docs/blocks/skills/relay
+v5+v5.1 doctrine + `check-hex.mjs`. **No schema, no migration anywhere
+in the wave** (server surface = `searchCatalog.js` + its test, both
+analytics-pure), so this was a code-only deploy with no DB track.
+
+**GATE RESULTS — read before acting on any of these.** Passed: both
+lanes re-run fresh on the merge candidate (unit 170/170 in 14 suites;
+Vite build 128 modules); tokens-only holds COMPLETELY (zero raw colors
+added anywhere in `client/src` across the wave, `index.css` included —
+all 274 new CSS lines are `var()`/`color-mix`); motion is 180ms on
+`--ease-standard`, inside the 150-250ms bar, gated behind
+`prefers-reduced-motion: no-preference`; cross-user isolation sound
+(`validateOptionalExerciseIdentity` scopes `userExerciseId` by
+`findFirst({ id, userId })`, session ownership separately 403s — note
+NTFIX2 makes that path reachable for the FIRST time and it is correctly
+guarded); NT2's runtime-invisible criteria all verified (`CHIP_CYCLE`/
+`nextChipRole` gone, retroactivity line in the CREATE done-state only,
+LINK variant correctly omits it, link paths use the
+`buildSessionExerciseNamePatch` idiom); permissions additive with no
+destructive allowlisting.
+
+**RULED — do not re-litigate: the NTFIX2 rename is CONTRACT-SANCTIONED,
+not a deviation.** NT2's block (`docs/tasks/nt2-add-exercise-stepped-
+sheet.md`, lines 101-104) specifies the create path commits
+`userExerciseId` "via the same updateSessionExercise path (**name
+unchanged if it already matches**)" — a parenthetical that only parses
+if the name is SENT alongside the id. NTFIX2 restored the specified
+behavior; the id-only version was the deviation that made the path
+silently no-op. The design treats row renames as routine (the LINK
+done-copy refuses the retroactivity claim precisely BECAUSE "a rename
+affects only this session's row"). Seth's smoke passed it. Closed.
+Also accepted on the record: NTFIX2's relay deviations (Claude Code
+authored the product code — direct-fix exception + Seth's explicit ask;
+audited per `land-unit` before landing).
+
+**SHIPPED KNOWINGLY — the gate's one real finding, now the top
+follow-up (see "Next up" 0a).** Nested `<button>` on the LIVE-session
+path: `SessionDetailPage.jsx:1468` renders
+`<button className="session-exercise-heading-toggle">{headingInner}</button>`
+and `headingInner` contains `ExerciseTrackedIndicator`, which renders a
+`<button>` when interactive (`:127`). Completed sessions use a `<div>`
+wrapper (`:1479`) and are FINE — this is live-only, i.e. exactly the
+path NT2 made interactive. Invalid HTML + React nesting warning +
+nested interactive controls are an AT problem (the inner control's
+accessible name can be swallowed). Functions today only because the
+inner `onClick` calls `stopPropagation`. NOT pre-existing relative to
+main — this wave introduced it when NT2 turned the pill into a button.
+Fix: lift the pill out of `headingInner` so it renders as a SIBLING of
+the toggle. Seth chose to ship and follow up.
+
+Previous entry (July 15, eighteenth session, Fable — relay v5.1:
 RESIDENT-SESSION AMENDMENT; docs only, no product code). Seth asked
 whether the wave should batch into one big Cursor run + one big audit;
 the settled answer, now doctrine: **batch SETH'S touchpoints, never
@@ -75,33 +134,22 @@ name on create. NT2's handler always anticipated this (its pre-existing
 PATCH 400'd — newly LIVE behavior, not new code. Worth an explicit ruling
 at the gate.
 
-**NEXT UP — the pre-main gate.** NTFIX2 was the last unit: the NT-wave is
-code-complete on `not-tracked-ux-wave` (`888e44d`). Seth's NTFIX1 + NT3
-smoke already PASSED (all four items) — but that smoke predates NTFIX2,
-so (a) **NTFIX2 needs its own smoke** on the staging Vercel preview
-(RUNBOOK step 6 staging repoint to this branch may still be owed first):
-[1] **live session, the headline fix** — add an exercise with an
-off-catalog name, tap the "not tracked" pill, create it -> pill flips to
-Tracked immediately (this was BROKEN before NTFIX2; it is the whole point
-of the unit); [2] **live session, edited name** — change the name in the
-sheet before saving -> the set row renames to the new name AND shows
-Tracked (**newly live behavior — if the rename is unwanted, say so, it is
-a deliberate open question for the gate**); [3] **completed session** —
-NT3's create-only flow still adds to library and flips the pill
-(regression check on the path NTFIX2 did not intend to touch); [4] **seed
-step** — clear the search to 1 char -> "Searching..." disappears, no
-stuck spinner; "None of these" -> seed hop shows results with no visible
-second fetch; [5] **mid-edit pill** — start editing an exercise name in a
-live session -> the pill must not be tappable while the draft is
-uncommitted. Then (b) Fable/Opus full-branch-diff review with the archive
-in hand — open items for it: **F** ("Failed to fetch" = Render cold-start
-candidate, needs a live Network-tab repro), **G** (client-side fix LANDED
-in NTFIX2; the open question is whether the SERVER should also accept an
-id-only identity PATCH — see issue 8), **the NTFIX2 rename behavior**
-(above), the React DOM-nesting warning (pill button inside heading
-button), and **NTFIX2's own relay deviations** (Claude Code authored the
-product code, no block file exists — QUEUE.md carries the full record).
-Merge stays behind Seth's "push to main" trigger phrase.
+**NEXT UP — post-merge verification (Seth's, all three).** The NT-wave
+is DONE: gate passed, NTFIX2 smoke passed (all five items incl. the
+rename), merged to main `c473e21`. Owed now, none of which an agent can
+do from here: **(1) verify the prod deploy SHA == `c473e21`** in Render
+AND Vercel Events — push is NOT proof of deploy, a redeploy rebuilds the
+OLD HEAD until it catches up; **(2) RUNBOOK step 6** — repoint staging
+Render off `not-tracked-ux-wave` back to `main`, verify that redeploy's
+SHA too; **(3) prod smoke** — the NT flow on prod, folding in the
+carried N-wave item: the "Every exercise, in one place" What's New modal
+fires for a logged-in user (prod is the ONLY place it renders).
+Open findings that SURVIVED the gate, in priority order: the nested
+`<button>` (top entry — "Next up" 0a), **F** ("Failed to fetch" = Render
+cold-start, no client defect; needs a live Network-tab repro, not code),
+the **G server-side question** (issue 8 — client fix already shipped), and
+"Use that name" being unable to stamp identity for custom exercises
+(issue 9).
 
 Aged out this rewrite, moved verbatim to `docs/HANDOFF-ARCHIVE.md`
 (newest first): the July 14 **sixteenth** session (Sonnet — NTFIX1 +
@@ -146,12 +194,16 @@ trusting it.
 
 ## Repo / deploy state
 
-- **`not-tracked-ux-wave` is at `888e44d` (July 15)** — NT1 + NT2 +
-  NTFIX1 + NT3 + **NTFIX2** + the relay v5 docs (spec, skills, QUEUE,
-  doctrine amendment) all on `origin/not-tracked-ux-wave`. Wave
-  code-complete; pre-main gate pending. Branched off
-  `analytics-rebalance-wave` HEAD `e960645` (= `main` `57b1fc8` + one
-  docs bookkeeping commit).
+- **NT-WAVE MERGED to `main` (`c473e21`), July 15** — NT1 `f4baee3` +
+  NT2 `f26e783` + NTFIX1 `e0ba383` + NT3 `98963f6` + NTFIX2 `888e44d` +
+  the relay v5/v5.1 docs are all fully contained in `main`, ff-only
+  (`57b1fc8..c473e21`, 28 commits, no merge commit). Gate DONE (results
+  in the top entry). No migration — code-only deploy.
+  **`not-tracked-ux-wave` LIVES ON as the CW1 landing branch** (a
+  concurrent July 15 session authored CW1 `38119e3` and flipped it
+  DISPATCHED `2a34b16` on top of the merge point) — so it is NOT a
+  deletion candidate yet, unlike the usual post-merge wave branch.
+  Branched off `analytics-rebalance-wave` HEAD `e960645`.
 - **A-wave MERGED to `main` (`13a1e59`), July 8.** `catalog-fk-wave`
   (`13a1e59`) — A1 + A4 + A5 + A6b + the `0e6f32a` db-host-guard split — is now
   fully contained in `main`; prod DB migrated + seeded + smoked. Branch is a
@@ -160,9 +212,12 @@ trusting it.
   (`ep-bitter-breeze-am81izlh` / noisy-surf) as of July 7; columns + CHECK
   constraints verified by direct SQL. **Prod HAS both as of July 8** (applied
   by hand pre-merge, 873 rows seeded, 16-row ledger drift-free).
-- **`main` is at `57b1fc8` (July 10)** — N-wave (`8068ffb`) + What's New
-  prod-gate follow-up. Prod Vercel/Render track `main` and auto-deploy on
-  push; the deploy-SHA verification is still an open follow-up (above).
+- **`main` is at `c473e21` (July 15)** — the NT-wave merge (above), on
+  top of the N-wave (`8068ffb`) + What's New prod-gate follow-up
+  (`57b1fc8`). Prod Vercel/Render track `main` and auto-deploy on push,
+  so `c473e21` is DEPLOYING/DEPLOYED to prod — **the deploy-SHA
+  verification in Events is OPEN and owed** (see NEXT UP). The older
+  `57b1fc8` prod-SHA check is superseded by this one.
 - Username feature LIVE and verified on both environments (unchanged).
 
 ## Open TODOs (do at next session start)
@@ -192,16 +247,21 @@ trusting it.
 
 ## Next up (the active task)
 
-00. **NT-WAVE CODE-COMPLETE — pre-main gate is the active task.** NT1
-   (`f4baee3`), NT2 (`f26e783`), NTFIX1 (`e0ba383`), NT3 (`98963f6`),
-   NTFIX2 (`888e44d`) all audited + pushed to `not-tracked-ux-wave`.
-   Seth's NTFIX1 + NT3 smoke PASSED (all four items) but PREDATES NTFIX2.
-   Remaining sequence: **Seth smokes NTFIX2 (5-item list in the top
-   entry)** -> Fable/Opus full-branch-diff review (open items F, G's
-   server-side question, the NTFIX2 rename behavior, DOM-nesting, and
-   NTFIX2's relay deviations — see top entry) -> Seth's "push to main"
-   trigger. Design source:
+00. **NT-WAVE DONE — merged to main `c473e21`, July 15.** Gate passed,
+   smoke passed, all five units in main. What remains is Seth's
+   post-merge verification (prod deploy SHA, RUNBOOK step 6 staging
+   repoint, prod smoke) — see the NEXT UP paragraph. Design source:
    `docs/design/not-tracked-add-flow-brainstorm.md`.
+0a. **TOP FOLLOW-UP — nested `<button>` on the live-session path
+   (SHIPPED KNOWINGLY, gate's one real finding).** Full diagnosis with
+   file:line in the top entry. Wants a small Cursor block, NOT a direct
+   fix: the diagnosis is done but the restructure (lift the pill out of
+   `headingInner` to render as a SIBLING of the heading toggle, without
+   breaking the sticky-heading layout or NT3's completed-session path)
+   is implementation-heavy, which per AGENTS.md sends it to Cursor
+   however small. Watch for: the `stopPropagation` in the pill's
+   `onClick` (`:132-136`) exists to stop the toggle firing — once the
+   pill is no longer a descendant, re-check whether it is still needed.
 0b. **A-wave follow-up (non-urgent):** optional Step-7 historical backfill:
    `node scripts/backfill-exercise-ids.mjs` (DRY-RUN first) then `--apply`
    against prod for pre-A4 historical rows (Seth runs the write).
@@ -275,6 +335,16 @@ stays dead-last. Residual open items:
    open for the gate to rule on:** whether the SERVER should also accept
    an id-only identity PATCH. If yes, it must fix BOTH :531 and :575, not
    just the guard. Not blocking — the client path works without it.
+9. **NEW (July 15, from the pre-main gate):** "Use that name" can never
+   stamp structural identity for CUSTOM exercises. The resolve endpoint
+   returns `canonicalName` + `catalogId` but NO `userExerciseId` for
+   `source: "userExercise"` (`exerciseController.js:77-82`), so
+   `handleUseThatName` correctly guards on `source === "catalog"` and
+   links by name alone otherwise — the sheet is doing the best the
+   payload allows, so any fix starts SERVER-side. Name-based resolution
+   (A4/A6) covers the behavior; only the structural id-link is missing.
+   Pairs naturally with issue 8 — same contract surface, do them
+   together.
 
 ## Known tech debt (queued, not blocking)
 

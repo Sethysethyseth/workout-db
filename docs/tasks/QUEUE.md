@@ -22,8 +22,23 @@ build or server runtime.
   constraints; dispatched July 15, Channel B auto rung, headless CLI in
   C:\dev\worktrees\cursor-lane on cursor/cw1-cursor-watch-dashboard off
   38119e3
+- QUEUED | cw2-cursor-watch-autoopen.md | auto-open flags for the CW1
+  watcher (--open at startup, --open-on-activity with once-per-run
+  re-arm on DELIVERY.md removal/branch change, --open-cmd test override)
+  so the dashboard POPS the moment Cursor starts working; dispatch-unit
+  skill amended same day to start/open the watcher at dispatch time |
+  MODEL auto -> B-auto rung; SAME FILE as CW1 - serialize strictly
+  after CW1 lands
 
-NT-wave (not-tracked custom-exercise flow rework), authored July 11
+NT-wave — **COMPLETE: MERGED TO MAIN `c473e21`, July 15** (gate passed,
+smoke passed, ff-only `57b1fc8..c473e21`, 28 commits, no migration). All
+five units below are in `main`; the entries stay for history. Gate
+results, the rename ruling, and the one knowingly-shipped finding (nested
+`<button>` on the live path) are in `docs/HANDOFF.md`. NOTE: the branch
+`not-tracked-ux-wave` LIVES ON as CW1's landing branch — not a deletion
+candidate.
+
+Authored July 11
 (Fable), branch `not-tracked-ux-wave` (off `e960645` = main `57b1fc8` +
 one docs commit). Design/contract source:
 `docs/design/not-tracked-add-flow-brainstorm.md` - direction A (catalog-
