@@ -122,6 +122,10 @@ export function AddExerciseToLibrarySheet({
   const seedInputRef = useRef(null);
   const initialSearchSeqRef = useRef(0);
   const seedSearchSeqRef = useRef(0);
+  // Last exercise-search term already fetched into seedMatches (by either the
+  // initial suggest search or the seed search) - lets the seed step reuse those
+  // rows instead of re-firing the identical query on the suggest->seed hop.
+  const seedFetchedTermRef = useRef(null);
 
   const [step, setStep] = useState("suggest");
   const [hadSuggestStep, setHadSuggestStep] = useState(false);
@@ -160,6 +164,7 @@ export function AddExerciseToLibrarySheet({
     setAlreadyTrackedResolution(null);
     setSuggestMatches([]);
     setSeedMatches([]);
+    seedFetchedTermRef.current = null;
     setDoneVariant("create");
     setDoneLinkName("");
     setHadSuggestStep(false);
@@ -183,11 +188,16 @@ export function AddExerciseToLibrarySheet({
         return;
       }
       try {
-        const data = await exerciseApi.searchExercises(trimmed, { limit: 5 });
+        const data = await exerciseApi.searchExercises(trimmed, { limit: 8 });
         if (cancelled || seq !== initialSearchSeqRef.current) return;
-        const results = Array.isArray(data?.results) ? data.results.slice(0, 5) : [];
-        setSuggestMatches(results);
-        if (results.length > 0) {
+        const results = Array.isArray(data?.results) ? data.results : [];
+        // Share this fetch with the seed step so the suggest->seed hop does not
+        // re-run the identical search.
+        seedFetchedTermRef.current = trimmed;
+        setSeedMatches(results);
+        const suggestions = results.slice(0, 5);
+        setSuggestMatches(suggestions);
+        if (suggestions.length > 0) {
           setStep("suggest");
           setHadSuggestStep(true);
         } else {
@@ -284,6 +294,16 @@ export function AddExerciseToLibrarySheet({
     const trimmed = String(seedQuery ?? "").trim();
     if (trimmed.length < 2) {
       setSeedMatches([]);
+      setSeedSearchLoading(false);
+      // Matches are gone, so a later retype of the primed term must refetch.
+      seedFetchedTermRef.current = null;
+      return undefined;
+    }
+
+    // Reuse the rows the initial suggest search already fetched for this exact
+    // term instead of firing the identical query again.
+    if (trimmed === seedFetchedTermRef.current) {
+      setSeedSearchLoading(false);
       return undefined;
     }
 
@@ -295,6 +315,7 @@ export function AddExerciseToLibrarySheet({
         const data = await exerciseApi.searchExercises(trimmed, { limit: 8 });
         if (seq !== seedSearchSeqRef.current) return;
         const results = Array.isArray(data?.results) ? data.results : [];
+        seedFetchedTermRef.current = trimmed;
         setSeedMatches(results);
       } catch {
         if (seq !== seedSearchSeqRef.current) return;
