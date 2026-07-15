@@ -1,5 +1,56 @@
 # HANDOFF ARCHIVE — session-log history (append-only)
 
+Previous entry (July 15, seventeenth session, Opus — orphaned
+findings-fix work traced, audited, LANDED as **NTFIX2 `888e44d`**;
+wave now at `888e44d` on origin).
+A pre-gate tree check found `AddExerciseToLibrarySheet.jsx` +
+`SessionDetailPage.jsx` modified and uncommitted, mtimes July 14 15:09,
+unstaged by a bare `git reset` at reflog `HEAD@{0}`. Seth did not write
+them and no `DELIVERY.md` or QUEUE entry claims them. **PROVENANCE NOW
+TRACED (do not re-litigate):** Claude Code session
+`ee60a330-d305-49c3-b2dc-0ec82b2fe35f`, July 14 **14:47-15:10 local**
+(18:47-19:10Z — the window brackets the 15:09 mtimes), prompt **"fix all
+findings and test to see if everything works"**. It fixed FOUR findings,
+ran the lanes green, reported in full, ended by asking *"I haven't
+committed - want me to land this?"* — **and never got an answer.** The
+session closed and the work sat in the tree. Not a rogue writer, not a
+lane-isolation breach; Cursor is exonerated (every recorded cursor-agent
+session that day ended by 10:11, and all NT3 relay activity clusters
+10:00-10:53). **Its self-reported four fixes:** (1) **finding G / HIGH** —
+stamp PATCH sent id-only, server 400s, and because `http()` throws the
+throw ALSO skipped the cache invalidate/refresh, so the pill stayed stale
+after a mid-session create; now sends name+id in a `try/catch` so
+resolution always runs; (2) **MEDIUM** — `seedSearchLoading` stuck on
+"Searching..." because the `<2 chars` early-return skipped clearing the
+flag; (3) **MEDIUM** — pill went interactive on a stale committed name
+mid-edit (visual keys off the draft, click now keys off the committed
+name; NT3's completed-session interactivity preserved); (4) **LOW** —
+duplicate search on the suggest->seed hop, deduped via
+`seedFetchedTermRef`. **AUDITED AND LANDED as NTFIX2 `888e44d`**, pushed to
+staging. Sequence: parked verbatim on `parked/unattributed-g-fix`
+(`532125d`) -> wave restored to the audited `98963f6` tree -> full
+`land-unit` audit -> landed as one unit with an accurate message.
+**Audit evidence (lanes re-run FRESH in the lane worktree, never trusted
+from the report):** server unit 170/170 in 14 suites, client Vite build
+green 128 modules, `check-hex` clean, scope exactly the 2 claimed files
+with nothing unexpected, all four criteria verified by direct read, and
+G's mechanism confirmed independently against source (issue 8).
+**Deviations stated, not hidden:** Claude Code authored product code
+(covered by the AGENTS.md direct-fix exception + Seth's explicit ask, but
+a deviation); fix 4 is an optimization beyond the findings; no block file
+or `DELIVERY.md` exists, so the session's final report stood in for one
+and QUEUE.md carries the record instead. **NOTE: `532125d`'s own commit
+message is superseded** — written before the trace, it calls the work
+unattributed, unaudited and partly scope creep; all three are wrong.
+**BEHAVIOR NOTE FOR THE GATE:** the stamp PATCH now carries
+`exerciseName`, so the session-exercise row **renames** to the sheet's
+name on create. NT2's handler always anticipated this (its pre-existing
+`oldName !== name` invalidation) but the rename never fired while the
+PATCH 400'd — newly LIVE behavior, not new code. Worth an explicit ruling
+at the gate.
+
+---
+
 Previous entry (July 14, sixteenth session, Sonnet — smoke sign-off).
 Seth smoked NTFIX1 + NT3 on the staging preview against the four-item list
 from the prior entry (completed-session pill interactive/create-only
