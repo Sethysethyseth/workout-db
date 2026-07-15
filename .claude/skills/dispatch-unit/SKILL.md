@@ -77,6 +77,15 @@ per unit is the crash/hand-relay fallback, not the design.
   whatever the previous invocation used (July 14: a flagless dispatch
   inherited an exhausted named model and quota-refused while
   `--model auto` worked fine).
+- Pop the visual (added July 15, with CW1/CW2): immediately after
+  launching the run, ensure the cursor-watch dashboard is serving -
+  if `http://127.0.0.1:4646` isn't answering, start it detached from
+  the MAIN tree (`node scripts/cursor-watch.mjs --open`, watching the
+  lane by default) - and open it (`Start-Process
+  http://127.0.0.1:4646`) so Seth gets visual confirmation the moment
+  Cursor starts working. Zero tokens: it's a local fs/git watcher, no
+  LLM anywhere in it. Skip gracefully if the script doesn't exist on
+  the branch yet.
 - On hang/timeout: kill, retry once, then descend or escalate.
 - On exit: delivery = uncommitted changes + DELIVERY.md in the
   worktree -> flip AWAITING-REVIEW, hand to `land-unit` (local-relay
