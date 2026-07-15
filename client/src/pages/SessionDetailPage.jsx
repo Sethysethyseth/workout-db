@@ -1379,6 +1379,12 @@ function SessionExerciseBlock({
     .join(" ");
 
   const displayTrackedStatus = draftTrackedStatus ?? trackedStatus;
+  // The pill's visual reflects the draft (live typing feedback), but its
+  // click-to-add affordance keys off the COMMITTED name - that is the name
+  // onOpenAddToLibrary opens the sheet with, so a mid-edit draft must not make
+  // it interactive with a stale name.
+  const trackedPillInteractive =
+    trackedStatus === "unresolved" && displayTrackedStatus === "unresolved";
 
   const headingInner = (
     <>
@@ -1395,10 +1401,8 @@ function SessionExerciseBlock({
         </span>
         <ExerciseTrackedIndicator
           status={displayTrackedStatus}
-          interactive={displayTrackedStatus === "unresolved"}
-          onOpenAddToLibrary={
-            displayTrackedStatus === "unresolved" ? onOpenAddToLibrary : undefined
-          }
+          interactive={trackedPillInteractive}
+          onOpenAddToLibrary={trackedPillInteractive ? onOpenAddToLibrary : undefined}
         />
         {summaryLine ? (
           <span className="session-exercise-heading-summary muted small"> · {summaryLine}</span>
@@ -1829,12 +1833,21 @@ export function SessionDetailPage() {
     async ({ name, userExerciseId }) => {
       const sessionExerciseId = addToLibrarySheet?.sessionExerciseId;
       const oldName = addToLibrarySheet?.exerciseName;
+      const storedName = inputToSessionExerciseName(name);
       if (sessionExerciseId && userExerciseId) {
-        const data = await sessionApi.updateSessionExercise(sessionId, sessionExerciseId, {
-          userExerciseId,
-        });
-        const row = data?.sessionExercise;
-        if (row) mergeSessionExerciseRow(row);
+        // The stamp PATCH must carry exerciseName: the server only applies the
+        // identity fields alongside a name change and rejects an empty patch.
+        // Keep it best-effort so name-based resolution below still runs if it fails.
+        try {
+          const data = await sessionApi.updateSessionExercise(sessionId, sessionExerciseId, {
+            exerciseName: storedName,
+            userExerciseId,
+          });
+          const row = data?.sessionExercise;
+          if (row) mergeSessionExerciseRow(row);
+        } catch {
+          // Library entry exists; name-based resolution below still flips the pill.
+        }
       }
       invalidateExerciseResolution(name);
       if (oldName && oldName !== name) invalidateExerciseResolution(oldName);
