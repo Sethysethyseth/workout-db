@@ -5,6 +5,7 @@
 //
 // Usage:
 //   node scripts/cursor-watch.mjs [--lane <dir>] [--port <n>] [--log <file>]
+//     [--open] [--open-on-activity] [--open-cmd <command>]
 //
 // Defaults: lane C:\dev\worktrees\cursor-lane, port 4646.
 // Binds 127.0.0.1 only. Node built-ins only.
@@ -43,7 +44,14 @@ const IGNORE_FILE_RE =
 // ---------------------------------------------------------------------------
 
 function parseArgs(argv) {
-  const out = { lane: DEFAULT_LANE, port: DEFAULT_PORT, log: null };
+  const out = {
+    lane: DEFAULT_LANE,
+    port: DEFAULT_PORT,
+    log: null,
+    open: false,
+    openOnActivity: false,
+    openCmd: null,
+  };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--lane') {
@@ -59,6 +67,13 @@ function parseArgs(argv) {
     } else if (a === '--log') {
       out.log = argv[++i];
       if (!out.log) throw new Error('--log requires a file path');
+    } else if (a === '--open') {
+      out.open = true;
+    } else if (a === '--open-on-activity') {
+      out.openOnActivity = true;
+    } else if (a === '--open-cmd') {
+      out.openCmd = argv[++i];
+      if (!out.openCmd) throw new Error('--open-cmd requires a command');
     } else if (a === '--help' || a === '-h') {
       out.help = true;
     } else {
@@ -70,8 +85,108 @@ function parseArgs(argv) {
 
 function printHelp() {
   console.log(`Usage: node scripts/cursor-watch.mjs [--lane <dir>] [--port <n>] [--log <file>]
+                        [--open] [--open-on-activity] [--open-cmd <command>]
 Defaults: lane ${DEFAULT_LANE}, port ${DEFAULT_PORT}
-Binds 127.0.0.1 only. Open the printed URL in a browser.`);
+Binds 127.0.0.1 only. Open the printed URL in a browser.
+  --open              Launch the default browser once after the server binds
+  --open-on-activity  Launch on first run activity (re-arms when DELIVERY.md
+                      disappears or the lane branch changes)
+  --open-cmd <cmd>    Override opener; <cmd> runs with the dashboard URL as
+                      the final argument (for tests / custom browsers)`);
+}
+
+// ---------------------------------------------------------------------------
+// Browser auto-open (non-blocking; failure never kills the server)
+// ---------------------------------------------------------------------------
+
+function quoteShellArg(arg) {
+  // Double-quote and escape embedded quotes for cmd.exe / sh.
+  return `"${String(arg).replace(/"/g, '\\"')}"`;
+}
+
+/**
+ * Launch the dashboard URL via --open-cmd override or the platform default.
+ * Never throws into the caller; logs and resolves on failure.
+ */
+function openDashboard(url, openCmd) {
+  let child;
+  try {
+    if (openCmd) {
+      // Override is a shell command string; append URL as the final argument.
+      child = spawn(`${openCmd} ${quoteShellArg(url)}`, {
+        shell: true,
+        detached: true,
+        stdio: 'ignore',
+        windowsHide: true,
+      });
+    } else if (process.platform === 'win32') {
+      // `start` title must be present so the URL is not treated as the title.
+      child = spawn('cmd', ['/c', 'start', '', url], {
+        detached: true,
+        stdio: 'ignore',
+        windowsHide: true,
+      });
+    } else if (process.platform === 'darwin') {
+      child = spawn('open', [url], {
+        detached: true,
+        stdio: 'ignore',
+      });
+    } else {
+      child = spawn('xdg-open', [url], {
+        detached: true,
+        stdio: 'ignore',
+      });
+    }
+  } catch (err) {
+    console.error(`cursor-watch: failed to open browser: ${err.message}`);
+    return;
+  }
+
+  child.on('error', (err) => {
+    console.error(`cursor-watch: failed to open browser: ${err.message}`);
+  });
+  child.on('close', (code) => {
+    if (code && code !== 0) {
+      console.error(
+        `cursor-watch: open command exited with code ${code}`,
+      );
+    }
+  });
+  try {
+    child.unref();
+  } catch {
+    /* ignore */
+  }
+}
+
+function createAutoOpenController(opts) {
+  // armed: may fire on the next non-DELIVERY activity. Starts true so the
+  // first WORKING signal pops the browser; re-arm resets this to true.
+  return {
+    enabled: Boolean(opts.openOnActivity),
+    openCmd: opts.openCmd,
+    url: opts.url,
+    armed: true,
+  };
+}
+
+function tryOpenOnActivity(ctrl, state) {
+  if (!ctrl || !ctrl.enabled) return;
+  if (!ctrl.armed) return;
+  if (state.phase === 'DELIVERY') return;
+  // DELIVERY.md lifecycle itself is not "run activity" for auto-open -
+  // re-arm on its removal must not consume the once-per-run slot.
+  const p = state.lastChangedPath;
+  if (p === 'DELIVERY.md' || (p && p.endsWith('/DELIVERY.md'))) return;
+  ctrl.armed = false;
+  openDashboard(ctrl.url, ctrl.openCmd);
+}
+
+function rearmAutoOpen(ctrl, reason) {
+  if (!ctrl || !ctrl.enabled) return;
+  if (ctrl.armed) return;
+  ctrl.armed = true;
+  console.log(`cursor-watch: auto-open re-armed (${reason})`);
 }
 
 // ---------------------------------------------------------------------------
@@ -245,6 +360,7 @@ function createState(lane, logPath) {
     excerpt: { path: null, text: '', kind: 'none' },
     logLines: [],
     clients: new Set(),
+    autoOpen: null, // set in main when --open-on-activity
   };
 }
 
@@ -317,6 +433,8 @@ function noteActivity(state, now = Date.now()) {
       branch: state.branch,
     });
   }
+  // Open-on-activity: fire once per run while not DELIVERY READY.
+  tryOpenOnActivity(state.autoOpen, state);
 }
 
 // ---------------------------------------------------------------------------
@@ -333,7 +451,14 @@ function startFileWatch(state) {
     const batch = [...pending.entries()];
     pending.clear();
     const now = Date.now();
+    let deliveryRemoved = false;
     for (const [rel, kind] of batch) {
+      if (
+        (rel === 'DELIVERY.md' || rel.endsWith('/DELIVERY.md')) &&
+        kind === 'unlink'
+      ) {
+        deliveryRemoved = true;
+      }
       pushActivity(state, { ts: now, path: rel, kind });
       state.lastChangedPath = rel;
       broadcast(state, {
@@ -343,7 +468,12 @@ function startFileWatch(state) {
         kind,
       });
     }
+    // Activity first (while still disarmed) so DELIVERY.md unlink does not
+    // consume the re-armed slot; re-arm after so the next write can fire.
     noteActivity(state, now);
+    if (deliveryRemoved) {
+      rearmAutoOpen(state.autoOpen, 'DELIVERY.md removed');
+    }
     // Refresh excerpt for the most recent path asynchronously
     const target = state.lastChangedPath;
     if (target) {
@@ -376,7 +506,7 @@ function startFileWatch(state) {
     } catch {
       kind = 'change';
     }
-    // Special-case delivery appearance
+    // Special-case delivery appearance / disappearance
     if (rel === 'DELIVERY.md' || rel.endsWith('/DELIVERY.md')) {
       kind = fs.existsSync(path.join(state.lane, 'DELIVERY.md'))
         ? 'delivery'
@@ -416,20 +546,27 @@ function startGitPoll(state) {
     try {
       const snap = await collectGitSnapshot(state.lane);
       const branchChanged = snap.branch !== state.branch;
+      if (branchChanged) {
+        rearmAutoOpen(state.autoOpen, `branch -> ${snap.branch}`);
+      }
       state.branch = snap.branch;
 
       const prevKey = JSON.stringify(state.files);
       state.files = snap.files;
       const filesChanged = JSON.stringify(state.files) !== prevKey;
 
+      const prevPhase = state.phase;
       const hadFiles = snap.files.length > 0;
       if (hadFiles) noteActivity(state);
 
       // Delivery check even without file events (poll-side)
-      const prevPhase = state.phase;
       state.phase = derivePhase(state);
       if (state.phase === 'DELIVERY' && !state.deliveryAt) {
         state.deliveryAt = Date.now();
+      }
+      // Leaving DELIVERY (e.g. DELIVERY.md removed without a watch event) re-arms
+      if (prevPhase === 'DELIVERY' && state.phase !== 'DELIVERY') {
+        rearmAutoOpen(state.autoOpen, 'left DELIVERY phase');
       }
 
       if (filesChanged || branchChanged || prevPhase !== state.phase) {
@@ -1211,14 +1348,30 @@ async function main() {
   }
 
   const server = await createServer(state, args.port);
+  const url = `http://127.0.0.1:${args.port}`;
+
+  if (args.openOnActivity) {
+    state.autoOpen = createAutoOpenController({
+      openOnActivity: true,
+      openCmd: args.openCmd,
+      url,
+    });
+  }
+
   startFileWatch(state);
   startGitPoll(state);
   startLogTail(state);
 
-  const url = `http://127.0.0.1:${args.port}`;
   console.log(`cursor-watch: watching ${lane}`);
   if (logPath) console.log(`cursor-watch: tailing log ${logPath}`);
   console.log(`cursor-watch: open ${url}`);
+
+  // --open: launch once after bind. Failure must not kill the server.
+  // Only invoke an opener when --open or --open-on-activity is set; --open-cmd
+  // alone never fires (CW1 default stays quiet).
+  if (args.open) {
+    openDashboard(url, args.openCmd);
+  }
 
   const shutdown = () => {
     console.log('\ncursor-watch: shutting down');
