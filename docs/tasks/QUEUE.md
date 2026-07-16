@@ -45,11 +45,14 @@ audit lands and its findings are folded into the contract.
   the edit path (asks 10+11); completedAt-only flip, sessions:changed
   gains type "reopened", resume hero reappears via local-apply |
   MODEL opus; integration tests WRITTEN not run in lane
-- QUEUED | mw4-per-side-analytics-audit.md | DIAGNOSIS, no code:
+- DISPATCHED | mw4-per-side-analytics-audit.md | DIAGNOSIS, no code:
   unilateral L/R end-to-end trace (storage/enrichment, volume, set
   counts, e1RM/top set, display, detection edges) with per-surface
   verdicts + fix proposals; pair-semantics questions surfaced as
-  questions, not rulings | MODEL auto
+  questions, not rulings | MODEL auto -> Channel B auto rung, dispatched
+  July 16 (named rung exhausted until 7/17 reset per HANDOFF), lane
+  branch cursor/mw4-per-side-analytics-audit off e94a352, Opus resident
+  session
 - QUEUED | mw5-decimal-values-audit.md | DIAGNOSIS, no code: decimal
   reps/RPE/RIR input->storage->analytics->display trace; rir is Int? in
   schema - pin the 1.5-RIR behavior exactly and recommend
