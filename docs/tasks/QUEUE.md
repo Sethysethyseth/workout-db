@@ -46,20 +46,38 @@ audit lands and its findings are folded into the contract.
   pill/summary, pill tap opens sheet without toggling collapse,
   no layout shift when pill flips Tracked/Not-tracked, completed
   view unchanged
-- DISPATCHED | mw2-identity-stamp-contract.md | issues 8+9 in one unit:
-  updateSessionExercise accepts id-only identity PATCH (guard :531 +
-  un-nest :575, validation helpers unchanged), resolve rows gain
-  userExerciseId for custom exercises, "Use that name" stamps it |
-  MODEL opus -> DELIBERATE DESCENT to B auto rung (same Seth call),
-  dispatched July 16 after MW1 landed f9a6dfd, lane branch
-  cursor/mw2-identity-stamp-contract off f9a6dfd, Opus resident
-  session; integration tests WRITTEN not run in lane - reviewer runs
-  them in the main tree at land time
-- QUEUED | mw3-reopen-completed-session.md | POST /sessions/:id/reopen +
+- LANDED 859f3d3 | mw2-identity-stamp-contract.md | issues 8+9 in one
+  unit: id-only identity PATCH accepted (guard counts
+  identityParse.provided, identity application un-nested from the name
+  branch as its own if-arm, validation helpers byte-untouched), resolve
+  rows uniformly carry userExerciseId (id on userExercise, null on
+  catalog/unresolved), "Use that name" gains the mutually-exclusive
+  userExercise arm | MODEL opus -> DELIBERATE DESCENT to B auto rung
+  (Seth's July 16 call, Opus audit compensates); landed same day,
+  audited per land-unit: scope exact (5 files = FILES TO TOUCH), lanes
+  fresh in lane (unit 170/170, build, check-hex clean), guard order
+  verified by direct read (404 :553 -> 403 :560 -> SESSION_COMPLETED
+  :570 -> identity :577, all in-transaction, userId passed to
+  validateOptionalExerciseIdentity), integration tests RUN AT LAND TIME
+  in the main tree per the block - 2 suites 17/17 green incl. the new
+  5-row PATCH matrix (owned-id 200/name-unchanged, catalog-id converse,
+  {} still 400, foreign-id 400, completed 400) and exact-shape resolve
+  asserts. One flagged non-deviation accepted: userExercise.findMany
+  index build now runs only in the name-derivation branch (was wasted
+  work when identity provided). Bonus verified: handleLinkRow :341
+  already forwards userExerciseId, so the suggest-list path gains
+  custom stamping for free. SMOKE (wave checklist): resolve a custom
+  exercise in the sheet -> "Use that name" -> pill flips Tracked
+  without rename side effect; issue-9 path now stamps structural id
+- DISPATCHED | mw3-reopen-completed-session.md | POST /sessions/:id/reopen +
   two-step-confirm "Reopen workout" on the completed view: un-finish IS
   the edit path (asks 10+11); completedAt-only flip, sessions:changed
   gains type "reopened", resume hero reappears via local-apply |
-  MODEL opus; integration tests WRITTEN not run in lane
+  MODEL opus -> DELIBERATE DESCENT to B auto rung (same Seth call),
+  dispatched July 16 after MW2 landed 859f3d3, lane branch
+  cursor/mw3-reopen-completed-session off 859f3d3, Opus resident
+  session; integration tests WRITTEN not run in lane - reviewer runs
+  them at land time
 - LANDED c005c2a | mw4-per-side-analytics-audit.md | DIAGNOSIS, no code:
   unilateral L/R end-to-end trace with per-surface verdicts | MODEL auto
   -> Channel B auto rung, dispatched + landed July 16 (Opus resident
