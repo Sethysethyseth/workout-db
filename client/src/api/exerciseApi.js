@@ -19,3 +19,11 @@ export function getMuscles() {
 export function createCustomExercise({ name, muscles }) {
   return http("/exercises/custom", { method: "POST", body: { name, muscles } });
 }
+
+export function listCustomExercises() {
+  return http("/exercises/custom");
+}
+
+export function deleteCustomExercise(id) {
+  return http(`/exercises/custom/${id}`, { method: "DELETE" });
+}

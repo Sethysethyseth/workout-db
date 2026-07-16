@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import * as templateApi from "../api/templateApi.js";
 import * as blockTemplateApi from "../api/blockTemplateApi.js";
 import * as sessionApi from "../api/sessionApi.js";
+import * as exerciseApi from "../api/exerciseApi.js";
 import { CommunityProgramsSection } from "../components/programs/CommunityProgramsSection.jsx";
 import { ErrorMessage } from "../components/ErrorMessage.jsx";
 import { LoadingState } from "../components/LoadingState.jsx";
@@ -14,6 +15,26 @@ import { pickLatestActiveSession } from "../lib/activeSession.js";
 import { readCurrentProgram, writeCurrentProgram } from "../lib/currentProgramStorage.js";
 import { sessionDisplayTitle } from "../lib/sessionDisplay.js";
 
+/**
+ * Muscle summary for a custom exercise row, mirroring the Main/Assists
+ * vocabulary of the AddExerciseToLibrarySheet curate step. `muscles` is the
+ * stored designations object: { [muscle]: "primary" | "secondary" }.
+ */
+function summarizeCustomExerciseMuscles(muscles) {
+  const main = [];
+  const assists = [];
+  if (muscles && typeof muscles === "object" && !Array.isArray(muscles)) {
+    for (const [muscle, designation] of Object.entries(muscles)) {
+      if (designation === "primary") main.push(muscle);
+      else if (designation === "secondary") assists.push(muscle);
+    }
+  }
+  const parts = [];
+  if (main.length > 0) parts.push(`Main: ${main.join(", ")}`);
+  if (assists.length > 0) parts.push(`Assists: ${assists.join(", ")}`);
+  return parts.join(" · ");
+}
+
 export function MyTemplatesPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -21,6 +42,7 @@ export function MyTemplatesPage() {
 
   const [workouts, setWorkouts] = useState([]);
   const [blocks, setBlocks] = useState([]);
+  const [customExercises, setCustomExercises] = useState([]);
   const [tab, setTab] = useState("workouts");
   const [visibility, setVisibility] = useState("all");
   const [loading, setLoading] = useState(true);
@@ -29,12 +51,16 @@ export function MyTemplatesPage() {
   const [actingKey, setActingKey] = useState(null);
   const [actingAction, setActingAction] = useState(null);
 
-  const rawItems = tab === "workouts" ? workouts : blocks;
+  const rawItems =
+    tab === "workouts" ? workouts : tab === "blocks" ? blocks : customExercises;
   const items = useMemo(() => {
+    // Custom exercises have no public/private axis - the visibility filter
+    // only applies to the two template tabs.
+    if (tab === "exercises") return rawItems;
     if (visibility === "all") return rawItems;
     if (visibility === "private") return rawItems.filter((t) => !t.isPublic);
     return rawItems.filter((t) => t.isPublic);
-  }, [rawItems, visibility]);
+  }, [rawItems, visibility, tab]);
   const emptyAll = useMemo(
     () => !loading && workouts.length === 0 && blocks.length === 0,
     [loading, workouts.length, blocks.length]
@@ -58,12 +84,14 @@ export function MyTemplatesPage() {
     setLoading(true);
     setError(null);
     try {
-      const [wData, bData] = await Promise.all([
+      const [wData, bData, eData] = await Promise.all([
         templateApi.getMyTemplates(),
         blockTemplateApi.getMyBlockTemplates(),
+        exerciseApi.listCustomExercises(),
       ]);
       setWorkouts(Array.isArray(wData.templates) ? wData.templates : []);
       setBlocks(Array.isArray(bData.blockTemplates) ? bData.blockTemplates : []);
+      setCustomExercises(Array.isArray(eData.userExercises) ? eData.userExercises : []);
     } catch (err) {
       setError(err);
     } finally {
@@ -194,6 +222,29 @@ export function MyTemplatesPage() {
     }
   }
 
+  async function onDeleteExercise(x) {
+    const ok = window.confirm(
+      `Delete custom exercise "${x.name}"? This cannot be undone. Sessions that used it keep their logged sets, but they lose the link to this exercise, so analytics stops attributing those sets to its muscles.`
+    );
+    if (!ok) return;
+
+    setError(null);
+    setSuccess(null);
+    setActingKey(keyFor("exercise", x.id));
+    setActingAction("delete");
+    try {
+      await exerciseApi.deleteCustomExercise(x.id);
+      setCustomExercises((prev) => prev.filter((e) => e.id !== x.id));
+      setSuccess("Custom exercise deleted.");
+      clearFeedbackSoon();
+    } catch (err) {
+      setError(err);
+    } finally {
+      setActingKey(null);
+      setActingAction(null);
+    }
+  }
+
   const busy = Boolean(actingKey);
   const currentProgram = readCurrentProgram();
 
@@ -291,8 +342,19 @@ export function MyTemplatesPage() {
               <span className="programs-type-tab__title">Saved blocks</span>
               <span className="programs-type-tab__meta muted small">{blocks.length}</span>
             </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={tab === "exercises"}
+              className={`programs-type-tab${tab === "exercises" ? " programs-type-tab--active" : ""}`}
+              onClick={() => setTab("exercises")}
+            >
+              <span className="programs-type-tab__title">Custom exercises</span>
+              <span className="programs-type-tab__meta muted small">{customExercises.length}</span>
+            </button>
           </div>
 
+          {tab !== "exercises" ? (
           <div className="programs-filter-row" role="group" aria-label="Filter by visibility">
             <span className="programs-filter-row__label muted small">Show</span>
             <div className="programs-filter-chips">
@@ -319,6 +381,7 @@ export function MyTemplatesPage() {
               </button>
             </div>
           </div>
+          ) : null}
         </>
       )}
 
@@ -336,7 +399,7 @@ export function MyTemplatesPage() {
 
           {loading ? <LoadingState slowLabel="Waking up the server…" /> : null}
 
-          {emptyAll ? (
+          {tab !== "exercises" && emptyAll ? (
             <div className="card stack">
               <p className="muted" style={{ margin: 0 }}>
                 Nothing saved yet. Create a block or a workout to add to your library.
@@ -352,7 +415,7 @@ export function MyTemplatesPage() {
             </div>
           ) : null}
 
-          {!loading && !emptyAll && !emptyRawTab && emptyTab ? (
+          {tab !== "exercises" && !loading && !emptyAll && !emptyRawTab && emptyTab ? (
             <div className="card stack">
               <p className="muted" style={{ margin: 0 }}>
                 No {tab === "workouts" ? "workouts" : "blocks"} match this filter. Try{" "}
@@ -364,7 +427,7 @@ export function MyTemplatesPage() {
             </div>
           ) : null}
 
-          {!loading && !emptyAll && emptyRawTab ? (
+          {tab !== "exercises" && !loading && !emptyAll && emptyRawTab ? (
             <div className="card stack">
               <p className="muted" style={{ margin: 0 }}>
                 {tab === "workouts"
@@ -389,8 +452,53 @@ export function MyTemplatesPage() {
             </div>
           ) : null}
 
-          <div className="stack" role="tabpanel" aria-label={tab === "workouts" ? "Workouts" : "Blocks"}>
-            {tab === "workouts"
+          {tab === "exercises" && !loading && customExercises.length === 0 ? (
+            <div className="card stack">
+              <p className="muted" style={{ margin: 0 }}>
+                No custom exercises yet. You create them from a live workout: when you
+                log an exercise the library doesn&apos;t know, tap its &quot;Not tracked
+                - add?&quot; pill and it&apos;s added to your library - then it shows up
+                here.
+              </p>
+            </div>
+          ) : null}
+
+          <div
+            className="stack"
+            role="tabpanel"
+            aria-label={
+              tab === "workouts" ? "Workouts" : tab === "blocks" ? "Blocks" : "Custom exercises"
+            }
+          >
+            {tab === "exercises"
+              ? items.map((x) => {
+                  const k = keyFor("exercise", x.id);
+                  const isActing = actingKey === k;
+                  const muscleSummary = summarizeCustomExerciseMuscles(x.muscles);
+                  return (
+                    <div key={k} className="card">
+                      <div className="row">
+                        <div>
+                          <h2 style={{ marginBottom: "0.35rem" }}>{x.name}</h2>
+                          {muscleSummary ? (
+                            <p className="muted small" style={{ margin: 0 }}>
+                              {muscleSummary}
+                            </p>
+                          ) : null}
+                        </div>
+                        <button
+                          type="button"
+                          className="btn btn-ghost"
+                          onClick={() => onDeleteExercise(x)}
+                          disabled={busy}
+                        >
+                          {isActing && actingAction === "delete" ? "Deleting…" : "Delete"}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })
+              : tab === "workouts"
               ? items.map((t) => {
               const k = keyFor("workout", t.id);
               const isActing = actingKey === k;
