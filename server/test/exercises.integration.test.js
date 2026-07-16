@@ -82,6 +82,7 @@ describe("POST /exercises/resolve", () => {
       resolved: true,
       source: "catalog",
       catalogId: "Barbell_Bench_Press_-_Medium_Grip",
+      userExerciseId: null,
       canonicalName: BENCH,
     });
 
@@ -90,6 +91,7 @@ describe("POST /exercises/resolve", () => {
       resolved: false,
       source: null,
       catalogId: null,
+      userExerciseId: null,
       canonicalName: null,
     });
   });
@@ -117,6 +119,7 @@ describe("POST /exercises/resolve", () => {
       resolved: true,
       source: "userExercise",
       catalogId: null,
+      userExerciseId: created.body.userExercise.id,
       canonicalName: CUSTOM_NAME,
     });
   });

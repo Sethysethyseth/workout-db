@@ -443,3 +443,112 @@ describe("WorkoutSet side field", () => {
   });
 });
 
+describe("Session exercise id-only identity PATCH", () => {
+  jest.setTimeout(30000);
+
+  const CATALOG_ID = "Barbell_Bench_Press_-_Medium_Grip";
+
+  test("id-only identity PATCH on a live session exercise; guards still fire", async () => {
+    const agent = request.agent(app);
+    await registerAndLogin(agent, {
+      email: "identity-patch-owner@example.com",
+      password: "password123",
+    });
+
+    const other = request.agent(app);
+    await registerAndLogin(other, {
+      email: "identity-patch-other@example.com",
+      password: "password123",
+    });
+
+    const customRes = await agent.post("/exercises/custom").send({
+      name: "Identity Patch Custom Movement",
+      muscles: { chest: "primary" },
+    });
+    expect(customRes.status).toBe(201);
+    const ownedUserExerciseId = customRes.body.userExercise.id;
+
+    const foreignRes = await other.post("/exercises/custom").send({
+      name: "Identity Patch Foreign Movement",
+      muscles: { chest: "primary" },
+    });
+    expect(foreignRes.status).toBe(201);
+    const foreignUserExerciseId = foreignRes.body.userExercise.id;
+
+    const created = await agent.post("/sessions").send({});
+    expect(created.status).toBe(201);
+    const sessionId = created.body.session.id;
+
+    const addEx = await agent.post(`/sessions/${sessionId}/exercises`).send({
+      exerciseName: "Mystery Movement Alpha",
+    });
+    expect(addEx.status).toBe(201);
+    const sessionExerciseId = addEx.body.sessionExercise.id;
+    const originalName = addEx.body.sessionExercise.exerciseName;
+
+    // PATCH { userExerciseId } alone -> 200; id stamped, name untouched
+    {
+      const res = await agent
+        .patch(`/sessions/${sessionId}/exercises/${sessionExerciseId}`)
+        .send({ userExerciseId: ownedUserExerciseId });
+      expect(res.status).toBe(200);
+      expect(res.body.sessionExercise.userExerciseId).toBe(ownedUserExerciseId);
+      expect(res.body.sessionExercise.exerciseId).toBeNull();
+      expect(res.body.sessionExercise.exerciseName).toBe(originalName);
+    }
+
+    // PATCH { exerciseId } alone -> 200; converse
+    {
+      const res = await agent
+        .patch(`/sessions/${sessionId}/exercises/${sessionExerciseId}`)
+        .send({ exerciseId: CATALOG_ID });
+      expect(res.status).toBe(200);
+      expect(res.body.sessionExercise.exerciseId).toBe(CATALOG_ID);
+      expect(res.body.sessionExercise.userExerciseId).toBeNull();
+      expect(res.body.sessionExercise.exerciseName).toBe(originalName);
+    }
+
+    // PATCH {} -> still the empty-patch 400
+    {
+      const res = await agent
+        .patch(`/sessions/${sessionId}/exercises/${sessionExerciseId}`)
+        .send({});
+      expect(res.status).toBe(400);
+      expect(res.body).toEqual({ error: "No fields to update" });
+    }
+
+    // PATCH with someone else's userExerciseId -> 400 (validate rejection)
+    {
+      const res = await agent
+        .patch(`/sessions/${sessionId}/exercises/${sessionExerciseId}`)
+        .send({ userExerciseId: foreignUserExerciseId });
+      expect(res.status).toBe(400);
+      expect(res.body).toEqual({
+        error: "userExerciseId not found for this user",
+      });
+    }
+
+    // identity PATCH on a COMPLETED session -> still 400 SESSION_COMPLETED
+    {
+      const setRes = await agent.post(`/sessions/${sessionId}/sets`).send({
+        sessionExerciseId,
+        order: 1,
+        reps: 5,
+        weight: 100,
+      });
+      expect(setRes.status).toBe(201);
+
+      const done = await agent.post(`/sessions/${sessionId}/complete`).send();
+      expect(done.status).toBe(200);
+
+      const res = await agent
+        .patch(`/sessions/${sessionId}/exercises/${sessionExerciseId}`)
+        .send({ userExerciseId: ownedUserExerciseId });
+      expect(res.status).toBe(400);
+      expect(res.body).toEqual({
+        error: "Completed sessions cannot be modified",
+      });
+    }
+  });
+});
+

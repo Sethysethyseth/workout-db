@@ -528,7 +528,7 @@ async function updateSessionExercise(req, res, next) {
         typeof rawNotes === "string" && rawNotes.trim() ? rawNotes.trim() : null;
     }
 
-    if (Object.keys(data).length === 0) {
+    if (Object.keys(data).length === 0 && !identityParse.provided) {
       return res.status(400).json({
         error: "No fields to update",
       });
@@ -574,34 +574,31 @@ async function updateSessionExercise(req, res, next) {
         });
       }
 
-      if (data.exerciseName !== undefined) {
+      if (identityParse.provided) {
+        const identityCheck = await validateOptionalExerciseIdentity(
+          identityParse,
+          userId,
+          tx
+        );
+        if (!identityCheck.ok) {
+          throw Object.assign(new Error(identityCheck.error), {
+            statusCode: 400,
+            code: "INVALID_EXERCISE_IDENTITY",
+          });
+        }
+        data.exerciseId = identityCheck.exerciseId;
+        data.userExerciseId = identityCheck.userExerciseId;
+      } else if (data.exerciseName !== undefined) {
         const userExerciseRows = await tx.userExercise.findMany({
           where: { userId },
         });
         const userIndex = buildUserExerciseIndex(userExerciseRows);
-
-        if (identityParse.provided) {
-          const identityCheck = await validateOptionalExerciseIdentity(
-            identityParse,
-            userId,
-            tx
-          );
-          if (!identityCheck.ok) {
-            throw Object.assign(new Error(identityCheck.error), {
-              statusCode: 400,
-              code: "INVALID_EXERCISE_IDENTITY",
-            });
-          }
-          data.exerciseId = identityCheck.exerciseId;
-          data.userExerciseId = identityCheck.userExerciseId;
-        } else {
-          const identity = stampExerciseIdentityWithIndex(
-            data.exerciseName,
-            userIndex
-          );
-          data.exerciseId = identity.exerciseId;
-          data.userExerciseId = identity.userExerciseId;
-        }
+        const identity = stampExerciseIdentityWithIndex(
+          data.exerciseName,
+          userIndex
+        );
+        data.exerciseId = identity.exerciseId;
+        data.userExerciseId = identity.userExerciseId;
       }
 
       return tx.sessionExercise.update({

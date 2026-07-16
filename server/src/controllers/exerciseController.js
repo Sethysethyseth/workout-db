@@ -78,6 +78,7 @@ function mapResolveResult(name, resolution) {
       resolved: true,
       source: "userExercise",
       catalogId: null,
+      userExerciseId: resolution.userExercise.id,
       canonicalName: resolution.userExercise.name,
     };
   }
@@ -88,6 +89,7 @@ function mapResolveResult(name, resolution) {
       resolved: true,
       source: "catalog",
       catalogId: resolution.catalogEntry.id,
+      userExerciseId: null,
       canonicalName: resolution.catalogEntry.name,
     };
   }
@@ -97,6 +99,7 @@ function mapResolveResult(name, resolution) {
     resolved: false,
     source: null,
     catalogId: null,
+    userExerciseId: null,
     canonicalName: null,
   };
 }

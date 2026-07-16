@@ -364,6 +364,8 @@ export function AddExerciseToLibrarySheet({
       };
       if (row.source === "catalog" && row.catalogId) {
         linkPayload.exerciseId = row.catalogId;
+      } else if (row.source === "userExercise" && row.userExerciseId) {
+        linkPayload.userExerciseId = row.userExerciseId;
       }
       await onLink(linkPayload);
       setDoneVariant("link");
