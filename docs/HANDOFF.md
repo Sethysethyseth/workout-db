@@ -1,6 +1,37 @@
 # HANDOFF — current state
 
-**Updated:** July 15, 2026, twentieth session (Fable — **the cursor-watch
+**Updated:** July 16, 2026, twenty-first session (Fable — **MW-WAVE
+(maintenance wave) SKELETON AUTHORED: 7 blocks on new branch
+`maintenance-wave`**, branched off not-tracked-ux-wave HEAD `5e3d981` =
+main `c473e21` + the CW dev-tooling arc, which therefore rides this
+wave's pre-main gate). Scope settled with Seth this session: item 12 =
+custom EXERCISES (not templates); **un-finish IS the edit path** for
+items 10+11 (one mechanism — reopen to live, edit with the existing live
+UI, finish again; no second editing surface); item 16 (catalog/search
+review) deliberately NOT authored, stays a candidate alongside A3.
+Units: MW1 heading-pill un-nest (the gate's shipped-knowingly finding),
+MW2 identity contract (issues 8+9 — and **issue 8 is now RULED: the
+server accepts id-only identity PATCHes**, fixing BOTH
+sessionController `:531` and `:575`), MW3 reopen-completed-session
+(`POST /sessions/:id/reopen`, completedAt-only flip; reopened sessions
+leaving history/analytics until re-finished is INTENDED), MW4 per-side
+end-to-end audit (diagnosis, no code), MW5 decimals audit (diagnosis,
+no code; `rir` is `Int?` in schema — the 1.5-RIR question), MW6
+per-side auto-first-pair (**DRAFT, gated on MW4's verdict**), MW7
+custom-exercise Library tab (client half only; L3 server routes exist).
+Dispatch order + serialization matrix in QUEUE.md: MW1+MW2 batchable
+(file-disjoint), MW3 after both, MW7 after MW3 (index.css overlap),
+MW4/MW5 solo anytime between reviews, never back-to-back with anything.
+Dispatch is the resident session's job next — NOTE the named rung is
+exhausted until the 7/17 reset, so the economical order is MW4/MW5
+(MODEL auto) today, the opus-tier units after the reset. **STAGING
+REPOINT AMENDED:** when Seth does RUNBOOK step 6, point staging at
+`maintenance-wave` (NOT back to `main`) — that is where this wave's
+smokes happen. Seth's post-merge trio (prod SHA verify == `c473e21`,
+the repoint, prod smoke incl. the What's New modal) and the CW3 visual
+sign-off remain owed, unchanged by this session.
+
+Previous entry (July 15, twentieth session, Fable — **the cursor-watch
 arc, all landed: CW1 `018a6ae`, CW2 `a26a2c8`, CW3 `6907d4a`**; wave at
 `6907d4a` on origin, resident session ran authored -> dispatched ->
 audited -> landed three times). CW2 (auto-open): `--open`,
@@ -57,86 +88,15 @@ committed those in `1b9174b`; status checks before every commit, zero
 collisions. No staging smoke owed — dev tooling, never in the client
 build; Seth verifies by watching the dashboard during a live run.
 
-Previous entry (July 15, nineteenth session, Opus — **PRE-MAIN GATE
-PASSED + NT-WAVE MERGED TO MAIN `c473e21`**). The gate ran on the full
-`main...not-tracked-ux-wave` diff with the archive in hand, then Seth
-gave the trigger phrase and the merge went ff-only via a scratch
-worktree outside OneDrive (`C:\dev\worktrees\main-merge`, removed
-after — the `ui-palettes-v2` precedent; never stash+checkout on this
-repo). **`origin/main` CONFIRMED at `c473e21`**, fast-forwarded
-`57b1fc8..c473e21`, 28 commits, no merge commit, history still linear.
-Product units in it: NT1 `f4baee3`, NT2 `f26e783`, NTFIX1 `e0ba383`,
-NT3 `98963f6`, NTFIX2 `888e44d`; the rest are docs/blocks/skills/relay
-v5+v5.1 doctrine + `check-hex.mjs`. **No schema, no migration anywhere
-in the wave** (server surface = `searchCatalog.js` + its test, both
-analytics-pure), so this was a code-only deploy with no DB track.
-
-**GATE RESULTS — read before acting on any of these.** Passed: both
-lanes re-run fresh on the merge candidate (unit 170/170 in 14 suites;
-Vite build 128 modules); tokens-only holds COMPLETELY (zero raw colors
-added anywhere in `client/src` across the wave, `index.css` included —
-all 274 new CSS lines are `var()`/`color-mix`); motion is 180ms on
-`--ease-standard`, inside the 150-250ms bar, gated behind
-`prefers-reduced-motion: no-preference`; cross-user isolation sound
-(`validateOptionalExerciseIdentity` scopes `userExerciseId` by
-`findFirst({ id, userId })`, session ownership separately 403s — note
-NTFIX2 makes that path reachable for the FIRST time and it is correctly
-guarded); NT2's runtime-invisible criteria all verified (`CHIP_CYCLE`/
-`nextChipRole` gone, retroactivity line in the CREATE done-state only,
-LINK variant correctly omits it, link paths use the
-`buildSessionExerciseNamePatch` idiom); permissions additive with no
-destructive allowlisting.
-
-**RULED — do not re-litigate: the NTFIX2 rename is CONTRACT-SANCTIONED,
-not a deviation.** NT2's block (`docs/tasks/nt2-add-exercise-stepped-
-sheet.md`, lines 101-104) specifies the create path commits
-`userExerciseId` "via the same updateSessionExercise path (**name
-unchanged if it already matches**)" — a parenthetical that only parses
-if the name is SENT alongside the id. NTFIX2 restored the specified
-behavior; the id-only version was the deviation that made the path
-silently no-op. The design treats row renames as routine (the LINK
-done-copy refuses the retroactivity claim precisely BECAUSE "a rename
-affects only this session's row"). Seth's smoke passed it. Closed.
-Also accepted on the record: NTFIX2's relay deviations (Claude Code
-authored the product code — direct-fix exception + Seth's explicit ask;
-audited per `land-unit` before landing).
-
-**SHIPPED KNOWINGLY — the gate's one real finding, now the top
-follow-up (see "Next up" 0a).** Nested `<button>` on the LIVE-session
-path: `SessionDetailPage.jsx:1468` renders
-`<button className="session-exercise-heading-toggle">{headingInner}</button>`
-and `headingInner` contains `ExerciseTrackedIndicator`, which renders a
-`<button>` when interactive (`:127`). Completed sessions use a `<div>`
-wrapper (`:1479`) and are FINE — this is live-only, i.e. exactly the
-path NT2 made interactive. Invalid HTML + React nesting warning +
-nested interactive controls are an AT problem (the inner control's
-accessible name can be swallowed). Functions today only because the
-inner `onClick` calls `stopPropagation`. NOT pre-existing relative to
-main — this wave introduced it when NT2 turned the pill into a button.
-Fix: lift the pill out of `headingInner` so it renders as a SIBLING of
-the toggle. Seth chose to ship and follow up.
-
-**NEXT UP — post-merge verification (Seth's, all three).** The NT-wave
-is DONE: gate passed, NTFIX2 smoke passed (all five items incl. the
-rename), merged to main `c473e21`. Owed now, none of which an agent can
-do from here: **(1) verify the prod deploy SHA == `c473e21`** in Render
-AND Vercel Events — push is NOT proof of deploy, a redeploy rebuilds the
-OLD HEAD until it catches up; **(2) RUNBOOK step 6** — repoint staging
-Render off `not-tracked-ux-wave` back to `main`, verify that redeploy's
-SHA too; **(3) prod smoke** — the NT flow on prod, folding in the
-carried N-wave item: the "Every exercise, in one place" What's New modal
-fires for a logged-in user (prod is the ONLY place it renders).
-Open findings that SURVIVED the gate, in priority order: the nested
-`<button>` (top entry — "Next up" 0a), **F** ("Failed to fetch" = Render
-cold-start, no client defect; needs a live Network-tab repro, not code),
-the **G server-side question** (issue 8 — client fix already shipped), and
-"Use that name" being unable to stamp identity for custom exercises
-(issue 9).
-
 Aged out this rewrite, moved verbatim to `docs/HANDOFF-ARCHIVE.md`
-(newest first): the July 15 **eighteenth** session (Fable — relay v5.1
+(newest first): the July 15 **nineteenth** session (Opus — PRE-MAIN GATE
+PASSED + NT-WAVE MERGED TO MAIN `c473e21`; the full GATE RESULTS, the
+NTFIX2-rename ruling, the nested-`<button>` diagnosis, and the
+post-merge NEXT UP trio live there verbatim — the still-live pieces are
+carried in the top entry, "Next up", and the MW blocks). The prior
+rewrite aged the July 15 **eighteenth** session (Fable — relay v5.1
 resident-session amendment: batch Seth's touchpoints, never the machine
-checkpoints). The prior rewrite aged the July 15 **seventeenth** session
+checkpoints), and the one before that the July 15 **seventeenth** session
 (Opus — the orphaned
 July 14 findings-fix work traced, audited and landed as NTFIX2
 `888e44d`; full provenance trace of session `ee60a330` lives there).
@@ -157,15 +117,10 @@ session (Opus — NT1 + NT2 landed), the July 11 eighth session (Fable —
 NT-wave skeleton authored), and the July 10 seventh session (Fable —
 not-tracked flow brainstorm).
 
-- **N-wave follow-ups — SUPERSEDED July 15 by the NT-wave merge; do all
-  three against `c473e21`, not `57b1fc8`, and see NEXT UP:** (1) verify
-  prod deploy SHA (was `57b1fc8`, now `c473e21`) in Render/Vercel
-  Events (push != live); (2) prod smoke — exercises tab, weekly-volume
-  graph, and the "Every exercise, in one place" What's New modal firing
-  for a logged-in user (prod is the ONLY place it renders); (3) RUNBOOK
-  step 6 — repoint staging Render off `analytics-rebalance-wave`; point
-  it at `not-tracked-ux-wave` NOW that the NT wave is code-complete,
-  verify redeploy SHA in Events.
+- **N-wave follow-ups — folded into "Next up" 0a (July 16):** all three
+  items run against `c473e21`, with the staging repoint target now
+  `maintenance-wave` (amended twice: analytics-rebalance-wave ->
+  not-tracked-ux-wave -> maintenance-wave; only the last is current).
 
 Previous entries (incl. the July 10 sixth session in full, the July 10
 Fable N-wave skeleton session, the July 9 spec-complete session and the
@@ -184,6 +139,11 @@ trusting it.
 
 ## Repo / deploy state
 
+- **MW-wave ACTIVE on `maintenance-wave` (July 16)** — branched off
+  not-tracked-ux-wave HEAD `5e3d981` (= main `c473e21` + the CW arc, so
+  the CW dev tooling rides this wave's pre-main gate). 7 task blocks
+  authored (6 QUEUED, MW6 DRAFT), nothing dispatched yet. Staging should
+  point HERE for the wave's smokes (the amended RUNBOOK step 6 target).
 - **NT-WAVE MERGED to `main` (`c473e21`), July 15** — NT1 `f4baee3` +
   NT2 `f26e783` + NTFIX1 `e0ba383` + NT3 `98963f6` + NTFIX2 `888e44d` +
   the relay v5/v5.1 docs are all fully contained in `main`, ff-only
@@ -237,21 +197,22 @@ trusting it.
 
 ## Next up (the active task)
 
-00. **NT-WAVE DONE — merged to main `c473e21`, July 15.** Gate passed,
-   smoke passed, all five units in main. What remains is Seth's
-   post-merge verification (prod deploy SHA, RUNBOOK step 6 staging
-   repoint, prod smoke) — see the NEXT UP paragraph. Design source:
-   `docs/design/not-tracked-add-flow-brainstorm.md`.
-0a. **TOP FOLLOW-UP — nested `<button>` on the live-session path
-   (SHIPPED KNOWINGLY, gate's one real finding).** Full diagnosis with
-   file:line in the top entry. Wants a small Cursor block, NOT a direct
-   fix: the diagnosis is done but the restructure (lift the pill out of
-   `headingInner` to render as a SIBLING of the heading toggle, without
-   breaking the sticky-heading layout or NT3's completed-session path)
-   is implementation-heavy, which per AGENTS.md sends it to Cursor
-   however small. Watch for: the `stopPropagation` in the pill's
-   `onClick` (`:132-136`) exists to stop the toggle firing — once the
-   pill is no longer a descendant, re-check whether it is still needed.
+00. **MW-WAVE DISPATCH — the active task.** 7 blocks authored July 16 on
+   `maintenance-wave` (this session); dispatch order + serialization
+   matrix in QUEUE.md. Economical order: MW4/MW5 (MODEL auto) can go
+   today; the opus-tier units wait for the 7/17 named-rung reset (or
+   descend the ladder deliberately). MW6 stays DRAFT until MW4 lands.
+   The nested-`<button>` follow-up that used to sit here is now MW1.
+0a. **Seth's post-merge verification trio (NT-wave merge, still owed):**
+   (1) prod deploy SHA == `c473e21` in Render AND Vercel Events (push is
+   not proof of deploy); (2) RUNBOOK step 6 — repoint staging at
+   `maintenance-wave` (amended July 16; NOT back to `main`), verify the
+   redeploy SHA in Events; (3) prod smoke — the NT flow + the "Every
+   exercise, in one place" What's New modal firing for a logged-in user
+   (prod is the ONLY place it renders). Plus the CW3 visual sign-off on
+   the next live watcher run. Finding **F** stays open independently
+   ("Failed to fetch" = Render cold-start ranked cause; needs a live
+   Network-tab repro, not code).
 0b. **A-wave follow-up (non-urgent):** optional Step-7 historical backfill:
    `node scripts/backfill-exercise-ids.mjs` (DRY-RUN first) then `--apply`
    against prod for pre-A4 historical rows (Seth runs the write).
@@ -321,10 +282,10 @@ stays dead-last. Residual open items:
    (`888e44d`)** — the client now sends name+id together, and the PATCH is
    wrapped in `try/catch` so the cache invalidate/refresh always runs
    (`http()` throwing on the 400 was skipping it, which is what actually
-   left the pill stale — the 400 alone was only half the bug). **Still
-   open for the gate to rule on:** whether the SERVER should also accept
-   an id-only identity PATCH. If yes, it must fix BOTH :531 and :575, not
-   just the guard. Not blocking — the client path works without it.
+   left the pill stale — the 400 alone was only half the bug). **RULED
+   July 16 (gate tier) + block authored:** the server WILL accept an
+   id-only identity PATCH — MW2 fixes BOTH :531 and :575 (validation
+   helpers untouched), paired with issue 9's resolve fix in one unit.
 9. **NEW (July 15, from the pre-main gate):** "Use that name" can never
    stamp structural identity for CUSTOM exercises. The resolve endpoint
    returns `canonicalName` + `catalogId` but NO `userExerciseId` for
@@ -334,7 +295,17 @@ stays dead-last. Residual open items:
    payload allows, so any fix starts SERVER-side. Name-based resolution
    (A4/A6) covers the behavior; only the structural id-link is missing.
    Pairs naturally with issue 8 — same contract surface, do them
-   together.
+   together. **MW2 (authored July 16) does exactly that:** resolve rows
+   gain `userExerciseId`, and "Use that name" stamps it.
+
+**Maintenance-wave candidates (Seth, July 16) — SCOPED AND AUTHORED same
+day as the MW-wave** (top entry + QUEUE.md; Seth's raw wording preserved
+in this file's git history at `5e3d981`). Mapping: 10+11 -> MW3
+(un-finish IS the edit path, settled with Seth), 12 -> MW7 (custom
+EXERCISES — Seth disambiguated; templates already have MyTemplatesPage),
+13 -> MW4 (audit), 14 -> MW5 (audit), 15 -> MW6 (DRAFT, gated on MW4's
+verdict), 16 -> NOT authored, stays a candidate: catalog + `searchCatalog`
+review pass, pairs with A3's 29 secondary-less compounds in QUEUE.md.
 
 ## Known tech debt (queued, not blocking)
 

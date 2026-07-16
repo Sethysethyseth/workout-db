@@ -6,6 +6,64 @@ Statuses: DRAFT / QUEUED / DISPATCHED / AWAITING-REVIEW / LANDED <sha> / BOUNCED
 
 ## Active
 
+MW-wave (maintenance wave), authored July 16 (Fable), branch
+`maintenance-wave` (off not-tracked-ux-wave HEAD `5e3d981` = main
+`c473e21` + the CW dev-tooling arc, which therefore rides this wave's
+pre-main gate). Sources: Seth's July 16 candidate list (HANDOFF items
+10-16) + the NT-gate's surviving findings (issues 8/9 + the nested
+`<button>`). Scope settled with Seth July 16: item 12 = custom
+EXERCISES (not templates); un-finish IS the edit path for 10+11 (one
+mechanism, no second editing surface); item 16 (catalog/search review
+pass) NOT authored - stays a candidate alongside A3. Gate-tier rulings
+baked into the blocks, do not re-litigate: the server WILL accept an
+id-only identity PATCH (issue 8, ruled July 16 - fixes BOTH :531 and
+:575); reopen = `completedAt`-only flip, and a reopened session leaving
+history/analytics until re-finished is intended semantics.
+
+Dispatch order: MW1+MW2 may go back-to-back (file-disjoint: client
+SessionDetailPage/index.css vs server controllers + sheet + tests),
+then MW3 (shares sessionController.js with MW2 AND SessionDetailPage.jsx
+with MW1), then MW7 (index.css possibly overlaps MW1/MW3 - when in
+doubt they collide, serialize). MW4 and MW5 are no-code diagnosis
+blocks: dispatch solo anytime between reviews, never back-to-back with
+anything (every block writes DELIVERY.md). MW6 stays DRAFT until MW4's
+audit lands and its findings are folded into the contract.
+
+- QUEUED | mw1-heading-pill-unnest.md | lift the tracked pill out of the
+  live heading toggle so no button nests inside a button (the gate's
+  shipped-knowingly finding); visual order, sticky heading, and the
+  slot-sizer layout-stability idiom preserved; re-check the pill's
+  stopPropagation once un-nested | MODEL opus
+- QUEUED | mw2-identity-stamp-contract.md | issues 8+9 in one unit:
+  updateSessionExercise accepts id-only identity PATCH (guard :531 +
+  un-nest :575, validation helpers unchanged), resolve rows gain
+  userExerciseId for custom exercises, "Use that name" stamps it |
+  MODEL opus; integration tests WRITTEN not run in lane - reviewer runs
+  them in the main tree at land time
+- QUEUED | mw3-reopen-completed-session.md | POST /sessions/:id/reopen +
+  two-step-confirm "Reopen workout" on the completed view: un-finish IS
+  the edit path (asks 10+11); completedAt-only flip, sessions:changed
+  gains type "reopened", resume hero reappears via local-apply |
+  MODEL opus; integration tests WRITTEN not run in lane
+- QUEUED | mw4-per-side-analytics-audit.md | DIAGNOSIS, no code:
+  unilateral L/R end-to-end trace (storage/enrichment, volume, set
+  counts, e1RM/top set, display, detection edges) with per-surface
+  verdicts + fix proposals; pair-semantics questions surfaced as
+  questions, not rulings | MODEL auto
+- QUEUED | mw5-decimal-values-audit.md | DIAGNOSIS, no code: decimal
+  reps/RPE/RIR input->storage->analytics->display trace; rir is Int? in
+  schema - pin the 1.5-RIR behavior exactly and recommend
+  reject-vs-widen | MODEL auto
+- DRAFT | mw6-per-side-auto-first-pair.md | auto-create the first L/R
+  pair when a committed name implies per-side and the exercise has zero
+  sets; GATED on MW4's verdict - contract finalizes after the audit
+  lands | MODEL opus
+- QUEUED | mw7-custom-exercise-library-view.md | third "Exercises" tab
+  in the Library page's yours-area: list custom exercises with
+  Main/Assists summary, guarded delete with honest SET-NULL consequence
+  copy, actionable empty state; client half only (L3 server routes
+  exist) | MODEL auto
+
 Off-wave dev-tooling unit, authored July 15 (Fable, Seth's go-ahead after
 the build-path question). Rides `not-tracked-ux-wave` for landing (one
 standalone new file added to the pending pre-main gate diff - flagged
