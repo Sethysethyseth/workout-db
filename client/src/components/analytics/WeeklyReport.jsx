@@ -5,6 +5,7 @@ import { useActiveSession } from "../../context/ActiveSessionContext.jsx";
 import { toDateOnlyString } from "../../lib/dateOnly.js";
 import { pickTopGain } from "../../lib/topGain.js";
 import { formatEffort } from "../../lib/effortDisplay.js";
+import { formatRepsValue } from "../../lib/repsDisplay.js";
 import { formatEstimate, formatWeight } from "../../lib/weightDisplay.js";
 
 function addDays(date, days) {
@@ -225,7 +226,7 @@ export function WeeklyReport() {
           value={
             topSet
               ? topSet.reps != null
-                ? `${formatWeight(topSet.weight)} × ${Math.round(topSet.reps)}`
+                ? `${formatWeight(topSet.weight)} × ${formatRepsValue(topSet.reps)}`
                 : formatWeight(topSet.weight)
               : "—"
           }

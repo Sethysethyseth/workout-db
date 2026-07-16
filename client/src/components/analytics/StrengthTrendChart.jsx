@@ -1,4 +1,5 @@
 import { formatEffort } from "../../lib/effortDisplay.js";
+import { formatRepsValue } from "../../lib/repsDisplay.js";
 import { formatEstimate, formatWeight } from "../../lib/weightDisplay.js";
 
 /**
@@ -19,7 +20,7 @@ function bareWeight(n) {
 
 function topSetNote(topSet) {
   if (!topSet) return "";
-  const reps = topSet.reps != null ? ` × ${Math.round(topSet.reps)}` : "";
+  const reps = topSet.reps != null ? ` × ${formatRepsValue(topSet.reps)}` : "";
   return ` · top set ${bareWeight(topSet.weight)}${reps}`;
 }
 

@@ -6,6 +6,7 @@ import { LoadingState } from "../LoadingState.jsx";
 import { HowCalculatedButton } from "./HowCalculatedButton.jsx";
 import { niceScale } from "../../lib/chartScale.js";
 import { formatEffort } from "../../lib/effortDisplay.js";
+import { formatRepsValue } from "../../lib/repsDisplay.js";
 import { loadWeightUnit } from "../../lib/weightUnitPref.js";
 import { formatEstimate, formatWeight, roundToPlate } from "../../lib/weightDisplay.js";
 
@@ -349,7 +350,7 @@ function ExerciseDetailPanel({ detail, weeks, loading, error, onClose }) {
               <li key={`${ts.performedAt}-${ts.weight}`} className="ex-top-set-row">
                 <span>
                   {ts.reps != null
-                    ? `${formatWeight(ts.weight)} × ${Math.round(ts.reps)}`
+                    ? `${formatWeight(ts.weight)} × ${formatRepsValue(ts.reps)}`
                     : formatWeight(ts.weight)}
                 </span>
                 <span className="muted small">{formatShortDate(ts.performedAt)}</span>

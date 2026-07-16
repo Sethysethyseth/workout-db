@@ -7,6 +7,7 @@
 import { Link } from "react-router-dom";
 import { pickTopGain } from "../../lib/topGain.js";
 import { formatEffort } from "../../lib/effortDisplay.js";
+import { formatRepsValue } from "../../lib/repsDisplay.js";
 import { formatEstimate, formatWeight } from "../../lib/weightDisplay.js";
 
 /** When effort coverage clears this, stimulating sets lead the volume pair.
@@ -123,7 +124,7 @@ export function StatTiles({ summary }) {
         value={
           topSet
             ? topSet.reps != null
-              ? `${formatWeight(topSet.weight)} × ${Math.round(topSet.reps)}`
+              ? `${formatWeight(topSet.weight)} × ${formatRepsValue(topSet.reps)}`
               : formatWeight(topSet.weight)
             : "—"
         }

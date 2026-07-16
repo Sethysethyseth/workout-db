@@ -15,6 +15,7 @@ import { Meter } from "../components/analytics/Meter.jsx";
 import { BalanceScale } from "../components/analytics/BalanceScale.jsx";
 import { toDateOnlyString } from "../lib/dateOnly.js";
 import { formatEffort } from "../lib/effortDisplay.js";
+import { formatRepsValue } from "../lib/repsDisplay.js";
 import { loadWeightUnit } from "../lib/weightUnitPref.js";
 import { loadAnalyticsWeeks, saveAnalyticsWeeks } from "../lib/analyticsRangePref.js";
 import { formatEstimate, formatWeight } from "../lib/weightDisplay.js";
@@ -70,7 +71,7 @@ function TopSetCell({ topSet }) {
   return (
     <span>
       {topSet.reps != null
-        ? `${formatWeight(topSet.weight)} × ${Math.round(topSet.reps)}`
+        ? `${formatWeight(topSet.weight)} × ${formatRepsValue(topSet.reps)}`
         : formatWeight(topSet.weight)}
     </span>
   );
