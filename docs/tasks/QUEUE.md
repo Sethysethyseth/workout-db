@@ -45,22 +45,38 @@ audit lands and its findings are folded into the contract.
   the edit path (asks 10+11); completedAt-only flip, sessions:changed
   gains type "reopened", resume hero reappears via local-apply |
   MODEL opus; integration tests WRITTEN not run in lane
-- DISPATCHED | mw4-per-side-analytics-audit.md | DIAGNOSIS, no code:
-  unilateral L/R end-to-end trace (storage/enrichment, volume, set
-  counts, e1RM/top set, display, detection edges) with per-surface
-  verdicts + fix proposals; pair-semantics questions surfaced as
-  questions, not rulings | MODEL auto -> Channel B auto rung, dispatched
-  July 16 (named rung exhausted until 7/17 reset per HANDOFF), lane
-  branch cursor/mw4-per-side-analytics-audit off e94a352, Opus resident
-  session
+- LANDED c005c2a | mw4-per-side-analytics-audit.md | DIAGNOSIS, no code:
+  unilateral L/R end-to-end trace with per-surface verdicts | MODEL auto
+  -> Channel B auto rung, dispatched + landed July 16 (Opus resident
+  session), audited per land-unit: lane 170/170 fresh, zero source
+  edits, spot-checks all confirmed by direct read/grep/count (analytics
+  side-blind - zero side refs in server/src/analytics; detection is
+  exactly \bsingle\b at SessionDetailPage.jsx:207-211; heading :1359
+  raw-row count vs toolbar :1318 pair count mismatch real; catalog 50
+  one-arm / 16 single of 873 exact). VERDICTS: storage+enrichment
+  CORRECT (side persists, engine side-blind by construction); volume /
+  set counts / e1RM all AMBIGUOUS (L+R = 2 full sets everywhere -
+  coherent but needs the pair=1-or-2 product ruling; series bucketing
+  does NOT double-count sessions; planned-vs-actual adherence hits 2.0
+  on paired work); display BROKEN (heading says "2 sets" while per-side
+  toolbar says 1 pair); detection BROKEN (misses all ~50 One-Arm
+  catalog names, false-positives on "single response"). Overall:
+  trustworthy WITH CAVEATS; MW6 must NOT ship on the \bsingle\b
+  detector alone. Full report preserved verbatim in
+  mw4-per-side-analytics-audit-FINDINGS.md (DELIVERY.md is gitignored);
+  5 product-ruling questions for Seth/Fable recorded there - MW6's
+  contract finalizes against it
 - QUEUED | mw5-decimal-values-audit.md | DIAGNOSIS, no code: decimal
   reps/RPE/RIR input->storage->analytics->display trace; rir is Int? in
   schema - pin the 1.5-RIR behavior exactly and recommend
   reject-vs-widen | MODEL auto
 - DRAFT | mw6-per-side-auto-first-pair.md | auto-create the first L/R
   pair when a committed name implies per-side and the exercise has zero
-  sets; GATED on MW4's verdict - contract finalizes after the audit
-  lands | MODEL opus
+  sets; GATED on MW4's verdict - audit LANDED c005c2a July 16, findings
+  in mw4-per-side-analytics-audit-FINDINGS.md; Fable folds them in
+  before this flips QUEUED (key: detector must cover One-Arm names, not
+  just \bsingle\b, and dodge the "single response" false positive) |
+  MODEL opus
 - QUEUED | mw7-custom-exercise-library-view.md | third "Exercises" tab
   in the Library page's yours-area: list custom exercises with
   Main/Assists summary, guarded delete with honest SET-NULL consequence

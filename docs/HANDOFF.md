@@ -1,6 +1,32 @@
 # HANDOFF — current state
 
-**Updated:** July 16, 2026, twenty-first session (Fable — **MW-WAVE
+**Updated:** July 16, 2026, twenty-second session (Opus resident —
+**MW-WAVE DISPATCH BEGUN: MW4 dispatched + LANDED `c005c2a` same
+session**, Channel B auto rung per the economical order — named rung
+exhausted until the 7/17 reset). MW4 (per-side end-to-end audit,
+DIAGNOSIS, no code) audited per `land-unit`: lane 170/170 fresh, zero
+source edits, every spot-checked claim confirmed by direct read/grep/
+count. **Verdicts:** storage + manual L/R logging CORRECT (side
+persists; engine side-blind by construction — zero `side` refs in
+`server/src/analytics/`); volume / set counts / e1RM AMBIGUOUS (an L+R
+pair counts as 2 full sets on every counting surface; series bucketing
+does NOT double-count sessions; planned-vs-actual adherence reads 2.0
+on paired work); display BROKEN (heading `:1359` says "2 sets" while
+the per-side toolbar `:1318` says 1 pair); detection BROKEN (regex is
+exactly `\bsingle\b` — misses all ~50 One-Arm catalog names of 873,
+false-positives on "single response"). Overall: trustworthy WITH
+CAVEATS; **MW6 must not ship on the current detector** — its DRAFT
+note now points at the findings. Full report preserved verbatim in
+`docs/tasks/mw4-per-side-analytics-audit-FINDINGS.md` (DELIVERY.md is
+gitignored); it ends with **5 product-ruling questions for Seth/Fable**
+(pair = 1 or 2 sets? adherence? per-side e1RM footing? sessions-list
+count? last-logged side cue?) — rulings needed before any AMBIGUOUS
+surface gets a fix block; the two BROKEN fixes (detector broadening,
+heading pair count) are block-ready without rulings. No smoke owed
+(no code). MW5 (decimals audit, MODEL auto) dispatches next in this
+session per the relay loop.
+
+Previous entry (July 16, twenty-first session, Fable — **MW-WAVE
 (maintenance wave) SKELETON AUTHORED: 7 blocks on new branch
 `maintenance-wave`**, branched off not-tracked-ux-wave HEAD `5e3d981` =
 main `c473e21` + the CW dev-tooling arc, which therefore rides this
@@ -31,65 +57,12 @@ smokes happen. Seth's post-merge trio (prod SHA verify == `c473e21`,
 the repoint, prod smoke incl. the What's New modal) and the CW3 visual
 sign-off remain owed, unchanged by this session.
 
-Previous entry (July 15, twentieth session, Fable — **the cursor-watch
-arc, all landed: CW1 `018a6ae`, CW2 `a26a2c8`, CW3 `6907d4a`**; wave at
-`6907d4a` on origin, resident session ran authored -> dispatched ->
-audited -> landed three times). CW2 (auto-open): `--open`,
-`--open-on-activity` (once per run, re-armed by DELIVERY.md removal or
-branch change), `--open-cmd` test override — audited with a live
-marker-cycle check (atStart=False, afterFirst=1, afterSecond=1,
-afterRearmWrite=2). CW3 (frontier visuals + DONE): layered panels,
-phase-driven accent, event-rate presence orb + sparkline, tool-call
-activity cards, DELIVERY READY page sweep + title/favicon state for
-background tabs, off-by-default chime, and server-side `--notify` OS
-toast (once per run; `--notify-cmd` override) — audited by driving the
-page in a REAL browser (Playwright: all three states render, titles
-flip, zero console errors) plus a live notify check (afterDelivery=1,
-afterMoreWrites=1). MODEL auto for CW3 was DELIBERATE (named rung
-exhausted until the 7/17 reset); the fully-specified design block
-protected quality. **Persistent setup on Seth's machine (his "anything
-ever" ask):** resident watcher runs `--open-on-activity --notify`, and
-a Startup shortcut (`shell:startup\cursor-watch.lnk`, hidden
-powershell -> node) relaunches it at every login — the dashboard pops
-and a toast fires whenever the lane stirs, no agent involved, zero
-tokens. **Papercut logged, not a defect in real use:** pointing the
-watcher at a NON-git directory lets git walk up to an enclosing repo,
-so the totals chip can count foreign files (seen in the audit scratch
-dir); the real lane is always a git worktree, unaffected. **Owed:
-Seth's visual sign-off on the next live run** — open items: does the
-WORKING page read as "a frontier agent at work"; does the DONE moment
-land (sweep, lockup, toast). Below, the original CW1 entry.
-Seth asked for a live visual of Cursor working, token cost weighed.
-Shipped as dev tooling: `scripts/cursor-watch.mjs` — zero-dependency
-(Node built-ins only), binds 127.0.0.1 only; run
-`node scripts/cursor-watch.mjs`, open `http://127.0.0.1:4646`.
-Recursive fs.watch + 3s git poll of the lane worktree, SSE to an
-embedded dark mission-control page: live activity feed, per-file +/-
-diff bars, typing-reveal pane on the newest diff, WAITING -> CURSOR IS
-WORKING -> DELIVERY READY keyed off `DELIVERY.md`, optional
-`cursor-run.log` tail. **Zero tokens to watch** — no LLM in the loop;
-built by Cursor on the free B-auto rung (the tool that visualizes
-Cursor was itself an autonomous dispatch). Audited per `land-unit`:
-lanes re-run fresh in the lane (unit 170/170 in 14 suites, Vite build
-128 modules); live contract spot-checked against a scratch dir (200
-text/html; file write -> WORKING event; DELIVERY.md -> DELIVERY READY;
-missing lane exits 1); imports all `node:` built-ins; no external URLs
-in the page; no deviations. **CW2 dispatched same session** (auto-open:
-`--open`, `--open-on-activity` with once-per-run re-arm on DELIVERY.md
-removal/branch change, `--open-cmd` test override) so the dashboard
-POPS the moment Cursor starts working; `dispatch-unit` amended with
-the pop-the-visual step (ensure watcher serving + open browser at
-dispatch; skip gracefully where the script doesn't exist). Two-agents
-note, a precedent that WORKED: this session interleaved with the
-nineteenth (gate/merge) in the SAME tree — the gate session
-deliberately carried this session's uncommitted CW2 QUEUE entry in
-`2318a87` and left its in-flight skill edit unstaged; this session
-committed those in `1b9174b`; status checks before every commit, zero
-collisions. No staging smoke owed — dev tooling, never in the client
-build; Seth verifies by watching the dashboard during a live run.
-
 Aged out this rewrite, moved verbatim to `docs/HANDOFF-ARCHIVE.md`
-(newest first): the July 15 **nineteenth** session (Opus — PRE-MAIN GATE
+(newest first): the July 15 **twentieth** session (Fable — the
+cursor-watch arc, CW1 `018a6ae` + CW2 `a26a2c8` + CW3 `6907d4a` all
+landed; the persistent-watcher Startup setup, the non-git-dir papercut,
+and the owed CW3 visual sign-off live there verbatim — the sign-off
+stays carried in "Next up" 0a). Before that: the July 15 **nineteenth** session (Opus — PRE-MAIN GATE
 PASSED + NT-WAVE MERGED TO MAIN `c473e21`; the full GATE RESULTS, the
 NTFIX2-rename ruling, the nested-`<button>` diagnosis, and the
 post-merge NEXT UP trio live there verbatim — the still-live pieces are
@@ -197,12 +170,14 @@ trusting it.
 
 ## Next up (the active task)
 
-00. **MW-WAVE DISPATCH — the active task.** 7 blocks authored July 16 on
-   `maintenance-wave` (this session); dispatch order + serialization
-   matrix in QUEUE.md. Economical order: MW4/MW5 (MODEL auto) can go
-   today; the opus-tier units wait for the 7/17 named-rung reset (or
-   descend the ladder deliberately). MW6 stays DRAFT until MW4 lands.
-   The nested-`<button>` follow-up that used to sit here is now MW1.
+00. **MW-WAVE DISPATCH — the active task.** 7 blocks authored July 16;
+   dispatch order + serialization matrix in QUEUE.md. **MW4 LANDED
+   `c005c2a` July 16** (findings + 5 product-ruling questions in
+   `docs/tasks/mw4-per-side-analytics-audit-FINDINGS.md` — Seth/Fable
+   rule before AMBIGUOUS-surface fix blocks; MW6 contract finalizes
+   against it). MW5 (MODEL auto) next; the opus-tier units (MW1/MW2/
+   MW3/MW7) wait for the 7/17 named-rung reset (or descend the ladder
+   deliberately). The nested-`<button>` follow-up is MW1.
 0a. **Seth's post-merge verification trio (NT-wave merge, still owed):**
    (1) prod deploy SHA == `c473e21` in Render AND Vercel Events (push is
    not proof of deploy); (2) RUNBOOK step 6 — repoint staging at

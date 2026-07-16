@@ -1,5 +1,62 @@
 # HANDOFF ARCHIVE — session-log history (append-only)
 
+Previous entry (July 15, twentieth session, Fable — **the cursor-watch
+arc, all landed: CW1 `018a6ae`, CW2 `a26a2c8`, CW3 `6907d4a`**; wave at
+`6907d4a` on origin, resident session ran authored -> dispatched ->
+audited -> landed three times). CW2 (auto-open): `--open`,
+`--open-on-activity` (once per run, re-armed by DELIVERY.md removal or
+branch change), `--open-cmd` test override — audited with a live
+marker-cycle check (atStart=False, afterFirst=1, afterSecond=1,
+afterRearmWrite=2). CW3 (frontier visuals + DONE): layered panels,
+phase-driven accent, event-rate presence orb + sparkline, tool-call
+activity cards, DELIVERY READY page sweep + title/favicon state for
+background tabs, off-by-default chime, and server-side `--notify` OS
+toast (once per run; `--notify-cmd` override) — audited by driving the
+page in a REAL browser (Playwright: all three states render, titles
+flip, zero console errors) plus a live notify check (afterDelivery=1,
+afterMoreWrites=1). MODEL auto for CW3 was DELIBERATE (named rung
+exhausted until the 7/17 reset); the fully-specified design block
+protected quality. **Persistent setup on Seth's machine (his "anything
+ever" ask):** resident watcher runs `--open-on-activity --notify`, and
+a Startup shortcut (`shell:startup\cursor-watch.lnk`, hidden
+powershell -> node) relaunches it at every login — the dashboard pops
+and a toast fires whenever the lane stirs, no agent involved, zero
+tokens. **Papercut logged, not a defect in real use:** pointing the
+watcher at a NON-git directory lets git walk up to an enclosing repo,
+so the totals chip can count foreign files (seen in the audit scratch
+dir); the real lane is always a git worktree, unaffected. **Owed:
+Seth's visual sign-off on the next live run** — open items: does the
+WORKING page read as "a frontier agent at work"; does the DONE moment
+land (sweep, lockup, toast). Below, the original CW1 entry.
+Seth asked for a live visual of Cursor working, token cost weighed.
+Shipped as dev tooling: `scripts/cursor-watch.mjs` — zero-dependency
+(Node built-ins only), binds 127.0.0.1 only; run
+`node scripts/cursor-watch.mjs`, open `http://127.0.0.1:4646`.
+Recursive fs.watch + 3s git poll of the lane worktree, SSE to an
+embedded dark mission-control page: live activity feed, per-file +/-
+diff bars, typing-reveal pane on the newest diff, WAITING -> CURSOR IS
+WORKING -> DELIVERY READY keyed off `DELIVERY.md`, optional
+`cursor-run.log` tail. **Zero tokens to watch** — no LLM in the loop;
+built by Cursor on the free B-auto rung (the tool that visualizes
+Cursor was itself an autonomous dispatch). Audited per `land-unit`:
+lanes re-run fresh in the lane (unit 170/170 in 14 suites, Vite build
+128 modules); live contract spot-checked against a scratch dir (200
+text/html; file write -> WORKING event; DELIVERY.md -> DELIVERY READY;
+missing lane exits 1); imports all `node:` built-ins; no external URLs
+in the page; no deviations. **CW2 dispatched same session** (auto-open:
+`--open`, `--open-on-activity` with once-per-run re-arm on DELIVERY.md
+removal/branch change, `--open-cmd` test override) so the dashboard
+POPS the moment Cursor starts working; `dispatch-unit` amended with
+the pop-the-visual step (ensure watcher serving + open browser at
+dispatch; skip gracefully where the script doesn't exist). Two-agents
+note, a precedent that WORKED: this session interleaved with the
+nineteenth (gate/merge) in the SAME tree — the gate session
+deliberately carried this session's uncommitted CW2 QUEUE entry in
+`2318a87` and left its in-flight skill edit unstaged; this session
+committed those in `1b9174b`; status checks before every commit, zero
+collisions. No staging smoke owed — dev tooling, never in the client
+build; Seth verifies by watching the dashboard during a live run.
+
 Previous entry (July 15, nineteenth session, Opus — **PRE-MAIN GATE
 PASSED + NT-WAVE MERGED TO MAIN `c473e21`**). The gate ran on the full
 `main...not-tracked-ux-wave` diff with the archive in hand, then Seth
