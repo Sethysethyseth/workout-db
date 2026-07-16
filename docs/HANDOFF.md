@@ -1,6 +1,38 @@
 # HANDOFF — current state
 
-**Updated:** July 16, 2026, twenty-second session (Opus resident —
+**Updated:** July 16, 2026, twenty-third session (Fable — **RULINGS
+INTERPRETED + LAST TWO WAVE UNITS AUTHORED: MW6 finalized and QUEUED,
+MW8 (new) QUEUED**). Seth's MW4/MW5 answers (`docs/tasks/
+mw6-seth-rulings.md`) were brainstormed with him live and dispositioned
+— the interpretation section appended to that file is the durable
+record. The short version: (1) pair = 2 sets RATIFIED, zero engine
+code, heading's raw row count is CORRECT and stays; (2) adherence
+pairs/planned DEFERRED into the ruling-3 unit (same side-plumbing);
+(3) ruling 3 is a NEW FEATURE — per-side L/R comparison analytics
+(side into enrichSet, exerciseDetail splits, Exercises-tab comparison
+UI) — Seth confirmed: own unit, NEXT wave, registered as a QUEUE.md
+candidate with the design sketch, needs a Fable design pass; (4)
+sessions-list "Sets: N" keeps raw rows, zero code; (5) collapsed
+summary gains a side letter, folded into MW6. Display vocabulary (Seth
+chose from previews): the stepper alone speaks "Pairs" in per-side
+mode; everything that COUNTS says sets. MW5's REJECT-decimal-RIR stands
+ratified plus Seth's rider ("make it impossible or inform the user") —
+a client-side RIR input gate folded into MW6. **MW6 as QUEUED now
+carries:** detector broadening with a machine-checkable name table
+(One-Arm/one-leg names TRUE, "single response" FALSE), the
+auto-first-pair trigger (committed-name discipline, override-on
+trigger ruled IN, delete respected/no re-trigger, derived-MODE keying
+so override=false wins), the Pairs stepper relabel via a new default-
+"Sets" label prop on PlanningSetCountControl (template/block builders
+zero-diff), the summary side cue, and the RIR gate. **MW8 (MODEL
+auto):** shared reps formatter (`client/src/lib/repsDisplay.js`)
+replacing Math.round at the 5 analytics top-set sites so 8.5 stops
+rendering as 9; null-reps gating per site untouched. MW6 + MW8 are
+fully file-disjoint — batchable back-to-back for one review session;
+they are the wave's LAST code units, then Seth's smoke, then the
+pre-main gate.
+
+Previous entry (July 16, twenty-second session, Opus resident —
 **MW-WAVE DISPATCH RAN THE WHOLE QUEUE: 6 of 7 units dispatched +
 LANDED in ONE session** — MW4 `c005c2a`, MW5 `87d6b37`, MW1 `f9a6dfd`,
 MW2 `859f3d3`, MW3 `9511e8f`, MW7 `b6c885f`; only MW6 remains, DRAFT,
@@ -47,39 +79,14 @@ count? last-logged side cue?) — rulings needed before any AMBIGUOUS
 surface gets a fix block; the two BROKEN fixes (detector broadening,
 heading pair count) are block-ready without rulings.
 
-Previous entry (July 16, twenty-first session, Fable — **MW-WAVE
-(maintenance wave) SKELETON AUTHORED: 7 blocks on new branch
-`maintenance-wave`**, branched off not-tracked-ux-wave HEAD `5e3d981` =
-main `c473e21` + the CW dev-tooling arc, which therefore rides this
-wave's pre-main gate). Scope settled with Seth this session: item 12 =
-custom EXERCISES (not templates); **un-finish IS the edit path** for
-items 10+11 (one mechanism — reopen to live, edit with the existing live
-UI, finish again; no second editing surface); item 16 (catalog/search
-review) deliberately NOT authored, stays a candidate alongside A3.
-Units: MW1 heading-pill un-nest (the gate's shipped-knowingly finding),
-MW2 identity contract (issues 8+9 — and **issue 8 is now RULED: the
-server accepts id-only identity PATCHes**, fixing BOTH
-sessionController `:531` and `:575`), MW3 reopen-completed-session
-(`POST /sessions/:id/reopen`, completedAt-only flip; reopened sessions
-leaving history/analytics until re-finished is INTENDED), MW4 per-side
-end-to-end audit (diagnosis, no code), MW5 decimals audit (diagnosis,
-no code; `rir` is `Int?` in schema — the 1.5-RIR question), MW6
-per-side auto-first-pair (**DRAFT, gated on MW4's verdict**), MW7
-custom-exercise Library tab (client half only; L3 server routes exist).
-Dispatch order + serialization matrix in QUEUE.md: MW1+MW2 batchable
-(file-disjoint), MW3 after both, MW7 after MW3 (index.css overlap),
-MW4/MW5 solo anytime between reviews, never back-to-back with anything.
-Dispatch is the resident session's job next — NOTE the named rung is
-exhausted until the 7/17 reset, so the economical order is MW4/MW5
-(MODEL auto) today, the opus-tier units after the reset. **STAGING
-REPOINT AMENDED:** when Seth does RUNBOOK step 6, point staging at
-`maintenance-wave` (NOT back to `main`) — that is where this wave's
-smokes happen. Seth's post-merge trio (prod SHA verify == `c473e21`,
-the repoint, prod smoke incl. the What's New modal) and the CW3 visual
-sign-off remain owed, unchanged by this session.
-
 Aged out this rewrite, moved verbatim to `docs/HANDOFF-ARCHIVE.md`
-(newest first): the July 15 **twentieth** session (Fable — the
+(newest first): the July 16 **twenty-first** session (Fable — MW-wave
+skeleton authored, 7 blocks on new branch `maintenance-wave` off
+`5e3d981`; the scope settlements with Seth — item 12 = custom
+EXERCISES, un-finish IS the edit path, item 16 not authored — and the
+original dispatch matrix live there verbatim; the still-live pieces are
+carried in QUEUE.md and the entries above). Before that: the July 15
+**twentieth** session (Fable — the
 cursor-watch arc, CW1 `018a6ae` + CW2 `a26a2c8` + CW3 `6907d4a` all
 landed; the persistent-watcher Startup setup, the non-git-dir papercut,
 and the owed CW3 visual sign-off live there verbatim — the sign-off
@@ -135,9 +142,11 @@ trusting it.
 
 - **MW-wave ACTIVE on `maintenance-wave` (July 16)** — branched off
   not-tracked-ux-wave HEAD `5e3d981` (= main `c473e21` + the CW arc, so
-  the CW dev tooling rides this wave's pre-main gate). 7 task blocks
-  authored (6 QUEUED, MW6 DRAFT), nothing dispatched yet. Staging should
-  point HERE for the wave's smokes (the amended RUNBOOK step 6 target).
+  the CW dev tooling rides this wave's pre-main gate). 6 of 7 original
+  units LANDED (HEAD `b6c885f`). Staging repointed here and Seth's
+  consolidated smoke checklist (MW1/MW2/MW3/MW7) PASSED July 16.
+  MW6 (finalized) + MW8 (new, reps formatter) are QUEUED as the wave's
+  last two code units — file-disjoint, batchable.
 - **NT-WAVE MERGED to `main` (`c473e21`), July 15** — NT1 `f4baee3` +
   NT2 `f26e783` + NTFIX1 `e0ba383` + NT3 `98963f6` + NTFIX2 `888e44d` +
   the relay v5/v5.1 docs are all fully contained in `main`, ff-only
@@ -192,9 +201,9 @@ trusting it.
 ## Next up (the active task)
 
 00. **MW-WAVE: 6 of 7 LANDED July 16 (one session).** Wave HEAD
-   `b6c885f` on origin. **SETH'S CONSOLIDATED SMOKE CHECKLIST** (once,
-   on the staging Vercel deploy, after the staging repoint in 0a —
-   4 palettes x 2 modes where visual, 360px):
+   `b6c885f` on origin. **SETH'S CONSOLIDATED SMOKE CHECKLIST — RUN
+   July 16, PASSED** (all four visual units — MW1, MW2, MW3, MW7 — on
+   the staging Vercel deploy):
    - MW1: live workout heading — order chevron/name/"· N sets"/pill/
      "· summary"; pill tap opens the Add-to-library sheet WITHOUT
      toggling collapse; no layout shift when the pill flips
@@ -209,19 +218,25 @@ trusting it.
      Main/Assists, delete confirm carries the honest SET-NULL copy and
      removes the row without reload, empty state names the pill path,
      community area unchanged, 3-up tablist reads right at 360px.
-   **Remaining wave work:** (1) Seth's rulings — MW4's 5 pair-semantics
-   questions + MW5's reject-vs-widen RIR call (findings docs in
-   docs/tasks/); (2) Fable finalizes MW6's contract against MW4's
-   findings (detector MUST cover One-Arm names, dodge "single
-   response") and authors the surfaced fix-block candidates (per-side
-   heading pair count; shared reps formatter for the 5 Math.round
-   sites — both block-ready without rulings); (3) the pre-main gate
-   (Fable + Seth) once MW6 resolves either way.
-0a. **Seth's post-merge verification trio (NT-wave merge, still owed):**
-   (1) prod deploy SHA == `c473e21` in Render AND Vercel Events (push is
-   not proof of deploy); (2) RUNBOOK step 6 — repoint staging at
-   `maintenance-wave` (amended July 16; NOT back to `main`), verify the
-   redeploy SHA in Events; (3) prod smoke — the NT flow + the "Every
+   **Remaining wave work (amended July 16, twenty-third session —
+   rulings DONE, blocks DONE):** (1) dispatch MW6 + MW8 (QUEUED,
+   file-disjoint, batchable back-to-back; MW6 is MODEL opus — named
+   rung resets 7/17, or descend to B auto with the Opus audit per
+   Seth's standing precedent from the six-unit day); (2) land both;
+   (3) Seth smokes ONLY the new items on staging (the four landed
+   visual units already PASSED July 16): MW6 — commit "One-Arm
+   Dumbbell Row" on a zero-set live exercise -> one L/R pair appears,
+   stepper reads "Pairs", collapsed summary shows the side letter
+   ("Last R 60 × 10"), RIR 1.5 blocked or informed inline with no
+   error flash; MW8 — log 8.5 reps -> analytics top-set strings show
+   8.5, not 9; (4) the pre-main gate (Fable + Seth). The ruling-3
+   per-side comparison feature is NEXT wave — candidate registered in
+   QUEUE.md with the design sketch.
+0a. **Seth's post-merge verification trio (NT-wave merge):** (1) STILL
+   OWED — prod deploy SHA == `c473e21` in Render AND Vercel Events
+   (push is not proof of deploy); (2) DONE July 16 — staging repointed
+   at `maintenance-wave` (the wave smoke ran on it and passed);
+   (3) STILL OWED — prod smoke — the NT flow + the "Every
    exercise, in one place" What's New modal firing for a logged-in user
    (prod is the ONLY place it renders). Plus the CW3 visual sign-off on
    the next live watcher run. Finding **F** stays open independently

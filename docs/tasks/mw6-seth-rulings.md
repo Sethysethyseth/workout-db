@@ -57,3 +57,43 @@ Not directly re-asked this session; diagnosis recommendation (REJECT, use
 RPE 8.5 instead) was presented but Seth did not override it in this pass -
 Fable should treat it as tentatively ratified unless it revisits the
 question explicitly.
+
+---
+
+## Fable interpretation (July 16, brainstormed with Seth same day)
+
+Every ruling above is now dispositioned; nothing here is still open.
+
+1. **Pair = 2 sets — RATIFIED, zero engine code.** All counting surfaces
+   already behave this way. The heading's raw row count ("2 sets") is
+   therefore CORRECT and stays; the MW4 "BROKEN display" fix is resolved
+   by vocabulary instead (see 2/4/5 below).
+2. **Adherence — DEFERRED into the per-side comparison unit.** Templates
+   are side-blind (zero `side` refs in the template pages), so a planned
+   "3 sets" on a unilateral exercise means 3 pairs and the current 2.0
+   adherence misleads. The better-UI answer is pairs/planned, but that
+   needs `side` visible to the engine — the exact plumbing ruling 3
+   needs — so it rides that unit rather than being hacked separately.
+3. **Per-side L/R comparison analytics — NEW FEATURE, own unit, NEXT
+   wave (Seth confirmed via brainstorm).** Scope when authored: plumb
+   `side` from the analytics controllers into `enrichSet` (engine is
+   currently side-blind by construction), per-side splits in
+   `exerciseDetail`, comparison UI in the Exercises tab (each side's
+   numbers + a same/different verdict, show the delta). Adherence
+   (ruling 2) rides it. Registered as a QUEUE.md candidate; needs a
+   Fable design pass before authoring.
+4. **Sessions list "Sets: N" — keep raw rows.** Consistent with ruling 1
+   (each side IS a set); zero code.
+5. **Collapsed "Last W × R" — side letter when sided** ("Last R 60 ×
+   10"). Folded into MW6.
+
+**Display vocabulary (Seth chose from previews):** the stepper — the one
+control that OPERATES in pairs — is relabeled "Pairs" in per-side mode;
+everything that COUNTS says sets. Heading "· 2 sets" + toolbar "Pairs: 1"
+coexist without contradiction. Folded into MW6.
+
+**MW5 RIR — REJECT ratified, plus a client gate (Seth: "make it
+impossible to or inform the user it won't count").** Schema untouched,
+server 400 stays; the live RIR input either blocks decimal entry or
+informs inline and never sends the PATCH. Folded into MW6 (same file);
+the 5 Math.round reps-display sites became MW8.

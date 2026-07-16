@@ -1,45 +1,133 @@
-# TASK MW6: auto-create the first L/R pair on per-side exercises
+# TASK MW6: per-side detection fix + auto-create the first L/R pair
 
-STATUS: DRAFT   <!-- GATED ON MW4's audit verdict - do not flip to QUEUED
-                     or dispatch until MW4 lands and its findings are
-                     folded into this contract. If MW4 finds the per-side
-                     foundation broken, fixes land first and this block
-                     gets re-authored on top of them. -->
+STATUS: QUEUED
 MODEL: opus
 MODE: 1-relay
 
 CONTEXT:
-Seth's ask #15 (July 16): when an exercise name matches the "single"
-per-side convention, auto-generate the first set pair instead of
-requiring a manual "+ Add set" tap. Per-side MODE detection already
-exists (`derivePerSideMode` / `exerciseNameImpliesPerSide` in
-`client/src/pages/SessionDetailPage.jsx` ~:207-221) and pair creation
-already exists (`createSetPairForExercise`) - this unit only adds the
-automatic trigger.
+Seth's ask #15 (July 16), finalized against the MW4 audit
+(`mw4-per-side-analytics-audit-FINDINGS.md`) and Seth's rulings
+(`mw6-seth-rulings.md`, interpreted by Fable July 16). Per-side MODE
+detection exists (`derivePerSideMode` / `exerciseNameImpliesPerSide`,
+`client/src/pages/SessionDetailPage.jsx` ~:203-217) and pair creation
+exists (`createSetPairForExercise` ~:277-289). MW4 found the detector is
+exactly `/\bsingle\b/i` - it misses all ~50 One-Arm/One Arm catalog names
+and false-positives on "(single response)" - and found one display
+inconsistency (Sets stepper counts pairs while the heading counts rows).
 
-CONTRACT SKETCH (to finalize post-MW4):
-- Trigger on the LIVE path only, when a session exercise's COMMITTED name
-  newly implies per-side mode AND the exercise has zero sets. Committed
-  name, not draft keystrokes - a user typing "single..." must not get
-  sets spawned mid-word (same committed-vs-draft discipline as the
-  tracked pill's interactivity guard, ~:1381-1387).
-- Exactly one auto-creation per exercise per qualifying commit - no
-  re-trigger loops when the pair is deleted (deleting the pair is a user
-  statement; respect it), none on page load of existing data, none on
-  completed sessions.
-- Reuse `createSetPairForExercise` verbatim - no second creation path.
+RULINGS BAKED IN - do not re-litigate:
+- A pair = 2 sets on every COUNTING surface (analytics untouched by this
+  block; the heading's raw row count "2 sets" is CORRECT and stays).
+- The stepper is the one control that operates in pairs, so it alone
+  speaks "Pairs" in per-side mode. Everything that COUNTS says sets.
+- Decimal RIR stays rejected server-side (schema untouched); the client
+  gains an input gate so a user typing 1.5 is stopped or informed inline,
+  never flashed a server error + reload.
 
-OPEN ITEMS BLOCKING QUEUED:
-1. MW4's verdicts on pair semantics and the detection edges - if the
-   audit flags `anySetHasSide`/mode-flip traps, this trigger inherits
-   them and the contract must address each named trap.
-2. Whether auto-creation should also fire when the manual per-side
-   override toggles on (not just name-implied) - decide when finalizing.
+FILES TO TOUCH:
+- client/src/pages/SessionDetailPage.jsx   (detector, auto-pair trigger,
+                                            stepper label wiring, summary
+                                            side cue, RIR input gate)
+- client/src/components/templates/PlanningSetCountControl.jsx
+                                           (optional label prop, default
+                                            "Sets" - template and block
+                                            builders must be zero-diff in
+                                            behavior)
+- client/src/index.css                     (only if a new class is
+                                            genuinely needed; prefer the
+                                            existing muted/small idioms)
+Do NOT modify anything outside these files.
 
-ACCEPTANCE CRITERIA (machine-checkable): to be finalized with the
-contract; will include the committed-name trigger cases, the
-no-re-trigger case, client build green, unit-lane tripwire, and zero raw
-colors if any CSS is touched.
+CHANGE (five parts, one file-coherent unit):
+
+1. DETECTOR BROADENING - `exerciseNameImpliesPerSide` must recognize the
+   catalog's unilateral naming, not just `\bsingle\b`, and must dodge the
+   known false positive. Mechanism is Cursor's choice (broader regex,
+   word-pair test, denylist - whatever reads cleanest); the observable
+   contract is the name table in the acceptance criteria. Keep the
+   existing blank-name guard (`isBlankSessionExerciseName`) intact.
+
+2. AUTO-CREATE THE FIRST PAIR - on the LIVE path only: when a qualifying
+   event leaves the exercise in per-side mode with ZERO sets, create
+   exactly one L/R pair via `createSetPairForExercise` VERBATIM - no
+   second creation path. Qualifying events, and only these:
+   (a) the COMMITTED exercise name changes (the `onExerciseCommitted`
+       path - same committed-vs-draft discipline as the tracked pill's
+       interactivity guard, see the comment at ~:1378-1383) such that
+       `derivePerSideMode` is now true; draft keystrokes must never
+       trigger it - a user typing "single..." mid-word gets nothing;
+   (b) the manual L/R override chip toggles ON (per-side override true).
+   Hard non-triggers: completed sessions; initial mount/page load of
+   existing data; any exercise that already has sets; override === false
+   (the trigger keys off the derived MODE, not the raw name, so a forced-
+   bilateral override wins over a per-side name); and re-trigger loops -
+   deleting the auto-created pair is a user statement, respected: with an
+   unchanged committed name and override state, the pair must NOT come
+   back. A LATER qualifying event (another name commit that implies
+   per-side, or the override toggled off and on again) may create again.
+   Auto-creation must not steal focus from whatever field the user was in
+   (same discipline as L1's autofill).
+
+3. STEPPER SPEAKS PAIRS - `PlanningSetCountControl` gains an optional
+   label prop (default "Sets", aria-label following suit) so template and
+   block builders are untouched; the live session passes "Pairs" when
+   `perSideMode` is on. The heading's `setCountLabel` (~:1355) stays raw
+   row count - that is ruling 1, not an oversight. Net result for one
+   L/R pair: heading "· 2 sets", toolbar "Pairs: 1" - different words,
+   no contradiction.
+
+4. LAST-LOGGED SIDE CUE - `sessionExerciseLastLoggedSummary` (~:346-357)
+   includes the side letter when the summarized set is sided, e.g.
+   collapsed line "Last R 60 × 10"; unsided sets render exactly as today.
+
+5. DECIMAL-RIR INPUT GATE - the live session RIR field (SessionSetRow
+   draft field, `inputMode="numeric"`, payload at ~:834) must never send
+   a non-integer RIR to the server. Either make a decimal impossible to
+   enter, or accept the keystrokes but block the PATCH and inform the
+   user inline (existing muted/small error idioms) that decimal RIR won't
+   count - Cursor's choice which, per Seth's ruling ("make it impossible
+   or inform the user"). Integer entry, clearing the field, and the RPE
+   field (where 8.5 is legal and correct) must be byte-for-byte
+   unaffected. Live session only - the template builder's SetRow is out
+   of scope.
+
+ACCEPTANCE CRITERIA (machine-checkable):
+
+- Detector name table - `exerciseNameImpliesPerSide` returns TRUE for:
+  "One-Arm Dumbbell Row", "Dumbbell One-Arm Shoulder Press",
+  "Cable One Arm Tricep Extension", "Dumbbell Seated One-Leg Calf Raise",
+  "Single-Arm Cable Crossover", "Single Leg Glute Bridge",
+  "Single Dumbbell Raise", "Unilateral Leg Press";
+  and FALSE for: "Chest Push (single response)", "Barbell Bench Press",
+  "Deadlift", "" and blank/placeholder names. Evidence: node eval of the
+  function (or its extracted predicate) in the delivery report.
+- Trigger matrix, each case evidenced (code-path walkthrough + manual
+  trace in the report):
+  - commit "One-Arm Dumbbell Row" on a live zero-set exercise -> exactly
+    one L/R pair appears (2 rows, L then R), created via
+    `createSetPairForExercise`;
+  - same commit on an exercise WITH sets -> no creation;
+  - toggling the L/R chip ON with zero sets -> one pair;
+  - override false + per-side name commit -> no creation;
+  - deleting the auto pair, name/override unchanged -> stays deleted
+    (no effect-loop respawn);
+  - completed session -> no creation anywhere;
+  - page load of an existing live session with a per-side name and zero
+    sets -> no creation.
+- Stepper: in per-side mode the control label reads "Pairs" (aria-label
+  updated to match); bilateral mode and the template/block builders still
+  read "Sets" - `grep` shows PlanningSetCountControl's default unchanged
+  and no other call site passes the new prop.
+- Collapsed summary: a sided last-logged set renders "Last R 60 × 10"
+  (side letter present); unsided renders "Last 60 × 10" as today.
+- RIR gate: entering 1.5 in a live RIR field results in ZERO network
+  write for that value and either a blocked input or an inline
+  explanation; entering 2 persists exactly as today; RPE 8.5 still
+  persists as 8.5.
+- `npm run test:unit` from server/ green (tripwire - no server files in
+  scope).
+- Client `npm run build` compiles with no errors.
+- Zero raw colors in any CSS touched (tokens only; check-hex clean).
 
 STOP CONDITION (standing footer - keep verbatim in every block):
 Stop when the acceptance criteria are met. If a criterion cannot be met,

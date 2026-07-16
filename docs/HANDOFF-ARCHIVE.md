@@ -1,5 +1,36 @@
 # HANDOFF ARCHIVE — session-log history (append-only)
 
+Previous entry (July 16, twenty-first session, Fable — **MW-WAVE
+(maintenance wave) SKELETON AUTHORED: 7 blocks on new branch
+`maintenance-wave`**, branched off not-tracked-ux-wave HEAD `5e3d981` =
+main `c473e21` + the CW dev-tooling arc, which therefore rides this
+wave's pre-main gate). Scope settled with Seth this session: item 12 =
+custom EXERCISES (not templates); **un-finish IS the edit path** for
+items 10+11 (one mechanism — reopen to live, edit with the existing live
+UI, finish again; no second editing surface); item 16 (catalog/search
+review) deliberately NOT authored, stays a candidate alongside A3.
+Units: MW1 heading-pill un-nest (the gate's shipped-knowingly finding),
+MW2 identity contract (issues 8+9 — and **issue 8 is now RULED: the
+server accepts id-only identity PATCHes**, fixing BOTH
+sessionController `:531` and `:575`), MW3 reopen-completed-session
+(`POST /sessions/:id/reopen`, completedAt-only flip; reopened sessions
+leaving history/analytics until re-finished is INTENDED), MW4 per-side
+end-to-end audit (diagnosis, no code), MW5 decimals audit (diagnosis,
+no code; `rir` is `Int?` in schema — the 1.5-RIR question), MW6
+per-side auto-first-pair (**DRAFT, gated on MW4's verdict**), MW7
+custom-exercise Library tab (client half only; L3 server routes exist).
+Dispatch order + serialization matrix in QUEUE.md: MW1+MW2 batchable
+(file-disjoint), MW3 after both, MW7 after MW3 (index.css overlap),
+MW4/MW5 solo anytime between reviews, never back-to-back with anything.
+Dispatch is the resident session's job next — NOTE the named rung is
+exhausted until the 7/17 reset, so the economical order is MW4/MW5
+(MODEL auto) today, the opus-tier units after the reset. **STAGING
+REPOINT AMENDED:** when Seth does RUNBOOK step 6, point staging at
+`maintenance-wave` (NOT back to `main`) — that is where this wave's
+smokes happen. Seth's post-merge trio (prod SHA verify == `c473e21`,
+the repoint, prod smoke incl. the What's New modal) and the CW3 visual
+sign-off remain owed, unchanged by this session.
+
 Previous entry (July 15, twentieth session, Fable — **the cursor-watch
 arc, all landed: CW1 `018a6ae`, CW2 `a26a2c8`, CW3 `6907d4a`**; wave at
 `6907d4a` on origin, resident session ran authored -> dispatched ->

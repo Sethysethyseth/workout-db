@@ -29,6 +29,14 @@ blocks: dispatch solo anytime between reviews, never back-to-back with
 anything (every block writes DELIVERY.md). MW6 stays DRAFT until MW4's
 audit lands and its findings are folded into the contract.
 
+July 16 addendum (Fable, post-rulings): MW6 finalized and QUEUED; MW8
+authored and QUEUED. MW6 (SessionDetailPage.jsx +
+PlanningSetCountControl.jsx + index.css-if-needed) and MW8 (5 analytics
+display files + one NEW lib file, no CSS) are fully file-disjoint and
+may dispatch back-to-back for one review session. These are the LAST
+two code units of the wave - after they land and Seth smokes, the
+pre-main gate (Fable) closes the wave.
+
 - LANDED f9a6dfd | mw1-heading-pill-unnest.md | tracked pill lifted out
   of the live heading toggle - pill + summary are now SIBLINGS of the
   toggle in a shared .session-exercise-heading-lead wrapper (live and
@@ -133,13 +141,23 @@ audit lands and its findings are folded into the contract.
   reps use step="1" (AMBIGUOUS, not broken). Fix-block candidate: the
   shared reps formatter to replace the 5 Math.round sites. Full report
   verbatim in mw5-decimal-values-audit-FINDINGS.md
-- DRAFT | mw6-per-side-auto-first-pair.md | auto-create the first L/R
-  pair when a committed name implies per-side and the exercise has zero
-  sets; GATED on MW4's verdict - audit LANDED c005c2a July 16, findings
-  in mw4-per-side-analytics-audit-FINDINGS.md; Fable folds them in
-  before this flips QUEUED (key: detector must cover One-Arm names, not
-  just \bsingle\b, and dodge the "single response" false positive) |
-  MODEL opus
+- QUEUED | mw6-per-side-auto-first-pair.md | per-side detection fix
+  (One-Arm/one-leg names covered, "single response" dodged, name table
+  in the block) + auto-create the first L/R pair on qualifying commit or
+  override-on with zero sets (delete respected, no re-trigger loop) +
+  stepper relabeled "Pairs" in per-side mode (PlanningSetCountControl
+  gains a default-"Sets" label prop) + collapsed-summary side cue +
+  decimal-RIR client input gate | MODEL opus; finalized July 16 by Fable
+  against MW4's findings + Seth's rulings (mw6-seth-rulings.md,
+  interpretation section) - rulings baked in, do not re-litigate:
+  pair = 2 sets, heading keeps raw row count, RIR stays rejected
+- QUEUED | mw8-reps-display-formatter.md | shared reps formatter
+  (client/src/lib/repsDisplay.js, formatEffortValue semantics) replaces
+  Math.round(reps) at the 5 analytics top-set sites (AnalyticsPage :73,
+  WeeklyReport :228, StatTiles :126, ExercisesView :352,
+  StrengthTrendChart :22) so 8.5 reps stops rendering as 9; null-reps
+  gating per site untouched | MODEL auto; authored July 16 from MW5's
+  fix-block candidate
 - LANDED b6c885f | mw7-custom-exercise-library-view.md | third
   "Custom exercises" tab in the Library yours-area: rows with
   Main/Assists summaries, confirm-guarded delete with honest SET-NULL
@@ -475,6 +493,14 @@ stays a post-N flag.
 
 ## Candidates (next units, not yet authored as blocks)
 
+- **Per-side L/R comparison analytics (ruling 3, Seth-confirmed July 16:
+  own unit, NEXT wave, needs a Fable design pass first).** Scope sketch
+  recorded in mw6-seth-rulings.md's interpretation section: plumb `side`
+  from the analytics controllers into enrichSet (engine is side-blind by
+  construction today), per-side splits in exerciseDetail, comparison UI
+  in the Exercises tab (each side's numbers + same/different verdict
+  with the delta). Plan-adherence pairs/planned (ruling 2) rides the
+  same unit - same plumbing.
 - A5B: extend the picker to template + block builders (after A5 proves the
   pattern in live sessions)
 - A3 curation skim: the 29 secondary-less compounds the validator surfaced
