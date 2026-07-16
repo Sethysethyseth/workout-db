@@ -66,13 +66,27 @@ audit lands and its findings are folded into the contract.
   mw4-per-side-analytics-audit-FINDINGS.md (DELIVERY.md is gitignored);
   5 product-ruling questions for Seth/Fable recorded there - MW6's
   contract finalizes against it
-- DISPATCHED | mw5-decimal-values-audit.md | DIAGNOSIS, no code: decimal
-  reps/RPE/RIR input->storage->analytics->display trace; rir is Int? in
-  schema - pin the 1.5-RIR behavior exactly and recommend
-  reject-vs-widen | MODEL auto -> Channel B auto rung, dispatched July
-  16 after MW4's review landed (diagnosis blocks solo, never
-  back-to-back), lane branch cursor/mw5-decimal-values-audit off
-  9ebadda, Opus resident session
+- LANDED 87d6b37 | mw5-decimal-values-audit.md | DIAGNOSIS, no code:
+  decimal reps/RPE/RIR end-to-end trace | MODEL auto -> Channel B auto
+  rung, dispatched + landed July 16 (Opus resident session), audited
+  per land-unit: lane 170/170 fresh, zero source edits, spot-checks all
+  confirmed by direct read/grep (parseNullableInt quote exact at :40-52;
+  rir-1.5 -> clean 400 on BOTH create :822-827 and update :1037-1042;
+  Math.round(reps) on exactly the 5 claimed surfaces; live reps input
+  really is step=1). VERDICTS: reps 8.5 trustworthy except ONE display
+  bug - analytics top-set strings Math.round to integer (AnalyticsPage
+  :73, WeeklyReport :228, StatTiles :126, ExercisesView :352,
+  StrengthTrendChart :22 - 8.5 renders as 9); RPE 8.5 CORRECT
+  end-to-end (Float, effort pooling derives 1.5, formatEffort keeps
+  fractions); RIR 1.5 NOT SUPPORTED by design - clean 400, never
+  stored, never truncated. RECOMMENDATION (ruling stays Fable/Seth):
+  REJECT decimal RIR, do NOT widen the column - half-steps already
+  expressible via RPE 8.5; optional client-side integer gate to avoid
+  the flash-error-and-reload UX. Factual correction to the block's
+  context: step="0.01" is TEMPLATES only (SetRow.jsx:43); live session
+  reps use step="1" (AMBIGUOUS, not broken). Fix-block candidate: the
+  shared reps formatter to replace the 5 Math.round sites. Full report
+  verbatim in mw5-decimal-values-audit-FINDINGS.md
 - DRAFT | mw6-per-side-auto-first-pair.md | auto-create the first L/R
   pair when a committed name implies per-side and the exercise has zero
   sets; GATED on MW4's verdict - audit LANDED c005c2a July 16, findings

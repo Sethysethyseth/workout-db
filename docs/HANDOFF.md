@@ -1,9 +1,26 @@
 # HANDOFF — current state
 
 **Updated:** July 16, 2026, twenty-second session (Opus resident —
-**MW-WAVE DISPATCH BEGUN: MW4 dispatched + LANDED `c005c2a` same
-session**, Channel B auto rung per the economical order — named rung
-exhausted until the 7/17 reset). MW4 (per-side end-to-end audit,
+**MW-WAVE DISPATCH BEGUN: both diagnosis units dispatched + LANDED same
+session — MW4 `c005c2a`, MW5 `87d6b37`**, Channel B auto rung per the
+economical order — named rung exhausted until the 7/17 reset; the
+opus-tier units MW1/MW2/MW3/MW7 are the NEXT session's dispatches, MW1+
+MW2 batchable back-to-back per the serialization matrix). **MW5
+(decimals audit) verdicts:** reps 8.5 trustworthy EXCEPT analytics
+top-set strings `Math.round` to integer (5 surfaces: AnalyticsPage:73,
+WeeklyReport:228, StatTiles:126, ExercisesView:352,
+StrengthTrendChart:22 — 8.5 renders as 9; fix-block candidate: shared
+reps formatter); RPE 8.5 CORRECT end-to-end; RIR 1.5 NOT SUPPORTED by
+design (clean 400 both write paths, never stored/truncated) —
+**recommendation for Fable/Seth: REJECT decimal RIR, don't widen the
+column** (half-steps already expressible via RPE 8.5; optional client
+integer gate to spare the flash-error UX). Factual correction: live
+reps input is `step="1"` (templates are the `0.01`). Audited per
+land-unit: lane 170/170 fresh, zero source edits, every spot-check
+confirmed (parse quote exact, 400 wiring at :822/:1037, Math.round
+grep exact, step attr read). Full report verbatim in
+`docs/tasks/mw5-decimal-values-audit-FINDINGS.md`. No smoke owed (no
+code in either unit). Below, the MW4 record from earlier this session. MW4 (per-side end-to-end audit,
 DIAGNOSIS, no code) audited per `land-unit`: lane 170/170 fresh, zero
 source edits, every spot-checked claim confirmed by direct read/grep/
 count. **Verdicts:** storage + manual L/R logging CORRECT (side
@@ -22,9 +39,7 @@ gitignored); it ends with **5 product-ruling questions for Seth/Fable**
 (pair = 1 or 2 sets? adherence? per-side e1RM footing? sessions-list
 count? last-logged side cue?) — rulings needed before any AMBIGUOUS
 surface gets a fix block; the two BROKEN fixes (detector broadening,
-heading pair count) are block-ready without rulings. No smoke owed
-(no code). MW5 (decimals audit, MODEL auto) dispatches next in this
-session per the relay loop.
+heading pair count) are block-ready without rulings.
 
 Previous entry (July 16, twenty-first session, Fable — **MW-WAVE
 (maintenance wave) SKELETON AUTHORED: 7 blocks on new branch
@@ -171,13 +186,17 @@ trusting it.
 ## Next up (the active task)
 
 00. **MW-WAVE DISPATCH — the active task.** 7 blocks authored July 16;
-   dispatch order + serialization matrix in QUEUE.md. **MW4 LANDED
-   `c005c2a` July 16** (findings + 5 product-ruling questions in
-   `docs/tasks/mw4-per-side-analytics-audit-FINDINGS.md` — Seth/Fable
-   rule before AMBIGUOUS-surface fix blocks; MW6 contract finalizes
-   against it). MW5 (MODEL auto) next; the opus-tier units (MW1/MW2/
-   MW3/MW7) wait for the 7/17 named-rung reset (or descend the ladder
-   deliberately). The nested-`<button>` follow-up is MW1.
+   dispatch order + serialization matrix in QUEUE.md. **Both diagnosis
+   units LANDED July 16: MW4 `c005c2a`, MW5 `87d6b37`** — findings docs
+   in `docs/tasks/*-FINDINGS.md`; rulings owed to Seth/Fable (MW4's 5
+   pair-semantics questions; MW5's reject-vs-widen RIR call). The
+   opus-tier units (MW1+MW2 batchable, then MW3, then MW7) wait for
+   the 7/17 named-rung reset (or descend the ladder deliberately).
+   MW6 stays DRAFT until Fable folds MW4's findings in. Fix-block
+   candidates surfaced by the audits, for Fable's next authoring pass:
+   per-side detector broadening + heading pair count (MW4, block-ready
+   without rulings); shared reps formatter for the 5 Math.round sites
+   (MW5). The nested-`<button>` follow-up is MW1.
 0a. **Seth's post-merge verification trio (NT-wave merge, still owed):**
    (1) prod deploy SHA == `c473e21` in Render AND Vercel Events (push is
    not proof of deploy); (2) RUNBOOK step 6 — repoint staging at
