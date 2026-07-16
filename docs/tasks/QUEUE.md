@@ -66,10 +66,13 @@ audit lands and its findings are folded into the contract.
   mw4-per-side-analytics-audit-FINDINGS.md (DELIVERY.md is gitignored);
   5 product-ruling questions for Seth/Fable recorded there - MW6's
   contract finalizes against it
-- QUEUED | mw5-decimal-values-audit.md | DIAGNOSIS, no code: decimal
+- DISPATCHED | mw5-decimal-values-audit.md | DIAGNOSIS, no code: decimal
   reps/RPE/RIR input->storage->analytics->display trace; rir is Int? in
   schema - pin the 1.5-RIR behavior exactly and recommend
-  reject-vs-widen | MODEL auto
+  reject-vs-widen | MODEL auto -> Channel B auto rung, dispatched July
+  16 after MW4's review landed (diagnosis blocks solo, never
+  back-to-back), lane branch cursor/mw5-decimal-values-audit off
+  9ebadda, Opus resident session
 - DRAFT | mw6-per-side-auto-first-pair.md | auto-create the first L/R
   pair when a committed name implies per-side and the exercise has zero
   sets; GATED on MW4's verdict - audit LANDED c005c2a July 16, findings
