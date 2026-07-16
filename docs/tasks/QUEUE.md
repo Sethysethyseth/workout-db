@@ -69,15 +69,28 @@ audit lands and its findings are folded into the contract.
   custom stamping for free. SMOKE (wave checklist): resolve a custom
   exercise in the sheet -> "Use that name" -> pill flips Tracked
   without rename side effect; issue-9 path now stamps structural id
-- DISPATCHED | mw3-reopen-completed-session.md | POST /sessions/:id/reopen +
-  two-step-confirm "Reopen workout" on the completed view: un-finish IS
-  the edit path (asks 10+11); completedAt-only flip, sessions:changed
-  gains type "reopened", resume hero reappears via local-apply |
-  MODEL opus -> DELIBERATE DESCENT to B auto rung (same Seth call),
-  dispatched July 16 after MW2 landed 859f3d3, lane branch
-  cursor/mw3-reopen-completed-session off 859f3d3, Opus resident
-  session; integration tests WRITTEN not run in lane - reviewer runs
-  them at land time
+- LANDED 9511e8f | mw3-reopen-completed-session.md | POST
+  /sessions/:id/reopen + two-step-confirm "Reopen workout" on the
+  completed view: un-finish IS the edit path (asks 10+11) | MODEL opus
+  -> DELIBERATE DESCENT to B auto rung (Seth's July 16 call); landed
+  same day, audited per land-unit: scope 6 of 7 allowed files
+  (index.css untouched - permitted "only if needed", affordance reuses
+  btn/row/stack), lanes fresh in lane (unit 170/170, build, check-hex
+  clean), handler verified by direct read (guard ladder 401 -> 400
+  bad-id -> findFirst{id,userId} 404 -> 400 not-completed; update
+  touches ONLY completedAt; include shape byte-identical to
+  completeSession), "reopened" local-apply branch string-compares ids,
+  confirm copy carries all three consequences (back to in-progress,
+  leaves history/analytics until re-finished, nothing lost),
+  integration RUN AT LAND TIME in main tree: lifecycle suite 11/11
+  green incl. all 3 new reopen tests (round trip with post-reopen set
+  write + re-complete, live 400, foreign 404). ONE DECLARED DEVIATION
+  accepted: confirm auto-dismiss 10s not the idiom's 5s (three-sentence
+  consequence copy needs reading time; commented at the effect).
+  SMOKE (wave checklist): complete a workout -> Reopen workout ->
+  confirm copy reads right -> live builder + finish dock take over in
+  place -> dashboard resume hero reappears -> finish again puts it
+  back in history/analytics
 - LANDED c005c2a | mw4-per-side-analytics-audit.md | DIAGNOSIS, no code:
   unilateral L/R end-to-end trace with per-surface verdicts | MODEL auto
   -> Channel B auto rung, dispatched + landed July 16 (Opus resident
@@ -127,11 +140,14 @@ audit lands and its findings are folded into the contract.
   before this flips QUEUED (key: detector must cover One-Arm names, not
   just \bsingle\b, and dodge the "single response" false positive) |
   MODEL opus
-- QUEUED | mw7-custom-exercise-library-view.md | third "Exercises" tab
-  in the Library page's yours-area: list custom exercises with
+- DISPATCHED | mw7-custom-exercise-library-view.md | third "Exercises"
+  tab in the Library page's yours-area: list custom exercises with
   Main/Assists summary, guarded delete with honest SET-NULL consequence
   copy, actionable empty state; client half only (L3 server routes
-  exist) | MODEL auto
+  exist) | MODEL auto -> Channel B auto rung, dispatched July 16 after
+  MW3 landed 9511e8f (index.css serialization respected - MW1/MW3
+  landed first), lane branch cursor/mw7-custom-exercise-library-view
+  off 9511e8f, Opus resident session
 
 Off-wave dev-tooling unit, authored July 15 (Fable, Seth's go-ahead after
 the build-path question). Rides `not-tracked-ux-wave` for landing (one
