@@ -11,6 +11,7 @@ const {
   updateSet,
   updateSession,
   completeSession,
+  reopenSession,
   deleteSession,
   deleteSet,
   deleteSessionExercise,
@@ -25,6 +26,7 @@ router.patch("/:id/exercises/:exerciseId", authRequired, updateSessionExercise);
 router.post("/:id/exercises", authRequired, addSessionExercise);
 router.get("/:id", authRequired, getSessionById);
 router.post("/:id/complete", authRequired, completeSession);
+router.post("/:id/reopen", authRequired, reopenSession);
 router.patch("/:id", authRequired, updateSession);
 router.delete("/:id", authRequired, deleteSession);
 router.post("/:id/sets", authRequired, createSetForSession);

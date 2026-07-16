@@ -1684,6 +1684,8 @@ export function SessionDetailPage() {
   const [scrollToExerciseId, setScrollToExerciseId] = useState(null);
   const [adjustingSetCountExerciseId, setAdjustingSetCountExerciseId] = useState(null);
   const [completeBusy, setCompleteBusy] = useState(false);
+  const [reopenBusy, setReopenBusy] = useState(false);
+  const [confirmReopen, setConfirmReopen] = useState(false);
   const [resolutionTick, setResolutionTick] = useState(0);
   const [addToLibrarySheet, setAddToLibrarySheet] = useState(null);
   const exerciseAnchorRefs = useRef(new Map());
@@ -2066,6 +2068,14 @@ export function SessionDetailPage() {
     });
   }, [scrollToExerciseId, session?.sessionExercises]);
 
+  // Same auto-dismiss idiom as the Remove-exercise confirm, but with a
+  // longer window - the reopen copy is three sentences, not three words.
+  useEffect(() => {
+    if (!confirmReopen || reopenBusy) return;
+    const t = setTimeout(() => setConfirmReopen(false), 10000);
+    return () => clearTimeout(t);
+  }, [confirmReopen, reopenBusy]);
+
   const pendingSetSavesRef = useRef(new Set());
   const setPatchChainsRef = useRef(new Map());
 
@@ -2112,6 +2122,22 @@ export function SessionDetailPage() {
       setError(err);
     } finally {
       setCompleteBusy(false);
+    }
+  }
+
+  async function onReopen() {
+    if (reopenBusy) return;
+    setError(null);
+    setReopenBusy(true);
+    try {
+      await sessionApi.reopenSession(sessionId);
+      setConfirmReopen(false);
+      // Refresh in place - the live builder UX and finish dock take over.
+      await load();
+    } catch (err) {
+      setError(err);
+    } finally {
+      setReopenBusy(false);
     }
   }
 
@@ -2829,6 +2855,47 @@ export function SessionDetailPage() {
               );
             })}
           </div>
+
+          {confirmReopen ? (
+            <div className="stack" style={{ gap: 8 }}>
+              <p className="muted small" style={{ margin: 0, fontWeight: 600 }}>
+                Reopen this workout? It goes back to in-progress so you can add sets and
+                exercises or fix anything. It leaves your history and analytics until you
+                finish it again, and nothing already logged is lost.
+              </p>
+              <div className="row" style={{ gap: 8 }}>
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => void onReopen()}
+                  disabled={reopenBusy}
+                  aria-busy={reopenBusy}
+                  style={{ padding: "6px 10px" }}
+                >
+                  {reopenBusy ? "Reopening…" : "Yes, reopen"}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setConfirmReopen(false)}
+                  disabled={reopenBusy}
+                  style={{ padding: "6px 10px" }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="row" style={{ justifyContent: "flex-start" }}>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => setConfirmReopen(true)}
+              >
+                Reopen workout
+              </button>
+            </div>
+          )}
         </div>
       )}
 

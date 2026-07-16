@@ -443,6 +443,124 @@ describe("WorkoutSet side field", () => {
   });
 });
 
+describe("Reopen a completed session", () => {
+  jest.setTimeout(30000);
+
+  test("complete -> reopen -> edit -> re-complete round trip", async () => {
+    const agent = request.agent(app);
+    await registerAndLogin(agent, {
+      email: "reopen-roundtrip@example.com",
+      password: "password123",
+    });
+
+    const created = await agent.post("/sessions").send({});
+    expect(created.status).toBe(201);
+    const sessionId = created.body.session.id;
+
+    const named = await agent.patch(`/sessions/${sessionId}`).send({ name: "Push day" });
+    expect(named.status).toBe(200);
+
+    const addEx = await agent.post(`/sessions/${sessionId}/exercises`).send({
+      exerciseName: "Overhead Press",
+    });
+    expect(addEx.status).toBe(201);
+    const sessionExerciseId = addEx.body.sessionExercise.id;
+
+    const firstSet = await agent.post(`/sessions/${sessionId}/sets`).send({
+      sessionExerciseId,
+      order: 1,
+      reps: 8,
+      weight: 60,
+    });
+    expect(firstSet.status).toBe(201);
+
+    const done = await agent.post(`/sessions/${sessionId}/complete`).send({});
+    expect(done.status).toBe(200);
+    expect(done.body.session.completedAt).toBeTruthy();
+    expect(done.body.session.name).toBe("Push day");
+
+    // Reopen: 200, completedAt cleared, name untouched
+    const reopened = await agent.post(`/sessions/${sessionId}/reopen`).send();
+    expect(reopened.status).toBe(200);
+    expect(reopened.body).toHaveProperty("session");
+    expect(reopened.body.session).toHaveProperty("id", sessionId);
+    expect(reopened.body.session.completedAt).toBeNull();
+    expect(reopened.body.session.name).toBe("Push day");
+
+    // A set-write on the reopened session succeeds again
+    const secondSet = await agent.post(`/sessions/${sessionId}/sets`).send({
+      sessionExerciseId,
+      order: 2,
+      reps: 6,
+      weight: 65,
+    });
+    expect(secondSet.status).toBe(201);
+    expect(secondSet.body.set).toHaveProperty("workoutSessionId", sessionId);
+
+    // Re-complete: 200 and completedAt set again
+    const redone = await agent.post(`/sessions/${sessionId}/complete`).send({});
+    expect(redone.status).toBe(200);
+    expect(redone.body.session.completedAt).toBeTruthy();
+    expect(redone.body.session.name).toBe("Push day");
+  });
+
+  test("reopen on a live session returns 400", async () => {
+    const agent = request.agent(app);
+    await registerAndLogin(agent, {
+      email: "reopen-live@example.com",
+      password: "password123",
+    });
+
+    const created = await agent.post("/sessions").send({});
+    expect(created.status).toBe(201);
+    const sessionId = created.body.session.id;
+
+    const res = await agent.post(`/sessions/${sessionId}/reopen`).send();
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual({
+      error: "Session is not completed",
+    });
+  });
+
+  test("reopen on another user's session returns 404", async () => {
+    const owner = request.agent(app);
+    const nonOwner = request.agent(app);
+
+    await registerAndLogin(owner, {
+      email: "reopen-owner@example.com",
+      password: "password123",
+    });
+    await registerAndLogin(nonOwner, {
+      email: "reopen-other@example.com",
+      password: "password123",
+    });
+
+    const created = await owner.post("/sessions").send({});
+    expect(created.status).toBe(201);
+    const sessionId = created.body.session.id;
+
+    const addEx = await owner.post(`/sessions/${sessionId}/exercises`).send({
+      exerciseName: "Row",
+    });
+    expect(addEx.status).toBe(201);
+    await owner.post(`/sessions/${sessionId}/sets`).send({
+      sessionExerciseId: addEx.body.sessionExercise.id,
+      order: 1,
+      reps: 10,
+      weight: 50,
+    });
+
+    const done = await owner.post(`/sessions/${sessionId}/complete`).send();
+    expect(done.status).toBe(200);
+
+    const res = await nonOwner.post(`/sessions/${sessionId}/reopen`).send();
+    expect(res.status).toBe(404);
+    expect(res.body).toEqual({
+      error: "Session not found",
+    });
+  });
+});
+
 describe("Session exercise id-only identity PATCH", () => {
   jest.setTimeout(30000);
 

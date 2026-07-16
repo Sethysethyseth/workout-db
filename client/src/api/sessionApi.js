@@ -3,7 +3,7 @@ import { http } from "./http.js";
 /**
  * Fired after a mutation that changes which session (if any) is active, so
  * ActiveSessionContext can update immediately instead of waiting for its
- * next poll. detail: { type: "completed" | "deleted", sessionId }.
+ * next poll. detail: { type: "completed" | "deleted" | "reopened", sessionId }.
  */
 export const SESSIONS_CHANGED_EVENT = "sessions:changed";
 
@@ -63,6 +63,12 @@ export async function completeSession(id, body = undefined) {
     ...(body !== undefined ? { body } : {}),
   });
   notifySessionsChanged({ type: "completed", sessionId: id });
+  return data;
+}
+
+export async function reopenSession(id) {
+  const data = await http(`/sessions/${id}/reopen`, { method: "POST" });
+  notifySessionsChanged({ type: "reopened", sessionId: id });
   return data;
 }
 

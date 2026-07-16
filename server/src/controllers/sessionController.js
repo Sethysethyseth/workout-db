@@ -1380,6 +1380,90 @@ async function completeSession(req, res, next) {
   }
 }
 
+async function reopenSession(req, res, next) {
+  try {
+    const userId = req.authUserId;
+
+    if (!userId) {
+      return res.status(401).json({
+        error: "Authentication required",
+      });
+    }
+
+    const sessionId = parsePositiveInt(req.params && req.params.id);
+
+    if (!sessionId) {
+      return res.status(400).json({
+        error: "Session id must be a positive integer",
+      });
+    }
+
+    const existingSession = await prisma.workoutSession.findFirst({
+      where: {
+        id: sessionId,
+        userId,
+      },
+      select: {
+        id: true,
+        completedAt: true,
+      },
+    });
+
+    if (!existingSession) {
+      return res.status(404).json({
+        error: "Session not found",
+      });
+    }
+
+    if (!existingSession.completedAt) {
+      return res.status(400).json({
+        error: "Session is not completed",
+      });
+    }
+
+    const session = await prisma.workoutSession.update({
+      where: {
+        id: sessionId,
+      },
+      data: {
+        completedAt: null,
+      },
+      include: {
+        workoutTemplate: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            isPublic: true,
+            userId: true,
+          },
+        },
+        sessionExercises: {
+          orderBy: {
+            order: "asc",
+          },
+        },
+        sets: {
+          orderBy: [
+            {
+              order: "asc",
+            },
+          ],
+          include: {
+            sessionExercise: true,
+          },
+        },
+      },
+    });
+
+    return res.status(200).json({
+      session,
+    });
+  } catch (err) {
+    return next(err);
+  }
+}
+
 async function deleteSession(req, res, next) {
   try {
     const userId = req.authUserId;
@@ -1594,6 +1678,7 @@ module.exports = {
   updateSet,
   updateSession,
   completeSession,
+  reopenSession,
   deleteSession,
   deleteSet,
   deleteSessionExercise,

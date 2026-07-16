@@ -66,6 +66,12 @@ export function ActiveSessionProvider({ children }) {
           );
         } else if (type === "deleted") {
           setSessions((prev) => prev.filter((s) => s && String(s.id) !== idKey));
+        } else if (type === "reopened") {
+          setSessions((prev) =>
+            prev.map((s) =>
+              s && String(s.id) === idKey && s.completedAt ? { ...s, completedAt: null } : s
+            )
+          );
         }
       }
       void refresh();
