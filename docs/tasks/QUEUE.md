@@ -29,11 +29,14 @@ blocks: dispatch solo anytime between reviews, never back-to-back with
 anything (every block writes DELIVERY.md). MW6 stays DRAFT until MW4's
 audit lands and its findings are folded into the contract.
 
-- QUEUED | mw1-heading-pill-unnest.md | lift the tracked pill out of the
-  live heading toggle so no button nests inside a button (the gate's
+- DISPATCHED | mw1-heading-pill-unnest.md | lift the tracked pill out of
+  the live heading toggle so no button nests inside a button (the gate's
   shipped-knowingly finding); visual order, sticky heading, and the
   slot-sizer layout-stability idiom preserved; re-check the pill's
-  stopPropagation once un-nested | MODEL opus
+  stopPropagation once un-nested | MODEL opus -> DELIBERATE LADDER
+  DESCENT to B auto rung (Seth's call July 16: don't wait for the 7/17
+  named reset, Opus audits compensate), lane branch
+  cursor/mw1-heading-pill-unnest off 627c520, Opus resident session
 - QUEUED | mw2-identity-stamp-contract.md | issues 8+9 in one unit:
   updateSessionExercise accepts id-only identity PATCH (guard :531 +
   un-nest :575, validation helpers unchanged), resolve rows gain
