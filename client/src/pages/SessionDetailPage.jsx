@@ -203,7 +203,15 @@ function nextSetOrder(session) {
 function exerciseNameImpliesPerSide(name) {
   const n = String(name ?? "").trim();
   if (!n || isBlankSessionExerciseName(n)) return false;
-  return /\bsingle\b/i.test(n);
+  // Catalog false positive: "Chest Push (single response)" is bilateral.
+  if (/\bsingle\s+response\b/i.test(n)) return false;
+  if (/\bunilateral\b/i.test(n)) return true;
+  // One-Arm / One Arm / One-Leg / One Leg / One-Legged
+  if (/\bone[\s-]*arm\b/i.test(n)) return true;
+  if (/\bone[\s-]*leg/i.test(n)) return true;
+  // Single-Arm / Single Leg / Single Dumbbell (not bare "single …")
+  if (/\bsingle[\s-]+(arm|leg|dumbbell)\b/i.test(n)) return true;
+  return false;
 }
 
 function anySetHasSide(sets) {
@@ -350,10 +358,22 @@ function sessionExerciseLastLoggedSummary(sets) {
     if (sessionSetHasCoreLogged(s)) {
       const w = String(s.weight ?? "").trim();
       const r = String(s.reps ?? "").trim();
+      if (s.side === "L" || s.side === "R") {
+        return `${s.side} ${w} × ${r}`;
+      }
       return `${w} × ${r}`;
     }
   }
   return null;
+}
+
+/** True when a live RIR draft is non-empty and not a whole number. */
+function isNonIntegerRirValue(v) {
+  const t = String(v ?? "").trim();
+  if (t === "") return false;
+  if (!/^-?\d+(\.\d+)?$/.test(t)) return true;
+  const n = Number(t);
+  return Number.isFinite(n) && !Number.isInteger(n);
 }
 
 /** Same field layout as `ExerciseEditor` (Create Workout); persists via session exercise API. */
@@ -785,6 +805,7 @@ const SessionSetRow = memo(function SessionSetRow({
           notes: set.notes ?? "",
         }
   );
+  const [rirGateHint, setRirGateHint] = useState(null);
   const draftRef = useRef(draft);
   const promotingRef = useRef(false);
   const lastSentKeyRef = useRef(null);
@@ -819,6 +840,7 @@ const SessionSetRow = memo(function SessionSetRow({
     setDraft(empty);
     draftRef.current = empty;
     lastSentKeyRef.current = null;
+    setRirGateHint(null);
   }, [isDraft, resumeVersion]);
 
   function payloadFromDraft(d) {
@@ -827,9 +849,25 @@ const SessionSetRow = memo(function SessionSetRow({
     payload.reps = d.reps === "" ? "" : Number(d.reps);
     payload.weight = d.weight === "" ? "" : Number(d.weight);
     payload.rpe = d.rpe === "" ? "" : Number(d.rpe);
-    payload.rir = d.rir === "" ? "" : Number(d.rir);
+    // Decimal RIR is rejected server-side; never send a non-integer.
+    if (d.rir === "" || isNonIntegerRirValue(d.rir)) {
+      payload.rir = "";
+    } else {
+      payload.rir = Number(d.rir);
+    }
     payload.notes = d.notes === "" ? "" : d.notes;
     return payload;
+  }
+
+  function onRirChange(e) {
+    const v = e.target.value;
+    // Allow empty or digits only — block decimals at the keystroke.
+    if (v === "" || /^\d*$/.test(v)) {
+      setRirGateHint(null);
+      setDraft((d) => ({ ...d, rir: v }));
+      return;
+    }
+    setRirGateHint("Whole numbers only — decimal RIR won't count.");
   }
 
   useEffect(() => {
@@ -865,6 +903,10 @@ const SessionSetRow = memo(function SessionSetRow({
     if (promotingRef.current) return;
     const cur = draftRef.current;
     if (sessionSetRowIsBlank(cur)) return;
+    if (isNonIntegerRirValue(cur.rir)) {
+      setRirGateHint("Whole numbers only — decimal RIR won't count.");
+      return;
+    }
     const k = payloadKey(promotionPayloadFromDraft(cur));
     if (k === lastSentKeyRef.current) return;
     promotingRef.current = true;
@@ -877,6 +919,10 @@ const SessionSetRow = memo(function SessionSetRow({
       // patch them on now.
       if (created && created.id != null && onUpdateSet) {
         const latest = draftRef.current;
+        if (isNonIntegerRirValue(latest.rir)) {
+          setRirGateHint("Whole numbers only — decimal RIR won't count.");
+          return;
+        }
         const latestKey = payloadKey(promotionPayloadFromDraft(latest));
         if (latestKey !== k) {
           lastSentKeyRef.current = latestKey;
@@ -899,6 +945,10 @@ const SessionSetRow = memo(function SessionSetRow({
 
   function flushNow() {
     if (isDraft || disabled) return;
+    if (isNonIntegerRirValue(draftRef.current.rir)) {
+      setRirGateHint("Whole numbers only — decimal RIR won't count.");
+      return;
+    }
     const latest = payloadFromDraft(draftRef.current);
     const k = payloadKey(latest);
     if (k === lastSentKeyRef.current) return;
@@ -934,6 +984,7 @@ const SessionSetRow = memo(function SessionSetRow({
     if (isDraft) {
       const cur = draftRef.current;
       if (sessionSetRowIsBlank(cur)) return;
+      if (isNonIntegerRirValue(cur.rir)) return;
       const k = payloadKey(promotionPayloadFromDraft(cur));
       if (k === lastSentKeyRef.current) return;
       const t = setTimeout(() => {
@@ -942,9 +993,11 @@ const SessionSetRow = memo(function SessionSetRow({
       return () => clearTimeout(t);
     }
     if (disabled) return;
+    if (isNonIntegerRirValue(draft.rir)) return;
     const latest = payloadFromDraft(draft);
     if (payloadKey(latest) === lastSentKeyRef.current) return;
     const t = setTimeout(() => {
+      if (isNonIntegerRirValue(draftRef.current.rir)) return;
       const cur = payloadFromDraft(draftRef.current);
       const k = payloadKey(cur);
       if (k === lastSentKeyRef.current) return;
@@ -1172,7 +1225,7 @@ const SessionSetRow = memo(function SessionSetRow({
                   <input
                     id={fieldIds.rir}
                     value={draft.rir}
-                    onChange={(e) => setDraft((d) => ({ ...d, rir: e.target.value }))}
+                    onChange={onRirChange}
                     onBlur={onFieldBlur}
                     onKeyDown={(e) => onEnterNext(e, "rir")}
                     enterKeyHint={useRPE || useSetNotes ? "next" : "done"}
@@ -1181,6 +1234,11 @@ const SessionSetRow = memo(function SessionSetRow({
                     placeholder="—"
                     title="Optional"
                   />
+                  {rirGateHint ? (
+                    <span className="muted small" style={{ display: "block", marginTop: 4 }}>
+                      {rirGateHint}
+                    </span>
+                  ) : null}
                 </label>
               ) : null}
               {useRPE ? (
@@ -1275,11 +1333,13 @@ function SessionExerciseBlock({
   const [draftTrackedStatus, setDraftTrackedStatus] = useState(null);
   const [perSideOverride, setPerSideOverride] = useState(null);
   const prevSetsLenRef = useRef(null);
+  const autoCreateBusyRef = useRef(false);
   const [confirmRemove, setConfirmRemove] = useState(false);
 
   useEffect(() => {
     setPerSideOverride(null);
     setDraftTrackedStatus(null);
+    autoCreateBusyRef.current = false;
   }, [se.id]);
 
   useEffect(() => {
@@ -1300,9 +1360,34 @@ function SessionExerciseBlock({
     return () => clearTimeout(t);
   }, [confirmRemove]);
 
-  const exerciseCommitted = isCompleted ? undefined : onExerciseCommitted;
   const rawName = se.exerciseName ?? "";
   const perSideMode = derivePerSideMode(perSideOverride, rawName, sets);
+
+  /** Live path only: one L/R pair via createSetPairForExercise when mode is on and sets are empty. */
+  const maybeAutoCreateFirstPair = useCallback(() => {
+    if (isCompleted) return;
+    if (sets.length > 0) return;
+    if (autoCreateBusyRef.current || setCountBusy) return;
+    autoCreateBusyRef.current = true;
+    Promise.resolve(onCreateSet(se.id, { perSide: true })).finally(() => {
+      autoCreateBusyRef.current = false;
+    });
+  }, [isCompleted, sets.length, setCountBusy, onCreateSet, se.id]);
+
+  const handleExerciseCommitted = useCallback(
+    (row) => {
+      onExerciseCommitted?.(row);
+      // Qualifying event (a): committed name change leaves derived mode true with zero sets.
+      // Draft keystrokes never reach here — only commitExercise / commitName.
+      if (sets.length > 0) return;
+      const nextMode = derivePerSideMode(perSideOverride, row?.exerciseName ?? "", sets);
+      if (!nextMode) return;
+      maybeAutoCreateFirstPair();
+    },
+    [onExerciseCommitted, sets, perSideOverride, maybeAutoCreateFirstPair]
+  );
+
+  const exerciseCommitted = isCompleted ? undefined : handleExerciseCommitted;
   const sortedSets = useMemo(
     () => [...sets].sort((a, b) => a.order - b.order),
     [sets]
@@ -1516,6 +1601,7 @@ function SessionExerciseBlock({
               {!isCompleted ? (
                 <>
                   <PlanningSetCountControl
+                    {...(perSideMode ? { label: "Pairs" } : {})}
                     value={pairCount}
                     disabled={setCountBusy}
                     onChange={(n) =>
@@ -1528,7 +1614,15 @@ function SessionExerciseBlock({
                     title="Log left/right sides separately"
                     aria-pressed={perSideMode}
                     onClick={() => {
-                      setPerSideOverride(perSideMode ? false : true);
+                      if (perSideMode) {
+                        setPerSideOverride(false);
+                        return;
+                      }
+                      // Qualifying event (b): manual L/R override toggled ON.
+                      setPerSideOverride(true);
+                      if (!isCompleted && sets.length === 0) {
+                        maybeAutoCreateFirstPair();
+                      }
                     }}
                   >
                     L/R

@@ -7,8 +7,10 @@ function maxSetCountOption(currentLen) {
 /**
  * Shared “Sets” count `<select>` for planning-style builders (block weeks, templates, live session).
  * Kept compact so it does not stretch across the full toolbar width on small screens.
+ * Optional `label` defaults to "Sets" so template/block builders stay zero-diff; live
+ * per-side mode passes "Pairs".
  */
-export function PlanningSetCountControl({ value, onChange, disabled = false }) {
+export function PlanningSetCountControl({ value, onChange, disabled = false, label = "Sets" }) {
   function handleChange(next) {
     const n = Number(next);
     if (!Number.isInteger(n) || n < 1) return;
@@ -20,11 +22,11 @@ export function PlanningSetCountControl({ value, onChange, disabled = false }) {
   return (
     <label className="exercise-editor-set-count-label">
       <span className="muted small" style={{ fontWeight: 600 }}>
-        Sets
+        {label}
       </span>
       <select
         className="exercise-editor-set-count-select"
-        aria-label="Number of sets"
+        aria-label={`Number of ${String(label).toLowerCase()}`}
         value={value}
         disabled={disabled}
         onChange={(e) => handleChange(Number(e.target.value))}
