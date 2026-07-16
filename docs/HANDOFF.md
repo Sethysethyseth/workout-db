@@ -1,6 +1,28 @@
 # HANDOFF — current state
 
-**Updated:** July 16, 2026, twenty-third session (Fable — **RULINGS
+**Updated:** July 16, 2026, twenty-fourth session (Opus resident —
+**MW-WAVE CODE-COMPLETE: MW6 `bfbbe56` + MW8 `52e84cf` dispatched and
+LANDED, all 8 units in**). Both went over Channel B in the lane
+worktree: MW6 (MODEL opus) on the auto rung as a DELIBERATE descent —
+Seth's dispatch instruction restated the standing "run on auto, Opus
+audits" call — MW8 (MODEL auto) on its own rung. Audits per
+`land-unit`, lanes fresh in the lane both times (unit 170/170, Vite
+build, check-hex), full diffs read. MW6: detector name table re-run
+independently by node eval (13/13), single pair-creation path +
+commit-vs-draft discipline + override-false-wins + completed-path
+triple-guard + no-respawn all verified by direct read; no deviations;
+one judged-accepted narrowing (bare `\bsingle\b` names like "Squat
+(single)" no longer auto-trigger — the name table is the contract,
+and `anySetHasSide` keeps existing sided data in per-side mode). MW8:
+formatter verified byte-for-byte the `formatEffortValue` body, eval
+re-run independently (8.5->"8.5", 8->"8", 10.25->"10.3"), null-reps
+ternaries untouched at all 5 sites; one reviewer trivia fix (stray
+blank line in StrengthTrendChart.jsx). Per-unit audit records in
+QUEUE.md. **Remaining: Seth smokes MW6+MW8 on staging (checklist in
+"Next up" 00 — MW1/2/3/7 already PASSED), then the pre-main gate
+(Fable + Seth) closes the wave.**
+
+Previous entry (July 16, twenty-third session, Fable — **RULINGS
 INTERPRETED + LAST TWO WAVE UNITS AUTHORED: MW6 finalized and QUEUED,
 MW8 (new) QUEUED**). Seth's MW4/MW5 answers (`docs/tasks/
 mw6-seth-rulings.md`) were brainstormed with him live and dispositioned
@@ -32,55 +54,14 @@ fully file-disjoint — batchable back-to-back for one review session;
 they are the wave's LAST code units, then Seth's smoke, then the
 pre-main gate.
 
-Previous entry (July 16, twenty-second session, Opus resident —
-**MW-WAVE DISPATCH RAN THE WHOLE QUEUE: 6 of 7 units dispatched +
-LANDED in ONE session** — MW4 `c005c2a`, MW5 `87d6b37`, MW1 `f9a6dfd`,
-MW2 `859f3d3`, MW3 `9511e8f`, MW7 `b6c885f`; only MW6 remains, DRAFT,
-gated on rulings + Fable). All six went over Channel B; the four
-opus-tier units ran on the AUTO rung as a **DELIBERATE ladder descent —
-Seth's call mid-session** ("run them on auto and you will review them
-as opus") instead of waiting for the 7/17 named-rung reset, with the
-Opus audit as the compensating control. Every audit ran per
-`land-unit`: lanes fresh in the lane each time (unit 170/170, Vite
-build, check-hex on UI units), full diffs read, claims spot-checked by
-direct read/grep, and the written-not-run integration tests RUN at
-land time in the main tree (MW2: 17/17 incl. the 5-row id-only PATCH
-matrix; MW3: 11/11 incl. the reopen round trip). Per-unit audit
-records + accepted deviations live in QUEUE.md. **Also this session:**
-wave-progress messaging (n/N at dispatch, n/N summary per landing,
-N/N complete) added to `dispatch-unit` 2b + `land-unit` 5 as Seth's
-standing ask (`627c520`); one transient OneDrive index.lock hiccup
-(self-cleared, no damage). **The diagnosis findings** (full reports in
-`docs/tasks/mw4-*-FINDINGS.md` / `mw5-*-FINDINGS.md`): MW4 — per-side
-storage CORRECT, engine side-blind; volume/counts/e1RM AMBIGUOUS (L+R
-pair = 2 full sets everywhere; 5 product-ruling questions for
-Seth/Fable); display BROKEN (heading "2 sets" vs toolbar 1 pair);
-detection BROKEN (regex misses all ~50 One-Arm names). MW5 — reps 8.5
-fine except 5 analytics surfaces Math.round it to 9 (fix-block
-candidate: shared reps formatter); RPE 8.5 correct end-to-end; RIR 1.5
-cleanly 400-rejected by design — recommendation: REJECT, don't widen. MW4 (per-side end-to-end audit,
-DIAGNOSIS, no code) audited per `land-unit`: lane 170/170 fresh, zero
-source edits, every spot-checked claim confirmed by direct read/grep/
-count. **Verdicts:** storage + manual L/R logging CORRECT (side
-persists; engine side-blind by construction — zero `side` refs in
-`server/src/analytics/`); volume / set counts / e1RM AMBIGUOUS (an L+R
-pair counts as 2 full sets on every counting surface; series bucketing
-does NOT double-count sessions; planned-vs-actual adherence reads 2.0
-on paired work); display BROKEN (heading `:1359` says "2 sets" while
-the per-side toolbar `:1318` says 1 pair); detection BROKEN (regex is
-exactly `\bsingle\b` — misses all ~50 One-Arm catalog names of 873,
-false-positives on "single response"). Overall: trustworthy WITH
-CAVEATS; **MW6 must not ship on the current detector** — its DRAFT
-note now points at the findings. Full report preserved verbatim in
-`docs/tasks/mw4-per-side-analytics-audit-FINDINGS.md` (DELIVERY.md is
-gitignored); it ends with **5 product-ruling questions for Seth/Fable**
-(pair = 1 or 2 sets? adherence? per-side e1RM footing? sessions-list
-count? last-logged side cue?) — rulings needed before any AMBIGUOUS
-surface gets a fix block; the two BROKEN fixes (detector broadening,
-heading pair count) are block-ready without rulings.
-
 Aged out this rewrite, moved verbatim to `docs/HANDOFF-ARCHIVE.md`
-(newest first): the July 16 **twenty-first** session (Fable — MW-wave
+(newest first): the July 16 **twenty-second** session (Opus resident —
+MW-wave dispatch ran the whole queue, 6 of 7 units dispatched + landed
+in one session; the deliberate auto-rung descent precedent, the
+wave-progress-messaging skill amendment `627c520`, and the MW4/MW5
+diagnosis verdicts live there verbatim — the still-live pieces are
+carried in QUEUE.md's per-unit records and the FINDINGS files). Before
+that: the July 16 **twenty-first** session (Fable — MW-wave
 skeleton authored, 7 blocks on new branch `maintenance-wave` off
 `5e3d981`; the scope settlements with Seth — item 12 = custom
 EXERCISES, un-finish IS the edit path, item 16 not authored — and the
@@ -140,13 +121,13 @@ trusting it.
 
 ## Repo / deploy state
 
-- **MW-wave ACTIVE on `maintenance-wave` (July 16)** — branched off
-  not-tracked-ux-wave HEAD `5e3d981` (= main `c473e21` + the CW arc, so
-  the CW dev tooling rides this wave's pre-main gate). 6 of 7 original
-  units LANDED (HEAD `b6c885f`). Staging repointed here and Seth's
-  consolidated smoke checklist (MW1/MW2/MW3/MW7) PASSED July 16.
-  MW6 (finalized) + MW8 (new, reps formatter) are QUEUED as the wave's
-  last two code units — file-disjoint, batchable.
+- **MW-wave CODE-COMPLETE on `maintenance-wave` (July 16)** — branched
+  off not-tracked-ux-wave HEAD `5e3d981` (= main `c473e21` + the CW arc,
+  so the CW dev tooling rides this wave's pre-main gate). ALL 8 units
+  LANDED (HEAD `52e84cf` on origin). Staging points here; Seth's
+  consolidated smoke checklist for MW1/MW2/MW3/MW7 PASSED July 16 —
+  the MW6+MW8 items are still owed (see "Next up" 00), then the
+  pre-main gate (Fable + Seth).
 - **NT-WAVE MERGED to `main` (`c473e21`), July 15** — NT1 `f4baee3` +
   NT2 `f26e783` + NTFIX1 `e0ba383` + NT3 `98963f6` + NTFIX2 `888e44d` +
   the relay v5/v5.1 docs are all fully contained in `main`, ff-only
@@ -200,9 +181,9 @@ trusting it.
 
 ## Next up (the active task)
 
-00. **MW-WAVE: 6 of 7 LANDED July 16 (one session).** Wave HEAD
-   `b6c885f` on origin. **SETH'S CONSOLIDATED SMOKE CHECKLIST — RUN
-   July 16, PASSED** (all four visual units — MW1, MW2, MW3, MW7 — on
+00. **MW-WAVE: ALL 8 UNITS LANDED July 16 (code-complete).** Wave HEAD
+   `52e84cf` on origin. **SETH'S CONSOLIDATED SMOKE CHECKLIST (first
+   four) — RUN July 16, PASSED** (all four visual units — MW1, MW2, MW3, MW7 — on
    the staging Vercel deploy):
    - MW1: live workout heading — order chevron/name/"· N sets"/pill/
      "· summary"; pill tap opens the Add-to-library sheet WITHOUT
@@ -218,20 +199,24 @@ trusting it.
      Main/Assists, delete confirm carries the honest SET-NULL copy and
      removes the row without reload, empty state names the pill path,
      community area unchanged, 3-up tablist reads right at 360px.
-   **Remaining wave work (amended July 16, twenty-third session —
-   rulings DONE, blocks DONE):** (1) dispatch MW6 + MW8 (QUEUED,
-   file-disjoint, batchable back-to-back; MW6 is MODEL opus — named
-   rung resets 7/17, or descend to B auto with the Opus audit per
-   Seth's standing precedent from the six-unit day); (2) land both;
-   (3) Seth smokes ONLY the new items on staging (the four landed
-   visual units already PASSED July 16): MW6 — commit "One-Arm
-   Dumbbell Row" on a zero-set live exercise -> one L/R pair appears,
-   stepper reads "Pairs", collapsed summary shows the side letter
-   ("Last R 60 × 10"), RIR 1.5 blocked or informed inline with no
-   error flash; MW8 — log 8.5 reps -> analytics top-set strings show
-   8.5, not 9; (4) the pre-main gate (Fable + Seth). The ruling-3
-   per-side comparison feature is NEXT wave — candidate registered in
-   QUEUE.md with the design sketch.
+   **Remaining wave work (amended July 16, twenty-fourth session —
+   MW6 `bfbbe56` + MW8 `52e84cf` LANDED, wave CODE-COMPLETE):**
+   (1) Seth smokes ONLY the new items on staging (the four earlier
+   visual units already PASSED July 16):
+   - MW6: commit "One-Arm Dumbbell Row" on a zero-set live exercise ->
+     exactly one L/R pair appears (L then R); stepper reads "Pairs"
+     while the heading still says "· 2 sets" (intended, ruling 1);
+     delete the pair -> it stays deleted; collapsed summary shows the
+     side letter ("Last R 60 × 10"); typing 1.5 in a live RIR field is
+     blocked with an inline whole-numbers hint (no error flash, no
+     reload); RPE 8.5 still saves.
+   - MW8: log 8.5 reps on a top set -> Top set tile, weekly report,
+     exercise-detail top-set list, and strength trend delta chip all
+     read "× 8.5", not "× 9"; integer reps still render bare (no
+     "8.0").
+   (2) the pre-main gate (Fable + Seth). The ruling-3 per-side
+   comparison feature is NEXT wave — candidate registered in QUEUE.md
+   with the design sketch.
 0a. **Seth's post-merge verification trio (NT-wave merge):** (1) STILL
    OWED — prod deploy SHA == `c473e21` in Render AND Vercel Events
    (push is not proof of deploy); (2) DONE July 16 — staging repointed

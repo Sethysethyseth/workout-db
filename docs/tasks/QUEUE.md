@@ -37,6 +37,12 @@ may dispatch back-to-back for one review session. These are the LAST
 two code units of the wave - after they land and Seth smokes, the
 pre-main gate (Fable) closes the wave.
 
+**WAVE CODE-COMPLETE July 16 (Opus resident session): all 8 units
+LANDED** (MW1 f9a6dfd, MW2 859f3d3, MW3 9511e8f, MW4 c005c2a, MW5
+87d6b37, MW6 bfbbe56, MW7 b6c885f, MW8 52e84cf). Remaining: Seth
+smokes MW6+MW8 on staging (MW1/2/3/7 already PASSED July 16), then
+the pre-main gate (Fable + Seth).
+
 - LANDED f9a6dfd | mw1-heading-pill-unnest.md | tracked pill lifted out
   of the live heading toggle - pill + summary are now SIBLINGS of the
   toggle in a shared .session-exercise-heading-lead wrapper (live and
@@ -141,23 +147,61 @@ pre-main gate (Fable) closes the wave.
   reps use step="1" (AMBIGUOUS, not broken). Fix-block candidate: the
   shared reps formatter to replace the 5 Math.round sites. Full report
   verbatim in mw5-decimal-values-audit-FINDINGS.md
-- QUEUED | mw6-per-side-auto-first-pair.md | per-side detection fix
-  (One-Arm/one-leg names covered, "single response" dodged, name table
-  in the block) + auto-create the first L/R pair on qualifying commit or
-  override-on with zero sets (delete respected, no re-trigger loop) +
-  stepper relabeled "Pairs" in per-side mode (PlanningSetCountControl
-  gains a default-"Sets" label prop) + collapsed-summary side cue +
-  decimal-RIR client input gate | MODEL opus; finalized July 16 by Fable
-  against MW4's findings + Seth's rulings (mw6-seth-rulings.md,
-  interpretation section) - rulings baked in, do not re-litigate:
-  pair = 2 sets, heading keeps raw row count, RIR stays rejected
-- QUEUED | mw8-reps-display-formatter.md | shared reps formatter
+- LANDED bfbbe56 | mw6-per-side-auto-first-pair.md | per-side detection
+  fix (One-Arm/one-leg names covered, "single response" dodged) +
+  auto-create the first L/R pair on qualifying commit or override-on
+  with zero sets (delete respected, no re-trigger loop) + stepper
+  relabeled "Pairs" in per-side mode (PlanningSetCountControl gains a
+  default-"Sets" label prop) + collapsed-summary side cue + decimal-RIR
+  client input gate | MODEL opus -> DELIBERATE DESCENT to Channel B auto
+  rung, dispatched + landed July 16 (Seth's standing "run on auto, Opus
+  audits" call); finalized July 16 by Fable against MW4's findings +
+  Seth's rulings (mw6-seth-rulings.md) - rulings baked in: pair = 2
+  sets, heading keeps raw row count, RIR stays rejected. Audited per
+  land-unit: scope exact (2 files; index.css untouched - permitted
+  "only if needed", RIR hint reuses muted/small), lanes fresh in lane
+  (unit 170/170, build, check-hex clean IN THE LANE), full diff read,
+  detector name table re-run INDEPENDENTLY by node eval with the real
+  isBlankSessionExerciseName (13/13), single creation path verified by
+  direct read (onCreateSet {perSide:true} -> onCreateSetForExercise
+  :2238 -> createSetPairForExercise :285, L then R), commit-vs-draft
+  discipline verified (onExerciseCommitted fires only from
+  commitExercise PATCH success :515), override-false-wins verified
+  (derivePerSideMode :221 returns early), completed path triple-guarded
+  (chip unrendered, exerciseCommitted undefined, isCompleted guard),
+  no-respawn verified (no effect watches empty sets; busyRef +
+  sets.length guards). No deviations declared, none found. ONE JUDGED
+  NOTE (accepted, not a deviation): detector narrows bare \bsingle\b -
+  names like "Squat (single)" no longer auto-trigger; the block made
+  the name table the contract and existing sided data keeps per-side
+  mode via anySetHasSide regardless of name. SMOKE (wave checklist):
+  commit "One-Arm Dumbbell Row" on a zero-set live exercise -> one L/R
+  pair appears (L then R), stepper reads "Pairs" while heading says
+  "2 sets", collapsed summary shows "Last R 60 x 10", typing 1.5 in RIR
+  is blocked with the inline whole-numbers hint (no error flash), RPE
+  8.5 still saves
+- LANDED 52e84cf | mw8-reps-display-formatter.md | shared reps formatter
   (client/src/lib/repsDisplay.js, formatEffortValue semantics) replaces
-  Math.round(reps) at the 5 analytics top-set sites (AnalyticsPage :73,
-  WeeklyReport :228, StatTiles :126, ExercisesView :352,
-  StrengthTrendChart :22) so 8.5 reps stops rendering as 9; null-reps
-  gating per site untouched | MODEL auto; authored July 16 from MW5's
-  fix-block candidate
+  Math.round(reps) at the 5 analytics top-set sites (AnalyticsPage,
+  WeeklyReport, StatTiles, ExercisesView, StrengthTrendChart) so 8.5
+  reps stops rendering as 9; null-reps gating per site untouched |
+  MODEL auto -> Channel B auto rung, dispatched + landed July 16 (Opus
+  resident session, after MW6 landed bfbbe56); authored July 16 from
+  MW5's fix-block candidate. Audited per land-unit: scope exact (6
+  files = FILES TO TOUCH incl. the one NEW lib file), lanes fresh in
+  lane (unit 170/170, build 129 modules), full diff read, formatter
+  verified byte-for-byte the formatEffortValue body (the block's
+  "mirror" ask taken literally), node eval re-run INDEPENDENTLY
+  (8.5->"8.5", 8->"8", 10.25->"10.3" one-decimal policy, stated in the
+  report), remaining Math.round in AnalyticsPage confirmed
+  adherence/effort-coverage percentages only (out of scope), single
+  definition + 5 imports verified by grep, null-reps ternaries
+  untouched at all 5 sites. No deviations. One reviewer trivia fix: a
+  stray blank line the swap left in StrengthTrendChart.jsx (build
+  re-run green after). SMOKE (wave checklist): log 8.5 reps on a top
+  set -> analytics Top set tile, weekly report, exercise detail
+  top-set list, and strength trend delta chip all read "x 8.5", not
+  "x 9"; integer reps still render bare (no "8.0")
 - LANDED b6c885f | mw7-custom-exercise-library-view.md | third
   "Custom exercises" tab in the Library yours-area: rows with
   Main/Assists summaries, confirm-guarded delete with honest SET-NULL

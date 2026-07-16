@@ -1,5 +1,52 @@
 # HANDOFF ARCHIVE — session-log history (append-only)
 
+Previous entry (July 16, twenty-second session, Opus resident —
+**MW-WAVE DISPATCH RAN THE WHOLE QUEUE: 6 of 7 units dispatched +
+LANDED in ONE session** — MW4 `c005c2a`, MW5 `87d6b37`, MW1 `f9a6dfd`,
+MW2 `859f3d3`, MW3 `9511e8f`, MW7 `b6c885f`; only MW6 remains, DRAFT,
+gated on rulings + Fable). All six went over Channel B; the four
+opus-tier units ran on the AUTO rung as a **DELIBERATE ladder descent —
+Seth's call mid-session** ("run them on auto and you will review them
+as opus") instead of waiting for the 7/17 named-rung reset, with the
+Opus audit as the compensating control. Every audit ran per
+`land-unit`: lanes fresh in the lane each time (unit 170/170, Vite
+build, check-hex on UI units), full diffs read, claims spot-checked by
+direct read/grep, and the written-not-run integration tests RUN at
+land time in the main tree (MW2: 17/17 incl. the 5-row id-only PATCH
+matrix; MW3: 11/11 incl. the reopen round trip). Per-unit audit
+records + accepted deviations live in QUEUE.md. **Also this session:**
+wave-progress messaging (n/N at dispatch, n/N summary per landing,
+N/N complete) added to `dispatch-unit` 2b + `land-unit` 5 as Seth's
+standing ask (`627c520`); one transient OneDrive index.lock hiccup
+(self-cleared, no damage). **The diagnosis findings** (full reports in
+`docs/tasks/mw4-*-FINDINGS.md` / `mw5-*-FINDINGS.md`): MW4 — per-side
+storage CORRECT, engine side-blind; volume/counts/e1RM AMBIGUOUS (L+R
+pair = 2 full sets everywhere; 5 product-ruling questions for
+Seth/Fable); display BROKEN (heading "2 sets" vs toolbar 1 pair);
+detection BROKEN (regex misses all ~50 One-Arm names). MW5 — reps 8.5
+fine except 5 analytics surfaces Math.round it to 9 (fix-block
+candidate: shared reps formatter); RPE 8.5 correct end-to-end; RIR 1.5
+cleanly 400-rejected by design — recommendation: REJECT, don't widen. MW4 (per-side end-to-end audit,
+DIAGNOSIS, no code) audited per `land-unit`: lane 170/170 fresh, zero
+source edits, every spot-checked claim confirmed by direct read/grep/
+count. **Verdicts:** storage + manual L/R logging CORRECT (side
+persists; engine side-blind by construction — zero `side` refs in
+`server/src/analytics/`); volume / set counts / e1RM AMBIGUOUS (an L+R
+pair counts as 2 full sets on every counting surface; series bucketing
+does NOT double-count sessions; planned-vs-actual adherence reads 2.0
+on paired work); display BROKEN (heading `:1359` says "2 sets" while
+the per-side toolbar `:1318` says 1 pair); detection BROKEN (regex is
+exactly `\bsingle\b` — misses all ~50 One-Arm catalog names of 873,
+false-positives on "single response"). Overall: trustworthy WITH
+CAVEATS; **MW6 must not ship on the current detector** — its DRAFT
+note now points at the findings. Full report preserved verbatim in
+`docs/tasks/mw4-per-side-analytics-audit-FINDINGS.md` (DELIVERY.md is
+gitignored); it ends with **5 product-ruling questions for Seth/Fable**
+(pair = 1 or 2 sets? adherence? per-side e1RM footing? sessions-list
+count? last-logged side cue?) — rulings needed before any AMBIGUOUS
+surface gets a fix block; the two BROKEN fixes (detector broadening,
+heading pair count) are block-ready without rulings.
+
 Previous entry (July 16, twenty-first session, Fable — **MW-WAVE
 (maintenance wave) SKELETON AUTHORED: 7 blocks on new branch
 `maintenance-wave`**, branched off not-tracked-ux-wave HEAD `5e3d981` =
