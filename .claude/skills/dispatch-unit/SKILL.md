@@ -92,6 +92,21 @@ per unit is the crash/hand-relay fallback, not the design.
   mode, pointed at the worktree; two-agents untracked-files check
   applies there before the commit).
 
+## 2b. Wave progress messaging (added July 16, Seth's standing ask)
+
+Applies on BOTH channels, fully compatible with autonomous mode - these
+are in-conversation messages, not extra stops:
+
+- **At dispatch:** tell Seth Cursor is now working, with the unit's
+  wave position - "Cursor is working on <unit> (n/N)". N = the wave's
+  total block count in QUEUE.md (DRAFT included); n = this unit's
+  position in landing order (units already landed + 1).
+- **At each landing** (after `land-unit` finishes): give a short
+  "n/N - <one-line result>" summary line.
+- **At the final landing** (n == N): mark it "N/N complete" and hand
+  over the consolidated wave smoke checklist per `land-unit`.
+- If N changes mid-wave (a block added/dropped), say so once and renumber.
+
 ## 3. The fallback ladder
 
 A named -> B named -> B auto -> STOP (page Seth). Descend on: missing

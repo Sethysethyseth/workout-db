@@ -94,6 +94,11 @@ green tests.
   smokes ONCE per wave against the consolidated checklist handed over at
   wave end, not after every unit. A hand-relayed or single-unit session
   still gives its list immediately.
+- Wave progress line (Seth's standing ask, July 16): end the landing
+  report with "n/N - <one-line result>" where N = the wave's total
+  block count in QUEUE.md and n = units landed so far; the final unit
+  says "N/N complete" instead. Matching dispatch-side convention in
+  `dispatch-unit` section 2b.
 - Relay loop: nothing left in flight and QUEUE.md has a QUEUED unit whose
   serialization notes allow it -> dispatch it via `dispatch-unit` IN THIS
   SAME SESSION (one resident session per wave is the norm - spec, "The
