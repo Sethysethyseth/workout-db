@@ -2989,7 +2989,8 @@ html[data-theme="dark"] .session-finish-dock {
 
 .session-exercise-heading-toggle {
   display: flex;
-  width: 100%;
+  flex: 0 1 auto;
+  max-width: 100%;
   margin: 0;
   align-items: flex-start;
   gap: 6px;
@@ -3015,6 +3016,20 @@ html[data-theme="dark"] .session-finish-dock {
 
 .session-exercise-heading-toggle-static {
   margin-bottom: 2px;
+}
+
+.session-exercise-heading-lead {
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  align-items: baseline;
+  min-width: 0;
+}
+
+.session-exercise-heading-lead > .session-exercise-heading-toggle {
+  /* Keep left/top/bottom pad for hit area; right pad would double the
+     slot's margin-left gap that used to sit inside the toggle. */
+  padding-right: 0;
 }
 
 .session-exercise-heading-chevron {

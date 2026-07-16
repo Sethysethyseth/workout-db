@@ -129,11 +129,7 @@ function ExerciseTrackedIndicator({ status, interactive = false, onOpenAddToLibr
       className="session-exercise-tracked-pill session-exercise-tracked-pill--unresolved session-exercise-tracked-pill--action"
       title="Not tracked - add to library?"
       aria-label="Not tracked - add to library?"
-      onClick={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        onOpenAddToLibrary?.();
-      }}
+      onClick={() => onOpenAddToLibrary?.()}
     >
       {unresolvedIcon}
       Not tracked - add?
@@ -1386,30 +1382,29 @@ function SessionExerciseBlock({
   const trackedPillInteractive =
     trackedStatus === "unresolved" && displayTrackedStatus === "unresolved";
 
-  const headingInner = (
-    <>
-      {collapsible && !isCompleted ? (
-        <span className="session-exercise-heading-chevron" aria-hidden="true">
-          {isCollapsed ? "▸" : "▾"}
-        </span>
-      ) : null}
-      <span className="session-exercise-heading-text">
-        <strong className="session-exercise-heading">{namePart}</strong>
-        <span className="session-exercise-heading-meta muted">
-          {" "}
-          · {setCountLabel}
-        </span>
-        <ExerciseTrackedIndicator
-          status={displayTrackedStatus}
-          interactive={trackedPillInteractive}
-          onOpenAddToLibrary={trackedPillInteractive ? onOpenAddToLibrary : undefined}
-        />
-        {summaryLine ? (
-          <span className="session-exercise-heading-summary muted small"> · {summaryLine}</span>
-        ) : null}
+  const headingNameAndSets = (
+    <span className="session-exercise-heading-text">
+      <strong className="session-exercise-heading">{namePart}</strong>
+      <span className="session-exercise-heading-meta muted">
+        {" "}
+        · {setCountLabel}
       </span>
-    </>
+    </span>
   );
+
+  const trackedIndicator = (
+    <ExerciseTrackedIndicator
+      status={displayTrackedStatus}
+      interactive={trackedPillInteractive}
+      onOpenAddToLibrary={trackedPillInteractive ? onOpenAddToLibrary : undefined}
+    />
+  );
+
+  const headingSummary = summaryLine ? (
+    <span className="session-exercise-heading-summary muted small"> · {summaryLine}</span>
+  ) : null;
+
+  const isLiveCollapsible = collapsible && !isCompleted;
 
   const removeControl =
     !isCompleted && onDeleteExercise ? (
@@ -1454,32 +1449,40 @@ function SessionExerciseBlock({
     <div className={blockClass}>
       <div
         className={
-          collapsible && !isCompleted
+          isLiveCollapsible
             ? "session-exercise-heading-sticky"
             : "session-exercise-heading-sticky session-exercise-heading-sticky--static"
         }
       >
-        {collapsible && !isCompleted ? (
-          <div className="row session-exercise-heading-row" style={{ justifyContent: "space-between" }}>
-            <button
-              type="button"
-              className="session-exercise-heading-toggle"
-              onClick={() => onToggleCollapsed?.()}
-              aria-expanded={expanded}
-            >
-              {headingInner}
-            </button>
-            {removeControl}
+        <div
+          className={
+            isLiveCollapsible
+              ? "row session-exercise-heading-row"
+              : "row session-exercise-heading-row session-exercise-heading-toggle-static"
+          }
+          style={{ justifyContent: "space-between" }}
+        >
+          <div className="session-exercise-heading-lead">
+            {isLiveCollapsible ? (
+              <button
+                type="button"
+                className="session-exercise-heading-toggle"
+                onClick={() => onToggleCollapsed?.()}
+                aria-expanded={expanded}
+              >
+                <span className="session-exercise-heading-chevron" aria-hidden="true">
+                  {isCollapsed ? "▸" : "▾"}
+                </span>
+                {headingNameAndSets}
+              </button>
+            ) : (
+              headingNameAndSets
+            )}
+            {trackedIndicator}
+            {headingSummary}
           </div>
-        ) : (
-          <div
-            className="row session-exercise-heading-row session-exercise-heading-toggle-static"
-            style={{ justifyContent: "space-between" }}
-          >
-            <div>{headingInner}</div>
-            {removeControl}
-          </div>
-        )}
+          {removeControl}
+        </div>
       </div>
 
       {expanded ? (
