@@ -1,26 +1,32 @@
 # HANDOFF — current state
 
 **Updated:** July 16, 2026, twenty-second session (Opus resident —
-**MW-WAVE DISPATCH BEGUN: both diagnosis units dispatched + LANDED same
-session — MW4 `c005c2a`, MW5 `87d6b37`**, Channel B auto rung per the
-economical order — named rung exhausted until the 7/17 reset; the
-opus-tier units MW1/MW2/MW3/MW7 are the NEXT session's dispatches, MW1+
-MW2 batchable back-to-back per the serialization matrix). **MW5
-(decimals audit) verdicts:** reps 8.5 trustworthy EXCEPT analytics
-top-set strings `Math.round` to integer (5 surfaces: AnalyticsPage:73,
-WeeklyReport:228, StatTiles:126, ExercisesView:352,
-StrengthTrendChart:22 — 8.5 renders as 9; fix-block candidate: shared
-reps formatter); RPE 8.5 CORRECT end-to-end; RIR 1.5 NOT SUPPORTED by
-design (clean 400 both write paths, never stored/truncated) —
-**recommendation for Fable/Seth: REJECT decimal RIR, don't widen the
-column** (half-steps already expressible via RPE 8.5; optional client
-integer gate to spare the flash-error UX). Factual correction: live
-reps input is `step="1"` (templates are the `0.01`). Audited per
-land-unit: lane 170/170 fresh, zero source edits, every spot-check
-confirmed (parse quote exact, 400 wiring at :822/:1037, Math.round
-grep exact, step attr read). Full report verbatim in
-`docs/tasks/mw5-decimal-values-audit-FINDINGS.md`. No smoke owed (no
-code in either unit). Below, the MW4 record from earlier this session. MW4 (per-side end-to-end audit,
+**MW-WAVE DISPATCH RAN THE WHOLE QUEUE: 6 of 7 units dispatched +
+LANDED in ONE session** — MW4 `c005c2a`, MW5 `87d6b37`, MW1 `f9a6dfd`,
+MW2 `859f3d3`, MW3 `9511e8f`, MW7 `b6c885f`; only MW6 remains, DRAFT,
+gated on rulings + Fable). All six went over Channel B; the four
+opus-tier units ran on the AUTO rung as a **DELIBERATE ladder descent —
+Seth's call mid-session** ("run them on auto and you will review them
+as opus") instead of waiting for the 7/17 named-rung reset, with the
+Opus audit as the compensating control. Every audit ran per
+`land-unit`: lanes fresh in the lane each time (unit 170/170, Vite
+build, check-hex on UI units), full diffs read, claims spot-checked by
+direct read/grep, and the written-not-run integration tests RUN at
+land time in the main tree (MW2: 17/17 incl. the 5-row id-only PATCH
+matrix; MW3: 11/11 incl. the reopen round trip). Per-unit audit
+records + accepted deviations live in QUEUE.md. **Also this session:**
+wave-progress messaging (n/N at dispatch, n/N summary per landing,
+N/N complete) added to `dispatch-unit` 2b + `land-unit` 5 as Seth's
+standing ask (`627c520`); one transient OneDrive index.lock hiccup
+(self-cleared, no damage). **The diagnosis findings** (full reports in
+`docs/tasks/mw4-*-FINDINGS.md` / `mw5-*-FINDINGS.md`): MW4 — per-side
+storage CORRECT, engine side-blind; volume/counts/e1RM AMBIGUOUS (L+R
+pair = 2 full sets everywhere; 5 product-ruling questions for
+Seth/Fable); display BROKEN (heading "2 sets" vs toolbar 1 pair);
+detection BROKEN (regex misses all ~50 One-Arm names). MW5 — reps 8.5
+fine except 5 analytics surfaces Math.round it to 9 (fix-block
+candidate: shared reps formatter); RPE 8.5 correct end-to-end; RIR 1.5
+cleanly 400-rejected by design — recommendation: REJECT, don't widen. MW4 (per-side end-to-end audit,
 DIAGNOSIS, no code) audited per `land-unit`: lane 170/170 fresh, zero
 source edits, every spot-checked claim confirmed by direct read/grep/
 count. **Verdicts:** storage + manual L/R logging CORRECT (side
@@ -185,18 +191,32 @@ trusting it.
 
 ## Next up (the active task)
 
-00. **MW-WAVE DISPATCH — the active task.** 7 blocks authored July 16;
-   dispatch order + serialization matrix in QUEUE.md. **Both diagnosis
-   units LANDED July 16: MW4 `c005c2a`, MW5 `87d6b37`** — findings docs
-   in `docs/tasks/*-FINDINGS.md`; rulings owed to Seth/Fable (MW4's 5
-   pair-semantics questions; MW5's reject-vs-widen RIR call). The
-   opus-tier units (MW1+MW2 batchable, then MW3, then MW7) wait for
-   the 7/17 named-rung reset (or descend the ladder deliberately).
-   MW6 stays DRAFT until Fable folds MW4's findings in. Fix-block
-   candidates surfaced by the audits, for Fable's next authoring pass:
-   per-side detector broadening + heading pair count (MW4, block-ready
-   without rulings); shared reps formatter for the 5 Math.round sites
-   (MW5). The nested-`<button>` follow-up is MW1.
+00. **MW-WAVE: 6 of 7 LANDED July 16 (one session).** Wave HEAD
+   `b6c885f` on origin. **SETH'S CONSOLIDATED SMOKE CHECKLIST** (once,
+   on the staging Vercel deploy, after the staging repoint in 0a —
+   4 palettes x 2 modes where visual, 360px):
+   - MW1: live workout heading — order chevron/name/"· N sets"/pill/
+     "· summary"; pill tap opens the Add-to-library sheet WITHOUT
+     toggling collapse; no layout shift when the pill flips
+     Tracked/Not-tracked; completed view heading unchanged.
+   - MW2: resolve a CUSTOM exercise in the sheet -> "Use that name" ->
+     pill flips Tracked with NO rename side effect (id-only stamp).
+   - MW3: finish a workout -> "Reopen workout" on the completed view ->
+     confirm copy reads right -> live builder + finish dock take over
+     in place -> dashboard resume hero reappears -> finish again and
+     it returns to history/analytics.
+   - MW7: Library -> "Custom exercises" tab — count + rows with
+     Main/Assists, delete confirm carries the honest SET-NULL copy and
+     removes the row without reload, empty state names the pill path,
+     community area unchanged, 3-up tablist reads right at 360px.
+   **Remaining wave work:** (1) Seth's rulings — MW4's 5 pair-semantics
+   questions + MW5's reject-vs-widen RIR call (findings docs in
+   docs/tasks/); (2) Fable finalizes MW6's contract against MW4's
+   findings (detector MUST cover One-Arm names, dodge "single
+   response") and authors the surfaced fix-block candidates (per-side
+   heading pair count; shared reps formatter for the 5 Math.round
+   sites — both block-ready without rulings); (3) the pre-main gate
+   (Fable + Seth) once MW6 resolves either way.
 0a. **Seth's post-merge verification trio (NT-wave merge, still owed):**
    (1) prod deploy SHA == `c473e21` in Render AND Vercel Events (push is
    not proof of deploy); (2) RUNBOOK step 6 — repoint staging at

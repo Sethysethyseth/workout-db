@@ -140,14 +140,28 @@ audit lands and its findings are folded into the contract.
   before this flips QUEUED (key: detector must cover One-Arm names, not
   just \bsingle\b, and dodge the "single response" false positive) |
   MODEL opus
-- DISPATCHED | mw7-custom-exercise-library-view.md | third "Exercises"
-  tab in the Library page's yours-area: list custom exercises with
-  Main/Assists summary, guarded delete with honest SET-NULL consequence
-  copy, actionable empty state; client half only (L3 server routes
-  exist) | MODEL auto -> Channel B auto rung, dispatched July 16 after
-  MW3 landed 9511e8f (index.css serialization respected - MW1/MW3
-  landed first), lane branch cursor/mw7-custom-exercise-library-view
-  off 9511e8f, Opus resident session
+- LANDED b6c885f | mw7-custom-exercise-library-view.md | third
+  "Custom exercises" tab in the Library yours-area: rows with
+  Main/Assists summaries, confirm-guarded delete with honest SET-NULL
+  consequence copy, actionable empty state naming the "Not tracked -
+  add?" pill; client half only | MODEL auto -> Channel B auto rung;
+  landed July 16, audited per land-unit: scope exact (3 files), lanes
+  fresh (unit 170/170, build, check-hex clean), claims verified by
+  direct read/grep (window.confirm IS the page's existing delete idiom
+  at :176/:201 so matching it satisfies the block; server really
+  returns { userExercises } with validated {muscle:
+  primary|secondary} designations; .programs-type-tablist has exactly
+  one consumer so the 1fr 1fr -> repeat(3,1fr) base-rule change is
+  sound, <=420px collapse untouched; community area zero-diff). FOUR
+  DECLARED DEVIATIONS, all accepted: tab titled "Custom exercises"
+  (matches Saved-workouts/Saved-blocks idiom), visibility filter
+  hidden on the exercises tab (no public/private axis - dead UI
+  otherwise), template empty-state cards gated tab!=="exercises"
+  (no-op on template tabs), compact card presentation (block left it
+  open). SMOKE (wave checklist): Library -> Custom exercises tab shows
+  count + rows, delete confirms with the honest copy and removes the
+  row without reload, empty state actionable, community area
+  unchanged, 3-up tablist reads right at 360px
 
 Off-wave dev-tooling unit, authored July 15 (Fable, Seth's go-ahead after
 the build-path question). Rides `not-tracked-ux-wave` for landing (one
