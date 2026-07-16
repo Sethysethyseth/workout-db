@@ -29,19 +29,31 @@ blocks: dispatch solo anytime between reviews, never back-to-back with
 anything (every block writes DELIVERY.md). MW6 stays DRAFT until MW4's
 audit lands and its findings are folded into the contract.
 
-- DISPATCHED | mw1-heading-pill-unnest.md | lift the tracked pill out of
-  the live heading toggle so no button nests inside a button (the gate's
-  shipped-knowingly finding); visual order, sticky heading, and the
-  slot-sizer layout-stability idiom preserved; re-check the pill's
-  stopPropagation once un-nested | MODEL opus -> DELIBERATE LADDER
-  DESCENT to B auto rung (Seth's call July 16: don't wait for the 7/17
-  named reset, Opus audits compensate), lane branch
-  cursor/mw1-heading-pill-unnest off 627c520, Opus resident session
-- QUEUED | mw2-identity-stamp-contract.md | issues 8+9 in one unit:
+- LANDED f9a6dfd | mw1-heading-pill-unnest.md | tracked pill lifted out
+  of the live heading toggle - pill + summary are now SIBLINGS of the
+  toggle in a shared .session-exercise-heading-lead wrapper (live and
+  completed branches unified, the block's optional invite taken) |
+  MODEL opus -> DELIBERATE DESCENT to B auto rung (Seth's July 16 call,
+  Opus audit compensates); landed same day, audited per land-unit:
+  lanes fresh (unit 170/170, Vite build, check-hex clean), full diff
+  read, un-nest verified in the JSX tree (toggle children = chevron +
+  name/sets only), slot-sizer idiom untouched (slot margin-left 8px
+  supplies the gap, toggle padding-right zeroed to avoid doubling -
+  commented), stopPropagation/preventDefault removal verified SAFE by
+  direct read (pill is type=button, no ancestor click handler remains),
+  CSS additions layout-only. No deviations. SMOKE (wave checklist):
+  live heading at 360px with a long name - order chevron/name/sets/
+  pill/summary, pill tap opens sheet without toggling collapse,
+  no layout shift when pill flips Tracked/Not-tracked, completed
+  view unchanged
+- DISPATCHED | mw2-identity-stamp-contract.md | issues 8+9 in one unit:
   updateSessionExercise accepts id-only identity PATCH (guard :531 +
   un-nest :575, validation helpers unchanged), resolve rows gain
   userExerciseId for custom exercises, "Use that name" stamps it |
-  MODEL opus; integration tests WRITTEN not run in lane - reviewer runs
+  MODEL opus -> DELIBERATE DESCENT to B auto rung (same Seth call),
+  dispatched July 16 after MW1 landed f9a6dfd, lane branch
+  cursor/mw2-identity-stamp-contract off f9a6dfd, Opus resident
+  session; integration tests WRITTEN not run in lane - reviewer runs
   them in the main tree at land time
 - QUEUED | mw3-reopen-completed-session.md | POST /sessions/:id/reopen +
   two-step-confirm "Reopen workout" on the completed view: un-finish IS
