@@ -1,6 +1,40 @@
 # HANDOFF — current state
 
-**Updated:** July 16, 2026, twenty-fourth session (Opus resident —
+**Updated:** July 17, 2026, twenty-fifth session (Fable — **PRE-MAIN
+GATE CODE REVIEW PASSED, wave clean, merge-ready pending Seth**).
+Reviewed the full accumulated diff `c473e21..a5294e3` (34 commits:
+MW1-MW8 + the CW dev-tooling arc + one post-wave direct fix) against
+the blocks, QUEUE's per-unit audit records, and the archived session
+logs per the gate ritual. Lanes re-run fresh AT THE GATE: unit 170/170
+(14 suites), Vite build green, check-hex clean. Verified by direct
+diff read: MW2's guard/identity un-nesting matches the July 16 ruling
+exactly (`:531` guard counts `identityParse.provided`, identity arm
+wins over name-derivation when both arrive — so the NTFIX2 client's
+name+id PATCH is id-authoritative), MW3's reopen ladder is
+ownership-correct (userId in the findFirst) with a completedAt-only
+flip and completeSession's include shape, MW1's un-nest is
+structurally sound (pill/summary are SIBLINGS of the toggle, the
+stopPropagation removal is safe because no ancestor handler remains),
+MW6's detector table + auto-pair guards (busyRef, sets.length,
+setCountBusy, commit-vs-draft, override-false-wins) all hold and the
+RIR keystroke gate makes the flush-path integer guards
+belt-and-suspenders, MW7/MW8 are surgical, watcher script confirmed
+NEVER imported by client or server (dev tooling stays out of runtime).
+**`a5294e3` recorded:** an off-flow July 16 evening direct fix (ONE
+confirm when deleting a filled L/R pair, no confirm on a blank pair,
+singles keep the per-set confirm) — committed outside land-unit during
+what was evidently Seth's MW6 smoke; now gate-reviewed directly,
+clean, on origin. NO fix blocks needed, nothing bounced, no Cursor
+busywork identified. **Remaining before merge: (1) Seth CONFIRMS the
+MW6+MW8 smoke checklist ("Next up" 00) — including a re-check of the
+pair-delete confirm on the `a5294e3` build; (2) the "push to main"
+trigger phrase, then the RUNBOOK merge ritual one command at a time.**
+Flagged, not blocking: `docs/specs/cursor-token-savings-{stats.md,
+data.json}` and `docs/parked/*` sit UNTRACKED since ~July 11-13
+(side-project artifacts for the poor-man's-agentic-workflow repo) —
+Seth to rule whether they belong in this repo's history or move out.
+
+Previous entry (July 16, twenty-fourth session, Opus resident —
 **MW-WAVE CODE-COMPLETE: MW6 `bfbbe56` + MW8 `52e84cf` dispatched and
 LANDED, all 8 units in**). Both went over Channel B in the lane
 worktree: MW6 (MODEL opus) on the auto rung as a DELIBERATE descent —
@@ -22,40 +56,14 @@ QUEUE.md. **Remaining: Seth smokes MW6+MW8 on staging (checklist in
 "Next up" 00 — MW1/2/3/7 already PASSED), then the pre-main gate
 (Fable + Seth) closes the wave.**
 
-Previous entry (July 16, twenty-third session, Fable — **RULINGS
-INTERPRETED + LAST TWO WAVE UNITS AUTHORED: MW6 finalized and QUEUED,
-MW8 (new) QUEUED**). Seth's MW4/MW5 answers (`docs/tasks/
-mw6-seth-rulings.md`) were brainstormed with him live and dispositioned
-— the interpretation section appended to that file is the durable
-record. The short version: (1) pair = 2 sets RATIFIED, zero engine
-code, heading's raw row count is CORRECT and stays; (2) adherence
-pairs/planned DEFERRED into the ruling-3 unit (same side-plumbing);
-(3) ruling 3 is a NEW FEATURE — per-side L/R comparison analytics
-(side into enrichSet, exerciseDetail splits, Exercises-tab comparison
-UI) — Seth confirmed: own unit, NEXT wave, registered as a QUEUE.md
-candidate with the design sketch, needs a Fable design pass; (4)
-sessions-list "Sets: N" keeps raw rows, zero code; (5) collapsed
-summary gains a side letter, folded into MW6. Display vocabulary (Seth
-chose from previews): the stepper alone speaks "Pairs" in per-side
-mode; everything that COUNTS says sets. MW5's REJECT-decimal-RIR stands
-ratified plus Seth's rider ("make it impossible or inform the user") —
-a client-side RIR input gate folded into MW6. **MW6 as QUEUED now
-carries:** detector broadening with a machine-checkable name table
-(One-Arm/one-leg names TRUE, "single response" FALSE), the
-auto-first-pair trigger (committed-name discipline, override-on
-trigger ruled IN, delete respected/no re-trigger, derived-MODE keying
-so override=false wins), the Pairs stepper relabel via a new default-
-"Sets" label prop on PlanningSetCountControl (template/block builders
-zero-diff), the summary side cue, and the RIR gate. **MW8 (MODEL
-auto):** shared reps formatter (`client/src/lib/repsDisplay.js`)
-replacing Math.round at the 5 analytics top-set sites so 8.5 stops
-rendering as 9; null-reps gating per site untouched. MW6 + MW8 are
-fully file-disjoint — batchable back-to-back for one review session;
-they are the wave's LAST code units, then Seth's smoke, then the
-pre-main gate.
-
 Aged out this rewrite, moved verbatim to `docs/HANDOFF-ARCHIVE.md`
-(newest first): the July 16 **twenty-second** session (Opus resident —
+(newest first): the July 16 **twenty-third** session (Fable — rulings
+interpreted + MW6 finalized/QUEUED + MW8 authored; the five ruling
+dispositions, the "stepper alone speaks Pairs" vocabulary choice, and
+the RIR-gate rider live there verbatim — the still-live pieces are
+baked into the landed MW6/MW8 QUEUE records and
+`mw6-seth-rulings.md`'s interpretation section). Before that: the
+July 16 **twenty-second** session (Opus resident —
 MW-wave dispatch ran the whole queue, 6 of 7 units dispatched + landed
 in one session; the deliberate auto-rung descent precedent, the
 wave-progress-messaging skill amendment `627c520`, and the MW4/MW5
@@ -121,13 +129,14 @@ trusting it.
 
 ## Repo / deploy state
 
-- **MW-wave CODE-COMPLETE on `maintenance-wave` (July 16)** — branched
+- **MW-wave GATE-REVIEWED on `maintenance-wave` (July 17)** — branched
   off not-tracked-ux-wave HEAD `5e3d981` (= main `c473e21` + the CW arc,
-  so the CW dev tooling rides this wave's pre-main gate). ALL 8 units
-  LANDED (HEAD `52e84cf` on origin). Staging points here; Seth's
-  consolidated smoke checklist for MW1/MW2/MW3/MW7 PASSED July 16 —
-  the MW6+MW8 items are still owed (see "Next up" 00), then the
-  pre-main gate (Fable + Seth).
+  which was reviewed inside this gate). ALL 8 units LANDED + the
+  `a5294e3` pair-delete-confirm fix (HEAD `a5294e3` on origin). The
+  pre-main Fable code review PASSED July 17 (top entry). Staging points
+  here; Seth's consolidated smoke for MW1/MW2/MW3/MW7 PASSED July 16 —
+  MW6+MW8 smoke confirmation owed (see "Next up" 00), then "push to
+  main".
 - **NT-WAVE MERGED to `main` (`c473e21`), July 15** — NT1 `f4baee3` +
   NT2 `f26e783` + NTFIX1 `e0ba383` + NT3 `98963f6` + NTFIX2 `888e44d` +
   the relay v5/v5.1 docs are all fully contained in `main`, ff-only
@@ -199,10 +208,15 @@ trusting it.
      Main/Assists, delete confirm carries the honest SET-NULL copy and
      removes the row without reload, empty state names the pill path,
      community area unchanged, 3-up tablist reads right at 360px.
-   **Remaining wave work (amended July 16, twenty-fourth session —
-   MW6 `bfbbe56` + MW8 `52e84cf` LANDED, wave CODE-COMPLETE):**
-   (1) Seth smokes ONLY the new items on staging (the four earlier
-   visual units already PASSED July 16):
+   **Remaining wave work (amended July 17, twenty-fifth session —
+   PRE-MAIN GATE CODE REVIEW PASSED, no fix blocks, wave HEAD now
+   `a5294e3` on origin):**
+   (1) Seth CONFIRMS the MW6+MW8 smoke on staging (the four earlier
+   visual units already PASSED July 16; the July 16 evening
+   `a5294e3` fix implies the MW6 smoke ran and caught the
+   triple-confirm — the full checklist result was never recorded, so
+   confirm it, and re-check the pair-delete: ONE confirm on a filled
+   pair, none on a blank pair):
    - MW6: commit "One-Arm Dumbbell Row" on a zero-set live exercise ->
      exactly one L/R pair appears (L then R); stepper reads "Pairs"
      while the heading still says "· 2 sets" (intended, ruling 1);
@@ -214,9 +228,11 @@ trusting it.
      exercise-detail top-set list, and strength trend delta chip all
      read "× 8.5", not "× 9"; integer reps still render bare (no
      "8.0").
-   (2) the pre-main gate (Fable + Seth). The ruling-3 per-side
-   comparison feature is NEXT wave — candidate registered in QUEUE.md
-   with the design sketch.
+   (2) Seth says "push to main" verbatim, then the RUNBOOK merge
+   ritual runs one command at a time (Fable's code review half of the
+   gate is DONE July 17 — clean, results in the top entry). The
+   ruling-3 per-side comparison feature is NEXT wave — candidate
+   registered in QUEUE.md with the design sketch.
 0a. **Seth's post-merge verification trio (NT-wave merge):** (1) STILL
    OWED — prod deploy SHA == `c473e21` in Render AND Vercel Events
    (push is not proof of deploy); (2) DONE July 16 — staging repointed

@@ -43,6 +43,28 @@ LANDED** (MW1 f9a6dfd, MW2 859f3d3, MW3 9511e8f, MW4 c005c2a, MW5
 smokes MW6+MW8 on staging (MW1/2/3/7 already PASSED July 16), then
 the pre-main gate (Fable + Seth).
 
+**PRE-MAIN GATE CODE REVIEW PASSED July 17 (Fable, twenty-fifth
+session).** Full accumulated diff `c473e21..a5294e3` (34 commits,
+MW1-MW8 + CW arc + one off-flow fix) reviewed against the blocks, the
+per-unit records above, and the archived session logs; lanes re-run
+fresh at the gate (unit 170/170 in 14 suites, Vite build green,
+check-hex clean); server contract, detector/auto-pair guards, and all
+5 formatter swaps verified by direct diff read; cursor-watch.mjs
+confirmed never imported by client or server. NO fix blocks, nothing
+bounced. Merge waits on Seth's MW6+MW8 smoke confirmation + the
+"push to main" trigger.
+
+- LANDED a5294e3 | (NO BLOCK FILE - off-flow direct fix, July 16
+  evening Fable session) | single confirm when deleting a FILLED
+  per-side L/R pair (was three dialogs: one pair-level + one per set),
+  no confirm at all on a blank pair, single-set deletes keep the
+  per-set confirm; mechanism: onDeleteSet gains { skipConfirm } and
+  handleDeleteSet's pair branch passes it after its own pair-level
+  window.confirm | 1 file (SessionDetailPage.jsx, 3 lines). Committed
+  outside land-unit during what was evidently Seth's MW6 smoke and
+  left unrecorded in QUEUE/HANDOFF until the July 17 gate; reviewed
+  DIRECTLY at the gate (diff read, lanes fresh) - clean, on origin
+
 - LANDED f9a6dfd | mw1-heading-pill-unnest.md | tracked pill lifted out
   of the live heading toggle - pill + summary are now SIBLINGS of the
   toggle in a shared .session-exercise-heading-lead wrapper (live and

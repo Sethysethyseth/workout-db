@@ -1,5 +1,37 @@
 # HANDOFF ARCHIVE — session-log history (append-only)
 
+Previous entry (July 16, twenty-third session, Fable — **RULINGS
+INTERPRETED + LAST TWO WAVE UNITS AUTHORED: MW6 finalized and QUEUED,
+MW8 (new) QUEUED**). Seth's MW4/MW5 answers (`docs/tasks/
+mw6-seth-rulings.md`) were brainstormed with him live and dispositioned
+— the interpretation section appended to that file is the durable
+record. The short version: (1) pair = 2 sets RATIFIED, zero engine
+code, heading's raw row count is CORRECT and stays; (2) adherence
+pairs/planned DEFERRED into the ruling-3 unit (same side-plumbing);
+(3) ruling 3 is a NEW FEATURE — per-side L/R comparison analytics
+(side into enrichSet, exerciseDetail splits, Exercises-tab comparison
+UI) — Seth confirmed: own unit, NEXT wave, registered as a QUEUE.md
+candidate with the design sketch, needs a Fable design pass; (4)
+sessions-list "Sets: N" keeps raw rows, zero code; (5) collapsed
+summary gains a side letter, folded into MW6. Display vocabulary (Seth
+chose from previews): the stepper alone speaks "Pairs" in per-side
+mode; everything that COUNTS says sets. MW5's REJECT-decimal-RIR stands
+ratified plus Seth's rider ("make it impossible or inform the user") —
+a client-side RIR input gate folded into MW6. **MW6 as QUEUED now
+carries:** detector broadening with a machine-checkable name table
+(One-Arm/one-leg names TRUE, "single response" FALSE), the
+auto-first-pair trigger (committed-name discipline, override-on
+trigger ruled IN, delete respected/no re-trigger, derived-MODE keying
+so override=false wins), the Pairs stepper relabel via a new default-
+"Sets" label prop on PlanningSetCountControl (template/block builders
+zero-diff), the summary side cue, and the RIR gate. **MW8 (MODEL
+auto):** shared reps formatter (`client/src/lib/repsDisplay.js`)
+replacing Math.round at the 5 analytics top-set sites so 8.5 stops
+rendering as 9; null-reps gating per site untouched. MW6 + MW8 are
+fully file-disjoint — batchable back-to-back for one review session;
+they are the wave's LAST code units, then Seth's smoke, then the
+pre-main gate.
+
 Previous entry (July 16, twenty-second session, Opus resident —
 **MW-WAVE DISPATCH RAN THE WHOLE QUEUE: 6 of 7 units dispatched +
 LANDED in ONE session** — MW4 `c005c2a`, MW5 `87d6b37`, MW1 `f9a6dfd`,
