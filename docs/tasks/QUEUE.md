@@ -51,8 +51,12 @@ fresh at the gate (unit 170/170 in 14 suites, Vite build green,
 check-hex clean); server contract, detector/auto-pair guards, and all
 5 formatter swaps verified by direct diff read; cursor-watch.mjs
 confirmed never imported by client or server. NO fix blocks, nothing
-bounced. Merge waits on Seth's MW6+MW8 smoke confirmation + the
-"push to main" trigger.
+bounced. **Same session: Seth confirmed the MW6+MW8 smoke PASSED and
+triggered the merge — MW-WAVE MERGED TO MAIN `3b325db` July 17**
+(ff-only `c473e21..3b325db`, 35 commits, scratch-worktree ritual,
+origin/main HEAD verified). All entries below are in `main`; they
+stay for history. `maintenance-wave` becomes a deletion candidate
+(gated) once Seth repoints staging Render to `main`.
 
 - LANDED a5294e3 | (NO BLOCK FILE - off-flow direct fix, July 16
   evening Fable session) | single confirm when deleting a FILLED

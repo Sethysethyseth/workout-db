@@ -1,7 +1,23 @@
 # HANDOFF — current state
 
 **Updated:** July 17, 2026, twenty-fifth session (Fable — **PRE-MAIN
-GATE CODE REVIEW PASSED, wave clean, merge-ready pending Seth**).
+GATE PASSED + MW-WAVE MERGED TO MAIN `3b325db`**). Seth confirmed the
+MW6+MW8 smoke PASSED and gave the trigger phrase; merge ran per the
+RUNBOOK ritual one command at a time in a scratch worktree
+(`C:\dev\worktrees\merge-main`, per the OneDrive lesson): ff-only
+`c473e21..3b325db`, 35 commits, no merge commit, `origin/main` HEAD
+verified `3b325db` post-push, worktree removed. NO migration —
+code-only deploy. Prod Vercel/Render track `main`, so `3b325db` is
+deploying — **Seth's post-merge steps: repoint staging Render back to
+`main`, verify deploy SHA `3b325db` in Render AND Vercel Events, prod
+smoke** (this folds the still-owed NT-wave prod checks forward: the
+What's New modal fires only on prod). `maintenance-wave` is now fully
+contained in `main` — a deletion candidate (gated) once staging is
+repointed. The wave that just shipped, for the record below: MW1-MW8 +
+the CW dev-tooling arc + `a5294e3`. Gate details in the review record
+that follows.
+
+Gate record (same session, pre-merge):
 Reviewed the full accumulated diff `c473e21..a5294e3` (34 commits:
 MW1-MW8 + the CW dev-tooling arc + one post-wave direct fix) against
 the blocks, QUEUE's per-unit audit records, and the archived session
@@ -25,10 +41,9 @@ confirm when deleting a filled L/R pair, no confirm on a blank pair,
 singles keep the per-set confirm) — committed outside land-unit during
 what was evidently Seth's MW6 smoke; now gate-reviewed directly,
 clean, on origin. NO fix blocks needed, nothing bounced, no Cursor
-busywork identified. **Remaining before merge: (1) Seth CONFIRMS the
-MW6+MW8 smoke checklist ("Next up" 00) — including a re-check of the
-pair-delete confirm on the `a5294e3` build; (2) the "push to main"
-trigger phrase, then the RUNBOOK merge ritual one command at a time.**
+busywork identified. (Both pre-merge conditions were then met same
+session: Seth confirmed the MW6+MW8 smoke PASSED and said "push to
+main" — see the merge record above.)
 Flagged, not blocking: `docs/specs/cursor-token-savings-{stats.md,
 data.json}` and `docs/parked/*` sit UNTRACKED since ~July 11-13
 (side-project artifacts for the poor-man's-agentic-workflow repo) —
@@ -129,14 +144,14 @@ trusting it.
 
 ## Repo / deploy state
 
-- **MW-wave GATE-REVIEWED on `maintenance-wave` (July 17)** — branched
-  off not-tracked-ux-wave HEAD `5e3d981` (= main `c473e21` + the CW arc,
-  which was reviewed inside this gate). ALL 8 units LANDED + the
-  `a5294e3` pair-delete-confirm fix (HEAD `a5294e3` on origin). The
-  pre-main Fable code review PASSED July 17 (top entry). Staging points
-  here; Seth's consolidated smoke for MW1/MW2/MW3/MW7 PASSED July 16 —
-  MW6+MW8 smoke confirmation owed (see "Next up" 00), then "push to
-  main".
+- **MW-WAVE MERGED to `main` (`3b325db`), July 17** — ff-only
+  `c473e21..3b325db`, 35 commits, no merge commit, no migration. All 8
+  MW units + the CW dev-tooling arc + the `a5294e3` pair-delete-confirm
+  fix are fully contained in `main`. Gate PASSED (top entry); Seth's
+  smoke PASSED in full (MW1/2/3/7 July 16, MW6+MW8 confirmed July 17).
+  Staging still points at `maintenance-wave` (now == the merge point) —
+  repoint to `main` is one of Seth's post-merge steps; after that the
+  branch is a deletion candidate (gated).
 - **NT-WAVE MERGED to `main` (`c473e21`), July 15** — NT1 `f4baee3` +
   NT2 `f26e783` + NTFIX1 `e0ba383` + NT3 `98963f6` + NTFIX2 `888e44d` +
   the relay v5/v5.1 docs are all fully contained in `main`, ff-only
@@ -155,12 +170,13 @@ trusting it.
   (`ep-bitter-breeze-am81izlh` / noisy-surf) as of July 7; columns + CHECK
   constraints verified by direct SQL. **Prod HAS both as of July 8** (applied
   by hand pre-merge, 873 rows seeded, 16-row ledger drift-free).
-- **`main` is at `c473e21` (July 15)** — the NT-wave merge (above), on
-  top of the N-wave (`8068ffb`) + What's New prod-gate follow-up
-  (`57b1fc8`). Prod Vercel/Render track `main` and auto-deploy on push,
-  so `c473e21` is DEPLOYING/DEPLOYED to prod — **the deploy-SHA
-  verification in Events is OPEN and owed** (see NEXT UP). The older
-  `57b1fc8` prod-SHA check is superseded by this one.
+- **`main` is at `3b325db` (July 17)** — the MW-wave merge (above), on
+  top of the NT-wave (`c473e21`), the N-wave (`8068ffb`) and the What's
+  New prod-gate follow-up (`57b1fc8`). Prod Vercel/Render track `main`
+  and auto-deploy on push, so `3b325db` is DEPLOYING/DEPLOYED to prod —
+  **the deploy-SHA verification in Events is OPEN and owed** (see NEXT
+  UP). This supersedes the older `c473e21` prod-SHA check (which was
+  itself never recorded as done).
 - Username feature LIVE and verified on both environments (unchanged).
 
 ## Open TODOs (do at next session start)
@@ -190,59 +206,30 @@ trusting it.
 
 ## Next up (the active task)
 
-00. **MW-WAVE: ALL 8 UNITS LANDED July 16 (code-complete).** Wave HEAD
-   `52e84cf` on origin. **SETH'S CONSOLIDATED SMOKE CHECKLIST (first
-   four) — RUN July 16, PASSED** (all four visual units — MW1, MW2, MW3, MW7 — on
-   the staging Vercel deploy):
-   - MW1: live workout heading — order chevron/name/"· N sets"/pill/
-     "· summary"; pill tap opens the Add-to-library sheet WITHOUT
-     toggling collapse; no layout shift when the pill flips
-     Tracked/Not-tracked; completed view heading unchanged.
-   - MW2: resolve a CUSTOM exercise in the sheet -> "Use that name" ->
-     pill flips Tracked with NO rename side effect (id-only stamp).
-   - MW3: finish a workout -> "Reopen workout" on the completed view ->
-     confirm copy reads right -> live builder + finish dock take over
-     in place -> dashboard resume hero reappears -> finish again and
-     it returns to history/analytics.
-   - MW7: Library -> "Custom exercises" tab — count + rows with
-     Main/Assists, delete confirm carries the honest SET-NULL copy and
-     removes the row without reload, empty state names the pill path,
-     community area unchanged, 3-up tablist reads right at 360px.
-   **Remaining wave work (amended July 17, twenty-fifth session —
-   PRE-MAIN GATE CODE REVIEW PASSED, no fix blocks, wave HEAD now
-   `a5294e3` on origin):**
-   (1) Seth CONFIRMS the MW6+MW8 smoke on staging (the four earlier
-   visual units already PASSED July 16; the July 16 evening
-   `a5294e3` fix implies the MW6 smoke ran and caught the
-   triple-confirm — the full checklist result was never recorded, so
-   confirm it, and re-check the pair-delete: ONE confirm on a filled
-   pair, none on a blank pair):
-   - MW6: commit "One-Arm Dumbbell Row" on a zero-set live exercise ->
-     exactly one L/R pair appears (L then R); stepper reads "Pairs"
-     while the heading still says "· 2 sets" (intended, ruling 1);
-     delete the pair -> it stays deleted; collapsed summary shows the
-     side letter ("Last R 60 × 10"); typing 1.5 in a live RIR field is
-     blocked with an inline whole-numbers hint (no error flash, no
-     reload); RPE 8.5 still saves.
-   - MW8: log 8.5 reps on a top set -> Top set tile, weekly report,
-     exercise-detail top-set list, and strength trend delta chip all
-     read "× 8.5", not "× 9"; integer reps still render bare (no
-     "8.0").
-   (2) Seth says "push to main" verbatim, then the RUNBOOK merge
-   ritual runs one command at a time (Fable's code review half of the
-   gate is DONE July 17 — clean, results in the top entry). The
-   ruling-3 per-side comparison feature is NEXT wave — candidate
-   registered in QUEUE.md with the design sketch.
-0a. **Seth's post-merge verification trio (NT-wave merge):** (1) STILL
-   OWED — prod deploy SHA == `c473e21` in Render AND Vercel Events
-   (push is not proof of deploy); (2) DONE July 16 — staging repointed
-   at `maintenance-wave` (the wave smoke ran on it and passed);
-   (3) STILL OWED — prod smoke — the NT flow + the "Every
-   exercise, in one place" What's New modal firing for a logged-in user
-   (prod is the ONLY place it renders). Plus the CW3 visual sign-off on
-   the next live watcher run. Finding **F** stays open independently
+00. **MW-WAVE: DONE — MERGED TO MAIN `3b325db` July 17.** Full smoke
+   PASSED (MW1/2/3/7 July 16; MW6+MW8 confirmed July 17, incl. the
+   `a5294e3` single-confirm pair delete), gate PASSED, ff-only merge
+   (details + SHAs in the top entry). **Seth's post-merge steps (this
+   wave, supersedes the NT-wave trio):**
+   (1) repoint staging Render back to `main`; verify redeploy SHA in
+   Events.
+   (2) verify prod deploy SHA == `3b325db` in Render AND Vercel Events
+   (push is not proof of deploy — this supersedes the never-recorded
+   `c473e21` check).
+   (3) prod smoke: one quick MW pass (reopen a completed workout;
+   commit a One-Arm exercise -> auto L/R pair; 8.5-rep top set reads
+   "× 8.5") + the still-owed NT items — the not-tracked flow and the
+   "Every exercise, in one place" What's New modal firing for a
+   logged-in user (prod is the ONLY place it renders).
+   The ruling-3 per-side comparison feature is NEXT wave — candidate
+   registered in QUEUE.md with the design sketch, needs a Fable design
+   pass first.
+0a. **Loose ends carried forward:** the CW3 visual sign-off on the
+   next live watcher run. Finding **F** stays open independently
    ("Failed to fetch" = Render cold-start ranked cause; needs a live
-   Network-tab repro, not code).
+   Network-tab repro, not code). The untracked
+   `docs/specs/cursor-token-savings-*` + `docs/parked/*` files await
+   Seth's ruling: commit here, or move to the workflow repo.
 0b. **A-wave follow-up (non-urgent):** optional Step-7 historical backfill:
    `node scripts/backfill-exercise-ids.mjs` (DRY-RUN first) then `--apply`
    against prod for pre-A4 historical rows (Seth runs the write).
