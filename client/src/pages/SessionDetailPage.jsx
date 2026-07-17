@@ -1424,7 +1424,7 @@ function SessionExerciseBlock({
         }
         const ids = [...unit.sets].reverse().map((s) => s.id);
         for (const id of ids) {
-          void onDeleteSet(id);
+          void onDeleteSet(id, { skipConfirm: true });
         }
         return;
       }
@@ -2470,8 +2470,8 @@ export function SessionDetailPage() {
   );
 
   const onDeleteSet = useCallback(
-    async (setId) => {
-      if (!confirm("Delete this set?")) return;
+    async (setId, { skipConfirm = false } = {}) => {
+      if (!skipConfirm && !confirm("Delete this set?")) return;
       setError(null);
       try {
         await sessionApi.deleteSet(setId);
