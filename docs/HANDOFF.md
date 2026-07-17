@@ -7,13 +7,12 @@ RUNBOOK ritual one command at a time in a scratch worktree
 (`C:\dev\worktrees\merge-main`, per the OneDrive lesson): ff-only
 `c473e21..3b325db`, 35 commits, no merge commit, `origin/main` HEAD
 verified `3b325db` post-push, worktree removed. NO migration —
-code-only deploy. Prod Vercel/Render track `main`, so `3b325db` is
-deploying — **Seth's post-merge steps: repoint staging Render back to
-`main`, verify deploy SHA `3b325db` in Render AND Vercel Events, prod
-smoke** (this folds the still-owed NT-wave prod checks forward: the
-What's New modal fires only on prod). `maintenance-wave` is now fully
-contained in `main` — a deletion candidate (gated) once staging is
-repointed. The wave that just shipped, for the record below: MW1-MW8 +
+code-only deploy. **Seth completed all three post-merge steps same
+day: staging Render repointed to `main`, prod deploy SHA verified ==
+`3b325db`, prod smoke PASSED (MW pass + the previously-owed NT items
+incl. the What's New modal — the NT-wave verification trio is
+retired).** `maintenance-wave` is now fully contained in `main` and
+staging no longer points at it — a deletion candidate (gated). The wave that just shipped, for the record below: MW1-MW8 +
 the CW dev-tooling arc + `a5294e3`. Gate details in the review record
 that follows.
 
@@ -149,9 +148,8 @@ trusting it.
   MW units + the CW dev-tooling arc + the `a5294e3` pair-delete-confirm
   fix are fully contained in `main`. Gate PASSED (top entry); Seth's
   smoke PASSED in full (MW1/2/3/7 July 16, MW6+MW8 confirmed July 17).
-  Staging still points at `maintenance-wave` (now == the merge point) —
-  repoint to `main` is one of Seth's post-merge steps; after that the
-  branch is a deletion candidate (gated).
+  Staging Render REPOINTED to `main` July 17 (Seth) — the branch is a
+  deletion candidate (gated).
 - **NT-WAVE MERGED to `main` (`c473e21`), July 15** — NT1 `f4baee3` +
   NT2 `f26e783` + NTFIX1 `e0ba383` + NT3 `98963f6` + NTFIX2 `888e44d` +
   the relay v5/v5.1 docs are all fully contained in `main`, ff-only
@@ -173,10 +171,10 @@ trusting it.
 - **`main` is at `3b325db` (July 17)** — the MW-wave merge (above), on
   top of the NT-wave (`c473e21`), the N-wave (`8068ffb`) and the What's
   New prod-gate follow-up (`57b1fc8`). Prod Vercel/Render track `main`
-  and auto-deploy on push, so `3b325db` is DEPLOYING/DEPLOYED to prod —
-  **the deploy-SHA verification in Events is OPEN and owed** (see NEXT
-  UP). This supersedes the older `c473e21` prod-SHA check (which was
-  itself never recorded as done).
+  and auto-deploy on push. Prod deploy SHA VERIFIED == `3b325db` in
+  Events July 17 (Seth) and prod smoke PASSED — no open
+  deploy-verification debt (this also retires the never-recorded
+  `c473e21` check).
 - Username feature LIVE and verified on both environments (unchanged).
 
 ## Open TODOs (do at next session start)
@@ -206,24 +204,16 @@ trusting it.
 
 ## Next up (the active task)
 
-00. **MW-WAVE: DONE — MERGED TO MAIN `3b325db` July 17.** Full smoke
-   PASSED (MW1/2/3/7 July 16; MW6+MW8 confirmed July 17, incl. the
-   `a5294e3` single-confirm pair delete), gate PASSED, ff-only merge
-   (details + SHAs in the top entry). **Seth's post-merge steps (this
-   wave, supersedes the NT-wave trio):**
-   (1) repoint staging Render back to `main`; verify redeploy SHA in
-   Events.
-   (2) verify prod deploy SHA == `3b325db` in Render AND Vercel Events
-   (push is not proof of deploy — this supersedes the never-recorded
-   `c473e21` check).
-   (3) prod smoke: one quick MW pass (reopen a completed workout;
-   commit a One-Arm exercise -> auto L/R pair; 8.5-rep top set reads
-   "× 8.5") + the still-owed NT items — the not-tracked flow and the
-   "Every exercise, in one place" What's New modal firing for a
-   logged-in user (prod is the ONLY place it renders).
-   The ruling-3 per-side comparison feature is NEXT wave — candidate
-   registered in QUEUE.md with the design sketch, needs a Fable design
-   pass first.
+00. **MW-WAVE: FULLY CLOSED July 17.** Merged to main `3b325db`
+   (ff-only, details + SHAs in the top entry) and Seth completed all
+   three post-merge steps same day: staging Render REPOINTED to
+   `main`, prod deploy SHA VERIFIED == `3b325db`, prod smoke PASSED
+   (MW pass + the previously-owed NT items, incl. the What's New
+   modal — this also retires the NT-wave verification trio). With
+   staging repointed, `maintenance-wave` is now a deletion candidate
+   (gated). NEXT UP: the ruling-3 per-side comparison feature —
+   candidate registered in QUEUE.md with the design sketch, needs a
+   Fable design pass first.
 0a. **Loose ends carried forward:** the CW3 visual sign-off on the
    next live watcher run. Finding **F** stays open independently
    ("Failed to fetch" = Render cold-start ranked cause; needs a live
