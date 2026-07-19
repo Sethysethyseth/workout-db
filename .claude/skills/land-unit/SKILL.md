@@ -25,8 +25,9 @@ precedent, wave units) or fold it into the HANDOFF session log
   `## <unit-id>` section when units were batched).
 - Delivery arrives one of three ways:
   - **Lane worktree (the v5 backbone):** `dispatch-unit` ran the headless
-    CLI in `C:\dev\worktrees\cursor-lane` - uncommitted changes +
-    DELIVERY.md sit in THAT tree, not this one. Audit and run the lanes
+    CLI in a pool worktree (`C:\dev\worktrees\cursor-lane`, `-2`, `-3`
+    since v5.2) - uncommitted changes + DELIVERY.md sit in THAT tree,
+    not this one. Audit and run the lanes
     THERE; land per the lane variant in section 4.
   - **Local relay (hand-relay fallback):** Seth pointed Cursor at the
     block himself - changes sit uncommitted in this working tree.
@@ -108,7 +109,8 @@ precedent, wave units) or fold it into the HANDOFF session log
   block count in QUEUE.md and n = units landed so far; the final unit
   says "N/N complete" instead. Matching dispatch-side convention in
   `dispatch-unit` section 2b.
-- Relay loop: nothing left in flight and QUEUE.md has a QUEUED unit whose
+- Relay loop: free width remaining (v5.2: 2 default / 3 cap, counting
+  every in-flight lane) and QUEUE.md has a QUEUED unit whose
   serialization notes allow it -> dispatch it via `dispatch-unit` IN THIS
   SAME SESSION (one resident session per wave is the norm - spec, "The
   relay loop"). Wave complete -> stop and hand Seth the consolidated

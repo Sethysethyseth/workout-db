@@ -163,7 +163,10 @@ fallback (session crash, hand-relay), not the design. What batches at
 wave scale is SETH'S attention (one smoke, one gate), never the
 machine checkpoints - per-unit audit, one commit per unit, and
 bisectable history are unchanged; do not "extend" this amendment into
-batching Cursor execution across units. Skills load fresh at
+batching Cursor execution across units. (v5.2 rider: fan-out
+PARALLELIZES execution across disjoint units, which is not batching -
+what stays unbatched is the per-unit audit/commit at landing; see
+"Fan-out (relay v5.2)".) Skills load fresh at
 execution time, so a long resident session still runs the exact
 `land-unit`/`dispatch-unit` checklists, not a degraded memory of them.
 Per tick:
@@ -175,7 +178,8 @@ Per tick:
    / escalate per that skill. Bounce = follow-up run (Channel A) or
    re-dispatch with findings appended (Channel B); TWO bounces on one
    unit = stop, page Seth.
-3. Nothing in flight and QUEUE.md has a QUEUED unit whose serialization
+3. Free width remaining (v5.2: 2 default / 3 cap, counting every
+   in-flight lane) and QUEUE.md has a QUEUED unit whose serialization
    notes allow it -> dispatch via `dispatch-unit`, flip it DISPATCHED.
 4. Stop conditions: queue empty; wave complete (pre-main gate is Fable
    + Seth, never the loop); any land-unit escalation trigger; ladder
@@ -266,9 +270,9 @@ LogChamp adoption of that grain.
   ALWAYS serialize through the single reviewer at landing. This is the
   existing batching rule, now stated as a lane class.
 - **REPORT lanes** produce a report file and touch nothing else. They
-  are embarrassingly parallel: zero merge risk, no landing commit -
-  the "delivery" is reading the report (optionally preserving it as a
-  FINDINGS doc, FP0 precedent). Verification sweeps, audits, web
+  are embarrassingly parallel: zero merge risk, no code-landing
+  commit - the "delivery" is reading the report (optionally preserved
+  via a docs-only FINDINGS commit, FP0 precedent). Verification sweeps, audits, web
   research, recon passes, and diagnosis blocks are ALL report lanes.
   Report lanes are the cheap on-ramp: when unsure how wide to go,
   fan out report lanes, not content lanes.
@@ -287,15 +291,29 @@ worktree: clean tree, `checkout -B`, explicit `--model`, background
 task with timeout. A lane holding an unlanded delivery is NOT clean -
 skip it, use another (never disturb an in-flight delivery).
 
+Concurrency mechanics (July 18 research lane, sources in its report):
+STAGGER launches by a beat - never fire two `agent -p` processes in
+the same instant (a staff-confirmed session-init/file-lock race
+killed one of two simultaneous starts on 2025-11 builds; reported
+fixed since, unverified on the current Windows build). The CLI's
+shared `~/.cursor/cli-config.json` persists last-used model state -
+explicit `--model` per run fully covers the run itself (never run
+flagless; standing rule). If soak use ever shows config clobbering,
+the escalation lever is a per-lane `CURSOR_CONFIG_DIR`.
+
 ### Many hands, one gate (what fan-out must never change)
 
 - Fan-out multiplies EXECUTORS, never reviewers. Audit, commit, push,
   and state upkeep stay single-file through one Claude Code seat;
   parallel deliveries land ONE AT A TIME through `land-unit`.
 - Dispatch width is set by what the reviewing seat can audit while
-  it's fresh, not by how many agents can run. Practical cap: 3
-  concurrent (the receipt's width). If landing feels like the
-  bottleneck, that is the design working.
+  it's fresh, not by how many agents can run. Width 2 is the default
+  for unattended fan-out; 3 is the hard cap, for babysat sessions
+  (the receipt's width). The July 18 research lane's grounding
+  (preserved: `fanout-cli-concurrency-research-2026-07-18.md`): no
+  official CLI concurrency SLA exists; provider rate limits, print
+  hangs, and quota burn compound with width - and the auto pool is
+  shared with Seth's interactive IDE use.
 - The gate NEVER fans out: no parallel agent touches gate items
   (main merges, prod, migrations). Two-bounce stop applies PER lane.
 - Seth's attention still batches: dispatch N, ONE consolidated review
@@ -361,6 +379,6 @@ this very amendment - while FP2's unlanded delivery sat untouched in
   conservatively (if in doubt whether units collide, they do -
   serialize). This is deliberate; do not "fix" it with a format change
   without Fable.
-- AGENTS.md/CLAUDE.md workflow sections describe relay v4 - amend to v5
-  only AFTER the probe validates and the first autonomous unit lands
-  clean (adoption evidence first, doctrine second).
+- ~~AGENTS.md/CLAUDE.md workflow sections describe relay v4~~ RESOLVED:
+  amended to v5 July 14 after NT3 landed clean, and to v5.2 July 18
+  (adoption evidence first, doctrine second - held both times).

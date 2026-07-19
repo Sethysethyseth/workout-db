@@ -62,9 +62,10 @@ per unit is the crash/hand-relay fallback, not the design.
 - Lane worktree: `C:\dev\worktrees\cursor-lane` (OUTSIDE OneDrive).
   Create once: `git worktree add C:\dev\worktrees\cursor-lane -b
   cursor/<unit> <wave-branch>`; reuse thereafter (amortizes npm
-  install). Per dispatch: `git status` MUST be clean in it (dirty =
-  stop, a prior delivery wasn't landed), then
-  `git checkout -B cursor/<unit> <wave-branch>`.
+  install). Per dispatch: `git status` MUST be clean in it (dirty = a
+  prior delivery isn't landed - that lane is UNAVAILABLE; use another
+  pool worktree per 2c, or stop if the dirty delivery is the very unit
+  in question), then `git checkout -B cursor/<unit> <wave-branch>`.
 - Flip the unit DISPATCHED in QUEUE.md (channel, rung, model in the
   notes) before the run - same bookkeeping as Channel A.
 - Run as a BACKGROUND task with a hard timeout (print mode has a known
@@ -120,9 +121,11 @@ Full grain: spec, "Fan-out (relay v5.2)". The mechanics here:
   only, no repo edits) parallelize freely. **CONTENT lanes** parallel
   only with fully disjoint FILES TO TOUCH (in doubt = collide =
   serialize), and always land serially through `land-unit`.
-- Width cap: 3 concurrent - set by what one seat can audit fresh,
-  not by quota. One background task per agent, each with its own
-  timeout and explicit `--model`.
+- Width: 2 default unattended, 3 hard cap (babysat) - set by what one
+  seat can audit fresh, not by quota; the auto pool is shared with
+  Seth's IDE use. One background task per agent, each with its own
+  timeout and explicit `--model`; STAGGER launches (never two
+  `agent -p` starts in the same instant - known session-init race).
 - Session-scoped report lanes (authoring recon, gate fuel) skip QUEUE
   bookkeeping - record them in the HANDOFF session log instead. Wave
   units keep full QUEUE bookkeeping regardless of parallelism.
