@@ -36,14 +36,22 @@ everything from here; no unit below needs another Fable pass):**
 - Pre-main gate for this wave: Opus runs it (standing fallback when
   Fable is unavailable); grep HANDOFF-ARCHIVE per the gate ritual.
 
-DISPATCHED | fp1-rebrand-copy-polish.md | title -> LogChamp, two
-  HelloPage WorkoutDB strings, never-gate-history guarantee line |
-  MODEL auto; disjoint from FP2 - may batch. Dispatched July 18,
-  Channel B auto rung, lane branch cursor/fp1-rebrand-copy-polish off
-  4e09379
-QUEUED | fp2-home-strip-coherence.md | buildSummary.workoutCount (one
-  ledger for the This-week strip, kills the completedAt/performedAt
-  dual-clock incoherence) + vertical 3-row recent workouts | MODEL auto
+LANDED 8dc799f | fp1-rebrand-copy-polish.md | title -> LogChamp, two
+  HelloPage WorkoutDB strings, never-gate-history guarantee line
+  ("Your history stays yours - every set, no time limit.") | MODEL
+  auto -> Channel B auto rung, dispatched + landed July 18 (Fable).
+  Audited per land-unit: scope exact (2 files), full diff read (three
+  string swaps + one muted line in the existing HelloPage inline-style
+  idiom), lanes fresh in lane (build green 129 modules, unit 170/170),
+  check-hex clean, WorkoutDB grep clean in client (README-only hits,
+  not rendered). No deviations. Lane rebased onto a115f35 then
+  ff-merged. SMOKE: tab title reads LogChamp; HelloPage welcome +
+  save-to-home-screen lines say LogChamp; guarantee line renders
+DISPATCHED | fp2-home-strip-coherence.md | buildSummary.workoutCount
+  (one ledger for the This-week strip, kills the completedAt/
+  performedAt dual-clock incoherence) + vertical 3-row recent workouts
+  | MODEL auto. Dispatched July 18, Channel B auto rung, lane branch
+  cursor/fp2-home-strip-coherence off 8dc799f
 QUEUED | fp3-active-exercise-lens.md | strength list sorts noteworthy
   first + collapses single-session rows; roster gains Active|All
   segmented lens (ACTIVE_WINDOW_WEEKS=8), history never hidden for good
