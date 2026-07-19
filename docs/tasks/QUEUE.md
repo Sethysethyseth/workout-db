@@ -11,7 +11,54 @@ FP-wave (frontier parity), opened July 18 (Fable), branch
 `3b325db` + two post-merge docs commits). Source: the July 17 product
 review (hands-on staging drive + Cursor competitor research). Direction
 calls made by Fable July 18 and baked into FP0 - the report grounds
-them; implementation blocks get authored AFTER Seth reads the report.
+them. Seth APPROVED the critiques July 18 and added two insights, both
+designed same session: the active-exercise lens (FP3, from his
+strength-view screenshot - single-session rows bury the real trends)
+and gym-context analytics (spec'd, next wave - see below).
+
+**FABLE HANDOVER (Fable unavailable after July 18 - Opus runs
+everything from here; no unit below needs another Fable pass):**
+- Wave order (Seth's rider: icons LAST, his intervention needed):
+  FP1+FP2 back-to-back (file-disjoint), then FP3 -> FP4 (share
+  AnalyticsPage/ExercisesView/index.css - serialize; FP2/FP3 share
+  index.css - serialize too), then FP5, then FP6 (needs FP2 AND FP5
+  landed), then FP8 (DRAFT until Seth's PNGs land in claudefiledrop/;
+  an authoring session may first emit docs/design/logchamp-icon.svg
+  for him to export from).
+- R6 tagline: Seth has NOT picked - one-line AuthLayout.jsx swap
+  whenever he does; keep out of every block until then.
+- R9/per-side + Strength Score: design DONE in
+  docs/specs/strength-score-per-side.md - Opus authors SS1/SS2/SS3
+  from it after the FP core lands.
+- Gym context (Seth's location insight): design DONE in
+  docs/specs/gym-context.md - Opus authors G1/G2/G3 from it; G1 is
+  MIGRATION-CARRYING (Seth's manual track, non-autonomous gate).
+- Pre-main gate for this wave: Opus runs it (standing fallback when
+  Fable is unavailable); grep HANDOFF-ARCHIVE per the gate ritual.
+
+QUEUED | fp1-rebrand-copy-polish.md | title -> LogChamp, two HelloPage
+  WorkoutDB strings, never-gate-history guarantee line | MODEL auto;
+  disjoint from FP2 - may batch
+QUEUED | fp2-home-strip-coherence.md | buildSummary.workoutCount (one
+  ledger for the This-week strip, kills the completedAt/performedAt
+  dual-clock incoherence) + vertical 3-row recent workouts | MODEL auto
+QUEUED | fp3-active-exercise-lens.md | strength list sorts noteworthy
+  first + collapses single-session rows; roster gains Active|All
+  segmented lens (ACTIVE_WINDOW_WEEKS=8), history never hidden for good
+  | MODEL auto; after FP2 (index.css)
+QUEUED | fp4-empty-state-ghosts.md | static tokens-only ghost previews +
+  honesty-voice unlock lines on all four empty analytics surfaces |
+  MODEL auto (design fully specified); after FP3 (same files)
+QUEUED | fp5-pr-detection.md | pure prs.js detector (weight/
+  reps-at-weight/e1RM, first-session suppression) + summary.prs stub
+  filled + exerciseDetail standing records + PR card + quiet completed-
+  view chip | MODEL opus; after FP2 (summary.js) and FP4 (ExercisesView)
+QUEUED | fp6-weekly-digest.md | digest layer under the Home band:
+  muscle movers, PR line, execution line, one deterministic nudge |
+  MODEL opus; STRICTLY after FP2 + FP5 land
+DRAFT | fp8-pwa-icons.md | manifest icons + manifest/apple-touch links
+  in index.html | LAST per Seth; flips QUEUED when his exported PNGs
+  land in claudefiledrop/
 
 LANDED 137e0ea | fp0-frontier-parity-report.md | report-only unit, NO
   code: per-item NOW (file:line evidence) + CHANGE + SIZE for the six
