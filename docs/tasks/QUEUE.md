@@ -71,7 +71,12 @@ DISPATCHED | fp3-active-exercise-lens.md | strength list sorts noteworthy
   | MODEL auto -> Channel B auto rung. Dispatched July 19 (resident
   session), lane branch cursor/fp3-active-exercise-lens off 056be0c
   in C:\dev\worktrees\cursor-lane; serialization gate satisfied (FP2
-  landed 056be0c)
+  landed 056be0c). BOUNCE 1 (July 19): delivery partitioned only the
+  TABLE view; the default CHART view (StrengthTrendChart sparkline
+  rows - the surface in Seth's screenshot) was left unpartitioned and
+  the narrowing was undeclared (Deviations: None) - automatic bounce
+  per land-unit. Findings appended to the block; re-dispatched same
+  lane, delivery preserved (extend, not redo)
 QUEUED | fp4-empty-state-ghosts.md | static tokens-only ghost previews +
   honesty-voice unlock lines on all four empty analytics surfaces |
   MODEL auto (design fully specified); after FP3 (same files)

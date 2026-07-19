@@ -1,6 +1,7 @@
 # TASK FP3: active-exercise lens - stop burying signal under dormant exercises
 
-STATUS: QUEUED
+STATUS: BOUNCED-1 (July 19 - see BOUNCE FINDINGS at the bottom; the
+existing delivery in the lane worktree is GOOD, extend it, do not redo it)
 MODEL: auto
 MODE: 1-relay
 
@@ -61,3 +62,30 @@ stop and explain why instead of guessing.
   anything under docs/tasks/ - state is the reviewer's job.
 - Do NOT add dependencies or refactor unrelated code.
 - Do NOT start another task file when done - end your turn.
+
+BOUNCE FINDINGS (July 19 review - first bounce):
+Your previous delivery sits UNCOMMITTED in this worktree. It is good
+work - keep all of it. One contract miss: you applied the CHANGE-1
+partition ONLY to the table view, but the DEFAULT view of "Strength
+trends" is the CHART view (`useState("chart")` in PerExerciseSection),
+and the block's evidence base ("single-session rows - one dot, no
+trend" in Seth's screenshot) IS the chart view: StrengthTrendChart.jsx
+renders a per-exercise sparkline row list where a single-session row
+gets `delta = 0` and therefore sorts ABOVE negative trends. Fix:
+1. Apply the SAME partition to the chart view: noteworthy rows
+   (>= 2 sessions) render as sparkline rows sorted by absolute
+   matched-effort delta DESCENDING (same comparator as the table -
+   reuse partitionStrengthTableRows, lift it if needed; do not
+   duplicate the logic); single-session rows collapse into the same
+   muted "N exercises with a single session in this range" line with
+   the same Show/Hide affordance, rendered below the chart rows.
+   All-single lists render as today, same as the table rule.
+2. Keep table and chart behavior consistent: one shared partition +
+   one shared showSingles state in PerExerciseSection is fine.
+3. Note for your report: StrengthTrendChart's own internal
+   raw-topSet-delta sort currently disagrees with the block's
+   matched-effort-delta ordering for noteworthy rows - the block's
+   ordering wins for the main rows; state in DELIVERY.md how you
+   resolved the two sorts.
+Update DELIVERY.md (append a "Bounce 1 fix" section), re-run the lanes,
+same stop conditions.
