@@ -1,6 +1,36 @@
 # HANDOFF — current state
 
-**Updated:** July 17, 2026, twenty-fifth session (Fable — **PRE-MAIN
+**Updated:** July 18, 2026, twenty-sixth session (Fable — **FP-WAVE
+OPENED: FP0 frontier-parity report authored, dispatched, and LANDED
+`137e0ea` in one session; NO implementation blocks yet by design**).
+Seth's ask: make the direction calls on the July 17 product-review
+findings and have Cursor produce a NOW/CHANGE report he can read
+before anything ships. New branch `frontier-parity-wave` off
+maintenance-wave HEAD `0206d30` (= main `3b325db` + two post-merge
+docs commits). Fable made the calls (baked into
+`docs/tasks/fp0-frontier-parity-report.md`, block `a5444b7`): retitle
+to LogChamp; interim "LC" monogram PWA icons; ONE window + ONE data
+source for the This-week strip; recent workouts go VERTICAL (3 rows,
+full titles); empty analytics tease the wedge with static ghost
+previews + honesty-voice unlock lines; tagline stays Seth's call
+(3 alternatives presented); PR detection as a pure engine module with
+quiet chips (no confetti); weekly digest extends the existing
+WeeklyReport band; Strength Score flagged NEEDS FABLE DESIGN PASS
+jointly with the queued per-side unit; never-gate-history verified
+true and becomes product copy. FP0 dispatched Channel B auto rung,
+landed same session per land-unit: lane porcelain-EMPTY (report-only
+contract held), unit lane fresh 170/170, spot-checks by direct read —
+the R3 diagnosis is REAL (Workouts tile counts by `completedAt` in
+LOCAL bounds at WeeklyReport.jsx:31-44 while Sets/Top-set ride
+/analytics/summary filtered by `performedAt` in UTC bounds — two
+clocks, two sources in one strip). Full report preserved verbatim in
+`docs/tasks/fp0-frontier-parity-report-FINDINGS.md` — **that file is
+Seth's read**; audit record in QUEUE.md. NEXT: Seth reads the report,
+rules on R6 (tagline) and wave composition; implementation blocks get
+authored after that (suggested block grouping is in the report's
+closing table, advisory).
+
+Previous entry (July 17, twenty-fifth session, Fable — **PRE-MAIN
 GATE PASSED + MW-WAVE MERGED TO MAIN `3b325db`**). Seth confirmed the
 MW6+MW8 smoke PASSED and gave the trigger phrase; merge ran per the
 RUNBOOK ritual one command at a time in a scratch worktree
@@ -48,30 +78,13 @@ data.json}` and `docs/parked/*` sit UNTRACKED since ~July 11-13
 (side-project artifacts for the poor-man's-agentic-workflow repo) —
 Seth to rule whether they belong in this repo's history or move out.
 
-Previous entry (July 16, twenty-fourth session, Opus resident —
-**MW-WAVE CODE-COMPLETE: MW6 `bfbbe56` + MW8 `52e84cf` dispatched and
-LANDED, all 8 units in**). Both went over Channel B in the lane
-worktree: MW6 (MODEL opus) on the auto rung as a DELIBERATE descent —
-Seth's dispatch instruction restated the standing "run on auto, Opus
-audits" call — MW8 (MODEL auto) on its own rung. Audits per
-`land-unit`, lanes fresh in the lane both times (unit 170/170, Vite
-build, check-hex), full diffs read. MW6: detector name table re-run
-independently by node eval (13/13), single pair-creation path +
-commit-vs-draft discipline + override-false-wins + completed-path
-triple-guard + no-respawn all verified by direct read; no deviations;
-one judged-accepted narrowing (bare `\bsingle\b` names like "Squat
-(single)" no longer auto-trigger — the name table is the contract,
-and `anySetHasSide` keeps existing sided data in per-side mode). MW8:
-formatter verified byte-for-byte the `formatEffortValue` body, eval
-re-run independently (8.5->"8.5", 8->"8", 10.25->"10.3"), null-reps
-ternaries untouched at all 5 sites; one reviewer trivia fix (stray
-blank line in StrengthTrendChart.jsx). Per-unit audit records in
-QUEUE.md. **Remaining: Seth smokes MW6+MW8 on staging (checklist in
-"Next up" 00 — MW1/2/3/7 already PASSED), then the pre-main gate
-(Fable + Seth) closes the wave.**
-
 Aged out this rewrite, moved verbatim to `docs/HANDOFF-ARCHIVE.md`
-(newest first): the July 16 **twenty-third** session (Fable — rulings
+(newest first): the July 16 **twenty-fourth** session (Opus resident —
+MW-wave code-complete, MW6 `bfbbe56` + MW8 `52e84cf` dispatched and
+landed, all 8 units in; the MW6 detector-narrowing judged note and the
+MW8 formatter verification live there verbatim — the still-live pieces
+are carried in QUEUE.md's per-unit records and the top-entry gate
+record). Before that: the July 16 **twenty-third** session (Fable — rulings
 interpreted + MW6 finalized/QUEUED + MW8 authored; the five ruling
 dispositions, the "stepper alone speaks Pairs" vocabulary choice, and
 the RIR-gate rider live there verbatim — the still-live pieces are
@@ -143,6 +156,10 @@ trusting it.
 
 ## Repo / deploy state
 
+- **`frontier-parity-wave` is the ACTIVE wave branch (July 18)** — off
+  maintenance-wave HEAD `0206d30`, docs-only so far (FP0 block + the
+  landed report `137e0ea`). Deploys nowhere: staging Render tracks
+  `main` since July 17.
 - **MW-WAVE MERGED to `main` (`3b325db`), July 17** — ff-only
   `c473e21..3b325db`, 35 commits, no merge commit, no migration. All 8
   MW units + the CW dev-tooling arc + the `a5294e3` pair-delete-confirm
@@ -204,16 +221,24 @@ trusting it.
 
 ## Next up (the active task)
 
-00. **MW-WAVE: FULLY CLOSED July 17.** Merged to main `3b325db`
+00. **FP-WAVE: SETH READS THE FP0 REPORT** —
+   `docs/tasks/fp0-frontier-parity-report-FINDINGS.md` (landed
+   `137e0ea` on `frontier-parity-wave`). It gives NOW/CHANGE/SIZE for
+   every review finding + frontier-parity feature. Seth rules on: R6
+   tagline (keep / one of three alternatives), whether the suggested
+   block grouping stands, and which tiers ship this wave. Then
+   implementation blocks get authored. R9 (Strength Score) folds the
+   already-queued per-side L/R comparison candidate into ONE Fable
+   design pass — that supersedes the standalone "per-side next" note
+   below.
+0z. **MW-WAVE: FULLY CLOSED July 17.** Merged to main `3b325db`
    (ff-only, details + SHAs in the top entry) and Seth completed all
    three post-merge steps same day: staging Render REPOINTED to
    `main`, prod deploy SHA VERIFIED == `3b325db`, prod smoke PASSED
    (MW pass + the previously-owed NT items, incl. the What's New
    modal — this also retires the NT-wave verification trio). With
    staging repointed, `maintenance-wave` is now a deletion candidate
-   (gated). NEXT UP: the ruling-3 per-side comparison feature —
-   candidate registered in QUEUE.md with the design sketch, needs a
-   Fable design pass first.
+   (gated).
 0a. **Loose ends carried forward:** the CW3 visual sign-off on the
    next live watcher run. Finding **F** stays open independently
    ("Failed to fetch" = Render cold-start ranked cause; needs a live

@@ -1,5 +1,27 @@
 # HANDOFF ARCHIVE — session-log history (append-only)
 
+Previous entry (July 16, twenty-fourth session, Opus resident —
+**MW-WAVE CODE-COMPLETE: MW6 `bfbbe56` + MW8 `52e84cf` dispatched and
+LANDED, all 8 units in**). Both went over Channel B in the lane
+worktree: MW6 (MODEL opus) on the auto rung as a DELIBERATE descent —
+Seth's dispatch instruction restated the standing "run on auto, Opus
+audits" call — MW8 (MODEL auto) on its own rung. Audits per
+`land-unit`, lanes fresh in the lane both times (unit 170/170, Vite
+build, check-hex), full diffs read. MW6: detector name table re-run
+independently by node eval (13/13), single pair-creation path +
+commit-vs-draft discipline + override-false-wins + completed-path
+triple-guard + no-respawn all verified by direct read; no deviations;
+one judged-accepted narrowing (bare `\bsingle\b` names like "Squat
+(single)" no longer auto-trigger — the name table is the contract,
+and `anySetHasSide` keeps existing sided data in per-side mode). MW8:
+formatter verified byte-for-byte the `formatEffortValue` body, eval
+re-run independently (8.5->"8.5", 8->"8", 10.25->"10.3"), null-reps
+ternaries untouched at all 5 sites; one reviewer trivia fix (stray
+blank line in StrengthTrendChart.jsx). Per-unit audit records in
+QUEUE.md. **Remaining: Seth smokes MW6+MW8 on staging (checklist in
+"Next up" 00 — MW1/2/3/7 already PASSED), then the pre-main gate
+(Fable + Seth) closes the wave.**
+
 Previous entry (July 16, twenty-third session, Fable — **RULINGS
 INTERPRETED + LAST TWO WAVE UNITS AUTHORED: MW6 finalized and QUEUED,
 MW8 (new) QUEUED**). Seth's MW4/MW5 answers (`docs/tasks/

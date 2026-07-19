@@ -13,15 +13,24 @@ review (hands-on staging drive + Cursor competitor research). Direction
 calls made by Fable July 18 and baked into FP0 - the report grounds
 them; implementation blocks get authored AFTER Seth reads the report.
 
-DISPATCHED | fp0-frontier-parity-report.md | report-only unit, NO code:
-  per-item NOW (file:line evidence) + CHANGE (what the called fix looks
-  like) + SIZE for the six Tier-0 review findings, four Tier-1
-  frontier-parity features, Tier-2 horizon paragraph; R3 is a real
-  diagnosis (This-week strip incoherence mechanism) | MODEL auto ->
-  B auto rung; deliverable is DELIVERY.md itself - preserve verbatim as
-  fp0-frontier-parity-report-FINDINGS.md at landing (MW4/MW5 precedent).
-  Dispatched July 18, Channel B auto rung, lane worktree branch
-  cursor/fp0-frontier-parity-report off a5444b7
+LANDED 137e0ea | fp0-frontier-parity-report.md | report-only unit, NO
+  code: per-item NOW (file:line evidence) + CHANGE + SIZE for the six
+  Tier-0 review findings, four Tier-1 frontier-parity features, Tier-2
+  horizon paragraph | MODEL auto -> Channel B auto rung, dispatched +
+  landed July 18 same session (Fable). Audited per land-unit: lane tree
+  porcelain-EMPTY (zero source mods, criterion verified directly), unit
+  lane re-run fresh in lane 170/170 (14 suites), spot-checks confirmed
+  by direct read (R3 dual-clock mechanism real: WeeklyReport.jsx:31-44
+  counts workouts by completedAt in LOCAL bounds while Sets/Top-set ride
+  /analytics/summary filtered by performedAt in UTC bounds; prs:[] stub
+  at summary.js:113; "PR detection coming" at ExercisesView.jsx:386;
+  HelloPage.jsx:17,49 rebrand leaks). One non-deviation noted: "WorkoutDB
+  API running" in server routes/index.js:13 not listed - API messages
+  are rename-boundary OUT and the sweep was scoped to client rendered
+  text. No deviations declared, none found. Report preserved verbatim in
+  fp0-frontier-parity-report-FINDINGS.md; R6 (tagline) + R9 (Strength
+  Score design pass) + wave composition await Seth's read - NO
+  implementation blocks authored yet by design
 
 MW-wave (maintenance wave), authored July 16 (Fable), branch
 `maintenance-wave` (off not-tracked-ux-wave HEAD `5e3d981` = main
