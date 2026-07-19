@@ -24,11 +24,31 @@ the R3 diagnosis is REAL (Workouts tile counts by `completedAt` in
 LOCAL bounds at WeeklyReport.jsx:31-44 while Sets/Top-set ride
 /analytics/summary filtered by `performedAt` in UTC bounds — two
 clocks, two sources in one strip). Full report preserved verbatim in
-`docs/tasks/fp0-frontier-parity-report-FINDINGS.md` — **that file is
-Seth's read**; audit record in QUEUE.md. NEXT: Seth reads the report,
-rules on R6 (tagline) and wave composition; implementation blocks get
-authored after that (suggested block grouping is in the report's
-closing table, advisory).
+`docs/tasks/fp0-frontier-parity-report-FINDINGS.md`; audit record in
+QUEUE.md.
+
+**Same session, phase 2 (after Seth's read):** Seth APPROVED the
+critiques with riders — icons LAST (needs his intervention), and
+everything Fable-gated must be set up for OPUS because **Fable is
+unavailable after July 18**. He brought two new insights, both
+designed same session: (1) his strength-view screenshot (in
+claudefiledrop/) shows single-session/dormant exercises burying the
+real trends — became FP3 (active-exercise lens: noteworthy-first sort,
+single-session rows collapsed, Active|All roster lens, history never
+hidden); (2) different-gym machine variance skews analytics (his
+screenshot's "Single arm lat pulldown -52.5 lbs" is the live example)
+— his location idea designed into `docs/specs/gym-context.md`
+(one-shot opt-in location at session start, Gym entity + session tag,
+ANNOTATE-never-adjust analytics + home-only filter; continuous
+tracking rejected on PWA/privacy/battery grounds, criteria named in
+the spec). The R9 design pass is DONE too:
+`docs/specs/strength-score-per-side.md` (self-referenced score,
+per-side comparison verdicts, imbalance headline; SS1-SS3 block plan).
+**FP-WAVE SKELETON AUTHORED `4e09379`: FP1-FP6 QUEUED, FP8 DRAFT**
+(order + serialization + the full Opus handover in QUEUE.md's FABLE
+HANDOVER section). FP1 DISPATCHED same session (Channel B auto rung).
+Open Seth items: R6 tagline pick; icon PNGs into claudefiledrop/ to
+un-DRAFT FP8; G1's migration when the G-wave starts.
 
 Previous entry (July 17, twenty-fifth session, Fable — **PRE-MAIN
 GATE PASSED + MW-WAVE MERGED TO MAIN `3b325db`**). Seth confirmed the

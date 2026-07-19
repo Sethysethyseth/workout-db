@@ -36,9 +36,11 @@ everything from here; no unit below needs another Fable pass):**
 - Pre-main gate for this wave: Opus runs it (standing fallback when
   Fable is unavailable); grep HANDOFF-ARCHIVE per the gate ritual.
 
-QUEUED | fp1-rebrand-copy-polish.md | title -> LogChamp, two HelloPage
-  WorkoutDB strings, never-gate-history guarantee line | MODEL auto;
-  disjoint from FP2 - may batch
+DISPATCHED | fp1-rebrand-copy-polish.md | title -> LogChamp, two
+  HelloPage WorkoutDB strings, never-gate-history guarantee line |
+  MODEL auto; disjoint from FP2 - may batch. Dispatched July 18,
+  Channel B auto rung, lane branch cursor/fp1-rebrand-copy-polish off
+  4e09379
 QUEUED | fp2-home-strip-coherence.md | buildSummary.workoutCount (one
   ledger for the This-week strip, kills the completedAt/performedAt
   dual-clock incoherence) + vertical 3-row recent workouts | MODEL auto
