@@ -119,18 +119,81 @@ function SparklinePlot({ series }) {
   );
 }
 
-export function StrengthTrendChart({ perExercise }) {
-  const rows = perExercise
+function buildTrendRows(perExercise) {
+  const list = Array.isArray(perExercise) ? perExercise : [];
+  // Preserve caller order - Strength trends partition owns sort (abs matched-
+  // effort delta). Do not re-sort by raw top-set weight delta here.
+  return list
     .map((ex) => {
       const series = Array.isArray(ex.topSetSeries) ? ex.topSetSeries : [];
       const delta =
-        series.length >= 2 ? series[series.length - 1].weight - series[0].weight : series.length === 1 ? 0 : null;
+        series.length >= 2
+          ? series[series.length - 1].weight - series[0].weight
+          : series.length === 1
+            ? 0
+            : null;
       return { ...ex, series, delta };
     })
-    .filter((ex) => ex.series.length > 0 || ex.topSet != null)
-    .sort((a, b) => (b.delta ?? -Infinity) - (a.delta ?? -Infinity));
+    .filter((ex) => ex.series.length > 0 || ex.topSet != null);
+}
 
-  if (rows.length === 0) {
+function StrengthTrendRow({ ex }) {
+  const { series } = ex;
+  if (series.length === 0) {
+    return (
+      <div className="st-row">
+        <div className="row st-row-head">
+          <span className="st-name">{ex.name}</span>
+          <span className="muted small">not enough data</span>
+        </div>
+      </div>
+    );
+  }
+
+  const tip =
+    series.length === 1
+      ? `${ex.name}: top set ${formatWeight(series[0].weight)} · 1 session in range`
+      : `${ex.name}: top set ${formatWeight(series[0].weight)} → ${formatWeight(series[series.length - 1].weight)} · ${series.length} sessions`;
+
+  return (
+    <div className="st-row" aria-label={tip}>
+      <div className="row st-row-head">
+        <span className="st-name">{ex.name}</span>
+        {series.length === 1 ? (
+          <span className="muted small">1 session</span>
+        ) : (
+          <DeltaChip delta={ex.delta} topSet={ex.topSet} />
+        )}
+      </div>
+      {ex.matchedEffortTrend ? (
+        <span
+          className={`st-matched small${ex.matchedEffortTrend.delta > 0 ? " st-matched--up" : " muted"}`}
+        >
+          matched effort {ex.matchedEffortTrend.delta >= 0 ? "+" : "−"}
+          {formatEstimate(Math.abs(ex.matchedEffortTrend.delta))} @{" "}
+          {formatEffort({
+            rir: ex.matchedEffortTrend.rir,
+            effortUnit: ex.matchedEffortTrend.effortUnit,
+          })}{" "}
+          · {ex.matchedEffortTrend.sessions} sessions
+        </span>
+      ) : null}
+      <SparklinePlot series={series} />
+    </div>
+  );
+}
+
+/**
+ * @param {object} props
+ * @param {Array} props.perExercise - main/noteworthy rows (caller-ordered)
+ * @param {React.ReactNode} [props.betweenRows] - e.g. singles collapse chip
+ * @param {Array} [props.afterPerExercise] - rows after betweenRows (expanded singles)
+ */
+export function StrengthTrendChart({ perExercise, betweenRows = null, afterPerExercise = null }) {
+  const rows = buildTrendRows(perExercise);
+  const afterRows = buildTrendRows(afterPerExercise);
+
+  if (rows.length === 0 && afterRows.length === 0) {
     return (
       <p className="muted small analytics-chart-note">
         Log a few weighted sets to see strength trends here.
@@ -141,51 +204,13 @@ export function StrengthTrendChart({ perExercise }) {
   return (
     <div className="st-chart stack">
       <div className="st-rows">
-        {rows.map((ex) => {
-          const { series } = ex;
-          if (series.length === 0) {
-            return (
-              <div key={ex.exerciseId} className="st-row">
-                <div className="row st-row-head">
-                  <span className="st-name">{ex.name}</span>
-                  <span className="muted small">not enough data</span>
-                </div>
-              </div>
-            );
-          }
-
-          const tip =
-            series.length === 1
-              ? `${ex.name}: top set ${formatWeight(series[0].weight)} · 1 session in range`
-              : `${ex.name}: top set ${formatWeight(series[0].weight)} → ${formatWeight(series[series.length - 1].weight)} · ${series.length} sessions`;
-
-          return (
-            <div key={ex.exerciseId} className="st-row" aria-label={tip}>
-              <div className="row st-row-head">
-                <span className="st-name">{ex.name}</span>
-                {series.length === 1 ? (
-                  <span className="muted small">1 session</span>
-                ) : (
-                  <DeltaChip delta={ex.delta} topSet={ex.topSet} />
-                )}
-              </div>
-              {ex.matchedEffortTrend ? (
-                <span
-                  className={`st-matched small${ex.matchedEffortTrend.delta > 0 ? " st-matched--up" : " muted"}`}
-                >
-                  matched effort {ex.matchedEffortTrend.delta >= 0 ? "+" : "−"}
-                  {formatEstimate(Math.abs(ex.matchedEffortTrend.delta))} @{" "}
-                  {formatEffort({
-                    rir: ex.matchedEffortTrend.rir,
-                    effortUnit: ex.matchedEffortTrend.effortUnit,
-                  })}{" "}
-                  · {ex.matchedEffortTrend.sessions} sessions
-                </span>
-              ) : null}
-              <SparklinePlot series={series} />
-            </div>
-          );
-        })}
+        {rows.map((ex) => (
+          <StrengthTrendRow key={ex.exerciseId} ex={ex} />
+        ))}
+        {betweenRows}
+        {afterRows.map((ex) => (
+          <StrengthTrendRow key={ex.exerciseId} ex={ex} />
+        ))}
       </div>
     </div>
   );

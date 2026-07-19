@@ -5930,6 +5930,19 @@ html[data-theme="dark"] .auth-page .auth-form.card {
   font-size: 12px;
 }
 
+.analytics-singles-row td {
+  vertical-align: middle;
+}
+
+.analytics-singles-row .view-chip {
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+.analytics-singles-row--chart {
+  padding: 4px 0;
+}
+
 /* -- Muscle volume bars -- */
 
 .mv-rows {

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import * as analyticsApi from "../api/analyticsApi.js";
 import { ErrorMessage } from "../components/ErrorMessage.jsx";
@@ -112,6 +112,98 @@ function MatchedEffortCell({ trend }) {
   );
 }
 
+/** Sessions in range = topSetSeries length (one heaviest-per-session point). */
+function sessionsInRange(ex) {
+  return Array.isArray(ex.topSetSeries) ? ex.topSetSeries.length : 0;
+}
+
+function absMatchedEffortDelta(ex) {
+  const trend = ex.matchedEffortTrend;
+  if (trend == null || trend.delta == null) return null;
+  return Math.abs(trend.delta);
+}
+
+/** Noteworthy (>= 2 sessions) first by |matched-effort delta| DESC; ties /
+    no-delta keep input order. Singles collapsed only when mixed with
+    noteworthy rows — all-single lists render unchanged. */
+function partitionStrengthTableRows(perExercise) {
+  const list = Array.isArray(perExercise) ? perExercise : [];
+  const noteworthy = [];
+  const singles = [];
+  for (const ex of list) {
+    if (sessionsInRange(ex) >= 2) noteworthy.push(ex);
+    else if (sessionsInRange(ex) === 1) singles.push(ex);
+    else noteworthy.push(ex);
+  }
+
+  if (singles.length === 0 || noteworthy.length === 0) {
+    return {
+      mainRows: singles.length === list.length ? list : [...noteworthy].sort(compareNoteworthyDelta),
+      singleRows: [],
+      collapseSingles: false,
+    };
+  }
+
+  return {
+    mainRows: [...noteworthy].sort(compareNoteworthyDelta),
+    singleRows: singles,
+    collapseSingles: true,
+  };
+}
+
+function compareNoteworthyDelta(a, b) {
+  const da = absMatchedEffortDelta(a);
+  const db = absMatchedEffortDelta(b);
+  if (da == null && db == null) return 0;
+  if (da == null) return 1;
+  if (db == null) return -1;
+  return db - da;
+}
+
+function StrengthExerciseTableRow({ ex }) {
+  return (
+    <tr>
+      <td>{ex.name}</td>
+      <td>
+        <TopSetCell topSet={ex.topSet} />
+      </td>
+      <td>
+        <TopSetTrendCell series={ex.topSetSeries} />
+      </td>
+      <td>
+        <MatchedEffortCell trend={ex.matchedEffortTrend} />
+      </td>
+    </tr>
+  );
+}
+
+/** Shared Show/Hide chip for collapsed single-session strength rows (table + chart). */
+function StrengthSinglesCollapse({ count, showSingles, onToggle, asTableRow = false }) {
+  const label = (
+    <>
+      <span className="muted small">
+        {count} exercise{count === 1 ? "" : "s"} with a single session in this range
+      </span>{" "}
+      <button
+        type="button"
+        className="range-chip view-chip"
+        aria-expanded={showSingles}
+        onClick={onToggle}
+      >
+        {showSingles ? "Hide" : "Show"}
+      </button>
+    </>
+  );
+  if (asTableRow) {
+    return (
+      <tr className="analytics-singles-row">
+        <td colSpan={4}>{label}</td>
+      </tr>
+    );
+  }
+  return <div className="analytics-singles-row analytics-singles-row--chart">{label}</div>;
+}
+
 const VOLUME_VIEW_OPTIONS = [
   { value: "chart", label: "Bars" },
   { value: "trend", label: "Trend" },
@@ -219,6 +311,12 @@ function PerMuscleSection({ perMuscle, granularity, effortCoverage }) {
 
 function PerExerciseSection({ perExercise }) {
   const [view, setView] = useState("chart");
+  const [showSingles, setShowSingles] = useState(false);
+  const { mainRows, singleRows, collapseSingles } = useMemo(
+    () => partitionStrengthTableRows(perExercise),
+    [perExercise]
+  );
+
   return (
     <section className="card analytics-table-card">
       <ChartCardHead
@@ -236,7 +334,19 @@ function PerExerciseSection({ perExercise }) {
       />
       {view === "chart" ? (
         <div className="analytics-chart-body">
-          <StrengthTrendChart perExercise={perExercise} />
+          <StrengthTrendChart
+            perExercise={mainRows}
+            betweenRows={
+              collapseSingles ? (
+                <StrengthSinglesCollapse
+                  count={singleRows.length}
+                  showSingles={showSingles}
+                  onToggle={() => setShowSingles((open) => !open)}
+                />
+              ) : null
+            }
+            afterPerExercise={collapseSingles && showSingles ? singleRows : null}
+          />
         </div>
       ) : (
         <div className="table-scroll">
@@ -253,20 +363,24 @@ function PerExerciseSection({ perExercise }) {
               </tr>
             </thead>
             <tbody>
-              {perExercise.map((ex) => (
-                <tr key={ex.exerciseId}>
-                  <td>{ex.name}</td>
-                  <td>
-                    <TopSetCell topSet={ex.topSet} />
-                  </td>
-                  <td>
-                    <TopSetTrendCell series={ex.topSetSeries} />
-                  </td>
-                  <td>
-                    <MatchedEffortCell trend={ex.matchedEffortTrend} />
-                  </td>
-                </tr>
+              {mainRows.map((ex) => (
+                <StrengthExerciseTableRow key={ex.exerciseId} ex={ex} />
               ))}
+              {collapseSingles ? (
+                <>
+                  <StrengthSinglesCollapse
+                    count={singleRows.length}
+                    showSingles={showSingles}
+                    onToggle={() => setShowSingles((open) => !open)}
+                    asTableRow
+                  />
+                  {showSingles
+                    ? singleRows.map((ex) => (
+                        <StrengthExerciseTableRow key={ex.exerciseId} ex={ex} />
+                      ))
+                    : null}
+                </>
+              ) : null}
             </tbody>
           </table>
         </div>

@@ -4,11 +4,21 @@ import * as analyticsApi from "../../api/analyticsApi.js";
 import { ErrorMessage } from "../ErrorMessage.jsx";
 import { LoadingState } from "../LoadingState.jsx";
 import { HowCalculatedButton } from "./HowCalculatedButton.jsx";
+import { ChartTableToggle } from "./ChartTableToggle.jsx";
 import { niceScale } from "../../lib/chartScale.js";
 import { formatEffort } from "../../lib/effortDisplay.js";
 import { formatRepsValue } from "../../lib/repsDisplay.js";
 import { loadWeightUnit } from "../../lib/weightUnitPref.js";
 import { formatEstimate, formatWeight, roundToPlate } from "../../lib/weightDisplay.js";
+
+/** Trailing window for the Active roster lens (most recent session). */
+const ACTIVE_WINDOW_WEEKS = 8;
+const ACTIVE_WINDOW_DAYS = ACTIVE_WINDOW_WEEKS * 7;
+
+const ROSTER_LENS_OPTIONS = [
+  { value: "active", label: "Active" },
+  { value: "all", label: "All" },
+];
 
 const HOW_REP_TARGETS =
   "Working weights for common rep targets, inverted from your best estimated 1RM (Epley). Plate-rounded to what you can actually load. Targets outside your logged rep range are less reliable.";
@@ -394,6 +404,7 @@ export function ExercisesView({ weeks, range, exerciseParam, onExerciseParamChan
   const [indexLoading, setIndexLoading] = useState(true);
   const [indexError, setIndexError] = useState(null);
   const [query, setQuery] = useState("");
+  const [rosterLens, setRosterLens] = useState("active");
 
   const [detail, setDetail] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -462,11 +473,19 @@ export function ExercisesView({ weeks, range, exerciseParam, onExerciseParamChan
 
   const exercises = index?.exercises ?? [];
 
+  const lensed = useMemo(() => {
+    if (rosterLens === "all") return exercises;
+    // Active = lastPerformed within trailing ACTIVE_WINDOW_WEEKS (index field).
+    return exercises.filter((row) => daysAgo(row.lastPerformed) <= ACTIVE_WINDOW_DAYS);
+  }, [exercises, rosterLens]);
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return exercises;
-    return exercises.filter((row) => row.name.toLowerCase().includes(q));
-  }, [exercises, query]);
+    if (!q) return lensed;
+    return lensed.filter((row) => row.name.toLowerCase().includes(q));
+  }, [lensed, query]);
+
+  const activeEmpty = rosterLens === "active" && exercises.length > 0 && lensed.length === 0;
 
   function selectRow(row) {
     const param = serializeExerciseParam(row.identity);
@@ -504,6 +523,15 @@ export function ExercisesView({ weeks, range, exerciseParam, onExerciseParamChan
 
   return (
     <div className="stack exercises-view">
+      <div className="row">
+        <ChartTableToggle
+          value={rosterLens}
+          onChange={setRosterLens}
+          cardName="Exercises roster"
+          options={ROSTER_LENS_OPTIONS}
+        />
+      </div>
+
       <div className="exercises-search-wrap">
         <input
           type="search"
@@ -515,7 +543,22 @@ export function ExercisesView({ weeks, range, exerciseParam, onExerciseParamChan
         />
       </div>
 
-      {filtered.length === 0 ? (
+      {activeEmpty ? (
+        <div className="stack ex-empty-roster">
+          <p className="muted small" style={{ margin: 0 }}>
+            Nothing trained in the last {ACTIVE_WINDOW_WEEKS} weeks.
+          </p>
+          <p className="small" style={{ margin: 0 }}>
+            <button
+              type="button"
+              className="range-chip view-chip"
+              onClick={() => setRosterLens("all")}
+            >
+              Show all
+            </button>
+          </p>
+        </div>
+      ) : filtered.length === 0 ? (
         <p className="muted small">No exercises match &ldquo;{query.trim()}&rdquo;.</p>
       ) : (
         <ul className="exercise-roster" role="list">
