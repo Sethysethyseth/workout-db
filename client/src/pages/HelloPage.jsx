@@ -14,7 +14,7 @@ export function HelloPage() {
             Beta
           </span>
         </div>
-        <p className="settings-page-subtitle muted small">Welcome to WorkoutDB Beta</p>
+        <p className="settings-page-subtitle muted small">Welcome to LogChamp</p>
       </header>
 
       <section className="card stack" aria-labelledby="hello-intro">
@@ -25,6 +25,9 @@ export function HelloPage() {
           What this is: This is a mobile friendly workout tracker, made for fast logging and creating workout
           blocks and programs. I intend to add many different features, but for now I want to fully optimize
           the workout logging before I go into the next step. This is where you come in.
+        </p>
+        <p className="muted" style={{ margin: 0 }}>
+          Your history stays yours - every set, no time limit.
         </p>
       </section>
 
@@ -46,7 +49,7 @@ export function HelloPage() {
           Save this website like an app
         </h2>
         <p className="muted" style={{ margin: 0 }}>
-          For the best mobile experience, save WorkoutDB to your phone&apos;s home screen.
+          For the best mobile experience, save LogChamp to your phone&apos;s home screen.
         </p>
         <ul className="stack" style={{ margin: 0, paddingLeft: 18 }}>
           <li>
