@@ -93,7 +93,11 @@ DISPATCHED | fp4-empty-state-ghosts.md | static tokens-only ghost previews +
   Dispatched July 19 (resident session), lane branch
   cursor/fp4-empty-state-ghosts off 3de1749 in
   C:\dev\worktrees\cursor-lane; serialization gate satisfied (FP3
-  landed 3de1749)
+  landed 3de1749). **RELAY HANDOVER (July 19): the dispatching session
+  stepped out with this run in flight - the delivery will be sitting
+  uncommitted in the lane worktree. Next resident session: audit +
+  land per land-unit, then run the rest of the queue (FP5 -> FP6,
+  MODEL opus = named rung) per the FABLE HANDOVER section above.**
 QUEUED | fp5-pr-detection.md | pure prs.js detector (weight/
   reps-at-weight/e1RM, first-session suppression) + summary.prs stub
   filled + exerciseDetail standing records + PR card + quiet completed-
