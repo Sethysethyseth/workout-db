@@ -57,7 +57,7 @@ export function DashboardPage() {
   const completedRecent = useMemo(() => {
     const list = Array.isArray(sessions) ? sessions.filter((s) => s?.completedAt) : [];
     list.sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt));
-    return list.slice(0, 5);
+    return list.slice(0, 3);
   }, [sessions]);
 
   useEffect(() => {
@@ -206,20 +206,20 @@ export function DashboardPage() {
             Completed workouts show up here.
           </p>
         ) : (
-          <ul className="workout-tab-recent__scroll">
+          <div className="card sub-card-list">
             {completedRecent.map((s) => {
               const when = formatLoggedWhen(s.completedAt);
               const title = sessionDisplayTitle(s);
               return (
-                <li key={s.id} className="workout-tab-recent__item">
-                  <Link to={`/sessions/${s.id}`} className="card card--notched workout-tab-recent__card">
-                    <span className="workout-tab-recent__card-title">{title}</span>
-                    <span className="muted small workout-tab-recent__card-when">{when}</span>
+                <div key={s.id} className="sub-card stack">
+                  <Link to={`/sessions/${s.id}`} className="workout-tab-recent__row-title">
+                    {title}
                   </Link>
-                </li>
+                  <span className="muted small workout-tab-recent__row-when">{when}</span>
+                </div>
               );
             })}
-          </ul>
+          </div>
         )}
       </section>
 

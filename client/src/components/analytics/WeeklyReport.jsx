@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import * as analyticsApi from "../../api/analyticsApi.js";
-import { useActiveSession } from "../../context/ActiveSessionContext.jsx";
 import { toDateOnlyString } from "../../lib/dateOnly.js";
 import { pickTopGain } from "../../lib/topGain.js";
 import { formatEffort } from "../../lib/effortDisplay.js";
@@ -26,22 +25,6 @@ export function weeklyReportWindows() {
       to: toDateOnlyString(addDays(today, -7)),
     },
   };
-}
-
-function windowBounds(fromStr, toStr) {
-  return {
-    fromMs: new Date(`${fromStr}T00:00:00`).getTime(),
-    toMs: new Date(`${toStr}T23:59:59.999`).getTime(),
-  };
-}
-
-function countWorkoutsInWindow(sessions, fromStr, toStr) {
-  const { fromMs, toMs } = windowBounds(fromStr, toStr);
-  return (Array.isArray(sessions) ? sessions : []).filter((s) => {
-    if (!s?.completedAt) return false;
-    const t = new Date(s.completedAt).getTime();
-    return !Number.isNaN(t) && t >= fromMs && t <= toMs;
-  }).length;
 }
 
 function hasSummaryData(summary) {
@@ -116,7 +99,6 @@ function ReportStat({ label, value, delta, deltaTone: tone }) {
 }
 
 export function WeeklyReport() {
-  const { sessions } = useActiveSession();
   const windows = useMemo(() => weeklyReportWindows(), []);
   const [currentSummary, setCurrentSummary] = useState(null);
   const [priorSummary, setPriorSummary] = useState(null);
@@ -158,12 +140,8 @@ export function WeeklyReport() {
 
   if (loading || fetchFailed) return null;
 
-  const currentWorkouts = countWorkoutsInWindow(
-    sessions,
-    windows.current.from,
-    windows.current.to
-  );
-  const priorWorkouts = countWorkoutsInWindow(sessions, windows.prior.from, windows.prior.to);
+  const currentWorkouts = currentSummary?.workoutCount ?? 0;
+  const priorWorkouts = priorSummary?.workoutCount ?? 0;
   const currentHasData = currentWorkouts > 0 || hasSummaryData(currentSummary);
   const priorHasData = priorWorkouts > 0 || hasSummaryData(priorSummary);
 

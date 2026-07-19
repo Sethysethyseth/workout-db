@@ -230,4 +230,50 @@ describe("buildSummary", () => {
       }
     }
   });
+
+  test("workoutCount: distinct sessions with sets; empty sessions not counted; empty range is 0", () => {
+    // Two sessions with sets (distinct performedAt) + no sets for a third
+    // "empty" session (empty sessions never appear in enrichedSets).
+    const fixtures = [
+      enrichSet({
+        exerciseName: BENCH,
+        weight: 100,
+        reps: 5,
+        rir: 2,
+        performedAt: "2026-06-02T10:00:00Z",
+      }),
+      enrichSet({
+        exerciseName: BENCH,
+        weight: 105,
+        reps: 5,
+        rir: 2,
+        performedAt: "2026-06-02T10:00:00Z", // same session
+      }),
+      enrichSet({
+        exerciseName: BENCH,
+        weight: 110,
+        reps: 5,
+        performedAt: "2026-06-09T10:00:00Z",
+      }),
+    ];
+    const summary = buildSummary(fixtures, { from, to });
+    expect(summary.workoutCount).toBe(2);
+
+    const empty = buildSummary([], { from, to });
+    expect(empty.workoutCount).toBe(0);
+
+    // Sets outside the range do not count.
+    const outside = buildSummary(
+      [
+        enrichSet({
+          exerciseName: BENCH,
+          weight: 100,
+          reps: 5,
+          performedAt: "2026-05-01T10:00:00Z",
+        }),
+      ],
+      { from, to }
+    );
+    expect(outside.workoutCount).toBe(0);
+  });
 });

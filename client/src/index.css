@@ -4251,55 +4251,21 @@ html[data-theme="dark"] .workout-hero.card--notched::before {
   padding-left: 2px;
 }
 
-.workout-tab-recent__scroll {
-  list-style: none;
-  margin: 0;
-  padding: 0 16px 4px 0;
-  display: flex;
-  gap: 10px;
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  -webkit-overflow-scrolling: touch;
-}
-
-.workout-tab-recent__item {
-  flex: 0 0 auto;
-  scroll-snap-align: start;
-}
-
-.workout-tab-recent__card {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  width: 150px;
-  min-height: 72px;
-  padding: 10px 12px;
-  text-decoration: none;
-  color: inherit;
-  transition:
-    border-color var(--motion-base) var(--ease-standard),
-    box-shadow var(--motion-base) var(--ease-standard);
-}
-
-.workout-tab-recent__card:hover {
-  border-color: color-mix(in srgb, var(--color-interactive) 45%, var(--color-border));
-  box-shadow: var(--shadow-card-hover);
-}
-
-.workout-tab-recent__card-title {
+.workout-tab-recent__row-title {
   font-weight: 700;
-  font-size: 13px;
-  line-height: 1.25;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  overflow: hidden;
+  font-size: 0.95rem;
+  line-height: 1.3;
+  color: inherit;
+  text-decoration: none;
 }
 
-.workout-tab-recent__card-when {
+.workout-tab-recent__row-title:hover {
+  color: var(--color-interactive);
+}
+
+.workout-tab-recent__row-when {
   margin: 0;
   font-variant-numeric: tabular-nums;
-  white-space: nowrap;
 }
 
 .workout-tab__error-compact {

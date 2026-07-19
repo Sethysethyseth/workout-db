@@ -80,6 +80,10 @@ function buildSummary(enrichedSets, { from, to, planLookup, userExercises }) {
   const balance = computeBalanceRatios(perMuscle);
 
   const inRange = filterInRange(enrichedSets, { from, to });
+  // Distinct sessions = distinct performedAt values among in-range sets
+  // (same session key the aggregates already use). Empty sessions never
+  // appear in enrichedSets, so they are not counted.
+  const workoutCount = new Set(inRange.map((s) => s.performedAt.getTime())).size;
   const execution = computeExecutionFidelity(inRange, planLookup);
   const attributedInRange = inRange.filter((s) => s.attribution.attributed);
 
@@ -108,6 +112,7 @@ function buildSummary(enrichedSets, { from, to, planLookup, userExercises }) {
       to: toDate(to).toISOString(),
       weeks,
     },
+    workoutCount,
     perMuscle,
     perExercise,
     prs: [],
