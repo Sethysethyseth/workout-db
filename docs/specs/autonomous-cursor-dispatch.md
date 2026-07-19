@@ -10,7 +10,10 @@ go-ahead on the brainstormed design); probe + trial July 14 (Fable).
 Amended July 15, 2026 (Fable, Seth's go-ahead): one RESIDENT Sonnet
 session per wave is the stated norm for the relay loop, and Seth's
 smoke sign-off is one consolidated checklist at wave end - see "The
-relay loop".
+relay loop". Amended July 18, 2026 (v5.2, Fable's last session, Seth's
+direction): FAN-OUT - multiple Cursor agents in parallel, one per
+worktree, and Cursor report lanes now aid the frontier seats' own
+work (authoring recon, gate fuel) - see "Fan-out (relay v5.2)".
 
 ## What this changes, in one sentence
 
@@ -244,6 +247,104 @@ was close but not exact): `model` must be an OBJECT `{ "id": "..." }`
 (a bare string is rejected); `repos: [{ url, startingRef }]` and
 top-level `autoCreatePR` are correct as sketched (`source`/`target`
 keys are rejected). `GET /v1/models` works and lists ~33 model ids.
+
+## Fan-out (relay v5.2, July 18, 2026)
+
+Adopted from the same-day receipt in the workflow repo: one frontier
+session ran FOUR Cursor agents (three parallel + one serialized), zero
+collisions by construction, and the parallel verify lane caught a real
+launch blocker "for free" while the content lane worked. Design note
+with the full grain: the workflow repo's
+`source-material/fan-out-dispatch-2026-07-18.md`. This section is the
+LogChamp adoption of that grain.
+
+### Lane classes (the load-bearing distinction)
+
+- **CONTENT lanes** produce repo changes. They parallelize ONLY when
+  their FILES TO TOUCH are fully disjoint (including test, CSS, and
+  barrel/index files - if in doubt, they collide: serialize), and they
+  ALWAYS serialize through the single reviewer at landing. This is the
+  existing batching rule, now stated as a lane class.
+- **REPORT lanes** produce a report file and touch nothing else. They
+  are embarrassingly parallel: zero merge risk, no landing commit -
+  the "delivery" is reading the report (optionally preserving it as a
+  FINDINGS doc, FP0 precedent). Verification sweeps, audits, web
+  research, recon passes, and diagnosis blocks are ALL report lanes.
+  Report lanes are the cheap on-ramp: when unsure how wide to go,
+  fan out report lanes, not content lanes.
+
+### Worktree pool (one agent per worktree, ALWAYS)
+
+The unit of safe parallelism is the worktree, not the file list - this
+generalizes the two-agents-one-tree scar to N agents by making it
+structurally impossible. `C:\dev\worktrees\cursor-lane` stays the
+primary content lane (amortized npm install). Parallel lanes get
+`cursor-lane-2`, `cursor-lane-3`, created on demand
+(`git worktree add C:\dev\worktrees\cursor-lane-N -b cursor/<slug>
+<base>`); report lanes rarely need node_modules, so cold worktrees are
+fine there. Per-dispatch preconditions are unchanged and apply PER
+worktree: clean tree, `checkout -B`, explicit `--model`, background
+task with timeout. A lane holding an unlanded delivery is NOT clean -
+skip it, use another (never disturb an in-flight delivery).
+
+### Many hands, one gate (what fan-out must never change)
+
+- Fan-out multiplies EXECUTORS, never reviewers. Audit, commit, push,
+  and state upkeep stay single-file through one Claude Code seat;
+  parallel deliveries land ONE AT A TIME through `land-unit`.
+- Dispatch width is set by what the reviewing seat can audit while
+  it's fresh, not by how many agents can run. Practical cap: 3
+  concurrent (the receipt's width). If landing feels like the
+  bottleneck, that is the design working.
+- The gate NEVER fans out: no parallel agent touches gate items
+  (main merges, prod, migrations). Two-bounce stop applies PER lane.
+- Seth's attention still batches: dispatch N, ONE consolidated review
+  pass, one smoke checklist. Progress messaging counts LANDINGS, not
+  dispatches (a parallel dispatch is announced as one message).
+
+### Where Cursor now aids the frontier seats (the v5.2 extension)
+
+Fan-out is not just wider execution - it moves grunt work OFF the
+frontier seats in their own two rituals:
+
+- **Authoring support (skeleton design).** Before authoring a wave,
+  the frontier seat may dispatch report lanes for the grounding it
+  would otherwise grep out itself: repo recon (NOW-state per finding
+  with file:line evidence - FP0 is the proven pattern), web/competitor
+  research, spec-input sweeps. The frontier seat then authors
+  contracts FROM the reports. The judgment - scope calls, contracts,
+  trade-offs, rejections - never delegates; only the search does.
+- **Gate support (pre-main review).** The gate seat may dispatch
+  parallel report lanes as gate fuel while it reads: per-unit
+  diff-vs-block coverage reports (each acceptance criterion -> where
+  the diff satisfies it), fresh-lanes verification runs, cross-doc
+  consistency sweeps. Verify-before-trust governs: reports compress
+  SEARCH, never judgment - the gate still spot-checks claims directly
+  and owns every verdict, and the ruling itself never fans out.
+
+Session-scoped report lanes (authoring recon, gate fuel) are recorded
+in the HANDOFF session log, NOT in QUEUE.md - the queue stays the
+roadmap-unit ledger. A report lane that is itself a roadmap unit
+(FP0) gets a QUEUE entry like any other.
+
+### Economics
+
+N parallel auto-rung lanes are free and compress wall-clock; the
+frontier seat's token cost stays roughly flat (authoring + auditing is
+the same work serial or parallel). The real win is frontier-session
+utilization: a seat that would idle waiting on one executor authors
+the next block - or reads the next report - while three run. Failure
+isolation comes free: a hung or quota-dead agent strands only its own
+lane; blocks are self-contained, so re-dispatch on another ladder rung
+is safe by construction.
+
+### First LogChamp receipt
+
+July 18, 2026 (this amendment's own session): two report lanes ran
+concurrently on the auto rung in `cursor-lane-2`/`cursor-lane-3` - a
+CLI-concurrency research sweep and a cross-doc consistency audit of
+this very amendment - while FP2's unlanded delivery sat untouched in
+`cursor-lane`. Results recorded in the HANDOFF session log.
 
 ## Risks / open items
 

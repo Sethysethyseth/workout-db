@@ -10,6 +10,15 @@ one commit, even when reviewing a batch. Verify-before-trust holds at
 every step: the delivery report is trusted for narrative, NEVER for
 green tests.
 
+Fan-out (v5.2): parallel lanes may DELIVER concurrently, but they land
+ONE AT A TIME through this ritual - fan-out multiplies executors,
+never reviewers. REPORT-lane deliveries (recon/research/audit blocks)
+have no code to land: audit = verify the lane tree is porcelain-empty
+(the no-edits contract), read the report, spot-check 1-2 claims
+directly, then either preserve it as a `-FINDINGS.md` doc commit (FP0
+precedent, wave units) or fold it into the HANDOFF session log
+(session-scoped lanes).
+
 ## 0. Preconditions
 
 - Read the task block (`docs/tasks/<unit>.md`) and `DELIVERY.md` (the

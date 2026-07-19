@@ -133,6 +133,14 @@ Rebrand text lives in: rendered UI, `<title>`, PWA manifest name fields.
   doesn't drift: when diagnosis was ~95% of the work and the fix is
   trivial, the diagnosing agent ships it directly - anything where
   implementation is the bulk of the work goes to Cursor, however small.
+- **Fan-out (relay v5.2, July 18):** multiple Cursor agents may run in
+  PARALLEL - one agent per worktree, always (`C:\dev\worktrees\
+  cursor-lane`, `-2`, `-3`). REPORT lanes (audits, recon, research,
+  diagnosis - report file only, zero repo edits) parallelize freely;
+  CONTENT lanes only when FILES TO TOUCH are fully disjoint (in doubt =
+  collide = serialize). Many hands, ONE gate: all deliveries land
+  serially through the single Claude Code reviewer; width cap 3. Design:
+  `docs/specs/autonomous-cursor-dispatch.md`, "Fan-out (relay v5.2)".
 - Seth personally runs everything the gate marks ask-first (main merges,
   prod, migrations).
 

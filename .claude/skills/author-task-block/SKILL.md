@@ -54,9 +54,24 @@ Seth by hand, same line either way - the file must stand alone.
   (file:line, mechanism, why it explains the EXACT symptom), blast
   radius, smallest-correct proposed fix. Fix block dispatches only after
   the reviewer verifies the reasoning.
-- **Batching:** two blocks may dispatch back-to-back only if FILES TO
-  TOUCH are fully disjoint - including test, CSS, and barrel/index
-  files. If in doubt whether they collide, they do: serialize.
+- **Report block (recon / research / audit):** CHANGE says produce a
+  REPORT ONLY - no code changes, no git operations - written to
+  `DELIVERY.md` (preserve as a `-FINDINGS.md` doc at landing if it
+  should outlive the session; FP0 precedent). Report blocks are
+  report LANES (spec, "Fan-out"): embarrassingly parallel, no landing
+  commit. Diagnosis blocks are a special case of this variant.
+- **Batching / parallelism (v5.2):** two CONTENT blocks may run
+  concurrently (or back-to-back) only if FILES TO TOUCH are fully
+  disjoint - including test, CSS, and barrel/index files. If in doubt
+  whether they collide, they do: serialize. REPORT blocks parallelize
+  freely with anything. One agent per worktree, always; width cap 3.
+- **Authoring recon (v5.2):** before authoring a wave, consider
+  dispatching report lanes for the grounding this seat would
+  otherwise grep out itself - NOW-state recon with file:line
+  evidence, web research, spec-input sweeps - and author the
+  contracts FROM the reports. The judgment (scope, contracts,
+  trade-offs) never delegates; only the search does. Session-scoped
+  recon lanes are logged in HANDOFF, not QUEUE.
 
 ## Finish
 

@@ -107,6 +107,28 @@ are in-conversation messages, not extra stops:
   over the consolidated wave smoke checklist per `land-unit`.
 - If N changes mid-wave (a block added/dropped), say so once and renumber.
 
+## 2c. Fan-out - parallel lanes (v5.2, July 18)
+
+Full grain: spec, "Fan-out (relay v5.2)". The mechanics here:
+
+- **One agent per worktree, ALWAYS.** Parallel lanes get their own
+  worktrees: `C:\dev\worktrees\cursor-lane-2`, `-3`, created on demand
+  (`git worktree add ... -b cursor/<slug> <base>`). All section-2
+  preconditions apply PER worktree; a lane holding an unlanded
+  delivery is NOT clean - skip it, never disturb it.
+- **REPORT lanes** (audits, recon, research, diagnosis - report file
+  only, no repo edits) parallelize freely. **CONTENT lanes** parallel
+  only with fully disjoint FILES TO TOUCH (in doubt = collide =
+  serialize), and always land serially through `land-unit`.
+- Width cap: 3 concurrent - set by what one seat can audit fresh,
+  not by quota. One background task per agent, each with its own
+  timeout and explicit `--model`.
+- Session-scoped report lanes (authoring recon, gate fuel) skip QUEUE
+  bookkeeping - record them in the HANDOFF session log instead. Wave
+  units keep full QUEUE bookkeeping regardless of parallelism.
+- Progress messaging: announce a parallel dispatch as ONE message;
+  "n/N" counts LANDINGS, not dispatches.
+
 ## 3. The fallback ladder
 
 A named -> B named -> B auto -> STOP (page Seth). Descend on: missing

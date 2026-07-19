@@ -20,7 +20,10 @@ Decided July 3, 2026 (v3, token-efficiency rebalance); amended July 6, 2026
 Cursor itself via the **`dispatch-unit` skill** instead of Seth relaying
 them; adopted after the pricing probe validated the cost model and NT3
 landed clean as the first autonomous unit. Design + channel/ladder
-details: `docs/specs/autonomous-cursor-dispatch.md`). Three roles:
+details: `docs/specs/autonomous-cursor-dispatch.md`); amended July 18,
+2026 (v5.2: FAN-OUT - multiple parallel Cursor agents, one per
+worktree; report lanes now aid the frontier seats' authoring recon and
+gate fuel; spec section "Fan-out (relay v5.2)"). Three roles:
 
 - **Sonnet in Claude Code = the resident driver.** Runs the day-to-day
   relay: per-unit AUDIT of each Cursor delivery, then commit / push /
@@ -36,7 +39,11 @@ details: `docs/specs/autonomous-cursor-dispatch.md`). Three roles:
   accumulated branch diff before any merge to main - nothing ships to main
   without a Fable/Opus pass; it greps `HANDOFF-ARCHIVE.md` for the wave's
   full session history (accepted deviations, sequencing flags, reviewer
-  fixes) as review fuel. Standing escalation triggers that pull Fable in
+  fixes) as review fuel. In BOTH rituals the frontier seat may fan out
+  Cursor REPORT lanes for the grunt search (authoring recon per
+  `author-task-block`; gate-fuel coverage/consistency sweeps per the
+  spec's fan-out section) - reports compress search, never judgment;
+  the ruling itself never fans out. Standing escalation triggers that pull Fable in
   mid-wave: schema or migration design (A4), security / cross-user
   isolation surfaces, prod incidents, root-cause debugging Sonnet can't
   close, and any unit where Sonnet's review finds the delivery and the
