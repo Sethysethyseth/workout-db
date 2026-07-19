@@ -125,10 +125,14 @@ LANDED d6180cf | fp4-empty-state-ghosts.md | static tokens-only ghost previews +
   rows between "No exercises logged yet." and the unlock line with the
   Log CTA intact; ghosts read as muted furniture in all 4 palettes x
   light/dark, never as real data, and nothing in them is tappable
-QUEUED | fp5-pr-detection.md | pure prs.js detector (weight/
+DISPATCHED | fp5-pr-detection.md | pure prs.js detector (weight/
   reps-at-weight/e1RM, first-session suppression) + summary.prs stub
   filled + exerciseDetail standing records + PR card + quiet completed-
-  view chip | MODEL opus; after FP2 (summary.js) and FP4 (ExercisesView)
+  view chip | MODEL opus -> Channel B NAMED rung (judgment tier, no
+  descent). Dispatched July 19 (second resident session), lane branch
+  cursor/fp5-pr-detection off 04ce6bf in C:\dev\worktrees\cursor-lane;
+  serialization gate satisfied - FP2 (summary.js) landed 056be0c and
+  FP4 (ExercisesView) landed d6180cf
 QUEUED | fp6-weekly-digest.md | digest layer under the Home band:
   muscle movers, PR line, execution line, one deterministic nudge |
   MODEL opus; STRICTLY after FP2 + FP5 land
