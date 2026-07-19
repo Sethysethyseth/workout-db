@@ -10,6 +10,7 @@ import { formatEffort } from "../../lib/effortDisplay.js";
 import { formatRepsValue } from "../../lib/repsDisplay.js";
 import { loadWeightUnit } from "../../lib/weightUnitPref.js";
 import { formatEstimate, formatWeight, roundToPlate } from "../../lib/weightDisplay.js";
+import { ExercisesEmptyGhost } from "./EmptyStateGhosts.jsx";
 
 /** Trailing window for the Active roster lens (most recent session). */
 const ACTIVE_WINDOW_WEEKS = 8;
@@ -510,9 +511,13 @@ export function ExercisesView({ weeks, range, exerciseParam, onExerciseParamChan
 
   if (exercises.length === 0) {
     return (
-      <section className="card stack ex-empty-roster">
+      <section className="card stack ex-empty-roster analytics-empty-surface">
         <p className="muted" style={{ margin: 0 }}>
-          No exercises logged yet. Log a workout to build your exercise history.
+          No exercises logged yet.
+        </p>
+        <ExercisesEmptyGhost />
+        <p className="analytics-unlock" style={{ margin: 0 }}>
+          Log a workout to build your exercise history.
         </p>
         <p className="small" style={{ margin: 0 }}>
           <Link to="/log-workout">Log your first workout →</Link>

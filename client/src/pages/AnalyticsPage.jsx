@@ -13,6 +13,11 @@ import { StrengthTrendChart } from "../components/analytics/StrengthTrendChart.j
 import { ExercisesView } from "../components/analytics/ExercisesView.jsx";
 import { Meter } from "../components/analytics/Meter.jsx";
 import { BalanceScale } from "../components/analytics/BalanceScale.jsx";
+import {
+  ExecutionEmptyGhost,
+  MusclesEmptyGhost,
+  StrengthEmptyGhost,
+} from "../components/analytics/EmptyStateGhosts.jsx";
 import { toDateOnlyString } from "../lib/dateOnly.js";
 import { formatEffort } from "../lib/effortDisplay.js";
 import { formatRepsValue } from "../lib/repsDisplay.js";
@@ -511,7 +516,8 @@ function ExecutionSection({ execution }) {
         onViewChange={setView}
       />
       {execution.length === 0 ? (
-        <div className="analytics-chart-body">
+        <div className="analytics-chart-body stack analytics-empty-surface">
+          <ExecutionEmptyGhost />
           <p className="muted small analytics-chart-note">
             Log workouts from a template with planned sets to unlock execution fidelity.
           </p>
@@ -733,26 +739,65 @@ export function AnalyticsPage() {
 
       {!error && summary ? (
         isEmpty && view !== "exercises" ? (
-          <div className="card stack analytics-page-empty">
-            {!indexReady ? (
-              <p className="muted small" style={{ margin: 0 }}>
-                Checking your history…
-              </p>
-            ) : isNewUser ? (
-              <>
-                <p className="muted" style={{ margin: 0 }}>
-                  You haven&apos;t logged any sets yet. Once you record a workout, volume and
-                  strength trends will show up here.
+          <div className={`stack analytics-content${loading ? " is-refreshing" : ""}`}>
+            <AnalyticsViewTabs value={view} onChange={setView} />
+            <div className="card stack analytics-page-empty analytics-empty-surface">
+              {!indexReady ? (
+                <p className="muted small" style={{ margin: 0 }}>
+                  Checking your history…
                 </p>
-                <p className="small" style={{ margin: 0 }}>
-                  <Link to="/log-workout">Log your first workout →</Link>
-                </p>
-              </>
-            ) : (
-              <p className="muted" style={{ margin: 0 }}>
-                No sets in the last {weeks} weeks — try a longer range with the chips above.
-              </p>
-            )}
+              ) : view === "strength" ? (
+                <>
+                  <StrengthEmptyGhost />
+                  <p className="analytics-unlock" style={{ margin: 0 }}>
+                    Log sets with weight and this becomes your strength trend.
+                  </p>
+                  {isNewUser ? (
+                    <p className="small" style={{ margin: 0 }}>
+                      <Link to="/log-workout">Log your first workout →</Link>
+                    </p>
+                  ) : (
+                    <p className="muted" style={{ margin: 0 }}>
+                      No sets in the last {weeks} weeks — try a longer range with the chips above.
+                    </p>
+                  )}
+                </>
+              ) : view === "execution" ? (
+                <>
+                  <ExecutionEmptyGhost />
+                  <p className="muted small analytics-chart-note" style={{ margin: 0 }}>
+                    Log workouts from a template with planned sets to unlock execution fidelity.
+                  </p>
+                  {isNewUser ? (
+                    <p className="small" style={{ margin: 0 }}>
+                      <Link to="/log-workout">Log your first workout →</Link>
+                    </p>
+                  ) : null}
+                </>
+              ) : (
+                <>
+                  <MusclesEmptyGhost />
+                  <p className="analytics-unlock" style={{ margin: 0 }}>
+                    Log 3 workouts and this becomes your volume trend.
+                  </p>
+                  {isNewUser ? (
+                    <>
+                      <p className="muted" style={{ margin: 0 }}>
+                        You haven&apos;t logged any sets yet. Once you record a workout, volume and
+                        strength trends will show up here.
+                      </p>
+                      <p className="small" style={{ margin: 0 }}>
+                        <Link to="/log-workout">Log your first workout →</Link>
+                      </p>
+                    </>
+                  ) : (
+                    <p className="muted" style={{ margin: 0 }}>
+                      No sets in the last {weeks} weeks — try a longer range with the chips above.
+                    </p>
+                  )}
+                </>
+              )}
+            </div>
           </div>
         ) : (
           <div className={`stack analytics-content${loading ? " is-refreshing" : ""}`}>

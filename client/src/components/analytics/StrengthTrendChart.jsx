@@ -1,6 +1,7 @@
 import { formatEffort } from "../../lib/effortDisplay.js";
 import { formatRepsValue } from "../../lib/repsDisplay.js";
 import { formatEstimate, formatWeight } from "../../lib/weightDisplay.js";
+import { StrengthEmptyGhost } from "./EmptyStateGhosts.jsx";
 
 /**
  * Sparkline chart: top-set weight per session via topSetSeries (N2) - the
@@ -195,9 +196,12 @@ export function StrengthTrendChart({ perExercise, betweenRows = null, afterPerEx
 
   if (rows.length === 0 && afterRows.length === 0) {
     return (
-      <p className="muted small analytics-chart-note">
-        Log a few weighted sets to see strength trends here.
-      </p>
+      <div className="stack analytics-empty-surface">
+        <StrengthEmptyGhost />
+        <p className="analytics-unlock" style={{ margin: 0 }}>
+          Log sets with weight and this becomes your strength trend.
+        </p>
+      </div>
     );
   }
 
