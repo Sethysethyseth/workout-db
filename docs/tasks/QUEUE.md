@@ -51,7 +51,12 @@ DISPATCHED | fp2-home-strip-coherence.md | buildSummary.workoutCount
   (one ledger for the This-week strip, kills the completedAt/
   performedAt dual-clock incoherence) + vertical 3-row recent workouts
   | MODEL auto. Dispatched July 18, Channel B auto rung, lane branch
-  cursor/fp2-home-strip-coherence off 8dc799f
+  cursor/fp2-home-strip-coherence off 8dc799f. **RELAY HANDOVER: the
+  Fable session dispatched this then stepped out (seat correction -
+  the relay is resident work); the delivery will be sitting
+  uncommitted in the lane worktree. Next Opus/Sonnet session: audit +
+  land per land-unit, then run the queue per the FABLE HANDOVER
+  section above.**
 QUEUED | fp3-active-exercise-lens.md | strength list sorts noteworthy
   first + collapses single-session rows; roster gains Active|All
   segmented lens (ACTIVE_WINDOW_WEEKS=8), history never hidden for good
