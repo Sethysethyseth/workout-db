@@ -65,21 +65,35 @@ LANDED 056be0c | fp2-home-strip-coherence.md | buildSummary.workoutCount
   tile now agrees with Sets/Top-set windows (a session with zero
   countable sets shows 0 workouts - intended); recent workouts render
   as 3 vertical full-width rows, titles wrap, View all works.
-DISPATCHED | fp3-active-exercise-lens.md | strength list sorts noteworthy
+LANDED 3de1749 | fp3-active-exercise-lens.md | strength list sorts noteworthy
   first + collapses single-session rows; roster gains Active|All
   segmented lens (ACTIVE_WINDOW_WEEKS=8), history never hidden for good
-  | MODEL auto -> Channel B auto rung. Dispatched July 19 (resident
-  session), lane branch cursor/fp3-active-exercise-lens off 056be0c
-  in C:\dev\worktrees\cursor-lane; serialization gate satisfied (FP2
-  landed 056be0c). BOUNCE 1 (July 19): delivery partitioned only the
-  TABLE view; the default CHART view (StrengthTrendChart sparkline
-  rows - the surface in Seth's screenshot) was left unpartitioned and
-  the narrowing was undeclared (Deviations: None) - automatic bounce
-  per land-unit. Findings appended to the block; re-dispatched same
-  lane, delivery preserved (extend, not redo)
-QUEUED | fp4-empty-state-ghosts.md | static tokens-only ghost previews +
+  | MODEL auto -> Channel B auto rung. Dispatched + landed July 19
+  (resident session). BOUNCE 1 (July 19): first delivery partitioned
+  only the TABLE view; the default CHART view (StrengthTrendChart
+  sparkline rows - the surface in Seth's screenshot, where a
+  single-session row got delta=0 and sorted ABOVE negative trends) was
+  left unpartitioned and undeclared - automatic bounce per land-unit.
+  Bounce fix audited clean: shared partition + one showSingles state
+  drives both views, StrengthTrendChart's internal raw-topSet-delta
+  sort REMOVED (caller order wins; DeltaChip display-only), row JSX
+  extraction verified verbatim, StrengthTrendChart.jsx touched OUTSIDE
+  original FILES TO TOUCH by reviewer direction (bounce findings named
+  it - declared this time). Lanes fresh in lane post-fix: unit 171/171,
+  build green, check-hex clean; ACTIVE_WINDOW_WEEKS single definition
+  verified; detail deep-link independence verified by direct read.
+  Lane rebased onto 3eae347 then ff-merged. SMOKE: Strength chart
+  (default) and table both show noteworthy-first order with a muted
+  "N exercises with a single session" Show/Hide line; Exercises roster
+  defaults Active with All one tap away; a deep link to a dormant
+  exercise still opens its detail under the Active lens.
+DISPATCHED | fp4-empty-state-ghosts.md | static tokens-only ghost previews +
   honesty-voice unlock lines on all four empty analytics surfaces |
-  MODEL auto (design fully specified); after FP3 (same files)
+  MODEL auto (design fully specified) -> Channel B auto rung.
+  Dispatched July 19 (resident session), lane branch
+  cursor/fp4-empty-state-ghosts off 3de1749 in
+  C:\dev\worktrees\cursor-lane; serialization gate satisfied (FP3
+  landed 3de1749)
 QUEUED | fp5-pr-detection.md | pure prs.js detector (weight/
   reps-at-weight/e1RM, first-session suppression) + summary.prs stub
   filled + exerciseDetail standing records + PR card + quiet completed-
