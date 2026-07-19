@@ -13,13 +13,15 @@ review (hands-on staging drive + Cursor competitor research). Direction
 calls made by Fable July 18 and baked into FP0 - the report grounds
 them; implementation blocks get authored AFTER Seth reads the report.
 
-QUEUED | fp0-frontier-parity-report.md | report-only unit, NO code:
+DISPATCHED | fp0-frontier-parity-report.md | report-only unit, NO code:
   per-item NOW (file:line evidence) + CHANGE (what the called fix looks
   like) + SIZE for the six Tier-0 review findings, four Tier-1
   frontier-parity features, Tier-2 horizon paragraph; R3 is a real
   diagnosis (This-week strip incoherence mechanism) | MODEL auto ->
   B auto rung; deliverable is DELIVERY.md itself - preserve verbatim as
-  fp0-frontier-parity-report-FINDINGS.md at landing (MW4/MW5 precedent)
+  fp0-frontier-parity-report-FINDINGS.md at landing (MW4/MW5 precedent).
+  Dispatched July 18, Channel B auto rung, lane worktree branch
+  cursor/fp0-frontier-parity-report off a5444b7
 
 MW-wave (maintenance wave), authored July 16 (Fable), branch
 `maintenance-wave` (off not-tracked-ux-wave HEAD `5e3d981` = main
