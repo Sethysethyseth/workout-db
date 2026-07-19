@@ -87,17 +87,44 @@ LANDED 3de1749 | fp3-active-exercise-lens.md | strength list sorts noteworthy
   "N exercises with a single session" Show/Hide line; Exercises roster
   defaults Active with All one tap away; a deep link to a dormant
   exercise still opens its detail under the Active lens.
-DISPATCHED | fp4-empty-state-ghosts.md | static tokens-only ghost previews +
+LANDED d6180cf | fp4-empty-state-ghosts.md | static tokens-only ghost previews +
   honesty-voice unlock lines on all four empty analytics surfaces |
   MODEL auto (design fully specified) -> Channel B auto rung.
-  Dispatched July 19 (resident session), lane branch
-  cursor/fp4-empty-state-ghosts off 3de1749 in
-  C:\dev\worktrees\cursor-lane; serialization gate satisfied (FP3
-  landed 3de1749). **RELAY HANDOVER (July 19): the dispatching session
-  stepped out with this run in flight - the delivery will be sitting
-  uncommitted in the lane worktree. Next resident session: audit +
-  land per land-unit, then run the rest of the queue (FP5 -> FP6,
-  MODEL opus = named rung) per the FABLE HANDOVER section above.**
+  Dispatched July 19 by one resident session that stepped out with the
+  run in flight; a SECOND July 19 resident session picked the delivery
+  up out of the lane worktree and landed it (relay handover worked as
+  written). Audited per land-unit: scope exact (5 files, all inside
+  FILES TO TOUCH - the two existing components touched,
+  StrengthTrendChart + ExercisesView, own the in-section empty states
+  the block names as surfaces 2 and 3, and both were declared), lanes
+  fresh in lane (unit 171/171 in 14 suites, build green 130 modules,
+  check-hex clean). Verified by direct read: every ghost root carries
+  aria-hidden + pointer-events:none and the new component file has zero
+  onClick/button/Link/<a>; CSS diff has no animation/transition/
+  @keyframes and no raw color (all color-mix over --color-interactive /
+  --color-border / --color-surface-2 / --chart-track); every class and
+  token the ghosts lean on pre-exists and behaves (.analytics-unlock
+  :5654, --chart-track :5682, .mv-track IS position:relative :5970 so
+  the absolute ghost bar anchors, .balance-scale--ghost :6397,
+  .st-row/.exec-row are plain grids so the reuse cannot conflict);
+  AnalyticsViewTabs prop contract matches its definition (value/
+  onChange). TWO DECLARED DEVIATIONS, both ACCEPTED: (1) view tabs now
+  render on the page-empty branch (N6 hid them) - not cosmetic but
+  REQUIRED by the contract, since four per-view teases are unreachable
+  without a URL edit otherwise; the exercises tab still routes to
+  ExercisesView's own empty branch via the existing
+  `isEmpty && view !== "exercises"` condition, so nothing dead-ends.
+  (2) exercises empty copy split into title + unlock line so the ghost
+  sits between them - exactly the block's "keep/tighten ... above the
+  ghosts" ask. Lane rebased onto 9fcd547 then ff-merged. SMOKE: with a
+  range that has no sets, Muscles shows 4 stepped ghost bars + the
+  ghost balance track + "Log 3 workouts and this becomes your volume
+  trend."; the tabs above it switch to Strength (sparkline silhouette +
+  2 row skeletons) and Execution (one plan-vs-actual ghost row) without
+  a URL edit; a brand-new account's Exercises tab shows 3 ghost roster
+  rows between "No exercises logged yet." and the unlock line with the
+  Log CTA intact; ghosts read as muted furniture in all 4 palettes x
+  light/dark, never as real data, and nothing in them is tappable
 QUEUED | fp5-pr-detection.md | pure prs.js detector (weight/
   reps-at-weight/e1RM, first-session suppression) + summary.prs stub
   filled + exerciseDetail standing records + PR card + quiet completed-
