@@ -1,158 +1,109 @@
 # HANDOFF — current state
 
-**Updated:** July 18, 2026, twenty-sixth session (Fable — **FP-WAVE
-OPENED: FP0 frontier-parity report authored, dispatched, and LANDED
-`137e0ea` in one session; NO implementation blocks yet by design**).
-Seth's ask: make the direction calls on the July 17 product-review
-findings and have Cursor produce a NOW/CHANGE report he can read
-before anything ships. New branch `frontier-parity-wave` off
-maintenance-wave HEAD `0206d30` (= main `3b325db` + two post-merge
-docs commits). Fable made the calls (baked into
-`docs/tasks/fp0-frontier-parity-report.md`, block `a5444b7`): retitle
-to LogChamp; interim "LC" monogram PWA icons; ONE window + ONE data
-source for the This-week strip; recent workouts go VERTICAL (3 rows,
-full titles); empty analytics tease the wedge with static ghost
-previews + honesty-voice unlock lines; tagline stays Seth's call
-(3 alternatives presented); PR detection as a pure engine module with
-quiet chips (no confetti); weekly digest extends the existing
-WeeklyReport band; Strength Score flagged NEEDS FABLE DESIGN PASS
-jointly with the queued per-side unit; never-gate-history verified
-true and becomes product copy. FP0 dispatched Channel B auto rung,
-landed same session per land-unit: lane porcelain-EMPTY (report-only
-contract held), unit lane fresh 170/170, spot-checks by direct read —
-the R3 diagnosis is REAL (Workouts tile counts by `completedAt` in
-LOCAL bounds at WeeklyReport.jsx:31-44 while Sets/Top-set ride
-/analytics/summary filtered by `performedAt` in UTC bounds — two
-clocks, two sources in one strip). Full report preserved verbatim in
-`docs/tasks/fp0-frontier-parity-report-FINDINGS.md`; audit record in
-QUEUE.md.
+**Updated:** July 19, 2026, twenty-seventh session (Opus resident —
+**FP4 LANDED `d6180cf`; FP5 DISPATCHED on the named rung and BOUNCED
+on audit — NOT landed**). This entry covers BOTH July 19 resident
+sessions; the first one landed FP2 `056be0c` and FP3 `3de1749` (after
+one bounce) and dispatched FP4, then stepped out with the run in
+flight, leaving a relay-handover note in QUEUE. That handover worked
+as written: this session picked the FP4 delivery straight out of the
+lane worktree and landed it.
 
-**Same session, phase 2 (after Seth's read):** Seth APPROVED the
-critiques with riders — icons LAST (needs his intervention), and
-everything Fable-gated must be set up for OPUS because **Fable is
-unavailable after July 18**. He brought two new insights, both
-designed same session: (1) his strength-view screenshot (in
-claudefiledrop/) shows single-session/dormant exercises burying the
-real trends — became FP3 (active-exercise lens: noteworthy-first sort,
-single-session rows collapsed, Active|All roster lens, history never
-hidden); (2) different-gym machine variance skews analytics (his
-screenshot's "Single arm lat pulldown -52.5 lbs" is the live example)
-— his location idea designed into `docs/specs/gym-context.md`
-(one-shot opt-in location at session start, Gym entity + session tag,
-ANNOTATE-never-adjust analytics + home-only filter; continuous
-tracking rejected on PWA/privacy/battery grounds, criteria named in
-the spec). The R9 design pass is DONE too:
-`docs/specs/strength-score-per-side.md` (self-referenced score,
-per-side comparison verdicts, imbalance headline; SS1-SS3 block plan).
-**FP-WAVE SKELETON AUTHORED `4e09379`: FP1-FP6 QUEUED, FP8 DRAFT**
-(order + serialization + the full Opus handover in QUEUE.md's FABLE
-HANDOVER section). FP1 DISPATCHED same session (Channel B auto rung).
-Open Seth items: R6 tagline pick; icon PNGs into claudefiledrop/ to
-un-DRAFT FP8; G1's migration when the G-wave starts.
+**Wave state: 4 of 6 code units landed** — FP1 `8dc799f`, FP2
+`056be0c`, FP3 `3de1749`, FP4 `d6180cf` (plus the FP0 report
+`137e0ea`). Branch `frontier-parity-wave`, all pushed to
+origin, deploys nowhere (staging Render tracks `main`).
 
-Previous entry (July 17, twenty-fifth session, Fable — **PRE-MAIN
-GATE PASSED + MW-WAVE MERGED TO MAIN `3b325db`**). Seth confirmed the
-MW6+MW8 smoke PASSED and gave the trigger phrase; merge ran per the
-RUNBOOK ritual one command at a time in a scratch worktree
-(`C:\dev\worktrees\merge-main`, per the OneDrive lesson): ff-only
-`c473e21..3b325db`, 35 commits, no merge commit, `origin/main` HEAD
-verified `3b325db` post-push, worktree removed. NO migration —
-code-only deploy. **Seth completed all three post-merge steps same
-day: staging Render repointed to `main`, prod deploy SHA verified ==
-`3b325db`, prod smoke PASSED (MW pass + the previously-owed NT items
-incl. the What's New modal — the NT-wave verification trio is
-retired).** `maintenance-wave` is now fully contained in `main` and
-staging no longer points at it — a deletion candidate (gated). The wave that just shipped, for the record below: MW1-MW8 +
-the CW dev-tooling arc + `a5294e3`. Gate details in the review record
-that follows.
+**FP4 (empty-state ghosts) LANDED `d6180cf`**, audited per land-unit:
+lanes fresh in lane (unit 171/171, build green 130 modules, check-hex
+clean), scope exact (5 files), every ghost verified aria-hidden +
+pointer-events:none with zero interactive elements, CSS diff free of
+animation/transition/@keyframes and of raw color, and every class and
+token the ghosts lean on verified to pre-exist and behave
+(`.analytics-unlock` :5654, `--chart-track` :5682, `.mv-track` IS
+`position: relative` so the absolute ghost bar anchors,
+`.balance-scale--ghost` :6397). Two declared deviations accepted: view
+tabs now render on the page-empty branch (required — three of the four
+per-view teases are otherwise unreachable without a URL edit), and the
+exercises empty copy split into title + unlock around the ghost.
 
-Gate record (same session, pre-merge):
-Reviewed the full accumulated diff `c473e21..a5294e3` (34 commits:
-MW1-MW8 + the CW dev-tooling arc + one post-wave direct fix) against
-the blocks, QUEUE's per-unit audit records, and the archived session
-logs per the gate ritual. Lanes re-run fresh AT THE GATE: unit 170/170
-(14 suites), Vite build green, check-hex clean. Verified by direct
-diff read: MW2's guard/identity un-nesting matches the July 16 ruling
-exactly (`:531` guard counts `identityParse.provided`, identity arm
-wins over name-derivation when both arrive — so the NTFIX2 client's
-name+id PATCH is id-authoritative), MW3's reopen ladder is
-ownership-correct (userId in the findFirst) with a completedAt-only
-flip and completeSession's include shape, MW1's un-nest is
-structurally sound (pill/summary are SIBLINGS of the toggle, the
-stopPropagation removal is safe because no ancestor handler remains),
-MW6's detector table + auto-pair guards (busyRef, sets.length,
-setCountBusy, commit-vs-draft, override-false-wins) all hold and the
-RIR keystroke gate makes the flush-path integer guards
-belt-and-suspenders, MW7/MW8 are surgical, watcher script confirmed
-NEVER imported by client or server (dev tooling stays out of runtime).
-**`a5294e3` recorded:** an off-flow July 16 evening direct fix (ONE
-confirm when deleting a filled L/R pair, no confirm on a blank pair,
-singles keep the per-set confirm) — committed outside land-unit during
-what was evidently Seth's MW6 smoke; now gate-reviewed directly,
-clean, on origin. NO fix blocks needed, nothing bounced, no Cursor
-busywork identified. (Both pre-merge conditions were then met same
-session: Seth confirmed the MW6+MW8 smoke PASSED and said "push to
-main" — see the merge record above.)
-Flagged, not blocking: `docs/specs/cursor-token-savings-{stats.md,
-data.json}` and `docs/parked/*` sit UNTRACKED since ~July 11-13
-(side-project artifacts for the poor-man's-agentic-workflow repo) —
-Seth to rule whether they belong in this repo's history or move out.
+**FP5 (PR detection) BOUNCED — bounce 1, delivery left uncommitted in
+the lane for the fix run.** First named-rung dispatch of the wave
+(`--model opus`, no descent). The lanes came back GREEN and stayed
+green when re-run fresh in the lane (unit 195/195 in 15 suites incl.
+24 new `prs.js` fixtures, build green, check-hex clean, purity grep
+clean) — **the bounce is not a lane failure, it is a defect the lanes
+structurally cannot see.** The ENGINE HALF passed audit and is kept:
+identity keying verified correct by direct read (`enrichSet.js:25`
+synthesizes a `user:<id>` catalogEntry for custom exercises, so
+`summary.js`'s helpers — copied verbatim from `exerciseDetail.js`'s
+landed N5 pattern — cover catalog AND custom), and cross-user
+isolation verified (the new all-time fetch reuses the pre-existing
+userId-scoped `fetchAllTimeEnrichedSets`, `where: { userId }` on both
+queries; no new query written). Two findings, both confined to
+`SessionDetailPage.jsx`, written into the block as BOUNCE 1 FINDINGS:
+**F1, BLOCKER and UNDECLARED** — `setHasPR` is a `const` inside the
+`SessionDetailPage` component (:2036) but is CALLED inside the
+top-level `SessionExerciseBlock` (:1709, :1738), which never receives
+it (call sites :2914/:2979 pass no such prop), so every COMPLETED
+session detail page throws `ReferenceError: setHasPR is not defined`;
+live sessions survive only via the `isCompleted &&` short-circuit.
+Invisible to both lanes (Vite does not resolve undefined identifiers,
+there are no client render tests) while the report claimed the chip
+worked — automatic bounce. **F2** — the chip matches PRs to rows by
+`weight:reps` alone, so bench 135x5 (a real PR) and curl 135x5 (not)
+both light up in the same session; the payload already carries
+`identity` + `exerciseName`, so the match must key on exercise
+identity. A false PR badge is a honesty-layer violation. Accepted and
+explicitly NOT to be "fixed" in the bounce: the extra
+`GET /analytics/summary` call on the completed view (the block
+permitted extending the response already touched), and `getSummary`
+now fetching all-time sets per request (inherent to the contract — PRs
+need history beyond the range).
+
+**Standing question Seth raised, deliberately NOT actioned here (his
+call to take to a Fable agent):** whether big/complicated waves should
+route Cursor to frontier models. Facts gathered for that conversation:
+`cursor-agent --list-models` DOES carry the frontier tier —
+`claude-opus-4-8-thinking-high` (1M, thinking) and
+`claude-fable-5-thinking-high` (1M thinking, flagged **NO ZDR**) —
+alongside the Codex/GPT-5.x ladder and Composer. Two observations
+worth putting to Fable: (a) `dispatch-unit` passes bare aliases like
+`--model opus` rather than exact ids, which resolved fine but is the
+same class of papercut as the July 14 "CLI remembers the last model"
+lesson; (b) the evidence so far says spend on AMBIGUITY, not size —
+MW's deliberate all-auto descent landed 8/8, while this wave's two
+bounces (FP3 chart-view partition, FP5's chip) were both places the
+block left a judgment call open. Seth owns raising this; no docs were
+changed for it.
+
+Previous entry (July 17, twenty-fifth session, Fable — PRE-MAIN GATE
+PASSED + MW-WAVE MERGED TO MAIN `3b325db`) moved VERBATIM to
+`docs/HANDOFF-ARCHIVE.md` this rewrite, together with its full gate
+record. Still-live pieces carried forward: the merge is done and
+prod-verified (see "Repo / deploy state"), and the untracked
+`docs/specs/cursor-token-savings-*` + `docs/parked/*` side-project
+artifacts still await Seth's ruling (see "Next up" 0a).
 
 Aged out this rewrite, moved verbatim to `docs/HANDOFF-ARCHIVE.md`
-(newest first): the July 16 **twenty-fourth** session (Opus resident —
-MW-wave code-complete, MW6 `bfbbe56` + MW8 `52e84cf` dispatched and
-landed, all 8 units in; the MW6 detector-narrowing judged note and the
-MW8 formatter verification live there verbatim — the still-live pieces
-are carried in QUEUE.md's per-unit records and the top-entry gate
-record). Before that: the July 16 **twenty-third** session (Fable — rulings
-interpreted + MW6 finalized/QUEUED + MW8 authored; the five ruling
-dispositions, the "stepper alone speaks Pairs" vocabulary choice, and
-the RIR-gate rider live there verbatim — the still-live pieces are
-baked into the landed MW6/MW8 QUEUE records and
-`mw6-seth-rulings.md`'s interpretation section). Before that: the
-July 16 **twenty-second** session (Opus resident —
-MW-wave dispatch ran the whole queue, 6 of 7 units dispatched + landed
-in one session; the deliberate auto-rung descent precedent, the
-wave-progress-messaging skill amendment `627c520`, and the MW4/MW5
-diagnosis verdicts live there verbatim — the still-live pieces are
-carried in QUEUE.md's per-unit records and the FINDINGS files). Before
-that: the July 16 **twenty-first** session (Fable — MW-wave
-skeleton authored, 7 blocks on new branch `maintenance-wave` off
-`5e3d981`; the scope settlements with Seth — item 12 = custom
-EXERCISES, un-finish IS the edit path, item 16 not authored — and the
-original dispatch matrix live there verbatim; the still-live pieces are
-carried in QUEUE.md and the entries above). Before that: the July 15
-**twentieth** session (Fable — the
-cursor-watch arc, CW1 `018a6ae` + CW2 `a26a2c8` + CW3 `6907d4a` all
-landed; the persistent-watcher Startup setup, the non-git-dir papercut,
-and the owed CW3 visual sign-off live there verbatim — the sign-off
-stays carried in "Next up" 0a). Before that: the July 15 **nineteenth** session (Opus — PRE-MAIN GATE
-PASSED + NT-WAVE MERGED TO MAIN `c473e21`; the full GATE RESULTS, the
-NTFIX2-rename ruling, the nested-`<button>` diagnosis, and the
-post-merge NEXT UP trio live there verbatim — the still-live pieces are
-carried in the top entry, "Next up", and the MW blocks). The prior
-rewrite aged the July 15 **eighteenth** session (Fable — relay v5.1
-resident-session amendment: batch Seth's touchpoints, never the machine
-checkpoints), and the one before that the July 15 **seventeenth** session
-(Opus — the orphaned
-July 14 findings-fix work traced, audited and landed as NTFIX2
-`888e44d`; full provenance trace of session `ee60a330` lives there).
-The prior rewrite aged the July 14 **sixteenth** session (Sonnet —
-NTFIX1 + NT3 smoke sign-off, all four items PASSED), and the one before
-aged the
-July 14 **fifteenth** session (Fable — relay v5 doc alignment pass) and
-the July 14 **fourteenth** session (Fable — RELAY v5 ADOPTED: pricing
-probe + NT3 as the first autonomous dispatch; the env/PATH and
-`--model` gotchas from it are preserved in the "Notes / gotchas"
-section below). Before that: the July 14 thirteenth
-session (Sonnet — relay v5 one-time manual setup complete; env/PATH
-staleness gotcha),
-the July 13 twelfth session (Fable — relay v5 proposal),
-the July 12 eleventh session (Sonnet — NTFIX1 landed `e0ba383` + the
-live browser test of F that produced finding G), the July 11 ninth
-session (Opus — NT1 + NT2 landed), the July 11 eighth session (Fable —
-NT-wave skeleton authored), and the July 10 seventh session (Fable —
-not-tracked flow brainstorm).
+(newest first): the July 18 **twenty-sixth** session (Fable — FP-WAVE
+OPENED, FP0 report landed `137e0ea`, the wave skeleton authored
+`4e09379`, and Seth's two new insights designed into
+`docs/specs/gym-context.md` + `docs/specs/strength-score-per-side.md`;
+the direction calls, the R3 dual-clock diagnosis, and the full
+Fable-unavailable handover live there verbatim — the still-live pieces
+are carried in QUEUE.md's FABLE HANDOVER section and the per-unit
+records) and the July 17 **twenty-fifth** session (Fable — pre-main
+gate + MW-wave merge, above).
+
+Everything older lives in the archive, newest first, and is NOT
+re-summarized here: sessions 7-24 (July 10-16) cover the not-tracked
+wave (NT1-NT3 + NTFIX1/NTFIX2 + the July 15 merge to `c473e21`), relay
+v5/v5.1/v5.2 adoption, the cursor-watch dev-tooling arc (CW1-CW3), and
+the whole MW-wave (skeleton, dispatch, rulings, code-complete). Grep
+the archive by session number or SHA when a decision's provenance
+matters; the still-live conclusions are all carried in QUEUE.md's
+per-unit records, the `-FINDINGS.md` files, and the sections below.
 
 - **N-wave follow-ups — folded into "Next up" 0a (July 16):** all three
   items run against `c473e21`, with the staging repoint target now
@@ -176,10 +127,18 @@ trusting it.
 
 ## Repo / deploy state
 
-- **`frontier-parity-wave` is the ACTIVE wave branch (July 18)** — off
-  maintenance-wave HEAD `0206d30`, docs-only so far (FP0 block + the
-  landed report `137e0ea`). Deploys nowhere: staging Render tracks
-  `main` since July 17.
+- **`frontier-parity-wave` is the ACTIVE wave branch (July 19)** — off
+  maintenance-wave HEAD `0206d30`. Now carries real code: FP0 report
+  `137e0ea`, FP1 `8dc799f`, FP2 `056be0c`, FP3 `3de1749`, FP4
+  `d6180cf`, all pushed. **Smoke-surface caveat, verify before the
+  wave smoke:** staging Render (the API) has tracked `main` since
+  July 17, so the SERVER halves of this wave are not deployed
+  anywhere. FP2's `buildSummary.workoutCount` is a server change, and
+  FP5's engine work will be too. The client halves ride Vercel's
+  per-branch deploy as usual. Seth either repoints staging Render at
+  `frontier-parity-wave` for the smoke or accepts that server-derived
+  numbers are stale — settle this BEFORE running the checklist below,
+  or the This-week strip will look unfixed.
 - **MW-WAVE MERGED to `main` (`3b325db`), July 17** — ff-only
   `c473e21..3b325db`, 35 commits, no merge commit, no migration. All 8
   MW units + the CW dev-tooling arc + the `a5294e3` pair-delete-confirm
@@ -241,16 +200,59 @@ trusting it.
 
 ## Next up (the active task)
 
-00. **FP-WAVE: SETH READS THE FP0 REPORT** —
-   `docs/tasks/fp0-frontier-parity-report-FINDINGS.md` (landed
-   `137e0ea` on `frontier-parity-wave`). It gives NOW/CHANGE/SIZE for
-   every review finding + frontier-parity feature. Seth rules on: R6
-   tagline (keep / one of three alternatives), whether the suggested
-   block grouping stands, and which tiers ship this wave. Then
-   implementation blocks get authored. R9 (Strength Score) folds the
-   already-queued per-side L/R comparison candidate into ONE Fable
-   design pass — that supersedes the standalone "per-side next" note
-   below.
+00. **FP-WAVE, NEXT SESSION'S FIRST JOB: re-dispatch FP5 with the
+   bounce findings.** The block `docs/tasks/fp5-pr-detection.md` is
+   STATUS: BOUNCED and carries a `BOUNCE 1 FINDINGS` section naming
+   both fixes (F1 the `setHasPR` scope crash, F2 the weight:reps
+   false-positive match) and explicitly ringfencing the engine half as
+   accepted. **The first delivery is still sitting uncommitted in
+   `C:\dev\worktrees\cursor-lane` on branch `cursor/fp5-pr-detection`
+   (base `04ce6bf`) — do NOT reset that lane and do NOT re-dispatch
+   from scratch.** Re-dispatch the SAME lane per `dispatch-unit`'s
+   bounce channel so the fix builds on the kept engine work; named
+   rung again (MODEL opus). F1's fix must be PROVEN by driving the
+   completed-session view in a browser or adding a render test —
+   "build green" is exactly the evidence that missed it the first
+   time. Two bounces on one unit = hard stop, page Seth.
+00b. **Then FP6** (`fp6-weekly-digest.md`, MODEL opus, QUEUED) — the
+   last code unit of the wave. Its gate is FP2 + FP5 both LANDED, so
+   it stays blocked until FP5 clears. After FP6 lands the wave is
+   code-complete except FP8, and the next gate is the pre-main review
+   (Opus, per the standing fallback) + Seth's smoke.
+00c. **Wave smoke checklist (FP1-FP4, hand to Seth when he asks or at
+   wave end)** — read the deploy caveat in "Repo / deploy state"
+   first; the server halves may not be deployed:
+   - Tab title reads **LogChamp**; HelloPage welcome + save-to-home
+     lines say LogChamp; the never-gate-history guarantee line renders
+   - Home This-week strip: the Workouts tile now agrees with the
+     Sets/Top-set windows (a session with zero countable sets shows 0
+     workouts — intended); recent workouts are 3 vertical full-width
+     rows with wrapping titles; View all works
+   - Analytics Strength (chart AND table): noteworthy-first order with
+     a muted "N exercises with a single session" Show/Hide line;
+     Exercises roster defaults to **Active** with All one tap away; a
+     deep link to a dormant exercise still opens its detail
+   - Empty analytics (use a range with no sets): Muscles shows 4
+     stepped ghost bars + ghost balance track + "Log 3 workouts and
+     this becomes your volume trend."; the tabs above it reach the
+     Strength (sparkline silhouette) and Execution (plan-vs-actual
+     row) teases without a URL edit; a new account's Exercises tab
+     shows 3 ghost roster rows between "No exercises logged yet." and
+     the unlock line, Log CTA intact; ghosts read as muted furniture
+     in all 4 palettes x light/dark and nothing in them is tappable
+00d. **Open Seth items, unchanged:** the R6 tagline pick (one-line
+   `AuthLayout.jsx` swap, kept out of every block until he decides);
+   the FP8 icon PNGs into `claudefiledrop/` to flip it QUEUED (icons
+   LAST by his rider); and the Cursor model-routing question he is
+   taking to a Fable agent (facts gathered in the top entry — do not
+   pre-empt it with doc edits).
+   Reference: `docs/tasks/fp0-frontier-parity-report-FINDINGS.md`
+   (landed `137e0ea`) is still the evidence base for every FP unit.
+   R9 (Strength Score) + per-side design is DONE in
+   `docs/specs/strength-score-per-side.md` — Opus authors SS1-SS3 from
+   it after the FP core lands; gym context likewise in
+   `docs/specs/gym-context.md` (G1 is migration-carrying = Seth's
+   manual track).
 0z. **MW-WAVE: FULLY CLOSED July 17.** Merged to main `3b325db`
    (ff-only, details + SHAs in the top entry) and Seth completed all
    three post-merge steps same day: staging Render REPOINTED to

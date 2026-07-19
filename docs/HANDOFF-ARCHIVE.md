@@ -1,5 +1,104 @@
 # HANDOFF ARCHIVE — session-log history (append-only)
 
+Previous entry (July 17, twenty-fifth session, Fable — **PRE-MAIN
+GATE PASSED + MW-WAVE MERGED TO MAIN `3b325db`**). Seth confirmed the
+MW6+MW8 smoke PASSED and gave the trigger phrase; merge ran per the
+RUNBOOK ritual one command at a time in a scratch worktree
+(`C:\dev\worktrees\merge-main`, per the OneDrive lesson): ff-only
+`c473e21..3b325db`, 35 commits, no merge commit, `origin/main` HEAD
+verified `3b325db` post-push, worktree removed. NO migration —
+code-only deploy. **Seth completed all three post-merge steps same
+day: staging Render repointed to `main`, prod deploy SHA verified ==
+`3b325db`, prod smoke PASSED (MW pass + the previously-owed NT items
+incl. the What's New modal — the NT-wave verification trio is
+retired).** `maintenance-wave` is now fully contained in `main` and
+staging no longer points at it — a deletion candidate (gated). The wave that just shipped, for the record below: MW1-MW8 +
+the CW dev-tooling arc + `a5294e3`. Gate details in the review record
+that follows.
+
+Gate record (same session, pre-merge):
+Reviewed the full accumulated diff `c473e21..a5294e3` (34 commits:
+MW1-MW8 + the CW dev-tooling arc + one post-wave direct fix) against
+the blocks, QUEUE's per-unit audit records, and the archived session
+logs per the gate ritual. Lanes re-run fresh AT THE GATE: unit 170/170
+(14 suites), Vite build green, check-hex clean. Verified by direct
+diff read: MW2's guard/identity un-nesting matches the July 16 ruling
+exactly (`:531` guard counts `identityParse.provided`, identity arm
+wins over name-derivation when both arrive — so the NTFIX2 client's
+name+id PATCH is id-authoritative), MW3's reopen ladder is
+ownership-correct (userId in the findFirst) with a completedAt-only
+flip and completeSession's include shape, MW1's un-nest is
+structurally sound (pill/summary are SIBLINGS of the toggle, the
+stopPropagation removal is safe because no ancestor handler remains),
+MW6's detector table + auto-pair guards (busyRef, sets.length,
+setCountBusy, commit-vs-draft, override-false-wins) all hold and the
+RIR keystroke gate makes the flush-path integer guards
+belt-and-suspenders, MW7/MW8 are surgical, watcher script confirmed
+NEVER imported by client or server (dev tooling stays out of runtime).
+**`a5294e3` recorded:** an off-flow July 16 evening direct fix (ONE
+confirm when deleting a filled L/R pair, no confirm on a blank pair,
+singles keep the per-set confirm) — committed outside land-unit during
+what was evidently Seth's MW6 smoke; now gate-reviewed directly,
+clean, on origin. NO fix blocks needed, nothing bounced, no Cursor
+busywork identified. (Both pre-merge conditions were then met same
+session: Seth confirmed the MW6+MW8 smoke PASSED and said "push to
+main" — see the merge record above.)
+Flagged, not blocking: `docs/specs/cursor-token-savings-{stats.md,
+data.json}` and `docs/parked/*` sit UNTRACKED since ~July 11-13
+(side-project artifacts for the poor-man's-agentic-workflow repo) —
+Seth to rule whether they belong in this repo's history or move out.
+
+
+Previous entry (July 18, 2026, twenty-sixth session (Fable — **FP-WAVE
+OPENED: FP0 frontier-parity report authored, dispatched, and LANDED
+`137e0ea` in one session; NO implementation blocks yet by design**).
+Seth's ask: make the direction calls on the July 17 product-review
+findings and have Cursor produce a NOW/CHANGE report he can read
+before anything ships. New branch `frontier-parity-wave` off
+maintenance-wave HEAD `0206d30` (= main `3b325db` + two post-merge
+docs commits). Fable made the calls (baked into
+`docs/tasks/fp0-frontier-parity-report.md`, block `a5444b7`): retitle
+to LogChamp; interim "LC" monogram PWA icons; ONE window + ONE data
+source for the This-week strip; recent workouts go VERTICAL (3 rows,
+full titles); empty analytics tease the wedge with static ghost
+previews + honesty-voice unlock lines; tagline stays Seth's call
+(3 alternatives presented); PR detection as a pure engine module with
+quiet chips (no confetti); weekly digest extends the existing
+WeeklyReport band; Strength Score flagged NEEDS FABLE DESIGN PASS
+jointly with the queued per-side unit; never-gate-history verified
+true and becomes product copy. FP0 dispatched Channel B auto rung,
+landed same session per land-unit: lane porcelain-EMPTY (report-only
+contract held), unit lane fresh 170/170, spot-checks by direct read —
+the R3 diagnosis is REAL (Workouts tile counts by `completedAt` in
+LOCAL bounds at WeeklyReport.jsx:31-44 while Sets/Top-set ride
+/analytics/summary filtered by `performedAt` in UTC bounds — two
+clocks, two sources in one strip). Full report preserved verbatim in
+`docs/tasks/fp0-frontier-parity-report-FINDINGS.md`; audit record in
+QUEUE.md.
+
+**Same session, phase 2 (after Seth's read):** Seth APPROVED the
+critiques with riders — icons LAST (needs his intervention), and
+everything Fable-gated must be set up for OPUS because **Fable is
+unavailable after July 18**. He brought two new insights, both
+designed same session: (1) his strength-view screenshot (in
+claudefiledrop/) shows single-session/dormant exercises burying the
+real trends — became FP3 (active-exercise lens: noteworthy-first sort,
+single-session rows collapsed, Active|All roster lens, history never
+hidden); (2) different-gym machine variance skews analytics (his
+screenshot's "Single arm lat pulldown -52.5 lbs" is the live example)
+— his location idea designed into `docs/specs/gym-context.md`
+(one-shot opt-in location at session start, Gym entity + session tag,
+ANNOTATE-never-adjust analytics + home-only filter; continuous
+tracking rejected on PWA/privacy/battery grounds, criteria named in
+the spec). The R9 design pass is DONE too:
+`docs/specs/strength-score-per-side.md` (self-referenced score,
+per-side comparison verdicts, imbalance headline; SS1-SS3 block plan).
+**FP-WAVE SKELETON AUTHORED `4e09379`: FP1-FP6 QUEUED, FP8 DRAFT**
+(order + serialization + the full Opus handover in QUEUE.md's FABLE
+HANDOVER section). FP1 DISPATCHED same session (Channel B auto rung).
+Open Seth items: R6 tagline pick; icon PNGs into claudefiledrop/ to
+un-DRAFT FP8; G1's migration when the G-wave starts.
+
 Previous entry (July 16, twenty-fourth session, Opus resident —
 **MW-WAVE CODE-COMPLETE: MW6 `bfbbe56` + MW8 `52e84cf` dispatched and
 LANDED, all 8 units in**). Both went over Channel B in the lane

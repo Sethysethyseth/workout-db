@@ -125,14 +125,45 @@ LANDED d6180cf | fp4-empty-state-ghosts.md | static tokens-only ghost previews +
   rows between "No exercises logged yet." and the unlock line with the
   Log CTA intact; ghosts read as muted furniture in all 4 palettes x
   light/dark, never as real data, and nothing in them is tappable
-DISPATCHED | fp5-pr-detection.md | pure prs.js detector (weight/
+BOUNCED (1) | fp5-pr-detection.md | pure prs.js detector (weight/
   reps-at-weight/e1RM, first-session suppression) + summary.prs stub
   filled + exerciseDetail standing records + PR card + quiet completed-
   view chip | MODEL opus -> Channel B NAMED rung (judgment tier, no
-  descent). Dispatched July 19 (second resident session), lane branch
-  cursor/fp5-pr-detection off 04ce6bf in C:\dev\worktrees\cursor-lane;
-  serialization gate satisfied - FP2 (summary.js) landed 056be0c and
-  FP4 (ExercisesView) landed d6180cf
+  descent - first named-rung dispatch of the wave). Dispatched July 19
+  (second resident session), lane branch cursor/fp5-pr-detection off
+  04ce6bf in C:\dev\worktrees\cursor-lane; serialization gate satisfied
+  (FP2 summary.js landed 056be0c, FP4 ExercisesView landed d6180cf).
+  **BOUNCE 1 (July 19), delivery NOT landed, work left uncommitted in
+  the lane for the fix run.** Lanes verified fresh in lane and GREEN
+  (unit 195/195 in 15 suites incl. 24 new prs fixtures, build green,
+  check-hex clean, purity grep clean) - the bounce is not a lane
+  failure, it is a defect the lanes cannot see. Engine half AUDITED
+  CLEAN and accepted as delivered: identity keying verified correct by
+  direct read (enrichSet.js:25 synthesizes a `user:<id>` catalogEntry
+  for custom exercises, so summary.js's identityKeyOf/identityFromKey -
+  copied verbatim from exerciseDetail.js's landed N5 pattern - covers
+  catalog AND custom); isolation verified (the new all-time fetch
+  reuses the pre-existing userId-scoped `fetchAllTimeEnrichedSets`,
+  `where: { userId }` on both queries, no new query written); the
+  removed HONESTY_PR_DETECTION note is now correct to drop. TWO
+  FINDINGS, both in SessionDetailPage.jsx, written into the block:
+  **F1 BLOCKER, UNDECLARED** - `setHasPR` is a const in
+  `SessionDetailPage` (:2036) but called inside the top-level
+  `SessionExerciseBlock` (:1709, :1738) with no prop threading it
+  (:2914/:2979 pass nothing), so every COMPLETED session detail page
+  throws `ReferenceError: setHasPR is not defined`; live sessions
+  survive only via the `isCompleted &&` short-circuit. Invisible to
+  both lanes (Vite does not resolve undefined identifiers, no client
+  render tests) and the report claimed the chip worked - automatic
+  bounce per land-unit. **F2** - the chip matches PRs to rows by
+  `weight:reps` alone, so any set sharing a weight/reps pair with a PR
+  in the same session gets chipped (bench 135x5 and curl 135x5 both
+  light up); declared as deviation 1 but not acceptable as built - the
+  payload already carries `identity` + `exerciseName`, so the match
+  must key on exercise identity too. A false PR badge is a
+  honesty-layer violation. Re-dispatch SAME lane with the findings
+  (bounce channel, engine half untouched). Two bounces on one unit =
+  hard stop, page Seth.
 QUEUED | fp6-weekly-digest.md | digest layer under the Home band:
   muscle movers, PR line, execution line, one deterministic nudge |
   MODEL opus; STRICTLY after FP2 + FP5 land
