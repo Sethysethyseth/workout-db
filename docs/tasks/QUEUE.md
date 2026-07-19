@@ -47,20 +47,31 @@ LANDED 8dc799f | fp1-rebrand-copy-polish.md | title -> LogChamp, two
   not rendered). No deviations. Lane rebased onto a115f35 then
   ff-merged. SMOKE: tab title reads LogChamp; HelloPage welcome +
   save-to-home-screen lines say LogChamp; guarantee line renders
-DISPATCHED | fp2-home-strip-coherence.md | buildSummary.workoutCount
+LANDED 056be0c | fp2-home-strip-coherence.md | buildSummary.workoutCount
   (one ledger for the This-week strip, kills the completedAt/
   performedAt dual-clock incoherence) + vertical 3-row recent workouts
-  | MODEL auto. Dispatched July 18, Channel B auto rung, lane branch
-  cursor/fp2-home-strip-coherence off 8dc799f. **RELAY HANDOVER: the
-  Fable session dispatched this then stepped out (seat correction -
-  the relay is resident work); the delivery will be sitting
-  uncommitted in the lane worktree. Next Opus/Sonnet session: audit +
-  land per land-unit, then run the queue per the FABLE HANDOVER
-  section above.**
-QUEUED | fp3-active-exercise-lens.md | strength list sorts noteworthy
+  | MODEL auto -> Channel B auto rung, dispatched July 18 (Fable),
+  landed July 19 (resident session). Audited per land-unit: scope
+  exact (5 files, index.js untouched - buildSummary already
+  re-exported), lanes fresh in lane (unit 171/171 incl. the new
+  workoutCount fixture, build green 129 modules, check-hex clean),
+  acceptance greps verified directly (countWorkoutsInWindow zero refs;
+  no overflow-x/scroll-snap/line-clamp on recent classes; sub-card
+  idiom matches SessionsPage; View all kept). ONE declared deviation,
+  ACCEPTED: enriched sets carry no sessionId, so workoutCount keys on
+  distinct in-range performedAt.getTime() - same session key the
+  engine's per-session aggregates already use; commented in code.
+  Lane rebased onto 05f893a then ff-merged. SMOKE: This-week Workouts
+  tile now agrees with Sets/Top-set windows (a session with zero
+  countable sets shows 0 workouts - intended); recent workouts render
+  as 3 vertical full-width rows, titles wrap, View all works.
+DISPATCHED | fp3-active-exercise-lens.md | strength list sorts noteworthy
   first + collapses single-session rows; roster gains Active|All
   segmented lens (ACTIVE_WINDOW_WEEKS=8), history never hidden for good
-  | MODEL auto; after FP2 (index.css)
+  | MODEL auto -> Channel B auto rung. Dispatched July 19 (resident
+  session), lane branch cursor/fp3-active-exercise-lens off 056be0c
+  in C:\dev\worktrees\cursor-lane; serialization gate satisfied (FP2
+  landed 056be0c)
 QUEUED | fp4-empty-state-ghosts.md | static tokens-only ghost previews +
   honesty-voice unlock lines on all four empty analytics surfaces |
   MODEL auto (design fully specified); after FP3 (same files)
