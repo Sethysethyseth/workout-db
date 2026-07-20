@@ -287,6 +287,47 @@ DRAFT | fp8-pwa-icons.md | manifest icons + manifest/apple-touch links
   in index.html | LAST per Seth; flips QUEUED when his exported PNGs
   land in claudefiledrop/
 
+**SMOKE-FINDINGS ARC (FP9-FP11), authored July 20 (Opus) from Seth's
+staging smoke.** Seth ruled the wave does NOT merge to main yet - it gets
+edited and improved first, so these land on `frontier-parity-wave` ahead
+of a re-smoke and a re-run gate. Authored from three Cursor recon lanes
+(exec-blocks / ux-surfaces / e1rm-blast, session-scoped, reports in the
+session scratchpad, not committed). Dispatch order: FP9 + FP10 in
+PARALLEL (file-disjoint - FP9 owns setMetrics/exerciseDetail/
+ExercisesView-formatter and touches NO css; FP10 owns WeeklyReport +
+index.css), then FP11 alone (collides with FP9 on ExercisesView.jsx and
+FP10 on index.css).
+
+QUEUED | fp9-e1rm-validity-window.md | 1-12 rep validity window on Epley
+  at the single producer (estimateOneRepMax), + e1rmPR renders as an
+  estimate with provenance, not as a performed set | MODEL opus. Root
+  cause of Seth's "266.7 lbs x 20 never happened": uncapped Epley on a
+  160x20 set became all-time bestE1rm and cascaded to 5 surfaces incl.
+  the PRESCRIPTIVE Working-weight-targets card (told him 227.5x5 when
+  his real best five was 220). Units RULED OUT as a cause. Guard goes at
+  the producer, not per-consumer - avoids recreating FPFIX1's
+  two-implementations bug. Expected fixture changes: setMetrics.test.js
+  :28-32 (currently ASSERTS uncapped epley at 37 reps - pins the bug),
+  prs.test.js:330-354 (45x20 warmup). SMOKE: Personal records e1RM row
+  reads as an estimate with its source set; Working weight targets no
+  longer inflated.
+QUEUED | fp10-weekly-digest-hierarchy.md | Home weekly digest: PRs become
+  structured rows (existing .session-set-pr-chip, grouped by exercise,
+  3 + "+N more"), four digest lines get a rank instead of four identical
+  muted paragraphs | MODEL opus. Presentation only - server already ships
+  structured prs[]; the client flattened it into a run-on sentence that
+  repeated the exercise name per PR. Tokens-only, card--live forbidden,
+  every existing empty/partial state must survive. SMOKE: a week with two
+  PRs on one exercise names it once.
+QUEUED | fp11-exercise-detail-cards.md | Top sets dedupe by (weight,reps)
+  keeping earliest date + React key fix, and a visual pass on the three
+  exercise-detail cards | MODEL opus. SERIALIZED behind FP9 AND FP10.
+  Carries a real defect, not just polish: no dedupe at
+  exerciseDetail.js:213-223 means 3 working sets of 220x5 take 3 of the
+  5 slots, and the client key omits reps (ExercisesView.jsx:422) so
+  those rows DUPLICATE React keys. SMOKE: five distinct top sets, no
+  console key warning.
+
 LANDED 137e0ea | fp0-frontier-parity-report.md | report-only unit, NO
   code: per-item NOW (file:line evidence) + CHANGE + SIZE for the six
   Tier-0 review findings, four Tier-1 frontier-parity features, Tier-2
