@@ -209,12 +209,40 @@ LANDED 9eb7e8d | fp5-pr-detection.md | pure prs.js detector (weight/
   honesty-layer violation. Re-dispatch SAME lane with the findings
   (bounce channel, engine half untouched). Two bounces on one unit =
   hard stop, page Seth.
-DISPATCHED | fp6-weekly-digest.md | digest layer under the Home band:
+LANDED 0805064 | fp6-weekly-digest.md | digest layer under the Home band:
   muscle movers, PR line, execution line, one deterministic nudge |
   MODEL opus -> Channel B NAMED rung. Gate (FP2 + FP5 both LANDED)
-  satisfied; dispatched July 19 (third resident session) off
-  frontier-parity-wave HEAD 9377ac1, lane branch cursor/fp6-weekly-digest
-  in C:\dev\worktrees\cursor-lane, file-disjoint from all prior FP units.
+  satisfied; dispatched and landed July 19 (third resident session), lane
+  branch cursor/fp6-weekly-digest in C:\dev\worktrees\cursor-lane,
+  file-disjoint from all prior FP units. Audited per land-unit: scope
+  exact (2 files = FILES TO TOUCH), lanes fresh in lane (unit 195/195 in
+  15 suites, build green 130 modules, check-hex clean), no deviations
+  (matches DELIVERY.md's "None" claim). Verified by direct read against
+  server shapes, not just trusted: `execution` array shape confirmed
+  exactly `{loadAdherence, volumeAdherence, effortDrift}` per exercise
+  (planVsActual.js:27-31) so the digest's per-field averaging into the
+  pre-existing `buildExecutionVerdict` is sound; `meta.effortCoverage`
+  confirmed real (summary.js:143/177) for the nudge-rule-(a) gate;
+  `sumEffectiveSets` confirmed pre-existing (not newly added, no
+  ReferenceError risk); empty-week guard verified structurally - both-
+  empty bails at line 267 before DigestSection is ever reached, and the
+  current-empty/prior-has-data branch returns its own JSX at line 271
+  without reaching it either, so the digest cannot appear in either
+  existing empty state. CSS diff tokens-only (`var(--color-border)`,
+  layout-only, no raw color). Rebased onto ac9bc69 (the FP6-dispatch
+  docs commit, routine 1-commit divergence) then ff-merged `0805064`,
+  pushed, origin HEAD confirmed. **This is the wave's last code unit
+  after FP2/FP5's gate cleared - FP-wave is now CODE-COMPLETE except
+  FP8** (still DRAFT, blocked on Seth's icon PNGs landing in
+  claudefiledrop/). Next gate is the pre-main review (Opus, per the
+  standing fallback), not another dispatch. SMOKE: Home's weekly report
+  band, under the four stats - a week with real data shows up to 3
+  muscle movers ("Chest +6 sets - Back -4 sets - Quads +3 sets"), a PR
+  line when the week had any PRs, one execution-verdict sentence when
+  planned-vs-actual data exists, and at most one nudge line (never more
+  than one); a week with nothing new shows none of the four lines and
+  the band looks exactly as it did before FP6; the both-weeks-empty and
+  nudge-only empty states are unchanged
 DRAFT | fp8-pwa-icons.md | manifest icons + manifest/apple-touch links
   in index.html | LAST per Seth; flips QUEUED when his exported PNGs
   land in claudefiledrop/

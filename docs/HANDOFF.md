@@ -1,17 +1,22 @@
 # HANDOFF — current state
 
 **Updated:** July 19, 2026, twenty-eighth session (Sonnet resident —
-**FP5 BOUNCE 1 FIX LANDED `9eb7e8d`**). Continued from the twenty-
-seventh session's bounce; picked up the SAME lane
-(`C:\dev\worktrees\cursor-lane`, branch `cursor/fp5-pr-detection`)
-exactly as the handover specified.
+**FP5 BOUNCE 1 FIX LANDED `9eb7e8d`; FP6 DISPATCHED AND LANDED
+`0805064` same session — FP-WAVE CODE-COMPLETE except FP8**).
+Continued from the twenty-seventh session's bounce; picked up the SAME
+lane (`C:\dev\worktrees\cursor-lane`, branch `cursor/fp5-pr-detection`)
+exactly as the handover specified, landed FP5, then dispatched and
+landed FP6 (its gate, FP2+FP5, cleared) in the same lane on a fresh
+branch, all in one resident session.
 
-**Wave state: 5 of 6 code units landed** — FP1 `8dc799f`, FP2
-`056be0c`, FP3 `3de1749`, FP4 `d6180cf`, FP5 `9eb7e8d` (plus the FP0
-report `137e0ea`). Branch `frontier-parity-wave`, all pushed to
-origin, deploys nowhere (staging Render tracks `main`). Only FP6
-(gated, now unblocked) and FP8 (DRAFT, waiting on Seth's icon PNGs)
-remain.
+**Wave state: 6 of 6 code units landed** — FP1 `8dc799f`, FP2
+`056be0c`, FP3 `3de1749`, FP4 `d6180cf`, FP5 `9eb7e8d`, FP6 `0805064`
+(plus the FP0 report `137e0ea`). Branch `frontier-parity-wave`, all
+pushed to origin, deploys nowhere (staging Render tracks `main`). Only
+FP8 remains (DRAFT, blocked on Seth's icon PNGs) — the wave is
+code-complete for everything else. **Next gate is the pre-main review
+(Opus, per the standing fallback) + Seth's consolidated smoke, not
+another dispatch.**
 
 **FP5 re-dispatched on the bounce channel (named rung, `--model
 opus`, same lane), then landed after a reviewer-driven live audit.**
@@ -56,6 +61,25 @@ deleted from the lane afterward; only staging Neon
 `d1cd3fb` then ff-merged `9eb7e8d`, pushed, origin HEAD confirmed. Full
 narrative (including the kept engine-half audit from bounce 1) in
 QUEUE.md's FP5 entry.
+
+**FP6 (weekly digest) dispatched and landed clean same session, no
+bounce** — the wave's last code unit, unblocked the moment FP5 landed
+(gate was FP2+FP5 both LANDED). Named rung (`--model opus`), fresh lane
+branch off the post-FP5 wave tip. Audited per land-unit: scope exact (2
+files), lanes fresh (195/195, build green, check-hex clean), no
+deviations. Given FP5's lesson that plausible-looking code can silently
+never fire, the reviewer went a step further than the report and
+verified the digest's data assumptions directly against the real server
+shapes rather than trusting the node-eval examples alone: `execution`
+array fields (`loadAdherence`/`volumeAdherence`/`effortDrift`) confirmed
+exact-match against `planVsActual.js`, `meta.effortCoverage` confirmed
+real against `summary.js`, and the empty-week guard confirmed
+structurally unreachable-when-empty by reading the surrounding branch
+logic (both-empty and nudge-only states both return before the digest
+component is ever mounted). Rebased onto `ac9bc69` (routine 1-commit
+divergence — the lane branched one docs commit before the FP6-dispatch
+flip landed) then ff-merged `0805064`, pushed, origin HEAD confirmed.
+Full narrative in QUEUE.md's FP6 entry.
 
 **Standing question Seth raised, still NOT actioned (his call to take
 to a Fable agent):** whether big/complicated waves should route Cursor
@@ -174,15 +198,24 @@ trusting it.
 
 ## Next up (the active task)
 
-00. **FP-WAVE, NEXT SESSION'S FIRST JOB: dispatch FP6.**
-   (`fp6-weekly-digest.md`, MODEL opus, QUEUED) — the last code unit of
-   the wave. Its gate was FP2 + FP5 both LANDED, which is now satisfied
-   (FP5 landed `9eb7e8d` this session). After FP6 lands the wave is
-   code-complete except FP8, and the next gate is the pre-main review
-   (Opus, per the standing fallback) + Seth's smoke.
-00c. **Wave smoke checklist (FP1-FP5, hand to Seth when he asks or at
+00. **FP-WAVE IS CODE-COMPLETE except FP8 (icon PNGs).** NEXT SESSION'S
+   FIRST JOB: the pre-main review (Opus, per the standing fallback,
+   since Fable is unavailable) of the full accumulated
+   `frontier-parity-wave` diff off its base, per the wave's
+   HANDOFF-ARCHIVE session logs (FP0's findings, every per-unit bounce
+   and reviewer fix). FP8 stays DRAFT and out of scope for that review
+   until Seth's PNGs land in `claudefiledrop/` — it can land after the
+   gate as its own small follow-up, or be folded in if it's ready in
+   time; Seth's call. Do NOT dispatch anything else in this wave without
+   checking with Seth first — the queue is empty of ready units.
+00c. **Wave smoke checklist (FP1-FP6, hand to Seth when he asks or at
    wave end)** — read the deploy caveat in "Repo / deploy state"
    first; the server halves may not be deployed:
+   - Home weekly report band: a week with real data shows up to 3
+     muscle movers, a PR line when the week had PRs, one execution
+     sentence, and at most one nudge line; a week with nothing new
+     shows none of the four lines (band looks unchanged); both-empty
+     and nudge-only states are unaffected
    - Completed session with a genuine PR: the set gets a small muted
      "PR" chip; a different exercise sharing that weight/reps in the
      same session does NOT get chipped; the Exercises detail view
