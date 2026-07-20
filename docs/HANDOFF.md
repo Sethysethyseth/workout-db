@@ -1,112 +1,81 @@
 # HANDOFF — current state
 
-**Updated:** July 19, 2026, twenty-eighth session (Sonnet resident —
-**FP5 BOUNCE 1 FIX LANDED `9eb7e8d`; FP6 DISPATCHED AND LANDED
-`0805064` same session — FP-WAVE CODE-COMPLETE except FP8**).
-Continued from the twenty-seventh session's bounce; picked up the SAME
-lane (`C:\dev\worktrees\cursor-lane`, branch `cursor/fp5-pr-detection`)
-exactly as the handover specified, landed FP5, then dispatched and
-landed FP6 (its gate, FP2+FP5, cleared) in the same lane on a fresh
-branch, all in one resident session.
+**Updated:** July 20, 2026, twenty-ninth session (Opus, FRONTIER SEAT —
+**PRE-MAIN GATE RUN; verdict PASS WITH FIXES; the one required fix
+FPFIX1 authored, dispatched, and LANDED `f144fee` same session**).
+Branch tip `0392e85`, pushed. **Seth's smoke is STILL OWED and is the
+only thing between this branch and the merge ritual.**
 
-**Wave state: 6 of 6 code units landed** — FP1 `8dc799f`, FP2
-`056be0c`, FP3 `3de1749`, FP4 `d6180cf`, FP5 `9eb7e8d`, FP6 `0805064`
-(plus the FP0 report `137e0ea`). Branch `frontier-parity-wave`, all
-pushed to origin, deploys nowhere (staging Render tracks `main`). Only
-FP8 remains (DRAFT, blocked on Seth's icon PNGs) — the wave is
-code-complete for everything else. **Next gate is the pre-main review
-(Opus, per the standing fallback) + Seth's consolidated smoke, not
-another dispatch.**
+**ORDER EXCEPTION, one time only, recorded so it does not become a
+pattern:** Seth explicitly overrode the wave-end order ("this is a one
+time exception, run the review and i will smoke before pushing to main,
+this will never happen again"). The gate therefore ran BEFORE smoke —
+the inversion `pre-main-review` section 0 exists to prevent. The
+standing order is unchanged for every future wave: N/N -> smoke -> gate
+-> merge. The cost is live: FPFIX1 changed engine behavior AFTER the
+gate read the diff, so the 00c checklist covers a wave the gate never
+reviewed in its final form.
 
-**FP5 re-dispatched on the bounce channel (named rung, `--model
-opus`, same lane), then landed after a reviewer-driven live audit.**
-Cursor's bounce-fix delivery threaded `setHasPR` through as a real
-prop (F1) and re-keyed the chip match to include `exerciseName` (F2
-partial); lanes came back fresh and green (195/195 in 15 suites, build
-green, check-hex clean). But its OWN evidence for F1 repeated exactly
-the mistake the bounce warned against — it claimed "Vite/esbuild catch
-undefined variable references at bundle time" (false for plain JS
-runtime errors) and punted the actual browser-drive/render-test proof
-to Seth as "manual verification steps." Given this is a second
-engagement on the same unit, the reviewer did not trust the writeup
-and drove the completed view live instead of accepting it or bouncing
-a third time: copied the main tree's staging `.env` into the lane's
-`server/`, started server + client dev instances there
-(`VITE_API_URL` pointed at the local server, not prod), registered a
-throwaway test account, and built a two-session fixture via direct API
-calls designed to hit exactly the F2 scenario (session A baseline —
-Bench 135x5, Curl 200x5, completed; session B — Bench 145x5, a real
-weight+e1RM PR, Curl 145x5 sharing that exact weight/reps but NOT a PR
-for curl) and loaded session B's completed view in a real browser.
-Found the delivery's F2 fix was still built on `exerciseName` alone,
-not identity as the block explicitly asked — fixed directly (trivia
-tier, not a third bounce): added a `prMatchKey(exerciseId,
-userExerciseId, exerciseName)` helper keyed on `se.exerciseId`/
-`se.userExerciseId` (confirmed present on the full session-exercise
-row) matching `pr.identity` from `summary.js`'s `identityFromKey`, with
-a name fallback. Then found a SECOND, undeclared defect only visible by
-actually loading the page: the chip could never render at all, because
-`setHasPR`'s date-scoping compared `session.performedAt` to each PR's
-`performedAt` for EXACT millisecond equality — but `session.performedAt`
-reflects the most recently written SET's timestamp, not any specific
-PR set's, so the check was always false. Fixed by dropping it (also
-trivia tier): the summary fetch's own `from`/`to` window already scopes
-PRs to the session's calendar day, so no extra date check was needed.
-Re-verified live after both fixes: exactly one PR chip rendered,
-correctly attributed to Bench Press and NOT Bicep Curl, zero console
-errors. Lanes re-run fresh once more post-fix (195/195, build green,
-check-hex clean). Verification servers torn down, the copied `.env`
-deleted from the lane afterward; only staging Neon
-(`ep-bitter-breeze-am81izlh`) touched, never prod. Lane rebased onto
-`d1cd3fb` then ff-merged `9eb7e8d`, pushed, origin HEAD confirmed. Full
-narrative (including the kept engine-half audit from bounce 1) in
-QUEUE.md's FP5 entry.
+**Gate fuel fanned out to three CURSOR report lanes** (never Claude
+subagents, per the standing rule); reports kept in the session
+scratchpad, not committed. Verification lane (auto): 195/195, build
+green, check-hex clean — trustworthy, real output. Doc/tokens sweep
+(auto): high quality, tokens-only confirmed clean wave-wide, its doc
+findings folded into this rewrite. **Coverage lane (sonnet): NOT
+TRUSTWORTHY, do not cite it** — it returned 22/22 SATISFIED while citing
+`EmptyStateGhosts.jsx:648-666` for a 91-line file and resting verdicts
+on "no build-breaking changes detected in diff" instead of a run. Its
+conclusions were discarded and the load-bearing criteria re-verified by
+hand (they DO hold). **Lesson for future gates: a report lane's line
+numbers are checkable cheaply — spot-check them before using its
+verdicts.**
 
-**FP6 (weekly digest) dispatched and landed clean same session, no
-bounce** — the wave's last code unit, unblocked the moment FP5 landed
-(gate was FP2+FP5 both LANDED). Named rung (`--model opus`), fresh lane
-branch off the post-FP5 wave tip. Audited per land-unit: scope exact (2
-files), lanes fresh (195/195, build green, check-hex clean), no
-deviations. Given FP5's lesson that plausible-looking code can silently
-never fire, the reviewer went a step further than the report and
-verified the digest's data assumptions directly against the real server
-shapes rather than trusting the node-eval examples alone: `execution`
-array fields (`loadAdherence`/`volumeAdherence`/`effortDrift`) confirmed
-exact-match against `planVsActual.js`, `meta.effortCoverage` confirmed
-real against `summary.js`, and the empty-week guard confirmed
-structurally unreachable-when-empty by reading the surrounding branch
-logic (both-empty and nudge-only states both return before the digest
-component is ever mounted). Rebased onto `ac9bc69` (routine 1-commit
-divergence — the lane branched one docs commit before the FP6-dispatch
-flip landed) then ff-merged `0805064`, pushed, origin HEAD confirmed.
-Full narrative in QUEUE.md's FP6 entry.
+**The blocking finding (now FIXED, kept short here because the full
+diagnosis lives in `docs/tasks/fpfix1-standing-pr-semantics.md` and
+QUEUE.md).** FP5 had shipped TWO implementations of the same PR
+vocabulary in `server/src/analytics/prs.js`: `detectPRs` (correct) and
+`computeStandingPRs` (a parallel reimplementation that drifted — it
+selected `repsAtWeightPR` by global max reps ignoring weight, and
+dropped first-session suppression). Net user-visible effect, reproduced
+by node-eval at the gate rather than inferred: the Exercises "Personal
+records" card rendered **"Reps - 45 lb x 20"** — a warmup set, dated to
+a first session. Per-unit review could not have caught it: 24 solid
+`detectPRs` fixtures but ONE `computeStandingPRs` fixture that passes
+under both the buggy and the correct logic. Green tests, false
+confidence — exactly the second-implementation class the gate exists
+for.
 
-**Standing question Seth raised, still NOT actioned (his call to take
-to the frontier seat):** whether big/complicated waves should route
-Cursor to frontier models. This session adds a second data point for that
-conversation — FP5's bounce-fix delivery itself needed two more
-reviewer-caught fixes even after landing on the named rung, both of
-the "the block already said what to do, the delivery just didn't do
-it or verify it" shape, same as the ambiguity pattern noted last
-session. Facts already gathered (last session): `cursor-agent
---list-models` carries `claude-opus-4-8-thinking-high` and
-`claude-fable-5-thinking-high` (both 1M, flagged **NO ZDR** on the
-Fable variant); `dispatch-unit` passes bare aliases (`--model opus`)
-rather than exact ids. Seth owns raising this; no docs changed for it.
+**FPFIX1 LANDED `f144fee`** (authored -> dispatched -> audited -> landed
+same session; Channel B named rung `--model opus`, chosen over auto
+because FP5's two prior deliveries both under-verified on this exact
+file). The fix is STRUCTURAL: `computeStandingPRs` now folds
+`repsAtWeightPR` down from `detectPRs`' event stream, so the two
+surfaces cannot diverge again by construction and suppression is
+inherited rather than half-tracked. `weightPR`/`e1rmPR` deliberately
+keep all-time-best behavior including first-session sets.
+`getPRsForSet` deleted (zero callers, a third definition).
+**ONE REVIEWER FIX on top, undeclared by the delivery** (trivia tier,
+direct-fix exception): removing the vestigial `isFirstSession` block
+also removed the chronological sort, making `weightPR`/`e1rmPR` tie
+resolution depend on caller input order — proved by node-eval (same sets
+reversed gave Jan 15 / 4 reps vs Jan 22 / 6 reps). Sort restored,
+determinism fixture added. Lanes after: **198/198, build green.**
+
+**Gate findings folded in rather than left open:** the Repo/deploy
+inventory had omitted FP6 and overstated "deploys nowhere" (the branch
+is HALF-deployed) — both corrected below; HANDOFF was 414 lines against
+its ~300 cap — this rewrite ages the twenty-eighth session out and
+compresses closed issues 8/9 and the merged NT/A-wave bullets. It is
+still OVER the cap (~390 vs ~300) even after that — the resume
+instructions at the head of "Next up" cost lines deliberately. Trim it
+properly next session; the U5, Analytics-track, and Issues sections are
+the remaining fat.
 
 Aged out this rewrite, moved verbatim to `docs/HANDOFF-ARCHIVE.md`
-(newest first): the July 19 **twenty-seventh** session (Opus resident —
-FP4 landed `d6180cf`, FP5 dispatched on the named rung and BOUNCED with
-the F1/F2 findings recorded above) and everything older, unchanged from
-prior rewrites. Grep the archive by session number or SHA when a
-decision's provenance matters; the still-live conclusions are all
-carried in QUEUE.md's per-unit records, the `-FINDINGS.md` files, and
-the sections below.
-
-- **N-wave follow-ups — folded into "Next up" 0a (July 16):** all three
-  items run against `c473e21`, with the staging repoint target now
-  `maintenance-wave` (amended twice: analytics-rebalance-wave ->
-  not-tracked-ux-wave -> maintenance-wave; only the last is current).
+(newest first): the July 19 **twenty-eighth** session (Sonnet resident —
+FP5 bounce-1 fix landed `9eb7e8d`, FP6 dispatched and landed `0805064`)
+and everything older, unchanged. Grep the archive by session number or
+SHA when provenance matters.
 
 Previous entries (incl. the July 10 sixth session in full, the July 10
 Fable N-wave skeleton session, the July 9 spec-complete session and the
@@ -125,18 +94,22 @@ trusting it.
 
 ## Repo / deploy state
 
-- **`frontier-parity-wave` is the ACTIVE wave branch (July 19)** — off
-  maintenance-wave HEAD `0206d30`. Now carries real code: FP0 report
-  `137e0ea`, FP1 `8dc799f`, FP2 `056be0c`, FP3 `3de1749`, FP4
-  `d6180cf`, FP5 `9eb7e8d`, all pushed. **Smoke-surface caveat, verify
-  before the wave smoke:** staging Render (the API) has tracked `main`
-  since July 17, so the SERVER halves of this wave are not deployed
-  anywhere. FP2's `buildSummary.workoutCount` and FP5's PR-detection
-  engine are both server changes riding this. The client halves ride
-  Vercel's per-branch deploy as usual. Seth either repoints staging
-  Render at `frontier-parity-wave` for the smoke or accepts that
-  server-derived numbers are stale — settle this BEFORE running the
-  checklist below, or the affected surfaces will look unfixed.
+- **`frontier-parity-wave` is the ACTIVE wave branch, tip `0392e85`
+  (July 20)** — off maintenance-wave HEAD `0206d30`. Carries the FULL
+  wave: FP0 report `137e0ea`, FP1 `8dc799f`, FP2 `056be0c`, FP3
+  `3de1749`, FP4 `d6180cf`, FP5 `9eb7e8d`, FP6 `0805064`, and the gate
+  fix FPFIX1 `f144fee`, all pushed (`origin` HEAD confirmed `0392e85`).
+  **Smoke-surface caveat, settle BEFORE running the checklist:** staging
+  Render (the API) has tracked `main` since July 17, so the SERVER halves
+  of this wave are deployed NOWHERE — FP2's `buildSummary.workoutCount`,
+  FP5's PR-detection engine, and FPFIX1's standing-record fix all ride
+  the server. The CLIENT halves DO deploy, via Vercel's per-branch build,
+  so the branch is not "deployed nowhere" — it is half-deployed, which is
+  the more dangerous state: the client degrades quietly
+  (`currentSummary?.workoutCount ?? 0`) rather than erroring, so a stale
+  server reads as "the fix didn't work" instead of as a deploy gap. Seth
+  either repoints staging Render at `frontier-parity-wave` for the smoke
+  or accepts that every server-derived number below is stale.
 - **MW-WAVE MERGED to `main` (`3b325db`), July 17** — ff-only
   `c473e21..3b325db`, 35 commits, no merge commit, no migration. All 8
   MW units + the CW dev-tooling arc + the `a5294e3` pair-delete-confirm
@@ -144,24 +117,16 @@ trusting it.
   smoke PASSED in full (MW1/2/3/7 July 16, MW6+MW8 confirmed July 17).
   Staging Render REPOINTED to `main` July 17 (Seth) — the branch is a
   deletion candidate (gated).
-- **NT-WAVE MERGED to `main` (`c473e21`), July 15** — NT1 `f4baee3` +
-  NT2 `f26e783` + NTFIX1 `e0ba383` + NT3 `98963f6` + NTFIX2 `888e44d` +
-  the relay v5/v5.1 docs are all fully contained in `main`, ff-only
-  (`57b1fc8..c473e21`, 28 commits, no merge commit). Gate DONE (results
-  in the top entry). No migration — code-only deploy.
-  **`not-tracked-ux-wave` LIVES ON as the CW1 landing branch** (a
-  concurrent July 15 session authored CW1 `38119e3` and flipped it
-  DISPATCHED `2a34b16` on top of the merge point) — so it is NOT a
-  deletion candidate yet, unlike the usual post-merge wave branch.
-  Branched off `analytics-rebalance-wave` HEAD `e960645`.
-- **A-wave MERGED to `main` (`13a1e59`), July 8.** `catalog-fk-wave`
-  (`13a1e59`) — A1 + A4 + A5 + A6b + the `0e6f32a` db-host-guard split — is now
-  fully contained in `main`; prod DB migrated + seeded + smoked. Branch is a
-  deletion candidate (gated). Pre-main review was DONE and clean.
-  **Both catalog/linkage migrations are APPLIED ON STAGING**
-  (`ep-bitter-breeze-am81izlh` / noisy-surf) as of July 7; columns + CHECK
-  constraints verified by direct SQL. **Prod HAS both as of July 8** (applied
-  by hand pre-merge, 873 rows seeded, 16-row ledger drift-free).
+- **NT-WAVE MERGED to `main` (`c473e21`), July 15** — NT1/NT2/NTFIX1/
+  NT3/NTFIX2 + the relay v5/v5.1 docs, ff-only, no migration. Note
+  `not-tracked-ux-wave` LIVES ON as the CW1 landing branch, so it is NOT
+  a deletion candidate. SHAs and gate results in the archive.
+- **A-wave MERGED to `main` (`13a1e59`), July 8** — A1/A4/A5/A6b + the
+  db-host-guard split; prod DB migrated + seeded + smoked, gate clean.
+  **Both catalog/linkage migrations are applied on STAGING
+  (`ep-bitter-breeze-am81izlh`) and on PROD** as of July 7-8, verified by
+  direct SQL (873 rows seeded, ledger drift-free). Branch is a deletion
+  candidate (gated).
 - **`main` is at `3b325db` (July 17)** — the MW-wave merge (above), on
   top of the NT-wave (`c473e21`), the N-wave (`8068ffb`) and the What's
   New prod-gate follow-up (`57b1fc8`). Prod Vercel/Render track `main`
@@ -198,28 +163,60 @@ trusting it.
 
 ## Next up (the active task)
 
-00. **FP-WAVE IS CODE-COMPLETE except FP8 (icon PNGs).** NEXT SESSION'S
-   FIRST JOB: hand Seth the consolidated smoke checklist below (00c) and
-   STOP. Per the July 20 wave-end rule (`land-unit` section 6), Seth
-   smokes the staging deploy ONCE for the whole wave BEFORE the gate
-   runs — his findings are review input, so a gate run before smoke gets
-   partly re-run after it.
-   THEN, and only on his sign-off: the pre-main review — Opus (the
-   frontier seat), ritual = the **`pre-main-review` skill** — of the full
-   accumulated `frontier-parity-wave` diff off its base, read against the
-   specs AND every FP block's contract, with the wave's HANDOFF-ARCHIVE
-   session logs in hand (FP0's findings, every per-unit bounce and
-   reviewer fix). Gate fuel fans out to Cursor report lanes, never Claude
-   subagents.
-   A smoke defect goes back through a diagnosis block and resets the
-   sign-off. FP8 stays DRAFT and out of scope for that review
-   until Seth's PNGs land in `claudefiledrop/` — it can land after the
-   gate as its own small follow-up, or be folded in if it's ready in
-   time; Seth's call. Do NOT dispatch anything else in this wave without
-   checking with Seth first — the queue is empty of ready units.
-00c. **Wave smoke checklist (FP1-FP6) — hand this to Seth FIRST, per 00
-   above** — read the deploy caveat in "Repo / deploy state"
-   first; the server halves may not be deployed:
+**HOW TO RESUME THIS (read first if you are a fresh session).** State as
+of July 20: the FP wave is code-complete except FP8, the pre-main gate
+has RUN and PASSED WITH FIXES, and the one required fix landed. There is
+NOTHING to author, dispatch, review, or gate. Do not re-run the gate, do
+not start reading the branch diff, do not dispatch a Cursor lane.
+The single open item is **Seth's smoke sign-off** (checklist at 00c).
+Sequence from here, in order, no steps skipped:
+1. Confirm ground truth first: `git log origin/frontier-parity-wave -1`
+   should read `0392e85` (or later if a smoke-fix landed since).
+2. Settle the Render repoint question with Seth (see the deploy caveat
+   in "Repo / deploy state") — this is not optional; smoking a
+   half-deployed branch produces false failures on every server-derived
+   surface.
+3. Hand him 00c. Wait. His findings are the input to whatever comes next.
+4. PASS -> the merge ritual (`docs/RUNBOOK.md`), gated on his verbatim
+   "push to main", one command at a time with approval before each.
+   Code-only, NO migration. Report what merged with SHAs afterward.
+5. DEFECT -> diagnosis block for Cursor, fix through `land-unit`,
+   sign-off resets. Anything on the PR-card surface: read
+   `docs/tasks/fpfix1-standing-pr-semantics.md` first, that surface
+   changed after the gate reviewed the diff.
+Any seat can run steps 1-3 and 5; step 4 is Seth's hands only.
+
+00. **THE GATE IS DONE. THE ONLY OPEN ITEM IS SETH'S SMOKE.** The wave
+   is code-complete except FP8, the pre-main gate RAN (July 20, verdict
+   PASS WITH FIXES, top entry), and its one required fix FPFIX1 LANDED
+   `f144fee`. Nothing is queued, nothing is in flight, and NOTHING SHOULD
+   BE DISPATCHED — the queue is empty of ready units.
+   **NEXT SESSION'S FIRST AND ONLY JOB: get Seth's smoke sign-off** on
+   the checklist at 00c, against the staging deploy, with the Render
+   repoint settled first (see the caveat in "Repo / deploy state" — the
+   branch is HALF-deployed, and a stale server reads as "the fix didn't
+   work"). Then STOP.
+   **On sign-off:** the merge ritual — `docs/RUNBOOK.md`, gated behind
+   Seth's verbatim "push to main", one command at a time with manual
+   approval before each. Do NOT re-run the gate; it is done and its
+   verdict stands. Code-only merge, NO migration.
+   **If smoke finds a defect:** it becomes a diagnosis block for Cursor
+   (per AGENTS.md), the fix lands through `land-unit`, and the sign-off
+   resets. A defect in the PR-card / standing-records surface
+   specifically should be read against FPFIX1's contract first
+   (`docs/tasks/fpfix1-standing-pr-semantics.md`) — that surface changed
+   after the gate read the diff.
+   FP8 stays DRAFT until Seth's PNGs land in `claudefiledrop/`; it can
+   follow the merge as its own small unit — his call, icons LAST by his
+   rider.
+00b. **Open judgment call Seth may want to settle before or after the
+   merge (preference, not a defect):** FPFIX1 selects the standing reps
+   record by HEAVIEST weight, so a lifter who has done both `100x8` and
+   `200x5` sees "Reps - 200 lb x 5". Real record under the contract's
+   rule; he may prefer most-reps-wins. One small block if he wants it.
+00c. **Wave smoke checklist (FP1-FP6 + FPFIX1) — the whole wave, ONCE.**
+   Read the deploy caveat in "Repo / deploy state" FIRST; the server
+   halves are not deployed unless Render is repointed:
    - Home weekly report band: a week with real data shows up to 3
      muscle movers, a PR line when the week had PRs, one execution
      sentence, and at most one nudge line; a week with nothing new
@@ -227,9 +224,16 @@ trusting it.
      and nudge-only states are unaffected
    - Completed session with a genuine PR: the set gets a small muted
      "PR" chip; a different exercise sharing that weight/reps in the
-     same session does NOT get chipped; the Exercises detail view
-     shows a Personal records card; completed session pages load
+     same session does NOT get chipped; completed session pages load
      without console errors
+   - **Personal records card (FPFIX1 — the gate fix, smoke this
+     deliberately):** open an exercise you have trained across several
+     sessions AND warmed up on. The card shows Weight and e1RM rows,
+     and a **Reps row ONLY when a genuine reps-at-weight record
+     exists**. A light warmup set must NEVER appear as the Reps record,
+     and no row may be dated to that exercise's very first session. An
+     exercise with only one session, or with no rep record yet, simply
+     shows fewer rows — that is correct, not a bug
    - Tab title reads **LogChamp**; HelloPage welcome + save-to-home
      lines say LogChamp; the never-gate-history guarantee line renders
    - Home This-week strip: the Workouts tile now agrees with the
@@ -262,13 +266,10 @@ trusting it.
    `docs/specs/gym-context.md` (G1 is migration-carrying = Seth's
    manual track).
 0z. **MW-WAVE: FULLY CLOSED July 17.** Merged to main `3b325db`
-   (ff-only, details + SHAs in the top entry) and Seth completed all
-   three post-merge steps same day: staging Render REPOINTED to
-   `main`, prod deploy SHA VERIFIED == `3b325db`, prod smoke PASSED
-   (MW pass + the previously-owed NT items, incl. the What's New
-   modal — this also retires the NT-wave verification trio). With
-   staging repointed, `maintenance-wave` is now a deletion candidate
-   (gated).
+   (ff-only), all three post-merge steps done by Seth same day: staging
+   Render repointed to `main` (the cause of THIS wave's deploy caveat),
+   prod SHA verified, prod smoke passed. `maintenance-wave` is a
+   deletion candidate (gated).
 0a. **Loose ends carried forward:** the CW3 visual sign-off on the
    next live watcher run. Finding **F** stays open independently
    ("Failed to fetch" = Render cold-start ranked cause; needs a live
@@ -333,47 +334,20 @@ stays dead-last. Residual open items:
    Seth: move the repo out of OneDrive (e.g. `C:\dev\workout-db`) or
    exclude it from sync. Everything is committed+pushed, so the move is
    low-risk whenever chosen.
-8. **NEW (July 14, from finding G); ROOT CAUSE CONFIRMED July 15:**
-   client/server contract reconciliation for the id-only `userExerciseId`
-   stamp PATCH (server accepts id-only identity PATCH, OR client sends
-   name+id together) — needs a task block after the pre-main gate weighs
-   in. **Mechanism, read directly from `server/src/controllers/
-   sessionController.js`:** the empty-patch guard at **:531** counts only
-   `exerciseName` and `notes`, so an id-only body yields
-   `400 "No fields to update"`; and identity stamping at **:575** is
-   nested inside `if (data.exerciseName !== undefined)`, so the id never
-   applies without a name alongside it — meaning the server-side option
-   must fix BOTH, not just the guard. Note **:570** rejects completed
-   sessions outright, so the live path is the only one in scope (NT3
-   already skips the stamp on completed rows by passing no
-   `userExerciseId`). **FIXED client-side and LANDED in NTFIX2
-   (`888e44d`)** — the client now sends name+id together, and the PATCH is
-   wrapped in `try/catch` so the cache invalidate/refresh always runs
-   (`http()` throwing on the 400 was skipping it, which is what actually
-   left the pill stale — the 400 alone was only half the bug). **RULED
-   July 16 (gate tier) + block authored:** the server WILL accept an
-   id-only identity PATCH — MW2 fixes BOTH :531 and :575 (validation
-   helpers untouched), paired with issue 9's resolve fix in one unit.
-9. **NEW (July 15, from the pre-main gate):** "Use that name" can never
-   stamp structural identity for CUSTOM exercises. The resolve endpoint
-   returns `canonicalName` + `catalogId` but NO `userExerciseId` for
-   `source: "userExercise"` (`exerciseController.js:77-82`), so
-   `handleUseThatName` correctly guards on `source === "catalog"` and
-   links by name alone otherwise — the sheet is doing the best the
-   payload allows, so any fix starts SERVER-side. Name-based resolution
-   (A4/A6) covers the behavior; only the structural id-link is missing.
-   Pairs naturally with issue 8 — same contract surface, do them
-   together. **MW2 (authored July 16) does exactly that:** resolve rows
-   gain `userExerciseId`, and "Use that name" stamps it.
+8. **CLOSED** (was: id-only `userExerciseId` stamp PATCH, from finding G,
+   July 14). Fixed client-side in NTFIX2 `888e44d`, then server-side in
+   MW2 (`sessionController.js` :531 guard + :575 stamping) — both merged
+   to `main`. Full mechanism write-up in `docs/HANDOFF-ARCHIVE.md`.
+9. **CLOSED** (was: "Use that name" could not stamp structural identity
+   for CUSTOM exercises, from the July 15 gate). MW2 gave resolve rows a
+   `userExerciseId` and made "Use that name" stamp it. Merged to `main`;
+   detail in the archive.
 
-**Maintenance-wave candidates (Seth, July 16) — SCOPED AND AUTHORED same
-day as the MW-wave** (top entry + QUEUE.md; Seth's raw wording preserved
-in this file's git history at `5e3d981`). Mapping: 10+11 -> MW3
-(un-finish IS the edit path, settled with Seth), 12 -> MW7 (custom
-EXERCISES — Seth disambiguated; templates already have MyTemplatesPage),
-13 -> MW4 (audit), 14 -> MW5 (audit), 15 -> MW6 (DRAFT, gated on MW4's
-verdict), 16 -> NOT authored, stays a candidate: catalog + `searchCatalog`
-review pass, pairs with A3's 29 secondary-less compounds in QUEUE.md.
+**Maintenance-wave candidates (Seth, July 16):** all authored and landed
+as MW1-MW8 except item 16 — a catalog + `searchCatalog` review pass,
+which stays an open candidate and pairs with A3's 29 secondary-less
+compounds (QUEUE.md). Full mapping and Seth's raw wording: this file's
+git history at `5e3d981`, and the archive.
 
 ## Known tech debt (queued, not blocking)
 

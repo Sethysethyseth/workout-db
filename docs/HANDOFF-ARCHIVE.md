@@ -1,5 +1,110 @@
 # HANDOFF ARCHIVE — session-log history (append-only)
 
+**Updated:** July 19, 2026, twenty-eighth session (Sonnet resident —
+**FP5 BOUNCE 1 FIX LANDED `9eb7e8d`; FP6 DISPATCHED AND LANDED
+`0805064` same session — FP-WAVE CODE-COMPLETE except FP8**).
+Continued from the twenty-seventh session's bounce; picked up the SAME
+lane (`C:\dev\worktrees\cursor-lane`, branch `cursor/fp5-pr-detection`)
+exactly as the handover specified, landed FP5, then dispatched and
+landed FP6 (its gate, FP2+FP5, cleared) in the same lane on a fresh
+branch, all in one resident session.
+
+**Wave state: 6 of 6 code units landed** — FP1 `8dc799f`, FP2
+`056be0c`, FP3 `3de1749`, FP4 `d6180cf`, FP5 `9eb7e8d`, FP6 `0805064`
+(plus the FP0 report `137e0ea`). Branch `frontier-parity-wave`, all
+pushed to origin, deploys nowhere (staging Render tracks `main`). Only
+FP8 remains (DRAFT, blocked on Seth's icon PNGs) — the wave is
+code-complete for everything else. **Next gate is the pre-main review
+(Opus, per the standing fallback) + Seth's consolidated smoke, not
+another dispatch.**
+
+**FP5 re-dispatched on the bounce channel (named rung, `--model
+opus`, same lane), then landed after a reviewer-driven live audit.**
+Cursor's bounce-fix delivery threaded `setHasPR` through as a real
+prop (F1) and re-keyed the chip match to include `exerciseName` (F2
+partial); lanes came back fresh and green (195/195 in 15 suites, build
+green, check-hex clean). But its OWN evidence for F1 repeated exactly
+the mistake the bounce warned against — it claimed "Vite/esbuild catch
+undefined variable references at bundle time" (false for plain JS
+runtime errors) and punted the actual browser-drive/render-test proof
+to Seth as "manual verification steps." Given this is a second
+engagement on the same unit, the reviewer did not trust the writeup
+and drove the completed view live instead of accepting it or bouncing
+a third time: copied the main tree's staging `.env` into the lane's
+`server/`, started server + client dev instances there
+(`VITE_API_URL` pointed at the local server, not prod), registered a
+throwaway test account, and built a two-session fixture via direct API
+calls designed to hit exactly the F2 scenario (session A baseline —
+Bench 135x5, Curl 200x5, completed; session B — Bench 145x5, a real
+weight+e1RM PR, Curl 145x5 sharing that exact weight/reps but NOT a PR
+for curl) and loaded session B's completed view in a real browser.
+Found the delivery's F2 fix was still built on `exerciseName` alone,
+not identity as the block explicitly asked — fixed directly (trivia
+tier, not a third bounce): added a `prMatchKey(exerciseId,
+userExerciseId, exerciseName)` helper keyed on `se.exerciseId`/
+`se.userExerciseId` (confirmed present on the full session-exercise
+row) matching `pr.identity` from `summary.js`'s `identityFromKey`, with
+a name fallback. Then found a SECOND, undeclared defect only visible by
+actually loading the page: the chip could never render at all, because
+`setHasPR`'s date-scoping compared `session.performedAt` to each PR's
+`performedAt` for EXACT millisecond equality — but `session.performedAt`
+reflects the most recently written SET's timestamp, not any specific
+PR set's, so the check was always false. Fixed by dropping it (also
+trivia tier): the summary fetch's own `from`/`to` window already scopes
+PRs to the session's calendar day, so no extra date check was needed.
+Re-verified live after both fixes: exactly one PR chip rendered,
+correctly attributed to Bench Press and NOT Bicep Curl, zero console
+errors. Lanes re-run fresh once more post-fix (195/195, build green,
+check-hex clean). Verification servers torn down, the copied `.env`
+deleted from the lane afterward; only staging Neon
+(`ep-bitter-breeze-am81izlh`) touched, never prod. Lane rebased onto
+`d1cd3fb` then ff-merged `9eb7e8d`, pushed, origin HEAD confirmed. Full
+narrative (including the kept engine-half audit from bounce 1) in
+QUEUE.md's FP5 entry.
+
+**FP6 (weekly digest) dispatched and landed clean same session, no
+bounce** — the wave's last code unit, unblocked the moment FP5 landed
+(gate was FP2+FP5 both LANDED). Named rung (`--model opus`), fresh lane
+branch off the post-FP5 wave tip. Audited per land-unit: scope exact (2
+files), lanes fresh (195/195, build green, check-hex clean), no
+deviations. Given FP5's lesson that plausible-looking code can silently
+never fire, the reviewer went a step further than the report and
+verified the digest's data assumptions directly against the real server
+shapes rather than trusting the node-eval examples alone: `execution`
+array fields (`loadAdherence`/`volumeAdherence`/`effortDrift`) confirmed
+exact-match against `planVsActual.js`, `meta.effortCoverage` confirmed
+real against `summary.js`, and the empty-week guard confirmed
+structurally unreachable-when-empty by reading the surrounding branch
+logic (both-empty and nudge-only states both return before the digest
+component is ever mounted). Rebased onto `ac9bc69` (routine 1-commit
+divergence — the lane branched one docs commit before the FP6-dispatch
+flip landed) then ff-merged `0805064`, pushed, origin HEAD confirmed.
+Full narrative in QUEUE.md's FP6 entry.
+
+**Standing question Seth raised, still NOT actioned (his call to take
+to the frontier seat):** whether big/complicated waves should route
+Cursor to frontier models. This session adds a second data point for that
+conversation — FP5's bounce-fix delivery itself needed two more
+reviewer-caught fixes even after landing on the named rung, both of
+the "the block already said what to do, the delivery just didn't do
+it or verify it" shape, same as the ambiguity pattern noted last
+session. Facts already gathered (last session): `cursor-agent
+--list-models` carries `claude-opus-4-8-thinking-high` and
+`claude-fable-5-thinking-high` (both 1M, flagged **NO ZDR** on the
+Fable variant); `dispatch-unit` passes bare aliases (`--model opus`)
+rather than exact ids. Seth owns raising this; no docs changed for it.
+
+Aged out this rewrite, moved verbatim to `docs/HANDOFF-ARCHIVE.md`
+(newest first): the July 19 **twenty-seventh** session (Opus resident —
+FP4 landed `d6180cf`, FP5 dispatched on the named rung and BOUNCED with
+the F1/F2 findings recorded above) and everything older, unchanged from
+prior rewrites. Grep the archive by session number or SHA when a
+decision's provenance matters; the still-live conclusions are all
+carried in QUEUE.md's per-unit records, the `-FINDINGS.md` files, and
+the sections below.
+
+---
+
 July 19, 2026, twenty-seventh session (Opus resident — **FP4 LANDED
 `d6180cf`; FP5 DISPATCHED on the named rung and BOUNCED on audit — NOT
 landed**). This entry covers BOTH July 19 resident sessions; the first
