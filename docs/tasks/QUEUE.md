@@ -298,6 +298,16 @@ ExercisesView-formatter and touches NO css; FP10 owns WeeklyReport +
 index.css), then FP11 alone (collides with FP9 on ExercisesView.jsx and
 FP10 on index.css).
 
+PARKED (not a unit) | docs/specs/block-execution-gap.md | the multi-week
+  block layer is fully authored in schema + API + builder UI but cannot be
+  TRAINED: no start-session-from-block, WorkoutSet.blockWorkoutSetId never
+  written, "set as current" is localStorage only, planVsActual has no
+  BlockWorkoutSet branch | Found by the July 20 recon lane while authoring
+  FP9-FP11. **Seth RULED July 20: "don't do anything with the block builder
+  for now, that's for another wave."** Doc exists to preserve the evidence -
+  do NOT author against it. The fork (finish it vs cut the dead-end UI) is
+  Seth's product call.
+
 QUEUED | fp9-e1rm-validity-window.md | 1-12 rep validity window on Epley
   at the single producer (estimateOneRepMax), + e1rmPR renders as an
   estimate with provenance, not as a performed set | MODEL opus. Root
