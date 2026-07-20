@@ -209,9 +209,12 @@ LANDED 9eb7e8d | fp5-pr-detection.md | pure prs.js detector (weight/
   honesty-layer violation. Re-dispatch SAME lane with the findings
   (bounce channel, engine half untouched). Two bounces on one unit =
   hard stop, page Seth.
-QUEUED | fp6-weekly-digest.md | digest layer under the Home band:
+DISPATCHED | fp6-weekly-digest.md | digest layer under the Home band:
   muscle movers, PR line, execution line, one deterministic nudge |
-  MODEL opus; STRICTLY after FP2 + FP5 land
+  MODEL opus -> Channel B NAMED rung. Gate (FP2 + FP5 both LANDED)
+  satisfied; dispatched July 19 (third resident session) off
+  frontier-parity-wave HEAD 9377ac1, lane branch cursor/fp6-weekly-digest
+  in C:\dev\worktrees\cursor-lane, file-disjoint from all prior FP units.
 DRAFT | fp8-pwa-icons.md | manifest icons + manifest/apple-touch links
   in index.html | LAST per Seth; flips QUEUED when his exported PNGs
   land in claudefiledrop/
