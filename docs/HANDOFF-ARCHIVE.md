@@ -1,5 +1,102 @@
 # HANDOFF ARCHIVE — session-log history (append-only)
 
+Session log (July 20, 2026, TWENTY-NINTH session, Opus FRONTIER SEAT -
+pre-main gate run out of order at Seth's explicit one-time override;
+verdict PASS WITH FIXES; FPFIX1 authored/dispatched/landed f144fee same
+session). Verbatim, as written at the time:
+
+**Updated:** July 20, 2026, twenty-ninth session (Opus, FRONTIER SEAT —
+**PRE-MAIN GATE RUN; verdict PASS WITH FIXES; the one required fix
+FPFIX1 authored, dispatched, and LANDED `f144fee` same session**).
+Branch tip `0392e85`, pushed. **Seth's smoke is STILL OWED and is the
+only thing between this branch and the merge ritual.**
+
+**ORDER EXCEPTION, one time only, recorded so it does not become a
+pattern:** Seth explicitly overrode the wave-end order ("this is a one
+time exception, run the review and i will smoke before pushing to main,
+this will never happen again"). The gate therefore ran BEFORE smoke —
+the inversion `pre-main-review` section 0 exists to prevent. The
+standing order is unchanged for every future wave: N/N -> smoke -> gate
+-> merge. The cost is live: FPFIX1 changed engine behavior AFTER the
+gate read the diff, so the 00c checklist covers a wave the gate never
+reviewed in its final form.
+
+**Gate fuel fanned out to three CURSOR report lanes** (never Claude
+subagents, per the standing rule); reports kept in the session
+scratchpad, not committed. Verification lane (auto): 195/195, build
+green, check-hex clean — trustworthy, real output. Doc/tokens sweep
+(auto): high quality, tokens-only confirmed clean wave-wide, its doc
+findings folded into this rewrite. **Coverage lane (sonnet): NOT
+TRUSTWORTHY, do not cite it** — it returned 22/22 SATISFIED while citing
+`EmptyStateGhosts.jsx:648-666` for a 91-line file and resting verdicts
+on "no build-breaking changes detected in diff" instead of a run. Its
+conclusions were discarded and the load-bearing criteria re-verified by
+hand (they DO hold). **Lesson for future gates: a report lane's line
+numbers are checkable cheaply — spot-check them before using its
+verdicts.**
+
+**The blocking finding (now FIXED, kept short here because the full
+diagnosis lives in `docs/tasks/fpfix1-standing-pr-semantics.md` and
+QUEUE.md).** FP5 had shipped TWO implementations of the same PR
+vocabulary in `server/src/analytics/prs.js`: `detectPRs` (correct) and
+`computeStandingPRs` (a parallel reimplementation that drifted — it
+selected `repsAtWeightPR` by global max reps ignoring weight, and
+dropped first-session suppression). Net user-visible effect, reproduced
+by node-eval at the gate rather than inferred: the Exercises "Personal
+records" card rendered **"Reps - 45 lb x 20"** — a warmup set, dated to
+a first session. Per-unit review could not have caught it: 24 solid
+`detectPRs` fixtures but ONE `computeStandingPRs` fixture that passes
+under both the buggy and the correct logic. Green tests, false
+confidence — exactly the second-implementation class the gate exists
+for.
+
+**FPFIX1 LANDED `f144fee`** (authored -> dispatched -> audited -> landed
+same session; Channel B named rung `--model opus`, chosen over auto
+because FP5's two prior deliveries both under-verified on this exact
+file). The fix is STRUCTURAL: `computeStandingPRs` now folds
+`repsAtWeightPR` down from `detectPRs`' event stream, so the two
+surfaces cannot diverge again by construction and suppression is
+inherited rather than half-tracked. `weightPR`/`e1rmPR` deliberately
+keep all-time-best behavior including first-session sets.
+`getPRsForSet` deleted (zero callers, a third definition).
+**ONE REVIEWER FIX on top, undeclared by the delivery** (trivia tier,
+direct-fix exception): removing the vestigial `isFirstSession` block
+also removed the chronological sort, making `weightPR`/`e1rmPR` tie
+resolution depend on caller input order — proved by node-eval (same sets
+reversed gave Jan 15 / 4 reps vs Jan 22 / 6 reps). Sort restored,
+determinism fixture added. Lanes after: **198/198, build green.**
+
+**Gate findings folded in rather than left open:** the Repo/deploy
+inventory had omitted FP6 and overstated "deploys nowhere" (the branch
+is HALF-deployed) — both corrected below; HANDOFF was 414 lines against
+its ~300 cap — this rewrite ages the twenty-eighth session out and
+compresses closed issues 8/9 and the merged NT/A-wave bullets. It is
+still OVER the cap (~390 vs ~300) even after that — the resume
+instructions at the head of "Next up" cost lines deliberately. Trim it
+properly next session; the U5, Analytics-track, and Issues sections are
+the remaining fat.
+
+Aged out this rewrite, moved verbatim to `docs/HANDOFF-ARCHIVE.md`
+(newest first): the July 19 **twenty-eighth** session (Sonnet resident —
+FP5 bounce-1 fix landed `9eb7e8d`, FP6 dispatched and landed `0805064`)
+and everything older, unchanged. Grep the archive by session number or
+SHA when provenance matters.
+
+Previous entries (incl. the July 10 sixth session in full, the July 10
+Fable N-wave skeleton session, the July 9 spec-complete session and the
+July 8 A-wave prod rollout) archived verbatim in
+`docs/HANDOFF-ARCHIVE.md`.
+
+**Rule:** rewritten in place at the end of every working session; kept
+CAPPED (~300 lines: current state, repo/deploy, latest 1-2 session entries,
+Open TODOs / Next up, short reference sections). Aged session logs move
+VERBATIM — never summarized — to `docs/HANDOFF-ARCHIVE.md`, newest first,
+in the same rewrite. Dated, never versioned. If this file looks stale
+(date > ~2 weeks old), verify branch/deploy state from ground truth before
+trusting it.
+
+---
+
 **Updated:** July 19, 2026, twenty-eighth session (Sonnet resident —
 **FP5 BOUNCE 1 FIX LANDED `9eb7e8d`; FP6 DISPATCHED AND LANDED
 `0805064` same session — FP-WAVE CODE-COMPLETE except FP8**).
