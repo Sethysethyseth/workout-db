@@ -6,6 +6,7 @@ import { pickTopGain } from "../../lib/topGain.js";
 import { formatEffort } from "../../lib/effortDisplay.js";
 import { formatRepsValue } from "../../lib/repsDisplay.js";
 import { formatEstimate, formatWeight } from "../../lib/weightDisplay.js";
+import { buildExecutionVerdict } from "../../lib/executionVerdict.js";
 
 function addDays(date, days) {
   const d = new Date(date);
@@ -80,6 +81,97 @@ function deltaTone(delta, priorEmpty) {
   return "up";
 }
 
+function computeMuscleMovers(currentPerMuscle, priorPerMuscle) {
+  if (!currentPerMuscle || !priorPerMuscle) return [];
+  const priorMap = new Map(priorPerMuscle.map((m) => [m.muscle, m.effectiveSets]));
+  const deltas = currentPerMuscle
+    .map((m) => ({
+      muscle: m.muscle,
+      delta: m.effectiveSets - (priorMap.get(m.muscle) ?? 0),
+    }))
+    .filter((m) => m.delta !== 0)
+    .sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta))
+    .slice(0, 3);
+  return deltas;
+}
+
+function formatMoverDelta(delta) {
+  const sign = delta > 0 ? "+" : "";
+  const rounded = Number(Number(delta).toFixed(1));
+  const s = rounded.toFixed(1);
+  const num = s.endsWith(".0") ? s.slice(0, -2) : s;
+  return `${sign}${num}`;
+}
+
+function formatMoversLine(movers) {
+  if (movers.length === 0) return null;
+  return movers.map((m) => `${m.muscle} ${formatMoverDelta(m.delta)} sets`).join(" - ");
+}
+
+function formatPRsLine(prs) {
+  if (!prs || prs.length === 0) return null;
+  const prDescriptions = prs.slice(0, 3).map((pr) => {
+    if (pr.type === "e1rmPR") {
+      return `${pr.exerciseName} e1RM ${formatEstimate(pr.value)}`;
+    }
+    return `${pr.exerciseName} ${formatWeight(pr.weight)} × ${formatRepsValue(pr.reps)}`;
+  });
+  const count = prs.length;
+  const prWord = count === 1 ? "PR" : "PRs";
+  return `${count} ${prWord} this week - ${prDescriptions.join(", ")}`;
+}
+
+function computeOverallExecutionVerdict(execution) {
+  if (!execution || execution.length === 0) return null;
+  const withData = execution.filter(
+    (ex) => ex.loadAdherence !== null || ex.volumeAdherence !== null || ex.effortDrift !== null
+  );
+  if (withData.length === 0) return null;
+  const avgLoad =
+    withData.filter((ex) => ex.loadAdherence !== null).length > 0
+      ? withData.reduce((sum, ex) => sum + (ex.loadAdherence ?? 0), 0) /
+        withData.filter((ex) => ex.loadAdherence !== null).length
+      : null;
+  const avgVolume =
+    withData.filter((ex) => ex.volumeAdherence !== null).length > 0
+      ? withData.reduce((sum, ex) => sum + (ex.volumeAdherence ?? 0), 0) /
+        withData.filter((ex) => ex.volumeAdherence !== null).length
+      : null;
+  const avgEffort =
+    withData.filter((ex) => ex.effortDrift !== null).length > 0
+      ? withData.reduce((sum, ex) => sum + (ex.effortDrift ?? 0), 0) /
+        withData.filter((ex) => ex.effortDrift !== null).length
+      : null;
+  return buildExecutionVerdict({
+    loadAdherence: avgLoad,
+    volumeAdherence: avgVolume,
+    effortDrift: avgEffort,
+  });
+}
+
+function computeNudgeLine(currentSummary, priorSummary) {
+  const effortCoverage = currentSummary?.meta?.effortCoverage;
+  if (effortCoverage !== null && effortCoverage < 0.6) {
+    return "Logging RIR or RPE unlocks better volume insights.";
+  }
+  const currentSets = sumEffectiveSets(currentSummary);
+  const priorSets = sumEffectiveSets(priorSummary);
+  if (priorSets > 0 && currentSets < priorSets * 0.8) {
+    return "Volume is down from last week.";
+  }
+  const currentPerMuscle = currentSummary?.perMuscle ?? [];
+  const priorPerMuscle = priorSummary?.perMuscle ?? [];
+  for (const pm of priorPerMuscle) {
+    if (pm.effectiveSets >= 3) {
+      const currentMuscle = currentPerMuscle.find((m) => m.muscle === pm.muscle);
+      if (!currentMuscle || currentMuscle.effectiveSets === 0) {
+        return `${pm.muscle} went quiet this week.`;
+      }
+    }
+  }
+  return null;
+}
+
 function ReportStat({ label, value, delta, deltaTone: tone }) {
   return (
     <div className="weekly-report__stat">
@@ -94,6 +186,33 @@ function ReportStat({ label, value, delta, deltaTone: tone }) {
           {delta}
         </span>
       ) : null}
+    </div>
+  );
+}
+
+function DigestSection({ currentSummary, priorSummary, priorEmpty }) {
+  const movers = priorEmpty
+    ? []
+    : computeMuscleMovers(currentSummary?.perMuscle, priorSummary?.perMuscle);
+  const moversLine = formatMoversLine(movers);
+  const prsLine = formatPRsLine(currentSummary?.prs);
+  const executionVerdict = computeOverallExecutionVerdict(currentSummary?.execution);
+  const nudgeLine = computeNudgeLine(currentSummary, priorSummary);
+
+  if (!moversLine && !prsLine && !executionVerdict && !nudgeLine) {
+    return null;
+  }
+
+  return (
+    <div className="weekly-report__digest">
+      {moversLine ? <p className="weekly-report__digest-line muted small">{moversLine}</p> : null}
+      {prsLine ? <p className="weekly-report__digest-line muted small">{prsLine}</p> : null}
+      {executionVerdict ? (
+        <p className="weekly-report__digest-line muted small">
+          Execution: {executionVerdict}.
+        </p>
+      ) : null}
+      {nudgeLine ? <p className="weekly-report__digest-line muted small">{nudgeLine}</p> : null}
     </div>
   );
 }
@@ -224,6 +343,11 @@ export function WeeklyReport() {
           deltaTone={topGain ? "up" : null}
         />
       </div>
+      <DigestSection
+        currentSummary={currentSummary}
+        priorSummary={priorSummary}
+        priorEmpty={priorEmpty}
+      />
     </section>
   );
 }

@@ -5831,6 +5831,17 @@ html[data-theme="dark"] .auth-page .auth-form.card {
   margin: 0;
 }
 
+.weekly-report__digest {
+  display: grid;
+  gap: 4px;
+  padding-top: 4px;
+  border-top: 1px solid var(--color-border);
+}
+
+.weekly-report__digest-line {
+  margin: 0;
+}
+
 /* -- Shared chart chrome -- */
 
 .chart-legend {
