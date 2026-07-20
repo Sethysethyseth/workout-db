@@ -1,5 +1,5 @@
 const { enrichSet } = require("../../src/analytics");
-const { detectPRs, computeStandingPRs, getPRsForSet } = require("../../src/analytics/prs");
+const { detectPRs, computeStandingPRs } = require("../../src/analytics/prs");
 
 const BENCH = "Barbell Bench Press - Medium Grip";
 
@@ -297,7 +297,8 @@ describe("computeStandingPRs", () => {
     expect(standing.weightPR.value).toBe(120);
     expect(standing.weightPR.performedAt).toBe(new Date("2026-06-08T10:00:00Z").toISOString());
 
-    expect(standing.repsAtWeightPR.value).toBe(10);
+    // repsAtWeightPR: session 3's 100x10 beats session 1's 100x5, so it's a valid event
+    expect(standing.repsAtWeightPR.reps).toBe(10);
     expect(standing.repsAtWeightPR.weight).toBe(100);
 
     expect(standing.e1rmPR).not.toBeNull();
@@ -311,44 +312,157 @@ describe("computeStandingPRs", () => {
       repsAtWeightPR: null,
     });
   });
-});
 
-describe("getPRsForSet", () => {
-  test("returns PR types held by a specific set", () => {
-    const sets = [
+  test("input order does not affect standing records (ties resolve chronologically)", () => {
+    // Two sets tie on weight; the standing weightPR must report the same
+    // occurrence regardless of the order the caller passes them in.
+    const inOrder = [
       benchSet({ performedAt: "2026-06-01T10:00:00Z", weight: 100, reps: 5 }),
-      benchSet({ performedAt: "2026-06-08T10:00:00Z", weight: 100, reps: 8 }),
+      benchSet({ performedAt: "2026-06-08T10:00:00Z", weight: 200, reps: 4 }),
+      benchSet({ performedAt: "2026-06-15T10:00:00Z", weight: 200, reps: 6 }),
     ];
+    const outOfOrder = [...inOrder].reverse();
 
-    const targetSet = sets[1];
-    const prTypes = getPRsForSet(sets, targetSet);
-
-    // 100 x 8 vs prior 100 x 5: repsAtWeightPR (8 > 5 at same weight) and e1rmPR
-    expect(prTypes).toContain("e1rmPR");
-    expect(prTypes).toContain("repsAtWeightPR");
-    expect(prTypes).not.toContain("weightPR"); // same weight
+    expect(computeStandingPRs(outOfOrder)).toEqual(computeStandingPRs(inOrder));
   });
 
-  test("returns empty array for first-session set", () => {
-    const sets = [
-      benchSet({ performedAt: "2026-06-01T10:00:00Z", weight: 100, reps: 5 }),
-      benchSet({ performedAt: "2026-06-08T10:00:00Z", weight: 90, reps: 3 }),
-    ];
+  describe("warmup set bug (the reported defect)", () => {
+    test("warmup 45x20 does NOT become standing repsAtWeightPR over real work", () => {
+      // The exact defect from the task: session 1 45x20 (warmup) + 225x5,
+      // session 2 45x20 + 235x5. Old buggy code: repsAtWeightPR = { value: 20, weight: 45 }
+      // Fixed code: repsAtWeightPR is null (no repsAtWeightPR events fire because
+      // session 1 sets don't count, and session 2's warmup 45x20 doesn't beat
+      // the prior 45x20, and 235x5 doesn't beat 225x5 at same-or-higher weight).
+      const session1 = "2026-06-01T10:00:00Z";
+      const session2 = "2026-06-08T10:00:00Z";
+      const sets = [
+        benchSet({ performedAt: session1, weight: 45, reps: 20 }),
+        benchSet({ performedAt: session1, weight: 225, reps: 5 }),
+        benchSet({ performedAt: session2, weight: 45, reps: 20 }),
+        benchSet({ performedAt: session2, weight: 235, reps: 5 }),
+      ];
 
-    const targetSet = sets[0];
-    const prTypes = getPRsForSet(sets, targetSet);
-    expect(prTypes).toHaveLength(0);
+      const standing = computeStandingPRs(sets);
+
+      // The warmup should NOT be the standing repsAtWeightPR
+      expect(standing.repsAtWeightPR).toBeNull();
+
+      // weightPR should be 235 (all-time best, including first session)
+      expect(standing.weightPR.value).toBe(235);
+
+      // e1rmPR should be non-null
+      expect(standing.e1rmPR).not.toBeNull();
+    });
   });
 
-  test("returns empty array for set that holds no PRs", () => {
-    const sets = [
-      benchSet({ performedAt: "2026-06-01T10:00:00Z", weight: 100, reps: 10 }),
-      benchSet({ performedAt: "2026-06-08T10:00:00Z", weight: 90, reps: 5 }),
-    ];
+  describe("legitimate rep PR fixture", () => {
+    test("100x5 -> 100x8 produces standing repsAtWeightPR at weight 100 with 8 reps", () => {
+      const session1 = "2026-06-01T10:00:00Z";
+      const session2 = "2026-06-08T10:00:00Z";
+      const sets = [
+        benchSet({ performedAt: session1, weight: 100, reps: 5 }),
+        benchSet({ performedAt: session2, weight: 100, reps: 8 }),
+      ];
 
-    const targetSet = sets[1];
-    const prTypes = getPRsForSet(sets, targetSet);
-    expect(prTypes).toHaveLength(0);
+      const standing = computeStandingPRs(sets);
+
+      expect(standing.repsAtWeightPR).not.toBeNull();
+      expect(standing.repsAtWeightPR.weight).toBe(100);
+      expect(standing.repsAtWeightPR.reps).toBe(8);
+      expect(standing.repsAtWeightPR.performedAt).toBe(new Date(session2).toISOString());
+    });
+  });
+
+  describe("heaviest-wins selection", () => {
+    test("when rep-PR events fire at both light and heavy weights, standing record is the heavy one", () => {
+      // This is the test that would have caught the shipped bug - it must fail
+      // against the old implementation (which selected by global max reps).
+      // Session 1: 100x5, 200x3
+      // Session 2: 100x8 (repsAtWeightPR: beats 100x5), 200x5 (repsAtWeightPR: beats 200x3)
+      // Old bug: would pick 100x8 because 8 > 5 (global max reps)
+      // Fixed: picks 200x5 because 200 > 100 (heaviest weight)
+      const session1 = "2026-06-01T10:00:00Z";
+      const session2 = "2026-06-08T10:00:00Z";
+      const sets = [
+        benchSet({ performedAt: session1, weight: 100, reps: 5 }),
+        benchSet({ performedAt: session1, weight: 200, reps: 3 }),
+        benchSet({ performedAt: session2, weight: 100, reps: 8 }),
+        benchSet({ performedAt: session2, weight: 200, reps: 5 }),
+      ];
+
+      const standing = computeStandingPRs(sets);
+
+      // The standing repsAtWeightPR should be the HEAVY one (200x5), not the light one (100x8)
+      expect(standing.repsAtWeightPR).not.toBeNull();
+      expect(standing.repsAtWeightPR.weight).toBe(200);
+      expect(standing.repsAtWeightPR.reps).toBe(5);
+    });
+  });
+
+  describe("consistency invariant (anti-drift guard)", () => {
+    test("standing repsAtWeightPR matches a detectPRs event exactly", () => {
+      // For a mixed multi-session fixture, if computeStandingPRs(sets).repsAtWeightPR
+      // is non-null then some event in detectPRs(sets) has type === "repsAtWeightPR"
+      // and the SAME weight, reps, and performedAt.
+      const session1 = "2026-06-01T10:00:00Z";
+      const session2 = "2026-06-08T10:00:00Z";
+      const session3 = "2026-06-15T10:00:00Z";
+      const sets = [
+        benchSet({ performedAt: session1, weight: 100, reps: 5 }),
+        benchSet({ performedAt: session1, weight: 150, reps: 3 }),
+        benchSet({ performedAt: session2, weight: 100, reps: 7 }),
+        benchSet({ performedAt: session2, weight: 150, reps: 4 }),
+        benchSet({ performedAt: session3, weight: 120, reps: 6 }),
+      ];
+
+      const standing = computeStandingPRs(sets);
+      const prEvents = detectPRs(sets);
+
+      if (standing.repsAtWeightPR !== null) {
+        const matchingEvent = prEvents.find(
+          (e) =>
+            e.type === "repsAtWeightPR" &&
+            e.weight === standing.repsAtWeightPR.weight &&
+            e.reps === standing.repsAtWeightPR.reps &&
+            e.performedAt === standing.repsAtWeightPR.performedAt
+        );
+        expect(matchingEvent).toBeDefined();
+      }
+    });
+  });
+
+  describe("first-session suppression for repsAtWeightPR", () => {
+    test("no standing repsAtWeightPR is ever dated to the exercise's first session", () => {
+      // Various fixtures to ensure first-session suppression is inherited from detectPRs
+      const fixtures = [
+        // Single session: no repsAtWeightPR possible
+        [benchSet({ performedAt: "2026-06-01T10:00:00Z", weight: 100, reps: 10 })],
+        // Two sessions, PR in second
+        [
+          benchSet({ performedAt: "2026-06-01T10:00:00Z", weight: 100, reps: 5 }),
+          benchSet({ performedAt: "2026-06-08T10:00:00Z", weight: 100, reps: 8 }),
+        ],
+        // Multiple first-session sets
+        [
+          benchSet({ performedAt: "2026-06-01T10:00:00Z", weight: 100, reps: 5 }),
+          benchSet({ performedAt: "2026-06-01T10:00:00Z", weight: 100, reps: 10 }),
+          benchSet({ performedAt: "2026-06-08T10:00:00Z", weight: 100, reps: 12 }),
+        ],
+      ];
+
+      for (const sets of fixtures) {
+        const standing = computeStandingPRs(sets);
+        if (standing.repsAtWeightPR !== null) {
+          // The first session is the earliest performedAt
+          const sorted = [...sets].sort(
+            (a, b) => a.performedAt.getTime() - b.performedAt.getTime()
+          );
+          const firstSessionMs = sorted[0].performedAt.getTime();
+          const standingMs = new Date(standing.repsAtWeightPR.performedAt).getTime();
+          expect(standingMs).not.toBe(firstSessionMs);
+        }
+      }
+    });
   });
 });
 

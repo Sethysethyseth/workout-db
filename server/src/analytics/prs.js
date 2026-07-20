@@ -127,31 +127,33 @@ function detectPRs(enrichedSets) {
  * Output: { weightPR, e1rmPR, repsAtWeightPR } where each is:
  * - null if no qualifying sets exist
  * - { value, weight, reps, performedAt } for the current standing record
+ *
+ * weightPR and e1rmPR: all-time best, including first session (a lifter's
+ * heaviest-ever bench is their heaviest-ever bench even if it happened on
+ * day one).
+ *
+ * repsAtWeightPR: DERIVED from detectPRs events to ensure one definition.
+ * Selection (frontier-seat decision): pick the event at the HEAVIEST weight;
+ * tie-break by more reps, then by more recent performedAt. Rationale: of the
+ * rep records the lifter has actually set under the real rule, surface the
+ * most impressive one, so a light warmup can never outrank real work.
  */
 function computeStandingPRs(enrichedSets) {
   if (!Array.isArray(enrichedSets) || enrichedSets.length === 0) {
     return { weightPR: null, e1rmPR: null, repsAtWeightPR: null };
   }
 
-  // Sort by performedAt
+  // Chronological order so ties resolve to the EARLIEST occurrence rather
+  // than to whatever order the caller happened to pass (the module's
+  // standing ordering-independence rule - see detectPRs).
   const sorted = [...enrichedSets].sort(
     (a, b) => a.performedAt.getTime() - b.performedAt.getTime()
   );
 
-  // Identify first session
-  const firstSessionMs = sorted[0].performedAt.getTime();
-
   let standingWeightPR = null;
   let standingE1rmPR = null;
-  let standingRepsAtWeightPR = null;
-
-  // Track for reps-at-weight: weight -> { reps, performedAt }
-  const bestRepsPerWeight = new Map();
 
   for (const set of sorted) {
-    const sessionMs = set.performedAt.getTime();
-    const isFirstSession = sessionMs === firstSessionMs;
-
     const weight = set.input.weight;
     const reps = set.input.reps;
     const e1rm = set.metrics?.e1rm?.epley ?? null;
@@ -160,18 +162,17 @@ function computeStandingPRs(enrichedSets) {
       continue;
     }
 
-    // Track best weight
+    // Track best weight (all-time, including first session)
     if (standingWeightPR === null || weight > standingWeightPR.value) {
       standingWeightPR = {
         value: weight,
         weight,
         reps,
         performedAt: set.performedAt.toISOString(),
-        isFirstSession,
       };
     }
 
-    // Track best e1RM
+    // Track best e1RM (all-time, including first session)
     if (e1rm !== null) {
       if (standingE1rmPR === null || e1rm > standingE1rmPR.value) {
         standingE1rmPR = {
@@ -179,95 +180,48 @@ function computeStandingPRs(enrichedSets) {
           weight,
           reps,
           performedAt: set.performedAt.toISOString(),
-          isFirstSession,
         };
       }
     }
+  }
 
-    // Track reps at weight
-    const existing = bestRepsPerWeight.get(weight);
-    if (!existing || reps > existing.reps) {
-      bestRepsPerWeight.set(weight, {
-        reps,
-        performedAt: set.performedAt.toISOString(),
-        isFirstSession,
-      });
+  // Derive repsAtWeightPR from detectPRs events (one definition, one code path)
+  const prEvents = detectPRs(enrichedSets);
+  const repsAtWeightEvents = prEvents.filter((e) => e.type === "repsAtWeightPR");
+
+  let standingRepsAtWeightPR = null;
+  for (const event of repsAtWeightEvents) {
+    if (standingRepsAtWeightPR === null) {
+      standingRepsAtWeightPR = event;
+      continue;
+    }
+    // Pick heaviest weight
+    if (event.weight > standingRepsAtWeightPR.weight) {
+      standingRepsAtWeightPR = event;
+    } else if (event.weight === standingRepsAtWeightPR.weight) {
+      // Tie-break: more reps
+      if (event.reps > standingRepsAtWeightPR.reps) {
+        standingRepsAtWeightPR = event;
+      } else if (event.reps === standingRepsAtWeightPR.reps) {
+        // Tie-break: more recent performedAt
+        if (event.performedAt > standingRepsAtWeightPR.performedAt) {
+          standingRepsAtWeightPR = event;
+        }
+      }
     }
   }
 
-  // Find the highest-rep entry across all weights (the "reps-at-weight" standing PR)
-  // This is the set with the most reps at any weight that hasn't been beaten at same-or-higher weight
-  let maxReps = null;
-  let maxRepsEntry = null;
-  let maxRepsWeight = null;
-  for (const [weight, entry] of bestRepsPerWeight) {
-    if (maxReps === null || entry.reps > maxReps) {
-      maxReps = entry.reps;
-      maxRepsEntry = entry;
-      maxRepsWeight = weight;
-    }
+  // Strip the 'type' field from the standing repsAtWeightPR if present
+  if (standingRepsAtWeightPR !== null) {
+    const { type, ...rest } = standingRepsAtWeightPR;
+    standingRepsAtWeightPR = rest;
   }
-  if (maxRepsEntry !== null) {
-    standingRepsAtWeightPR = {
-      value: maxReps,
-      weight: maxRepsWeight,
-      reps: maxReps,
-      performedAt: maxRepsEntry.performedAt,
-      isFirstSession: maxRepsEntry.isFirstSession,
-    };
-  }
-
-  // Clean up: remove isFirstSession markers
-  const clean = (pr) => {
-    if (!pr) return null;
-    const { isFirstSession, ...rest } = pr;
-    return rest;
-  };
 
   return {
-    weightPR: clean(standingWeightPR),
-    e1rmPR: clean(standingE1rmPR),
-    repsAtWeightPR: clean(standingRepsAtWeightPR),
+    weightPR: standingWeightPR,
+    e1rmPR: standingE1rmPR,
+    repsAtWeightPR: standingRepsAtWeightPR,
   };
-}
-
-/**
- * Check if a specific set holds a PR at the time it was performed.
- * Used for marking set rows in completed session view.
- *
- * Input: enrichedSets for one exercise, the target set to check
- * Output: array of PR types the set holds (e.g., ['weightPR', 'e1rmPR'])
- */
-function getPRsForSet(enrichedSets, targetSet) {
-  if (!Array.isArray(enrichedSets) || enrichedSets.length === 0 || !targetSet) {
-    return [];
-  }
-
-  const targetMs = targetSet.performedAt.getTime();
-  const targetWeight = targetSet.input.weight;
-  const targetReps = targetSet.input.reps;
-  const targetE1rm = targetSet.metrics?.e1rm?.epley ?? null;
-
-  if (targetWeight == null || targetWeight <= 0 || targetReps == null || targetReps < 1) {
-    return [];
-  }
-
-  // Get all PRs
-  const allPRs = detectPRs(enrichedSets);
-
-  // Find PRs that match this set's performedAt, weight, and reps
-  const types = [];
-  for (const pr of allPRs) {
-    if (
-      pr.performedAt === targetSet.performedAt.toISOString() &&
-      pr.weight === targetWeight &&
-      pr.reps === targetReps
-    ) {
-      types.push(pr.type);
-    }
-  }
-
-  return types;
 }
 
 function round2(n) {
@@ -277,5 +231,4 @@ function round2(n) {
 module.exports = {
   detectPRs,
   computeStandingPRs,
-  getPRsForSet,
 };

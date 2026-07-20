@@ -32,7 +32,6 @@ const {
 const {
   detectPRs,
   computeStandingPRs,
-  getPRsForSet,
 } = require("./prs");
 
 module.exports = {
@@ -63,5 +62,4 @@ module.exports = {
   REP_TARGET_LADDER,
   detectPRs,
   computeStandingPRs,
-  getPRsForSet,
 };
