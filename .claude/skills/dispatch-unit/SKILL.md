@@ -98,14 +98,19 @@ per unit is the crash/hand-relay fallback, not the design.
 Applies on BOTH channels, fully compatible with autonomous mode - these
 are in-conversation messages, not extra stops:
 
-- **At dispatch:** tell Seth Cursor is now working, with the unit's
-  wave position - "Cursor is working on <unit> (n/N)". N = the wave's
-  total block count in QUEUE.md (DRAFT included); n = this unit's
-  position in landing order (units already landed + 1).
-- **At each landing** (after `land-unit` finishes): give a short
-  "n/N - <one-line result>" summary line.
-- **At the final landing** (n == N): mark it "N/N complete" and hand
-  over the consolidated wave smoke checklist per `land-unit`.
+- **At dispatch:** tell Seth Cursor is now working, and NAME THE STEP -
+  not just the count. "Cursor is working on FP7 (5/8) - weekly digest
+  card on Home." Unit id + n/N + a plain-language phrase for what this
+  step of the wave does, so Seth knows where the wave is without
+  opening QUEUE.md. N = the wave's total block count in QUEUE.md
+  (DRAFT included); n = this unit's position in landing order (units
+  already landed + 1). Also say the rung/model when it isn't the
+  default, and the expected lane worktree.
+- **At each landing** (after `land-unit` finishes): a SHORT
+  "n/N - <one-line result>" summary. Brief means brief - no test
+  output, no diffs, no file lists (see `land-unit` section 5).
+- **At the final landing** (n == N): "N/N complete", the consolidated
+  wave smoke checklist, and a STOP - see section 4.
 - If N changes mid-wave (a block added/dropped), say so once and renumber.
 
 ## 2c. Fan-out - parallel lanes (v5.2, July 18)
@@ -145,6 +150,11 @@ the audit needs to know who actually delivered).
 
 - Two bounces on one unit -> stop, page Seth.
 - Any `land-unit` escalation trigger fired -> stop.
-- Wave complete -> the pre-main gate is Fable + Seth, never this skill.
+- **Wave complete (n == N) -> STOP AND HAND OVER FOR SMOKE.** The
+  session ends with the consolidated smoke checklist and an ask for
+  sign-off (`land-unit` section 6). Never roll from the last landing
+  into a branch review, `/code-review`, or any merge prep - Seth smokes
+  first, then a frontier seat runs `pre-main-review`. This seat does
+  not run the gate.
 - A migration-carrying or prod-touching block -> this skill refuses;
   those are Seth's manual track, full stop.

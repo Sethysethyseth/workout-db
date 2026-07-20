@@ -97,11 +97,21 @@ Sonnet audits and lands. The loop per unit:
    (no code); Sonnet verifies the reasoning and green-lights the fix
    block. Direct-fix exception: when diagnosis was ~95% of the work and
    the fix is trivial, the diagnosing agent ships it directly.
-6. Before merge to main: Fable/Opus reviews the full accumulated branch
-   diff against the specs, with the wave's archived session logs in hand
-   (the review lane caught a real shipped-contract bug on day one - it is
-   not optional ceremony; it has moved gates, not disappeared). Merge
-   itself stays behind Seth's "push to main" trigger phrase per the gate.
+6. **Wave complete (n == N) -> Seth smokes FIRST.** The relay session
+   stops at the last landing, hands over ONE consolidated smoke
+   checklist against the staging Vercel deploy, and ends. No branch
+   review, no `/code-review`, no merge prep until Seth signs off - his
+   smoke findings are review INPUT, and a gate run before smoke gets
+   partly re-run after it. A smoke defect re-enters as a diagnosis
+   block and resets the sign-off.
+7. Only after sign-off: the pre-main gate - ritual is the
+   **`pre-main-review` skill**. Opus reviews the full accumulated branch
+   diff against the specs and the task-block contracts, with the wave's
+   archived session logs in hand, fanning gate fuel out to CURSOR report
+   lanes (never Claude subagents). The review lane caught a real
+   shipped-contract bug on day one - it is not optional ceremony; it has
+   moved gates, not disappeared. Merge itself stays behind Seth's "push
+   to main" trigger phrase per the gate.
 
 `docs/HANDOFF.md` (capped) carries current-state between sessions - all
 agents read it. `docs/HANDOFF-ARCHIVE.md` carries the verbatim session-log
@@ -119,8 +129,9 @@ history - only Fable reads it, when planning or gating.
 - Project skills (`.claude/skills/`) carry the repeated rituals so they
   load on demand at full fidelity instead of sitting always-on:
   `land-unit` (per-unit audit + land), `author-task-block` (block
-  authoring), and `dispatch-unit` (autonomous hand-to-Cursor, channels +
-  fallback ladder). Cursor never loads skills - anything Cursor needs
+  authoring), `dispatch-unit` (autonomous hand-to-Cursor, channels +
+  fallback ladder), and `pre-main-review` (the gate: wave-end order,
+  gate-fuel fan-out, verdict). Cursor never loads skills - anything Cursor needs
   stays in AGENTS.md. Deliberately NOT skills: merge-to-main and schema-deploy
   stay as copy-paste RUNBOOK rituals - their friction is a feature.
   `scripts/check-hex.mjs` is the tokens-only tripwire `land-unit` runs

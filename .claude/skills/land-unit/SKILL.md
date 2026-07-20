@@ -72,8 +72,8 @@ precedent, wave units) or fold it into the HANDOFF session log
 - **Rework:** flip the block to BOUNCED in QUEUE.md with what to fix
   written into the block; back to QUEUED once updated.
 - **Ambiguity:** if the delivery and the spec disagree in a way the block
-  doesn't settle, escalate to Fable - never settle contract ambiguity in
-  this seat. Other standing escalation triggers: schema/migration design,
+  doesn't settle, escalate to the frontier seat (Opus; Fable is
+  departed) - never settle contract ambiguity in this seat. Other standing escalation triggers: schema/migration design,
   security or cross-user isolation surfaces, prod incidents, root-cause
   debugging that won't close.
 
@@ -109,9 +109,39 @@ precedent, wave units) or fold it into the HANDOFF session log
   block count in QUEUE.md and n = units landed so far; the final unit
   says "N/N complete" instead. Matching dispatch-side convention in
   `dispatch-unit` section 2b.
+- **Keep the landing report BRIEF.** Seth reads these mid-wave, one per
+  unit: what landed (one line), the SHA, anything he needs to know
+  (fixes applied, deviations accepted, bounces), the n/N line. Do NOT
+  paste test output, diffs, or file lists - the audit happened; report
+  its conclusion. Detail belongs in the HANDOFF session log, and the
+  full read belongs to the pre-main gate. Exception: a bounce or an
+  escalation gets the evidence inline, because Seth is being asked to
+  judge it.
 - Relay loop: free width remaining (v5.2: 2 default / 3 cap, counting
   every in-flight lane) and QUEUE.md has a QUEUED unit whose
   serialization notes allow it -> dispatch it via `dispatch-unit` IN THIS
   SAME SESSION (one resident session per wave is the norm - spec, "The
-  relay loop"). Wave complete -> stop and hand Seth the consolidated
-  smoke checklist; the pre-main gate is Fable + Seth, never the loop.
+  relay loop").
+
+## 6. Wave end - HARD STOP for smoke
+
+When n == N (every block in the wave LANDED, nothing QUEUED or in
+flight), the relay session's job is DONE. In one message:
+
+- "N/N complete" plus a one-line-per-unit recap.
+- The CONSOLIDATED smoke checklist: every landed unit's smoke items
+  carried forward into one list, against the staging Vercel deploy
+  (never local dev), with `origin/<branch>` confirmed so Seth knows the
+  deploy has the code.
+- An explicit ask for smoke sign-off.
+
+Then STOP. Do NOT roll into the pre-main gate, do NOT run
+`/code-review`, do NOT start reading the branch diff, do NOT schedule a
+wakeup to do it later. Seth smoking the wave comes FIRST, always - his
+findings are review input, and a gate run before smoke gets partly
+re-run after it.
+
+The gate resumes only when Seth signs off (or explicitly waives smoke),
+and it runs under the `pre-main-review` skill in a FRONTIER seat (Opus).
+If this session is Sonnet, say the wave is ready for the gate and hand
+the chair over - Sonnet never runs the gate itself.
