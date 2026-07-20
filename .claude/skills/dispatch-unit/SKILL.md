@@ -113,6 +113,48 @@ are in-conversation messages, not extra stops:
   wave smoke checklist, and a STOP - see section 4.
 - If N changes mid-wave (a block added/dropped), say so once and renumber.
 
+## 2b-2. The wave task list (the in-terminal wave UI, July 20)
+
+Seth's standing ask: while a wave runs, he wants a live checklist in the
+terminal, not just prose messages. Use the TaskCreate/TaskUpdate tools -
+Claude Code renders them as a persistent checkbox list with a spinner on
+whatever is in_progress.
+
+NOT the Agent tool. A Claude subagent renders a richer panel (timer +
+token counter), and using one for wave work violates the standing
+fan-out rule - the executor is always a Cursor lane. The task list is
+bookkeeping in THIS session; it dispatches nothing.
+
+**At wave start** (first dispatch of the wave), `TaskList` first to avoid
+duplicates, then create the full wave in ONE pass:
+
+- One task per block in QUEUE.md, in landing order. Subject = the unit id
+  plus a plain-language phrase: `FP7 - weekly digest card on Home`.
+  `activeForm` = what Seth should see spinning: `Cursor working FP7
+  (5/8) - weekly digest card`.
+- Then a task `Seth smoke sign-off on staging (whole wave)`.
+- Then a task `Pre-main gate review (Opus)`, `addBlockedBy` the smoke
+  task - so the terminal itself shows the gate is blocked until smoke
+  clears (section 4's hard stop, made visible).
+
+**Per tick:**
+
+- At dispatch -> that unit's task to `in_progress`. Parallel lanes mean
+  several in_progress at once; that is correct and shows the fan-out.
+- At landing -> `completed` (`land-unit` does this as part of its
+  bookkeeping).
+- Bounced -> stays `in_progress`; append the bounce reason to the
+  description. Never complete a bounced unit.
+- N changes mid-wave -> create or delete tasks to match QUEUE.md, and
+  say so once in chat.
+
+The task list mirrors QUEUE.md; it never replaces it. QUEUE.md stays the
+durable ledger - the task list dies with the session.
+
+For the browser-side visual (Cursor actually typing), the cursor-watch
+dashboard in section 2 is the companion: task list = where the wave is,
+dashboard = what the agent is doing right now.
+
 ## 2c. Fan-out - parallel lanes (v5.2, July 18)
 
 Full grain: spec, "Fan-out (relay v5.2)". The mechanics here:

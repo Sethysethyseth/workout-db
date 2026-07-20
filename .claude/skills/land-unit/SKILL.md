@@ -95,6 +95,9 @@ precedent, wave units) or fold it into the HANDOFF session log
 ## 5. Bookkeeping
 
 - `docs/tasks/QUEUE.md`: flip the unit to `LANDED <sha>` (or BOUNCED).
+- Wave task list (`dispatch-unit` section 2b-2): flip this unit's task to
+  `completed`. A BOUNCED unit stays `in_progress` with the bounce reason
+  appended to its description - never complete it.
 - `docs/HANDOFF.md`: update, keep capped (~300 lines); move aged session
   logs VERBATIM (never summarized) to `docs/HANDOFF-ARCHIVE.md`,
   newest first.
@@ -134,6 +137,9 @@ flight), the relay session's job is DONE. In one message:
   (never local dev), with `origin/<branch>` confirmed so Seth knows the
   deploy has the code.
 - An explicit ask for smoke sign-off.
+- Flip the wave task list's `Seth smoke sign-off` task to `in_progress`
+  and leave it there. The terminal then shows exactly one open item with
+  the gate blocked behind it - the stop, made visible.
 
 Then STOP. Do NOT roll into the pre-main gate, do NOT run
 `/code-review`, do NOT start reading the branch diff, do NOT schedule a
