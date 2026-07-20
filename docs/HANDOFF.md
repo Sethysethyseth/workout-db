@@ -1,109 +1,83 @@
 # HANDOFF — current state
 
-**Updated:** July 19, 2026, twenty-seventh session (Opus resident —
-**FP4 LANDED `d6180cf`; FP5 DISPATCHED on the named rung and BOUNCED
-on audit — NOT landed**). This entry covers BOTH July 19 resident
-sessions; the first one landed FP2 `056be0c` and FP3 `3de1749` (after
-one bounce) and dispatched FP4, then stepped out with the run in
-flight, leaving a relay-handover note in QUEUE. That handover worked
-as written: this session picked the FP4 delivery straight out of the
-lane worktree and landed it.
+**Updated:** July 19, 2026, twenty-eighth session (Sonnet resident —
+**FP5 BOUNCE 1 FIX LANDED `9eb7e8d`**). Continued from the twenty-
+seventh session's bounce; picked up the SAME lane
+(`C:\dev\worktrees\cursor-lane`, branch `cursor/fp5-pr-detection`)
+exactly as the handover specified.
 
-**Wave state: 4 of 6 code units landed** — FP1 `8dc799f`, FP2
-`056be0c`, FP3 `3de1749`, FP4 `d6180cf` (plus the FP0 report
-`137e0ea`). Branch `frontier-parity-wave`, all pushed to
-origin, deploys nowhere (staging Render tracks `main`).
+**Wave state: 5 of 6 code units landed** — FP1 `8dc799f`, FP2
+`056be0c`, FP3 `3de1749`, FP4 `d6180cf`, FP5 `9eb7e8d` (plus the FP0
+report `137e0ea`). Branch `frontier-parity-wave`, all pushed to
+origin, deploys nowhere (staging Render tracks `main`). Only FP6
+(gated, now unblocked) and FP8 (DRAFT, waiting on Seth's icon PNGs)
+remain.
 
-**FP4 (empty-state ghosts) LANDED `d6180cf`**, audited per land-unit:
-lanes fresh in lane (unit 171/171, build green 130 modules, check-hex
-clean), scope exact (5 files), every ghost verified aria-hidden +
-pointer-events:none with zero interactive elements, CSS diff free of
-animation/transition/@keyframes and of raw color, and every class and
-token the ghosts lean on verified to pre-exist and behave
-(`.analytics-unlock` :5654, `--chart-track` :5682, `.mv-track` IS
-`position: relative` so the absolute ghost bar anchors,
-`.balance-scale--ghost` :6397). Two declared deviations accepted: view
-tabs now render on the page-empty branch (required — three of the four
-per-view teases are otherwise unreachable without a URL edit), and the
-exercises empty copy split into title + unlock around the ghost.
+**FP5 re-dispatched on the bounce channel (named rung, `--model
+opus`, same lane), then landed after a reviewer-driven live audit.**
+Cursor's bounce-fix delivery threaded `setHasPR` through as a real
+prop (F1) and re-keyed the chip match to include `exerciseName` (F2
+partial); lanes came back fresh and green (195/195 in 15 suites, build
+green, check-hex clean). But its OWN evidence for F1 repeated exactly
+the mistake the bounce warned against — it claimed "Vite/esbuild catch
+undefined variable references at bundle time" (false for plain JS
+runtime errors) and punted the actual browser-drive/render-test proof
+to Seth as "manual verification steps." Given this is a second
+engagement on the same unit, the reviewer did not trust the writeup
+and drove the completed view live instead of accepting it or bouncing
+a third time: copied the main tree's staging `.env` into the lane's
+`server/`, started server + client dev instances there
+(`VITE_API_URL` pointed at the local server, not prod), registered a
+throwaway test account, and built a two-session fixture via direct API
+calls designed to hit exactly the F2 scenario (session A baseline —
+Bench 135x5, Curl 200x5, completed; session B — Bench 145x5, a real
+weight+e1RM PR, Curl 145x5 sharing that exact weight/reps but NOT a PR
+for curl) and loaded session B's completed view in a real browser.
+Found the delivery's F2 fix was still built on `exerciseName` alone,
+not identity as the block explicitly asked — fixed directly (trivia
+tier, not a third bounce): added a `prMatchKey(exerciseId,
+userExerciseId, exerciseName)` helper keyed on `se.exerciseId`/
+`se.userExerciseId` (confirmed present on the full session-exercise
+row) matching `pr.identity` from `summary.js`'s `identityFromKey`, with
+a name fallback. Then found a SECOND, undeclared defect only visible by
+actually loading the page: the chip could never render at all, because
+`setHasPR`'s date-scoping compared `session.performedAt` to each PR's
+`performedAt` for EXACT millisecond equality — but `session.performedAt`
+reflects the most recently written SET's timestamp, not any specific
+PR set's, so the check was always false. Fixed by dropping it (also
+trivia tier): the summary fetch's own `from`/`to` window already scopes
+PRs to the session's calendar day, so no extra date check was needed.
+Re-verified live after both fixes: exactly one PR chip rendered,
+correctly attributed to Bench Press and NOT Bicep Curl, zero console
+errors. Lanes re-run fresh once more post-fix (195/195, build green,
+check-hex clean). Verification servers torn down, the copied `.env`
+deleted from the lane afterward; only staging Neon
+(`ep-bitter-breeze-am81izlh`) touched, never prod. Lane rebased onto
+`d1cd3fb` then ff-merged `9eb7e8d`, pushed, origin HEAD confirmed. Full
+narrative (including the kept engine-half audit from bounce 1) in
+QUEUE.md's FP5 entry.
 
-**FP5 (PR detection) BOUNCED — bounce 1, delivery left uncommitted in
-the lane for the fix run.** First named-rung dispatch of the wave
-(`--model opus`, no descent). The lanes came back GREEN and stayed
-green when re-run fresh in the lane (unit 195/195 in 15 suites incl.
-24 new `prs.js` fixtures, build green, check-hex clean, purity grep
-clean) — **the bounce is not a lane failure, it is a defect the lanes
-structurally cannot see.** The ENGINE HALF passed audit and is kept:
-identity keying verified correct by direct read (`enrichSet.js:25`
-synthesizes a `user:<id>` catalogEntry for custom exercises, so
-`summary.js`'s helpers — copied verbatim from `exerciseDetail.js`'s
-landed N5 pattern — cover catalog AND custom), and cross-user
-isolation verified (the new all-time fetch reuses the pre-existing
-userId-scoped `fetchAllTimeEnrichedSets`, `where: { userId }` on both
-queries; no new query written). Two findings, both confined to
-`SessionDetailPage.jsx`, written into the block as BOUNCE 1 FINDINGS:
-**F1, BLOCKER and UNDECLARED** — `setHasPR` is a `const` inside the
-`SessionDetailPage` component (:2036) but is CALLED inside the
-top-level `SessionExerciseBlock` (:1709, :1738), which never receives
-it (call sites :2914/:2979 pass no such prop), so every COMPLETED
-session detail page throws `ReferenceError: setHasPR is not defined`;
-live sessions survive only via the `isCompleted &&` short-circuit.
-Invisible to both lanes (Vite does not resolve undefined identifiers,
-there are no client render tests) while the report claimed the chip
-worked — automatic bounce. **F2** — the chip matches PRs to rows by
-`weight:reps` alone, so bench 135x5 (a real PR) and curl 135x5 (not)
-both light up in the same session; the payload already carries
-`identity` + `exerciseName`, so the match must key on exercise
-identity. A false PR badge is a honesty-layer violation. Accepted and
-explicitly NOT to be "fixed" in the bounce: the extra
-`GET /analytics/summary` call on the completed view (the block
-permitted extending the response already touched), and `getSummary`
-now fetching all-time sets per request (inherent to the contract — PRs
-need history beyond the range).
-
-**Standing question Seth raised, deliberately NOT actioned here (his
-call to take to a Fable agent):** whether big/complicated waves should
-route Cursor to frontier models. Facts gathered for that conversation:
-`cursor-agent --list-models` DOES carry the frontier tier —
-`claude-opus-4-8-thinking-high` (1M, thinking) and
-`claude-fable-5-thinking-high` (1M thinking, flagged **NO ZDR**) —
-alongside the Codex/GPT-5.x ladder and Composer. Two observations
-worth putting to Fable: (a) `dispatch-unit` passes bare aliases like
-`--model opus` rather than exact ids, which resolved fine but is the
-same class of papercut as the July 14 "CLI remembers the last model"
-lesson; (b) the evidence so far says spend on AMBIGUITY, not size —
-MW's deliberate all-auto descent landed 8/8, while this wave's two
-bounces (FP3 chart-view partition, FP5's chip) were both places the
-block left a judgment call open. Seth owns raising this; no docs were
-changed for it.
-
-Previous entry (July 17, twenty-fifth session, Fable — PRE-MAIN GATE
-PASSED + MW-WAVE MERGED TO MAIN `3b325db`) moved VERBATIM to
-`docs/HANDOFF-ARCHIVE.md` this rewrite, together with its full gate
-record. Still-live pieces carried forward: the merge is done and
-prod-verified (see "Repo / deploy state"), and the untracked
-`docs/specs/cursor-token-savings-*` + `docs/parked/*` side-project
-artifacts still await Seth's ruling (see "Next up" 0a).
+**Standing question Seth raised, still NOT actioned (his call to take
+to a Fable agent):** whether big/complicated waves should route Cursor
+to frontier models. This session adds a second data point for that
+conversation — FP5's bounce-fix delivery itself needed two more
+reviewer-caught fixes even after landing on the named rung, both of
+the "the block already said what to do, the delivery just didn't do
+it or verify it" shape, same as the ambiguity pattern noted last
+session. Facts already gathered (last session): `cursor-agent
+--list-models` carries `claude-opus-4-8-thinking-high` and
+`claude-fable-5-thinking-high` (both 1M, flagged **NO ZDR** on the
+Fable variant); `dispatch-unit` passes bare aliases (`--model opus`)
+rather than exact ids. Seth owns raising this; no docs changed for it.
 
 Aged out this rewrite, moved verbatim to `docs/HANDOFF-ARCHIVE.md`
-(newest first): the July 18 **twenty-sixth** session (Fable — FP-WAVE
-OPENED, FP0 report landed `137e0ea`, the wave skeleton authored
-`4e09379`, and Seth's two new insights designed into
-`docs/specs/gym-context.md` + `docs/specs/strength-score-per-side.md`;
-the direction calls, the R3 dual-clock diagnosis, and the full
-Fable-unavailable handover live there verbatim — the still-live pieces
-are carried in QUEUE.md's FABLE HANDOVER section and the per-unit
-records) and the July 17 **twenty-fifth** session (Fable — pre-main
-gate + MW-wave merge, above).
-
-Everything older lives in the archive, newest first, and is NOT
-re-summarized here: sessions 7-24 (July 10-16) cover the not-tracked
-wave (NT1-NT3 + NTFIX1/NTFIX2 + the July 15 merge to `c473e21`), relay
-v5/v5.1/v5.2 adoption, the cursor-watch dev-tooling arc (CW1-CW3), and
-the whole MW-wave (skeleton, dispatch, rulings, code-complete). Grep
-the archive by session number or SHA when a decision's provenance
-matters; the still-live conclusions are all carried in QUEUE.md's
-per-unit records, the `-FINDINGS.md` files, and the sections below.
+(newest first): the July 19 **twenty-seventh** session (Opus resident —
+FP4 landed `d6180cf`, FP5 dispatched on the named rung and BOUNCED with
+the F1/F2 findings recorded above) and everything older, unchanged from
+prior rewrites. Grep the archive by session number or SHA when a
+decision's provenance matters; the still-live conclusions are all
+carried in QUEUE.md's per-unit records, the `-FINDINGS.md` files, and
+the sections below.
 
 - **N-wave follow-ups — folded into "Next up" 0a (July 16):** all three
   items run against `c473e21`, with the staging repoint target now
@@ -130,15 +104,15 @@ trusting it.
 - **`frontier-parity-wave` is the ACTIVE wave branch (July 19)** — off
   maintenance-wave HEAD `0206d30`. Now carries real code: FP0 report
   `137e0ea`, FP1 `8dc799f`, FP2 `056be0c`, FP3 `3de1749`, FP4
-  `d6180cf`, all pushed. **Smoke-surface caveat, verify before the
-  wave smoke:** staging Render (the API) has tracked `main` since
-  July 17, so the SERVER halves of this wave are not deployed
-  anywhere. FP2's `buildSummary.workoutCount` is a server change, and
-  FP5's engine work will be too. The client halves ride Vercel's
-  per-branch deploy as usual. Seth either repoints staging Render at
-  `frontier-parity-wave` for the smoke or accepts that server-derived
-  numbers are stale — settle this BEFORE running the checklist below,
-  or the This-week strip will look unfixed.
+  `d6180cf`, FP5 `9eb7e8d`, all pushed. **Smoke-surface caveat, verify
+  before the wave smoke:** staging Render (the API) has tracked `main`
+  since July 17, so the SERVER halves of this wave are not deployed
+  anywhere. FP2's `buildSummary.workoutCount` and FP5's PR-detection
+  engine are both server changes riding this. The client halves ride
+  Vercel's per-branch deploy as usual. Seth either repoints staging
+  Render at `frontier-parity-wave` for the smoke or accepts that
+  server-derived numbers are stale — settle this BEFORE running the
+  checklist below, or the affected surfaces will look unfixed.
 - **MW-WAVE MERGED to `main` (`3b325db`), July 17** — ff-only
   `c473e21..3b325db`, 35 commits, no merge commit, no migration. All 8
   MW units + the CW dev-tooling arc + the `a5294e3` pair-delete-confirm
@@ -200,28 +174,20 @@ trusting it.
 
 ## Next up (the active task)
 
-00. **FP-WAVE, NEXT SESSION'S FIRST JOB: re-dispatch FP5 with the
-   bounce findings.** The block `docs/tasks/fp5-pr-detection.md` is
-   STATUS: BOUNCED and carries a `BOUNCE 1 FINDINGS` section naming
-   both fixes (F1 the `setHasPR` scope crash, F2 the weight:reps
-   false-positive match) and explicitly ringfencing the engine half as
-   accepted. **The first delivery is still sitting uncommitted in
-   `C:\dev\worktrees\cursor-lane` on branch `cursor/fp5-pr-detection`
-   (base `04ce6bf`) — do NOT reset that lane and do NOT re-dispatch
-   from scratch.** Re-dispatch the SAME lane per `dispatch-unit`'s
-   bounce channel so the fix builds on the kept engine work; named
-   rung again (MODEL opus). F1's fix must be PROVEN by driving the
-   completed-session view in a browser or adding a render test —
-   "build green" is exactly the evidence that missed it the first
-   time. Two bounces on one unit = hard stop, page Seth.
-00b. **Then FP6** (`fp6-weekly-digest.md`, MODEL opus, QUEUED) — the
-   last code unit of the wave. Its gate is FP2 + FP5 both LANDED, so
-   it stays blocked until FP5 clears. After FP6 lands the wave is
+00. **FP-WAVE, NEXT SESSION'S FIRST JOB: dispatch FP6.**
+   (`fp6-weekly-digest.md`, MODEL opus, QUEUED) — the last code unit of
+   the wave. Its gate was FP2 + FP5 both LANDED, which is now satisfied
+   (FP5 landed `9eb7e8d` this session). After FP6 lands the wave is
    code-complete except FP8, and the next gate is the pre-main review
    (Opus, per the standing fallback) + Seth's smoke.
-00c. **Wave smoke checklist (FP1-FP4, hand to Seth when he asks or at
+00c. **Wave smoke checklist (FP1-FP5, hand to Seth when he asks or at
    wave end)** — read the deploy caveat in "Repo / deploy state"
    first; the server halves may not be deployed:
+   - Completed session with a genuine PR: the set gets a small muted
+     "PR" chip; a different exercise sharing that weight/reps in the
+     same session does NOT get chipped; the Exercises detail view
+     shows a Personal records card; completed session pages load
+     without console errors
    - Tab title reads **LogChamp**; HelloPage welcome + save-to-home
      lines say LogChamp; the never-gate-history guarantee line renders
    - Home This-week strip: the Workouts tile now agrees with the

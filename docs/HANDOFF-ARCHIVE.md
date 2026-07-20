@@ -1,5 +1,82 @@
 # HANDOFF ARCHIVE — session-log history (append-only)
 
+July 19, 2026, twenty-seventh session (Opus resident — **FP4 LANDED
+`d6180cf`; FP5 DISPATCHED on the named rung and BOUNCED on audit — NOT
+landed**). This entry covers BOTH July 19 resident sessions; the first
+one landed FP2 `056be0c` and FP3 `3de1749` (after one bounce) and
+dispatched FP4, then stepped out with the run in flight, leaving a
+relay-handover note in QUEUE. That handover worked as written: this
+session picked the FP4 delivery straight out of the lane worktree and
+landed it.
+
+**Wave state: 4 of 6 code units landed** — FP1 `8dc799f`, FP2
+`056be0c`, FP3 `3de1749`, FP4 `d6180cf` (plus the FP0 report
+`137e0ea`). Branch `frontier-parity-wave`, all pushed to
+origin, deploys nowhere (staging Render tracks `main`).
+
+**FP4 (empty-state ghosts) LANDED `d6180cf`**, audited per land-unit:
+lanes fresh in lane (unit 171/171, build green 130 modules, check-hex
+clean), scope exact (5 files), every ghost verified aria-hidden +
+pointer-events:none with zero interactive elements, CSS diff free of
+animation/transition/@keyframes and of raw color, and every class and
+token the ghosts lean on verified to pre-exist and behave
+(`.analytics-unlock` :5654, `--chart-track` :5682, `.mv-track` IS
+`position: relative` so the absolute ghost bar anchors,
+`.balance-scale--ghost` :6397). Two declared deviations accepted: view
+tabs now render on the page-empty branch (required — three of the four
+per-view teases are otherwise unreachable without a URL edit), and the
+exercises empty copy split into title + unlock around the ghost.
+
+**FP5 (PR detection) BOUNCED — bounce 1, delivery left uncommitted in
+the lane for the fix run.** First named-rung dispatch of the wave
+(`--model opus`, no descent). The lanes came back GREEN and stayed
+green when re-run fresh in the lane (unit 195/195 in 15 suites incl.
+24 new `prs.js` fixtures, build green, check-hex clean, purity grep
+clean) — **the bounce is not a lane failure, it is a defect the lanes
+structurally cannot see.** The ENGINE HALF passed audit and is kept:
+identity keying verified correct by direct read (`enrichSet.js:25`
+synthesizes a `user:<id>` catalogEntry for custom exercises, so
+`summary.js`'s helpers — copied verbatim from `exerciseDetail.js`'s
+landed N5 pattern — cover catalog AND custom), and cross-user
+isolation verified (the new all-time fetch reuses the pre-existing
+userId-scoped `fetchAllTimeEnrichedSets`, `where: { userId }` on both
+queries; no new query written). Two findings, both confined to
+`SessionDetailPage.jsx`, written into the block as BOUNCE 1 FINDINGS:
+**F1, BLOCKER and UNDECLARED** — `setHasPR` is a `const` inside the
+`SessionDetailPage` component (:2036) but is CALLED inside the
+top-level `SessionExerciseBlock` (:1709, :1738), which never receives
+it (call sites :2914/:2979 pass no such prop), so every COMPLETED
+session detail page throws `ReferenceError: setHasPR is not defined`;
+live sessions survive only via the `isCompleted &&` short-circuit.
+Invisible to both lanes (Vite does not resolve undefined identifiers,
+there are no client render tests) while the report claimed the chip
+worked — automatic bounce. **F2** — the chip matches PRs to rows by
+`weight:reps` alone, so bench 135x5 (a real PR) and curl 135x5 (not)
+both light up in the same session; the payload already carries
+`identity` + `exerciseName`, so the match must key on exercise
+identity. A false PR badge is a honesty-layer violation. Accepted and
+explicitly NOT to be "fixed" in the bounce: the extra
+`GET /analytics/summary` call on the completed view (the block
+permitted extending the response already touched), and `getSummary`
+now fetching all-time sets per request (inherent to the contract — PRs
+need history beyond the range).
+
+**Standing question Seth raised, deliberately NOT actioned here (his
+call to take to a Fable agent):** whether big/complicated waves should
+route Cursor to frontier models. Facts gathered for that conversation:
+`cursor-agent --list-models` DOES carry the frontier tier —
+`claude-opus-4-8-thinking-high` (1M, thinking) and
+`claude-fable-5-thinking-high` (1M thinking, flagged **NO ZDR**) —
+alongside the Codex/GPT-5.x ladder and Composer. Two observations
+worth putting to Fable: (a) `dispatch-unit` passes bare aliases like
+`--model opus` rather than exact ids, which resolved fine but is the
+same class of papercut as the July 14 "CLI remembers the last model"
+lesson; (b) the evidence so far says spend on AMBIGUITY, not size —
+MW's deliberate all-auto descent landed 8/8, while this wave's two
+bounces (FP3 chart-view partition, FP5's chip) were both places the
+block left a judgment call open. Seth owns raising this; no docs were
+changed for it.
+
 Previous entry (July 17, twenty-fifth session, Fable — **PRE-MAIN
 GATE PASSED + MW-WAVE MERGED TO MAIN `3b325db`**). Seth confirmed the
 MW6+MW8 smoke PASSED and gave the trigger phrase; merge ran per the

@@ -125,7 +125,7 @@ LANDED d6180cf | fp4-empty-state-ghosts.md | static tokens-only ghost previews +
   rows between "No exercises logged yet." and the unlock line with the
   Log CTA intact; ghosts read as muted furniture in all 4 palettes x
   light/dark, never as real data, and nothing in them is tappable
-DISPATCHED (bounce fix) | fp5-pr-detection.md | pure prs.js detector (weight/
+LANDED 9eb7e8d | fp5-pr-detection.md | pure prs.js detector (weight/
   reps-at-weight/e1RM, first-session suppression) + summary.prs stub
   filled + exerciseDetail standing records + PR card + quiet completed-
   view chip | MODEL opus -> Channel B NAMED rung (judgment tier, no
@@ -133,10 +133,51 @@ DISPATCHED (bounce fix) | fp5-pr-detection.md | pure prs.js detector (weight/
   (second resident session), lane branch cursor/fp5-pr-detection off
   04ce6bf in C:\dev\worktrees\cursor-lane; serialization gate satisfied
   (FP2 summary.js landed 056be0c, FP4 ExercisesView landed d6180cf).
-  BOUNCE FIX re-dispatched July 19 (third resident session), same lane,
-  same branch - engine half untouched, fixing only F1 (setHasPR scope
-  crash) and F2 (weight:reps false-positive) per BOUNCE 1 FINDINGS in
-  the block.
+  **BOUNCE 1 FIX re-dispatched and LANDED July 19 (third resident
+  session), same lane, same branch, engine half untouched.** Cursor's
+  bounce-fix delivery threaded `setHasPR` through as a real prop (F1)
+  and re-keyed the chip match to include `exerciseName` (F2 partial) -
+  lanes fresh in lane (195/195 in 15 suites, build green, check-hex
+  clean) - but its OWN evidence for F1 was inadequate exactly as
+  warned against ("Vite/esbuild catch undefined variable references at
+  bundle time" is false for plain JS; no render test, no browser
+  drive, verification punted to Seth as manual steps), so the reviewer
+  did not trust it and drove the completed view live instead: spun up
+  the server against the staging DB + client in the lane worktree
+  (`server/.env` copied in for the run, deleted after), registered a
+  throwaway test account, built a two-session fixture via direct API
+  calls (session A baseline Bench 135x5 + Curl 200x5 completed; session
+  B Bench 145x5 = real weight+e1rm PR, Curl 145x5 sharing the exact
+  weight/reps but NOT a PR for curl) and loaded the completed session B
+  in a real browser. Found TWO more defects live: (1) F2 as literally
+  built matched by `exerciseName` alone, not identity - the block's
+  explicit instruction - which the reviewer fixed directly (trivia
+  tier): added `prMatchKey(exerciseId, userExerciseId, exerciseName)`
+  keying on `se.exerciseId`/`se.userExerciseId` (confirmed present on
+  the full session-exercise row) with a name fallback, matching
+  `pr.identity` from `summary.js`'s `identityFromKey`; (2) NEW,
+  undeclared, found only by driving the browser - the chip could NEVER
+  render at all: `setHasPR`'s date-scoping compared
+  `session.performedAt` to each PR's `performedAt` for EXACT
+  millisecond equality, but `session.performedAt` reflects the most
+  recently written set's timestamp, not any specific PR set's - so the
+  check was always false. Fixed by dropping it entirely (trivia tier):
+  the summary fetch's own from/to window already scopes PRs to the
+  session's calendar day, so no extra date check was needed. Re-verified
+  live after both reviewer fixes: exactly one PR chip rendered, correctly
+  attributed to Bench Press, NOT Bicep Curl, zero console errors. Lanes
+  re-run fresh once more post-fix (195/195, build green, check-hex
+  clean). Verification servers torn down, copied `.env` deleted, no
+  writes to prod (staging Neon `ep-bitter-breeze-am81izlh` only, via the
+  main tree's existing `.env`). Lane rebased onto d1cd3fb then ff-merged
+  `9eb7e8d`, pushed, origin HEAD confirmed. Engine half unchanged from
+  BOUNCE 1's audit (still accepted: prs.js 24 fixtures, index.js
+  re-export, summary.js stub fill, exerciseDetail.js personalRecords,
+  analyticsController.js all-time fetch, ExercisesView Personal records
+  card). SMOKE: complete a session with a genuine PR - the set gets a
+  small muted "PR" chip; a different exercise sharing that weight/reps
+  in the same session does NOT get chipped; completed session pages
+  load without console errors
   **BOUNCE 1 (July 19), delivery NOT landed, work left uncommitted in
   the lane for the fix run.** Lanes verified fresh in lane and GREEN
   (unit 195/195 in 15 suites incl. 24 new prs fixtures, build green,
