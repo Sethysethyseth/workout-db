@@ -248,7 +248,7 @@ LANDED 0805064 | fp6-weekly-digest.md | digest layer under the Home band:
   than one); a week with nothing new shows none of the four lines and
   the band looks exactly as it did before FP6; the both-weeks-empty and
   nudge-only empty states are unchanged
-QUEUED | fpfix1-standing-pr-semantics.md | standing PR records derive
+LANDED f144fee | fpfix1-standing-pr-semantics.md | standing PR records derive
   from detectPRs instead of reimplementing it (kills the warmup-set
   "Reps - 45 lb x 20" record + the first-session leak on the Exercises
   PR card); deletes the dead getPRsForSet export | MODEL opus -> Channel
@@ -262,6 +262,27 @@ QUEUED | fpfix1-standing-pr-semantics.md | standing PR records derive
   Untested by construction - the lone standing fixture (100x10 vs
   120x5) passes under both the buggy and the correct logic. Serializes
   against nothing currently in flight; file-disjoint from FP8.
+  DISPATCHED July 20, Channel B named rung (`--model opus`, chosen over
+  auto because FP5's two prior deliveries both under-verified on this
+  exact file), lane `C:\dev\worktrees\cursor-lane` on branch
+  `cursor/fpfix1-standing-pr-semantics` off `1a643f3`. LANDED same
+  session, no bounce. Audited per land-unit: scope exact (3 files),
+  lanes re-run FRESH in the lane (198/198 in 15 suites, client build
+  green), delivery's node-evals NOT replayed but re-derived from
+  independent fixtures - warmup case returns null, anti-drift invariant
+  holds (standing record always matches a real detectPRs event), and a
+  warmup-progression case confirms real work outranks a 45x25.
+  ONE REVIEWER FIX on top of the delivery, undeclared by it (trivia
+  tier, direct-fix exception - diagnosis was the whole job): removing
+  the vestigial isFirstSession block also removed the chronological
+  sort, so weightPR/e1rmPR tie resolution became caller-input-order
+  dependent (proved by node-eval: same sets reversed gave Jan 15/4 reps
+  vs Jan 22/6 reps). Restored the sort and added a determinism fixture
+  matching the module's existing "chronological ordering independence"
+  idiom. SMOKE: Exercises detail -> Personal records card shows Weight
+  and e1RM rows, and a Reps row ONLY when a genuine reps-at-weight
+  record exists - never a warmup set, never dated to the exercise's
+  first session.
 DRAFT | fp8-pwa-icons.md | manifest icons + manifest/apple-touch links
   in index.html | LAST per Seth; flips QUEUED when his exported PNGs
   land in claudefiledrop/
