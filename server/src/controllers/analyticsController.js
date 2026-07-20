@@ -235,8 +235,17 @@ async function getSummary(req, res, next) {
       }
     }
 
+    // Fetch all-time sets for PR detection (PRs need full history to know what came before)
+    const allTimeEnriched = await fetchAllTimeEnrichedSets(userId);
+
     return res.json(
-      buildSummary(enriched, { from, to, planLookup, userExercises: userExerciseRows })
+      buildSummary(enriched, {
+        from,
+        to,
+        planLookup,
+        userExercises: userExerciseRows,
+        allTimeEnrichedSets: allTimeEnriched,
+      })
     );
   } catch (err) {
     return next(err);

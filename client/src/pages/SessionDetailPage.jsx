@@ -8,6 +8,7 @@ import {
   useState,
 } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import * as analyticsApi from "../api/analyticsApi.js";
 import * as exerciseApi from "../api/exerciseApi.js";
 import * as sessionApi from "../api/sessionApi.js";
 import { ErrorMessage } from "../components/ErrorMessage.jsx";
@@ -37,6 +38,14 @@ import {
 } from "../lib/sessionExerciseName.js";
 
 const exerciseResolutionCache = new Map();
+
+/** Exercise-identity key for PR matching: id-based when resolved, name fallback otherwise. */
+function prMatchKey(exerciseId, userExerciseId, exerciseName) {
+  if (exerciseId != null) return `id:${exerciseId}`;
+  if (userExerciseId != null) return `user:${userExerciseId}`;
+  if (exerciseName != null) return `name:${exerciseName}`;
+  return null;
+}
 
 function exerciseResolutionCacheKey(name) {
   const trimmed = String(name ?? "").trim();
@@ -791,6 +800,7 @@ const SessionSetRow = memo(function SessionSetRow({
   onUpdateSet,
   onDeleteSet,
   isNext = false,
+  hasPR = false,
 }) {
   const rootRef = useRef(null);
   const [draft, setDraft] = useState(() =>
@@ -1142,6 +1152,11 @@ const SessionSetRow = memo(function SessionSetRow({
               {orderField}
               {sideBadge}
               {statusBadge}
+              {hasPR && disabled ? (
+                <span className="session-set-pr-chip" title="Personal record">
+                  PR
+                </span>
+              ) : null}
             </>
           )
         }
@@ -1328,6 +1343,8 @@ function SessionExerciseBlock({
   /** null = blank/unknown; resolved | unresolved from catalog lookup. */
   trackedStatus = null,
   onOpenAddToLibrary,
+  /** Callback: (exerciseName, weight, reps) => boolean. Passed from parent for completed views. */
+  setHasPR = () => false,
 }) {
   const [draftResumeVersion, setDraftResumeVersion] = useState(0);
   const [draftTrackedStatus, setDraftTrackedStatus] = useState(null);
@@ -1699,6 +1716,7 @@ function SessionExerciseBlock({
                               onInteractStart={!isCompleted ? onActivateExercise : undefined}
                               onUpdateSet={onUpdateSet}
                               onDeleteSet={() => handleDeleteSet(s.id, unit)}
+                              hasPR={isCompleted && setHasPR(se, s.weight, s.reps)}
                             />
                           ))}
                         </div>
@@ -1727,6 +1745,7 @@ function SessionExerciseBlock({
                         onInteractStart={!isCompleted ? onActivateExercise : undefined}
                         onUpdateSet={onUpdateSet}
                         onDeleteSet={() => handleDeleteSet(s.id, unit)}
+                        hasPR={isCompleted && setHasPR(se, s.weight, s.reps)}
                       />
                     );
                   })
@@ -1782,6 +1801,7 @@ export function SessionDetailPage() {
   const [confirmReopen, setConfirmReopen] = useState(false);
   const [resolutionTick, setResolutionTick] = useState(0);
   const [addToLibrarySheet, setAddToLibrarySheet] = useState(null);
+  const [sessionPRs, setSessionPRs] = useState([]);
   const exerciseAnchorRefs = useRef(new Map());
   const sessionNoteTogglesInitRef = useRef(null);
 
@@ -1997,6 +2017,50 @@ export function SessionDetailPage() {
     if (names.length === 0) return;
     void cacheExerciseResolutions(names, bumpResolutions);
   }, [session?.sessionExercises, bumpResolutions]);
+
+  useEffect(() => {
+    if (!session || !session.completedAt || !session.performedAt) {
+      setSessionPRs([]);
+      return;
+    }
+    let cancelled = false;
+    async function fetchPRs() {
+      try {
+        const sessionDate = session.performedAt.slice(0, 10);
+        const from = `${sessionDate}T00:00:00.000Z`;
+        const to = `${sessionDate}T23:59:59.999Z`;
+        const summary = await analyticsApi.getSummary({ from, to });
+        if (!cancelled && Array.isArray(summary?.prs)) {
+          setSessionPRs(summary.prs);
+        }
+      } catch {
+        if (!cancelled) setSessionPRs([]);
+      }
+    }
+    fetchPRs();
+    return () => {
+      cancelled = true;
+    };
+  }, [session?.id, session?.completedAt, session?.performedAt]);
+
+  const setHasPR = useMemo(() => {
+    if (sessionPRs.length === 0) return () => false;
+    // sessionPRs is already scoped to this session's calendar day by the
+    // fetch's from/to window - no additional per-set date match needed
+    // (a session-level timestamp cannot equal an individual PR set's
+    // timestamp except by coincidence).
+    const prSet = new Set();
+    for (const pr of sessionPRs) {
+      const key = prMatchKey(pr.identity?.exerciseId, pr.identity?.userExerciseId, pr.exerciseName);
+      if (key != null) prSet.add(`${key}:${pr.weight}:${pr.reps}`);
+    }
+    return (se, weight, reps) => {
+      if (weight == null || reps == null) return false;
+      const key = prMatchKey(se?.exerciseId, se?.userExerciseId, se?.exerciseName);
+      if (key == null) return false;
+      return prSet.has(`${key}:${weight}:${reps}`);
+    };
+  }, [sessionPRs]);
 
   const trackedStatusByExerciseId = useMemo(() => {
     const map = new Map();
@@ -2945,6 +3009,7 @@ export function SessionDetailPage() {
                   onDeleteSet={onDeleteSet}
                   onAdjustSetCount={onAdjustSetCountForExercise}
                   setCountBusy={false}
+                  setHasPR={setHasPR}
                 />
               );
             })}

@@ -29,6 +29,11 @@ const {
   buildExerciseDetail,
   REP_TARGET_LADDER,
 } = require("./exerciseDetail");
+const {
+  detectPRs,
+  computeStandingPRs,
+  getPRsForSet,
+} = require("./prs");
 
 module.exports = {
   loadCatalog,
@@ -56,4 +61,7 @@ module.exports = {
   buildExerciseIndex,
   buildExerciseDetail,
   REP_TARGET_LADDER,
+  detectPRs,
+  computeStandingPRs,
+  getPRsForSet,
 };

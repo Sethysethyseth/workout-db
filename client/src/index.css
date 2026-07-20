@@ -6714,12 +6714,58 @@ html[data-theme="dark"][data-palette="iron"] .analytics-page {
 .ex-pr-slot {
   padding: 12px 14px;
   gap: 6px;
-  border-style: dashed;
-  background: color-mix(in srgb, var(--color-surface-2) 50%, transparent);
 }
 
 .ex-pr-slot .analytics-section-title {
   margin: 0;
+}
+
+.ex-pr-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ex-pr-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.ex-pr-row:last-child {
+  border-bottom: none;
+}
+
+.ex-pr-type {
+  font-weight: 600;
+  font-size: 0.82rem;
+  min-width: 50px;
+  color: var(--color-text-secondary);
+}
+
+.ex-pr-value {
+  flex: 1;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.session-set-pr-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1px 6px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--color-interactive) 18%, transparent);
+  color: var(--color-interactive);
+  border: 1px solid color-mix(in srgb, var(--color-interactive) 30%, transparent);
 }
 
 /* -- Analytics empty-state ghosts (FP4) — static, tokens-only, no motion -- */

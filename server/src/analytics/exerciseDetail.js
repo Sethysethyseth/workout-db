@@ -1,5 +1,6 @@
 const { computeMatchedEffortTrend } = require("./matchedEffort");
 const { computeWeeksInRange, filterInRange, toDate, MS_PER_WEEK } = require("./aggregate");
+const { computeStandingPRs } = require("./prs");
 
 // Fixed rep ladder for the rep-target calculator (N5). SETTLED July 10:
 // 15 is in for hypertrophy-range lifters; 20 is rejected - that far above
@@ -249,6 +250,7 @@ function buildExerciseDetail(enrichedSets, { exerciseId, userExerciseId, from, t
     weeklyVolume: computeWeeklyVolume(sets, { from: weeklyFrom, to: weeklyTo }),
     repTargets: computeRepTargets(bestE1rm, loggedRepRange),
     loggedRepRange,
+    personalRecords: computeStandingPRs(sets),
   };
 }
 

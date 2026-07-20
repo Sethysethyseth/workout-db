@@ -9,8 +9,6 @@ const BENCH = "Barbell Bench Press - Medium Grip";
 
 const FRONT_REAR_NOTE =
   "frontRearDelt cannot be computed: the exercise catalog's muscle taxonomy has no separate front/rear deltoid distinction (single 'shoulders' bucket).";
-const PR_NOTE =
-  "PR detection (tracked-vs-estimated) is not yet implemented; it requires full lift history beyond the selected range.";
 
 const from = "2026-06-01T00:00:00Z";
 const to = "2026-06-15T00:00:00Z";
@@ -129,16 +127,15 @@ describe("buildSummary", () => {
     expect(bench.matchedEffortTrend.sessions).toBe(2);
   });
 
-  test("prs and execution are empty arrays", () => {
+  test("prs is empty when allTimeEnrichedSets is not provided; execution is empty without plan data", () => {
     const summary = buildSummary(resolvedFixtures(), { from, to });
     expect(summary.prs).toEqual([]);
     expect(summary.execution).toEqual([]);
   });
 
-  test("honestyNotes always contain both baseline notes verbatim", () => {
+  test("honestyNotes contains frontRearDelt note", () => {
     const summary = buildSummary(resolvedFixtures(), { from, to });
     expect(summary.meta.honestyNotes).toContain(FRONT_REAR_NOTE);
-    expect(summary.meta.honestyNotes).toContain(PR_NOTE);
   });
 
   test("unresolved-count note present only when an unresolved set is in range", () => {

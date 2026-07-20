@@ -237,6 +237,67 @@ function MatchedEffortBlock({ trend }) {
   );
 }
 
+const PR_TYPE_LABELS = {
+  weightPR: "Weight",
+  e1rmPR: "e1RM",
+  repsAtWeightPR: "Reps",
+};
+
+function formatPRValue(pr) {
+  if (!pr) return null;
+  if (pr.type === "weightPR" || pr.type === "e1rmPR") {
+    return `${formatWeight(pr.value)} × ${formatRepsValue(pr.reps)}`;
+  }
+  if (pr.type === "repsAtWeightPR") {
+    return `${formatWeight(pr.weight)} × ${formatRepsValue(pr.value)}`;
+  }
+  return String(pr.value);
+}
+
+function PersonalRecordsCard({ personalRecords }) {
+  if (!personalRecords) {
+    return (
+      <section className="card stack ex-pr-slot">
+        <h3 className="analytics-section-title">Personal records</h3>
+        <p className="analytics-unlock small">log weighted sets with reps to track PRs</p>
+      </section>
+    );
+  }
+
+  const { weightPR, e1rmPR, repsAtWeightPR } = personalRecords;
+  const hasPRs = weightPR || e1rmPR || repsAtWeightPR;
+
+  if (!hasPRs) {
+    return (
+      <section className="card stack ex-pr-slot">
+        <h3 className="analytics-section-title">Personal records</h3>
+        <p className="analytics-unlock small">log weighted sets with reps to track PRs</p>
+      </section>
+    );
+  }
+
+  const prList = [
+    weightPR ? { ...weightPR, type: "weightPR" } : null,
+    e1rmPR ? { ...e1rmPR, type: "e1rmPR" } : null,
+    repsAtWeightPR ? { ...repsAtWeightPR, type: "repsAtWeightPR" } : null,
+  ].filter(Boolean);
+
+  return (
+    <section className="card stack ex-pr-slot">
+      <h3 className="analytics-section-title">Personal records</h3>
+      <ul className="ex-pr-list">
+        {prList.map((pr) => (
+          <li key={pr.type} className="ex-pr-row">
+            <span className="ex-pr-type">{PR_TYPE_LABELS[pr.type]}</span>
+            <span className="ex-pr-value">{formatPRValue(pr)}</span>
+            <span className="muted small">{formatShortDate(pr.performedAt)}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 function RepTargetsCard({ repTargets }) {
   const unit = loadWeightUnit();
   const hasExtrapolated = Array.isArray(repTargets) && repTargets.some((r) => r.extrapolated);
@@ -392,10 +453,7 @@ function ExerciseDetailPanel({ detail, weeks, loading, error, onClose }) {
         <E1rmSparkline history={e1rmHistory} />
       </section>
 
-      <div className="ex-pr-slot card stack">
-        <h3 className="analytics-section-title">Personal records</h3>
-        <p className="muted small">PR detection coming — milestones will show up here.</p>
-      </div>
+      <PersonalRecordsCard personalRecords={detail.personalRecords} />
     </section>
   );
 }

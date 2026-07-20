@@ -8,6 +8,7 @@ const {
   toDate,
 } = require("./aggregate");
 const { computeExecutionFidelity } = require("./planVsActual");
+const { detectPRs } = require("./prs");
 
 function round2(n) {
   return Math.round(n * 100) / 100;
@@ -15,10 +16,60 @@ function round2(n) {
 
 const HONESTY_FRONT_REAR_DELT =
   "frontRearDelt cannot be computed: the exercise catalog's muscle taxonomy has no separate front/rear deltoid distinction (single 'shoulders' bucket).";
-const HONESTY_PR_DETECTION =
-  "PR detection (tracked-vs-estimated) is not yet implemented; it requires full lift history beyond the selected range.";
 
-function buildSummary(enrichedSets, { from, to, planLookup, userExercises }) {
+function identityKeyOf(set) {
+  if (!set.resolution.resolved || !set.resolution.catalogEntry) return null;
+  return set.resolution.catalogEntry.id;
+}
+
+function identityFromKey(key) {
+  if (key.startsWith("user:")) {
+    return { userExerciseId: Number(key.slice("user:".length)) };
+  }
+  return { exerciseId: key };
+}
+
+function computePRsInRange(allTimeSets, from, to) {
+  const fromMs = toDate(from).getTime();
+  const toMs = toDate(to).getTime();
+
+  // Group all-time sets by exercise
+  const byExercise = new Map();
+  for (const set of allTimeSets) {
+    const key = identityKeyOf(set);
+    if (key === null) continue;
+    if (!byExercise.has(key)) {
+      byExercise.set(key, {
+        name: set.resolution.catalogEntry.name,
+        sets: [],
+      });
+    }
+    byExercise.get(key).sets.push(set);
+  }
+
+  // Detect PRs for each exercise, filter to those in range
+  const prs = [];
+  for (const [key, group] of byExercise) {
+    const exercisePRs = detectPRs(group.sets);
+    for (const pr of exercisePRs) {
+      const prMs = new Date(pr.performedAt).getTime();
+      if (prMs >= fromMs && prMs <= toMs) {
+        prs.push({
+          ...pr,
+          identity: identityFromKey(key),
+          exerciseName: group.name,
+        });
+      }
+    }
+  }
+
+  // Sort by performedAt
+  return prs.sort(
+    (a, b) => new Date(a.performedAt).getTime() - new Date(b.performedAt).getTime()
+  );
+}
+
+function buildSummary(enrichedSets, { from, to, planLookup, userExercises, allTimeEnrichedSets }) {
   const weeks = computeWeeksInRange(from, to);
   // Granularity derives from the range (<= 14 days -> day cells), never a
   // second knob. Averages stay per-week regardless.
@@ -98,13 +149,18 @@ function buildSummary(enrichedSets, { from, to, planLookup, userExercises }) {
           ).length / attributedInRange.length
         );
 
-  const honestyNotes = [HONESTY_FRONT_REAR_DELT, HONESTY_PR_DETECTION];
+  const honestyNotes = [HONESTY_FRONT_REAR_DELT];
   const unresolvedCount = inRange.filter((s) => !s.resolution.resolved).length;
   if (unresolvedCount > 0) {
     honestyNotes.push(
       `${unresolvedCount} set(s) in this range had an unresolved exercise name and were excluded from all metrics.`
     );
   }
+
+  // Compute PRs: requires all-time history to know what came before
+  const prs = allTimeEnrichedSets
+    ? computePRsInRange(allTimeEnrichedSets, from, to)
+    : [];
 
   return {
     range: {
@@ -115,7 +171,7 @@ function buildSummary(enrichedSets, { from, to, planLookup, userExercises }) {
     workoutCount,
     perMuscle,
     perExercise,
-    prs: [],
+    prs,
     balance,
     execution,
     meta: { effortCoverage, seriesGranularity, honestyNotes },
