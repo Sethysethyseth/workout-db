@@ -248,6 +248,20 @@ LANDED 0805064 | fp6-weekly-digest.md | digest layer under the Home band:
   than one); a week with nothing new shows none of the four lines and
   the band looks exactly as it did before FP6; the both-weeks-empty and
   nudge-only empty states are unchanged
+QUEUED | fpfix1-standing-pr-semantics.md | standing PR records derive
+  from detectPRs instead of reimplementing it (kills the warmup-set
+  "Reps - 45 lb x 20" record + the first-session leak on the Exercises
+  PR card); deletes the dead getPRsForSet export | MODEL opus -> Channel
+  B named rung. FROM THE JULY 20 PRE-MAIN GATE (verdict: PASS WITH
+  FIXES; this is the one required-before-merge fix). Root cause is a
+  SECOND implementation of the same PR vocabulary: `computeStandingPRs`
+  selected repsAtWeightPR by global max reps ignoring weight, contra
+  FP5's contract and contra `detectPRs`, and dropped first-session
+  suppression via an isFirstSession field that clean() stripped without
+  ever gating on it. Proven by node-eval at the gate, not inferred.
+  Untested by construction - the lone standing fixture (100x10 vs
+  120x5) passes under both the buggy and the correct logic. Serializes
+  against nothing currently in flight; file-disjoint from FP8.
 DRAFT | fp8-pwa-icons.md | manifest icons + manifest/apple-touch links
   in index.html | LAST per Seth; flips QUEUED when his exported PNGs
   land in claudefiledrop/
