@@ -15,6 +15,68 @@ that predates FPFIX1's final form and all of FP9-FP11. The gate MUST be
 re-run after the new units land and Seth re-smokes. Do not treat the
 earlier PASS WITH FIXES as live.
 
+---
+
+# ASK SETH THESE QUESTIONS FIRST — DO NOT GUESS, DO NOT PROCEED PAST THEM
+
+**Seth's explicit instruction closing the thirtieth session: "make sure
+the next agent knows this and asks me the right questions."** Five
+decisions below are HIS, not yours. Several were made unilaterally by the
+frontier seat this session to keep the wave moving; they are all still
+cheap to reverse RIGHT NOW and expensive to reverse after FP11 lands.
+Ask them as a batch at session start (AskUserQuestion is the right
+vehicle), give a recommendation with each — he invites tested pushback
+and wants a named criterion, not a menu — and then act.
+
+**Q1. Repoint staging Render to `frontier-parity-wave`, or accept stale
+server numbers?** BLOCKING — settle before ANY smoke.
+Staging Render has tracked `main` since July 17, so every server-side
+change in this wave deploys nowhere, INCLUDING FP9's engine fix, which is
+the entire point of the arc. The client degrades quietly rather than
+erroring, so a stale server reads to a smoker as "the fix didn't work."
+*Recommendation: repoint.* Smoking FP9 against a `main` server cannot
+validate it, and a false failure costs a whole diagnosis cycle.
+
+**Q2. Is the 12-rep Epley window right?** This is a DOMAIN call about his
+sport, and the frontier seat picked it alone.
+FP9 nulls `epley` above 12 reps. Consequence he should hear plainly: an
+exercise he has ONLY ever trained above 12 reps will show no e1RM, no
+rep targets, and no e1RM PRs at all — by design, routed to the existing
+unlock copy. 10 would be more conservative and would churn three more
+fixtures; 15 would match the rep-target ladder's emit ceiling.
+*Recommendation: keep 12* — conventional edge of Epley credibility, and
+it keeps the existing 10- and 12-rep fixtures honest. But if he lifts
+high-rep often, he is the one who knows whether losing e1RM there hurts.
+
+**Q3. Does he want to EYEBALL FP10 before it lands, or land-then-smoke?**
+FP10 is delivered but encodes two unreviewed frontier-seat choices: it
+reuses `.session-set-pr-chip` (the badge from completed set rows) on
+Home, and it groups PRs by exercise so the name appears once. He asked
+for "between too much and too simple" and never saw the interpretation.
+*Recommendation: land it and let him judge it in the re-smoke* — it is
+reversible, and a screenshot out of context is worse evidence than the
+real surface. But offer the bounce.
+
+**Q4. FP11 design direction — last cheap moment.** FP11 is QUEUED and NOT
+dispatched. Same aesthetic brief, three cards (Working weight targets,
+Top sets, Personal records). Its one non-obvious contract call: Top sets
+dedupes by `(weight, reps)` keeping the EARLIEST date, on the theory that
+a top set is an achievement and the first time you hit it is the record —
+matching the vocabulary `computeStandingPRs` already uses. If he'd rather
+see the most RECENT occurrence, that is a one-line change now and a
+bounce later.
+
+**Q5. The standing reps-record rule (carried from the 29th session,
+never answered).** FPFIX1 picks the standing reps record by HEAVIEST
+weight, so a lifter who has done both `100x8` and `200x5` sees
+"Reps - 200 lb x 5". Real record under the contract; he may prefer
+most-reps-wins. One small block either way.
+
+**DO NOT ask about the block builder.** He ruled it PARKED for another
+wave (item 00c). Raising it again is re-litigating a closed decision.
+
+---
+
 **Two units are sitting in lanes AWAITING REVIEW right now** (nothing
 landed this session — the session was authoring + dispatch):
 - **FP9** in `C:\dev\worktrees\cursor-lane` (branch `cursor/fp9`),
@@ -93,8 +155,13 @@ the five slots — AND the React key `${performedAt}-${weight}`
 "stand clear for now" at the end of this session — he has NOT asked for
 the next step to run. Do not dispatch or land anything until he says go.
 
+0. **ASK THE FIVE QUESTIONS** in the block at the top of this file
+   FIRST, as a batch, before touching anything. Q1 (Render repoint) and
+   Q2 (the 12-rep window) gate real work; Q3/Q4 are cheap now and
+   expensive after FP11. This is Seth's explicit standing instruction
+   from the thirtieth session, not a suggestion.
 1. Confirm ground truth: `git log origin/frontier-parity-wave -1` should
-   read `267271c` or later.
+   read `aab6083` or later.
 2. **Audit and land FP9 and FP10** via the `land-unit` skill — they are
    sitting in `cursor-lane` and `cursor-lane-2`, unaudited. Land them
    SERIALLY (one commit per unit) even though they ran in parallel.
