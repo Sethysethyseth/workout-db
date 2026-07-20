@@ -272,9 +272,15 @@ trusting it.
 0a. **Loose ends carried forward:** the CW3 visual sign-off on the
    next live watcher run. Finding **F** stays open independently
    ("Failed to fetch" = Render cold-start ranked cause; needs a live
-   Network-tab repro, not code). The untracked
-   `docs/specs/cursor-token-savings-*` + `docs/parked/*` files await
-   Seth's ruling: commit here, or move to the workflow repo.
+   Network-tab repro, not code).
+   **RULED July 20 (Seth): `docs/specs/cursor-token-savings-*` belongs
+   to the workflow repo, not here - both files DELETED from workout-db.**
+   Nothing lost: they were snapshotted into
+   `C:\dev\the-poor-mans-agentic-workflow\source-material\` on 2026-07-12
+   (data.json byte-identical; stats.md verbatim plus a provenance header)
+   and the data is already published there as `docs/receipts-data.json`
+   on the `receipts-wave` branch. The untracked `docs/parked/*` files
+   still await Seth's ruling: commit here, or move to the workflow repo.
 0b. **A-wave follow-up (non-urgent):** optional Step-7 historical backfill:
    `node scripts/backfill-exercise-ids.mjs` (DRY-RUN first) then `--apply`
    against prod for pre-A4 historical rows (Seth runs the write).
