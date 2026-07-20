@@ -39,11 +39,13 @@ gate fuel; spec section "Fan-out (relay v5.2)"). Three roles:
   accumulated branch diff before any merge to main - nothing ships to main
   without a Fable/Opus pass; it greps `HANDOFF-ARCHIVE.md` for the wave's
   full session history (accepted deviations, sequencing flags, reviewer
-  fixes) as review fuel. In BOTH rituals the frontier seat may fan out
-  Cursor REPORT lanes for the grunt search (authoring recon per
-  `author-task-block`; gate-fuel coverage/consistency sweeps per the
-  spec's fan-out section) - reports compress search, never judgment;
-  the ruling itself never fans out. Standing escalation triggers that pull Fable in
+  fixes) as review fuel. In BOTH rituals the frontier seat fans grunt
+  search out to CURSOR agents - report lanes on the cheap rung, per the
+  spec's fan-out section - explicitly NOT Claude subagents via the
+  Agent tool, even when a built-in ritual (e.g. `/code-review`) says
+  "spawn agents" (authoring recon per `author-task-block`; gate-fuel
+  coverage/consistency sweeps per the spec) - reports compress search,
+  never judgment; the ruling itself never fans out. Standing escalation triggers that pull Fable in
   mid-wave: schema or migration design (A4), security / cross-user
   isolation surfaces, prod incidents, root-cause debugging Sonnet can't
   close, and any unit where Sonnet's review finds the delivery and the

@@ -323,7 +323,15 @@ the escalation lever is a per-lane `CURSOR_CONFIG_DIR`.
 ### Where Cursor now aids the frontier seats (the v5.2 extension)
 
 Fan-out is not just wider execution - it moves grunt work OFF the
-frontier seats in their own two rituals:
+frontier seats in their own two rituals. **Explicit (July 19, 2026):
+the fan-out vehicle is CURSOR agents (report lanes on the cheap rung),
+NOT Claude subagents.** A frontier seat that fans its grunt search out
+via the Agent tool spends frontier-family tokens on exactly the work
+this section exists to move off them - when a ritual (including a
+built-in like `/code-review`) says "spawn agents," the LogChamp
+reading is: dispatch Cursor report lanes per this section, and keep
+only the judgment calls (dedupe, verdicts, the ruling) on the frontier
+seat.
 
 - **Authoring support (skeleton design).** Before authoring a wave,
   the frontier seat may dispatch report lanes for the grounding it
