@@ -67,7 +67,7 @@ differentiator — is under-promoted. Goals:
 > not "complete" until it passes as a professional frontier weightlifting
 > app in look/feel/ease of use, DOWN TO EVERY DETAIL. This checklist is that
 > test made checkable. It runs twice: each unit's audit checks the items its
-> files touch; the pre-main Fable review runs the whole list against the
+> files touch; the pre-main gate review runs the whole list against the
 > staging deploy. A miss is a bounce, not a note.
 
 1. **No trailing `.0` on weights.** "225 lbs", never "225.0 lbs". Halves
@@ -292,7 +292,7 @@ Files: `AnalyticsPage.jsx` (`PerExerciseSection`),
 ### N5 — Exercise detail: server endpoint + client detail view
 
 The only server unit. **Security surface: cross-user isolation — this
-endpoint is a standing Fable-escalation trigger; its shape is fixed here
+endpoint is a standing frontier-seat escalation trigger; its shape is fixed here
 precisely so the block is mechanical.**
 
 - `GET /api/analytics/exercise?exerciseId=…|userExerciseId=…&from=&to=`

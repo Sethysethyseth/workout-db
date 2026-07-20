@@ -82,8 +82,8 @@ flip landed) then ff-merged `0805064`, pushed, origin HEAD confirmed.
 Full narrative in QUEUE.md's FP6 entry.
 
 **Standing question Seth raised, still NOT actioned (his call to take
-to a Fable agent):** whether big/complicated waves should route Cursor
-to frontier models. This session adds a second data point for that
+to the frontier seat):** whether big/complicated waves should route
+Cursor to frontier models. This session adds a second data point for that
 conversation — FP5's bounce-fix delivery itself needed two more
 reviewer-caught fixes even after landing on the named rung, both of
 the "the block already said what to do, the delivery just didn't do
@@ -192,24 +192,33 @@ trusting it.
 
 - **T1 DONE**, **T2 DONE and merged to main** (`ccd0829`, July 1): all 5
   palettes on real raster scenes. **T3 DONE and merged to main** (`750c42b`,
-  July 4). T4 (motion) not started; needs a Fable design pass first.
+  July 4). T4 (motion) not started; needs a frontier-seat design pass first.
 - Full T2 fix-by-fix history: the July 1 morning HANDOFF in git history
   (`ec3d85a`).
 
 ## Next up (the active task)
 
 00. **FP-WAVE IS CODE-COMPLETE except FP8 (icon PNGs).** NEXT SESSION'S
-   FIRST JOB: the pre-main review (Opus, per the standing fallback,
-   since Fable is unavailable) of the full accumulated
-   `frontier-parity-wave` diff off its base, per the wave's
-   HANDOFF-ARCHIVE session logs (FP0's findings, every per-unit bounce
-   and reviewer fix). FP8 stays DRAFT and out of scope for that review
+   FIRST JOB: hand Seth the consolidated smoke checklist below (00c) and
+   STOP. Per the July 20 wave-end rule (`land-unit` section 6), Seth
+   smokes the staging deploy ONCE for the whole wave BEFORE the gate
+   runs — his findings are review input, so a gate run before smoke gets
+   partly re-run after it.
+   THEN, and only on his sign-off: the pre-main review — Opus (the
+   frontier seat), ritual = the **`pre-main-review` skill** — of the full
+   accumulated `frontier-parity-wave` diff off its base, read against the
+   specs AND every FP block's contract, with the wave's HANDOFF-ARCHIVE
+   session logs in hand (FP0's findings, every per-unit bounce and
+   reviewer fix). Gate fuel fans out to Cursor report lanes, never Claude
+   subagents.
+   A smoke defect goes back through a diagnosis block and resets the
+   sign-off. FP8 stays DRAFT and out of scope for that review
    until Seth's PNGs land in `claudefiledrop/` — it can land after the
    gate as its own small follow-up, or be folded in if it's ready in
    time; Seth's call. Do NOT dispatch anything else in this wave without
    checking with Seth first — the queue is empty of ready units.
-00c. **Wave smoke checklist (FP1-FP6, hand to Seth when he asks or at
-   wave end)** — read the deploy caveat in "Repo / deploy state"
+00c. **Wave smoke checklist (FP1-FP6) — hand this to Seth FIRST, per 00
+   above** — read the deploy caveat in "Repo / deploy state"
    first; the server halves may not be deployed:
    - Home weekly report band: a week with real data shows up to 3
      muscle movers, a PR line when the week had PRs, one execution
@@ -243,7 +252,7 @@ trusting it.
    `AuthLayout.jsx` swap, kept out of every block until he decides);
    the FP8 icon PNGs into `claudefiledrop/` to flip it QUEUED (icons
    LAST by his rider); and the Cursor model-routing question he is
-   taking to a Fable agent (facts gathered in the top entry — do not
+   taking to the frontier seat (facts gathered in the top entry — do not
    pre-empt it with doc edits).
    Reference: `docs/tasks/fp0-frontier-parity-report-FINDINGS.md`
    (landed `137e0ea`) is still the evidence base for every FP unit.
@@ -273,7 +282,7 @@ trusting it.
 1. **T3C sprite loader upgrade** unblocks whenever Seth drops the Gemini
    frames in `claudefiledrop/` (currently holds two `.url` Discord-CDN
    shortcuts, not the expected transparent PNGs).
-2. T4 motion (last unstarted U5 unit) — needs a Fable design pass first.
+2. T4 motion (last unstarted U5 unit) — needs a frontier-seat design pass first.
 
 ## Analytics/catalog track — state
 

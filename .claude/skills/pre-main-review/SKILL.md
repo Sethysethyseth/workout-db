@@ -5,7 +5,8 @@ description: The pre-main gate - one thorough frontier review of the whole accum
 
 # Pre-main review (the gate ritual)
 
-Frontier seat ONLY (Opus; Fable when present). Sonnet does not run this -
+Frontier seat ONLY - that means OPUS (Fable departed July 18, 2026).
+Sonnet does not run this -
 if a wave is complete and no frontier seat is in the chair, STOP and say
 so. This skill produces a VERDICT, not a merge: the merge itself stays
 the copy-paste RUNBOOK ritual behind Seth's verbatim "push to main".

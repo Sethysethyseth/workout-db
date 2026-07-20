@@ -41,10 +41,16 @@ git log origin/<branch> -1 --oneline
 ```
 ```
 # 2. Point staging Render at <branch>; verify deploy SHA in Events.
-# 3. Smoke test on staging/preview IN THE BROWSER (build/server tests do NOT
-#    catch React Hook dependency-array errors — exercise the changed screens).
-# 4. If the unit includes a schema change → run section 3 BEFORE merging.
-# 5. Merge (manual, ff-only preferred):
+# 3. SMOKE on staging/preview IN THE BROWSER, once for the whole wave, against
+#    the consolidated checklist the relay session handed over (build/server
+#    tests do NOT catch React Hook dependency-array errors — exercise the
+#    changed screens). Smoke comes BEFORE the gate: findings are review input.
+# 4. GATE — after smoke sign-off, the frontier seat (Opus) runs the
+#    `pre-main-review` skill on the full accumulated branch diff. NOTHING
+#    merges without a PASS. A BLOCKED verdict sends fixes back through the
+#    relay and restarts at step 1.
+# 5. If the unit includes a schema change → run section 3 BEFORE merging.
+# 6. Merge (manual, ff-only preferred):
 ```
 ```powershell
 git checkout main
@@ -52,8 +58,8 @@ git merge --ff-only <branch>
 git push
 ```
 ```
-# 6. Repoint staging Render back to main. Verify redeploy SHA in Events.
-# 7. Update docs/HANDOFF.md.
+# 7. Repoint staging Render back to main. Verify redeploy SHA in Events.
+# 8. Update docs/HANDOFF.md.
 ```
 
 ---

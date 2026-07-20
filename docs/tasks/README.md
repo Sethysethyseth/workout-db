@@ -101,10 +101,13 @@ Requirements, all mandatory:
   the dispatch line. If the block needs a decision that isn't made yet, it's
   DRAFT, not QUEUED.
 - State the recommended Cursor model tier at the top (`MODEL: opus` for
-  judgment-heavy units - Fable stays withheld for the pre-main gate -
-  `MODEL: auto` for mechanical ones) - this is where the cost lever
-  lives, and since v5 it is also the dispatch-routing lever (`auto` ->
-  the free CLI rung, named tier -> plan credit).
+  judgment-heavy units, `MODEL: auto` for mechanical ones) - this is
+  where the cost lever lives, and since v5 it is also the dispatch-routing
+  lever (`auto` -> the free CLI rung, named tier -> plan credit). The
+  value is passed verbatim to `--model`, so it must name a LIVE model:
+  never `fable` (departed July 18, 2026). Blocks landed before that date
+  carry `MODEL: fable` in their headers - that is history, not a
+  template to copy.
 - Delivery-mechanism token overhead (file read vs paste) is noise; do not
   optimize it. Optimize block size (bigger coherent units amortize Cursor's
   fixed context-loading cost) and model tier instead.

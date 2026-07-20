@@ -12,7 +12,15 @@
 
 ---
 
-## Model selection / division of labor (v5 - Sonnet resident, Fable gated, Cursor rebalanced, dispatch autonomous)
+## Model selection / division of labor (v5 - Sonnet resident, Opus on the frontier seat, Cursor rebalanced, dispatch autonomous)
+
+> **Seat naming (July 18, 2026): Fable has DEPARTED.** Opus holds the
+> frontier seat - skeletons, block authoring, escalations, and the
+> pre-main gate. "Frontier seat" below always means Opus. Historical
+> records (HANDOFF-ARCHIVE session logs, QUEUE per-unit notes, dated
+> spec amendments, landed task blocks' MODEL headers) still name Fable
+> as the actor and are CORRECT as history - never rewrite them. Only
+> live instructions were swept.
 
 Decided July 3, 2026 (v3, token-efficiency rebalance); amended July 6, 2026
 (v4: Cursor rebalance + two-tier state channel); amended July 14, 2026
@@ -23,7 +31,11 @@ landed clean as the first autonomous unit. Design + channel/ladder
 details: `docs/specs/autonomous-cursor-dispatch.md`); amended July 18,
 2026 (v5.2: FAN-OUT - multiple parallel Cursor agents, one per
 worktree; report lanes now aid the frontier seats' authoring recon and
-gate fuel; spec section "Fan-out (relay v5.2)"). Three roles:
+gate fuel; spec section "Fan-out (relay v5.2)"); amended July 20, 2026
+(v5.3: the gate gets a ritual - the **`pre-main-review` skill** - and
+wave end becomes an ordered HARD STOP: N/N -> Seth smokes -> gate ->
+merge trigger; plus the live wave task list and the Fable->Opus seat
+sweep). Three roles:
 
 - **Sonnet in Claude Code = the resident driver.** Runs the day-to-day
   relay: per-unit AUDIT of each Cursor delivery, then commit / push /
@@ -31,13 +43,14 @@ gate fuel; spec section "Fan-out (relay v5.2)"). Three roles:
   it at review time rather than reciting from memory. Sonnet does NOT
   author task blocks and does NOT settle contract ambiguity - it bounces
   up instead of guessing (escalation triggers below).
-- **Fable/Opus in Claude Code = the architect + final gate.** Short, rare,
+- **Opus in Claude Code = the frontier seat: architect + final gate.** Short, rare,
   high-leverage sessions: (a) authors the unit-scale task blocks
   CONTRACT-FIRST - the ritual is the **`author-task-block` skill** -
   plus architecture and planning with the repo in hand; (b) ONE thorough
   review of the
   accumulated branch diff before any merge to main - nothing ships to main
-  without a Fable/Opus pass; it greps `HANDOFF-ARCHIVE.md` for the wave's
+  without a frontier-seat pass (ritual: the **`pre-main-review` skill**);
+  it greps `HANDOFF-ARCHIVE.md` for the wave's
   full session history (accepted deviations, sequencing flags, reviewer
   fixes) as review fuel. In BOTH rituals the frontier seat fans grunt
   search out to CURSOR agents - report lanes on the cheap rung, per the
@@ -45,7 +58,8 @@ gate fuel; spec section "Fan-out (relay v5.2)"). Three roles:
   Agent tool, even when a built-in ritual (e.g. `/code-review`) says
   "spawn agents" (authoring recon per `author-task-block`; gate-fuel
   coverage/consistency sweeps per the spec) - reports compress search,
-  never judgment; the ruling itself never fans out. Standing escalation triggers that pull Fable in
+  never judgment; the ruling itself never fans out. Standing escalation
+  triggers that pull the frontier seat in
   mid-wave: schema or migration design (A4), security / cross-user
   isolation surfaces, prod incidents, root-cause debugging Sonnet can't
   close, and any unit where Sonnet's review finds the delivery and the
@@ -62,7 +76,7 @@ gate fuel; spec section "Fan-out (relay v5.2)"). Three roles:
 Accepted trade-offs, stated so nobody "fixes" them silently: (v3) deep
 review moves from per-unit to the single pre-main gate, so a contract bug
 can land on staging and be caught one gate later - Sonnet's per-unit pass
-is the tripwire, the pre-main Fable review is the net. (v4) contract-first
+is the tripwire, the pre-main gate review is the net. (v4) contract-first
 blocks mean Cursor occasionally picks a wrong idiom and gets bounced -
 that bounce cost is the price of moving implementation thinking off the
 frontier seat; the acceptance criteria and review lane are what protect
@@ -70,13 +84,13 @@ precision, not spec prose density.
 
 ## Workflow (the relay, v5)
 
-Fable plans / Claude Code dispatches / Cursor executes and self-verifies /
+Opus plans / Claude Code dispatches / Cursor executes and self-verifies /
 Sonnet audits and lands. The loop per unit:
 
-1. Fable (Claude Code) emits a **unit-scale task block** (ritual: the
-   `author-task-block` skill) - one coherent roadmap unit with a testable
-   contract, not a 1-3 file slice. Fable typically authors a wave of
-   blocks in one session, then drops out.
+1. Opus (Claude Code, the frontier seat) emits a **unit-scale task block**
+   (ritual: the `author-task-block` skill) - one coherent roadmap unit with
+   a testable contract, not a 1-3 file slice. The frontier seat typically
+   authors a wave of blocks in one session, then drops out.
 2. Claude Code dispatches the block itself (ritual: the **`dispatch-unit`
    skill**): backbone is Channel B - headless Cursor CLI in the lane
    worktree `C:\dev\worktrees\cursor-lane`, `--model` ALWAYS explicit
@@ -115,7 +129,7 @@ Sonnet audits and lands. The loop per unit:
 
 `docs/HANDOFF.md` (capped) carries current-state between sessions - all
 agents read it. `docs/HANDOFF-ARCHIVE.md` carries the verbatim session-log
-history - only Fable reads it, when planning or gating.
+history - only the frontier seat (Opus) reads it, when planning or gating.
 
 ## Claude-Code-specific environment
 

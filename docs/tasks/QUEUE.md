@@ -33,8 +33,13 @@ everything from here; no unit below needs another Fable pass):**
 - Gym context (Seth's location insight): design DONE in
   docs/specs/gym-context.md - Opus authors G1/G2/G3 from it; G1 is
   MIGRATION-CARRYING (Seth's manual track, non-autonomous gate).
-- Pre-main gate for this wave: Opus runs it (standing fallback when
-  Fable is unavailable); grep HANDOFF-ARCHIVE per the gate ritual.
+- Wave end for this wave (July 20 rule): at N/N the relay STOPS and
+  hands Seth the consolidated smoke checklist (HANDOFF item 00c).
+  Seth smokes staging ONCE and signs off BEFORE the gate runs -
+  no branch review or /code-review until then.
+- Pre-main gate for this wave: Opus runs it AFTER that sign-off,
+  ritual = the `pre-main-review` skill; grep HANDOFF-ARCHIVE per that
+  ritual, and fan gate fuel out to Cursor report lanes, not subagents.
 
 LANDED 8dc799f | fp1-rebrand-copy-polish.md | title -> LogChamp, two
   HelloPage WorkoutDB strings, never-gate-history guarantee line
@@ -824,7 +829,7 @@ stays a post-N flag.
 ## Candidates (next units, not yet authored as blocks)
 
 - **Per-side L/R comparison analytics (ruling 3, Seth-confirmed July 16:
-  own unit, NEXT wave, needs a Fable design pass first).** Scope sketch
+  own unit, NEXT wave, needs a frontier-seat design pass first).** Scope sketch
   recorded in mw6-seth-rulings.md's interpretation section: plumb `side`
   from the analytics controllers into enrichSet (engine is side-blind by
   construction today), per-side splits in exerciseDetail, comparison UI
@@ -836,7 +841,7 @@ stays a post-N flag.
 - A3 curation skim: the 29 secondary-less compounds the validator surfaced
   (content pass, not urgent; A5's lifting-subset filter already handles the
   category question mechanically)
-- T4 motion (last unstarted U5 unit) - needs Fable design first
+- T4 motion (last unstarted U5 unit) - needs a frontier-seat design pass first
 - T3C sprite loader upgrade: BLOCKED on Seth's Gemini frames landing in
   claudefiledrop/ (art direction + prompts settled July 6, see HANDOFF)
 - (U11 "what's new" candidate PROMOTED into the L-wave July 5 and shipped

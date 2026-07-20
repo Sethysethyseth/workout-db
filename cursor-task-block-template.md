@@ -151,7 +151,7 @@ changes, and write to `DELIVERY.md`:
 
 The reviewer verifies the reasoning (cheap) instead of deriving it
 (expensive), then green-lights a fix block, or overrides and escalates to
-Fable per the standing triggers.
+the frontier seat (Opus) per the standing triggers.
 
 **The direct-fix exception, stated so it doesn't drift:** when diagnosis was
 ~95% of the work and the fix is trivial (the promotion-glitch / wheel-scroll

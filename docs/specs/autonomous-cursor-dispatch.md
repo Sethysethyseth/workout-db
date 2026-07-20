@@ -20,8 +20,13 @@ work (authoring recon, gate fuel) - see "Fan-out (relay v5.2)".
 The manual step "Seth points Cursor at a block" is replaced by Claude
 Code dispatching the block itself - via Cursor's Cloud Agents API
 (Channel A) or the headless Cursor CLI in a worktree (Channel B) - so
-the relay runs Fable-authors -> auto-dispatch -> Cursor-executes ->
-Sonnet-lands without Seth in the inner loop.
+the relay runs frontier-seat-authors -> auto-dispatch -> Cursor-executes
+-> Sonnet-lands without Seth in the inner loop.
+
+**Seat naming:** dated entries below name FABLE as the actor (authoring,
+probe, amendments). Fable departed July 18, 2026; Opus holds the frontier
+seat now. Those records are correct as history and stay verbatim - every
+LIVE instruction in this spec says "frontier seat" and means Opus.
 
 ## What does NOT change
 
@@ -38,7 +43,8 @@ Sonnet-lands without Seth in the inner loop.
   mode, pointed at the worktree).
 - Escalation triggers. Contract ambiguity, schema/security surfaces,
   and repeated bounces still stop the machine and page a human.
-- Block authoring (`author-task-block`) and the pre-main Fable gate.
+- Block authoring (`author-task-block`) and the pre-main gate
+  (`pre-main-review`, frontier seat) - both stay frontier-seat rituals.
 
 ## Channel A - Cloud Agents API (default for judgment-tier blocks)
 
@@ -153,8 +159,8 @@ deliberate quality call without noting it in the QUEUE entry.
 
 ## The relay loop (what makes it autonomous, not just scriptable)
 
-A Sonnet Claude Code session runs the loop (Fable stays withheld per
-the standing rule). **One RESIDENT session per wave is the norm**
+A Sonnet Claude Code session runs the loop (the frontier seat stays out
+of it per the standing rule - it authors and gates, never relays). **One RESIDENT session per wave is the norm**
 (amended July 15, 2026): the SAME Sonnet session runs every tick -
 dispatch, monitor (scheduled wakeups while Cursor executes, never
 spinning), land, dispatch-next - from "run the relay" until a stop
@@ -181,8 +187,10 @@ Per tick:
 3. Free width remaining (v5.2: 2 default / 3 cap, counting every
    in-flight lane) and QUEUE.md has a QUEUED unit whose serialization
    notes allow it -> dispatch via `dispatch-unit`, flip it DISPATCHED.
-4. Stop conditions: queue empty; wave complete (pre-main gate is Fable
-   + Seth, never the loop); any land-unit escalation trigger; ladder
+4. Stop conditions: queue empty; wave complete (the loop STOPS at N/N
+   and hands Seth the consolidated smoke checklist - smoke sign-off
+   comes first, then the frontier seat runs `pre-main-review`; neither
+   is ever the loop's job); any land-unit escalation trigger; ladder
    exhausted.
 
 Seth's remaining touchpoints: authoring go-ahead, bug reports, staging
@@ -386,7 +394,7 @@ this very amendment - while FP2's unlanded delivery sat untouched in
 - QUEUE serialization notes are prose; the loop must read them
   conservatively (if in doubt whether units collide, they do -
   serialize). This is deliberate; do not "fix" it with a format change
-  without Fable.
+  without the frontier seat.
 - ~~AGENTS.md/CLAUDE.md workflow sections describe relay v4~~ RESOLVED:
   amended to v5 July 14 after NT3 landed clean, and to v5.2 July 18
   (adoption evidence first, doctrine second - held both times).

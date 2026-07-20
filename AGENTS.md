@@ -72,8 +72,9 @@ Rebrand text lives in: rendered UI, `<title>`, PWA manifest name fields.
   CAPPED (~300 lines). THE work-state channel for all agents.
 - `docs/HANDOFF-ARCHIVE.md` - append-only history tier: aged session logs
   move there VERBATIM (never summarized) when HANDOFF is rewritten, newest
-  first. Fable/Opus greps it for pre-main review and big-picture planning;
-  Sonnet and Cursor never load it. Same single writer as HANDOFF.
+  first. The frontier seat (Opus) greps it for pre-main review and
+  big-picture planning; Sonnet and Cursor never load it. Same single
+  writer as HANDOFF.
 - `docs/tasks/` - file-dispatched task queue: Claude Code authors unit blocks
   as files and dispatches them to Cursor itself (relay v5, July 14 - headless
   CLI in a lane worktree as the backbone, Cloud Agents API as the gated
@@ -199,8 +200,8 @@ depends on it deploys (code-ahead-of-DB crashes prod login). Exact steps:
 Read `docs/HANDOFF.md`. It is rewritten every session, capped, and is the
 work-state channel - this file never carries state, and the DB is app data
 only (never route work-state through it). Aged session logs live verbatim
-in `docs/HANDOFF-ARCHIVE.md` (Fable-only reading, for pre-main review and
-big-picture work).
+in `docs/HANDOFF-ARCHIVE.md` (frontier-seat reading only - Opus, for
+pre-main review and big-picture work).
 
 ## Durable gotchas
 

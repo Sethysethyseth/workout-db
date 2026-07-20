@@ -3,7 +3,7 @@
 **Status:** BRAINSTORM ONLY — no code, no task blocks authored yet.
 **Session:** July 10, 2026, Fable. Seth stopped the session after the
 brainstorm was delivered; the open questions at the bottom are UNANSWERED.
-**Next step:** a Fable session resumes here, settles the open questions
+**Next step:** a frontier-seat session (Opus) resumes here, settles the open questions
 with Seth, then authors the wave skeleton (unit task blocks) per the
 recommendation below.
 

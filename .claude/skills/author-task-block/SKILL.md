@@ -1,9 +1,9 @@
 ---
 name: author-task-block
-description: Author a unit-scale Cursor task block contract-first from docs/tasks/_TEMPLATE.md, register it in QUEUE.md, commit AND push. Use in Fable/Opus planning sessions when emitting the next block or wave of blocks.
+description: Author a unit-scale Cursor task block contract-first from docs/tasks/_TEMPLATE.md, register it in QUEUE.md, commit AND push. Use in Opus planning sessions when emitting the next block or wave of blocks.
 ---
 
-# Author a task block (the Fable/Opus planning ritual)
+# Author a task block (the frontier-seat planning ritual)
 
 Blocks are contracts, not implementations. Cursor gets NO chat context
 beyond the one-line dispatch prompt - autonomous via `dispatch-unit` or
@@ -31,9 +31,11 @@ Seth by hand, same line either way - the file must stand alone.
   yet, STATUS stays DRAFT, not QUEUED.
 - MODEL header is the cost lever AND the dispatch-routing lever
   (`auto` -> Channel B auto rung, free; named tier -> B named rung,
-  plan credit - see `dispatch-unit`): `fable`/`opus` for judgment-heavy
-  units, `auto` for mechanical ones. (Standing rule: execution units
-  default to Opus; Fable is withheld for the pre-main gate.)
+  plan credit - see `dispatch-unit`): `opus` for judgment-heavy units,
+  `auto` for mechanical ones. The value is passed verbatim to `--model`,
+  so it must name a LIVE model - never `fable` (departed July 18, 2026;
+  landed blocks still carrying `MODEL: fable` are history, not a pattern
+  to copy).
 - MODE line: `1-relay`, or `2-worktree` with explicit path + branch
   (requirements in `docs/tasks/README.md`). Autonomous dispatch runs
   1-relay blocks in the lane worktree regardless - MODE governs the

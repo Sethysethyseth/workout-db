@@ -72,8 +72,8 @@ precedent, wave units) or fold it into the HANDOFF session log
 - **Rework:** flip the block to BOUNCED in QUEUE.md with what to fix
   written into the block; back to QUEUED once updated.
 - **Ambiguity:** if the delivery and the spec disagree in a way the block
-  doesn't settle, escalate to the frontier seat (Opus; Fable is
-  departed) - never settle contract ambiguity in this seat. Other standing escalation triggers: schema/migration design,
+  doesn't settle, escalate to the frontier seat (Opus) - never settle
+  contract ambiguity in this seat. Other standing escalation triggers: schema/migration design,
   security or cross-user isolation surfaces, prod incidents, root-cause
   debugging that won't close.
 

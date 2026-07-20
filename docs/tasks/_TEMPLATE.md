@@ -1,7 +1,11 @@
 # TASK <unit-id>: <one-line title>
 
 STATUS: DRAFT            <!-- Claude Code flips to QUEUED when final -->
-MODEL: <fable | auto>    <!-- recommended Cursor model tier -->
+MODEL: <opus | auto>     <!-- Cursor model tier AND dispatch rung: opus =
+                              judgment-heavy (named rung, plan credit);
+                              auto = mechanical (free rung). Passed
+                              verbatim to `--model`, so it must be a live
+                              model - never `fable` (departed July 18). -->
 MODE: <1-relay | 2-worktree @ C:\dev\worktrees\<unit-id> on branch unit/<unit-id>>
 
 CONTEXT:
