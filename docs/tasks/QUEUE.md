@@ -330,21 +330,30 @@ LANDED a356e4a | fp9-e1rm-validity-window.md | 1-12 rep validity window on Epley
   set; Working weight targets no longer inflated by high-rep sets; an
   exercise trained only above 12 reps shows the existing
   insufficient-data unlock copy, not a broken card.
-QUEUED | fp10-weekly-digest-hierarchy.md | Home weekly digest: PRs become
+LANDED 6ddda4b | fp10-weekly-digest-hierarchy.md | Home weekly digest: PRs become
   structured rows (existing .session-set-pr-chip, grouped by exercise,
   3 + "+N more"), four digest lines get a rank instead of four identical
   muted paragraphs | MODEL opus. Presentation only - server already ships
   structured prs[]; the client flattened it into a run-on sentence that
   repeated the exercise name per PR. Tokens-only, card--live forbidden,
-  every existing empty/partial state must survive. SMOKE: a week with two
-  PRs on one exercise names it once.
-QUEUED | fp11-exercise-detail-cards.md | Top sets dedupe by (weight,reps)
+  every existing empty/partial state must survive. Audited per land-unit:
+  scope exact (2 files, matches FILES TO TOUCH), lanes fresh in lane
+  (198/198 unit unchanged, client build clean), check-hex clean.
+  `.session-set-pr-chip` reused not redefined; e1rmPR row omits reps
+  ("e1RM 267 lbs"); every null/empty-state branch preserved. No
+  deviations. Lane rebased onto 9cc98f4 then ff-merged. SMOKE: a week
+  with two PRs on one exercise names it once; a week with 5 PRs shows 3
+  + "+2 more"; a week with no PRs looks unchanged; digest lines read as
+  Movers/Execution/Note labels instead of a bare "Execution: " prefix.
+DISPATCHED | fp11-exercise-detail-cards.md | Top sets dedupe by (weight,reps)
   keeping earliest date + React key fix, and a visual pass on the three
-  exercise-detail cards | MODEL opus. SERIALIZED behind FP9 AND FP10.
-  Carries a real defect, not just polish: no dedupe at
-  exerciseDetail.js:213-223 means 3 working sets of 220x5 take 3 of the
-  5 slots, and the client key omits reps (ExercisesView.jsx:422) so
-  those rows DUPLICATE React keys. SMOKE: five distinct top sets, no
+  exercise-detail cards | MODEL opus, Channel B named rung, lane
+  `C:\dev\worktrees\cursor-lane` branch `cursor/fp11`, based on
+  frontier-parity-wave `6ddda4b` (FP9 + FP10 both landed, so the
+  serialization is clear). Carries a real defect, not just polish: no
+  dedupe at exerciseDetail.js:213-223 means 3 working sets of 220x5 take
+  3 of the 5 slots, and the client key omits reps (ExercisesView.jsx:422)
+  so those rows DUPLICATE React keys. SMOKE: five distinct top sets, no
   console key warning.
 
 LANDED 137e0ea | fp0-frontier-parity-report.md | report-only unit, NO

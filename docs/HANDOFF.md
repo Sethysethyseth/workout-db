@@ -86,12 +86,14 @@ heaviest-weight, no change).** Landing FP9 and FP10 now.
   in the lane worktree (202/202 unit, client build clean, check-hex
   clean), diffs hand-verified against every acceptance criterion, no
   deviations. Full detail in QUEUE.md's FP9 entry.
-- **FP10** in `C:\dev\worktrees\cursor-lane-2` (branch `cursor/fp10`),
-  exit 0, DELIVERY.md written. Self-reports 198 unit tests, build clean,
-  check-hex clean. Its log mentions an npm install in the lane — VERIFIED
-  no package.json/lockfile mutation (porcelain shows only WeeklyReport.jsx
-  + index.css), so gate item 5 was not tripped, but re-verify at audit.
-  **NOT YET AUDITED** — up next.
+- **FP10 LANDED `6ddda4b`.** Audited per `land-unit`: lanes re-run fresh
+  in the lane worktree (198/198 unit, client build clean, check-hex
+  clean), `.session-set-pr-chip` reused not redefined, every empty-state
+  branch verified preserved, no deviations. Full detail in QUEUE.md's
+  FP10 entry.
+- **FP11 next**: QUEUED, not yet dispatched — was serialized behind both
+  FP9 (shares `ExercisesView.jsx`) and FP10 (shares `index.css`), both
+  now landed. Dispatching now.
 
 ## THE SMOKE FINDINGS (what this wave now exists to fix)
 
