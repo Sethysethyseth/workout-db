@@ -34,12 +34,14 @@ everything from here; no unit below needs another Fable pass):**
   docs/specs/gym-context.md - Opus authors G1/G2/G3 from it; G1 is
   MIGRATION-CARRYING (Seth's manual track, non-autonomous gate).
 - Wave end for this wave (July 20 rule): at N/N the relay STOPS and
-  hands Seth the consolidated smoke checklist (HANDOFF item 00c).
-  Seth smokes staging ONCE and signs off BEFORE the gate runs -
-  no branch review or /code-review until then.
-- Pre-main gate for this wave: Opus runs it AFTER that sign-off,
-  ritual = the `pre-main-review` skill; grep HANDOFF-ARCHIVE per that
-  ritual, and fan gate fuel out to Cursor report lanes, not subagents.
+  hands Seth the consolidated smoke checklist. FP9-FP11 landed the
+  wave to 3/3 July 21; **Seth SIGNED OFF on smoke same session**
+  ("smoke test is passed, this looks much better") - no open findings.
+- Pre-main gate for this wave: Opus runs it now that sign-off has
+  landed, ritual = the `pre-main-review` skill; grep HANDOFF-ARCHIVE per
+  that ritual (thirtieth/thirty-first session entry has the FP9-FP11
+  arc in full), and fan gate fuel out to Cursor report lanes, not
+  subagents. THIS IS THE IMMEDIATE NEXT STEP - nothing is blocking it.
 
 LANDED 8dc799f | fp1-rebrand-copy-polish.md | title -> LogChamp, two
   HelloPage WorkoutDB strings, never-gate-history guarantee line

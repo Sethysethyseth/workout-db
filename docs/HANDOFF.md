@@ -2,9 +2,11 @@
 
 **Updated:** July 21, 2026, thirty-first session (Sonnet resident —
 **FP9-FP11 ALL LANDED (FP9 `a356e4a`, FP10 `6ddda4b`, FP11 `5ca24f4`),
-WAVE IS 3/3 COMPLETE. Seth's smoke sign-off is the only thing between
-this branch and the pre-main gate.**). Branch tip `5ca24f4`, pushed
-(`origin` confirmed).
+WAVE IS 3/3 COMPLETE, AND SETH HAS SIGNED OFF ON THE WAVE SMOKE**
+("smoke test is passed, this looks much better"). **The pre-main gate
+is next — a FRONTIER SEAT (Opus) job, not this session's** (Sonnet
+never runs the gate). Branch tip `431ef34`, pushed (`origin`
+confirmed).
 
 **Session resumed from the thirtieth session's five open questions —
 all answered by Seth at the start of this session** (AskUserQuestion,
@@ -22,12 +24,16 @@ bounces. Full per-unit audit detail in `docs/tasks/QUEUE.md`.
 
 ---
 
-## SETH: WAVE SMOKE CHECKLIST — sign-off needed before the gate
+## WAVE SMOKE — SETH SIGNED OFF July 21 ("smoke test is passed, this
+## looks much better")
 
-Test against the **staging Vercel deploy** (never local dev) on branch
-`frontier-parity-wave`. Staging Render now tracks this branch too (you
-repointed it), so server-side fixes (FP9) are live there for the first
-time this wave.
+No open smoke findings. The checklist below is preserved as the record
+of what was verified, and as gate-fuel reference for the frontier seat.
+
+Tested against the **staging Vercel deploy** (never local dev) on branch
+`frontier-parity-wave`. Staging Render tracks this branch too (Seth
+repointed it before smoking), so server-side fixes (FP9) were live
+there for the first time this wave.
 
 **New this round (FP9-FP11, the fixes for your July 20 smoke findings):**
 - Exercises detail -> Personal records: the e1RM row reads as an
@@ -72,10 +78,9 @@ should be unchanged):**
   genuine reps-at-weight record exists — never a warmup set, never
   dated to the exercise's first session.
 
-If anything looks wrong, it re-enters as a diagnosis block and resets
-sign-off — same as last time. Once you're satisfied, say so and the
-pre-main gate runs next (Opus, full branch diff against the specs,
-since the July 20 gate verdict is stale).
+Should a NEW defect surface later (e.g. during the gate's own drive, or
+a future session), it re-enters as a diagnosis block and resets
+sign-off — same protocol as before.
 
 ---
 
@@ -102,18 +107,25 @@ since the July 20 gate verdict is stale).
 
 ## Next up (the active task)
 
-1. **Seth smokes** against the checklist above. This session's job is
-   done until sign-off lands — do not roll into the gate or
-   `/code-review` on your own (`land-unit` section 6's hard stop).
-2. **On sign-off: the pre-main gate** (`pre-main-review` skill, Opus —
-   this seat does not run the gate itself). The July 20 verdict is
-   stale (predates FPFIX1's final form and all of FP9-FP11) — re-run is
-   not optional. Grep `docs/HANDOFF-ARCHIVE.md` for the full session
-   history of this wave as gate fuel.
-3. **On a smoke finding instead:** it becomes a diagnosis block for
-   Cursor (root cause + evidence, no code) per the standing bug
-   protocol, and sign-off resets.
-4. **Merge stays behind Seth's verbatim "push to main"**, one command
+1. **THE PRE-MAIN GATE IS THE IMMEDIATE NEXT STEP.** Seth has signed
+   off on smoke — nothing is blocking it now. Ritual: the
+   `pre-main-review` skill, run by a FRONTIER SEAT (Opus), NOT this
+   Sonnet resident session. If this session is asked to "review the
+   branch" or "run the gate," say so and hand the chair over rather
+   than attempting it.
+2. **The July 20 gate verdict is STALE and must not be treated as
+   live** — it read a diff that predates FPFIX1's final form and all of
+   FP9-FP11. This is a full re-run, not a diff-the-diff.
+3. Gate fuel: grep `docs/HANDOFF-ARCHIVE.md` for this wave's full
+   session history (accepted deviations, the smoke findings, reviewer
+   fixes) — the thirtieth/thirty-first session entry has the FP9-FP11
+   arc in full, including exact file:line evidence for each fix. Fan
+   report-lane fuel out to CURSOR agents per the ritual, never Claude
+   subagents.
+4. **On a gate finding:** normal escalation - a required fix becomes a
+   task block (FPFIX2-style), authored/dispatched/landed same as any
+   other unit, then the gate's verdict stands or gets revisited.
+5. **Merge stays behind Seth's verbatim "push to main"**, one command
    at a time. Code-only, NO migration.
 
 **00b. Open judgment call, now CLOSED:** the standing reps-record rule
