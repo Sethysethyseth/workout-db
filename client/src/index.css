@@ -5833,13 +5833,68 @@ html[data-theme="dark"] .auth-page .auth-form.card {
 
 .weekly-report__digest {
   display: grid;
-  gap: 4px;
-  padding-top: 4px;
+  gap: 6px;
+  padding-top: 6px;
   border-top: 1px solid var(--color-border);
+}
+
+.weekly-report__prs {
+  display: grid;
+  gap: 4px;
+}
+
+.weekly-report__pr-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.weekly-report__pr-achievements {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.weekly-report__pr-achievement:not(:last-child)::after {
+  content: "·";
+  margin-left: 6px;
+  color: var(--color-muted);
+  font-weight: 400;
+}
+
+.weekly-report__pr-exercise {
+  font-size: 12px;
+  color: var(--color-muted);
+}
+
+.weekly-report__pr-overflow {
+  margin: 0;
+  padding-left: 2px;
 }
 
 .weekly-report__digest-line {
   margin: 0;
+}
+
+.weekly-report__digest-line--supporting {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--color-muted);
+}
+
+.weekly-report__digest-label {
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 10px;
+  letter-spacing: 0.02em;
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
 }
 
 /* -- Shared chart chrome -- */

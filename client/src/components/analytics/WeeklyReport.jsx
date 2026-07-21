@@ -108,17 +108,28 @@ function formatMoversLine(movers) {
   return movers.map((m) => `${m.muscle} ${formatMoverDelta(m.delta)} sets`).join(" - ");
 }
 
-function formatPRsLine(prs) {
-  if (!prs || prs.length === 0) return null;
-  const prDescriptions = prs.slice(0, 3).map((pr) => {
-    if (pr.type === "e1rmPR") {
-      return `${pr.exerciseName} e1RM ${formatEstimate(pr.value)}`;
+function groupPRsByExercise(prs) {
+  if (!prs || prs.length === 0) return { groups: [], overflow: 0 };
+  const shown = prs.slice(0, 3);
+  const overflow = prs.length > 3 ? prs.length - 3 : 0;
+  const grouped = new Map();
+  for (const pr of shown) {
+    const name = pr.exerciseName;
+    if (!grouped.has(name)) {
+      grouped.set(name, []);
     }
-    return `${pr.exerciseName} ${formatWeight(pr.weight)} × ${formatRepsValue(pr.reps)}`;
-  });
-  const count = prs.length;
-  const prWord = count === 1 ? "PR" : "PRs";
-  return `${count} ${prWord} this week - ${prDescriptions.join(", ")}`;
+    grouped.get(name).push(pr);
+  }
+  const groups = Array.from(grouped.entries()).map(([name, items]) => ({
+    exerciseName: name,
+    achievements: items.map((pr) => {
+      if (pr.type === "e1rmPR") {
+        return { text: `e1RM ${formatEstimate(pr.value)}`, isE1rm: true };
+      }
+      return { text: `${formatWeight(pr.weight)} × ${formatRepsValue(pr.reps)}`, isE1rm: false };
+    }),
+  }));
+  return { groups, overflow };
 }
 
 function computeOverallExecutionVerdict(execution) {
@@ -190,29 +201,65 @@ function ReportStat({ label, value, delta, deltaTone: tone }) {
   );
 }
 
+function PRRows({ prs }) {
+  const { groups, overflow } = groupPRsByExercise(prs);
+  if (groups.length === 0) return null;
+
+  return (
+    <div className="weekly-report__prs">
+      {groups.map((group) => (
+        <div key={group.exerciseName} className="weekly-report__pr-row">
+          <span className="session-set-pr-chip" title="Personal record">PR</span>
+          <span className="weekly-report__pr-achievements">
+            {group.achievements.map((a, i) => (
+              <span key={i} className="weekly-report__pr-achievement">{a.text}</span>
+            ))}
+          </span>
+          <span className="weekly-report__pr-exercise">{group.exerciseName}</span>
+        </div>
+      ))}
+      {overflow > 0 ? (
+        <p className="weekly-report__pr-overflow muted small">+{overflow} more</p>
+      ) : null}
+    </div>
+  );
+}
+
 function DigestSection({ currentSummary, priorSummary, priorEmpty }) {
   const movers = priorEmpty
     ? []
     : computeMuscleMovers(currentSummary?.perMuscle, priorSummary?.perMuscle);
   const moversLine = formatMoversLine(movers);
-  const prsLine = formatPRsLine(currentSummary?.prs);
+  const prs = currentSummary?.prs ?? [];
+  const hasPRs = prs.length > 0;
   const executionVerdict = computeOverallExecutionVerdict(currentSummary?.execution);
   const nudgeLine = computeNudgeLine(currentSummary, priorSummary);
 
-  if (!moversLine && !prsLine && !executionVerdict && !nudgeLine) {
+  if (!moversLine && !hasPRs && !executionVerdict && !nudgeLine) {
     return null;
   }
 
   return (
     <div className="weekly-report__digest">
-      {moversLine ? <p className="weekly-report__digest-line muted small">{moversLine}</p> : null}
-      {prsLine ? <p className="weekly-report__digest-line muted small">{prsLine}</p> : null}
-      {executionVerdict ? (
-        <p className="weekly-report__digest-line muted small">
-          Execution: {executionVerdict}.
+      <PRRows prs={prs} />
+      {moversLine ? (
+        <p className="weekly-report__digest-line weekly-report__digest-line--supporting">
+          <span className="weekly-report__digest-label">Movers</span>
+          {moversLine}
         </p>
       ) : null}
-      {nudgeLine ? <p className="weekly-report__digest-line muted small">{nudgeLine}</p> : null}
+      {executionVerdict ? (
+        <p className="weekly-report__digest-line weekly-report__digest-line--supporting">
+          <span className="weekly-report__digest-label">Execution</span>
+          {executionVerdict}.
+        </p>
+      ) : null}
+      {nudgeLine ? (
+        <p className="weekly-report__digest-line weekly-report__digest-line--supporting">
+          <span className="weekly-report__digest-label">Note</span>
+          {nudgeLine}
+        </p>
+      ) : null}
     </div>
   );
 }
