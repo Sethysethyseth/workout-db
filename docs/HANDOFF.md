@@ -1,26 +1,30 @@
 # HANDOFF — current state
 
-**Updated:** July 21, 2026, thirty-first session (Sonnet resident —
-**FP9-FP11 ALL LANDED (FP9 `a356e4a`, FP10 `6ddda4b`, FP11 `5ca24f4`),
-WAVE IS 3/3 COMPLETE, AND SETH HAS SIGNED OFF ON THE WAVE SMOKE**
-("smoke test is passed, this looks much better"). **The pre-main gate
-is next — a FRONTIER SEAT (Opus) job, not this session's** (Sonnet
-never runs the gate). Branch tip `431ef34`, pushed (`origin`
-confirmed).
+**Updated:** July 21, 2026, thirty-second session (Opus frontier seat —
+**PRE-MAIN GATE PASSED AND THE FRONTIER-PARITY WAVE IS MERGED TO
+`main`**). The gate ran the full accumulated branch diff
+(`3b325db..90248f9`, 53 files, +5936/-673) against the specs and
+task-block contracts: verdict **PASS**, no fix blocks. Seth then gave
+the verbatim "push to main" trigger and the merge ran one command at a
+time (RUNBOOK section 2, code-only, NO migration): ff-only
+`3b325db..90248f9`, pushed, `origin/main` confirmed at `90248f9`.
 
-**Session resumed from the thirtieth session's five open questions —
-all answered by Seth at the start of this session** (AskUserQuestion,
-batched, each with a recommendation): Render already repointed to
-`frontier-parity-wave` (Seth did it himself); keep the 12-rep Epley
-window; land FP10 then smoke (don't eyeball first); FP11's Top-sets
-dedupe stays earliest-date; the standing reps-record rule stays
-heaviest-weight, no change. Full detail (each question, his answer, the
-recommendation) in `docs/HANDOFF-ARCHIVE.md`'s thirtieth/thirty-first
-session entry.
+**IMMEDIATE OPEN ITEMS (manual, none gated):**
+1. **Verify the prod deploy SHA is `90248f9`** — Render
+   `workout-db-l3gc` (prod) -> Events, and Vercel prod. The push
+   triggered the deploy; a redeploy rebuilds the OLD HEAD until it
+   picks up the push, so confirm the SHA before trusting it.
+2. **Repoint staging Render back to `main`** — it is still on
+   `frontier-parity-wave` from the wave smoke.
+3. **Prod smoke** the changed surfaces once the deploy is live (PR
+   chips, exercise-detail cards, weekly digest, e1RM validity window).
 
-All three units audited fresh per `land-unit` (lanes re-run in the lane
-worktree, never trusted from the delivery report), no deviations, no
-bounces. Full per-unit audit detail in `docs/tasks/QUEUE.md`.
+**Gate findings worth carrying:** one NON-BLOCKING observation, no fix
+authored — the SessionDetailPage PR-chip window is the session's full
+UTC calendar day, so two sessions on the SAME day could cross-chip only
+if exercise identity + weight + reps coincide exactly (vanishingly
+unlikely, and the set genuinely tied a record that day). Revisit only
+if it ever surfaces in real use.
 
 ---
 
@@ -86,47 +90,35 @@ sign-off — same protocol as before.
 
 ## Repo / deploy state
 
-- **`frontier-parity-wave` is the ACTIVE wave branch, tip `5ca24f4`**,
-  pushed (`origin` confirmed). Carries FP0 `137e0ea`, FP1 `8dc799f`,
-  FP2 `056be0c`, FP3 `3de1749`, FP4 `d6180cf`, FP5 `9eb7e8d`, FP6
-  `0805064`, FPFIX1 `f144fee`, FP9 `a356e4a`, FP10 `6ddda4b`, FP11
-  `5ca24f4`, plus docs commits. Only FP8 (icons) remains outside this
-  wave's code-complete set, DRAFT, blocked on Seth's PNGs.
-- **DEPLOY STATE CHANGED THIS SESSION:** staging Render now tracks
-  `frontier-parity-wave` (Seth repointed it before this session's
-  smoke). Both server and client halves of the wave now deploy to
-  staging — the "half-deployed" caveat from prior sessions no longer
-  applies. Confirm the Render Events tab shows `5ca24f4` deployed
-  before treating any smoke result as conclusive.
-- **`main` is at `3b325db` (July 17)** — the MW-wave merge. Prod
-  Vercel/Render track `main`, deploy SHA verified, prod smoke passed. No
-  open deploy-verification debt. Prod Render is UNCHANGED by the
-  staging repoint above.
-- MW-wave, NT-wave, A-wave all merged and closed; their branches are
-  deletion candidates (gated). Details in the archive.
+- **`main` is at `90248f9` (July 21)** — the frontier-parity-wave
+  merge (ff-only from `3b325db`), pushed, `origin/main` confirmed.
+  Carries FP0 `137e0ea`, FP1 `8dc799f`, FP2 `056be0c`, FP3 `3de1749`,
+  FP4 `d6180cf`, FP5 `9eb7e8d`, FP6 `0805064`, FPFIX1 `f144fee`, FP9
+  `a356e4a`, FP10 `6ddda4b`, FP11 `5ca24f4`, plus docs commits. Prod
+  Vercel/Render track `main`; **deploy SHA verification is OPEN** (see
+  the immediate items at top) — confirm Events shows `90248f9` before
+  treating prod as shipped.
+- **`frontier-parity-wave` is now MERGED and a deletion candidate**
+  (gated). Only FP8 (icons) remains outside the wave's code-complete
+  set — DRAFT, blocked on Seth's PNGs.
+- **STAGING REPOINT IS OPEN:** staging Render still tracks
+  `frontier-parity-wave` from the wave smoke — repoint it back to
+  `main`. Once repointed, confirm the Events tab shows the `main` HEAD.
+- MW-wave, NT-wave, A-wave (and now the FP wave) all merged and closed;
+  their branches are deletion candidates (gated). Details in the archive.
 
 ## Next up (the active task)
 
-1. **THE PRE-MAIN GATE IS THE IMMEDIATE NEXT STEP.** Seth has signed
-   off on smoke — nothing is blocking it now. Ritual: the
-   `pre-main-review` skill, run by a FRONTIER SEAT (Opus), NOT this
-   Sonnet resident session. If this session is asked to "review the
-   branch" or "run the gate," say so and hand the chair over rather
-   than attempting it.
-2. **The July 20 gate verdict is STALE and must not be treated as
-   live** — it read a diff that predates FPFIX1's final form and all of
-   FP9-FP11. This is a full re-run, not a diff-the-diff.
-3. Gate fuel: grep `docs/HANDOFF-ARCHIVE.md` for this wave's full
-   session history (accepted deviations, the smoke findings, reviewer
-   fixes) — the thirtieth/thirty-first session entry has the FP9-FP11
-   arc in full, including exact file:line evidence for each fix. Fan
-   report-lane fuel out to CURSOR agents per the ritual, never Claude
-   subagents.
-4. **On a gate finding:** normal escalation - a required fix becomes a
-   task block (FPFIX2-style), authored/dispatched/landed same as any
-   other unit, then the gate's verdict stands or gets revisited.
-5. **Merge stays behind Seth's verbatim "push to main"**, one command
-   at a time. Code-only, NO migration.
+1. **Close out the three open manual items at the top** — prod deploy
+   SHA verify (`90248f9`), staging Render repoint to `main`, prod
+   smoke. None are gated; all are browser/dashboard steps for Seth (or
+   read-only confirmation for the next agent).
+2. **FP8 (PWA icons)** is the only open FP unit — DRAFT, blocked on
+   Seth dropping icon PNGs into `claudefiledrop/`. Icons LAST by his
+   rider. Flip to QUEUED once the PNGs land.
+3. Wave is otherwise DONE. Next roadmap work is a fresh planning pass
+   (frontier seat) against `fp0-frontier-parity-report-FINDINGS.md` and
+   the parked specs — see the open Seth items below.
 
 **00b. Open judgment call, now CLOSED:** the standing reps-record rule
 (heaviest-weight vs most-reps) — Seth chose to keep heaviest-weight, no
