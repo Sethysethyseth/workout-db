@@ -4,12 +4,19 @@ const { getStimulusMultiplier } = require("./stimulusCurve");
 // beyond it, so the formula is undefined/nonsensical there. Guard it.
 const BRZYCKI_SINGULARITY_REPS = 37;
 
+// Epley is only credible in roughly the 1-12 rep range; above 12 the
+// extrapolation error exceeds a plate increment. REP_TARGET_LADDER in
+// exerciseDetail.js already refuses to EMIT targets above 15 for the same
+// reason - this applies the same principle to the INPUT side, at the single
+// producer. All consumers inherit this guard by construction.
+const EPLEY_VALIDITY_MAX_REPS = 12;
+
 function estimateOneRepMax(weight, reps) {
   if (weight == null || reps == null || weight <= 0 || reps <= 0) {
     return { epley: null, brzycki: null };
   }
 
-  const epley = weight * (1 + reps / 30);
+  const epley = reps > EPLEY_VALIDITY_MAX_REPS ? null : weight * (1 + reps / 30);
   const brzycki =
     reps >= BRZYCKI_SINGULARITY_REPS ? null : (weight * 36) / (37 - reps);
 

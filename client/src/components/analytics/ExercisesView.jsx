@@ -245,8 +245,11 @@ const PR_TYPE_LABELS = {
 
 function formatPRValue(pr) {
   if (!pr) return null;
-  if (pr.type === "weightPR" || pr.type === "e1rmPR") {
+  if (pr.type === "weightPR") {
     return `${formatWeight(pr.value)} × ${formatRepsValue(pr.reps)}`;
+  }
+  if (pr.type === "e1rmPR") {
+    return `~${formatEstimate(pr.value)} (from ${formatWeight(pr.weight)} × ${formatRepsValue(pr.reps)})`;
   }
   if (pr.type === "repsAtWeightPR") {
     return `${formatWeight(pr.weight)} × ${formatRepsValue(pr.value)}`;

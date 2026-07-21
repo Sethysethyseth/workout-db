@@ -250,4 +250,51 @@ describe("buildExerciseDetail", () => {
     expect(detail.weeklyVolume).toHaveLength(12);
     expect(detail.weeklyVolume[11].effectiveSets).toBe(1);
   });
+
+  describe("e1RM validity window (FP9 bug fix)", () => {
+    test("high-rep set (160x20) does not inflate bestE1rm over valid working sets", () => {
+      // The reported defect: 160x20 produces epley 266.7, but 220x5 produces
+      // 256.67. Without the validity window, 266.7 wins. With the window,
+      // 160x20's epley is null, so 220x5's 256.67 is the true bestE1rm.
+      const sets = [
+        benchSet({ performedAt: "2026-06-01T10:00:00Z", weight: 220, reps: 5 }),
+        benchSet({ performedAt: "2026-06-01T10:00:00Z", weight: 210, reps: 5 }),
+        benchSet({ performedAt: "2026-06-01T10:00:00Z", weight: 160, reps: 20 }),
+      ];
+
+      const detail = buildExerciseDetail(sets, { exerciseId: BENCH_ID });
+
+      // bestE1rm should come from 220x5: 220 * (1 + 5/30) = 256.67
+      expect(detail.bestE1rm).toBeCloseTo(256.67, 1);
+      // NOT 266.7 (which would come from 160x20 without the window)
+
+      // repTargets 5-rep row should be <= 220, not 227.5
+      const at5 = detail.repTargets.find((t) => t.reps === 5);
+      // Inverted Epley: 256.67 / (1 + 5/30) = 220
+      expect(at5.weight).toBeCloseTo(220, 0);
+      expect(at5.weight).toBeLessThanOrEqual(220);
+    });
+
+    test("exercise logged ONLY at high reps yields null bestE1rm and repTargets", () => {
+      // All sets above 12 reps - no valid e1RM data
+      const sets = [
+        benchSet({ performedAt: "2026-06-01T10:00:00Z", weight: 100, reps: 15 }),
+        benchSet({ performedAt: "2026-06-02T10:00:00Z", weight: 90, reps: 20 }),
+        benchSet({ performedAt: "2026-06-03T10:00:00Z", weight: 80, reps: 25 }),
+      ];
+
+      const detail = buildExerciseDetail(sets, { exerciseId: BENCH_ID });
+
+      // bestE1rm must be null, not NaN or 0
+      expect(detail.bestE1rm).toBe(null);
+      // repTargets must be null (insufficient data), not an empty array or throw
+      expect(detail.repTargets).toBe(null);
+      // e1rmHistory should be empty (no valid e1RM data points)
+      expect(detail.e1rmHistory).toEqual([]);
+      // loggedRepRange should still reflect what was logged
+      expect(detail.loggedRepRange).toBeNull();
+      // The detail itself should exist (exercise was logged)
+      expect(detail.totals.sets).toBe(3);
+    });
+  });
 });

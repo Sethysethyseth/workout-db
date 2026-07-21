@@ -25,11 +25,34 @@ describe("estimateOneRepMax", () => {
     expect(estimateOneRepMax(w, r)).toEqual({ epley: null, brzycki: null });
   });
 
-  test("reps >= 37: brzycki null but epley still a number", () => {
+  test("reps > 12: epley null (validity window)", () => {
+    // At the boundary: 12 reps is valid
+    const at12 = estimateOneRepMax(160, 12);
+    expect(at12.epley).toBeCloseTo(160 * (1 + 12 / 30), 5); // 224
+    expect(at12.brzycki).toBeCloseTo((160 * 36) / (37 - 12), 5);
+
+    // Above the boundary: 13 reps is invalid
+    const at13 = estimateOneRepMax(160, 13);
+    expect(at13.epley).toBe(null);
+    expect(at13.brzycki).toBeCloseTo((160 * 36) / (37 - 13), 5);
+
+    // Well above: 20 reps
+    const at20 = estimateOneRepMax(160, 20);
+    expect(at20.epley).toBe(null);
+    expect(at20.brzycki).toBeCloseTo((160 * 36) / (37 - 20), 5);
+  });
+
+  test("reps >= 37: brzycki null (singularity guard unchanged)", () => {
     const { epley, brzycki } = estimateOneRepMax(100, 37);
     expect(brzycki).toBe(null);
-    expect(typeof epley).toBe("number");
-    expect(epley).toBeCloseTo(100 * (1 + 37 / 30), 5);
+    // epley is also null because 37 > 12
+    expect(epley).toBe(null);
+  });
+
+  test("brzycki behaviour unchanged for in-range reps", () => {
+    // brzycki at 5 reps: 100 * 36 / 32 = 112.5
+    const { brzycki } = estimateOneRepMax(100, 5);
+    expect(brzycki).toBeCloseTo(112.5, 5);
   });
 });
 
