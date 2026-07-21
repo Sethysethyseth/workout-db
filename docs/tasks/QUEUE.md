@@ -308,7 +308,7 @@ PARKED (not a unit) | docs/specs/block-execution-gap.md | the multi-week
   do NOT author against it. The fork (finish it vs cut the dead-end UI) is
   Seth's product call.
 
-QUEUED | fp9-e1rm-validity-window.md | 1-12 rep validity window on Epley
+LANDED a356e4a | fp9-e1rm-validity-window.md | 1-12 rep validity window on Epley
   at the single producer (estimateOneRepMax), + e1rmPR renders as an
   estimate with provenance, not as a performed set | MODEL opus. Root
   cause of Seth's "266.7 lbs x 20 never happened": uncapped Epley on a
@@ -318,9 +318,18 @@ QUEUED | fp9-e1rm-validity-window.md | 1-12 rep validity window on Epley
   the producer, not per-consumer - avoids recreating FPFIX1's
   two-implementations bug. Expected fixture changes: setMetrics.test.js
   :28-32 (currently ASSERTS uncapped epley at 37 reps - pins the bug),
-  prs.test.js:330-354 (45x20 warmup). SMOKE: Personal records e1RM row
-  reads as an estimate with its source set; Working weight targets no
-  longer inflated.
+  prs.test.js:330-354 (45x20 warmup, verified unchanged - passes via
+  working sets). Audited per land-unit: scope exact (4 files, matches
+  FILES TO TOUCH), lanes fresh in lane (202/202 unit tests, client build
+  clean), check-hex clean. Diffs hand-verified against every acceptance
+  criterion: EPLEY_VALIDITY_MAX_REPS=12 named constant with rationale
+  comment; formatPRValue gives e1rmPR its own branch
+  ("~267 lbs (from 160 lbs x 20)"), weightPR/repsAtWeightPR branches
+  untouched. No deviations. Lane rebased onto b365914 then ff-merged.
+  SMOKE: Personal records e1RM row reads as an estimate with its source
+  set; Working weight targets no longer inflated by high-rep sets; an
+  exercise trained only above 12 reps shows the existing
+  insufficient-data unlock copy, not a broken card.
 QUEUED | fp10-weekly-digest-hierarchy.md | Home weekly digest: PRs become
   structured rows (existing .session-set-pr-chip, grouped by exercise,
   3 + "+N more"), four digest lines get a rank instead of four identical

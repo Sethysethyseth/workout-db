@@ -77,18 +77,21 @@ wave (item 00c). Raising it again is re-litigating a closed decision.
 
 ---
 
-**Two units are sitting in lanes AWAITING REVIEW right now** (nothing
-landed this session — the session was authoring + dispatch):
-- **FP9** in `C:\dev\worktrees\cursor-lane` (branch `cursor/fp9`),
-  exit 0, DELIVERY.md written. Self-reports 202 unit tests green,
-  client build clean.
+**Session resumed July 21 — Seth answered all five questions (Render
+already repointed to `frontier-parity-wave`; keep 12-rep window; land
+FP10 then smoke; FP11 dedupe stays earliest-date; reps-record rule stays
+heaviest-weight, no change).** Landing FP9 and FP10 now.
+
+- **FP9 LANDED `a356e4a`.** Audited per `land-unit`: lanes re-run fresh
+  in the lane worktree (202/202 unit, client build clean, check-hex
+  clean), diffs hand-verified against every acceptance criterion, no
+  deviations. Full detail in QUEUE.md's FP9 entry.
 - **FP10** in `C:\dev\worktrees\cursor-lane-2` (branch `cursor/fp10`),
   exit 0, DELIVERY.md written. Self-reports 198 unit tests, build clean,
   check-hex clean. Its log mentions an npm install in the lane — VERIFIED
   no package.json/lockfile mutation (porcelain shows only WeeklyReport.jsx
   + index.css), so gate item 5 was not tripped, but re-verify at audit.
-- **NEITHER HAS BEEN AUDITED.** Reports are never trusted for green
-  tests (AGENTS.md) — re-run the lanes fresh per `land-unit`.
+  **NOT YET AUDITED** — up next.
 
 ## THE SMOKE FINDINGS (what this wave now exists to fix)
 
