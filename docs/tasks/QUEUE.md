@@ -345,16 +345,24 @@ LANDED 6ddda4b | fp10-weekly-digest-hierarchy.md | Home weekly digest: PRs becom
   with two PRs on one exercise names it once; a week with 5 PRs shows 3
   + "+2 more"; a week with no PRs looks unchanged; digest lines read as
   Movers/Execution/Note labels instead of a bare "Execution: " prefix.
-DISPATCHED | fp11-exercise-detail-cards.md | Top sets dedupe by (weight,reps)
+LANDED 5ca24f4 | fp11-exercise-detail-cards.md | Top sets dedupe by (weight,reps)
   keeping earliest date + React key fix, and a visual pass on the three
   exercise-detail cards | MODEL opus, Channel B named rung, lane
-  `C:\dev\worktrees\cursor-lane` branch `cursor/fp11`, based on
-  frontier-parity-wave `6ddda4b` (FP9 + FP10 both landed, so the
-  serialization is clear). Carries a real defect, not just polish: no
-  dedupe at exerciseDetail.js:213-223 means 3 working sets of 220x5 take
-  3 of the 5 slots, and the client key omits reps (ExercisesView.jsx:422)
-  so those rows DUPLICATE React keys. SMOKE: five distinct top sets, no
-  console key warning.
+  `C:\dev\worktrees\cursor-lane` branch `cursor/fp11`. Carries a real
+  defect, not just polish: no dedupe at exerciseDetail.js:213-223 means 3
+  working sets of 220x5 take 3 of the 5 slots, and the client key omits
+  reps (ExercisesView.jsx:422) so those rows DUPLICATE React keys.
+  Audited per land-unit: scope exact (4 files, matches FILES TO TOUCH),
+  lanes fresh in lane (204/204 unit incl. two new dedupe tests, client
+  build clean, check-hex clean). Dedupe applied at the engine before
+  slicing to MAX_TOP_SETS=5, earliest performedAt kept per (weight,reps)
+  key, sort order otherwise unchanged; React key now includes reps as
+  defense in depth. No `card--live`, no raw colors, all empty/unlock
+  states verified present in the diff. No deviations. Lane rebased onto
+  d9775c4 then ff-merged. SMOKE: five distinct top sets, no console key
+  warning; Working weight targets reads as a ladder/curve, not a bare
+  table; Personal records e1RM row stays visually distinct as an
+  estimate (FP9's contract intact).
 
 LANDED 137e0ea | fp0-frontier-parity-report.md | report-only unit, NO
   code: per-item NOW (file:line evidence) + CHANGE + SIZE for the six

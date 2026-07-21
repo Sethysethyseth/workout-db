@@ -1,5 +1,167 @@
 # HANDOFF ARCHIVE — session-log history (append-only)
 
+Session log (July 20-21, 2026, THIRTIETH session (Opus, FRONTIER SEAT)
+and THIRTY-FIRST session (Sonnet resident) — Seth's smoke on the
+27-unit wave surfaced one real engine defect (uncapped Epley e1RM) and
+a presentation critique; FP9-FP11 authored, dispatched, and ALL THREE
+LANDED (FP9 `a356e4a`, FP10 `6ddda4b`, FP11 `5ca24f4`); wave now awaits
+Seth's re-smoke and the re-run pre-main gate). Verbatim, as written at
+the time:
+
+**Updated:** July 20, 2026, thirtieth session (Opus, FRONTIER SEAT —
+**Seth's smoke came back with findings; the wave is NOT merging yet.
+FP9-FP11 authored from three recon lanes; FP9 + FP10 DELIVERED and
+AWAITING REVIEW; FP11 queued behind them**). Branch tip `267271c`,
+pushed.
+
+**SETH'S RULING, July 20 — the wave does NOT go to main yet:** "this is
+not getting pushed to main, we will edit and improve upon this wave
+before pushing to main." His smoke passed functionally ("things looked
+good") but surfaced one real engine defect and a presentation critique.
+So: **the July 20 pre-main gate verdict is now STALE** — it read a diff
+that predates FPFIX1's final form and all of FP9-FP11. The gate MUST be
+re-run after the new units land and Seth re-smokes. Do not treat the
+earlier PASS WITH FIXES as live.
+
+**FIVE QUESTIONS Opus left for the next session, ALL ANSWERED July 21
+at the start of the thirty-first session** (AskUserQuestion, batched,
+each with a recommendation): Q1 Render repoint — Seth had ALREADY
+repointed staging Render to `frontier-parity-wave` himself. Q2 the
+12-rep Epley window — keep 12 (recommendation accepted). Q3 FP10
+eyeball-first vs land-then-smoke — land then smoke (recommendation
+accepted). Q4 FP11 Top-sets dedupe direction — earliest date
+(recommendation accepted, no change from the authored contract). Q5
+the standing reps-record rule (heaviest-weight vs most-reps) — keep
+heaviest-weight, no change.
+
+**FP9 LANDED `a356e4a`** (thirty-first session, Sonnet resident).
+Audited per `land-unit`: lane worktree `C:\dev\worktrees\cursor-lane`,
+branch `cursor/fp9`, scope exact (4 files matching FILES TO TOUCH),
+lanes re-run fresh (202/202 unit tests, client build clean, check-hex
+clean), every acceptance criterion hand-verified against the diff
+(`EPLEY_VALIDITY_MAX_REPS = 12` named constant with rationale comment;
+`formatPRValue` gives `e1rmPR` its own branch rendering
+`~267 lbs (from 160 lbs x 20)`; `weightPR`/`repsAtWeightPR` branches
+untouched). No deviations. Lane rebased onto `b365914` then ff-merged,
+pushed, origin HEAD confirmed.
+
+**FP10 LANDED `6ddda4b`** (thirty-first session). Audited per
+`land-unit`: lane worktree `C:\dev\worktrees\cursor-lane-2`, branch
+`cursor/fp10`, scope exact (2 files), lanes re-run fresh (198/198 unit
+tests unchanged, client build clean, check-hex clean),
+`.session-set-pr-chip` confirmed reused not redefined (no new class
+definition for it in the CSS diff), every empty/partial-state branch in
+`DigestSection` verified preserved by reading the diff directly, `e1RM`
+row confirmed to omit reps (`"e1RM 267 lbs"`, no `x <reps>` pairing). No
+deviations. Lane rebased onto `9cc98f4` then ff-merged, pushed, origin
+HEAD confirmed.
+
+**FP11 LANDED `5ca24f4`** (thirty-first session), the wave's last code
+unit. Dispatched via `dispatch-unit` to lane `C:\dev\worktrees\cursor-lane`
+(reused from FP9, now free), branch `cursor/fp11`, Channel B named rung
+(`--model opus`), launched DETACHED per the thirtieth session's
+operational lesson (`Start-Process pwsh -WindowStyle Hidden` running a
+generated `.ps1`) — completed clean this time, no reap. Audited per
+`land-unit`: scope exact (4 files matching FILES TO TOUCH), lanes
+re-run fresh (204/204 unit tests incl. two new dedupe fixtures, client
+build clean, check-hex clean). Diff-verified: `dedupeTopSets` keys by
+`` `${weight}:${reps}` ``, keeps the entry with the earliest
+`performedAt`, preserves the existing weight-desc/reps-desc sort order
+post-dedupe (the old third tiebreak on `performedAt` becomes moot once
+duplicates are removed, so dropping it is not a behavior change); React
+key at `ExercisesView.jsx` now includes reps as defense in depth; no
+`card--live`, no raw colors outside `index.css`, all three
+empty/unlock states (`Top sets`, rep-targets unlock, PR-card unlock)
+confirmed present in the diff. No deviations. Lane rebased onto
+`d9775c4` then ff-merged, pushed, origin HEAD confirmed.
+
+**Wave task list used for the first time this session** (per
+`dispatch-unit` section 2b-2): five tasks created (FP9/FP10/FP11, Seth
+smoke sign-off, pre-main gate review), landings flipped to `completed`
+in real time, smoke sign-off flipped to `in_progress` at wave end so
+the terminal shows exactly one open item with the gate blocked behind
+it.
+
+**THE SMOKE FINDINGS (what this wave existed to fix), preserved for the
+pre-main gate's reference:**
+
+1. **e1RM was fabricating numbers — the serious one.** Seth logged one
+set of `160 lbs x 20` on bench. `estimateOneRepMax`
+(`server/src/analytics/setMetrics.js:7-16`) computed Epley
+`weight * (1 + reps/30)` with NO rep bound (only Brzycki was guarded,
+at its reps>=37 singularity), so that set produced e1RM 266.7 and
+became the all-time best. It cascaded to FIVE surfaces: the
+Personal-records e1RM row, the Home weekly PR line, the Home "TOP GAIN
++32 lbs estimated 1RM" tile, the e1RM history sparkline, and — worst —
+the "Working weight targets" card, which INVERTED bestE1rm to
+PRESCRIBE working loads. Arithmetic verified against his screenshot:
+with bestE1rm 266.7 the card told him 227.5x5 when his real best five
+was 220x5, ~3.5% inflated. Seth wondered about a lbs/kg bug — RULED OUT
+conclusively (stored weights are unit-agnostic and never converted,
+`client/src/lib/weightUnitPref.js:3-7`; display helpers only append a
+label). Separately, the Personal-records card rendered the estimate AS
+A PERFORMED SET ("266.7 lbs x 20") because `formatPRValue`
+(`ExercisesView.jsx:246-254`) routed `e1rmPR` through the same
+`weight x reps` branch as `weightPR` — Home's PR line already handled
+this correctly, so it was one formatter being wrong, not a systemic
+pattern. **Both fixed by FP9.**
+
+2. **"The UX isn't very pleasing and it's quite plain."** Seth's words,
+about the Home PR line, Working weight targets, and Top sets. His
+brief: "find something in between too much and too simple." Root cause
+was uniform: the server ships fully STRUCTURED data and the client
+flattened it into run-on sentences and undifferentiated lists. **Fixed
+by FP10 (Home digest) and FP11 (exercise-detail cards).**
+
+3. **Top sets had a real defect, not just plainness.** No dedupe at
+`exerciseDetail.js:213-223` — three working sets of 220x5 took three of
+the five slots — AND the React key `${performedAt}-${weight}`
+(`ExercisesView.jsx:422`) omitted reps, so those rows DUPLICATED React
+keys. **Fixed by FP11.**
+
+**OPERATIONAL LESSONS FROM THE THIRTIETH SESSION (dispatch mechanism,
+still load-bearing for future waves):**
+
+1. **Background-task dispatch gets REAPED — launch detached instead.**
+Three consecutive dispatches were KILLED mid-run. Diagnosis, with
+evidence: the named `opus` rung answered a PONG probe in 10s (healthy —
+NOT quota, NOT auth, so the fallback ladder was the wrong response);
+short runs survived (recon lanes 2-3 min); and FP9 + FP10 both died at
+~6 min simultaneously despite a 30s stagger — two independently started
+tasks dying at one instant means an external reap of the harness's
+background children, not per-task timeouts. **The fix is mechanism, not
+rung:** launch via `Start-Process pwsh -WindowStyle Hidden` running a
+small generated `.ps1` that sets `CURSOR_API_KEY`, cds to the lane, and
+redirects `*>` to a log file. Detached from the task tree, units then
+complete exit 0. Confirmed working again on FP11 the following session.
+
+2. **`DELIVERY.md` IS GITIGNORED (`.gitignore:48`) — so
+`git status --untracked-files=all` reports a lane CLEAN while it still
+holds a stale report.** The thirtieth session read a two-day-old gate
+report as if it were fresh recon and nearly fed it into contract
+authoring; caught by mtime. **Check lane cleanliness by TIMESTAMP on
+DELIVERY.md, not by git status.** This compounds the 29th session's
+lesson (a report lane that invented line numbers) — that makes two
+near-misses in two sessions from trusting report lanes without a cheap
+spot-check.
+
+3. **Partial work from a killed run is worth preserving, not
+resuming.** Both killed lanes held real, largely CORRECT work (FP9's
+core change was already contract-perfect). Saved as `PARTIAL-fp9.patch`
+/ `PARTIAL-fp10.patch` in the scratchpad, then the lanes were RESET
+rather than resumed — a half-finished run with no DELIVERY.md is
+unverified by definition, and re-running from a dirty tree confuses the
+agent.
+
+4. **Recon fan-out earned its keep.** Three Cursor report lanes
+(exec-blocks / ux-surfaces / e1rm-blast, `--model auto`, session-scoped,
+reports NOT committed) produced the file:line evidence behind every
+contract in this arc — including the block-execution finding Seth had
+asked about directly, and the Top-sets duplicate-React-key defect
+nobody had noticed. Reports preserved in the scratchpad as `RECON-*.md`.
+
+---
+
 Session log (July 20, 2026, TWENTY-NINTH session, Opus FRONTIER SEAT -
 pre-main gate run out of order at Seth's explicit one-time override;
 verdict PASS WITH FIXES; FPFIX1 authored/dispatched/landed f144fee same

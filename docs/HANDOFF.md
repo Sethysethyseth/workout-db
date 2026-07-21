@@ -1,214 +1,124 @@
 # HANDOFF — current state
 
-**Updated:** July 20, 2026, thirtieth session (Opus, FRONTIER SEAT —
-**Seth's smoke came back with findings; the wave is NOT merging yet.
-FP9-FP11 authored from three recon lanes; FP9 + FP10 DELIVERED and
-AWAITING REVIEW; FP11 queued behind them**). Branch tip `267271c`,
-pushed.
+**Updated:** July 21, 2026, thirty-first session (Sonnet resident —
+**FP9-FP11 ALL LANDED (FP9 `a356e4a`, FP10 `6ddda4b`, FP11 `5ca24f4`),
+WAVE IS 3/3 COMPLETE. Seth's smoke sign-off is the only thing between
+this branch and the pre-main gate.**). Branch tip `5ca24f4`, pushed
+(`origin` confirmed).
 
-**SETH'S RULING, July 20 — the wave does NOT go to main yet:** "this is
-not getting pushed to main, we will edit and improve upon this wave
-before pushing to main." His smoke passed functionally ("things looked
-good") but surfaced one real engine defect and a presentation critique.
-So: **the July 20 pre-main gate verdict is now STALE** — it read a diff
-that predates FPFIX1's final form and all of FP9-FP11. The gate MUST be
-re-run after the new units land and Seth re-smokes. Do not treat the
-earlier PASS WITH FIXES as live.
+**Session resumed from the thirtieth session's five open questions —
+all answered by Seth at the start of this session** (AskUserQuestion,
+batched, each with a recommendation): Render already repointed to
+`frontier-parity-wave` (Seth did it himself); keep the 12-rep Epley
+window; land FP10 then smoke (don't eyeball first); FP11's Top-sets
+dedupe stays earliest-date; the standing reps-record rule stays
+heaviest-weight, no change. Full detail (each question, his answer, the
+recommendation) in `docs/HANDOFF-ARCHIVE.md`'s thirtieth/thirty-first
+session entry.
 
----
-
-# ASK SETH THESE QUESTIONS FIRST — DO NOT GUESS, DO NOT PROCEED PAST THEM
-
-**Seth's explicit instruction closing the thirtieth session: "make sure
-the next agent knows this and asks me the right questions."** Five
-decisions below are HIS, not yours. Several were made unilaterally by the
-frontier seat this session to keep the wave moving; they are all still
-cheap to reverse RIGHT NOW and expensive to reverse after FP11 lands.
-Ask them as a batch at session start (AskUserQuestion is the right
-vehicle), give a recommendation with each — he invites tested pushback
-and wants a named criterion, not a menu — and then act.
-
-**Q1. Repoint staging Render to `frontier-parity-wave`, or accept stale
-server numbers?** BLOCKING — settle before ANY smoke.
-Staging Render has tracked `main` since July 17, so every server-side
-change in this wave deploys nowhere, INCLUDING FP9's engine fix, which is
-the entire point of the arc. The client degrades quietly rather than
-erroring, so a stale server reads to a smoker as "the fix didn't work."
-*Recommendation: repoint.* Smoking FP9 against a `main` server cannot
-validate it, and a false failure costs a whole diagnosis cycle.
-
-**Q2. Is the 12-rep Epley window right?** This is a DOMAIN call about his
-sport, and the frontier seat picked it alone.
-FP9 nulls `epley` above 12 reps. Consequence he should hear plainly: an
-exercise he has ONLY ever trained above 12 reps will show no e1RM, no
-rep targets, and no e1RM PRs at all — by design, routed to the existing
-unlock copy. 10 would be more conservative and would churn three more
-fixtures; 15 would match the rep-target ladder's emit ceiling.
-*Recommendation: keep 12* — conventional edge of Epley credibility, and
-it keeps the existing 10- and 12-rep fixtures honest. But if he lifts
-high-rep often, he is the one who knows whether losing e1RM there hurts.
-
-**Q3. Does he want to EYEBALL FP10 before it lands, or land-then-smoke?**
-FP10 is delivered but encodes two unreviewed frontier-seat choices: it
-reuses `.session-set-pr-chip` (the badge from completed set rows) on
-Home, and it groups PRs by exercise so the name appears once. He asked
-for "between too much and too simple" and never saw the interpretation.
-*Recommendation: land it and let him judge it in the re-smoke* — it is
-reversible, and a screenshot out of context is worse evidence than the
-real surface. But offer the bounce.
-
-**Q4. FP11 design direction — last cheap moment.** FP11 is QUEUED and NOT
-dispatched. Same aesthetic brief, three cards (Working weight targets,
-Top sets, Personal records). Its one non-obvious contract call: Top sets
-dedupes by `(weight, reps)` keeping the EARLIEST date, on the theory that
-a top set is an achievement and the first time you hit it is the record —
-matching the vocabulary `computeStandingPRs` already uses. If he'd rather
-see the most RECENT occurrence, that is a one-line change now and a
-bounce later.
-
-**Q5. The standing reps-record rule (carried from the 29th session,
-never answered).** FPFIX1 picks the standing reps record by HEAVIEST
-weight, so a lifter who has done both `100x8` and `200x5` sees
-"Reps - 200 lb x 5". Real record under the contract; he may prefer
-most-reps-wins. One small block either way.
-
-**DO NOT ask about the block builder.** He ruled it PARKED for another
-wave (item 00c). Raising it again is re-litigating a closed decision.
+All three units audited fresh per `land-unit` (lanes re-run in the lane
+worktree, never trusted from the delivery report), no deviations, no
+bounces. Full per-unit audit detail in `docs/tasks/QUEUE.md`.
 
 ---
 
-**Session resumed July 21 — Seth answered all five questions (Render
-already repointed to `frontier-parity-wave`; keep 12-rep window; land
-FP10 then smoke; FP11 dedupe stays earliest-date; reps-record rule stays
-heaviest-weight, no change).** Landing FP9 and FP10 now.
+## SETH: WAVE SMOKE CHECKLIST — sign-off needed before the gate
 
-- **FP9 LANDED `a356e4a`.** Audited per `land-unit`: lanes re-run fresh
-  in the lane worktree (202/202 unit, client build clean, check-hex
-  clean), diffs hand-verified against every acceptance criterion, no
-  deviations. Full detail in QUEUE.md's FP9 entry.
-- **FP10 LANDED `6ddda4b`.** Audited per `land-unit`: lanes re-run fresh
-  in the lane worktree (198/198 unit, client build clean, check-hex
-  clean), `.session-set-pr-chip` reused not redefined, every empty-state
-  branch verified preserved, no deviations. Full detail in QUEUE.md's
-  FP10 entry.
-- **FP11 next**: QUEUED, not yet dispatched — was serialized behind both
-  FP9 (shares `ExercisesView.jsx`) and FP10 (shares `index.css`), both
-  now landed. Dispatching now.
+Test against the **staging Vercel deploy** (never local dev) on branch
+`frontier-parity-wave`. Staging Render now tracks this branch too (you
+repointed it), so server-side fixes (FP9) are live there for the first
+time this wave.
 
-## THE SMOKE FINDINGS (what this wave now exists to fix)
+**New this round (FP9-FP11, the fixes for your July 20 smoke findings):**
+- Exercises detail -> Personal records: the e1RM row reads as an
+  estimate with its source set shown as provenance (e.g.
+  "~267 lbs (from 160 lbs x 20)"), never as a performed set.
+- Log a high-rep set (13+ reps) on an exercise whose real best is a
+  lower-rep set: Working weight targets and the e1RM-derived numbers
+  should NOT be inflated by the high-rep set.
+- An exercise trained ONLY above 12 reps: e1RM / rep targets should show
+  the existing "not enough data" unlock copy, not an error or a blank.
+- Home weekly report band: a week with 2+ PRs on the SAME exercise
+  names it once, with achievements grouped under it (reusing the PR
+  chip from completed-set rows). 5+ PRs in a week shows 3 plus a quiet
+  "+N more". The four digest lines (PRs/Movers/Execution/Note) should
+  read as a ranked list, not four identical grey paragraphs.
+- Exercises detail -> Top sets: five DISTINCT sets, no repeats (a set
+  you hit 3 times should occupy one slot, not three) — open the browser
+  console and confirm no duplicate-key warning.
+- Exercises detail -> Working weight targets: should read as one curve
+  (a ladder/bar visualization), not a bare two-column table. Muted
+  out-of-range rows + footnote should still be there.
+- Exercises detail -> Personal records: Weight/e1RM/Reps rows should
+  each be visually distinguishable by kind (badges), with the e1RM row
+  staying visually distinct as an estimate.
 
-**1. e1RM was fabricating numbers — the serious one.** Seth logged one
-set of `160 lbs x 20` on bench. `estimateOneRepMax`
-(`server/src/analytics/setMetrics.js:7-16`) computes Epley
-`weight * (1 + reps/30)` with NO rep bound (only Brzycki is guarded, at
-its reps>=37 singularity), so that set produced e1RM 266.7 and became
-the all-time best. It cascaded to FIVE surfaces: the Personal-records
-e1RM row, the Home weekly PR line, the Home "TOP GAIN +32 lbs
-estimated 1RM" tile, the e1RM history sparkline, and — worst — the
-**"Working weight targets" card, which INVERTS bestE1rm to PRESCRIBE
-working loads.** Arithmetic verified against his screenshot: with
-bestE1rm 266.7 the card told him 227.5x5 when his real best five was
-220x5, ~3.5% inflated. A prescriptive surface silently inflated by a
-warmup-grade set is a trust defect, not a cosmetic one.
-**Seth wondered about a lbs/kg bug — RULED OUT conclusively.** Stored
-weights are unit-agnostic and never converted
-(`client/src/lib/weightUnitPref.js:3-7`); display helpers only append a
-label. It is pure uncapped Epley arithmetic.
-**Separately**, the Personal-records card rendered the estimate AS A
-PERFORMED SET ("266.7 lbs x 20") because `formatPRValue`
-(`ExercisesView.jsx:246-254`) routed `e1rmPR` through the same
-`weight x reps` branch as `weightPR`. Home's PR line already did this
-correctly — it was one formatter, not a systemic pattern.
+**Carried forward from earlier in the wave (worth a quick re-check,
+should be unchanged):**
+- Tab title and HelloPage read "LogChamp"; save-to-home-screen line
+  correct; never-gate-history guarantee line renders.
+- Home's This-week strip: Workouts tile agrees with the Sets/Top-set
+  windows; recent workouts render as 3 vertical full-width rows.
+- Analytics > Strength: chart and table both sort noteworthy-first, a
+  muted "N exercises with a single session" toggle exists; Exercises
+  roster defaults to Active with All one tap away.
+- Analytics > Muscles with an empty range: 4 stepped ghost bars + the
+  "Log 3 workouts..." unlock line, nothing tappable.
+- Complete a session with a genuine PR: the set gets a small muted "PR"
+  chip; a different exercise sharing that weight/reps in the same
+  session does NOT get chipped; completed session pages load without
+  console errors.
+- Exercises detail -> Personal records: a Reps row appears ONLY when a
+  genuine reps-at-weight record exists — never a warmup set, never
+  dated to the exercise's first session.
 
-**2. "The UX isn't very pleasing and it's quite plain."** Seth's words,
-about the Home PR line, Working weight targets, and Top sets. His brief:
-"find something in between too much and too simple." Root cause is
-uniform: the server ships fully STRUCTURED data and the client flattens
-it into run-on sentences and undifferentiated lists. All four Home
-digest lines render as identical `muted small` paragraphs; the PR line
-repeats the full exercise name per PR.
+If anything looks wrong, it re-enters as a diagnosis block and resets
+sign-off — same as last time. Once you're satisfied, say so and the
+pre-main gate runs next (Opus, full branch diff against the specs,
+since the July 20 gate verdict is stale).
 
-**3. Top sets has a real defect, not just plainness.** No dedupe at
-`exerciseDetail.js:213-223` — three working sets of 220x5 take three of
-the five slots — AND the React key `${performedAt}-${weight}`
-(`ExercisesView.jsx:422`) omits reps, so those rows DUPLICATE React keys.
+---
 
 ## Repo / deploy state
 
-- **`frontier-parity-wave` is the ACTIVE wave branch, tip `267271c`**,
+- **`frontier-parity-wave` is the ACTIVE wave branch, tip `5ca24f4`**,
   pushed (`origin` confirmed). Carries FP0 `137e0ea`, FP1 `8dc799f`,
   FP2 `056be0c`, FP3 `3de1749`, FP4 `d6180cf`, FP5 `9eb7e8d`, FP6
-  `0805064`, FPFIX1 `f144fee`, plus this session's two docs commits:
-  `65092f5` (FP9-FP11 blocks) and `267271c` (block-execution-gap spec).
-- **DEPLOY CAVEAT, unchanged and still load-bearing:** staging Render
-  (the API) has tracked `main` since July 17, so the SERVER halves of
-  this wave deploy NOWHERE — including FP9's engine change, which is the
-  whole point of the fix. The CLIENT halves DO deploy via Vercel's
-  per-branch build. Half-deployed is the dangerous state: the client
-  degrades quietly rather than erroring, so a stale server reads as "the
-  fix didn't work." **Settle the Render repoint with Seth BEFORE any
-  re-smoke.**
+  `0805064`, FPFIX1 `f144fee`, FP9 `a356e4a`, FP10 `6ddda4b`, FP11
+  `5ca24f4`, plus docs commits. Only FP8 (icons) remains outside this
+  wave's code-complete set, DRAFT, blocked on Seth's PNGs.
+- **DEPLOY STATE CHANGED THIS SESSION:** staging Render now tracks
+  `frontier-parity-wave` (Seth repointed it before this session's
+  smoke). Both server and client halves of the wave now deploy to
+  staging — the "half-deployed" caveat from prior sessions no longer
+  applies. Confirm the Render Events tab shows `5ca24f4` deployed
+  before treating any smoke result as conclusive.
 - **`main` is at `3b325db` (July 17)** — the MW-wave merge. Prod
   Vercel/Render track `main`, deploy SHA verified, prod smoke passed. No
-  open deploy-verification debt.
+  open deploy-verification debt. Prod Render is UNCHANGED by the
+  staging repoint above.
 - MW-wave, NT-wave, A-wave all merged and closed; their branches are
   deletion candidates (gated). Details in the archive.
 
 ## Next up (the active task)
 
-**HOW TO RESUME (read first if you are a fresh session).** Seth said
-"stand clear for now" at the end of this session — he has NOT asked for
-the next step to run. Do not dispatch or land anything until he says go.
+1. **Seth smokes** against the checklist above. This session's job is
+   done until sign-off lands — do not roll into the gate or
+   `/code-review` on your own (`land-unit` section 6's hard stop).
+2. **On sign-off: the pre-main gate** (`pre-main-review` skill, Opus —
+   this seat does not run the gate itself). The July 20 verdict is
+   stale (predates FPFIX1's final form and all of FP9-FP11) — re-run is
+   not optional. Grep `docs/HANDOFF-ARCHIVE.md` for the full session
+   history of this wave as gate fuel.
+3. **On a smoke finding instead:** it becomes a diagnosis block for
+   Cursor (root cause + evidence, no code) per the standing bug
+   protocol, and sign-off resets.
+4. **Merge stays behind Seth's verbatim "push to main"**, one command
+   at a time. Code-only, NO migration.
 
-0. **ASK THE FIVE QUESTIONS** in the block at the top of this file
-   FIRST, as a batch, before touching anything. Q1 (Render repoint) and
-   Q2 (the 12-rep window) gate real work; Q3/Q4 are cheap now and
-   expensive after FP11. This is Seth's explicit standing instruction
-   from the thirtieth session, not a suggestion.
-1. Confirm ground truth: `git log origin/frontier-parity-wave -1` should
-   read `aab6083` or later.
-2. **Audit and land FP9 and FP10** via the `land-unit` skill — they are
-   sitting in `cursor-lane` and `cursor-lane-2`, unaudited. Land them
-   SERIALLY (one commit per unit) even though they ran in parallel.
-   Re-run lanes fresh; do not trust the DELIVERY reports.
-3. **Then dispatch FP11** (`docs/tasks/fp11-exercise-detail-cards.md`).
-   It is SERIALIZED behind both — it shares `ExercisesView.jsx` with FP9
-   and `index.css` with FP10.
-4. **Then Seth re-smokes** the whole wave (old checklist in the archive's
-   29th-session entry at item 00c, PLUS the three new units). Settle the
-   Render repoint first.
-5. **Then re-run the pre-main gate** (`pre-main-review`). The July 20
-   verdict is stale — this is not optional.
-6. Merge stays behind Seth's verbatim "push to main", one command at a
-   time. Code-only, NO migration.
-
-**FP9-FP11, the smoke-findings arc (authored this session, in QUEUE.md):**
-- `fp9-e1rm-validity-window.md` — 1-12 rep window on Epley applied at the
-  SINGLE PRODUCER (not per-consumer: ~10 consumers all already null-check,
-  and per-consumer filters would recreate FPFIX1's two-implementations
-  bug), plus `e1rmPR` rendering as an estimate with provenance. The window
-  bound is 12 by contract; the rep-target ladder already refuses to EMIT
-  above 15 for the same reason, and 12 keeps existing 10/12-rep fixtures
-  honest. Expected fixture changes were called out in the block:
-  `setMetrics.test.js:28-32` currently ASSERTS uncapped epley at 37 reps
-  (it pins the bug) and `prs.test.js:330-354` uses a 45x20 warmup.
-- `fp10-weekly-digest-hierarchy.md` — structured PR rows grouped by
-  exercise reusing `.session-set-pr-chip`, 3 + "+N more", rank across the
-  four digest lines. Presentation only.
-- `fp11-exercise-detail-cards.md` — Top sets dedupe by `(weight,reps)`
-  keeping the EARLIEST date (matches the record vocabulary
-  `computeStandingPRs` established), React key fix, visual pass on the
-  three cards. QUEUED, not yet dispatched.
-
-**OPEN — Seth has not weighed in on FP10/FP11 design direction.** They
-were dispatched to avoid stalling the wave, but the contracts encode two
-frontier-seat choices: reusing the session-page PR chip on Home, and
-grouping PRs by exercise. If he dislikes either, bounce cheap.
-
-**00b. Open judgment call, carried forward:** FPFIX1 selects the standing
-reps record by HEAVIEST weight, so `100x8` + `200x5` shows "Reps - 200 lb
-x 5". Real record under the contract; Seth may prefer most-reps-wins. One
-small block if he wants it.
+**00b. Open judgment call, now CLOSED:** the standing reps-record rule
+(heaviest-weight vs most-reps) — Seth chose to keep heaviest-weight, no
+change needed.
 
 **00c. PARKED by Seth: the block builder.** "don't do anything with the
 block builder for now, that's for another wave." Evidence preserved in
@@ -219,10 +129,11 @@ start-session-from-block, `WorkoutSet.blockWorkoutSetId` never written
 anywhere in `server/src/`, "set as current" is localStorage only, and
 `planVsActual` has no `BlockWorkoutSet` branch. The doc states the fork
 (finish it vs cut the dead-end UI) without picking. **Do NOT author
-against it.** It also records a separate concern found on the way:
-Execution reads planned values LIVE from `TemplateSet` rather than
-snapshotting, so editing a template retroactively changes what past
-sessions are judged against.
+against it.** Do NOT ask Seth about it again either — he already ruled.
+It also records a separate concern found on the way: Execution reads
+planned values LIVE from `TemplateSet` rather than snapshotting, so
+editing a template retroactively changes what past sessions are judged
+against.
 
 **00d. Open Seth items, unchanged:** the R6 tagline pick (one-line
 `AuthLayout.jsx` swap); FP8 icon PNGs into `claudefiledrop/` to flip it
@@ -248,45 +159,11 @@ frames in `claudefiledrop/`. **2.** T4 motion (last unstarted U5 unit) —
 needs a frontier-seat design pass. U5 T1/T2/T3 are DONE and merged to
 main (`ccd0829`, `750c42b`).
 
-## OPERATIONAL LESSONS FROM THIS SESSION (read before dispatching)
-
-**1. Background-task dispatch gets REAPED — launch detached instead.**
-Three consecutive dispatches were KILLED mid-run. Diagnosis, with
-evidence: the named `opus` rung answered a PONG probe in 10s (healthy —
-NOT quota, NOT auth, so the fallback ladder was the wrong response);
-short runs survived (recon lanes 2-3 min); and FP9 + FP10 both died at
-~6 min **simultaneously despite a 30s stagger** — two independently
-started tasks dying at one instant means an external reap of the
-harness's background children, not per-task timeouts.
-**The fix is mechanism, not rung:** launch via `Start-Process pwsh
--WindowStyle Hidden` running a small generated `.ps1` that sets
-`CURSOR_API_KEY`, cds to the lane, and redirects `*>` to a log file.
-Detached from the task tree, both units then completed exit 0. Scripts
-and logs from this session are in the session scratchpad as
-`run-fp9.ps1` / `fp9-run.log`. Fold this into `dispatch-unit` section 2.
-
-**2. `DELIVERY.md` IS GITIGNORED (`.gitignore:48`) — so
-`git status --untracked-files=all` reports a lane CLEAN while it still
-holds a stale report.** This session read a two-day-old gate report as
-if it were fresh recon and nearly fed it into contract authoring; caught
-by mtime. **Check lane cleanliness by TIMESTAMP on DELIVERY.md, not by
-git status.** This compounds the 29th session's lesson (a report lane
-that invented line numbers) — that makes two near-misses in two sessions
-from trusting report lanes without a cheap spot-check.
-
-**3. Partial work from a killed run is worth preserving, not resuming.**
-Both killed lanes held real, largely CORRECT work (FP9's core change was
-already contract-perfect). Saved as `PARTIAL-fp9.patch` /
-`PARTIAL-fp10.patch` in the scratchpad, then the lanes were RESET rather
-than resumed — a half-finished run with no DELIVERY.md is unverified by
-definition, and re-running from a dirty tree confuses the agent.
-
-**4. Recon fan-out earned its keep.** Three Cursor report lanes
-(exec-blocks / ux-surfaces / e1rm-blast, `--model auto`, session-scoped,
-reports NOT committed) produced the file:line evidence behind every
-contract in this arc — including the block-execution finding Seth had
-asked about directly, and the Top-sets duplicate-React-key defect nobody
-had noticed. Reports preserved in the scratchpad as `RECON-*.md`.
+**Dispatch-mechanism lessons from the thirtieth/thirty-first sessions**
+(detached-launch fix for the background-task reap bug, the
+DELIVERY.md-is-gitignored staleness trap, killed-run salvage) are
+preserved verbatim in `docs/HANDOFF-ARCHIVE.md` — still load-bearing for
+future dispatches, just moved out of the capped file.
 
 ## Analytics/catalog track — state
 
@@ -340,6 +217,8 @@ UNVIEWED.
 - Cursor's agent binaries run as `node.exe` under
   `cursor-agent\versions\` — a `ProcessName -like "*cursor*"` filter
   returns 0 and looks like "the run died." Match on the PATH instead.
+- **`DELIVERY.md` is gitignored** — check lane cleanliness by TIMESTAMP
+  on the file, not by `git status` (a stale report reads as "clean").
 - Scene mock PNGs are design references — `docs/design/mocks/`, never
   ship from `client/src/`.
 - A commit can land locally while a redeploy rebuilds the OLD HEAD until
