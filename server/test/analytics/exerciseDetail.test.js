@@ -251,6 +251,50 @@ describe("buildExerciseDetail", () => {
     expect(detail.weeklyVolume[11].effectiveSets).toBe(1);
   });
 
+  describe("topSets dedupe (FP11)", () => {
+    test("dedupe by (weight, reps), keeping earliest performedAt", () => {
+      const sets = [
+        benchSet({ performedAt: "2026-06-29T10:00:00Z", weight: 220, reps: 5 }),
+        benchSet({ performedAt: "2026-06-29T11:00:00Z", weight: 220, reps: 5 }),
+        benchSet({ performedAt: "2026-07-13T10:00:00Z", weight: 220, reps: 5 }),
+        benchSet({ performedAt: "2026-06-15T10:00:00Z", weight: 210, reps: 5 }),
+        benchSet({ performedAt: "2026-06-15T11:00:00Z", weight: 210, reps: 5 }),
+        benchSet({ performedAt: "2026-06-22T10:00:00Z", weight: 200, reps: 8 }),
+      ];
+
+      const detail = buildExerciseDetail(sets, { exerciseId: BENCH_ID });
+
+      expect(detail.topSets).toHaveLength(3);
+      expect(detail.topSets.map((s) => `${s.weight}x${s.reps}`)).toEqual([
+        "220x5",
+        "210x5",
+        "200x8",
+      ]);
+      const top220 = detail.topSets.find((s) => s.weight === 220);
+      expect(new Date(top220.performedAt).toISOString()).toBe(
+        new Date("2026-06-29T10:00:00Z").toISOString()
+      );
+    });
+
+    test("8 distinct (weight, reps) pairs still yields exactly 5 (MAX_TOP_SETS)", () => {
+      const sets = [
+        benchSet({ performedAt: "2026-06-01T10:00:00Z", weight: 100, reps: 5 }),
+        benchSet({ performedAt: "2026-06-02T10:00:00Z", weight: 110, reps: 5 }),
+        benchSet({ performedAt: "2026-06-03T10:00:00Z", weight: 120, reps: 5 }),
+        benchSet({ performedAt: "2026-06-04T10:00:00Z", weight: 130, reps: 5 }),
+        benchSet({ performedAt: "2026-06-05T10:00:00Z", weight: 140, reps: 5 }),
+        benchSet({ performedAt: "2026-06-06T10:00:00Z", weight: 150, reps: 5 }),
+        benchSet({ performedAt: "2026-06-07T10:00:00Z", weight: 160, reps: 5 }),
+        benchSet({ performedAt: "2026-06-08T10:00:00Z", weight: 170, reps: 5 }),
+      ];
+
+      const detail = buildExerciseDetail(sets, { exerciseId: BENCH_ID });
+
+      expect(detail.topSets).toHaveLength(5);
+      expect(detail.topSets.map((s) => s.weight)).toEqual([170, 160, 150, 140, 130]);
+    });
+  });
+
   describe("e1RM validity window (FP9 bug fix)", () => {
     test("high-rep set (160x20) does not inflate bestE1rm over valid working sets", () => {
       // The reported defect: 160x20 produces epley 266.7, but 220x5 produces

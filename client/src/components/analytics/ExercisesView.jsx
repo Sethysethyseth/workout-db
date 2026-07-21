@@ -290,10 +290,13 @@ function PersonalRecordsCard({ personalRecords }) {
       <h3 className="analytics-section-title">Personal records</h3>
       <ul className="ex-pr-list">
         {prList.map((pr) => (
-          <li key={pr.type} className="ex-pr-row">
-            <span className="ex-pr-type">{PR_TYPE_LABELS[pr.type]}</span>
+          <li
+            key={pr.type}
+            className={`ex-pr-row${pr.type === "e1rmPR" ? " ex-pr-row--estimate" : ""}`}
+          >
+            <span className="ex-pr-type-badge">{PR_TYPE_LABELS[pr.type]}</span>
             <span className="ex-pr-value">{formatPRValue(pr)}</span>
-            <span className="muted small">{formatShortDate(pr.performedAt)}</span>
+            <span className="ex-pr-date muted small">{formatShortDate(pr.performedAt)}</span>
           </li>
         ))}
       </ul>
@@ -316,6 +319,8 @@ function RepTargetsCard({ repTargets }) {
     );
   }
 
+  const maxWeight = Math.max(...repTargets.map((r) => r.weight));
+
   return (
     <section className="card stack ex-rep-targets-card">
       <div className="ex-detail-head stack">
@@ -325,23 +330,28 @@ function RepTargetsCard({ repTargets }) {
         </h2>
         <p className="muted small analytics-card-sub">Estimated from your best set</p>
       </div>
-      <div className="table-scroll">
-        <table className="data-table ex-rep-targets-table">
-          <tbody>
-            {repTargets.map((row) => (
-              <tr
-                key={row.reps}
-                className={row.extrapolated ? "ex-rep-target-row--extrapolated" : undefined}
-              >
-                <td>{row.reps} reps</td>
-                <td className="num">
-                  → {formatWeight(roundToPlate(row.weight, unit), unit)}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <ul className="ex-rep-targets-ladder">
+        {repTargets.map((row) => {
+          const frac = maxWeight > 0 ? row.weight / maxWeight : 0;
+          return (
+            <li
+              key={row.reps}
+              className={`ex-rep-target-row${row.extrapolated ? " ex-rep-target-row--extrapolated" : ""}`}
+            >
+              <span className="ex-rep-target-reps">{row.reps}</span>
+              <span className="ex-rep-target-bar-wrap">
+                <span
+                  className="ex-rep-target-bar"
+                  style={{ width: `${frac * 100}%` }}
+                />
+              </span>
+              <span className="ex-rep-target-weight">
+                {formatWeight(roundToPlate(row.weight, unit), unit)}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
       {hasExtrapolated ? (
         <p className="muted small ex-rep-targets-footnote">
           Muted rows are outside your logged rep range.
@@ -415,20 +425,23 @@ function ExerciseDetailPanel({ detail, weeks, loading, error, onClose }) {
 
       <RepTargetsCard repTargets={repTargets} />
 
-      <section className="card stack ex-detail-support">
+      <section className="card stack ex-detail-support ex-top-sets-card">
         <h3 className="analytics-section-title">Top sets</h3>
         {topSets.length === 0 ? (
           <p className="muted small">not enough data</p>
         ) : (
           <ul className="ex-top-sets-list">
-            {topSets.map((ts) => (
-              <li key={`${ts.performedAt}-${ts.weight}`} className="ex-top-set-row">
-                <span>
+            {topSets.map((ts, idx) => (
+              <li
+                key={`${ts.performedAt}-${ts.weight}-${ts.reps}`}
+                className={`ex-top-set-row${idx === 0 ? " ex-top-set-row--headline" : ""}`}
+              >
+                <span className="ex-top-set-val">
                   {ts.reps != null
                     ? `${formatWeight(ts.weight)} × ${formatRepsValue(ts.reps)}`
                     : formatWeight(ts.weight)}
                 </span>
-                <span className="muted small">{formatShortDate(ts.performedAt)}</span>
+                <span className="ex-top-set-date muted small">{formatShortDate(ts.performedAt)}</span>
               </li>
             ))}
           </ul>

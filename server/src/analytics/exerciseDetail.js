@@ -150,6 +150,31 @@ function computeWeeklyVolume(sets, { from, to }) {
 const MAX_TOP_SETS = 5;
 
 /**
+ * Dedupe top sets by (weight, reps) pair, keeping the EARLIEST performedAt
+ * for each distinct achievement (the date you first achieved it, matching the
+ * record vocabulary in prs.js). Returns up to `limit` sets, sorted by heaviest
+ * weight, tie-break higher reps.
+ */
+function dedupeTopSets(weightedSets, limit) {
+  const byAchievement = new Map();
+  for (const set of weightedSets) {
+    const key = `${set.input.weight}:${set.input.reps ?? "null"}`;
+    const existing = byAchievement.get(key);
+    if (!existing || set.performedAt.getTime() < existing.performedAt.getTime()) {
+      byAchievement.set(key, set);
+    }
+  }
+  return Array.from(byAchievement.values())
+    .sort((a, b) => {
+      if (b.input.weight !== a.input.weight) return b.input.weight - a.input.weight;
+      const repsA = a.input.reps ?? -Infinity;
+      const repsB = b.input.reps ?? -Infinity;
+      return repsB - repsA;
+    })
+    .slice(0, limit);
+}
+
+/**
  * Whole-exercise detail payload. `enrichedSets` may be the user's full
  * all-time set list - the identity filter runs here (controller fetches,
  * engine computes). Core stats (totals, topSet(s), bestE1rm, e1rmHistory,
@@ -210,17 +235,10 @@ function buildExerciseDetail(enrichedSets, { exerciseId, userExerciseId, from, t
     }
   }
 
-  const topSets = sets
-    .filter((s) => s.input.weight != null)
-    .sort((a, b) => {
-      if (b.input.weight !== a.input.weight) return b.input.weight - a.input.weight;
-      const repsA = a.input.reps ?? -Infinity;
-      const repsB = b.input.reps ?? -Infinity;
-      if (repsB !== repsA) return repsB - repsA;
-      return b.performedAt.getTime() - a.performedAt.getTime();
-    })
-    .slice(0, MAX_TOP_SETS)
-    .map(serializeTopSet);
+  const topSets = dedupeTopSets(
+    sets.filter((s) => s.input.weight != null),
+    MAX_TOP_SETS
+  ).map(serializeTopSet);
 
   const e1rmHistory = Array.from(sessionBestE1rm.entries())
     .sort(([a], [b]) => a - b)

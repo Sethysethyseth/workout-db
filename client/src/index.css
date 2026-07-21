@@ -6679,19 +6679,72 @@ html[data-theme="dark"][data-palette="iron"] .analytics-page {
   gap: 10px;
 }
 
-.ex-rep-targets-table td {
-  min-height: 44px;
-  padding-top: 10px;
-  padding-bottom: 10px;
+.ex-rep-targets-ladder {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
 }
 
-.ex-rep-target-row--extrapolated td {
+.ex-rep-target-row {
+  display: grid;
+  grid-template-columns: 24px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 32px;
+}
+
+.ex-rep-target-reps {
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
   color: var(--color-text-secondary);
-  opacity: 0.75;
+}
+
+.ex-rep-target-bar-wrap {
+  position: relative;
+  height: 10px;
+  border-radius: 5px;
+  background: var(--chart-track);
+  overflow: hidden;
+}
+
+.ex-rep-target-bar {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 0 5px 5px 0;
+  background: var(--chart-accent);
+  min-width: 4px;
+}
+
+.ex-rep-target-weight {
+  font-size: 0.88rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  min-width: 72px;
+  text-align: right;
+}
+
+.ex-rep-target-row--extrapolated .ex-rep-target-reps,
+.ex-rep-target-row--extrapolated .ex-rep-target-weight {
+  color: var(--color-text-secondary);
+  opacity: 0.7;
+}
+
+.ex-rep-target-row--extrapolated .ex-rep-target-bar {
+  background: color-mix(in srgb, var(--color-text-secondary) 30%, transparent);
 }
 
 .ex-rep-targets-footnote {
   margin: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .ex-rep-target-bar {
+    animation: chart-grow var(--motion-base) var(--ease-standard);
+    transform-origin: left center;
+  }
 }
 
 .ex-detail-support {
@@ -6699,26 +6752,56 @@ html[data-theme="dark"][data-palette="iron"] .analytics-page {
   gap: 8px;
 }
 
+.ex-top-sets-card {
+  gap: 10px;
+}
+
 .ex-top-sets-list {
   list-style: none;
   margin: 0;
   padding: 0;
   display: grid;
-  gap: 6px;
+  gap: 2px;
 }
 
 .ex-top-set-row {
   display: flex;
   justify-content: space-between;
-  align-items: baseline;
+  align-items: center;
   gap: 10px;
-  min-height: 44px;
-  padding: 8px 0;
-  border-bottom: 1px solid color-mix(in srgb, var(--color-border) 50%, transparent);
+  min-height: 36px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--color-surface-2) 50%, transparent);
 }
 
-.ex-top-set-row:last-child {
-  border-bottom: none;
+.ex-top-set-row--headline {
+  background: color-mix(in srgb, var(--color-interactive) 10%, var(--color-surface-2));
+  box-shadow: var(--shadow-ring-accent);
+  padding: 10px 12px;
+  min-height: 44px;
+  border-radius: 8px;
+  margin-bottom: 4px;
+}
+
+.ex-top-set-val {
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+
+.ex-top-set-row--headline .ex-top-set-val {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.ex-top-set-date {
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+.ex-top-set-row--headline .ex-top-set-date {
+  font-size: 0.82rem;
 }
 
 .ex-weekly-volume {
@@ -6779,7 +6862,7 @@ html[data-theme="dark"][data-palette="iron"] .analytics-page {
 
 .ex-pr-slot {
   padding: 12px 14px;
-  gap: 6px;
+  gap: 10px;
 }
 
 .ex-pr-slot .analytics-section-title {
@@ -6796,28 +6879,53 @@ html[data-theme="dark"][data-palette="iron"] .analytics-page {
 }
 
 .ex-pr-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
   gap: 10px;
-  padding: 4px 0;
-  border-bottom: 1px solid var(--color-border);
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--color-surface-2) 50%, transparent);
 }
 
-.ex-pr-row:last-child {
-  border-bottom: none;
+.ex-pr-row--estimate {
+  background: color-mix(in srgb, var(--color-text-secondary) 6%, var(--color-surface-2));
+  border: 1px dashed color-mix(in srgb, var(--color-border) 80%, transparent);
 }
 
-.ex-pr-type {
-  font-weight: 600;
-  font-size: 0.82rem;
+.ex-pr-type-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 8px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--color-interactive) 15%, transparent);
+  color: var(--color-interactive);
   min-width: 50px;
+}
+
+.ex-pr-row--estimate .ex-pr-type-badge {
+  background: color-mix(in srgb, var(--color-text-secondary) 12%, transparent);
   color: var(--color-text-secondary);
 }
 
 .ex-pr-value {
-  flex: 1;
   font-weight: 700;
   font-size: 0.95rem;
+}
+
+.ex-pr-row--estimate .ex-pr-value {
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.ex-pr-date {
+  font-size: 0.78rem;
+  white-space: nowrap;
 }
 
 .session-set-pr-chip {
