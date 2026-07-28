@@ -1,6 +1,20 @@
 # HANDOFF — current state
 
-**Updated:** July 21, 2026, thirty-second session (Opus frontier seat —
+**Next action (human):** Choose the next wave's direction — the
+logging/reward brainstorm's liked items (set-row layer, finish recap,
+drop sets) are the strongest candidate pool; dropping FP8's icon PNGs
+into `claudefiledrop/` is the alternative one-minute unblock.
+
+> **Standing rule:** the line above is filled on EVERY rewrite and is
+> never empty or deferred — one sentence, the single thing SETH does
+> next (not the agent). If nothing is blocked on him, it says so
+> explicitly. Dogfoods the shell repo's decision-10 no-dangling-next-
+> action requirement; `land-unit` section 5 keeps it maintained.
+
+**Updated:** July 28, 2026, thirty-third session (Opus frontier seat —
+FP wave confirmed shipped in prod; workflow-debt items 1/3/4 from the
+parked cross-pollination handoff absorbed). Prior entry: July 21,
+thirty-second session (Opus frontier seat —
 **PRE-MAIN GATE PASSED AND THE FRONTIER-PARITY WAVE IS MERGED TO
 `main`**). The gate ran the full accumulated branch diff
 (`3b325db..90248f9`, 53 files, +5936/-673) against the specs and

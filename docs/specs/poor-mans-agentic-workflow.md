@@ -309,6 +309,16 @@ receipts stay current.
 - **~half of all commits are docs/state upkeep** - the bookkeeping tax,
   priced down in v4 by the capped state file + mid-tier resident
   driver.
+- **Seat-split measurement, July 2-11** (37 units / 35 commits;
+  78.4/21.6 executor-vs-planner split by UNIT, 80.7/19.3 by BYTES
+  changed). The two splits agreeing within ~2 points is the load-bearing
+  part: the executor seat isn't just taking more units, it's taking
+  proportionally as much actual code - so the cheap tier is absorbing
+  real work, not just the small stuff. Source data lives in the shell
+  repo's `source-material/cursor-token-savings-stats.md` + `-data.json`
+  (NOT carried in this repo - do not re-derive it here; cite the shell
+  repo). Charts for these numbers: placement/format still an open
+  owner decision, see section 9.
 
 ## 9. Open questions before publishing
 
@@ -426,3 +436,68 @@ receipts stay current.
   repo refreshed the same session: source-material re-scrubbed to the
   current v4 files, BRIEF updated to the v4 three-role story + the new
   required content.
+- **2026-07-11:** Executor substitution (unplanned, kept as a receipt).
+  Cursor ran out of frontier-tier tokens mid-wave; NT2 (`f26e783`) was
+  delivered by a DIFFERENT executor (Composer) reading the SAME block
+  file, with zero repo changes to accommodate it. Generalizes for the
+  public repo as: "the block file is the interface - when the workflow
+  is file-dispatched and contract-first, the executor is swappable under
+  pressure. Roles, not tools."
+- **2026-07-11:** Planner-tier refinement. The frontier seat is withheld
+  for the gate, skeletons, and escalations; the mid-tier seat audits
+  execution units. Sharpens v3's split rather than replacing it - the
+  frontier seat's scarcity IS the mechanism, so anything that can be
+  audited one tier down must be.
+- **2026-07-12:** Cloud-dispatch variant (`804b65b`). A second dispatch
+  channel where the executor runs from its OWN clone: blocks must be
+  PUSHED (not merely committed) to be visible, delivery is a `cursor/`
+  branch + the report in the PR body, and the reviewer audits the PR
+  branch. Its structural win is that the shared-working-tree hazard
+  disappears entirely - two agents can never race one tree.
+- **2026-07-12:** Human smoke caught two defects (E/F) AFTER a clean
+  11-criterion audit - the receipt that the human visual lane is not
+  ceremony. Same session, diagnosis-first was skipped on owner's
+  instruction ("this once"), recorded at the time rather than silently
+  waived, then partially walked back (the follow-up unit kept F
+  diagnose-first). Generalizes as: "an exception that gets WRITTEN DOWN
+  stays an exception; an unrecorded one becomes the new default."
+- **2026-07-13:** Rituals moved into project skills (`land-unit`,
+  `author-task-block`) so they load on demand at full fidelity instead of
+  sitting always-on in the context every seat pays for. Deliberately NOT
+  converted: merge-to-main and schema-deploy stay copy-paste RUNBOOK
+  rituals - their friction is a feature, and automating the two
+  irreversible operations is exactly the wrong optimization.
+- **2026-07-14:** Relay v5 - autonomous dispatch. The resident seat now
+  dispatches blocks to the executor ITSELF (headless CLI in a lane
+  worktree as the backbone; the cloud-agent API as a gated exception),
+  removing the human from the relay's inner loop; he keeps the gate
+  items. Adopted after a pricing probe validated the cost model and one
+  unit landed clean autonomously. Quota refusals descend a stated
+  fallback ladder rather than stalling. Design:
+  `docs/specs/autonomous-cursor-dispatch.md`.
+- **2026-07-18:** Relay v5.2 - fan-out. Multiple executor agents may run
+  in PARALLEL, strictly one agent per worktree. REPORT lanes (audits,
+  recon, research, diagnosis - report file only, zero repo edits)
+  parallelize freely; CONTENT lanes only when their file sets are fully
+  disjoint (in doubt = collide = serialize). Width cap 3. The invariant
+  that makes it safe: MANY HANDS, ONE GATE - every delivery still lands
+  serially through the single reviewer, because fan-out multiplies
+  executors, never reviewers.
+- **2026-07-20:** Relay v5.3 - the gate gets a ritual (`pre-main-review`)
+  and wave end becomes an ORDERED HARD STOP: all units landed -> human
+  smokes -> gate -> merge trigger. Reason: a gate run before the human's
+  smoke gets partly re-run after it, since his findings are review INPUT.
+  Also stated explicitly: the frontier seat fans grunt search out to
+  EXECUTOR report lanes, never to same-tier subagents - reports compress
+  search, never judgment, and the ruling itself never fans out.
+- **2026-07-28:** Two steering-layer fixes absorbed from a parked
+  cross-pollination handoff. (1) A standing **"Next action (human):"**
+  line at the top of the work-state file, refilled every rewrite, never
+  empty - dogfoods section 6's no-dangling-next-action requirement, and
+  `land-unit` now maintains it. (2) The reviewer-checklist idea, which
+  the skills migration had partly superseded, resolved as a BACKPORT
+  rather than a new file: the "things a green build cannot catch" list
+  (contract seams, `var()` tokens that resolve, dangling refs) moved
+  INTO `land-unit`. Generalizes for the public repo as: "extract the
+  published checklist FROM the ritual the agent actually runs - a
+  checklist maintained separately from the ritual drifts from it."

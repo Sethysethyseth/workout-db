@@ -66,6 +66,25 @@ precedent, wave units) or fold it into the HANDOFF session log
   auto-fail.
 - A report that doesn't match the tree is itself the loudest signal.
 
+**Things a green build CANNOT catch** (from the July 11 Opus audit;
+backported here July 28 - the build and the unit lane both pass on every
+one of these, so they only get caught by looking):
+
+- **Contract seams - API shape vs client read.** When a unit touches both
+  sides, diff the server's response shape against what the client
+  actually destructures: a renamed/nested/removed field compiles fine on
+  both sides and fails only at runtime with real data. Same for a
+  resolver's return shape vs its callers.
+- **CSS `var()` tokens actually RESOLVE.** `check-hex.mjs` catches raw hex
+  ADDED; it does not catch `var(--color-typo)` that was never defined.
+  An undefined custom property is silently transparent/inherited - the
+  build is green and the surface is subtly wrong in some of the 8 combos.
+  Grep each new `var(--...)` name against `client/src/index.css`.
+- **Dangling refs after a rename or delete.** An export, prop, route, or
+  helper removed in this unit but still referenced elsewhere - grep the
+  old identifier repo-wide before landing. Dynamic/string-keyed uses
+  never fail the build.
+
 ## 3. Decide: fix, bounce down, or bounce up
 
 - **Trivia:** fix it yourself; note the fix in the HANDOFF session log.
@@ -101,6 +120,11 @@ precedent, wave units) or fold it into the HANDOFF session log
 - `docs/HANDOFF.md`: update, keep capped (~300 lines); move aged session
   logs VERBATIM (never summarized) to `docs/HANDOFF-ARCHIVE.md`,
   newest first.
+- **"Next action (human):" line** (top of HANDOFF, standing): refill it
+  on EVERY rewrite - one sentence, the single thing SETH does next, never
+  empty and never deferred to "see below". If nothing is blocked on him,
+  say that explicitly rather than leaving the last one to rot. A stale
+  line is worse than none: he acts on it without re-reading state.
 - Smoke list (standing ask - Seth tests on the staging-branch Vercel
   deploy, never local dev): write the unit's smoke items into the HANDOFF
   session log, and in a resident relay session CARRY THEM FORWARD - Seth
