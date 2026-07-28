@@ -9,15 +9,16 @@ the verbatim "push to main" trigger and the merge ran one command at a
 time (RUNBOOK section 2, code-only, NO migration): ff-only
 `3b325db..90248f9`, pushed, `origin/main` confirmed at `90248f9`.
 
-**IMMEDIATE OPEN ITEMS (manual, none gated):**
-1. **Verify the prod deploy SHA is `90248f9`** — Render
-   `workout-db-l3gc` (prod) -> Events, and Vercel prod. The push
-   triggered the deploy; a redeploy rebuilds the OLD HEAD until it
-   picks up the push, so confirm the SHA before trusting it.
-2. **Repoint staging Render back to `main`** — it is still on
-   `frontier-parity-wave` from the wave smoke.
-3. **Prod smoke** the changed surfaces once the deploy is live (PR
-   chips, exercise-detail cards, weekly digest, e1RM validity window).
+**IMMEDIATE OPEN ITEMS — ALL CLOSED July 28, 2026 (Seth, manual):**
+1. ~~Verify the prod deploy SHA~~ — CLOSED. Prod is live on the merged
+   wave and behaving.
+2. ~~Repoint staging Render back to `main`~~ — CLOSED. Seth repointed
+   it; staging tracks `main` again.
+3. ~~Prod smoke the changed surfaces~~ — CLOSED. Seth: "main smoke has
+   passed, it works fine live." No prod defects found.
+
+**The frontier-parity wave is fully shipped and verified in production.
+Nothing from it is outstanding.**
 
 **Gate findings worth carrying:** one NON-BLOCKING observation, no fix
 authored — the SessionDetailPage PR-chip window is the session's full
@@ -95,30 +96,28 @@ sign-off — same protocol as before.
   Carries FP0 `137e0ea`, FP1 `8dc799f`, FP2 `056be0c`, FP3 `3de1749`,
   FP4 `d6180cf`, FP5 `9eb7e8d`, FP6 `0805064`, FPFIX1 `f144fee`, FP9
   `a356e4a`, FP10 `6ddda4b`, FP11 `5ca24f4`, plus docs commits. Prod
-  Vercel/Render track `main`; **deploy SHA verification is OPEN** (see
-  the immediate items at top) — confirm Events shows `90248f9` before
-  treating prod as shipped.
+  Vercel/Render track `main`; **deployed and prod-smoked clean (Seth,
+  July 28)**.
 - **`frontier-parity-wave` is now MERGED and a deletion candidate**
   (gated). Only FP8 (icons) remains outside the wave's code-complete
   set — DRAFT, blocked on Seth's PNGs.
-- **STAGING REPOINT IS OPEN:** staging Render still tracks
-  `frontier-parity-wave` from the wave smoke — repoint it back to
-  `main`. Once repointed, confirm the Events tab shows the `main` HEAD.
+- **Staging Render tracks `main` again** (Seth repointed it July 28,
+  after the wave smoke).
 - MW-wave, NT-wave, A-wave (and now the FP wave) all merged and closed;
   their branches are deletion candidates (gated). Details in the archive.
 
 ## Next up (the active task)
 
-1. **Close out the three open manual items at the top** — prod deploy
-   SHA verify (`90248f9`), staging Render repoint to `main`, prod
-   smoke. None are gated; all are browser/dashboard steps for Seth (or
-   read-only confirmation for the next agent).
+**The FP wave is CLOSED — shipped, merged, prod-smoked. There is no
+work in flight.** The next move is a fresh frontier-seat planning pass.
+
+1. **Fresh planning pass (frontier seat)** against
+   `docs/tasks/fp0-frontier-parity-report-FINDINGS.md` and the parked
+   specs, to pick and author the next wave. Nothing is dispatched.
 2. **FP8 (PWA icons)** is the only open FP unit — DRAFT, blocked on
-   Seth dropping icon PNGs into `claudefiledrop/`. Icons LAST by his
-   rider. Flip to QUEUED once the PNGs land.
-3. Wave is otherwise DONE. Next roadmap work is a fresh planning pass
-   (frontier seat) against `fp0-frontier-parity-report-FINDINGS.md` and
-   the parked specs — see the open Seth items below.
+   Seth dropping icon PNGs into `claudefiledrop/` (as of July 28 that
+   directory holds only an analytics screenshot, no PNGs). Icons LAST
+   by his rider. Flip to QUEUED once the PNGs land.
 
 **00b. Open judgment call, now CLOSED:** the standing reps-record rule
 (heaviest-weight vs most-reps) — Seth chose to keep heaviest-weight, no
