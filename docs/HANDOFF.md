@@ -1,12 +1,13 @@
 # HANDOFF — current state
 
-**Next action (human):** Nothing blocks the E-wave — say "dispatch E1" and
-the relay runs. Two decisions are yours whenever you want them, neither
-urgent: **AI0** (`ai-layer.md` section 4.2 — build an OAuth 2.1
-authorization server vs delegate to a managed provider; recommendation is
-delegate) blocks the AI connector lane but NOT the E-wave, and the
-untracked `docs/parked/*` files still need a ruling (commit here, or move
-to the workflow repo).
+**Next action (human):** Smoke the E-wave on the staging Vercel deploy
+against the checklist below (branch `effort-wave`, `origin` HEAD
+`3eadc64`) and give a sign-off — the pre-main gate is blocked behind it.
+Two decisions remain yours whenever you want them, neither urgent:
+**AI0** (`ai-layer.md` section 4.2 — build an OAuth 2.1 authorization
+server vs delegate to a managed provider; recommendation is delegate)
+blocks the AI connector lane, and the untracked `docs/parked/*` files
+still need a ruling (commit here, or move to the workflow repo).
 
 > **Standing rule:** the line above is filled on EVERY rewrite and is
 > never empty or deferred — one sentence, the single thing SETH does
@@ -14,39 +15,88 @@ to the workflow repo).
 > explicitly. Dogfoods the shell repo's decision-10 no-dangling-next-
 > action requirement; `land-unit` section 5 keeps it maintained.
 
-**Updated:** July 29, 2026, thirty-fourth session (Opus frontier seat —
-**AI-layer planning pass; the E-wave is OPEN with E1/E2 QUEUED and
-pushed, nothing dispatched**). Prior entry: July 28, thirty-third session
-(Opus frontier seat — FP wave confirmed shipped in prod). Full session
-logs for both, including the research that ruled out `.mil` credentials
-and the scope finding that halved this wave, are verbatim in
-`docs/HANDOFF-ARCHIVE.md`.
+**Updated:** July 29, 2026, thirty-fifth session (resident relay —
+**E-wave CODE-COMPLETE 2/2, awaiting Seth's smoke sign-off**). Prior
+entry: July 29, thirty-fourth session (Opus frontier seat — AI-layer
+planning pass, E-wave opened). Full session logs, including the research
+that ruled out `.mil` credentials and the scope finding that halved this
+wave, are verbatim in `docs/HANDOFF-ARCHIVE.md`.
 
 ---
 
-## The E-wave (effort logging) — 2 units, 0/2 dispatched
+## The E-wave (effort logging) — 2 units, 2/2 LANDED
 
-Branch **`effort-wave`** at **`b214247`**, pushed (`origin/effort-wave`
-confirmed). Branched off `main` `90248f9`; code is identical to main, the
-commit is docs-only.
+Branch **`effort-wave`** at **`3eadc64`**, pushed (`origin/effort-wave`
+confirmed). Branched off `main` `90248f9`. Client-only; no server code,
+no schema change, no migration.
 
-- **E1** `docs/tasks/e1-effort-capture-default-on.md` — QUEUED. RIR
-  defaults ON for new templates, new block templates, and quick logs;
-  RPE stays off; a stored boolean always wins. MODEL auto.
-- **E2** `docs/tasks/e2-effort-legacy-nudge.md` — QUEUED. Point-of-edit
-  nudge + why-RIR education when both toggles are off. Copy authored
-  verbatim in the block. MODEL auto.
+- **E1** `876bd58` — RIR defaults ON for new templates, new block
+  templates, and quick logs; RPE stays off; a stored boolean always wins.
+- **E2** `3eadc64` — point-of-edit nudge + why-RIR education when both
+  toggles are off, both variants, tokens-only.
 
-FILES TO TOUCH are fully disjoint (E1: `SessionDetailPage.jsx`,
-`CreateTemplatePage.jsx`; E2: `RirRpeToggleRow.jsx`, `index.css`), so they
-MAY run concurrently in separate lanes. Preferred order is still E1 then
-E2 — E2's acceptance criteria read more cleanly once the new default
-exists.
+Both dispatched CONCURRENTLY (lanes 1 and 2, Channel B auto rung) and
+landed serially through one reviewer. The frontier seat's "preferred E1
+then E2" turned out to be a readability preference, not a dependency:
+E2's acceptance criteria are all prop-driven on `RirRpeToggleRow` and
+never read E1's defaults. Cost of the parallelism was one extra rebase.
 
-**Hard constraints repeated in both blocks:** no schema change, no
-migration, no backfill. The Prisma `useRIR Boolean @default(false)` stays
-as-is; existing templates keep their stored values and are nudged, never
-silently rewritten.
+**Session log — what the audit found beyond the reports:**
+
+- **E1 carried one real gap, declared but unfixed.** `resetFlow()` — the
+  **Back** button on both create forms (`CreateTemplatePage.jsx:299`,
+  `:420`) — still reset `useRIR`/`blockUseRIR` to `false`, so the next
+  "first render" would have contradicted the new default. Cursor flagged
+  it as a residual and left it, reading the block's named line numbers as
+  the scope boundary. Fixed directly (trivia tier, diagnosis was the
+  whole job): both flipped to `true`, lanes re-run green after.
+- **E2 was clean** — no deviations declared, none found. Copy verified
+  character-by-character against the block's verbatim spec.
+- Two build-invisible risks checked by hand on E2, both clear: the new
+  `var(--color-muted)` genuinely resolves (`index.css:63`, an alias of
+  `--color-text-secondary`, so all 8 palette/mode combos inherit it), and
+  all five `RirRpeToggleRow` call sites pass BOTH `useRIR` and `useRPE`
+  explicitly — the nudge keys on absence, so an omitted prop would have
+  rendered it spuriously.
+- E2's lanes were re-run after rebasing onto E1, i.e. against the
+  combined wave state rather than the delivered state.
+- **Lane hygiene:** all three lanes were stale on FP-wave branches as
+  warned. Lane 1 also carried a zero-byte `index.lock` about five hours
+  old with no git process behind it (OneDrive lag) — cleared before
+  checkout. Stale FP `DELIVERY.md` files were deleted from both lanes
+  first, per the gitignored-report staleness trap.
+
+### Smoke checklist — the whole wave (staging Vercel, `3eadc64`)
+
+1. **New workout template** (Create template → workout): the RIR toggle
+   is ON and RPE OFF before you touch anything, and set rows show a RIR
+   column.
+2. **New block template** (Create template → block): same — block RIR ON,
+   RPE OFF on first render.
+3. **Back, then re-enter either form:** RIR is still ON (this is the
+   reviewer fix; before it, Back silently turned RIR back off).
+4. **Quick log on a fresh device/profile** (no stored prefs): RIR toggle
+   ON, RPE OFF, and the set row exposes a RIR input.
+5. **Quick log where you previously turned RIR OFF:** it stays OFF. Your
+   stored choice beats the new default — this is the one that proves
+   nothing was silently rewritten.
+6. **An existing saved template with RIR off** → open it for editing: it
+   still shows RIR OFF, and now also shows the two-line nudge
+   ("Effort logging off - volume still tracks…" / "Two sets of 10 can be
+   worlds apart…"). Toggling RIR on makes the nudge vanish with no
+   reload.
+7. **RPE-only** (RIR off, RPE on): the nudge does NOT appear — RPE alone
+   is a valid effort signal.
+8. **Nudge reads as a quiet hint**, not a warning: no color alarm, no
+   icon, no banner, nothing dismissible, no layout shift pushing the
+   toggles off screen. Check it in a couple of palettes and in dark mode.
+9. The pre-existing "RIR — Reps in Reserve" / "RPE — Rating of Perceived
+   Exertion" definition lines still render, nudge showing or not.
+
+**Hard constraints held:** no schema change, no migration, no backfill.
+The Prisma `useRIR Boolean @default(false)` is untouched; existing
+templates keep their stored values and are nudged, never silently
+rewritten. Verified in the audit, not just asserted.
 
 **Why this wave is only 2 units.** The effort stack is ALREADY BUILT end
 to end: `rir`/`rpe` on `WorkoutSet`, `deriveEffortRir()`
@@ -59,14 +109,16 @@ copy) were DROPPED as already implemented. **Do not re-author them.**
 The only real gap was that capture defaults OFF
 (`SessionDetailPage.jsx:2205`, `CreateTemplatePage.jsx:46-47`, `:493-494`).
 
-### Before dispatch: the lane worktrees are stale
+### Lane worktree state (post-wave)
 
-All three still sit on FP-wave branches — `cursor-lane` on `cursor/fp11`
-(`5ca24f4`), `cursor-lane-2` on `cursor/fp10` (`6ddda4b`), `cursor-lane-3`
-on `recon/e1rm-blast` (`4078c0b`). Repoint the lane to a branch off
-`effort-wave` before dispatching, or the delivery lands on the wrong base.
-Check lane cleanliness by DELIVERY.md TIMESTAMP, not `git status` (it is
-gitignored, so a stale report reads as "clean").
+`cursor-lane` is on `cursor/e1` (`876bd58`), `cursor-lane-2` on
+`cursor/e2` (`3eadc64`) — both landed and ff-merged, so both lanes are
+free. `cursor-lane-3` is untouched on `recon/e1rm-blast` (`4078c0b`).
+Repoint any lane to a branch off the target wave before dispatching, or
+the delivery lands on the wrong base. Check lane cleanliness by
+DELIVERY.md TIMESTAMP, not `git status` (it is gitignored, so a stale
+report reads as "clean") — and delete the stale report before the run so
+the incoming one cannot be mistaken for landed work.
 
 ## The AI layer — spec'd, nothing authored
 
@@ -105,10 +157,10 @@ specified.
   track `main`. **Because prod tracks main, any push to main is a
   prod-bound push (gate item 2)** — this session's docs went to
   `effort-wave` for exactly that reason.
-- **Staging Render tracks `main`** (Seth repointed it July 28). If the
-  E-wave needs server-side smoking, it must be repointed to `effort-wave`
-  first — E1/E2 are client-only, so probably not.
-- **`effort-wave` at `b214247`** — docs only so far.
+- **Staging Render tracks `main`** (Seth repointed it July 28). The
+  E-wave shipped ZERO server changes, so smoking it against a `main`
+  Render backend is correct — no repoint needed.
+- **`effort-wave` at `3eadc64`** — E1 + E2 + 2 docs commits.
 - MW-wave, NT-wave, A-wave, FP-wave all merged and closed; their branches
   plus the lane branches are deletion candidates (gated).
 - FP8 (PWA icons) is the only open FP unit — DRAFT, blocked on Seth

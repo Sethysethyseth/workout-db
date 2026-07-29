@@ -17,7 +17,7 @@ that capture DEFAULTS OFF. A planned third unit (effort-coverage honesty
 surface) and most of a fourth (education copy) were DROPPED as already
 implemented - do not re-author them.
 
-DISPATCHED | e1-effort-capture-default-on.md | RIR defaults ON for new templates,
+LANDED 876bd58 | e1-effort-capture-default-on.md | RIR defaults ON for new templates,
 new block templates, and quick logs; RPE stays off; stored values always win |
 MODEL auto. NO schema change, NO migration, NO backfill of existing templates -
 Prisma `@default(false)` stays. Touches SessionDetailPage.jsx +
@@ -28,8 +28,30 @@ disjoint-files clause below. Lane repoint note: all three lanes were stale on
 FP-wave branches and lane 1 carried a 5-hour-old zero-byte `index.lock` (no git
 process running) that had to be cleared before checkout; stale FP DELIVERY.md
 removed from both lanes first so the new reports cannot read as landed work.
+LANDED July 29 same session, no bounce. Audited per land-unit: scope exact (2
+files = FILES TO TOUCH, `server/prisma/schema.prisma` absent from the diff as
+the block requires), full diff read (3 one-line changes), lanes re-run FRESH in
+the lane post-fix (unit 204/204 in 15 suites, client build green 130 modules),
+check-hex clean. Contract verified by direct read rather than trusting the
+report: `loadQuickWorkoutLogPrefs()` returns `{}` on an absent key
+(quickWorkoutLogPrefs.js:10-11) so the new `true` fallback is what fires, while
+a stored `false` IS a boolean and therefore wins the ternary - the
+stored-value-wins criterion holds by construction. Repo-wide grep of
+`useRIR|blockUseRIR` confirms the only initializers changed are the two the
+block names; `EditTemplatePage.jsx:29/:55` and `EditBlockTemplatePage.jsx:47/:78`
+keep their `useState(false)` + `setUseRIR(Boolean(t.useRIR))` load pattern, so
+no default can leak into an existing saved template.
+ONE REVIEWER FIX on top of the delivery (trivia tier, direct-fix exception -
+Cursor DECLARED it as a residual but left it unfixed): `resetFlow()` still set
+`setUseRIR(false)` (:78) and `setBlockUseRIR(false)` (:88). `resetFlow` is the
+**Back** button on BOTH create forms (:299, :420) - it clears the form and
+returns to the chooser, so the next first render a user sees would have shown
+RIR OFF, directly contradicting this unit's contract. The block named only the
+`useState` initializers, but the reset path re-initializes the same state for
+the same "new template" surface, so leaving it was a real gap, not a scope
+boundary. Both flipped to `true`; lanes re-run green after.
 
-DISPATCHED | e2-effort-legacy-nudge.md | Point-of-edit nudge + why-RIR education
+LANDED 3eadc64 | e2-effort-legacy-nudge.md | Point-of-edit nudge + why-RIR education
 when both RIR and RPE are off; absorbs the wave's education requirement |
 MODEL auto, copy authored verbatim in the block. Touches
 RirRpeToggleRow.jsx + index.css. Must not duplicate the analytics-side coverage
@@ -41,6 +63,26 @@ RirRpeToggleRow/index.css); the frontier seat's "preferred E1 then E2" is a
 readability preference, not a dependency - E2's acceptance criteria are all
 prop-driven on RirRpeToggleRow and do not read E1's defaults. Landing stays
 SERIAL, E1 first.
+LANDED July 29 same session, no bounce, NO deviations declared and none found.
+Audited per land-unit: scope exact (2 files = FILES TO TOUCH), full diff read,
+copy compared CHARACTER BY CHARACTER against the block's verbatim spec (both
+lines match, ASCII hyphen in line 1 as authored - the pre-existing "RIR - Reps
+in Reserve" definition lines keep their em-dashes and are untouched in both
+variants, as the block requires). Gate condition is `!useRIR && !useRPE`, so
+RPE-only correctly suppresses the nudge. Lanes re-run FRESH in the lane AFTER
+rebasing onto E1, i.e. on the COMBINED wave state, not the delivered state:
+unit 204/204 in 15 suites, client build green, check-hex clean.
+Two build-invisible risks checked by direct read, both clear: (1) the new
+`var(--color-muted)` RESOLVES - defined at `index.css:63` as an alias of
+`--color-text-secondary`, so it inherits all 4 palettes x 2 modes for free
+rather than being silently transparent; (2) the nudge keys on absence, so an
+OMITTED prop at any call site would render it spuriously - all five call sites
+(CreateTemplatePage :365 and :492, EditTemplatePage :198, EditBlockTemplatePage
+:313, SessionDetailPage :2810) pass `useRIR` AND `useRPE` explicitly, so no
+call site can trip it. Note the intended E1/E2 interaction: with E1 landed, new
+templates and quick logs start RIR ON, so the nudge is correctly INVISIBLE
+there and shows up on legacy / deliberately-off surfaces only - which is the
+point of the pair.
 
 E-wave sequencing: FILES TO TOUCH are fully disjoint, so E1 and E2 MAY run
 concurrently in separate lane worktrees. Preferred order is still E1 then E2,
@@ -48,6 +90,13 @@ because E2's acceptance criteria read more cleanly once the new default exists.
 Wave end (N/N = 2/2) follows the July 20 rule: the relay STOPS, hands Seth one
 consolidated smoke checklist against the staging Vercel deploy, and waits for
 sign-off BEFORE the pre-main gate.
+
+**WAVE CODE-COMPLETE July 29 (resident session): 2/2 LANDED** (E1 876bd58,
+E2 3eadc64) on `effort-wave`, pushed, `origin/effort-wave` HEAD confirmed at
+3eadc64. Both ran CONCURRENTLY in lanes 1 and 2 and landed serially through one
+reviewer - the fan-out worked as designed and cost one extra rebase. Remaining:
+Seth smokes the consolidated checklist on the staging Vercel deploy, THEN the
+pre-main gate (Opus, `pre-main-review`). This seat does not run the gate.
 
 **Sequenced AFTER this wave: the AI layer** - `docs/specs/ai-layer.md`
 (AI0-AI6) and `docs/specs/ai-theming.md`. Nothing there is authored yet, and
