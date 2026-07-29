@@ -11,6 +11,20 @@ export function RirRpeToggleRow({
   variant = "prefs",
 }) {
   const isCompact = variant === "compact";
+  const showEffortNudge = !useRIR && !useRPE;
+  const effortNudge = showEffortNudge ? (
+    <p className="muted small rir-rpe-effort-nudge">
+      <span className="rir-rpe-effort-nudge__line">
+        {"Effort logging off - volume still tracks, but effort-based analytics stay locked."}
+      </span>
+      <span className="rir-rpe-effort-nudge__line">
+        {
+          "Two sets of 10 can be worlds apart: one taken to the limit, one with five reps left. RIR is how LogChamp tells them apart."
+        }
+      </span>
+    </p>
+  ) : null;
+
   if (isCompact) {
     return (
       <div className="stack" style={{ gap: 6 }}>
@@ -41,6 +55,7 @@ export function RirRpeToggleRow({
           <span style={{ display: "block" }}>RIR — Reps in Reserve</span>
           <span style={{ display: "block" }}>RPE — Rating of Perceived Exertion</span>
         </p>
+        {effortNudge}
       </div>
     );
   }
@@ -72,6 +87,7 @@ export function RirRpeToggleRow({
         <span style={{ display: "block" }}>RIR — Reps in Reserve</span>
         <span style={{ display: "block" }}>RPE — Rating of Perceived Exertion</span>
       </p>
+      {effortNudge}
     </div>
   );
 }

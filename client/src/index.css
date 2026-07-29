@@ -3853,6 +3853,17 @@ html[data-theme="dark"] .exercise-name-suggestions {
   font-size: 11px;
 }
 
+/* Point-of-edit effort nudge: quieter than toggles, same muted small treatment as rir-rpe-toggle-hint. */
+.rir-rpe-effort-nudge {
+  margin: 0;
+  line-height: 1.35;
+  color: var(--color-muted);
+}
+
+.rir-rpe-effort-nudge__line {
+  display: block;
+}
+
 .rir-rpe-inline-row {
   justify-content: space-between;
   width: 100%;
