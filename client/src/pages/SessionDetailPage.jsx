@@ -2202,7 +2202,7 @@ export function SessionDetailPage() {
     setLiveUseExerciseNotes(
       typeof p.useExerciseNotes === "boolean" ? p.useExerciseNotes : true
     );
-    setLiveUseRIR(typeof p.useRIR === "boolean" ? p.useRIR : false);
+    setLiveUseRIR(typeof p.useRIR === "boolean" ? p.useRIR : true);
     setLiveUseRPE(typeof p.useRPE === "boolean" ? p.useRPE : false);
     setLiveUseSetNotes(false);
   }, [session]);

@@ -43,7 +43,7 @@ export function CreateTemplatePage() {
   const [description, setDescription] = useState("");
   const [isPublic, setIsPublic] = useState(false);
   const [workoutExercises, setWorkoutExercises] = useState(createInitialExercises());
-  const [useRIR, setUseRIR] = useState(false);
+  const [useRIR, setUseRIR] = useState(true);
   const [useRPE, setUseRPE] = useState(false);
   const [useWorkoutDescription, setUseWorkoutDescription] = useState(false);
   const [useExerciseNotes, setUseExerciseNotes] = useState(false);
@@ -56,7 +56,7 @@ export function CreateTemplatePage() {
   const [blockDescription, setBlockDescription] = useState("");
   const [blockIsPublic, setBlockIsPublic] = useState(false);
   const [durationWeeks, setDurationWeeks] = useState("");
-  const [blockUseRIR, setBlockUseRIR] = useState(false);
+  const [blockUseRIR, setBlockUseRIR] = useState(true);
   const [blockUseRPE, setBlockUseRPE] = useState(false);
   const [blockUseDescription, setBlockUseDescription] = useState(false);
   const [blockUseExerciseNotes, setBlockUseExerciseNotes] = useState(false);
@@ -75,7 +75,7 @@ export function CreateTemplatePage() {
     setDescription("");
     setIsPublic(false);
     setWorkoutExercises(createInitialExercises());
-    setUseRIR(false);
+    setUseRIR(true);
     setUseRPE(false);
     setUseWorkoutDescription(false);
     setUseExerciseNotes(false);
@@ -85,7 +85,7 @@ export function CreateTemplatePage() {
     setBlockDescription("");
     setBlockIsPublic(false);
     setDurationWeeks("");
-    setBlockUseRIR(false);
+    setBlockUseRIR(true);
     setBlockUseRPE(false);
     setBlockUseDescription(false);
     setBlockUseExerciseNotes(false);
