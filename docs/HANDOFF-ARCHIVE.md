@@ -1,5 +1,133 @@
 # HANDOFF ARCHIVE — session-log history (append-only)
 
+Session log (July 29, 2026, THIRTY-FOURTH session (Opus frontier seat —
+AI-layer planning pass from Seth's chatbot brainstorm; two specs
+authored, `analytics-engine.md` section 8 amended, E-wave opened with
+E1/E2 QUEUED on branch `effort-wave` `b214247`, pushed. Nothing
+dispatched). Written at the time:
+
+**The brainstorm.** Seth proposed an AI chatbot to personalize LogChamp,
+with three sub-ideas: BYO API key, connecting an LLM subscription the
+user already pays for, and a hosted paid tier whose edge includes
+AI-customized frontend theming. He also asked whether his `.mil` access
+could supply free tokens. Research changed two premises:
+
+1. **`.mil` credentials: permanently out.** GenAI.mil (launched Dec 9,
+   2025; Gemini/Grok/ChatGPT to ~3M DoD users), NIPRGPT, CamoGPT, and
+   Ask Sage's CDAO contract are all real, and Ask Sage exposes an API.
+   But 5 CFR 2635.704 limits government property to authorized purposes
+   and de minimis personal use does not cover commercial activity; the
+   credentials are unit-furnished; civilian users' workout data would
+   transit a government enclave. Ruled out entirely, recorded in
+   `ai-layer.md` section 3. Do not revisit.
+2. **Consumer-subscription OAuth in third-party apps is a ToS
+   violation**, not merely unavailable — Anthropic began blocking it
+   Jan 2026, clarified the docs Feb 19, 2026, and the later partial
+   reinstatement meters third-party calls against a separate prepaid
+   balance. The original section 8 correction was right and now has
+   teeth. **The unlock is to invert the direction:** remote MCP
+   connectors (OAuth 2.1) are supported on Claude Pro/Max/Team/
+   Enterprise and ChatGPT Plus/Pro, so the user adds LogChamp inside the
+   app they already pay for and their subscription funds inference. That
+   became Lane A and the first thing to build.
+
+**Seth's four decisions this session:** both surfaces with connector
+first; free at launch with the entitlement gate designed in; effort
+logging BEFORE the AI work; theming spec'd now, built later.
+
+**Scope finding that halved the E-wave.** Recon found the effort stack
+already built end to end — `rir`/`rpe` on `WorkoutSet`,
+`deriveEffortRir()` (`server/src/analytics/effort.js`),
+`meta.effortCoverage` (`summary.js:143`), the coverage meter
+(`AnalyticsPage.jsx:600-607`), the sub-60% note (`WeeklyReport.jsx:164`),
+and the adaptive volume headline via
+`EFFORT_COVERAGE_HEADLINE_THRESHOLD` (`StatTiles.jsx:16`). A planned
+third unit (coverage honesty surface) and most of a fourth (education
+copy) were DROPPED as already implemented rather than authored. The only
+real gap was that capture DEFAULTS OFF
+(`SessionDetailPage.jsx:2205`, `CreateTemplatePage.jsx:46-47`, `:493-494`).
+
+**Correction recorded in `ai-theming.md` section 4:** `check-hex.mjs`
+cannot gate AI-generated palettes — it scans a git diff
+(`check-hex.mjs:23`), so runtime-generated output never passes through
+it. It stays the right tripwire for the feature's own authored code. A
+separate pure validator is specified instead (shape, hex-only, cascade
+parity, contrast vs the FIXED text tokens, surface separation).
+
+**Branch choice:** committed to `effort-wave`, not `main` — prod Vercel
+and Render both track `main`, so a docs push there would have been a
+prod-bound push (gate item 2).
+
+**Verbatim record of the FP wave's smoke checklist**, moved here from
+HANDOFF when the FP wave closed. Seth signed off July 21 ("smoke test is
+passed, this looks much better"); no findings were left open. Preserved
+as the record of what was verified and as gate-fuel reference:
+
+> ## WAVE SMOKE — SETH SIGNED OFF July 21
+>
+> Tested against the **staging Vercel deploy** (never local dev) on
+> branch `frontier-parity-wave`. Staging Render tracked this branch too
+> (Seth repointed it before smoking), so server-side fixes (FP9) were
+> live there for the first time this wave.
+>
+> **New this round (FP9-FP11, the fixes for the July 20 smoke
+> findings):**
+> - Exercises detail -> Personal records: the e1RM row reads as an
+>   estimate with its source set shown as provenance (e.g.
+>   "~267 lbs (from 160 lbs x 20)"), never as a performed set.
+> - Log a high-rep set (13+ reps) on an exercise whose real best is a
+>   lower-rep set: Working weight targets and the e1RM-derived numbers
+>   should NOT be inflated by the high-rep set.
+> - An exercise trained ONLY above 12 reps: e1RM / rep targets should
+>   show the existing "not enough data" unlock copy, not an error or a
+>   blank.
+> - Home weekly report band: a week with 2+ PRs on the SAME exercise
+>   names it once, with achievements grouped under it (reusing the PR
+>   chip from completed-set rows). 5+ PRs in a week shows 3 plus a quiet
+>   "+N more". The four digest lines (PRs/Movers/Execution/Note) should
+>   read as a ranked list, not four identical grey paragraphs.
+> - Exercises detail -> Top sets: five DISTINCT sets, no repeats (a set
+>   you hit 3 times should occupy one slot, not three) — open the
+>   browser console and confirm no duplicate-key warning.
+> - Exercises detail -> Working weight targets: should read as one curve
+>   (a ladder/bar visualization), not a bare two-column table. Muted
+>   out-of-range rows + footnote should still be there.
+> - Exercises detail -> Personal records: Weight/e1RM/Reps rows should
+>   each be visually distinguishable by kind (badges), with the e1RM row
+>   staying visually distinct as an estimate.
+>
+> **Carried forward from earlier in the wave:**
+> - Tab title and HelloPage read "LogChamp"; save-to-home-screen line
+>   correct; never-gate-history guarantee line renders.
+> - Home's This-week strip: Workouts tile agrees with the Sets/Top-set
+>   windows; recent workouts render as 3 vertical full-width rows.
+> - Analytics > Strength: chart and table both sort noteworthy-first, a
+>   muted "N exercises with a single session" toggle exists; Exercises
+>   roster defaults to Active with All one tap away.
+> - Analytics > Muscles with an empty range: 4 stepped ghost bars + the
+>   "Log 3 workouts..." unlock line, nothing tappable.
+> - Complete a session with a genuine PR: the set gets a small muted
+>   "PR" chip; a different exercise sharing that weight/reps in the same
+>   session does NOT get chipped; completed session pages load without
+>   console errors.
+> - Exercises detail -> Personal records: a Reps row appears ONLY when a
+>   genuine reps-at-weight record exists — never a warmup set, never
+>   dated to the exercise's first session.
+
+Session log (July 28, 2026, THIRTY-THIRD session (Opus frontier seat —
+FP wave confirmed shipped in prod; workflow-debt items 1/3/4 from the
+parked cross-pollination handoff absorbed). Seth closed all three open
+items manually: prod deploy SHA verified and live on the merged wave;
+staging Render repointed back to `main`; prod smoke passed ("main smoke
+has passed, it works fine live"), no prod defects. **The
+frontier-parity wave is fully shipped and verified in production;
+nothing from it is outstanding.** Gate finding worth carrying (NON-
+BLOCKING, no fix authored): the SessionDetailPage PR-chip window is the
+session's full UTC calendar day, so two sessions on the SAME day could
+cross-chip only if exercise identity + weight + reps coincide exactly
+(vanishingly unlikely, and the set genuinely tied a record that day).
+Revisit only if it ever surfaces in real use.
+
 Session log (July 20-21, 2026, THIRTIETH session (Opus, FRONTIER SEAT)
 and THIRTY-FIRST session (Sonnet resident) — Seth's smoke on the
 27-unit wave surfaced one real engine defect (uncapped Epley e1RM) and

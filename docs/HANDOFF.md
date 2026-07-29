@@ -1,9 +1,12 @@
 # HANDOFF — current state
 
-**Next action (human):** Choose the next wave's direction — the
-logging/reward brainstorm's liked items (set-row layer, finish recap,
-drop sets) are the strongest candidate pool; dropping FP8's icon PNGs
-into `claudefiledrop/` is the alternative one-minute unblock.
+**Next action (human):** Nothing blocks the E-wave — say "dispatch E1" and
+the relay runs. Two decisions are yours whenever you want them, neither
+urgent: **AI0** (`ai-layer.md` section 4.2 — build an OAuth 2.1
+authorization server vs delegate to a managed provider; recommendation is
+delegate) blocks the AI connector lane but NOT the E-wave, and the
+untracked `docs/parked/*` files still need a ruling (commit here, or move
+to the workflow repo).
 
 > **Standing rule:** the line above is filled on EVERY rewrite and is
 > never empty or deferred — one sentence, the single thing SETH does
@@ -11,213 +14,160 @@ into `claudefiledrop/` is the alternative one-minute unblock.
 > explicitly. Dogfoods the shell repo's decision-10 no-dangling-next-
 > action requirement; `land-unit` section 5 keeps it maintained.
 
-**Updated:** July 28, 2026, thirty-third session (Opus frontier seat —
-FP wave confirmed shipped in prod; workflow-debt items 1/3/4 from the
-parked cross-pollination handoff absorbed). Prior entry: July 21,
-thirty-second session (Opus frontier seat —
-**PRE-MAIN GATE PASSED AND THE FRONTIER-PARITY WAVE IS MERGED TO
-`main`**). The gate ran the full accumulated branch diff
-(`3b325db..90248f9`, 53 files, +5936/-673) against the specs and
-task-block contracts: verdict **PASS**, no fix blocks. Seth then gave
-the verbatim "push to main" trigger and the merge ran one command at a
-time (RUNBOOK section 2, code-only, NO migration): ff-only
-`3b325db..90248f9`, pushed, `origin/main` confirmed at `90248f9`.
-
-**IMMEDIATE OPEN ITEMS — ALL CLOSED July 28, 2026 (Seth, manual):**
-1. ~~Verify the prod deploy SHA~~ — CLOSED. Prod is live on the merged
-   wave and behaving.
-2. ~~Repoint staging Render back to `main`~~ — CLOSED. Seth repointed
-   it; staging tracks `main` again.
-3. ~~Prod smoke the changed surfaces~~ — CLOSED. Seth: "main smoke has
-   passed, it works fine live." No prod defects found.
-
-**The frontier-parity wave is fully shipped and verified in production.
-Nothing from it is outstanding.**
-
-**Gate findings worth carrying:** one NON-BLOCKING observation, no fix
-authored — the SessionDetailPage PR-chip window is the session's full
-UTC calendar day, so two sessions on the SAME day could cross-chip only
-if exercise identity + weight + reps coincide exactly (vanishingly
-unlikely, and the set genuinely tied a record that day). Revisit only
-if it ever surfaces in real use.
+**Updated:** July 29, 2026, thirty-fourth session (Opus frontier seat —
+**AI-layer planning pass; the E-wave is OPEN with E1/E2 QUEUED and
+pushed, nothing dispatched**). Prior entry: July 28, thirty-third session
+(Opus frontier seat — FP wave confirmed shipped in prod). Full session
+logs for both, including the research that ruled out `.mil` credentials
+and the scope finding that halved this wave, are verbatim in
+`docs/HANDOFF-ARCHIVE.md`.
 
 ---
 
-## WAVE SMOKE — SETH SIGNED OFF July 21 ("smoke test is passed, this
-## looks much better")
+## The E-wave (effort logging) — 2 units, 0/2 dispatched
 
-No open smoke findings. The checklist below is preserved as the record
-of what was verified, and as gate-fuel reference for the frontier seat.
+Branch **`effort-wave`** at **`b214247`**, pushed (`origin/effort-wave`
+confirmed). Branched off `main` `90248f9`; code is identical to main, the
+commit is docs-only.
 
-Tested against the **staging Vercel deploy** (never local dev) on branch
-`frontier-parity-wave`. Staging Render tracks this branch too (Seth
-repointed it before smoking), so server-side fixes (FP9) were live
-there for the first time this wave.
+- **E1** `docs/tasks/e1-effort-capture-default-on.md` — QUEUED. RIR
+  defaults ON for new templates, new block templates, and quick logs;
+  RPE stays off; a stored boolean always wins. MODEL auto.
+- **E2** `docs/tasks/e2-effort-legacy-nudge.md` — QUEUED. Point-of-edit
+  nudge + why-RIR education when both toggles are off. Copy authored
+  verbatim in the block. MODEL auto.
 
-**New this round (FP9-FP11, the fixes for your July 20 smoke findings):**
-- Exercises detail -> Personal records: the e1RM row reads as an
-  estimate with its source set shown as provenance (e.g.
-  "~267 lbs (from 160 lbs x 20)"), never as a performed set.
-- Log a high-rep set (13+ reps) on an exercise whose real best is a
-  lower-rep set: Working weight targets and the e1RM-derived numbers
-  should NOT be inflated by the high-rep set.
-- An exercise trained ONLY above 12 reps: e1RM / rep targets should show
-  the existing "not enough data" unlock copy, not an error or a blank.
-- Home weekly report band: a week with 2+ PRs on the SAME exercise
-  names it once, with achievements grouped under it (reusing the PR
-  chip from completed-set rows). 5+ PRs in a week shows 3 plus a quiet
-  "+N more". The four digest lines (PRs/Movers/Execution/Note) should
-  read as a ranked list, not four identical grey paragraphs.
-- Exercises detail -> Top sets: five DISTINCT sets, no repeats (a set
-  you hit 3 times should occupy one slot, not three) — open the browser
-  console and confirm no duplicate-key warning.
-- Exercises detail -> Working weight targets: should read as one curve
-  (a ladder/bar visualization), not a bare two-column table. Muted
-  out-of-range rows + footnote should still be there.
-- Exercises detail -> Personal records: Weight/e1RM/Reps rows should
-  each be visually distinguishable by kind (badges), with the e1RM row
-  staying visually distinct as an estimate.
+FILES TO TOUCH are fully disjoint (E1: `SessionDetailPage.jsx`,
+`CreateTemplatePage.jsx`; E2: `RirRpeToggleRow.jsx`, `index.css`), so they
+MAY run concurrently in separate lanes. Preferred order is still E1 then
+E2 — E2's acceptance criteria read more cleanly once the new default
+exists.
 
-**Carried forward from earlier in the wave (worth a quick re-check,
-should be unchanged):**
-- Tab title and HelloPage read "LogChamp"; save-to-home-screen line
-  correct; never-gate-history guarantee line renders.
-- Home's This-week strip: Workouts tile agrees with the Sets/Top-set
-  windows; recent workouts render as 3 vertical full-width rows.
-- Analytics > Strength: chart and table both sort noteworthy-first, a
-  muted "N exercises with a single session" toggle exists; Exercises
-  roster defaults to Active with All one tap away.
-- Analytics > Muscles with an empty range: 4 stepped ghost bars + the
-  "Log 3 workouts..." unlock line, nothing tappable.
-- Complete a session with a genuine PR: the set gets a small muted "PR"
-  chip; a different exercise sharing that weight/reps in the same
-  session does NOT get chipped; completed session pages load without
-  console errors.
-- Exercises detail -> Personal records: a Reps row appears ONLY when a
-  genuine reps-at-weight record exists — never a warmup set, never
-  dated to the exercise's first session.
+**Hard constraints repeated in both blocks:** no schema change, no
+migration, no backfill. The Prisma `useRIR Boolean @default(false)` stays
+as-is; existing templates keep their stored values and are nudged, never
+silently rewritten.
 
-Should a NEW defect surface later (e.g. during the gate's own drive, or
-a future session), it re-enters as a diagnosis block and resets
-sign-off — same protocol as before.
+**Why this wave is only 2 units.** The effort stack is ALREADY BUILT end
+to end: `rir`/`rpe` on `WorkoutSet`, `deriveEffortRir()`
+(`server/src/analytics/effort.js`), `meta.effortCoverage`
+(`summary.js:143`), the coverage meter (`AnalyticsPage.jsx:600-607`), the
+sub-60% note (`WeeklyReport.jsx:164`), and the adaptive volume headline
+via `EFFORT_COVERAGE_HEADLINE_THRESHOLD` (`StatTiles.jsx:16`). A planned
+third unit (coverage honesty surface) and most of a fourth (education
+copy) were DROPPED as already implemented. **Do not re-author them.**
+The only real gap was that capture defaults OFF
+(`SessionDetailPage.jsx:2205`, `CreateTemplatePage.jsx:46-47`, `:493-494`).
 
----
+### Before dispatch: the lane worktrees are stale
+
+All three still sit on FP-wave branches — `cursor-lane` on `cursor/fp11`
+(`5ca24f4`), `cursor-lane-2` on `cursor/fp10` (`6ddda4b`), `cursor-lane-3`
+on `recon/e1rm-blast` (`4078c0b`). Repoint the lane to a branch off
+`effort-wave` before dispatching, or the delivery lands on the wrong base.
+Check lane cleanliness by DELIVERY.md TIMESTAMP, not `git status` (it is
+gitignored, so a stale report reads as "clean").
+
+## The AI layer — spec'd, nothing authored
+
+- **`docs/specs/ai-layer.md`** is the AI design of record. Two surfaces,
+  **connector first**: Lane A a remote MCP server the user adds inside
+  the AI app they already pay for (their subscription funds inference, we
+  pay zero tokens); Lane B the in-app coach proxy where BYO-key and
+  hosted are ONE code path with a different key source. Phasing AI0-AI6.
+- **`docs/specs/ai-theming.md`** — AI-generated palettes. The model emits
+  a ~20-hex token object, **never CSS**. Spec only, by Seth's decision.
+- `analytics-engine.md` section 8 is AMENDED, not contradicted; Track C
+  now means `ai-layer.md`. Do not phase AI work from the old section.
+
+**AI0 blocks the whole connector lane** and is Seth's call: the server has
+no OAuth today (cookie sessions + `server/src/lib/jwt.js` only) and remote
+connectors need OAuth 2.1 with dynamic client registration. Build vs
+delegate — recommendation is delegate, since hand-rolling it turns the
+cheapest lane into the most security-sensitive code in the repo.
+
+**Two premises settled this session, so nobody re-litigates them:**
+`.mil`/DoD credentials are permanently out (5 CFR 2635.704 — government
+property, authorized purposes only), and consumer-subscription OAuth in
+third-party apps is a ToS violation, not merely unavailable. Detail in
+`ai-layer.md` section 3 and the archive.
+
+**Correction on record** (`ai-theming.md` section 4): `check-hex.mjs`
+CANNOT gate AI-generated palettes — it scans a git diff
+(`check-hex.mjs:23`), so runtime-generated output never reaches it. It
+stays the right tripwire for authored code. A separate pure validator is
+specified.
 
 ## Repo / deploy state
 
-- **`main` is at `90248f9` (July 21)** — the frontier-parity-wave
-  merge (ff-only from `3b325db`), pushed, `origin/main` confirmed.
-  Carries FP0 `137e0ea`, FP1 `8dc799f`, FP2 `056be0c`, FP3 `3de1749`,
-  FP4 `d6180cf`, FP5 `9eb7e8d`, FP6 `0805064`, FPFIX1 `f144fee`, FP9
-  `a356e4a`, FP10 `6ddda4b`, FP11 `5ca24f4`, plus docs commits. Prod
-  Vercel/Render track `main`; **deployed and prod-smoked clean (Seth,
-  July 28)**.
-- **`frontier-parity-wave` is now MERGED and a deletion candidate**
-  (gated). Only FP8 (icons) remains outside the wave's code-complete
-  set — DRAFT, blocked on Seth's PNGs.
-- **Staging Render tracks `main` again** (Seth repointed it July 28,
-  after the wave smoke).
-- MW-wave, NT-wave, A-wave (and now the FP wave) all merged and closed;
-  their branches are deletion candidates (gated). Details in the archive.
+- **`main` is at `90248f9` (July 21)** — the frontier-parity-wave merge,
+  deployed and prod-smoked clean (Seth, July 28). Prod Vercel/Render
+  track `main`. **Because prod tracks main, any push to main is a
+  prod-bound push (gate item 2)** — this session's docs went to
+  `effort-wave` for exactly that reason.
+- **Staging Render tracks `main`** (Seth repointed it July 28). If the
+  E-wave needs server-side smoking, it must be repointed to `effort-wave`
+  first — E1/E2 are client-only, so probably not.
+- **`effort-wave` at `b214247`** — docs only so far.
+- MW-wave, NT-wave, A-wave, FP-wave all merged and closed; their branches
+  plus the lane branches are deletion candidates (gated).
+- FP8 (PWA icons) is the only open FP unit — DRAFT, blocked on Seth
+  dropping icon PNGs into `claudefiledrop/` (as of July 29 it holds only
+  an analytics screenshot). Icons LAST by his rider.
 
-## Next up (the active task)
+## Other open items (unchanged)
 
-**The FP wave is CLOSED — shipped, merged, prod-smoked. There is no
-work in flight.** The next move is a fresh frontier-seat planning pass.
+**Seth items:** the R6 tagline pick (one-line `AuthLayout.jsx` swap); FP8
+icon PNGs; the Cursor model-routing question; the `docs/parked/*` ruling.
 
-1. **Fresh planning pass (frontier seat)** against
-   `docs/tasks/fp0-frontier-parity-report-FINDINGS.md` and the parked
-   specs, to pick and author the next wave. Nothing is dispatched.
-2. **FP8 (PWA icons)** is the only open FP unit — DRAFT, blocked on
-   Seth dropping icon PNGs into `claudefiledrop/` (as of July 28 that
-   directory holds only an analytics screenshot, no PNGs). Icons LAST
-   by his rider. Flip to QUEUED once the PNGs land.
+**PARKED by Seth — the block builder.** "don't do anything with the block
+builder for now, that's for another wave." Evidence in
+`docs/specs/block-execution-gap.md` (`267271c`): the multi-week layer is
+fully authored in schema + API + builder UI but CANNOT BE TRAINED. **Do
+NOT author against it, and do NOT ask him about it again** — he already
+ruled. It also records that Execution reads planned values LIVE from
+`TemplateSet` rather than snapshotting, so editing a template
+retroactively changes what past sessions are judged against.
 
-**00b. Open judgment call, now CLOSED:** the standing reps-record rule
-(heaviest-weight vs most-reps) — Seth chose to keep heaviest-weight, no
-change needed.
+**Spec'd, unauthored:** R9/per-side in
+`docs/specs/strength-score-per-side.md` (SS1-SS3); gym context in
+`docs/specs/gym-context.md` (G1 is migration-carrying = Seth's manual
+track). Evidence base for FP units stays
+`docs/tasks/fp0-frontier-parity-report-FINDINGS.md` (`137e0ea`).
 
-**00c. PARKED by Seth: the block builder.** "don't do anything with the
-block builder for now, that's for another wave." Evidence preserved in
-`docs/specs/block-execution-gap.md` (`267271c`) — the multi-week layer
-(`BlockTemplate` -> `BlockWeek` -> `BlockWorkout` -> `BlockWorkoutSet`)
-is fully authored in schema + API + builder UI but CANNOT BE TRAINED: no
-start-session-from-block, `WorkoutSet.blockWorkoutSetId` never written
-anywhere in `server/src/`, "set as current" is localStorage only, and
-`planVsActual` has no `BlockWorkoutSet` branch. The doc states the fork
-(finish it vs cut the dead-end UI) without picking. **Do NOT author
-against it.** Do NOT ask Seth about it again either — he already ruled.
-It also records a separate concern found on the way: Execution reads
-planned values LIVE from `TemplateSet` rather than snapshotting, so
-editing a template retroactively changes what past sessions are judged
-against.
+**Loose ends:** CW3 visual sign-off on the next live watcher run. Finding
+**F** stays open ("Failed to fetch" = Render cold-start ranked cause;
+needs a live Network-tab repro). A-wave optional Step-7 backfill:
+`node scripts/backfill-exercise-ids.mjs` (DRY-RUN first) then `--apply`
+against prod — idempotent, safe to defer. T3C sprite loader unblocks when
+Seth drops the Gemini frames in `claudefiledrop/`. T4 motion (last
+unstarted U5 unit) needs a frontier-seat design pass.
 
-**00d. Open Seth items, unchanged:** the R6 tagline pick (one-line
-`AuthLayout.jsx` swap); FP8 icon PNGs into `claudefiledrop/` to flip it
-QUEUED (icons LAST by his rider); the Cursor model-routing question.
-Reference: `docs/tasks/fp0-frontier-parity-report-FINDINGS.md` (`137e0ea`)
-is still the evidence base for every FP unit. R9/per-side is spec'd in
-`docs/specs/strength-score-per-side.md` (SS1-SS3 after FP core lands);
-gym context in `docs/specs/gym-context.md` (G1 is migration-carrying =
-Seth's manual track).
+**Analytics/catalog track.** Track B v1 (B1-B9) MERGED (`e9ce82c`), Track
+A MERGED (`13a1e59`), prod migrated + seeded. Residual: (1) validator
+surfaced 29 secondary-less compounds in the 675-exercise lifting subset —
+curation-skim candidate (A3), pairs with the catalog/`searchCatalog`
+review pass (maintenance item 16); (2) integration test step-6 output
+(malformed-key seed behavior) still UNVIEWED.
 
-**0a. Loose ends:** CW3 visual sign-off on the next live watcher run.
-Finding **F** stays open ("Failed to fetch" = Render cold-start ranked
-cause; needs a live Network-tab repro). The untracked `docs/parked/*`
-files still await Seth's ruling: commit here, or move to the workflow
-repo.
+**Issues to open:** connect-pg-simple `session` table drift (proposed
+`@@ignore`); integration-suite isolation on shared staging (Neon
+copy-on-write branches would kill the FK-pollution flake); user-defined
+exercise support; favicon/PWA icon swap; migration automation vs manual
+discipline; schema sentinel (`docs/specs/schema-sentinel.md`); **repo
+lives inside OneDrive** (already caused a `git stash` hang — decision for
+Seth: move to `C:\dev\workout-db` or exclude from sync; everything is
+pushed, so the move is low-risk).
 
-**0b. A-wave follow-up (non-urgent):** optional Step-7 historical
-backfill: `node scripts/backfill-exercise-ids.mjs` (DRY-RUN first) then
-`--apply` against prod. Idempotent; safe to defer.
+**Known tech debt (queued, not blocking):** `DraftSessionSetRow` /
+`SessionSetRow` unification; Prisma 6->7 bump; Jest open handle; pg SSL
+deprecation. Also parked: `round-7-unify-set-row` (`f6c2a6f`), decision
+pending.
 
-**1.** T3C sprite loader upgrade unblocks whenever Seth drops the Gemini
-frames in `claudefiledrop/`. **2.** T4 motion (last unstarted U5 unit) —
-needs a frontier-seat design pass. U5 T1/T2/T3 are DONE and merged to
-main (`ccd0829`, `750c42b`).
-
-**Dispatch-mechanism lessons from the thirtieth/thirty-first sessions**
+**Dispatch-mechanism lessons** from the thirtieth/thirty-first sessions
 (detached-launch fix for the background-task reap bug, the
-DELIVERY.md-is-gitignored staleness trap, killed-run salvage) are
-preserved verbatim in `docs/HANDOFF-ARCHIVE.md` — still load-bearing for
-future dispatches, just moved out of the capped file.
-
-## Analytics/catalog track — state
-
-*Spec: `docs/specs/analytics-engine.md`. Direction rationale:
-`analytics-engine-direction` memory. Build history: archive + QUEUE.md.*
-
-Track B v1 (B1-B9) MERGED (`e9ce82c`). Track A MERGED (`13a1e59`), prod
-migrated + seeded. Track C (AI coach) stays dead-last. Residual: (1)
-validator surfaced 29 secondary-less compounds in the 675-exercise
-lifting subset — curation-skim candidate (A3), not urgent; (2)
-integration test step-6 output (malformed-key seed behavior) still
-UNVIEWED.
-
-## Other branches / issues / debt
-
-- `round-7-unify-set-row` (`f6c2a6f`) — parked, decision pending.
-- `parked/unattributed-g-fix` (`532125d`) — content LANDED as NTFIX2
-  (`888e44d`); deletion candidate (gated). Its commit message's
-  "unattributed / scope creep" framing predates the provenance trace and
-  is WRONG — QUEUE.md's NTFIX2 entry is the accurate record.
-- Branch graveyard has grown (many merged-to-main branches + local lane
-  branches); all deletion candidates whenever Seth asks for that gated op.
-- **Issues to open:** connect-pg-simple `session` table drift (proposed:
-  `@@ignore`); integration-suite isolation on shared staging (Neon
-  copy-on-write branches would kill the FK-pollution flake); user-defined
-  exercise support; favicon/PWA icon swap; migration automation vs manual
-  discipline; schema sentinel (`docs/specs/schema-sentinel.md`); **repo
-  lives inside OneDrive** (already caused a `git stash` hang — decision
-  for Seth: move to `C:\dev\workout-db` or exclude from sync; everything
-  is pushed, so the move is low-risk). Closed: issues 8 and 9 (id-only
-  `userExerciseId` stamp, and "Use that name" structural identity) — both
-  fixed and merged; detail in the archive.
-- **Maintenance-wave candidates:** all landed as MW1-MW8 except item 16,
-  a catalog + `searchCatalog` review pass, which pairs with A3.
-- **Known tech debt (queued, not blocking):** `DraftSessionSetRow` /
-  `SessionSetRow` unification; Prisma 6->7 bump; Jest open handle; pg SSL
-  deprecation.
+DELIVERY.md-is-gitignored staleness trap, killed-run salvage) are verbatim
+in `docs/HANDOFF-ARCHIVE.md` — still load-bearing for future dispatches.
 
 ## Durable gotchas
 
