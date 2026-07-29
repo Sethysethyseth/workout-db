@@ -17,17 +17,30 @@ that capture DEFAULTS OFF. A planned third unit (effort-coverage honesty
 surface) and most of a fourth (education copy) were DROPPED as already
 implemented - do not re-author them.
 
-QUEUED | e1-effort-capture-default-on.md | RIR defaults ON for new templates,
+DISPATCHED | e1-effort-capture-default-on.md | RIR defaults ON for new templates,
 new block templates, and quick logs; RPE stays off; stored values always win |
 MODEL auto. NO schema change, NO migration, NO backfill of existing templates -
 Prisma `@default(false)` stays. Touches SessionDetailPage.jsx +
-CreateTemplatePage.jsx.
+CreateTemplatePage.jsx. Dispatched July 29 (resident session), Channel B AUTO
+rung (`--model auto`), lane `C:\dev\worktrees\cursor-lane` branch `cursor/e1`
+off `origin/effort-wave` 01f103a. Dispatched in PARALLEL with E2 per the
+disjoint-files clause below. Lane repoint note: all three lanes were stale on
+FP-wave branches and lane 1 carried a 5-hour-old zero-byte `index.lock` (no git
+process running) that had to be cleared before checkout; stale FP DELIVERY.md
+removed from both lanes first so the new reports cannot read as landed work.
 
-QUEUED | e2-effort-legacy-nudge.md | Point-of-edit nudge + why-RIR education
+DISPATCHED | e2-effort-legacy-nudge.md | Point-of-edit nudge + why-RIR education
 when both RIR and RPE are off; absorbs the wave's education requirement |
 MODEL auto, copy authored verbatim in the block. Touches
 RirRpeToggleRow.jsx + index.css. Must not duplicate the analytics-side coverage
-notes.
+notes. Dispatched July 29 (resident session), Channel B AUTO rung
+(`--model auto`), lane `C:\dev\worktrees\cursor-lane-2` branch `cursor/e2` off
+`origin/effort-wave` 01f103a. Ran CONCURRENTLY with E1 (FILES TO TOUCH fully
+disjoint and verified: E1 owns SessionDetailPage/CreateTemplatePage, E2 owns
+RirRpeToggleRow/index.css); the frontier seat's "preferred E1 then E2" is a
+readability preference, not a dependency - E2's acceptance criteria are all
+prop-driven on RirRpeToggleRow and do not read E1's defaults. Landing stays
+SERIAL, E1 first.
 
 E-wave sequencing: FILES TO TOUCH are fully disjoint, so E1 and E2 MAY run
 concurrently in separate lane worktrees. Preferred order is still E1 then E2,
