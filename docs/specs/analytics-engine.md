@@ -115,7 +115,13 @@ layer (section 8) cheap later - zero extra work today, no corner painted.
   convention). Engine code: `server/src/analytics/` (resolve, attribution,
   setMetrics, aggregate, planVsActual, summary, stimulusCurve).
 
-## 8. AI coach layer (EXPERIMENTAL - Seth-only first, v2+, off the critical path)
+## 8. AI coach layer (SUPERSEDED July 29, 2026 - see `ai-layer.md`)
+
+> **The AI design of record is now `docs/specs/ai-layer.md`.** Track C below
+> means "that spec." This section is kept because its hard boundary and its
+> API-key correction are still exactly right, and because the amendment at the
+> end records what changed. Design against `ai-layer.md`, not against the
+> phasing here.
 
 Goal: prove the "personalized AI help" idea works before charging anyone, using
 Seth's own key. Deliberately NOT blocking the deterministic base.
@@ -146,6 +152,27 @@ and the hosted/paid bot swaps it for our key + billing. Same shape throughout.
 **Deferred to productization (escalate to Opus when we get there):** per-user key
 storage (encrypted at rest, never plaintext), explicit opt-in data-sharing consent
 (workout data leaving the app is a privacy event), rate limiting, abuse handling.
+(Amended July 29, 2026: consent is NO LONGER deferred - `ai-layer.md` section 6
+moves it into the first AI feature, because retrofitting consent onto users who
+already have the feature is the one irreversible mistake available here.)
+
+**Amendment, July 29, 2026 (two things changed in the world):**
+
+1. The API-key correction above is still correct, and now has enforcement behind
+   it. Anthropic began blocking third-party consumer-plan OAuth in January 2026
+   and clarified the docs on February 19, 2026; the later partial reinstatement
+   meters third-party calls against a separate prepaid balance. So "hook up your
+   Pro account" is not merely unavailable - it is a ToS violation.
+2. There is now a sanctioned zero-token path that this section did not
+   anticipate: **invert the direction.** Remote MCP connectors (OAuth 2.1) are
+   supported on Claude Pro/Max/Team/Enterprise and ChatGPT Plus/Pro, so the user
+   adds LogChamp inside the AI app they already pay for and their subscription
+   pays for inference. That is Lane A in `ai-layer.md` and is now the FIRST
+   thing built - ahead of the in-app proxy described below, which remains the
+   design for Lane B.
+
+Also ruled permanently out of scope there: DoD/`.mil`-sourced credentials for
+app inference (5 CFR 2635.704 - government property, authorized purposes only).
 
 ## 9. Unified phased roadmap
 
@@ -170,10 +197,11 @@ storage (encrypted at rest, never plaintext), explicit opt-in data-sharing conse
 - B6. Matched-effort progression (L2).
 - B7. Execution fidelity Mechanism A - plan-vs-actual join (L2).
 
-**Track C - AI coach experiment (optional, parallel, Seth-only):**
-- C1. Confirm engine emits a clean serializable summary (falls out of B3/B6).
-- C2. Coach proxy `POST /api/coach/ask` behind Seth-only flag, staging API key.
-- C3. Coach UI (chat panel on analytics screen), flag-gated.
+**Track C - the AI layer: MOVED to `docs/specs/ai-layer.md` (July 29, 2026).**
+No longer "optional, parallel, Seth-only" - it is a real product track with its
+own phasing (AI0-AI6), sequenced AFTER the effort-logging wave. C1 (engine emits
+a clean serializable summary) is DONE and fell out of B3/B6 as predicted; the
+old C2/C3 survive as Lane B in that spec. Do not phase AI work from here.
 
 **Deferred (need months of user history):** personalized volume landmarks
 (adaptive MEV/MAV/MRV), fatigue/deload signalling (observation, never prescription),
@@ -184,7 +212,8 @@ for non-block users).
 
 Structure is decided here, so most of the above is Sonnet + Cursor task blocks.
 **Escalate back to Opus for:** A1 (prod migration), A4 (FK schema design), and the
-Track C productization security work (section 8 deferred items). Everything else -
+the AI layer's security work (now `ai-layer.md` section 9 - the OAuth 2.1 and
+consent surfaces). Everything else -
 pure-function engine code, aggregation, endpoint, UI wiring, task-block emission and
 diff review - is Sonnet's lane.
 ```

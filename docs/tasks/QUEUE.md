@@ -6,6 +6,44 @@ Statuses: DRAFT / QUEUED / DISPATCHED / AWAITING-REVIEW / LANDED <sha> / BOUNCED
 
 ## Active
 
+E-wave (effort logging), opened July 29, 2026 (Opus frontier seat). Two units
+only - deliberately small, because recon found the effort stack ALREADY BUILT
+end to end: `rir`/`rpe` on `WorkoutSet`, `deriveEffortRir()` in
+`server/src/analytics/effort.js`, `meta.effortCoverage` in `summary.js:143`,
+the coverage meter at `AnalyticsPage.jsx:600-607`, the sub-60% note at
+`WeeklyReport.jsx:164`, and the adaptive volume headline via
+`EFFORT_COVERAGE_HEADLINE_THRESHOLD` (`StatTiles.jsx:16`). The only real gap was
+that capture DEFAULTS OFF. A planned third unit (effort-coverage honesty
+surface) and most of a fourth (education copy) were DROPPED as already
+implemented - do not re-author them.
+
+QUEUED | e1-effort-capture-default-on.md | RIR defaults ON for new templates,
+new block templates, and quick logs; RPE stays off; stored values always win |
+MODEL auto. NO schema change, NO migration, NO backfill of existing templates -
+Prisma `@default(false)` stays. Touches SessionDetailPage.jsx +
+CreateTemplatePage.jsx.
+
+QUEUED | e2-effort-legacy-nudge.md | Point-of-edit nudge + why-RIR education
+when both RIR and RPE are off; absorbs the wave's education requirement |
+MODEL auto, copy authored verbatim in the block. Touches
+RirRpeToggleRow.jsx + index.css. Must not duplicate the analytics-side coverage
+notes.
+
+E-wave sequencing: FILES TO TOUCH are fully disjoint, so E1 and E2 MAY run
+concurrently in separate lane worktrees. Preferred order is still E1 then E2,
+because E2's acceptance criteria read more cleanly once the new default exists.
+Wave end (N/N = 2/2) follows the July 20 rule: the relay STOPS, hands Seth one
+consolidated smoke checklist against the staging Vercel deploy, and waits for
+sign-off BEFORE the pre-main gate.
+
+**Sequenced AFTER this wave: the AI layer** - `docs/specs/ai-layer.md`
+(AI0-AI6) and `docs/specs/ai-theming.md`. Nothing there is authored yet, and
+AI0 (the OAuth 2.1 build-vs-delegate decision, spec section 4.2) is a SETH
+decision that blocks the whole connector lane. Do not author AI blocks until it
+is resolved.
+
+---
+
 FP-wave (frontier parity), opened July 18 (Fable), branch
 `frontier-parity-wave` (off maintenance-wave HEAD `0206d30` = main
 `3b325db` + two post-merge docs commits). Source: the July 17 product
