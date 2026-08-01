@@ -1,13 +1,13 @@
 # HANDOFF — current state
 
-**Next action (human):** Smoke the E-wave on the staging Vercel deploy
-against the checklist below (branch `effort-wave`, `origin` HEAD
-`3eadc64`) and give a sign-off — the pre-main gate is blocked behind it.
-Two decisions remain yours whenever you want them, neither urgent:
-**AI0** (`ai-layer.md` section 4.2 — build an OAuth 2.1 authorization
-server vs delegate to a managed provider; recommendation is delegate)
-blocks the AI connector lane, and the untracked `docs/parked/*` files
-still need a ruling (commit here, or move to the workflow repo).
+**Next action (human):** Say **"push to main"** when you want the E-wave
+merged — it is smoke-signed-off and gate-PASSED, and the merge is the only
+thing standing between `effort-wave` and prod. Three decisions remain
+yours, none urgent: **AI0** (`ai-layer.md` section 4.2 — build an OAuth 2.1
+authorization server vs delegate to a managed provider; recommendation is
+delegate) blocks the AI connector lane; the untracked `docs/parked/*` files
+still need a ruling (commit here, or move to the workflow repo); and the
+F-wave shape below needs your yes before it is authored.
 
 > **Standing rule:** the line above is filled on EVERY rewrite and is
 > never empty or deferred — one sentence, the single thing SETH does
@@ -15,101 +15,115 @@ still need a ruling (commit here, or move to the workflow repo).
 > explicitly. Dogfoods the shell repo's decision-10 no-dangling-next-
 > action requirement; `land-unit` section 5 keeps it maintained.
 
-**Updated:** July 29, 2026, thirty-fifth session (resident relay —
-**E-wave CODE-COMPLETE 2/2, awaiting Seth's smoke sign-off**). Prior
-entry: July 29, thirty-fourth session (Opus frontier seat — AI-layer
-planning pass, E-wave opened). Full session logs, including the research
-that ruled out `.mil` credentials and the scope finding that halved this
-wave, are verbatim in `docs/HANDOFF-ARCHIVE.md`.
+**Updated:** August 1, 2026, thirty-sixth session (Opus frontier seat —
+**E-wave smoke sign-off + pre-main gate PASS; F-wave ruled, not
+authored**). Prior entry: July 29, thirty-fifth session (resident relay —
+E-wave landed 2/2). Full session logs, including the E-wave audit
+findings and the AI-layer research, are verbatim in
+`docs/HANDOFF-ARCHIVE.md`.
 
 ---
 
-## The E-wave (effort logging) — 2 units, 2/2 LANDED
+## The E-wave — SIGNED OFF, GATE PASSED, awaiting merge
 
-Branch **`effort-wave`** at **`3eadc64`**, pushed (`origin/effort-wave`
-confirmed). Branched off `main` `90248f9`. Client-only; no server code,
-no schema change, no migration.
+Branch **`effort-wave`** at **`1a585ed`** (code at `3eadc64`), pushed.
+Branched off `main` `90248f9`. Client-only; no server code, no schema
+change, no migration.
 
 - **E1** `876bd58` — RIR defaults ON for new templates, new block
   templates, and quick logs; RPE stays off; a stored boolean always wins.
 - **E2** `3eadc64` — point-of-edit nudge + why-RIR education when both
   toggles are off, both variants, tokens-only.
 
-Both dispatched CONCURRENTLY (lanes 1 and 2, Channel B auto rung) and
-landed serially through one reviewer. The frontier seat's "preferred E1
-then E2" turned out to be a readability preference, not a dependency:
-E2's acceptance criteria are all prop-driven on `RirRpeToggleRow` and
-never read E1's defaults. Cost of the parallelism was one extra rebase.
+**Smoke sign-off: Seth, August 1.** He raised three findings; all three
+were classified as next-wave scope, none an E1/E2 contract failure (see
+the F-wave section). He then explicitly chose to gate and merge the wave
+as-is rather than hold or revert E2.
 
-**Session log — what the audit found beyond the reports:**
+**Pre-main gate: PASS (Opus, August 1).** Lanes re-run fresh on the
+branch — 204 unit tests / 15 suites green, client build clean,
+`check-hex.mjs` exit 0. Each commit touches exactly the files its block
+named (E1 two, E2 two); `schema.prisma` absent from the diff as
+contracted; no scope leakage; no security/auth/cross-user surface.
 
-- **E1 carried one real gap, declared but unfixed.** `resetFlow()` — the
-  **Back** button on both create forms (`CreateTemplatePage.jsx:299`,
-  `:420`) — still reset `useRIR`/`blockUseRIR` to `false`, so the next
-  "first render" would have contradicted the new default. Cursor flagged
-  it as a residual and left it, reading the block's named line numbers as
-  the scope boundary. Fixed directly (trivia tier, diagnosis was the
-  whole job): both flipped to `true`, lanes re-run green after.
-- **E2 was clean** — no deviations declared, none found. Copy verified
-  character-by-character against the block's verbatim spec.
-- Two build-invisible risks checked by hand on E2, both clear: the new
-  `var(--color-muted)` genuinely resolves (`index.css:63`, an alias of
-  `--color-text-secondary`, so all 8 palette/mode combos inherit it), and
-  all five `RirRpeToggleRow` call sites pass BOTH `useRIR` and `useRPE`
-  explicitly — the nudge keys on absence, so an omitted prop would have
-  rendered it spuriously.
-- E2's lanes were re-run after rebasing onto E1, i.e. against the
-  combined wave state rather than the delivered state.
-- **Lane hygiene:** all three lanes were stale on FP-wave branches as
-  warned. Lane 1 also carried a zero-byte `index.lock` about five hours
-  old with no git process behind it (OneDrive lag) — cleared before
-  checkout. Stale FP `DELIVERY.md` files were deleted from both lanes
-  first, per the gitignored-report staleness trap.
+Three things the gate verified DIRECTLY rather than trusting the reports
+— re-verify these if the code moves:
 
-### Smoke checklist — the whole wave (staging Vercel, `3eadc64`)
+- `--color-muted` (`index.css:63`) resolves in all 8 palette x mode
+  combos. It aliases `--color-text-secondary`, overridden only at
+  `:root:12` and `html[data-theme="dark"]:94` — both root selectors, no
+  palette block touches it. Had a palette overridden it on a descendant,
+  the nudge would have computed to nothing in 6 of 8 combos.
+- All five `RirRpeToggleRow` call sites pass BOTH `useRIR` and `useRPE`
+  explicitly. The nudge keys on ABSENCE (`!useRIR && !useRPE`), so one
+  omitted prop renders it on a template that IS capturing effort.
+- Neither edit page can flash the nudge pre-hydration —
+  `EditTemplatePage.jsx:110` and `EditBlockTemplatePage.jsx:220` both
+  early-return on `loading`, so the toggle row never mounts against the
+  `useState(false)` initial values.
 
-1. **New workout template** (Create template → workout): the RIR toggle
-   is ON and RPE OFF before you touch anything, and set rows show a RIR
-   column.
-2. **New block template** (Create template → block): same — block RIR ON,
-   RPE OFF on first render.
-3. **Back, then re-enter either form:** RIR is still ON (this is the
-   reviewer fix; before it, Back silently turned RIR back off).
-4. **Quick log on a fresh device/profile** (no stored prefs): RIR toggle
-   ON, RPE OFF, and the set row exposes a RIR input.
-5. **Quick log where you previously turned RIR OFF:** it stays OFF. Your
-   stored choice beats the new default — this is the one that proves
-   nothing was silently rewritten.
-6. **An existing saved template with RIR off** → open it for editing: it
-   still shows RIR OFF, and now also shows the two-line nudge
-   ("Effort logging off - volume still tracks…" / "Two sets of 10 can be
-   worlds apart…"). Toggling RIR on makes the nudge vanish with no
-   reload.
-7. **RPE-only** (RIR off, RPE on): the nudge does NOT appear — RPE alone
-   is a valid effort signal.
-8. **Nudge reads as a quiet hint**, not a warning: no color alarm, no
-   icon, no banner, nothing dismissible, no layout shift pushing the
-   toggles off screen. Check it in a couple of palettes and in dark mode.
-9. The pre-existing "RIR — Reps in Reserve" / "RPE — Rating of Perceived
-   Exertion" definition lines still render, nudge showing or not.
+**Gate process note, recorded as a deliberate call:** the diff was read
+in-seat rather than fanned out to Cursor report lanes. 37 lines across 4
+files — fan-out exists to move grunt SEARCH off the frontier seat and
+there was no search here. Not a skipped step; do not read it as
+precedent for larger waves.
 
 **Hard constraints held:** no schema change, no migration, no backfill.
 The Prisma `useRIR Boolean @default(false)` is untouched; existing
 templates keep their stored values and are nudged, never silently
-rewritten. Verified in the audit, not just asserted.
+rewritten.
 
-**Why this wave is only 2 units.** The effort stack is ALREADY BUILT end
-to end: `rir`/`rpe` on `WorkoutSet`, `deriveEffortRir()`
-(`server/src/analytics/effort.js`), `meta.effortCoverage`
-(`summary.js:143`), the coverage meter (`AnalyticsPage.jsx:600-607`), the
-sub-60% note (`WeeklyReport.jsx:164`), and the adaptive volume headline
-via `EFFORT_COVERAGE_HEADLINE_THRESHOLD` (`StatTiles.jsx:16`). A planned
-third unit (coverage honesty surface) and most of a fourth (education
-copy) were DROPPED as already implemented. **Do not re-author them.**
-The only real gap was that capture defaults OFF
-(`SessionDetailPage.jsx:2205`, `CreateTemplatePage.jsx:46-47`, `:493-494`).
+## The F-wave (effort mandatory) — RULED by Seth, NOT YET AUTHORED
 
-### Lane worktree state (post-wave)
+Seth's August 1 rulings, from the E-wave smoke. These supersede the
+"someday" framing of the mandate:
+
+1. **RIR and RPE are EITHER-OR, never both.** Two independent toggles is
+   the wrong model — one effort signal per template/session, RIR default.
+2. **Mandatory lands in the SAME wave as either-or.** He was offered a
+   3-state `RIR | RPE | Off` interim and explicitly chose `RIR | RPE`
+   with no Off state.
+3. **Capture preference must be REMEMBERED, device-local.** Extend the
+   existing `quickWorkoutLogPrefs.js` localStorage pattern (same
+   precedent as `weightUnitPref.js`) to template creation and block
+   templates. Explicitly NOT an account-level column — no schema change,
+   no migration.
+
+**The conflict this creates, and the agreed resolution.** With no Off
+state, an existing template storing both toggles `false` (no backfill
+ever ran, so these exist) renders a control with nothing selected. The
+two naive exits are both wrong: auto-selecting RIR silently rewrites a
+stored user choice — exactly what E-wave smoke item 5 existed to catch —
+and keeping an implicit off-state is the 3-state option in disguise.
+Resolution put to Seth and not contested:
+
+- **New templates, block templates, quick logs:** hard 2-state, one
+  signal always selected, RIR default, remembered from prefs. No Off.
+- **Legacy templates with both off:** a one-time REQUIRED CHOICE on open.
+  Nothing is written until the user picks. E2's copy is not deleted — it
+  is repurposed from a quiet hint into that prompt, which also satisfies
+  the standing "the mandate ships WITH user education" requirement.
+- **Enforcement:** block session completion when a captured-effort set
+  has no value. Already-completed historical sessions untouched.
+
+**Where the pref gap actually is** (verified August 1, not assumed):
+preference memory exists for QUICK LOGS ONLY. `quickWorkoutLogPrefs.js`
+persists `useRIR`/`useRPE`/`useExerciseNotes`, restored at
+`SessionDetailPage.jsx:2199-2206`. Template creation ignores it entirely
+(`CreateTemplatePage.jsx:46-47` hardcodes `useState(true)`/
+`useState(false)`; block equivalents the same), and template-driven live
+sessions take the template's stored booleans via the
+`session.workoutTemplate` branch at `SessionDetailPage.jsx:2190-2196` and
+never consult prefs. Net effect: an RPE user is handed RIR-on/RPE-off on
+every new template, forever. Weight unit DOES already persist
+device-local (`weightUnitPref.js`, defaults lbs) — if it appears to
+forget, that is a SEPARATE bug and needs a repro.
+
+**Not yet authored.** Blocks go through `author-task-block` once Seth
+confirms the shape above. Expect ~3 units: toggle model + pref memory,
+legacy required-choice prompt, completion enforcement.
+
+### Lane worktree state
 
 `cursor-lane` is on `cursor/e1` (`876bd58`), `cursor-lane-2` on
 `cursor/e2` (`3eadc64`) — both landed and ff-merged, so both lanes are
@@ -138,10 +152,10 @@ connectors need OAuth 2.1 with dynamic client registration. Build vs
 delegate — recommendation is delegate, since hand-rolling it turns the
 cheapest lane into the most security-sensitive code in the repo.
 
-**Two premises settled this session, so nobody re-litigates them:**
-`.mil`/DoD credentials are permanently out (5 CFR 2635.704 — government
-property, authorized purposes only), and consumer-subscription OAuth in
-third-party apps is a ToS violation, not merely unavailable. Detail in
+**Two premises settled, so nobody re-litigates them:** `.mil`/DoD
+credentials are permanently out (5 CFR 2635.704 — government property,
+authorized purposes only), and consumer-subscription OAuth in third-party
+apps is a ToS violation, not merely unavailable. Detail in
 `ai-layer.md` section 3 and the archive.
 
 **Correction on record** (`ai-theming.md` section 4): `check-hex.mjs`
@@ -155,22 +169,25 @@ specified.
 - **`main` is at `90248f9` (July 21)** — the frontier-parity-wave merge,
   deployed and prod-smoked clean (Seth, July 28). Prod Vercel/Render
   track `main`. **Because prod tracks main, any push to main is a
-  prod-bound push (gate item 2)** — this session's docs went to
-  `effort-wave` for exactly that reason.
+  prod-bound push (gate item 2).**
 - **Staging Render tracks `main`** (Seth repointed it July 28). The
   E-wave shipped ZERO server changes, so smoking it against a `main`
-  Render backend is correct — no repoint needed.
-- **`effort-wave` at `3eadc64`** — E1 + E2 + 2 docs commits.
+  Render backend was correct — no repoint needed. The F-wave is also
+  expected client-only; re-check that assumption if enforcement needs
+  server validation.
+- **`effort-wave` at `1a585ed`** — E1 + E2 + docs commits. Gate-passed,
+  merge pending the trigger phrase.
 - MW-wave, NT-wave, A-wave, FP-wave all merged and closed; their branches
   plus the lane branches are deletion candidates (gated).
 - FP8 (PWA icons) is the only open FP unit — DRAFT, blocked on Seth
-  dropping icon PNGs into `claudefiledrop/` (as of July 29 it holds only
-  an analytics screenshot). Icons LAST by his rider.
+  dropping icon PNGs into `claudefiledrop/` (as of Aug 1 it holds only an
+  analytics screenshot). Icons LAST by his rider.
 
 ## Other open items (unchanged)
 
 **Seth items:** the R6 tagline pick (one-line `AuthLayout.jsx` swap); FP8
-icon PNGs; the Cursor model-routing question; the `docs/parked/*` ruling.
+icon PNGs; the Cursor model-routing question; the `docs/parked/*` ruling;
+the F-wave shape confirmation.
 
 **PARKED by Seth — the block builder.** "don't do anything with the block
 builder for now, that's for another wave." Evidence in
@@ -238,6 +255,10 @@ in `docs/HANDOFF-ARCHIVE.md` — still load-bearing for future dispatches.
   returns 0 and looks like "the run died." Match on the PATH instead.
 - **`DELIVERY.md` is gitignored** — check lane cleanliness by TIMESTAMP
   on the file, not by `git status` (a stale report reads as "clean").
+- **A component keying off prop ABSENCE is a seam risk** — the E2 nudge
+  (`!useRIR && !useRPE`) renders spuriously if any call site omits a
+  prop. Build passes either way. Check every call site, not just the
+  ones the block named.
 - Scene mock PNGs are design references — `docs/design/mocks/`, never
   ship from `client/src/`.
 - A commit can land locally while a redeploy rebuilds the OLD HEAD until

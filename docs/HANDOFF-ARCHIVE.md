@@ -1,5 +1,61 @@
 # HANDOFF ARCHIVE — session-log history (append-only)
 
+Session log (July 29, 2026, THIRTY-FIFTH session (resident relay — E-wave
+CODE-COMPLETE 2/2, awaiting Seth's smoke sign-off). Written at the time:
+
+Branch **`effort-wave`** at **`3eadc64`**, pushed (`origin/effort-wave`
+confirmed). Branched off `main` `90248f9`. Client-only; no server code,
+no schema change, no migration.
+
+- **E1** `876bd58` — RIR defaults ON for new templates, new block
+  templates, and quick logs; RPE stays off; a stored boolean always wins.
+- **E2** `3eadc64` — point-of-edit nudge + why-RIR education when both
+  toggles are off, both variants, tokens-only.
+
+Both dispatched CONCURRENTLY (lanes 1 and 2, Channel B auto rung) and
+landed serially through one reviewer. The frontier seat's "preferred E1
+then E2" turned out to be a readability preference, not a dependency:
+E2's acceptance criteria are all prop-driven on `RirRpeToggleRow` and
+never read E1's defaults. Cost of the parallelism was one extra rebase.
+
+**Session log — what the audit found beyond the reports:**
+
+- **E1 carried one real gap, declared but unfixed.** `resetFlow()` — the
+  **Back** button on both create forms (`CreateTemplatePage.jsx:299`,
+  `:420`) — still reset `useRIR`/`blockUseRIR` to `false`, so the next
+  "first render" would have contradicted the new default. Cursor flagged
+  it as a residual and left it, reading the block's named line numbers as
+  the scope boundary. Fixed directly (trivia tier, diagnosis was the
+  whole job): both flipped to `true`, lanes re-run green after.
+- **E2 was clean** — no deviations declared, none found. Copy verified
+  character-by-character against the block's verbatim spec.
+- Two build-invisible risks checked by hand on E2, both clear: the new
+  `var(--color-muted)` genuinely resolves (`index.css:63`, an alias of
+  `--color-text-secondary`, so all 8 palette/mode combos inherit it), and
+  all five `RirRpeToggleRow` call sites pass BOTH `useRIR` and `useRPE`
+  explicitly — the nudge keys on absence, so an omitted prop would have
+  rendered it spuriously.
+- E2's lanes were re-run after rebasing onto E1, i.e. against the
+  combined wave state rather than the delivered state.
+- **Lane hygiene:** all three lanes were stale on FP-wave branches as
+  warned. Lane 1 also carried a zero-byte `index.lock` about five hours
+  old with no git process behind it (OneDrive lag) — cleared before
+  checkout. Stale FP `DELIVERY.md` files were deleted from both lanes
+  first, per the gitignored-report staleness trap.
+
+**Why this wave is only 2 units.** The effort stack is ALREADY BUILT end
+to end: `rir`/`rpe` on `WorkoutSet`, `deriveEffortRir()`
+(`server/src/analytics/effort.js`), `meta.effortCoverage`
+(`summary.js:143`), the coverage meter (`AnalyticsPage.jsx:600-607`), the
+sub-60% note (`WeeklyReport.jsx:164`), and the adaptive volume headline
+via `EFFORT_COVERAGE_HEADLINE_THRESHOLD` (`StatTiles.jsx:16`). A planned
+third unit (coverage honesty surface) and most of a fourth (education
+copy) were DROPPED as already implemented. **Do not re-author them.**
+The only real gap was that capture defaults OFF
+(`SessionDetailPage.jsx:2205`, `CreateTemplatePage.jsx:46-47`, `:493-494`).
+
+---
+
 Session log (July 29, 2026, THIRTY-FOURTH session (Opus frontier seat —
 AI-layer planning pass from Seth's chatbot brainstorm; two specs
 authored, `analytics-engine.md` section 8 amended, E-wave opened with
