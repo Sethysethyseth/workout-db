@@ -98,11 +98,46 @@ reviewer - the fan-out worked as designed and cost one extra rebase. Remaining:
 Seth smokes the consolidated checklist on the staging Vercel deploy, THEN the
 pre-main gate (Opus, `pre-main-review`). This seat does not run the gate.
 
-**Sequenced AFTER this wave: the AI layer** - `docs/specs/ai-layer.md`
-(AI0-AI6) and `docs/specs/ai-theming.md`. Nothing there is authored yet, and
-AI0 (the OAuth 2.1 build-vs-delegate decision, spec section 4.2) is a SETH
-decision that blocks the whole connector lane. Do not author AI blocks until it
-is resolved.
+**WAVE REOPENED August 2, 2026 (Opus frontier seat) for ONE unit, E3.** The
+wave was smoke-signed-off (Aug 1) and gate-PASSED (Aug 1), merge pending. Seth
+then ruled that the "why we ask for effort" rationale belongs in Analytics, and
+chose to add it before the merge rather than after. That makes the Aug 1 gate
+PASS STALE FOR THE DELTA: the pre-main gate must be re-run SCOPED TO THE NEW
+COMMITS ONLY before `effort-wave` merges. E1/E2 do not need re-gating - nothing
+re-touches their files.
+
+QUEUED | e3-analytics-effort-rationale.md | one HowCalculatedButton + one copy
+constant on the Data Quality coverage row, explaining WHY LogChamp asks for an
+effort signal | MODEL auto. Client-only, ONE file
+(`client/src/pages/AnalyticsPage.jsx`), no CSS, no schema, no server. Copy is
+specified VERBATIM in the block - it is product voice, not Cursor's call.
+Explicitly NOT the "education copy" unit this wave dropped as already
+implemented: that was the RirRpeToggleRow nudge shipped as E2. The coverage row
+at `AnalyticsPage.jsx:596-619` has a meter and a sentence but no explainer
+button - verified by direct read Aug 2. Placement is the non-null coverage
+branch only; a user at 0% coverage renders the row and IS the intended reader,
+while `null` means no attributed sets at all and stays untouched. Files are
+disjoint from every other open unit, so it may run alongside the AI0 recon lane.
+
+**AI0 RESOLVED August 2, 2026 by Seth** - the section-4.2 binary was false and
+is superseded. LogChamp's own login is NOT migrating to a third-party identity
+provider: an IdP in the app-login path is a new single point of failure for the
+whole app, whereas scoped to the connector an outage costs only the connector.
+The ruling is OAuth layered OVER the existing cookie/JWT authentication,
+connector-only, read-only scopes, zero user migration. Recorded in
+`docs/specs/ai-layer.md` section 4.2.
+
+QUEUED | ai0-recon-oauth-delegation.md | REPORT ONLY - which vendors sell
+OAuth-over-existing-auth with dynamic client registration, at what price, plus
+fallback sizing for a minimal in-house authorization server | MODEL auto. Report
+lane, zero repo edits, parallelizes freely. Answers the one open input the AI0
+ruling still needs: whether the layer-over-existing-auth shape is purchasable on
+a free tier. Preserve as `ai0-recon-oauth-delegation-FINDINGS.md` at landing
+(FP0 precedent) - it outlives the session and feeds the AI1+ blocks.
+
+**Still sequenced AFTER this wave: the AI layer** - `docs/specs/ai-layer.md`
+(AI0-AI6) and `docs/specs/ai-theming.md`. AI0's DIRECTION is now settled, but no
+AI unit is authored, and AI1+ waits on the recon report above landing.
 
 ---
 

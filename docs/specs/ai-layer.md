@@ -97,24 +97,66 @@ prompt surface - they are product copy, not incidental strings.
 document. This is the single largest new piece of infrastructure in the entire
 AI layer, and it is genuinely new work - not an adaptation of the JWT path.
 
-Two options, to be decided before any Lane A block is authored:
+#### RULED August 2, 2026 by Seth. The original A1/A2 binary was FALSE.
 
-- **A1. Implement an authorization server in Express.** Full control, no new
-  vendor, no new monthly cost, data stays in our stack. Cost: OAuth 2.1 is
-  security-critical surface and getting it subtly wrong is a cross-user
-  isolation bug - exactly the category CLAUDE.md says escalates to the
-  frontier seat. Needs token issuance/refresh/revocation, dynamic client
-  registration, consent screen, and scope enforcement.
-- **A2. Delegate to a managed identity provider.** Correct-by-default OAuth,
-  much less security surface authored here. Cost: a new vendor and likely a new
-  bill, plus a migration path for existing cookie/JWT users, plus an external
-  dependency in the login path.
+This subsection originally offered two options: build an authorization server
+in Express (A1), or delegate to a managed identity provider (A2). Both were
+framed as all-or-nothing for LogChamp's identity, and A2 was costed as
+including "a migration path for existing cookie/JWT users." That framing was
+wrong and is superseded. It conflated two surfaces that have different
+requirements and do not have to share an answer:
 
-**Recommendation: A2 unless the cost is disqualifying.** Rationale: the value
-of Lane A is that it is cheap to run, and hand-rolling an OAuth 2.1
-authorization server converts "cheap" into "the most security-sensitive code
-in the repo, authored once, maintained forever." Seth's call - it is a
-vendor/cost decision as much as a technical one.
+- **App login** (browser -> LogChamp). Cookie sessions. Works today, users
+  exist, nothing about the AI layer requires touching it.
+- **Connector auth** (Claude / ChatGPT -> LogChamp API). Needs OAuth 2.1 with
+  dynamic client registration.
+
+Only the second needs anything new. **The ruling: OAuth is layered OVER the
+existing authentication, scoped to the connector only. LogChamp's login and
+user table do not move, and no existing user is migrated.**
+
+The deciding argument is not cost, it is blast radius. **An identity provider
+in the app-login path is a new single point of failure for the entire product**
+- their outage means nobody can open LogChamp at all. Scoped to the connector,
+the same outage means the connector is down and the app is fine. That
+asymmetry decides it on its own, and it holds regardless of what the vendor
+research comes back with.
+
+**What this means concretely.** The pattern to buy is the one where the vendor
+acts as an authorization server for an app that keeps its own users - sold
+variously as "connected apps", "OAuth provider mode", or "auth for MCP
+servers". LogChamp tells the vendor "this already-authenticated session belongs
+to user X"; the vendor handles client registration, consent, and token
+issuance / refresh / revocation. LogChamp's server validates the resulting
+token and maps it to a user. Explicitly NOT purchased: any arrangement where
+the vendor becomes the identity source.
+
+**Open input, not an open decision.** Whether that shape is available on a free
+tier at LogChamp's scale is a research question, dispatched August 2 as the
+`ai0-recon-oauth-delegation` report lane. It cannot reopen the ruling; it only
+selects the implementation path:
+
+- **Path 1 (preferred).** A vendor supports layer-over-existing-auth WITH
+  dynamic client registration on a free tier. LogChamp authors token validation
+  and scope enforcement, nothing more.
+- **Path 2 (fallback).** No vendor qualifies. LogChamp builds a MINIMAL
+  authorization server - authorization-code + PKCE over the existing session
+  cookie, read-only scopes, short-lived tokens, one client type. This is not
+  A1: A1 imagined a general-purpose identity provider, which is why it read as
+  enormous. Scoped to "issue read-only tokens to one kind of client for a user
+  who is already logged in", it is a few hundred lines and genuinely reviewable.
+  It remains a cross-user isolation surface and therefore a mandatory
+  frontier-seat review under CLAUDE.md, whoever writes it.
+
+**The long-term-risk question Seth asked, answered plainly.** Path 1's
+reversibility risk is vendor lock-in on token issuance. It is bounded: the
+tokens are opaque to third-party clients, the scopes are ours, and the user
+mapping stays in our database, so switching vendors - or falling back to Path 2
+later - re-issues connector tokens and forces users to re-link the connector.
+That is an annoyance, not a data migration and not a login outage. There is no
+identified failure mode here that cannot be fixed forward. Had the IdP owned
+app login, the same switch would have been a full user migration; that is
+precisely the outcome this ruling avoids.
 
 Whichever is chosen, scopes are **read-only for v1**. No MCP tool writes
 workout data. Logging a set from Claude is a plausible later feature and a bad
