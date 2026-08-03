@@ -106,7 +106,7 @@ PASS STALE FOR THE DELTA: the pre-main gate must be re-run SCOPED TO THE NEW
 COMMITS ONLY before `effort-wave` merges. E1/E2 do not need re-gating - nothing
 re-touches their files.
 
-QUEUED | e3-analytics-effort-rationale.md | one HowCalculatedButton + one copy
+DISPATCHED | e3-analytics-effort-rationale.md | one HowCalculatedButton + one copy
 constant on the Data Quality coverage row, explaining WHY LogChamp asks for an
 effort signal | MODEL auto. Client-only, ONE file
 (`client/src/pages/AnalyticsPage.jsx`), no CSS, no schema, no server. Copy is
@@ -118,6 +118,10 @@ button - verified by direct read Aug 2. Placement is the non-null coverage
 branch only; a user at 0% coverage renders the row and IS the intended reader,
 while `null` means no attributed sets at all and stays untouched. Files are
 disjoint from every other open unit, so it may run alongside the AI0 recon lane.
+Dispatched Aug 2 (Opus session), Channel B AUTO rung (`--model auto`), lane
+`C:\dev\worktrees\cursor-lane` branch `cursor/e3` off `origin/effort-wave`
+ad0f313. Both lanes carried stale July 29 E1/E2 DELIVERY.md reports; deleted
+before the run so the incoming report cannot read as landed work.
 
 **AI0 RESOLVED August 2, 2026 by Seth** - the section-4.2 binary was false and
 is superseded. LogChamp's own login is NOT migrating to a third-party identity
@@ -127,13 +131,16 @@ The ruling is OAuth layered OVER the existing cookie/JWT authentication,
 connector-only, read-only scopes, zero user migration. Recorded in
 `docs/specs/ai-layer.md` section 4.2.
 
-QUEUED | ai0-recon-oauth-delegation.md | REPORT ONLY - which vendors sell
+DISPATCHED | ai0-recon-oauth-delegation.md | REPORT ONLY - which vendors sell
 OAuth-over-existing-auth with dynamic client registration, at what price, plus
 fallback sizing for a minimal in-house authorization server | MODEL auto. Report
 lane, zero repo edits, parallelizes freely. Answers the one open input the AI0
 ruling still needs: whether the layer-over-existing-auth shape is purchasable on
 a free tier. Preserve as `ai0-recon-oauth-delegation-FINDINGS.md` at landing
-(FP0 precedent) - it outlives the session and feeds the AI1+ blocks.
+(FP0 precedent) - it outlives the session and feeds the AI1+ blocks. Dispatched
+Aug 2 (Opus session), Channel B AUTO rung, lane `C:\dev\worktrees\cursor-lane-2`
+branch `recon/ai0-oauth` off `origin/effort-wave` ad0f313. Report lane, so it
+runs concurrently with E3 without a collision check.
 
 **Still sequenced AFTER this wave: the AI layer** - `docs/specs/ai-layer.md`
 (AI0-AI6) and `docs/specs/ai-theming.md`. AI0's DIRECTION is now settled, but no
