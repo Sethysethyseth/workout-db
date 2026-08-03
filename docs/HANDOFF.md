@@ -242,9 +242,14 @@ authored code. A separate pure validator is specified.
   Render backend was correct — no repoint needed. The F-wave is also
   expected client-only; re-check that assumption if enforcement needs
   server validation.
-- **`effort-wave` at `d272930`** — MERGED and closed; identical to `main`, so
-  the branch is now a deletion candidate (gated) alongside the other merged
-  wave branches. Nothing further lands on it.
+- **`effort-wave` is MERGED and closed** — all its CODE is on `main`. It now
+  sits one or two DOCS-ONLY commits ahead (this post-merge HANDOFF upkeep,
+  which is written after the merge and so cannot be part of it). **Therefore
+  it is NOT yet a safe deletion candidate** — deleting it would drop those
+  commits, since `main`'s copy of this file still reads "awaiting the merge
+  trigger". Prior waves resolved this by landing the post-merge HANDOFF commit
+  on `main` (`f2be093`, `869c5f1` are exactly that). Doing so is a docs-only
+  prod-bound push and needs Seth's say-so; until then, leave the branch alone.
 - **Staging Render needed no repoint** (RUNBOOK step 7): it already tracks
   `main`, and the E-wave shipped zero server changes either way.
 - MW-wave, NT-wave, A-wave, FP-wave all merged and closed; their branches
