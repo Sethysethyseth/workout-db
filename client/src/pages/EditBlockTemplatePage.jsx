@@ -17,6 +17,13 @@ import {
   parseBlockDurationWeekCap,
 } from "../components/templates/workoutBuilderState.js";
 
+/** Map stored useRIR/useRPE booleans to the either-or signal. RIR wins when both. */
+function storedBooleansToSignal(useRIR, useRPE) {
+  if (useRIR) return "rir";
+  if (useRPE) return "rpe";
+  return null;
+}
+
 function blockWeeksNoteFlags(weeks) {
   let exerciseNotes = false;
   let setNotes = false;
@@ -44,8 +51,9 @@ export function EditBlockTemplatePage() {
   const [description, setDescription] = useState("");
   const [isPublic, setIsPublic] = useState(false);
   const [durationWeeks, setDurationWeeks] = useState("");
-  const [useRIR, setUseRIR] = useState(false);
-  const [useRPE, setUseRPE] = useState(false);
+  const [effortSignal, setEffortSignal] = useState(null);
+  const useRIR = effortSignal === "rir";
+  const useRPE = effortSignal === "rpe";
   const [useBlockDescription, setUseBlockDescription] = useState(false);
   const [useExerciseNotes, setUseExerciseNotes] = useState(false);
   const [useSetNotes, setUseSetNotes] = useState(false);
@@ -75,8 +83,7 @@ export function EditBlockTemplatePage() {
         setDescription(t.description || "");
         setIsPublic(Boolean(t.isPublic));
         setDurationWeeks(t.durationWeeks != null ? String(t.durationWeeks) : "");
-        setUseRIR(Boolean(t.useRIR));
-        setUseRPE(Boolean(t.useRPE));
+        setEffortSignal(storedBooleansToSignal(Boolean(t.useRIR), Boolean(t.useRPE)));
         setUseDuration(Boolean(t.useDuration));
         setUseBlockDescription(Boolean(String(t.description ?? "").trim()));
         const weeks = blockTemplateToBlockWeeks(t);
@@ -311,10 +318,8 @@ export function EditBlockTemplatePage() {
 
           <div className="quick-log-display-prefs stack">
             <RirRpeToggleRow
-              useRIR={useRIR}
-              useRPE={useRPE}
-              onUseRIRChange={setUseRIR}
-              onUseRPEChange={setUseRPE}
+              value={effortSignal}
+              onChange={setEffortSignal}
             />
           </div>
 

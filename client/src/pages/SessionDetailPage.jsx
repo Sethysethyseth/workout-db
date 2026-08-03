@@ -28,6 +28,7 @@ import {
   loadQuickWorkoutLogPrefs,
   saveQuickWorkoutLogPrefs,
 } from "../lib/quickWorkoutLogPrefs.js";
+import { loadEffortSignal, saveEffortSignal } from "../lib/effortSignalPref.js";
 import { loadWeightUnit, saveWeightUnit } from "../lib/weightUnitPref.js";
 import { useSessionLiveLoggingGuard } from "../context/SessionLiveLoggingGuardContext.jsx";
 import {
@@ -2207,8 +2208,9 @@ export function SessionDetailPage() {
     setLiveUseExerciseNotes(
       typeof p.useExerciseNotes === "boolean" ? p.useExerciseNotes : true
     );
-    setLiveUseRIR(typeof p.useRIR === "boolean" ? p.useRIR : true);
-    setLiveUseRPE(typeof p.useRPE === "boolean" ? p.useRPE : false);
+    const effortSignal = loadEffortSignal();
+    setLiveUseRIR(effortSignal === "rir");
+    setLiveUseRPE(effortSignal === "rpe");
     setLiveUseSetNotes(false);
   }, [session]);
 
@@ -2813,25 +2815,11 @@ export function SessionDetailPage() {
           ) : (
             <div className="quick-log-display-prefs stack">
               <RirRpeToggleRow
-                useRIR={liveUseRIR}
-                useRPE={liveUseRPE}
-                onUseRIRChange={(next) => {
-                  setLiveUseRIR(next);
-                  saveQuickWorkoutLogPrefs({
-                    useRIR: next,
-                    useRPE: liveUseRPE,
-                    useExerciseNotes: liveUseExerciseNotes,
-                    useSessionNotes: false,
-                  });
-                }}
-                onUseRPEChange={(next) => {
-                  setLiveUseRPE(next);
-                  saveQuickWorkoutLogPrefs({
-                    useRIR: liveUseRIR,
-                    useRPE: next,
-                    useExerciseNotes: liveUseExerciseNotes,
-                    useSessionNotes: false,
-                  });
+                value={liveUseRIR ? "rir" : liveUseRPE ? "rpe" : null}
+                onChange={(next) => {
+                  setLiveUseRIR(next === "rir");
+                  setLiveUseRPE(next === "rpe");
+                  saveEffortSignal(next);
                 }}
               />
               <div className="quick-log-display-prefs__group stack">

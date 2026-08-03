@@ -1,17 +1,23 @@
 /**
- * RIR / RPE column toggles. Presentation matches quick workout log (quick-log-toggle* in index.css).
+ * RIR / RPE either-or control. One active signal at a time; null means
+ * nothing chosen yet (legacy both-false rows only - not user-selectable).
+ * Presentation matches quick workout log (quick-log-toggle* in index.css).
+ *
+ * @param {"rir" | "rpe" | null} value
+ * @param {(next: "rir" | "rpe") => void} onChange - never called with null
  */
 export function RirRpeToggleRow({
-  useRIR,
-  useRPE,
-  onUseRIRChange,
-  onUseRPEChange,
+  value,
+  onChange,
   sectionLabel = "Per set",
   showSectionLabel = true,
   variant = "prefs",
 }) {
   const isCompact = variant === "compact";
-  const showEffortNudge = !useRIR && !useRPE;
+  const rirOn = value === "rir";
+  const rpeOn = value === "rpe";
+  // Legacy both-false only - either-or cannot reach null via the control.
+  const showEffortNudge = value === null;
   const effortNudge = showEffortNudge ? (
     <p className="muted small rir-rpe-effort-nudge">
       <span className="rir-rpe-effort-nudge__line">
@@ -25,6 +31,11 @@ export function RirRpeToggleRow({
     </p>
   ) : null;
 
+  function select(signal) {
+    if (value === signal) return;
+    onChange(signal);
+  }
+
   if (isCompact) {
     return (
       <div className="stack" style={{ gap: 6 }}>
@@ -35,17 +46,17 @@ export function RirRpeToggleRow({
           <div className="rir-rpe-inline-row__segmented" role="group" aria-label={sectionLabel}>
             <button
               type="button"
-              className={`rir-rpe-inline-row__option ${useRIR ? "is-on" : ""}`}
-              aria-pressed={useRIR}
-              onClick={() => onUseRIRChange(!useRIR)}
+              className={`rir-rpe-inline-row__option ${rirOn ? "is-on" : ""}`}
+              aria-pressed={rirOn}
+              onClick={() => select("rir")}
             >
               RIR
             </button>
             <button
               type="button"
-              className={`rir-rpe-inline-row__option ${useRPE ? "is-on" : ""}`}
-              aria-pressed={useRPE}
-              onClick={() => onUseRPEChange(!useRPE)}
+              className={`rir-rpe-inline-row__option ${rpeOn ? "is-on" : ""}`}
+              aria-pressed={rpeOn}
+              onClick={() => select("rpe")}
             >
               RPE
             </button>
@@ -68,17 +79,17 @@ export function RirRpeToggleRow({
       <div className="quick-log-toggle-row row">
         <button
           type="button"
-          className={`quick-log-toggle ${useRIR ? "quick-log-toggle--on" : ""}`}
-          aria-pressed={useRIR}
-          onClick={() => onUseRIRChange(!useRIR)}
+          className={`quick-log-toggle ${rirOn ? "quick-log-toggle--on" : ""}`}
+          aria-pressed={rirOn}
+          onClick={() => select("rir")}
         >
           RIR
         </button>
         <button
           type="button"
-          className={`quick-log-toggle ${useRPE ? "quick-log-toggle--on" : ""}`}
-          aria-pressed={useRPE}
-          onClick={() => onUseRPEChange(!useRPE)}
+          className={`quick-log-toggle ${rpeOn ? "quick-log-toggle--on" : ""}`}
+          aria-pressed={rpeOn}
+          onClick={() => select("rpe")}
         >
           RPE
         </button>

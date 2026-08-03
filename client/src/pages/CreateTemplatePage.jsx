@@ -19,6 +19,7 @@ import {
   newBlockWorkout,
   parseBlockDurationWeekCap,
 } from "../components/templates/workoutBuilderState.js";
+import { loadEffortSignal, saveEffortSignal } from "../lib/effortSignalPref.js";
 
 function stepFromTypeParam(searchParams) {
   const t = searchParams.get("type");
@@ -43,8 +44,9 @@ export function CreateTemplatePage() {
   const [description, setDescription] = useState("");
   const [isPublic, setIsPublic] = useState(false);
   const [workoutExercises, setWorkoutExercises] = useState(createInitialExercises());
-  const [useRIR, setUseRIR] = useState(true);
-  const [useRPE, setUseRPE] = useState(false);
+  const [effortSignal, setEffortSignal] = useState(() => loadEffortSignal());
+  const useRIR = effortSignal === "rir";
+  const useRPE = effortSignal === "rpe";
   const [useWorkoutDescription, setUseWorkoutDescription] = useState(false);
   const [useExerciseNotes, setUseExerciseNotes] = useState(false);
   const [useSetNotes, setUseSetNotes] = useState(false);
@@ -56,8 +58,9 @@ export function CreateTemplatePage() {
   const [blockDescription, setBlockDescription] = useState("");
   const [blockIsPublic, setBlockIsPublic] = useState(false);
   const [durationWeeks, setDurationWeeks] = useState("");
-  const [blockUseRIR, setBlockUseRIR] = useState(true);
-  const [blockUseRPE, setBlockUseRPE] = useState(false);
+  const [blockEffortSignal, setBlockEffortSignal] = useState(() => loadEffortSignal());
+  const blockUseRIR = blockEffortSignal === "rir";
+  const blockUseRPE = blockEffortSignal === "rpe";
   const [blockUseDescription, setBlockUseDescription] = useState(false);
   const [blockUseExerciseNotes, setBlockUseExerciseNotes] = useState(false);
   const [blockUseSetNotes, setBlockUseSetNotes] = useState(false);
@@ -75,8 +78,7 @@ export function CreateTemplatePage() {
     setDescription("");
     setIsPublic(false);
     setWorkoutExercises(createInitialExercises());
-    setUseRIR(true);
-    setUseRPE(false);
+    setEffortSignal(loadEffortSignal());
     setUseWorkoutDescription(false);
     setUseExerciseNotes(false);
     setUseSetNotes(false);
@@ -85,8 +87,7 @@ export function CreateTemplatePage() {
     setBlockDescription("");
     setBlockIsPublic(false);
     setDurationWeeks("");
-    setBlockUseRIR(true);
-    setBlockUseRPE(false);
+    setBlockEffortSignal(loadEffortSignal());
     setBlockUseDescription(false);
     setBlockUseExerciseNotes(false);
     setBlockUseSetNotes(false);
@@ -363,10 +364,11 @@ export function CreateTemplatePage() {
 
           <div className="quick-log-display-prefs stack">
             <RirRpeToggleRow
-              useRIR={useRIR}
-              useRPE={useRPE}
-              onUseRIRChange={setUseRIR}
-              onUseRPEChange={setUseRPE}
+              value={effortSignal}
+              onChange={(next) => {
+                setEffortSignal(next);
+                saveEffortSignal(next);
+              }}
             />
           </div>
 
@@ -490,10 +492,11 @@ export function CreateTemplatePage() {
 
           <div className="template-options-grid">
             <RirRpeToggleRow
-              useRIR={blockUseRIR}
-              useRPE={blockUseRPE}
-              onUseRIRChange={setBlockUseRIR}
-              onUseRPEChange={setBlockUseRPE}
+              value={blockEffortSignal}
+              onChange={(next) => {
+                setBlockEffortSignal(next);
+                saveEffortSignal(next);
+              }}
               sectionLabel="Set intensity"
               variant="compact"
             />

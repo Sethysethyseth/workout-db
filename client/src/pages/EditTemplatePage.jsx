@@ -15,6 +15,13 @@ import {
   templateToBuilderExercises,
 } from "../components/templates/workoutBuilderState.js";
 
+/** Map stored useRIR/useRPE booleans to the either-or signal. RIR wins when both. */
+function storedBooleansToSignal(useRIR, useRPE) {
+  if (useRIR) return "rir";
+  if (useRPE) return "rpe";
+  return null;
+}
+
 export function EditTemplatePage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -26,8 +33,9 @@ export function EditTemplatePage() {
   const [description, setDescription] = useState("");
   const [isPublic, setIsPublic] = useState(false);
   const [workoutExercises, setWorkoutExercises] = useState(null);
-  const [useRIR, setUseRIR] = useState(false);
-  const [useRPE, setUseRPE] = useState(false);
+  const [effortSignal, setEffortSignal] = useState(null);
+  const useRIR = effortSignal === "rir";
+  const useRPE = effortSignal === "rpe";
   const [useTemplateDescription, setUseTemplateDescription] = useState(false);
   const [useExerciseNotes, setUseExerciseNotes] = useState(false);
   const [useSetNotes, setUseSetNotes] = useState(false);
@@ -52,8 +60,7 @@ export function EditTemplatePage() {
         setName(t.name || "");
         setDescription(t.description || "");
         setIsPublic(Boolean(t.isPublic));
-        setUseRIR(Boolean(t.useRIR));
-        setUseRPE(Boolean(t.useRPE));
+        setEffortSignal(storedBooleansToSignal(Boolean(t.useRIR), Boolean(t.useRPE)));
         setUseTemplateDescription(Boolean(String(t.description ?? "").trim()));
         const exercises = templateToBuilderExercises(t);
         setWorkoutExercises(exercises);
@@ -196,10 +203,8 @@ export function EditTemplatePage() {
 
         <div className="quick-log-display-prefs stack">
           <RirRpeToggleRow
-            useRIR={useRIR}
-            useRPE={useRPE}
-            onUseRIRChange={setUseRIR}
-            onUseRPEChange={setUseRPE}
+            value={effortSignal}
+            onChange={setEffortSignal}
           />
         </div>
 
