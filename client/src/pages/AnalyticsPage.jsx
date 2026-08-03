@@ -59,6 +59,8 @@ const HOW_BALANCE =
   "Push vs. pull and quad vs. hamstring ratios use effective sets summed over the engine's muscle groups (push: chest, shoulders, triceps; pull: lats, middle back, traps, biceps; quads and hamstrings each stand alone). The shaded band is a rough 0.8–1.25 guide, not a prescription.";
 const HOW_EFFORT_MATTERS =
   "Two sets of 10 can be worlds apart - one taken to the limit, one with five reps left. RIR (or RPE) is how LogChamp tells them apart, so hard sets count for more than easy ones. Sets logged without it still count toward volume, but cannot feed stimulating sets, matched-effort trends, or execution.";
+const EFFORT_RATIONALE_SHORT =
+  "Two sets of 10 can be worlds apart - one at the limit, one with five reps left. Effort is how LogChamp tells them apart.";
 
 /** to = today (date-only; the endpoint treats it as inclusive end-of-day),
     from = to minus (N*7 - 1) days so the range covers exactly N*7 calendar
@@ -602,13 +604,18 @@ function DataQualitySection({ meta }) {
       {meta.effortCoverage === null ? (
         <p className="muted analytics-card-sub">no attributed sets in range</p>
       ) : (
-        <div className="coverage-row">
-          <p className="analytics-card-sub">
-            Effort (RIR or RPE) logged on {Math.round(meta.effortCoverage * 100)}% of sets{" "}
-            <HowCalculatedButton title="Effort logging" copy={HOW_EFFORT_MATTERS} />
+        <>
+          <div className="coverage-row">
+            <p className="analytics-card-sub">
+              Effort (RIR or RPE) logged on {Math.round(meta.effortCoverage * 100)}% of sets{" "}
+              <HowCalculatedButton title="Effort logging" copy={HOW_EFFORT_MATTERS} />
+            </p>
+            <Meter value={meta.effortCoverage} />
+          </div>
+          <p className="muted small" style={{ margin: 0 }}>
+            {EFFORT_RATIONALE_SHORT}
           </p>
-          <Meter value={meta.effortCoverage} />
-        </div>
+        </>
       )}
       {Array.isArray(meta.honestyNotes) && meta.honestyNotes.length > 0 ? (
         <ul className="muted small analytics-honesty-notes">
