@@ -5,6 +5,9 @@
  *
  * @param {"rir" | "rpe" | null} value
  * @param {(next: "rir" | "rpe") => void} onChange - never called with null
+ * @param {boolean} showNudge - set false where the CALLER supplies its own
+ *   null-state copy (the edit pages' required-choice prompt), or the same
+ *   "two sets of 10" sentence renders twice back to back.
  */
 export function RirRpeToggleRow({
   value,
@@ -12,12 +15,13 @@ export function RirRpeToggleRow({
   sectionLabel = "Per set",
   showSectionLabel = true,
   variant = "prefs",
+  showNudge = true,
 }) {
   const isCompact = variant === "compact";
   const rirOn = value === "rir";
   const rpeOn = value === "rpe";
   // Legacy both-false only - either-or cannot reach null via the control.
-  const showEffortNudge = value === null;
+  const showEffortNudge = value === null && showNudge;
   const effortNudge = showEffortNudge ? (
     <p className="muted small rir-rpe-effort-nudge">
       <span className="rir-rpe-effort-nudge__line">

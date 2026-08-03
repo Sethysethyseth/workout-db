@@ -16,6 +16,7 @@ import {
   newBlockWorkout,
   parseBlockDurationWeekCap,
 } from "../components/templates/workoutBuilderState.js";
+import { EFFORT_SIGNAL_REQUIRED_CHOICE_HINT } from "./EditTemplatePage.jsx";
 
 /** Map stored useRIR/useRPE booleans to the either-or signal. RIR wins when both. */
 function storedBooleansToSignal(useRIR, useRPE) {
@@ -174,6 +175,10 @@ export function EditBlockTemplatePage() {
         setError(new Error("Block name is required."));
         return;
       }
+      if (effortSignal == null) {
+        setError(new Error("Choose RIR or RPE before saving."));
+        return;
+      }
       let durationField = null;
       if (useDuration) {
         const weeksRaw = durationWeeks.trim();
@@ -242,6 +247,7 @@ export function EditBlockTemplatePage() {
   const blockDurationCap = parseBlockDurationWeekCap(useDuration, durationWeeks);
   const blockAtMaxWeeks = blockDurationCap != null && blockWeeks.length >= blockDurationCap;
   const blockDurationTooSmall = blockDurationCap != null && blockWeeks.length > blockDurationCap;
+  const effortSignalRequired = effortSignal == null;
 
   return (
     <div className="stack">
@@ -320,7 +326,11 @@ export function EditBlockTemplatePage() {
             <RirRpeToggleRow
               value={effortSignal}
               onChange={setEffortSignal}
+              showNudge={false}
             />
+            {effortSignalRequired ? (
+              <span className="field-hint-warn">{EFFORT_SIGNAL_REQUIRED_CHOICE_HINT}</span>
+            ) : null}
           </div>
 
           <div className="template-options-grid">
@@ -403,7 +413,7 @@ export function EditBlockTemplatePage() {
         )}
 
         <div className="row">
-          <button className="btn" disabled={submitting || blockDurationTooSmall}>
+          <button className="btn" disabled={submitting || blockDurationTooSmall || effortSignalRequired}>
             {submitting ? "Saving…" : "Save changes"}
           </button>
         </div>

@@ -22,6 +22,10 @@ function storedBooleansToSignal(useRIR, useRPE) {
   return null;
 }
 
+/** Shared F2 required-choice prompt for legacy both-false templates. */
+export const EFFORT_SIGNAL_REQUIRED_CHOICE_HINT =
+  "Two sets of 10 can be worlds apart - one taken to the limit, one with five reps left. Effort is how LogChamp tells them apart. Choose RIR or RPE before saving.";
+
 export function EditTemplatePage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -92,6 +96,10 @@ export function EditTemplatePage() {
         setError(new Error("Template name is required."));
         return;
       }
+      if (effortSignal == null) {
+        setError(new Error("Choose RIR or RPE before saving."));
+        return;
+      }
       const exercises = exercisesToTemplateApi(workoutExercises);
       const invalid = exercises.some((ex) => !ex.exerciseName);
       if (invalid) {
@@ -113,6 +121,8 @@ export function EditTemplatePage() {
       setSubmitting(false);
     }
   }
+
+  const effortSignalRequired = effortSignal == null;
 
   if (loading) {
     return <LoadingState slowLabel="Waking up the server…" />;
@@ -205,7 +215,11 @@ export function EditTemplatePage() {
           <RirRpeToggleRow
             value={effortSignal}
             onChange={setEffortSignal}
+            showNudge={false}
           />
+          {effortSignalRequired ? (
+            <span className="field-hint-warn">{EFFORT_SIGNAL_REQUIRED_CHOICE_HINT}</span>
+          ) : null}
         </div>
 
         <ViewModeToggle value={viewMode} onChange={setViewMode} />
@@ -231,7 +245,7 @@ export function EditTemplatePage() {
         )}
 
         <div className="row">
-          <button className="btn" disabled={submitting}>
+          <button className="btn" disabled={submitting || effortSignalRequired}>
             {submitting ? "Saving…" : "Save changes"}
           </button>
         </div>
