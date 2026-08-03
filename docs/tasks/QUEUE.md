@@ -131,7 +131,7 @@ twice, copy matches the block VERBATIM, the button sits inside the
 literals added. Lane rebased onto b043d68 before the ff-merge (the wave had
 moved under it while E3 ran).
 
-QUEUED | e4-effort-rationale-visible.md | always-visible one-line effort
+LANDED 965b2c8 | e4-effort-rationale-visible.md | always-visible one-line effort
 rationale under the coverage row; the `(?)` keeps the longer copy | MODEL auto.
 Client-only, ONE file, no CSS. Opened because Seth smoked E3 on Aug 2 and
 reported it INVISIBLE - fair, since the page already carries six `(?)` buttons
@@ -139,7 +139,14 @@ and Data quality sits at the page bottom. E3 is not reverted; E4 adds a short
 line that gets read and leaves the fuller copy behind the tap. Placement trap
 recorded in the block: `.coverage-row` is a 2-col grid (index.css:6535), so the
 new line must be a SIBLING of that div, not a child, or it renders in the narrow
-first column. Wave N goes 3 -> 4.
+first column. Wave N goes 3 -> 4. LANDED Aug 2 same session, no bounce. Audited
+per land-unit: scope exact (1 file), full diff read, lanes re-run FRESH in the
+lane (unit 204/204 in 15 suites, client build green 130 modules), check-hex exit
+0. Verified directly rather than trusting the report: the new `<p>` sits OUTSIDE
+the `.coverage-row` div inside the fragment (the placement trap held),
+`EFFORT_RATIONALE_SHORT` and `HOW_EFFORT_MATTERS` each occur exactly twice, the
+`(?)` still receives the long copy unchanged, the null branch is untouched at
+line 605, zero hex added.
 
 **Process note worth keeping:** E3 met every acceptance criterion in its block
 and still failed its actual purpose. The criteria tested that the button

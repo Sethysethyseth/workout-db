@@ -1,13 +1,14 @@
 # HANDOFF — current state
 
-**Next action (human):** **Smoke E3 on the staging Vercel deploy** (the one
-new item: Analytics -> Data quality -> the `(?)` next to the effort-coverage
-line). E1/E2 were already signed off August 1 and are NOT re-smoked. Once you
-sign off, the pre-main gate re-runs SCOPED TO THE DELTA and then the merge
-waits on your "push to main". Two decisions still yours, neither urgent nor
-blocking the merge: the untracked `docs/parked/*` ruling (commit here, or move
-to the workflow repo), and the F-wave shape confirmation before it is authored.
-AI0 is now RESOLVED and no longer needs you.
+**Next action (human):** **Confirm Vercel actually built `965b2c8` (or at least
+`19c2c20`), then smoke E3+E4 on staging** - Analytics -> Data quality, at the
+page bottom: a visible one-line rationale under the coverage meter, plus a `(?)`
+holding the longer version. E1/E2 were signed off August 1 and are NOT
+re-smoked. The build check is not optional this time: on August 2 the E3 change
+read as "nothing has changed" and the deploy was never confirmed, so a stale
+build has not been ruled out. Then the gate runs SCOPED TO THE DELTA and the
+merge waits on your "push to main". Still yours, not blocking: the
+`docs/parked/*` ruling, and the F-wave-vs-AI sequencing call below.
 
 > **Standing rule:** the line above is filled on EVERY rewrite and is
 > never empty or deferred — one sentence, the single thing SETH does
@@ -16,16 +17,16 @@ AI0 is now RESOLVED and no longer needs you.
 > action requirement; `land-unit` section 5 keeps it maintained.
 
 **Updated:** August 2, 2026, thirty-seventh session (Opus frontier seat —
-**E3 authored + landed; AI0 RULED and its recon landed; gate now stale for
-the delta**). Prior entry: August 1, thirty-sixth session (Opus — E-wave
+**E3 + E4 authored and landed; AI0 RULED and its recon landed; gate now stale
+for the delta**). Prior entry: August 1, thirty-sixth session (Opus — E-wave
 smoke sign-off + pre-main gate PASS; F-wave ruled). Full session logs are
 verbatim in `docs/HANDOFF-ARCHIVE.md`.
 
 ---
 
-## The E-wave — 3/3 LANDED, E3 awaiting smoke, gate STALE for the delta
+## The E-wave — 4/4 LANDED, E3+E4 awaiting smoke, gate STALE for the delta
 
-Branch **`effort-wave`** at **`19c2c20`**, pushed. Branched off `main`
+Branch **`effort-wave`** at **`965b2c8`**, pushed. Branched off `main`
 `90248f9`. Client-only throughout; no server code, no schema change, no
 migration.
 
@@ -35,12 +36,14 @@ migration.
   toggles are off, both variants, tokens-only.
 - **E3** `19c2c20` (August 2) — the "why we ask for effort" rationale as a
   `HowCalculatedButton` on the Analytics Data-quality coverage row.
+- **E4** `965b2c8` (August 2) — the same rationale, one short sentence, ALWAYS
+  VISIBLE under the coverage meter. The `(?)` stays and keeps the long copy.
 
 **Smoke sign-off: Seth, August 1 — covers E1/E2 ONLY.** He raised three
 findings; all three were classified as next-wave scope, none an E1/E2
 contract failure (see the F-wave section). He then explicitly chose to gate
-and merge the wave as-is rather than hold or revert E2. **E3 postdates that
-sign-off and is NOT covered by it.**
+and merge the wave as-is rather than hold or revert E2. **E3 and E4 postdate
+that sign-off and are NOT covered by it.**
 
 **Pre-main gate: PASSED August 1, but only through `1a585ed`.** Lanes were
 re-run fresh on the branch — 204 unit tests / 15 suites green, client build
@@ -48,34 +51,70 @@ clean, `check-hex.mjs` exit 0. Each commit touched exactly the files its
 block named (E1 two, E2 two); `schema.prisma` absent from the diff as
 contracted; no scope leakage; no security/auth/cross-user surface.
 
-**That PASS is now STALE FOR THE DELTA.** Three commits landed after it:
-`ad0f313` (specs + blocks), `b043d68` (queue), `19c2c20` (E3 code). The gate
-must re-run SCOPED TO THOSE COMMITS before the merge. E1/E2 do not need
-re-gating — nothing in the delta re-touches their files. Order is unchanged
-and non-negotiable: Seth smokes E3 -> scoped gate -> "push to main".
+**That PASS is now STALE FOR THE DELTA.** Everything from `ad0f313` through
+`965b2c8` landed after it — two code commits (`19c2c20` E3, `965b2c8` E4) and
+the docs/queue commits between them. The gate must re-run SCOPED TO THAT RANGE
+before the merge. E1/E2 do not need re-gating — nothing in the delta re-touches
+their files; the only code file involved is `AnalyticsPage.jsx`. Order is
+unchanged and non-negotiable: Seth smokes -> scoped gate -> "push to main".
 
-### E3 — what landed and why it is where it is
+### E3/E4 — the effort rationale, and why it took two units
 
-One file (`client/src/pages/AnalyticsPage.jsx`), 4 insertions. Adds a
-`HOW_EFFORT_MATTERS` copy constant beside the existing `HOW_*` constants and
-renders the already-imported `HowCalculatedButton` on the coverage row in
-`DataQualitySection`.
+Both touch only `client/src/pages/AnalyticsPage.jsx`. E3 filed the rationale
+behind the Data-quality `(?)`; E4 added the always-visible one-liner under the
+coverage meter when smoke found E3 invisible. Both live in the
+`effortCoverage !== null` branch only — a user at 0% coverage renders that row
+and IS the intended reader, while `null` means no attributed sets at all.
+Deliberately NOT mid-workout: an explainer bolted to a mandatory field signals
+the field is an imposition. Full rationale in HANDOFF-ARCHIVE.
 
-Placement rationale, so it is not "improved" later by accident: the page
-already explained what each metric COSTS without effort
-(`HOW_STIMULATING_SETS`) and `MetricInfoButton` already DEFINES RIR/RPE at
-logging time. The missing layer was the conceptual why, and it belongs where
-the user reads their own coverage number — not mid-workout, where an
-explainer on a mandatory field signals that the field is an imposition.
-Deliberately scoped to the `effortCoverage !== null` branch: a user at 0%
-coverage still renders that row and IS the intended reader, while `null`
-means no attributed sets at all and has nothing to explain.
+The copy reuses E2's smoke-approved line, which is load-bearing for the
+F-wave: E2's nudge fires on `!useRIR && !useRPE`, impossible once one signal
+is always selected, so that copy would otherwise have become dead code.
 
-The copy reuses E2's smoke-approved line. That is load-bearing for the
-F-wave: E2's nudge fires on `!useRIR && !useRPE`, which becomes impossible
-once the F-wave makes one signal always selected, so the copy would
-otherwise have become dead code.
+## NEXT AFTER THE MERGE — the connector auth work, then the AI layer
 
+**Seth's August 2 instruction:** once the E-wave is merged, the server-side
+auth work is next, "along with the option to add AI." Recorded here so it is
+the first thing the next session reads.
+
+**Naming, stated once so nobody builds the wrong thing.** Seth calls this "the
+server migration." It is NOT a user migration and must never become one - the
+August 2 AI0 ruling is explicitly zero-migration. What actually changes on the
+server is that LogChamp gains the ability to ISSUE scoped OAuth tokens to
+third-party clients, layered OVER the cookie/JWT auth that already exists.
+Existing users, the user table, and the login flow are untouched. If a future
+block description contains the words "migrate users", it has misread this.
+
+**Sequencing this creates a real question.** The F-wave (effort mandatory) was
+previously next and is fully ruled but unauthored. Seth's August 2 line puts
+the AI/auth work first. Both are live; neither is dropped. **This needs one
+sentence from Seth before either is authored** - it is a priority call, not a
+technical one. Do not silently pick.
+
+**The auth unit (AI1), when it is authored.** Per `ai-layer.md` section 4.2 as
+amended, and the recon findings:
+
+- Delegate to a vendor supporting OAuth-over-existing-auth. WorkOS Standalone
+  Connect ranked 1 (1M MAU free, exact pattern fit), Scalekit 2, Stytch 3.
+- LogChamp authors only: the Login URI handler (vendor redirects to us, we
+  check the existing session, we call their completion API with the identity),
+  `/.well-known/oauth-protected-resource` (RFC 9728 - a MUST for MCP servers),
+  Bearer validation against the vendor's JWKS WITH audience checking (RFC 8707
+  binding is a MUST), and read-only scope enforcement.
+- **This is a cross-user isolation surface**, so it is a standing frontier-seat
+  escalation under CLAUDE.md regardless of who writes it, and it is the first
+  server-side unit in a long while - re-check the client-only assumptions that
+  the E and F waves have been coasting on.
+- It is NOT migration-carrying and NOT prod-touching by itself, so it does not
+  hit the manual-track gate. Deploying it eventually will.
+
+**Then the AI layer proper** (`docs/specs/ai-layer.md`, phases AI0-AI6). AI0 is
+resolved; AI1+ are unauthored. Lane A (the remote MCP connector - their
+subscription pays for inference, we pay zero tokens) is deliberately first;
+Lane B (in-app coach, BYO-key and hosted over one code path) second. The hard
+boundary holds on both: the deterministic engine computes every number, the
+model only narrates.
 
 ## The F-wave (effort mandatory) — RULED by Seth, NOT YET AUTHORED
 
@@ -138,55 +177,34 @@ DELIVERY.md TIMESTAMP, not `git status` (it is gitignored, so a stale
 report reads as "clean") — and delete the stale report before the run so
 the incoming one cannot be mistaken for landed work.
 
-## The AI layer — spec'd, nothing authored
+## The AI layer — specs, and what is already settled
+
+Forward plan and the AI0 ruling live in "NEXT AFTER THE MERGE" above; this
+section holds only the standing spec pointers and the things already decided,
+so they are not re-litigated.
 
 - **`docs/specs/ai-layer.md`** is the AI design of record. Two surfaces,
-  **connector first**: Lane A a remote MCP server the user adds inside
-  the AI app they already pay for (their subscription funds inference, we
-  pay zero tokens); Lane B the in-app coach proxy where BYO-key and
+  **connector first**: Lane A a remote MCP server the user adds inside the AI
+  app they already pay for; Lane B the in-app coach proxy where BYO-key and
   hosted are ONE code path with a different key source. Phasing AI0-AI6.
-- **`docs/specs/ai-theming.md`** — AI-generated palettes. The model emits
-  a ~20-hex token object, **never CSS**. Spec only, by Seth's decision.
-- `analytics-engine.md` section 8 is AMENDED, not contradicted; Track C
-  now means `ai-layer.md`. Do not phase AI work from the old section.
+  Section 4.2 carries the Aug 2 AI0 ruling plus both Aug 2 corrections (DCR is
+  no longer a hard MCP requirement - CIMD is SHOULD, DCR is MAY; and the
+  in-house fallback is multi-day/multi-week, not "a few hundred lines").
+- **`docs/specs/ai-theming.md`** — AI-generated palettes. The model emits a
+  ~20-hex token object, **never CSS**. Spec only, by Seth's decision.
+- `analytics-engine.md` section 8 is AMENDED, not contradicted; Track C now
+  means `ai-layer.md`. Do not phase AI work from the old section.
+- Recon findings: `docs/tasks/ai0-recon-oauth-delegation-FINDINGS.md`.
 
-**AI0 is RESOLVED (Seth, August 2) — the connector lane is unblocked.** The
-old build-vs-delegate binary was FALSE: it conflated app login with connector
-auth and costed delegation as including a user migration. **Ruling: OAuth
-layers OVER the existing cookie/JWT auth, connector-only, zero user
-migration.** Deciding argument is blast radius, not cost — an IdP in the
-app-login path is a single point of failure for the whole product; scoped to
-the connector, an outage costs only the connector. Written into
-`ai-layer.md` section 4.2.
+**Two premises settled, so nobody re-litigates them:** `.mil`/DoD credentials
+are permanently out (5 CFR 2635.704 — government property, authorized purposes
+only), and consumer-subscription OAuth in third-party apps is a ToS violation,
+not merely unavailable. Detail in `ai-layer.md` section 3 and the archive.
 
-**Recon landed** (`docs/tasks/ai0-recon-oauth-delegation-FINDINGS.md`): the
-shape IS purchasable and free at our scale. Ranked WorkOS Standalone Connect
-1 (1M MAU free, exact pattern fit), Scalekit 2, Stytch 3. Clerk, Auth0,
-Logto and Keycloak disqualified with reasons recorded.
-
-**Two corrections that came out of it, both already in the spec:**
-
-- **DCR is NOT a hard MCP requirement any more.** Verified in-seat against
-  the 2025-11-25 authorization spec, not taken from the report: CIMD is
-  SHOULD, DCR is MAY and explicitly back-compat, protected-resource metadata
-  (RFC 9728) is MUST on the server, and audience binding via RFC 8707 is
-  MUST. Prefer a vendor with both CIMD and DCR. This widens the field.
-- **The in-house fallback was under-costed in-seat** as "a few hundred
-  lines." Honest sizing is multi-day to multi-week security-sensitive work
-  plus ongoing spec-churn maintenance. Build on `oidc-provider` if ever
-  taken; `oauth2orize` is stale. This makes delegation more clearly right.
-
-**Two premises settled, so nobody re-litigates them:** `.mil`/DoD
-credentials are permanently out (5 CFR 2635.704 — government property,
-authorized purposes only), and consumer-subscription OAuth in third-party
-apps is a ToS violation, not merely unavailable. Detail in
-`ai-layer.md` section 3 and the archive.
-
-**Correction on record** (`ai-theming.md` section 4): `check-hex.mjs`
-CANNOT gate AI-generated palettes — it scans a git diff
-(`check-hex.mjs:23`), so runtime-generated output never reaches it. It
-stays the right tripwire for authored code. A separate pure validator is
-specified.
+**Correction on record** (`ai-theming.md` section 4): `check-hex.mjs` CANNOT
+gate AI-generated palettes — it scans a git diff (`check-hex.mjs:23`), so
+runtime-generated output never reaches it. It stays the right tripwire for
+authored code. A separate pure validator is specified.
 
 ## Repo / deploy state
 
@@ -199,8 +217,8 @@ specified.
   Render backend was correct — no repoint needed. The F-wave is also
   expected client-only; re-check that assumption if enforcement needs
   server validation.
-- **`effort-wave` at `19c2c20`** - E1 + E2 + E3 + docs commits. E1/E2 gate-
-  passed Aug 1; the delta (ad0f313, b043d68, 19c2c20) is NOT yet gated.
+- **`effort-wave` at `965b2c8`** - E1 + E2 + E3 + E4 + docs commits. E1/E2 gate-
+  passed Aug 1; the delta (ad0f313 through 965b2c8) is NOT yet gated.
 - MW-wave, NT-wave, A-wave, FP-wave all merged and closed; their branches
   plus the lane branches are deletion candidates (gated).
 - FP8 (PWA icons) is the only open FP unit — DRAFT, blocked on Seth
@@ -279,6 +297,16 @@ in `docs/HANDOFF-ARCHIVE.md` — still load-bearing for future dispatches.
   returns 0 and looks like "the run died." Match on the PATH instead.
 - **`DELIVERY.md` is gitignored** — check lane cleanliness by TIMESTAMP
   on the file, not by `git status` (a stale report reads as "clean").
+- **Acceptance criteria cannot express "discoverable."** E3 met every
+  criterion in its block and still failed its purpose — Seth looked at the
+  page and saw nothing, because a 7th `(?)` on a page with six others is
+  invisible. Criteria assert an element EXISTS; only smoke asserts a human
+  NOTICES it. The fix is not vaguer criteria; it is remembering that
+  discoverability is a smoke question. (E4 `965b2c8` is the repair.)
+- **Adding a child to a CSS grid silently reflows it.** E4's line had to be a
+  SIBLING of `.coverage-row` (a `1fr 120px` grid, `index.css:6535`) — as a
+  child it becomes a third grid item squeezed into the narrow first column,
+  with a green build and a wrong layout.
 - **A component keying off prop ABSENCE is a seam risk** — the E2 nudge
   (`!useRIR && !useRPE`) renders spuriously if any call site omits a
   prop. Build passes either way. Check every call site, not just the

@@ -1,5 +1,44 @@
 # HANDOFF ARCHIVE — session-log history (append-only)
 
+E3/E4 detail excerpt (August 2, 2026, THIRTY-SEVENTH session - Opus).
+Moved out of HANDOFF verbatim the same session for the cap; the condensed
+version stays in HANDOFF. Written at the time:
+
+### E3 — what landed and why it is where it is
+
+One file (`client/src/pages/AnalyticsPage.jsx`), 4 insertions. Adds a
+`HOW_EFFORT_MATTERS` copy constant beside the existing `HOW_*` constants and
+renders the already-imported `HowCalculatedButton` on the coverage row in
+`DataQualitySection`.
+
+Placement rationale, so it is not "improved" later by accident: the page
+already explained what each metric COSTS without effort
+(`HOW_STIMULATING_SETS`) and `MetricInfoButton` already DEFINES RIR/RPE at
+logging time. The missing layer was the conceptual why, and it belongs where
+the user reads their own coverage number — not mid-workout, where an
+explainer on a mandatory field signals that the field is an imposition.
+Deliberately scoped to the `effortCoverage !== null` branch: a user at 0%
+coverage still renders that row and IS the intended reader, while `null`
+means no attributed sets at all and has nothing to explain.
+
+The copy reuses E2's smoke-approved line. That is load-bearing for the
+F-wave: E2's nudge fires on `!useRIR && !useRPE`, which becomes impossible
+once the F-wave makes one signal always selected, so the copy would
+otherwise have become dead code.
+
+**Why E4 exists, recorded as a process finding.** E3 met every acceptance
+criterion in its block - button renders, correct branch, copy verbatim, no
+CSS, lanes green - and still failed its purpose: Seth looked at the page and
+saw nothing. Machine-checkable criteria can assert that an element EXISTS;
+they structurally cannot assert that a human NOTICES it. That gap is what the
+smoke pass is for, and it worked. Do not "fix" this by writing vaguer
+criteria - fix it by remembering that discoverability is a smoke question.
+E4's placement trap is the companion lesson: `.coverage-row` is a two-column
+grid, so the new line had to be a SIBLING of it. As a child it would have
+rendered squeezed into the narrow first column, with a green build.
+
+---
+
 Gate-detail excerpt (August 1, 2026, THIRTY-SIXTH session - Opus pre-main
 gate on E1/E2). Moved out of HANDOFF verbatim August 2 when E3 landed and the
 file exceeded its cap; the E1/E2 gate PASS itself still stands and is
