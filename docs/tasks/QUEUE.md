@@ -29,7 +29,7 @@ must update its `SessionDetailPage.jsx:2810` call site - the same file F0 and F3
 edit. In doubt = collide = serialize. No parallel content lanes this wave; the
 only parallelism was the two recon lanes.
 
-DISPATCHED | f0-template-effort-signal-reaches-session.md | make a template's stored
+LANDED 00e06d9 | f0-template-effort-signal-reaches-session.md | make a template's stored
 effort signal reach the live session (server select + one-time client seed) |
 MODEL auto. 2 files: `sessionController.js` (additive select) +
 `SessionDetailPage.jsx` (template branch of the init effect). Carries the
@@ -40,7 +40,31 @@ analytics-only, integration lane needs `server/.env`), so green lanes do not
 prove this one - it is a smoke item. DISPATCHED August 2, Channel B AUTO rung
 (`--model auto`), lane `C:\dev\worktrees\cursor-lane` branch `cursor/f0` off
 `origin/effort-mandatory-wave` 5871daa. Stale E4 DELIVERY.md removed from the
-lane first so the incoming report cannot read as landed work.
+lane first so the incoming report cannot read as landed work. LANDED August 2,
+no bounce, but with a REVIEWER FIX that matters more than the unit did.
+
+**The block named the wrong object, and the delivery was correct against it.**
+F0 said to patch `FULL_SESSION_RELATIONS`. That object is referenced at exactly
+ONE call site (`sessionController.js:293`) - creating an ad-hoc session, which
+by definition has no template - so the fix as contracted landed somewhere it can
+never fire, with a green build and a truthful delivery report. Cursor reported
+no deviations because there were none; the authoring was at fault. Caught by the
+land-unit contract-seam check (API shape vs client read), which is exactly the
+class of bug a green lane cannot catch. Corrected in-seat to cover all SIX
+template selects that serve real template data: `FULL_SESSION_RELATIONS`,
+`startSession`, `getSessionById` (the page's actual load path - the one that
+mattered), `updateSession`, `completeSession`, `reopenSession`. `getMySessions`
+(`:666`) deliberately EXCLUDED - it selects only id/name/description for the
+session list and has no consumer for these flags; adding them there would be
+scope creep. Lanes re-run FRESH after the fix: 204/204 in 15 suites, client
+build green, plus `node --check` on the edited controller since the unit lane
+never loads server controllers. Diff kept free of EOF/whitespace noise by
+rebuilding from the git blob with an anchored regex rather than a line-based
+rewrite.
+
+**Authoring lesson for the rest of this wave:** recon named BOTH locations
+(`sessionController.js:8-16` AND `:710-717`); the block carried only the first.
+When recon lists two sites, the contract must name both or say why not.
 
 QUEUED | f1-either-or-effort-signal.md | either-or effort signal control + new
 device-local signal pref, wired to all five call sites | MODEL opus (the wave's
