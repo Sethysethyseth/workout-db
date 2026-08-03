@@ -1,10 +1,11 @@
 # HANDOFF — current state
 
-**Next action (human):** **Say "push to main" when you want the E-wave merged** -
-smoke passed August 2 and the scoped pre-main gate PASSED the same day, so
-nothing else blocks it. The merge is the RUNBOOK ritual, one command at a time.
-Also yours, not blocking the merge: the F-wave-vs-AI sequencing call below (one
-sentence, needed before either is authored) and the `docs/parked/*` ruling.
+**Next action (human):** **Prod-smoke the E-wave on production, then answer the
+F-wave-vs-AI sequencing question below** - one sentence, and it is the only
+thing blocking the next wave from being authored. The E-wave MERGED to `main`
+August 2 (`d272930`), so prod Vercel is rebuilding; confirm the deploy SHA and
+check Analytics -> Data quality plus the template RIR toggles. Also still yours,
+blocking nothing: the `docs/parked/*` ruling.
 
 > **Standing rule:** the line above is filled on EVERY rewrite and is
 > never empty or deferred — one sentence, the single thing SETH does
@@ -13,18 +14,20 @@ sentence, needed before either is authored) and the `docs/parked/*` ruling.
 > action requirement; `land-unit` section 5 keeps it maintained.
 
 **Updated:** August 2, 2026, thirty-eighth session (Opus frontier seat —
-**scoped pre-main gate on the E3/E4 delta: PASS; merge awaits the trigger
-phrase**). Prior entry: August 2, thirty-seventh session (Opus — E3 + E4
+**scoped pre-main gate PASS, then the E-wave MERGED to `main` `d272930`; wave
+CLOSED**). Prior entry: August 2, thirty-seventh session (Opus — E3 + E4
 authored and landed; AI0 RULED and its recon landed). Full session logs are
 verbatim in `docs/HANDOFF-ARCHIVE.md`.
 
 ---
 
-## The E-wave — 4/4 LANDED, SMOKED, and GATED. Waiting on "push to main".
+## The E-wave — CLOSED. 4/4 landed, smoked, gated, MERGED to main.
 
-Branch **`effort-wave`** at **`8b34138`**, pushed. Branched off `main`
-`90248f9`. Client-only throughout; no server code, no schema change, no
-migration.
+**Merged August 2 as a clean fast-forward, `7d1c9ba..d272930`**, verified on
+`origin/main` by SHA (`origin/main` == `origin/effort-wave` == `d272930`). No
+merge commit. Branched off `main` `90248f9`. Client-only throughout — five
+client files, no server code, no schema change, no migration, so the merge
+carried no DB work and the manual migration track was never engaged.
 
 - **E1** `876bd58` — RIR defaults ON for new templates, new block
   templates, and quick logs; RPE stays off; a stored boolean always wins.
@@ -228,21 +231,22 @@ authored code. A separate pure validator is specified.
 
 ## Repo / deploy state
 
-- **`main` is at `7d1c9ba`** — corrected at the August 2 gate; this file had
-  said `90248f9` (July 21), which is now two DOCS-ONLY commits behind
-  (`869c5f1`, `7d1c9ba` — HANDOFF, the `land-unit` skill, and the poor-mans
-  spec). No code moved on main since the frontier-parity merge `90248f9`, which
-  was prod-smoked clean July 28, and `effort-wave` already contains both. Prod
-  Vercel/Render track `main`. **Because prod tracks main, any push to main is a
-  prod-bound push (gate item 2).**
+- **`main` is at `d272930`** — the E-wave merge, August 2. It is the first
+  CODE to reach main since the frontier-parity merge `90248f9` (July 21,
+  prod-smoked clean July 28); the two commits between them (`869c5f1`,
+  `7d1c9ba`) were docs-only. Prod Vercel/Render track `main`, so this push is
+  deploying to production now — **prod smoke is open and unverified.** Because
+  prod tracks main, any push to main is a prod-bound push (gate item 2).
 - **Staging Render tracks `main`** (Seth repointed it July 28). The
   E-wave shipped ZERO server changes, so smoking it against a `main`
   Render backend was correct — no repoint needed. The F-wave is also
   expected client-only; re-check that assumption if enforcement needs
   server validation.
-- **`effort-wave` at `8b34138`**, pushed (origin matches) - E1 + E2 + E3 + E4 +
-  docs commits. FULLY GATED: E1/E2 Aug 1, the delta Aug 2. Awaiting only the
-  merge trigger.
+- **`effort-wave` at `d272930`** — MERGED and closed; identical to `main`, so
+  the branch is now a deletion candidate (gated) alongside the other merged
+  wave branches. Nothing further lands on it.
+- **Staging Render needed no repoint** (RUNBOOK step 7): it already tracks
+  `main`, and the E-wave shipped zero server changes either way.
 - MW-wave, NT-wave, A-wave, FP-wave all merged and closed; their branches
   plus the lane branches are deletion candidates (gated).
 - FP8 (PWA icons) is the only open FP unit — DRAFT, blocked on Seth
