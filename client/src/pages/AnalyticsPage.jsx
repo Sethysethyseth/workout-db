@@ -57,6 +57,8 @@ const HOW_EXECUTION =
   "Each row shows what you planned vs. what you logged (sets, reps, weight, RIR). Load % = actual weight ÷ planned; Volume % = sets done ÷ sets planned; effort drift = actual RIR − planned (positive = stopped earlier). Only sets logged from a template count — block plans aren't linked yet.";
 const HOW_BALANCE =
   "Push vs. pull and quad vs. hamstring ratios use effective sets summed over the engine's muscle groups (push: chest, shoulders, triceps; pull: lats, middle back, traps, biceps; quads and hamstrings each stand alone). The shaded band is a rough 0.8–1.25 guide, not a prescription.";
+const HOW_EFFORT_MATTERS =
+  "Two sets of 10 can be worlds apart - one taken to the limit, one with five reps left. RIR (or RPE) is how LogChamp tells them apart, so hard sets count for more than easy ones. Sets logged without it still count toward volume, but cannot feed stimulating sets, matched-effort trends, or execution.";
 
 /** to = today (date-only; the endpoint treats it as inclusive end-of-day),
     from = to minus (N*7 - 1) days so the range covers exactly N*7 calendar
@@ -602,7 +604,8 @@ function DataQualitySection({ meta }) {
       ) : (
         <div className="coverage-row">
           <p className="analytics-card-sub">
-            Effort (RIR or RPE) logged on {Math.round(meta.effortCoverage * 100)}% of sets
+            Effort (RIR or RPE) logged on {Math.round(meta.effortCoverage * 100)}% of sets{" "}
+            <HowCalculatedButton title="Effort logging" copy={HOW_EFFORT_MATTERS} />
           </p>
           <Meter value={meta.effortCoverage} />
         </div>
