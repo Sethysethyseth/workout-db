@@ -66,7 +66,7 @@ rewrite.
 (`sessionController.js:8-16` AND `:710-717`); the block carried only the first.
 When recon lists two sites, the contract must name both or say why not.
 
-QUEUED | f1-either-or-effort-signal.md | either-or effort signal control + new
+DISPATCHED | f1-either-or-effort-signal.md | either-or effort signal control + new
 device-local signal pref, wired to all five call sites | MODEL opus (the wave's
 most intricate unit - shared control contract across 5 sites; a bounce costs
 more than the rung). Value domain `"rir" | "rpe" | null`, where `null` is NOT a

@@ -25,6 +25,11 @@ Preference memory today exists for QUICK LOGS ONLY
 `CreateTemplatePage.jsx:46-47` and `:59-60` hardcode `useState(true)`/`useState(false)`.
 Net effect an RPE user is handed RIR-on/RPE-off on every new template, forever.
 
+LINE-NUMBER NOTE: every `SessionDetailPage.jsx` line number below was recorded
+BEFORE F0 (`00e06d9`) landed, which inserted 5 lines at ~2193. References after
+that point are therefore off by about 5. Locate the code by CONTENT, not by
+line number, and trust the surrounding code over any number in this block.
+
 FILES TO TOUCH:
 - client/src/components/templates/RirRpeToggleRow.jsx  (either-or control)
 - client/src/lib/<new effort-signal pref module>        (new, see CHANGE 2)
