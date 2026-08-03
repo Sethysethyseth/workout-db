@@ -1,7 +1,8 @@
 # TASK F3: live session - either-or signal, lock after first value, block completion
 
 STATUS: QUEUED
-MODEL: opus
+MODEL: auto     <!-- was opus; named rung unavailable on this plan (refused
+                     August 2 on F1). Auto is the only rung. -->
 MODE: 1-relay
 
 CONTEXT:

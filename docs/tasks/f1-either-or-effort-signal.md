@@ -1,7 +1,12 @@
 # TASK F1: either-or effort signal + remembered device-local preference
 
 STATUS: QUEUED
-MODEL: opus
+MODEL: auto     <!-- was opus; the named rung REFUSED August 2 with
+                     "Named models unavailable. Free plans can only use Auto."
+                     Descended per the dispatch-unit fallback ladder. This is a
+                     plan limitation, not a judgment about the unit - it is
+                     still the wave's most intricate block, so the acceptance
+                     criteria and the review lane carry the precision here. -->
 MODE: 1-relay
 
 CONTEXT:

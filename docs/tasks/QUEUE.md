@@ -67,9 +67,18 @@ rewrite.
 When recon lists two sites, the contract must name both or say why not.
 
 DISPATCHED | f1-either-or-effort-signal.md | either-or effort signal control + new
-device-local signal pref, wired to all five call sites | MODEL opus (the wave's
-most intricate unit - shared control contract across 5 sites; a bounce costs
-more than the rung). Value domain `"rir" | "rpe" | null`, where `null` is NOT a
+device-local signal pref, wired to all five call sites | MODEL auto, DESCENDED
+from opus. The named rung REFUSED outright on August 2: `ActionRequiredError:
+Named models unavailable Free plans can only use Auto. Switch to Auto or upgrade
+plans to continue.` Descended per the dispatch-unit fallback ladder (B named ->
+B auto); the lane was verified clean first - the CLI refused before touching the
+tree, so there was no partial run to salvage. **Standing consequence: the named
+rung does not exist on this plan, so the MODEL header's cost/routing lever is
+effectively auto-only until Seth upgrades.** F3's header was corrected the same
+way pre-emptively rather than letting it fail the same way. This does not lower
+the bar for the unit - it was tiered opus because a shared-control contract
+across 5 call sites is where a wrong idiom is most expensive, so the acceptance
+criteria and the review lane are now carrying that precision alone. Value domain `"rir" | "rpe" | null`, where `null` is NOT a
 user-selectable Off but the legacy not-yet-chosen state F2 resolves. New pref
 module modeled on `weightUnitPref.js` BY NAME, `workoutdb`-prefixed key per the
 AGENTS.md rename boundary. Wire format unchanged - still writes the two boolean
