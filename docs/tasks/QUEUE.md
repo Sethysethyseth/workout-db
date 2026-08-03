@@ -113,8 +113,67 @@ module modeled on `weightUnitPref.js` BY NAME, `workoutdb`-prefixed key per the
 AGENTS.md rename boundary. Wire format unchanged - still writes the two boolean
 columns.
 
-QUEUED | f2-legacy-effort-required-choice.md | required effort-signal choice on
+LANDED bfa010a | f2-legacy-effort-required-choice.md | required effort-signal choice on
 legacy both-false templates, nothing written until the user picks | MODEL auto.
+DISPATCHED August 3, Channel B AUTO rung (`--model auto`), lane
+`C:\dev\worktrees\cursor-lane` branch `cursor/f2` off `origin/effort-mandatory-wave`
+5d2aa2f. Lane verified clean first (no DELIVERY.md present at all, so no stale
+report could read as landed work). **This dispatch doubles as the quota probe** -
+the wave parked August 2 on an exhausted auto rung, and the ladder's named rung
+does not exist on this plan, so a refusal here means the park stands and the only
+change is the date. **The quota HAD reset** - the run completed clean, exit 0,
+with a full DELIVERY.md. The August 2 park is therefore closed on its own terms:
+Seth's "wait for the reset" ruling was the correct call and cost the wave one day.
+
+LANDED August 3 same session, no bounce. Audited per land-unit: scope exact (2
+delivered files = FILES TO TOUCH; `index.css` correctly untouched since
+`field-hint-warn` already existed at `index.css:2563`), full diff read, lanes
+re-run FRESH in the lane (204/204 in 15 suites, client build clean, check-hex
+exit 0). Criteria verified by direct read rather than trusted: the load path in
+both pages calls React setters only and neither page imports `effortSignalPref.js`
+(grep clean), so opening a legacy template writes nothing; `storedBooleansToSignal`
+-> `effortSignal == null` is the single condition distinguishing legacy from
+normal templates, so a template WITH a signal is untouched; and
+`RirRpeToggleRow`'s `select()` (`:34-37`) can never emit null, so once picked the
+required state cannot be re-entered. Load-order seam checked and CLEAN: both
+pages guard `if (loading) return <LoadingState/>` before the form, so the initial
+`useState(null)` never renders the prompt during the fetch. On a FAILED load the
+form renders with Save disabled - a pre-existing empty-form hazard that this unit
+incidentally makes safer, not a regression.
+
+**ONE REVIEWER FIX on top of the delivery, undeclared by it - and it is an
+AUTHORING miss, not a Cursor miss.** `RirRpeToggleRow` already renders its OWN
+nudge at `value === null` (`:20-32`, E2's copy kept by F1). The block forbade
+touching that component ("consume it, don't reopen it") and never accounted for
+what it renders in the exact state F2 targets, so the delivery stacked TWO
+near-identical "Two sets of 10 can be worlds apart" sentences back to back on one
+screen, in two different wordings ("RIR is how" vs "Effort is how"). Worse, the
+component's first line - "Effort logging off - volume still tracks" - is
+factually WRONG on a surface where the choice is now mandatory: the signal is
+unanswered, not off. Both lanes pass straight through it; only reading the
+component catches it. Fixed directly (diagnosis was the whole job): added a
+`showNudge` prop defaulting TRUE - so all three other call sites, including
+`SessionDetailPage.jsx:2817` which F3 will own, are byte-unchanged - and passed
+`showNudge={false}` from the two edit pages. Lanes re-run green after.
+`RirRpeToggleRow.jsx` is outside FILES TO TOUCH and was touched by REVIEWER
+DIRECTION (FP3 precedent).
+
+**Authoring lesson, and it is F0's lesson again in a smaller costume:** F0's
+block named one of two locations recon had found; F2's block named one of two
+things that render the null state. Both produced a faithful delivery, a green
+build, a truthful no-deviations report, and a wrong screen. **When a unit
+introduces copy for a state, the contract must name everything already rendering
+in that state - or say why not.** The F3 author should assume the same trap:
+`SessionDetailPage.jsx:2817` passes no `showNudge`, so it still shows the
+component nudge, which is correct for now but is F3's call to confirm.
+
+Placement note carried forward (declared by Cursor, accepted, NOT a deviation):
+the shared copy constant `EFFORT_SIGNAL_REQUIRED_CHOICE_HINT` is exported from
+`EditTemplatePage.jsx` and imported by `EditBlockTemplatePage.jsx`, because
+FILES TO TOUCH allowed no third module. Page-importing-page is a mild wart with
+ZERO bundle cost here - `App.jsx:11-12` imports both statically, so they already
+share a chunk. It should be absorbed by the known effort-copy consolidation
+follow-up (the August 2 gate note), which now has a FOURTH variant to fold in.
 Edit pages only. Follows the `field-hint-warn` + disabled-Save idiom those pages
 already use for block duration - no modal, no toast (this client has no toast
 system). Repurposes E2's smoke-approved education copy into the prompt, which is

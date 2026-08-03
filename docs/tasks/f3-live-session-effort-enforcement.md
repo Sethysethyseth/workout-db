@@ -24,6 +24,13 @@ Three things are wrong today, all verified August 2:
   `rir`/`rpe`. The client's only gate is `canFinishWorkout = totalSetsLogged >= 1`
   (`:2650-2651`).
 
+LINE NUMBERS ARE APPROXIMATE. Every `:NNNN` reference below was captured against
+the pre-F0 tree; F0, F1 and F2 have since edited `SessionDetailPage.jsx` and
+shifted them (the F1 call site cited as `:2810` now sits at `:2817`). Locate
+every anchor by SYMBOL - `canFinishWorkout`, `sessionSetHasCoreLogged`,
+`sessionNoteTogglesInitRef`, `session-set-field--needs-value` - and treat the
+numbers as a hint about where to start reading, never as the target.
+
 FILES TO TOUCH:
 - client/src/pages/SessionDetailPage.jsx
 - client/src/index.css                    (ONLY if unavoidable; tokens, no hex)
@@ -42,6 +49,21 @@ renders this control after F1 - do not restructure it.
 Seeding stays F0's: the template's stored signal, resolved once per session id
 via the existing `sessionNoteTogglesInitRef` guard. Do not convert that one-time
 seed into a continuous sync.
+
+**The nudge prop - read this before you render the control (added August 3,
+after F2).** `RirRpeToggleRow` renders its OWN copy block when `value === null`
+(the "Effort logging off ... two sets of 10" nudge). F2 shipped a screen where
+that nudge and the page's own null-state copy stacked back to back saying nearly
+the same thing twice; the fix was a `showNudge` prop, default TRUE. For THIS
+unit the default is correct and you should NOT pass `showNudge`: a live session
+with a `null` signal is exactly the legacy case that is not enforced, and
+"volume still tracks, but effort-based analytics stay locked" is a true and
+useful thing to say there. The point of naming it here is that it is now a
+DECISION, not an accident - if you add any null-state copy of your own to the
+live session, pass `showNudge={false}` so the sentence does not ship twice.
+
+Also note the LOCK line (change 2) is separate copy on a NON-null signal, so it
+cannot collide with the nudge; the two are mutually exclusive by construction.
 
 **2. Lock the signal after the first effort value.** Seth's August 2 ruling:
 the signal is switchable until the session's first effort value is logged, then
