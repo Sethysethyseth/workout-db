@@ -29,7 +29,7 @@ must update its `SessionDetailPage.jsx:2810` call site - the same file F0 and F3
 edit. In doubt = collide = serialize. No parallel content lanes this wave; the
 only parallelism was the two recon lanes.
 
-QUEUED | f0-template-effort-signal-reaches-session.md | make a template's stored
+DISPATCHED | f0-template-effort-signal-reaches-session.md | make a template's stored
 effort signal reach the live session (server select + one-time client seed) |
 MODEL auto. 2 files: `sessionController.js` (additive select) +
 `SessionDetailPage.jsx` (template branch of the init effect). Carries the
@@ -37,7 +37,10 @@ both-true -> RIR-wins and both-false -> stays-off resolution table. NOT
 migration-carrying - the columns already exist. LANE GAP flagged in the block:
 neither runnable lane covers a server response shape (unit lane is
 analytics-only, integration lane needs `server/.env`), so green lanes do not
-prove this one - it is a smoke item.
+prove this one - it is a smoke item. DISPATCHED August 2, Channel B AUTO rung
+(`--model auto`), lane `C:\dev\worktrees\cursor-lane` branch `cursor/f0` off
+`origin/effort-mandatory-wave` 5871daa. Stale E4 DELIVERY.md removed from the
+lane first so the incoming report cannot read as landed work.
 
 QUEUED | f1-either-or-effort-signal.md | either-or effort signal control + new
 device-local signal pref, wired to all five call sites | MODEL opus (the wave's
