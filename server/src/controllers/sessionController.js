@@ -13,6 +13,8 @@ const FULL_SESSION_RELATIONS = {
       description: true,
       isPublic: true,
       userId: true,
+      useRIR: true,
+      useRPE: true,
     },
   },
   sessionExercises: {
@@ -229,6 +231,8 @@ async function startSession(req, res, next) {
               description: true,
               isPublic: true,
               userId: true,
+              useRIR: true,
+              useRPE: true,
             },
           },
           sessionExercises: {
@@ -714,6 +718,8 @@ async function getSessionById(req, res, next) {
             description: true,
             isPublic: true,
             userId: true,
+            useRIR: true,
+            useRPE: true,
           },
         },
         sessionExercises: {
@@ -1249,6 +1255,8 @@ async function updateSession(req, res, next) {
             description: true,
             isPublic: true,
             userId: true,
+            useRIR: true,
+            useRPE: true,
           },
         },
         sessionExercises: {
@@ -1352,6 +1360,8 @@ async function completeSession(req, res, next) {
             description: true,
             isPublic: true,
             userId: true,
+            useRIR: true,
+            useRPE: true,
           },
         },
         sessionExercises: {
@@ -1436,6 +1446,8 @@ async function reopenSession(req, res, next) {
             description: true,
             isPublic: true,
             userId: true,
+            useRIR: true,
+            useRPE: true,
           },
         },
         sessionExercises: {

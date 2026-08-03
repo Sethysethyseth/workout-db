@@ -2193,6 +2193,11 @@ export function SessionDetailPage() {
       setLiveUseExerciseNotes(ex.some((se) => String(se.notes ?? "").trim() !== ""));
       const setsList = session.sets || [];
       setLiveUseSetNotes(setsList.some((s) => String(s.notes ?? "").trim() !== ""));
+      const tplRIR = Boolean(session.workoutTemplate.useRIR);
+      const tplRPE = Boolean(session.workoutTemplate.useRPE);
+      // RESOLUTION: RIR wins when both true; both-false stays off (no auto-select).
+      setLiveUseRIR(tplRIR);
+      setLiveUseRPE(tplRPE && !tplRIR);
       return;
     }
 
