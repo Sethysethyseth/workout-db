@@ -102,7 +102,12 @@ WAVE PARKED at 2/4. F2 and F3 are QUEUED and cannot be dispatched - every rung
 on the fallback ladder is exhausted (Channel A off by billing precondition,
 B named refuses on plan, B auto out of quota). Per `dispatch-unit` section 3
 this is the ladder's terminal STOP: page Seth, do not stall and do not
-improvise a substitute executor. Value domain `"rir" | "rpe" | null`, where `null` is NOT a
+improvise a substitute executor. **RULED by Seth August 2: WAIT for the auto
+quota to reset.** He declined both the Cursor Pro upgrade and the
+waive-the-no-inline-code-rule option. Resume trigger is "resume the F-wave" -
+dispatch F2 on the auto rung, then F3, then hand over the consolidated smoke
+checklist. F1's block header still reads `MODEL: auto` (descended from opus);
+if the plan is ever upgraded, F3's tier is the one worth restoring first. Value domain `"rir" | "rpe" | null`, where `null` is NOT a
 user-selectable Off but the legacy not-yet-chosen state F2 resolves. New pref
 module modeled on `weightUnitPref.js` BY NAME, `workoutdb`-prefixed key per the
 AGENTS.md rename boundary. Wire format unchanged - still writes the two boolean

@@ -1,12 +1,12 @@
 # HANDOFF — current state
 
-**Next action (human):** **Decide how the F-wave finishes - the Cursor quota is
-gone and F2/F3 cannot be dispatched.** Every rung on the ladder is exhausted
-(named models refuse on this plan; auto hit its usage limit mid-F1). Options are
-laid out in "The F-wave" below: upgrade to Cursor Pro, wait for the quota to
-reset, or waive the standing no-inline-code rule for the last two units. Nothing
-else moves until you pick. Also open, blocking nothing: prod-smoke the E-wave on
-production (merged `d272930`, prod Vercel rebuilt), and the `docs/parked/*`
+**Next action (human):** **When the Cursor auto quota has reset, say "resume the
+F-wave"** - the next session dispatches F2, then F3, then hands over the
+consolidated smoke checklist. Seth RULED August 2 that the wave waits for the
+reset rather than upgrading the plan or waiving the no-inline-code rule; that
+choice is settled, so do not re-offer the alternatives unless he reopens it.
+Nothing else is blocked on him for this wave. Separately open, blocking nothing:
+prod-smoke the E-wave on production (merged `d272930`), and the `docs/parked/*`
 ruling.
 
 > **Standing rule:** the line above is filled on EVERY rewrite and is
