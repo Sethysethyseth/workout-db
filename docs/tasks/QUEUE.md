@@ -6,6 +6,69 @@ Statuses: DRAFT / QUEUED / DISPATCHED / AWAITING-REVIEW / LANDED <sha> / BOUNCED
 
 ## Active
 
+F-wave (effort MANDATORY), opened August 2, 2026 (Opus frontier seat). FOUR
+units on branch `effort-mandatory-wave`, off `main` 8541bca. Implements Seth's
+August 1 rulings: RIR/RPE either-or (never both), mandatory in the SAME wave as
+either-or (he was offered a 3-state interim and declined it), and the choice
+remembered device-local via the localStorage pattern - NOT an account column, so
+NO schema change and NO migration anywhere in this wave.
+
+**F0 exists because authoring recon found a live bug**, not because the roadmap
+called for it. Two parallel Cursor recon lanes (report-only, August 2)
+independently found that a template's stored `useRIR`/`useRPE` NEVER reaches the
+live session - the init effect's template branch at `SessionDetailPage.jsx:2190-2196`
+returns without setting them, and `FULL_SESSION_RELATIONS` (`sessionController.js:9-16`)
+does not even select the columns. Verified in-seat before acting on it. Effect:
+E1's "RIR defaults ON" is inert at logging time, and F3 would otherwise be
+enforcing a field the session never shows. HANDOFF had asserted the opposite;
+that claim was wrong against the tree and has been corrected.
+
+**Serialization: all four units are STRICTLY SERIAL.** F0 and F1 look disjoint
+at first glance, but F1 changes `RirRpeToggleRow`'s prop contract and therefore
+must update its `SessionDetailPage.jsx:2810` call site - the same file F0 and F3
+edit. In doubt = collide = serialize. No parallel content lanes this wave; the
+only parallelism was the two recon lanes.
+
+QUEUED | f0-template-effort-signal-reaches-session.md | make a template's stored
+effort signal reach the live session (server select + one-time client seed) |
+MODEL auto. 2 files: `sessionController.js` (additive select) +
+`SessionDetailPage.jsx` (template branch of the init effect). Carries the
+both-true -> RIR-wins and both-false -> stays-off resolution table. NOT
+migration-carrying - the columns already exist. LANE GAP flagged in the block:
+neither runnable lane covers a server response shape (unit lane is
+analytics-only, integration lane needs `server/.env`), so green lanes do not
+prove this one - it is a smoke item.
+
+QUEUED | f1-either-or-effort-signal.md | either-or effort signal control + new
+device-local signal pref, wired to all five call sites | MODEL opus (the wave's
+most intricate unit - shared control contract across 5 sites; a bounce costs
+more than the rung). Value domain `"rir" | "rpe" | null`, where `null` is NOT a
+user-selectable Off but the legacy not-yet-chosen state F2 resolves. New pref
+module modeled on `weightUnitPref.js` BY NAME, `workoutdb`-prefixed key per the
+AGENTS.md rename boundary. Wire format unchanged - still writes the two boolean
+columns.
+
+QUEUED | f2-legacy-effort-required-choice.md | required effort-signal choice on
+legacy both-false templates, nothing written until the user picks | MODEL auto.
+Edit pages only. Follows the `field-hint-warn` + disabled-Save idiom those pages
+already use for block duration - no modal, no toast (this client has no toast
+system). Repurposes E2's smoke-approved education copy into the prompt, which is
+also the "mandate ships WITH education" requirement. Static analysis confirms
+both-false is the historical NORM, not an edge case: migration
+`20260325120000_template_display_options` adds the columns
+`NOT NULL DEFAULT false` and never backfills.
+
+QUEUED | f3-live-session-effort-enforcement.md | live session either-or control,
+signal locks after first effort value, Finish blocked when effort missing |
+MODEL opus (a wrongly-blocking Finish button is the worst bug available here).
+CLIENT-ONLY by deliberate ruling - the live signal is session-local state the
+server cannot see, so proper server enforcement needs a session-level column =
+migration = out of scope. Limitation stated in the block and to be repeated in
+the delivery. Legacy `null`-signal sessions are explicitly NOT enforced so no
+user is stranded mid-workout.
+
+---
+
 E-wave (effort logging), opened July 29, 2026 (Opus frontier seat). Two units
 only - deliberately small, because recon found the effort stack ALREADY BUILT
 end to end: `rir`/`rpe` on `WorkoutSet`, `deriveEffortRir()` in
