@@ -66,7 +66,7 @@ rewrite.
 (`sessionController.js:8-16` AND `:710-717`); the block carried only the first.
 When recon lists two sites, the contract must name both or say why not.
 
-DISPATCHED | f1-either-or-effort-signal.md | either-or effort signal control + new
+LANDED 3da8bf5 | f1-either-or-effort-signal.md | either-or effort signal control + new
 device-local signal pref, wired to all five call sites | MODEL auto, DESCENDED
 from opus. The named rung REFUSED outright on August 2: `ActionRequiredError:
 Named models unavailable Free plans can only use Auto. Switch to Auto or upgrade
@@ -78,7 +78,31 @@ effectively auto-only until Seth upgrades.** F3's header was corrected the same
 way pre-emptively rather than letting it fail the same way. This does not lower
 the bar for the unit - it was tiered opus because a shared-control contract
 across 5 call sites is where a wrong idiom is most expensive, so the acceptance
-criteria and the review lane are now carrying that precision alone. Value domain `"rir" | "rpe" | null`, where `null` is NOT a
+criteria and the review lane are now carrying that precision alone.
+
+**Then the auto rung died too, mid-run: `ActionRequiredError: You've hit your
+usage limit`.** LANDED August 2 as a SALVAGED KILLED RUN. The agent had written
+all six files but not `DELIVERY.md`, so the delivery carries NO per-criterion
+evidence and no deviation disclosure - and with every rung exhausted it could
+not be re-dispatched to produce one. Landing unreported work is normally a
+bounce; bouncing was impossible and discarding would have thrown away complete,
+green work, so the reviewer audited every acceptance criterion DIRECTLY instead:
+all five call sites converted (zero `onUseRIRChange`/`onUseRPEChange` left
+anywhere in `client/src`), `storedBooleansToSignal` implements RIR-wins ->
+RPE -> null, save mapping derives the two booleans so the wire format is
+unchanged, create flows seed AND write the pref while edit pages seed only,
+F0's template seeding at `SessionDetailPage.jsx:2200-2201` is untouched,
+`quickWorkoutLogPrefs.js` and `index.css` are absent from the diff, and scope is
+exactly the six files named. Lanes re-run fresh in the lane: 204/204 in 15
+suites, client build green, `check-hex` 0. **Flag for the pre-main gate: this
+unit landed WITHOUT a delivery report - read it as first-pass material, not as
+something already reviewed twice.**
+
+WAVE PARKED at 2/4. F2 and F3 are QUEUED and cannot be dispatched - every rung
+on the fallback ladder is exhausted (Channel A off by billing precondition,
+B named refuses on plan, B auto out of quota). Per `dispatch-unit` section 3
+this is the ladder's terminal STOP: page Seth, do not stall and do not
+improvise a substitute executor. Value domain `"rir" | "rpe" | null`, where `null` is NOT a
 user-selectable Off but the legacy not-yet-chosen state F2 resolves. New pref
 module modeled on `weightUnitPref.js` BY NAME, `workoutdb`-prefixed key per the
 AGENTS.md rename boundary. Wire format unchanged - still writes the two boolean

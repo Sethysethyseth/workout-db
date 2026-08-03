@@ -1,11 +1,13 @@
 # HANDOFF — current state
 
-**Next action (human):** **Prod-smoke the E-wave on production, then answer the
-F-wave-vs-AI sequencing question below** - one sentence, and it is the only
-thing blocking the next wave from being authored. The E-wave MERGED to `main`
-August 2 (`d272930`), so prod Vercel is rebuilding; confirm the deploy SHA and
-check Analytics -> Data quality plus the template RIR toggles. Also still yours,
-blocking nothing: the `docs/parked/*` ruling.
+**Next action (human):** **Decide how the F-wave finishes - the Cursor quota is
+gone and F2/F3 cannot be dispatched.** Every rung on the ladder is exhausted
+(named models refuse on this plan; auto hit its usage limit mid-F1). Options are
+laid out in "The F-wave" below: upgrade to Cursor Pro, wait for the quota to
+reset, or waive the standing no-inline-code rule for the last two units. Nothing
+else moves until you pick. Also open, blocking nothing: prod-smoke the E-wave on
+production (merged `d272930`, prod Vercel rebuilt), and the `docs/parked/*`
+ruling.
 
 > **Standing rule:** the line above is filled on EVERY rewrite and is
 > never empty or deferred — one sentence, the single thing SETH does
@@ -13,11 +15,63 @@ blocking nothing: the `docs/parked/*` ruling.
 > explicitly. Dogfoods the shell repo's decision-10 no-dangling-next-
 > action requirement; `land-unit` section 5 keeps it maintained.
 
-**Updated:** August 2, 2026, thirty-eighth session (Opus frontier seat —
-**scoped pre-main gate PASS, then the E-wave MERGED to `main` `d272930`; wave
-CLOSED**). Prior entry: August 2, thirty-seventh session (Opus — E3 + E4
-authored and landed; AI0 RULED and its recon landed). Full session logs are
-verbatim in `docs/HANDOFF-ARCHIVE.md`.
+**Updated:** August 2, 2026, thirty-eighth session (Opus frontier seat — **E-wave
+gated and MERGED to `main`; F-wave opened, authored, and PARKED at 2/4 on
+exhausted Cursor quota**). Prior entry: August 2, thirty-seventh session (Opus —
+E3 + E4 authored and landed; AI0 RULED and its recon landed). Full session logs
+are verbatim in `docs/HANDOFF-ARCHIVE.md`.
+
+---
+
+## The F-wave (effort MANDATORY) — 2/4 LANDED, PARKED on quota
+
+Branch **`effort-mandatory-wave`** at **`3da8bf5`**, pushed, branched off `main`
+`8541bca`. NOT smoked, NOT gated. No schema change or migration anywhere in it.
+
+- **F0** `00e06d9` — a template's stored effort signal now reaches the live
+  session (six server selects + a one-time client seed).
+- **F1** `3da8bf5` — either-or signal control (`rir | rpe | null`) plus
+  `effortSignalPref.js`, wired to all five call sites.
+- **F2** `f2-legacy-effort-required-choice.md` — QUEUED, undispatched.
+- **F3** `f3-live-session-effort-enforcement.md` — QUEUED, undispatched.
+
+**Why it is parked.** Every rung of the `dispatch-unit` fallback ladder is
+exhausted: Channel A is off by the standing billing precondition, Channel B
+named refuses (`Named models unavailable. Free plans can only use Auto.`), and
+Channel B auto hit its usage limit partway through F1. The ladder's terminal
+rung is STOP-and-page-Seth, which is where this sits. **Seth's call, three
+options:** (1) upgrade to Cursor Pro, which also restores the named rung the
+MODEL header assumes; (2) wait for the auto quota to reset and resume with no
+other change; (3) waive the standing "Claude Code never writes feature code
+inline" rule for F2/F3 only. Option 3 contradicts the relay's whole cost model
+and should be a deliberate exception, not a drift - do not take it silently.
+
+**Two things the next session must not re-derive:**
+
+1. **F0's bug was an AUTHORING error, and it is the wave's main lesson.** The
+   block said to patch `FULL_SESSION_RELATIONS`; that object is referenced at
+   exactly ONE call site - creating an ad-hoc session, which by definition has
+   no template - so the fix as contracted landed where it could never fire, with
+   a green build and a truthful no-deviations report. The real load path is
+   `getSessionById`, which carries its own inline select. Recon had named BOTH
+   sites; the block carried one. **When recon lists two locations, the contract
+   names both or says why not.**
+2. **F1 landed WITHOUT a delivery report** - a salvaged killed run (code written,
+   `DELIVERY.md` not, quota died in between). Every acceptance criterion was
+   audited directly instead. The pre-main gate must read F1 as first-pass
+   material, not as something already reviewed twice.
+
+**Smoke items accumulated so far** (do NOT smoke yet - the wave is incomplete;
+these carry forward to the consolidated wave checklist):
+- Build a template with RIR on, start a workout from it, confirm the RIR field
+  appears WITHOUT touching a checkbox. This is F0's whole point and neither
+  runnable lane can prove it - the unit lane is analytics-only and the
+  integration lane cannot run in a dispatch worktree.
+- New template / new block template: the control offers exactly one of RIR/RPE,
+  never both, never neither.
+- Switch to RPE, reload, create another template - it should still be RPE.
+- Open a legacy template (both toggles off historically): expect neither
+  selected and the education nudge. The REQUIRED-CHOICE prompt is F2, not landed.
 
 ---
 
