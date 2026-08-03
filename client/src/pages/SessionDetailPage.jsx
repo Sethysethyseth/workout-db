@@ -326,6 +326,22 @@ function sessionSetHasCoreLogged(set) {
   return t(set.weight) !== "" && t(set.reps) !== "";
 }
 
+/** Non-null, non-blank rir or rpe on a set — used to lock the live effort signal. */
+function sessionSetHasAnyEffortValue(set) {
+  if (!set || typeof set !== "object") return false;
+  const t = (v) => (v == null ? "" : String(v)).trim();
+  return t(set.rir) !== "" || t(set.rpe) !== "";
+}
+
+/** Whether a set has a value for the active effort signal (`"rir"` | `"rpe"`). */
+function sessionSetHasSignalEffort(set, signal) {
+  if (!set || typeof set !== "object") return false;
+  const t = (v) => (v == null ? "" : String(v)).trim();
+  if (signal === "rir") return t(set.rir) !== "";
+  if (signal === "rpe") return t(set.rpe) !== "";
+  return true;
+}
+
 function sessionSetDraftDirty(draft, set) {
   const norm = (v) => (v == null ? "" : String(v)).trim();
   return (
@@ -802,6 +818,8 @@ const SessionSetRow = memo(function SessionSetRow({
   onDeleteSet,
   isNext = false,
   hasPR = false,
+  /** Soft cue: core-logged set missing the active effort signal value. */
+  highlightMissingEffort = false,
 }) {
   const rootRef = useRef(null);
   const [draft, setDraft] = useState(() =>
@@ -1077,6 +1095,14 @@ const SessionSetRow = memo(function SessionSetRow({
   const needsReps = Boolean(!disabled && !coreLogged && !rTrim && (Boolean(wTrim) || isNext));
   const needsWeightHighlight = Boolean(needsWeight && (!isNext || rTrim !== ""));
   const needsRepsHighlight = Boolean(needsReps && (!isNext || wTrim !== ""));
+  const rirTrim = (draft.rir ?? "").toString().trim();
+  const rpeTrim = (draft.rpe ?? "").toString().trim();
+  const needsRirHighlight = Boolean(
+    highlightMissingEffort && !disabled && !isDraft && coreLogged && useRIR && rirTrim === ""
+  );
+  const needsRpeHighlight = Boolean(
+    highlightMissingEffort && !disabled && !isDraft && coreLogged && useRPE && rpeTrim === ""
+  );
   const showNextHint = Boolean(!disabled && isNext && !coreLogged && !wTrim && !rTrim);
 
   const synced = !isDraft && coreLogged && !sessionSetDraftDirty(draft, set);
@@ -1231,7 +1257,14 @@ const SessionSetRow = memo(function SessionSetRow({
           {useRIR || useRPE ? (
             <div className="session-set-optional-row grid-set-row" style={{ "--set-cols": optionalColCount }}>
               {useRIR ? (
-                <label className="session-set-field session-set-field--secondary">
+                <label
+                  className={[
+                    "session-set-field session-set-field--secondary",
+                    needsRirHighlight ? "session-set-field--needs-value" : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                >
                   <span className="session-set-field-label session-set-field-label-line">
                     <span>RIR</span> <MetricInfoButton metric="rir" />
                   </span>
@@ -1249,6 +1282,7 @@ const SessionSetRow = memo(function SessionSetRow({
                     disabled={isDraft ? false : disabled}
                     placeholder="—"
                     title="Optional"
+                    aria-invalid={needsRirHighlight ? true : undefined}
                   />
                   {rirGateHint ? (
                     <span className="muted small" style={{ display: "block", marginTop: 4 }}>
@@ -1258,7 +1292,14 @@ const SessionSetRow = memo(function SessionSetRow({
                 </label>
               ) : null}
               {useRPE ? (
-                <label className="session-set-field session-set-field--secondary">
+                <label
+                  className={[
+                    "session-set-field session-set-field--secondary",
+                    needsRpeHighlight ? "session-set-field--needs-value" : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                >
                   <span className="session-set-field-label session-set-field-label-line">
                     <span>RPE</span> <MetricInfoButton metric="rpe" />
                   </span>
@@ -1276,6 +1317,7 @@ const SessionSetRow = memo(function SessionSetRow({
                     disabled={isDraft ? false : disabled}
                     placeholder="—"
                     title="Optional"
+                    aria-invalid={needsRpeHighlight ? true : undefined}
                   />
                 </label>
               ) : null}
@@ -1346,6 +1388,8 @@ function SessionExerciseBlock({
   onOpenAddToLibrary,
   /** Callback: (exerciseName, weight, reps) => boolean. Passed from parent for completed views. */
   setHasPR = () => false,
+  /** Soft-cue missing effort fields on core-logged sets when finish is blocked. */
+  highlightMissingEffort = false,
 }) {
   const [draftResumeVersion, setDraftResumeVersion] = useState(0);
   const [draftTrackedStatus, setDraftTrackedStatus] = useState(null);
@@ -1718,6 +1762,7 @@ function SessionExerciseBlock({
                               onUpdateSet={onUpdateSet}
                               onDeleteSet={() => handleDeleteSet(s.id, unit)}
                               hasPR={isCompleted && setHasPR(se, s.weight, s.reps)}
+                              highlightMissingEffort={highlightMissingEffort}
                             />
                           ))}
                         </div>
@@ -1747,6 +1792,7 @@ function SessionExerciseBlock({
                         onUpdateSet={onUpdateSet}
                         onDeleteSet={() => handleDeleteSet(s.id, unit)}
                         hasPR={isCompleted && setHasPR(se, s.weight, s.reps)}
+                        highlightMissingEffort={highlightMissingEffort}
                       />
                     );
                   })
@@ -2655,11 +2701,54 @@ export function SessionDetailPage() {
 
   const sessionExercises = orderedSessionExercises;
   const totalSetsLogged = Array.isArray(session?.sets) ? session.sets.length : 0;
-  const canFinishWorkout = totalSetsLogged >= 1;
+  const liveEffortSignal = liveUseRIR ? "rir" : liveUseRPE ? "rpe" : null;
+  const sessionSets = Array.isArray(session?.sets) ? session.sets : [];
+  // Lock once any set carries a non-blank effort value (and a signal is active).
+  const effortSignalLocked =
+    !isCompleted &&
+    liveEffortSignal != null &&
+    sessionSets.some((s) => sessionSetHasAnyEffortValue(s));
+  const coreLoggedSets = sessionSets.filter((s) => sessionSetHasCoreLogged(s));
+  const setsMissingEffort =
+    !isCompleted && liveEffortSignal != null
+      ? coreLoggedSets.filter((s) => !sessionSetHasSignalEffort(s, liveEffortSignal)).length
+      : 0;
+  const effortMandateOk = liveEffortSignal == null || setsMissingEffort === 0;
+  const canFinishWorkout = totalSetsLogged >= 1 && effortMandateOk;
+  const highlightMissingEffort = !isCompleted && setsMissingEffort > 0;
   const workoutTitle = session ? sessionDisplayTitle(session) : "Workout";
   const readonlyWorkoutName = isFromTemplate
     ? session.workoutTemplate.name
     : sessionDisplayTitle(session);
+
+  function onLiveEffortSignalChange(next) {
+    if (effortSignalLocked) return;
+    setLiveUseRIR(next === "rir");
+    setLiveUseRPE(next === "rpe");
+    if (!isFromTemplate) saveEffortSignal(next);
+  }
+
+  const liveEffortToggle = (
+    <div
+      className="session-effort-signal"
+      style={
+        effortSignalLocked
+          ? { opacity: 0.72, pointerEvents: "none" }
+          : undefined
+      }
+      aria-disabled={effortSignalLocked || undefined}
+    >
+      <RirRpeToggleRow
+        value={liveEffortSignal}
+        onChange={onLiveEffortSignalChange}
+      />
+      {effortSignalLocked ? (
+        <p className="muted small" style={{ margin: 0, lineHeight: 1.35 }}>
+          Signal locked - fixed for this workout once effort is logged on a set.
+        </p>
+      ) : null}
+    </div>
+  );
 
   async function commitQuickTitle() {
     if (!session || session.workoutTemplate || session.completedAt) return;
@@ -2760,68 +2849,38 @@ export function SessionDetailPage() {
           ) : null}
 
           {isFromTemplate ? (
-            <div className="template-options-grid">
-              <label className="checkbox-inline">
-                <input
-                  type="checkbox"
-                  checked={liveUseSessionNotes}
-                  onChange={(e) => setLiveUseSessionNotes(e.target.checked)}
-                />
-                <span>Workout description</span>
-              </label>
-              <label className="checkbox-inline">
-                <input
-                  type="checkbox"
-                  checked={liveUseExerciseNotes}
-                  onChange={(e) => setLiveUseExerciseNotes(e.target.checked)}
-                />
-                <span>Exercise notes</span>
-              </label>
-              <label className="checkbox-inline">
-                <input
-                  type="checkbox"
-                  checked={liveUseSetNotes}
-                  onChange={(e) => setLiveUseSetNotes(e.target.checked)}
-                />
-                <span>Set notes</span>
-              </label>
-              <label className="checkbox-inline">
-                <input
-                  type="checkbox"
-                  checked={liveUseRIR}
-                  onChange={(e) => setLiveUseRIR(e.target.checked)}
-                />
-                <span>
-                  Use RIR on sets
-                  <span className="muted small" style={{ display: "block", fontWeight: 400, marginTop: 2 }}>
-                    Reps in Reserve
-                  </span>
-                </span>
-              </label>
-              <label className="checkbox-inline">
-                <input
-                  type="checkbox"
-                  checked={liveUseRPE}
-                  onChange={(e) => setLiveUseRPE(e.target.checked)}
-                />
-                <span>
-                  Use RPE on sets
-                  <span className="muted small" style={{ display: "block", fontWeight: 400, marginTop: 2 }}>
-                    Rating of Perceived Exertion
-                  </span>
-                </span>
-              </label>
+            <div className="stack" style={{ gap: 10 }}>
+              <div className="template-options-grid">
+                <label className="checkbox-inline">
+                  <input
+                    type="checkbox"
+                    checked={liveUseSessionNotes}
+                    onChange={(e) => setLiveUseSessionNotes(e.target.checked)}
+                  />
+                  <span>Workout description</span>
+                </label>
+                <label className="checkbox-inline">
+                  <input
+                    type="checkbox"
+                    checked={liveUseExerciseNotes}
+                    onChange={(e) => setLiveUseExerciseNotes(e.target.checked)}
+                  />
+                  <span>Exercise notes</span>
+                </label>
+                <label className="checkbox-inline">
+                  <input
+                    type="checkbox"
+                    checked={liveUseSetNotes}
+                    onChange={(e) => setLiveUseSetNotes(e.target.checked)}
+                  />
+                  <span>Set notes</span>
+                </label>
+              </div>
+              {liveEffortToggle}
             </div>
           ) : (
             <div className="quick-log-display-prefs stack">
-              <RirRpeToggleRow
-                value={liveUseRIR ? "rir" : liveUseRPE ? "rpe" : null}
-                onChange={(next) => {
-                  setLiveUseRIR(next === "rir");
-                  setLiveUseRPE(next === "rpe");
-                  saveEffortSignal(next);
-                }}
-              />
+              {liveEffortToggle}
               <div className="quick-log-display-prefs__group stack">
                 <div className="quick-log-display-prefs__label muted small">Exercise</div>
                 <div className="quick-log-toggle-row row">
@@ -2947,6 +3006,7 @@ export function SessionDetailPage() {
                       lastLoggedSummary={lastLoggedSummary}
                       onActivateExercise={() => activateExercise(se.id)}
                       nextIncompleteSetId={nextIncompleteSetId}
+                      highlightMissingEffort={highlightMissingEffort}
                     />
                   </div>
                 );
@@ -3059,7 +3119,21 @@ export function SessionDetailPage() {
             </p>
             {!canFinishWorkout ? (
               <p className="muted small session-finish-dock__hint" style={{ margin: 0 }}>
-                Log at least one set anywhere to enable <strong>Finish workout</strong>.
+                {totalSetsLogged < 1 ? (
+                  <>
+                    Log at least one set anywhere to enable <strong>Finish workout</strong>.
+                  </>
+                ) : setsMissingEffort > 0 ? (
+                  <>
+                    Add {liveEffortSignal === "rpe" ? "RPE" : "RIR"} on {setsMissingEffort} more{" "}
+                    {setsMissingEffort === 1 ? "set" : "sets"} to enable{" "}
+                    <strong>Finish workout</strong>.
+                  </>
+                ) : (
+                  <>
+                    Log at least one set anywhere to enable <strong>Finish workout</strong>.
+                  </>
+                )}
               </p>
             ) : null}
             <button
