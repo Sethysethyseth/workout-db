@@ -182,14 +182,74 @@ both-false is the historical NORM, not an edge case: migration
 `20260325120000_template_display_options` adds the columns
 `NOT NULL DEFAULT false` and never backfills.
 
-QUEUED | f3-live-session-effort-enforcement.md | live session either-or control,
+LANDED 0ee258b | f3-live-session-effort-enforcement.md | live session either-or control,
 signal locks after first effort value, Finish blocked when effort missing |
 MODEL opus (a wrongly-blocking Finish button is the worst bug available here).
 CLIENT-ONLY by deliberate ruling - the live signal is session-local state the
 server cannot see, so proper server enforcement needs a session-level column =
 migration = out of scope. Limitation stated in the block and to be repeated in
 the delivery. Legacy `null`-signal sessions are explicitly NOT enforced so no
-user is stranded mid-workout.
+user is stranded mid-workout. **MODEL header corrected to auto** pre-emptively on
+August 2 (the named rung does not exist on this plan); the opus tiering was
+deserved - a wrongly-blocking Finish button is the worst bug available here - so
+the acceptance criteria and the review lane carry that precision alone.
+**Block AMENDED August 3 pre-dispatch, twice**, both from F2's landing lesson:
+(1) a LINE NUMBERS ARE APPROXIMATE banner, because every `:NNNN` anchor in it was
+captured pre-F0 and F0/F1/F2 have since shifted `SessionDetailPage.jsx` (the F1
+call site cited as `:2810` now sits at `:2817`) - anchors are to be found by
+SYMBOL; (2) an explicit ruling on `RirRpeToggleRow`'s new `showNudge` prop -
+F3 should NOT pass it, because a `null`-signal live session is precisely the
+unenforced legacy case where "volume still tracks, but effort-based analytics
+stay locked" is true and useful. Naming it makes it a decision rather than the
+accident it was in F2. DISPATCHED August 3, Channel B AUTO rung (`--model auto`),
+lane `C:\dev\worktrees\cursor-lane` branch `cursor/f3` off
+`origin/effort-mandatory-wave` a277bb9. F2's DELIVERY.md deleted from the lane
+first so the incoming report cannot read as landed work.
+
+LANDED August 3 same session, NO BOUNCE and NO REVIEWER FIX - the only unit of
+this wave that needed neither. Audited per land-unit: scope exact (1 file =
+FILES TO TOUCH; `index.css` untouched because the block's named cue
+`session-set-field--needs-value` already existed at `index.css:3249` and was
+REUSED, not redefined), full 200-line diff read, lanes re-run FRESH in the lane
+(204/204 in 15 suites, client build clean, check-hex exit 0).
+
+**Four things verified by direct read because this unit's worst bug is a
+wrongly-blocking Finish button, and no lane can see any of them:**
+
+1. **The `rir = 0` trap is handled.** Effort presence is decided by
+   `String(v).trim() !== ""`, not truthiness, so a legitimate RIR of 0 (taken to
+   failure - the single most important value in the vocabulary) counts as
+   PRESENT. A truthiness check here would have blocked Finish on exactly the
+   sets that matter most, and both lanes pass either way.
+2. **No pre-filled scaffold sets exist to block on.** `startSession`
+   (`sessionController.js:148`) creates the session and its `sessionExercise`
+   rows and **zero `WorkoutSet` rows** - verified by reading the transaction.
+   So a fresh template session has nothing to enforce against, and the
+   feared "template pre-fills planned weight/reps, Finish is dead on arrival"
+   failure mode does not exist. Client draft rows are not in `session.sets`
+   either, so they cannot count.
+3. **No TDZ / cross-component scope bug (the FP5 `setHasPR` class).**
+   `isCompleted` is declared at `:1855`, inside `SessionDetailPage` (which
+   opens at `:1824`), and the new render-time consts sit at `:2704-2718` - same
+   scope, declared above use. `SessionExerciseBlock` spans `:1355-1823` and is
+   NOT where it comes from.
+4. **The lock survives a keyboard user.** The wrapper uses
+   `pointerEvents: "none"` + opacity, which does not stop Tab+Enter, but
+   `onLiveEffortSignalChange` early-returns on `effortSignalLocked`, so the
+   guard is real and the styling is only cosmetic.
+
+Behavior preserved rather than silently changed: `saveEffortSignal` is now
+called only when `!isFromTemplate`, which EXACTLY matches the pre-F3 split (the
+quick-log branch always wrote the device pref; the template branch had
+checkboxes and never did). A live template session overriding its signal does
+not rewrite the global default - correct, and consistent with F1's
+create-writes / edit-seeds-only rule.
+
+Two cosmetic residuals accepted, neither worth a bounce: the finish-dock hint
+has an unreachable third branch (`totalSetsLogged >= 1 && setsMissingEffort === 0`
+implies `canFinishWorkout`, so the hint does not render at all), and the new
+wrapper class `session-effort-signal` has no rule in `index.css` - inert, since
+layout comes from the inline `stack` gap.
 
 ---
 

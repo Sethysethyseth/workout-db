@@ -1,3 +1,80 @@
+## ARCHIVED August 3, 2026 - the E-wave section, moved VERBATIM from HANDOFF
+## when it exceeded its cap. The wave is CLOSED, merged to main as d272930.
+
+## The E-wave — CLOSED. 4/4 landed, smoked, gated, MERGED to main.
+
+**Merged August 2 as a clean fast-forward, `7d1c9ba..d272930`**, verified on
+`origin/main` by SHA (`origin/main` == `origin/effort-wave` == `d272930`). No
+merge commit. Branched off `main` `90248f9`. Client-only throughout — five
+client files, no server code, no schema change, no migration, so the merge
+carried no DB work and the manual migration track was never engaged.
+
+- **E1** `876bd58` — RIR defaults ON for new templates, new block
+  templates, and quick logs; RPE stays off; a stored boolean always wins.
+- **E2** `3eadc64` — point-of-edit nudge + why-RIR education when both
+  toggles are off, both variants, tokens-only.
+- **E3** `19c2c20` (August 2) — the "why we ask for effort" rationale as a
+  `HowCalculatedButton` on the Analytics Data-quality coverage row.
+- **E4** `965b2c8` (August 2) — the same rationale, one short sentence, ALWAYS
+  VISIBLE under the coverage meter. The `(?)` stays and keeps the long copy.
+
+**Smoke sign-off: Seth, August 1 — covers E1/E2 ONLY.** He raised three
+findings; all three were classified as next-wave scope, none an E1/E2
+contract failure (see the F-wave section). He then explicitly chose to gate
+and merge the wave as-is rather than hold or revert E2. **E3 and E4 postdate
+that sign-off and are NOT covered by it.**
+
+**Pre-main gate: PASSED August 1, but only through `1a585ed`.** Lanes were
+re-run fresh on the branch — 204 unit tests / 15 suites green, client build
+clean, `check-hex.mjs` exit 0. Each commit touched exactly the files its
+block named (E1 two, E2 two); `schema.prisma` absent from the diff as
+contracted; no scope leakage; no security/auth/cross-user surface.
+
+**Scoped gate on the delta: PASSED August 2** (Opus frontier seat), covering
+`1a585ed..8b34138` — E3, E4, and the docs/spec/queue commits between them. Seth
+smoked E3+E4 and signed off first, in order. Lanes re-run fresh on the branch:
+204 unit tests / 15 suites green, client build clean, `check-hex.mjs` exit 0.
+The delta's only code file is `AnalyticsPage.jsx` (E1/E2's files are untouched
+by it, so their August 1 PASS still stands); zero server, schema, or migration
+files anywhere in the wave; no scope leakage. Both blocks' contracts met
+verbatim, including E4's grid-SIBLING placement constraint and the
+byte-identical `effortCoverage === null` branch.
+
+**The one cross-unit seam was checked directly, not assumed.** E2 modified the
+SHARED `RirRpeToggleRow`, whose nudge keys off prop ABSENCE (`!useRIR &&
+!useRPE`) — so call sites no block ever named could render it spuriously with a
+green build. Both untouched sites (`EditTemplatePage.jsx:198`,
+`EditBlockTemplatePage.jsx:313`) pass `useRIR`/`useRPE` explicitly. Seam clean.
+
+**Merge mechanics, verified:** `main` is an ancestor of `effort-wave`, so the
+merge is a clean fast-forward with no divergence to reconcile.
+
+### E3/E4 — the effort rationale, and why it took two units
+
+Both touch only `client/src/pages/AnalyticsPage.jsx`. E3 filed the rationale
+behind the Data-quality `(?)`; E4 added the always-visible one-liner under the
+coverage meter when smoke found E3 invisible. Both live in the
+`effortCoverage !== null` branch only — a user at 0% coverage renders that row
+and IS the intended reader, while `null` means no attributed sets at all.
+Deliberately NOT mid-workout: an explainer bolted to a mandatory field signals
+the field is an imposition. Full rationale in HANDOFF-ARCHIVE.
+
+The copy reuses E2's smoke-approved line, which is load-bearing for the
+F-wave: E2's nudge fires on `!useRIR && !useRPE`, impossible once one signal
+is always selected, so that copy would otherwise have become dead code.
+
+**Gate note, August 2 — copy drift, for whoever authors the F-wave.** "Reuses"
+above is generous: the "two sets of 10" sentence now ships in THREE hand-varied
+forms — E2's nudge (`RirRpeToggleRow.jsx:22`, colon, "taken to the limit",
+"RIR is how"), E3's `HOW_EFFORT_MATTERS` (hyphen, "taken to the limit", "RIR
+(or RPE) is how"), and E4's `EFFORT_RATIONALE_SHORT` (hyphen, "at the limit",
+"Effort is how"). Each is defensible alone and none is a defect, so this did
+NOT block the gate. But the F-wave plans to repurpose E2's copy into the
+legacy required-choice prompt, which would make a FOURTH variant. Pick one
+canonical wording and a single shared constant at that point instead of
+authoring another — three near-identical strings drifting independently is how
+product voice erodes, and the F-wave is the natural moment to consolidate.
+
 # HANDOFF ARCHIVE — session-log history (append-only)
 
 E3/E4 detail excerpt (August 2, 2026, THIRTY-SEVENTH session - Opus).
