@@ -108,8 +108,9 @@ requirements and do not have to share an answer:
 
 - **App login** (browser -> LogChamp). Cookie sessions. Works today, users
   exist, nothing about the AI layer requires touching it.
-- **Connector auth** (Claude / ChatGPT -> LogChamp API). Needs OAuth 2.1 with
-  dynamic client registration.
+- **Connector auth** (Claude / ChatGPT -> LogChamp API). Needs OAuth 2.1 plus a
+  registration mechanism for clients we have no prior relationship with (see
+  the CIMD correction below).
 
 Only the second needs anything new. **The ruling: OAuth is layered OVER the
 existing authentication, scoped to the connector only. LogChamp's login and
@@ -131,22 +132,94 @@ issuance / refresh / revocation. LogChamp's server validates the resulting
 token and maps it to a user. Explicitly NOT purchased: any arrangement where
 the vendor becomes the identity source.
 
-**Open input, not an open decision.** Whether that shape is available on a free
-tier at LogChamp's scale is a research question, dispatched August 2 as the
-`ai0-recon-oauth-delegation` report lane. It cannot reopen the ruling; it only
-selects the implementation path:
+#### CORRECTION, August 2, 2026: DCR is NOT the hard requirement.
 
-- **Path 1 (preferred).** A vendor supports layer-over-existing-auth WITH
-  dynamic client registration on a free tier. LogChamp authors token validation
-  and scope enforcement, nothing more.
+The paragraph above originally said remote MCP connectors "require OAuth 2.1,
+including dynamic client registration." That was true of an earlier revision of
+the MCP authorization spec and is now WRONG. Verified directly against
+`https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization`
+(read in-seat August 2, not taken from the recon report):
+
+- Authorization servers and clients **SHOULD** support **Client ID Metadata
+  Documents** (CIMD) - the client uses an HTTPS URL as its `client_id` and
+  hosts its metadata there. This is now the preferred mechanism for the
+  no-prior-relationship case, which is exactly ours.
+- Authorization servers and clients **MAY** support **DCR** (RFC 7591). The
+  spec states it is "included for backwards compatibility with earlier
+  versions of the MCP authorization spec."
+- MCP **servers MUST** implement **Protected Resource Metadata** (RFC 9728) and
+  return `401` with a `WWW-Authenticate: ... resource_metadata=...` header.
+- MCP servers **MUST** validate that a token was issued for them specifically -
+  audience binding via RFC 8707 resource indicators is a MUST, not a nicety.
+
+Practical effect: prefer an AS supporting **both CIMD and DCR** (CIMD for
+current clients, DCR for lagging ones); treat CIMD as the requirement and DCR
+as strongly desirable. A vendor lacking BOTH is disqualified. This slightly
+widens the vendor field rather than narrowing it, so it does not disturb the
+ruling.
+
+**Open input, not an open decision - now ANSWERED.** Whether the
+layer-over-existing-auth shape is purchasable was dispatched August 2 as the
+`ai0-recon-oauth-delegation` report lane. Findings preserved at
+`docs/tasks/ai0-recon-oauth-delegation-FINDINGS.md`. **It is purchasable, and
+free at LogChamp's scale.** The shape is sold today by WorkOS (Standalone
+Connect), Scalekit, Stytch (Connected Apps) and Descope, and is the native
+architecture of Ory Hydra. Two claims were spot-checked in-seat rather than
+trusted: the MCP spec correction above, and WorkOS Standalone Connect's flow
+(`workos.com/docs/authkit/connect/standalone` - WorkOS redirects to OUR login
+URI, we authenticate against our own stack, we call a completion API with the
+identity, WorkOS issues the token; "maintain your existing authentication
+stack"). Both held.
+
+Recon's ranked recommendation, criterion = zero migration > not in login path >
+free at our scale > registration support > least code authored here:
+
+1. **WorkOS Standalone Connect** - exact pattern fit, 1M MAU free, CIMD
+   documented on the standalone page, smallest glue.
+2. **Scalekit** BYOA - same fit, MCP-native docs, 1M MAU free.
+3. **Stytch** Connected Apps - 10k MAU free, but its trusted-auth-token
+   profile wants an `email` claim and `server/src/lib/jwt.js` signs only
+   `{ sub }` today, so more glue.
+
+Disqualified: Clerk and Auth0 (both assume they own identity - migration plus
+login-path SPOF), Logto (no DCR, IdP-centric third-party apps), Keycloak
+(soft - its own MCP matrix lists RFC 8707 resource indicators unsupported,
+which collides with the audience-binding MUST above, plus heavy ops).
+
+One caveat carried forward rather than buried: the WorkOS standalone page
+documents CIMD but not DCR; the DCR claim comes from a separate WorkOS MCP
+guide page. Given DCR is now MAY and CIMD is SHOULD, this is not
+disqualifying - but confirm DCR availability before committing if
+lagging-client support turns out to matter.
+
+- **Path 1 (preferred, and now the live plan).** Delegate to a vendor
+  supporting layer-over-existing-auth on a free tier. LogChamp authors the
+  Login URI handler, the protected-resource-metadata endpoint, Bearer
+  validation against the vendor's JWKS with audience checking, and scope
+  enforcement - nothing more.
 - **Path 2 (fallback).** No vendor qualifies. LogChamp builds a MINIMAL
   authorization server - authorization-code + PKCE over the existing session
   cookie, read-only scopes, short-lived tokens, one client type. This is not
   A1: A1 imagined a general-purpose identity provider, which is why it read as
   enormous. Scoped to "issue read-only tokens to one kind of client for a user
-  who is already logged in", it is a few hundred lines and genuinely reviewable.
-  It remains a cross-user isolation surface and therefore a mandatory
-  frontier-seat review under CLAUDE.md, whoever writes it.
+  who is already logged in", it is far smaller than A1. It remains a cross-user
+  isolation surface and therefore a mandatory frontier-seat review under
+  CLAUDE.md, whoever writes it.
+
+  **Sizing correction, August 2.** This path was described in-seat as "a few
+  hundred lines and genuinely reviewable" before the recon enumerated the
+  actual surface. That estimate was too low. The real list is authorize +
+  token + refresh + revoke + PKCE verification + RFC 8414 discovery +
+  protected-resource metadata + a registration mechanism (CIMD fetch and/or
+  DCR) + a consent page + persistence for clients, codes, refresh tokens and
+  consents + JWKS or introspection. Honest order of magnitude is multi-day to
+  multi-week security-sensitive work, plus a standing obligation to track MCP
+  spec churn - the CIMD correction above is an example of that churn landing
+  inside a year. `oidc-provider` (panva, actively maintained, last release
+  2026-07-27) is the library to build on if this path is ever taken;
+  `oauth2orize` is stale (last release 2023) and should not be chosen. This
+  correction makes Path 1 MORE clearly right, not less - it is recorded so the
+  fallback is never costed optimistically in a later planning session.
 
 **The long-term-risk question Seth asked, answered plainly.** Path 1's
 reversibility risk is vendor lock-in on token issuance. It is bounded: the

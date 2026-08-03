@@ -106,7 +106,7 @@ PASS STALE FOR THE DELTA: the pre-main gate must be re-run SCOPED TO THE NEW
 COMMITS ONLY before `effort-wave` merges. E1/E2 do not need re-gating - nothing
 re-touches their files.
 
-DISPATCHED | e3-analytics-effort-rationale.md | one HowCalculatedButton + one copy
+LANDED 19c2c20 | e3-analytics-effort-rationale.md | one HowCalculatedButton + one copy
 constant on the Data Quality coverage row, explaining WHY LogChamp asks for an
 effort signal | MODEL auto. Client-only, ONE file
 (`client/src/pages/AnalyticsPage.jsx`), no CSS, no schema, no server. Copy is
@@ -121,7 +121,15 @@ disjoint from every other open unit, so it may run alongside the AI0 recon lane.
 Dispatched Aug 2 (Opus session), Channel B AUTO rung (`--model auto`), lane
 `C:\dev\worktrees\cursor-lane` branch `cursor/e3` off `origin/effort-wave`
 ad0f313. Both lanes carried stale July 29 E1/E2 DELIVERY.md reports; deleted
-before the run so the incoming report cannot read as landed work.
+before the run so the incoming report cannot read as landed work. LANDED Aug 2
+same session, no bounce. Audited per land-unit: scope exact (1 file = FILES TO
+TOUCH), full diff read, lanes re-run FRESH in the lane (unit 204/204 in 15
+suites, client build green 130 modules), check-hex exit 0. Criteria verified by
+direct read rather than trusting the report: `HOW_EFFORT_MATTERS` occurs exactly
+twice, copy matches the block VERBATIM, the button sits inside the
+`effortCoverage !== null` branch and the null branch is byte-identical, zero hex
+literals added. Lane rebased onto b043d68 before the ff-merge (the wave had
+moved under it while E3 ran).
 
 **AI0 RESOLVED August 2, 2026 by Seth** - the section-4.2 binary was false and
 is superseded. LogChamp's own login is NOT migrating to a third-party identity
@@ -131,7 +139,7 @@ The ruling is OAuth layered OVER the existing cookie/JWT authentication,
 connector-only, read-only scopes, zero user migration. Recorded in
 `docs/specs/ai-layer.md` section 4.2.
 
-DISPATCHED | ai0-recon-oauth-delegation.md | REPORT ONLY - which vendors sell
+LANDED (findings doc) | ai0-recon-oauth-delegation.md | REPORT ONLY - which vendors sell
 OAuth-over-existing-auth with dynamic client registration, at what price, plus
 fallback sizing for a minimal in-house authorization server | MODEL auto. Report
 lane, zero repo edits, parallelizes freely. Answers the one open input the AI0
@@ -140,7 +148,18 @@ a free tier. Preserve as `ai0-recon-oauth-delegation-FINDINGS.md` at landing
 (FP0 precedent) - it outlives the session and feeds the AI1+ blocks. Dispatched
 Aug 2 (Opus session), Channel B AUTO rung, lane `C:\dev\worktrees\cursor-lane-2`
 branch `recon/ai0-oauth` off `origin/effort-wave` ad0f313. Report lane, so it
-runs concurrently with E3 without a collision check.
+runs concurrently with E3 without a collision check. LANDED Aug 2 as
+`ai0-recon-oauth-delegation-FINDINGS.md`. No-edits contract HELD (lane tree
+porcelain-empty). ANSWER: the layer-over-existing-auth shape IS purchasable and
+free at our scale - WorkOS Standalone Connect ranked 1, Scalekit 2, Stytch 3;
+Clerk/Auth0/Logto/Keycloak disqualified with reasons. Two claims spot-checked
+in-seat rather than trusted, both held: the MCP-spec registration correction and
+the WorkOS standalone flow. The report CORRECTED the frontier seat's own premise
+- DCR is no longer a hard MCP requirement (CIMD is SHOULD, DCR is MAY and
+explicitly back-compat as of the 2025-11-25 spec); `ai-layer.md` 4.2 amended
+accordingly, along with an honest re-sizing of the in-house fallback from "a few
+hundred lines" to multi-day/multi-week. Report lane earned its cost here: it
+moved a decision input the seat had wrong.
 
 **Still sequenced AFTER this wave: the AI layer** - `docs/specs/ai-layer.md`
 (AI0-AI6) and `docs/specs/ai-theming.md`. AI0's DIRECTION is now settled, but no

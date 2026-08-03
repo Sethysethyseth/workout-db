@@ -1,5 +1,39 @@
 # HANDOFF ARCHIVE — session-log history (append-only)
 
+Gate-detail excerpt (August 1, 2026, THIRTY-SIXTH session - Opus pre-main
+gate on E1/E2). Moved out of HANDOFF verbatim August 2 when E3 landed and the
+file exceeded its cap; the E1/E2 gate PASS itself still stands and is
+summarized in HANDOFF. Written at the time:
+
+Three things the gate verified DIRECTLY rather than trusting the reports
+— re-verify these if the code moves:
+
+- `--color-muted` (`index.css:63`) resolves in all 8 palette x mode
+  combos. It aliases `--color-text-secondary`, overridden only at
+  `:root:12` and `html[data-theme="dark"]:94` — both root selectors, no
+  palette block touches it. Had a palette overridden it on a descendant,
+  the nudge would have computed to nothing in 6 of 8 combos.
+- All five `RirRpeToggleRow` call sites pass BOTH `useRIR` and `useRPE`
+  explicitly. The nudge keys on ABSENCE (`!useRIR && !useRPE`), so one
+  omitted prop renders it on a template that IS capturing effort.
+- Neither edit page can flash the nudge pre-hydration —
+  `EditTemplatePage.jsx:110` and `EditBlockTemplatePage.jsx:220` both
+  early-return on `loading`, so the toggle row never mounts against the
+  `useState(false)` initial values.
+
+**Gate process note, recorded as a deliberate call:** the diff was read
+in-seat rather than fanned out to Cursor report lanes. 37 lines across 4
+files — fan-out exists to move grunt SEARCH off the frontier seat and
+there was no search here. Not a skipped step; do not read it as
+precedent for larger waves.
+
+**Hard constraints held:** no schema change, no migration, no backfill.
+The Prisma `useRIR Boolean @default(false)` is untouched; existing
+templates keep their stored values and are nudged, never silently
+rewritten.
+
+---
+
 Session log (July 29, 2026, THIRTY-FIFTH session (resident relay — E-wave
 CODE-COMPLETE 2/2, awaiting Seth's smoke sign-off). Written at the time:
 

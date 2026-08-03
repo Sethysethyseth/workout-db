@@ -1,13 +1,13 @@
 # HANDOFF — current state
 
-**Next action (human):** Say **"push to main"** when you want the E-wave
-merged — it is smoke-signed-off and gate-PASSED, and the merge is the only
-thing standing between `effort-wave` and prod. Three decisions remain
-yours, none urgent: **AI0** (`ai-layer.md` section 4.2 — build an OAuth 2.1
-authorization server vs delegate to a managed provider; recommendation is
-delegate) blocks the AI connector lane; the untracked `docs/parked/*` files
-still need a ruling (commit here, or move to the workflow repo); and the
-F-wave shape below needs your yes before it is authored.
+**Next action (human):** **Smoke E3 on the staging Vercel deploy** (the one
+new item: Analytics -> Data quality -> the `(?)` next to the effort-coverage
+line). E1/E2 were already signed off August 1 and are NOT re-smoked. Once you
+sign off, the pre-main gate re-runs SCOPED TO THE DELTA and then the merge
+waits on your "push to main". Two decisions still yours, neither urgent nor
+blocking the merge: the untracked `docs/parked/*` ruling (commit here, or move
+to the workflow repo), and the F-wave shape confirmation before it is authored.
+AI0 is now RESOLVED and no longer needs you.
 
 > **Standing rule:** the line above is filled on EVERY rewrite and is
 > never empty or deferred — one sentence, the single thing SETH does
@@ -15,63 +15,67 @@ F-wave shape below needs your yes before it is authored.
 > explicitly. Dogfoods the shell repo's decision-10 no-dangling-next-
 > action requirement; `land-unit` section 5 keeps it maintained.
 
-**Updated:** August 1, 2026, thirty-sixth session (Opus frontier seat —
-**E-wave smoke sign-off + pre-main gate PASS; F-wave ruled, not
-authored**). Prior entry: July 29, thirty-fifth session (resident relay —
-E-wave landed 2/2). Full session logs, including the E-wave audit
-findings and the AI-layer research, are verbatim in
-`docs/HANDOFF-ARCHIVE.md`.
+**Updated:** August 2, 2026, thirty-seventh session (Opus frontier seat —
+**E3 authored + landed; AI0 RULED and its recon landed; gate now stale for
+the delta**). Prior entry: August 1, thirty-sixth session (Opus — E-wave
+smoke sign-off + pre-main gate PASS; F-wave ruled). Full session logs are
+verbatim in `docs/HANDOFF-ARCHIVE.md`.
 
 ---
 
-## The E-wave — SIGNED OFF, GATE PASSED, awaiting merge
+## The E-wave — 3/3 LANDED, E3 awaiting smoke, gate STALE for the delta
 
-Branch **`effort-wave`** at **`1a585ed`** (code at `3eadc64`), pushed.
-Branched off `main` `90248f9`. Client-only; no server code, no schema
-change, no migration.
+Branch **`effort-wave`** at **`19c2c20`**, pushed. Branched off `main`
+`90248f9`. Client-only throughout; no server code, no schema change, no
+migration.
 
 - **E1** `876bd58` — RIR defaults ON for new templates, new block
   templates, and quick logs; RPE stays off; a stored boolean always wins.
 - **E2** `3eadc64` — point-of-edit nudge + why-RIR education when both
   toggles are off, both variants, tokens-only.
+- **E3** `19c2c20` (August 2) — the "why we ask for effort" rationale as a
+  `HowCalculatedButton` on the Analytics Data-quality coverage row.
 
-**Smoke sign-off: Seth, August 1.** He raised three findings; all three
-were classified as next-wave scope, none an E1/E2 contract failure (see
-the F-wave section). He then explicitly chose to gate and merge the wave
-as-is rather than hold or revert E2.
+**Smoke sign-off: Seth, August 1 — covers E1/E2 ONLY.** He raised three
+findings; all three were classified as next-wave scope, none an E1/E2
+contract failure (see the F-wave section). He then explicitly chose to gate
+and merge the wave as-is rather than hold or revert E2. **E3 postdates that
+sign-off and is NOT covered by it.**
 
-**Pre-main gate: PASS (Opus, August 1).** Lanes re-run fresh on the
-branch — 204 unit tests / 15 suites green, client build clean,
-`check-hex.mjs` exit 0. Each commit touches exactly the files its block
-named (E1 two, E2 two); `schema.prisma` absent from the diff as
+**Pre-main gate: PASSED August 1, but only through `1a585ed`.** Lanes were
+re-run fresh on the branch — 204 unit tests / 15 suites green, client build
+clean, `check-hex.mjs` exit 0. Each commit touched exactly the files its
+block named (E1 two, E2 two); `schema.prisma` absent from the diff as
 contracted; no scope leakage; no security/auth/cross-user surface.
 
-Three things the gate verified DIRECTLY rather than trusting the reports
-— re-verify these if the code moves:
+**That PASS is now STALE FOR THE DELTA.** Three commits landed after it:
+`ad0f313` (specs + blocks), `b043d68` (queue), `19c2c20` (E3 code). The gate
+must re-run SCOPED TO THOSE COMMITS before the merge. E1/E2 do not need
+re-gating — nothing in the delta re-touches their files. Order is unchanged
+and non-negotiable: Seth smokes E3 -> scoped gate -> "push to main".
 
-- `--color-muted` (`index.css:63`) resolves in all 8 palette x mode
-  combos. It aliases `--color-text-secondary`, overridden only at
-  `:root:12` and `html[data-theme="dark"]:94` — both root selectors, no
-  palette block touches it. Had a palette overridden it on a descendant,
-  the nudge would have computed to nothing in 6 of 8 combos.
-- All five `RirRpeToggleRow` call sites pass BOTH `useRIR` and `useRPE`
-  explicitly. The nudge keys on ABSENCE (`!useRIR && !useRPE`), so one
-  omitted prop renders it on a template that IS capturing effort.
-- Neither edit page can flash the nudge pre-hydration —
-  `EditTemplatePage.jsx:110` and `EditBlockTemplatePage.jsx:220` both
-  early-return on `loading`, so the toggle row never mounts against the
-  `useState(false)` initial values.
+### E3 — what landed and why it is where it is
 
-**Gate process note, recorded as a deliberate call:** the diff was read
-in-seat rather than fanned out to Cursor report lanes. 37 lines across 4
-files — fan-out exists to move grunt SEARCH off the frontier seat and
-there was no search here. Not a skipped step; do not read it as
-precedent for larger waves.
+One file (`client/src/pages/AnalyticsPage.jsx`), 4 insertions. Adds a
+`HOW_EFFORT_MATTERS` copy constant beside the existing `HOW_*` constants and
+renders the already-imported `HowCalculatedButton` on the coverage row in
+`DataQualitySection`.
 
-**Hard constraints held:** no schema change, no migration, no backfill.
-The Prisma `useRIR Boolean @default(false)` is untouched; existing
-templates keep their stored values and are nudged, never silently
-rewritten.
+Placement rationale, so it is not "improved" later by accident: the page
+already explained what each metric COSTS without effort
+(`HOW_STIMULATING_SETS`) and `MetricInfoButton` already DEFINES RIR/RPE at
+logging time. The missing layer was the conceptual why, and it belongs where
+the user reads their own coverage number — not mid-workout, where an
+explainer on a mandatory field signals that the field is an imposition.
+Deliberately scoped to the `effortCoverage !== null` branch: a user at 0%
+coverage still renders that row and IS the intended reader, while `null`
+means no attributed sets at all and has nothing to explain.
+
+The copy reuses E2's smoke-approved line. That is load-bearing for the
+F-wave: E2's nudge fires on `!useRIR && !useRPE`, which becomes impossible
+once the F-wave makes one signal always selected, so the copy would
+otherwise have become dead code.
+
 
 ## The F-wave (effort mandatory) — RULED by Seth, NOT YET AUTHORED
 
@@ -146,11 +150,31 @@ the incoming one cannot be mistaken for landed work.
 - `analytics-engine.md` section 8 is AMENDED, not contradicted; Track C
   now means `ai-layer.md`. Do not phase AI work from the old section.
 
-**AI0 blocks the whole connector lane** and is Seth's call: the server has
-no OAuth today (cookie sessions + `server/src/lib/jwt.js` only) and remote
-connectors need OAuth 2.1 with dynamic client registration. Build vs
-delegate — recommendation is delegate, since hand-rolling it turns the
-cheapest lane into the most security-sensitive code in the repo.
+**AI0 is RESOLVED (Seth, August 2) — the connector lane is unblocked.** The
+old build-vs-delegate binary was FALSE: it conflated app login with connector
+auth and costed delegation as including a user migration. **Ruling: OAuth
+layers OVER the existing cookie/JWT auth, connector-only, zero user
+migration.** Deciding argument is blast radius, not cost — an IdP in the
+app-login path is a single point of failure for the whole product; scoped to
+the connector, an outage costs only the connector. Written into
+`ai-layer.md` section 4.2.
+
+**Recon landed** (`docs/tasks/ai0-recon-oauth-delegation-FINDINGS.md`): the
+shape IS purchasable and free at our scale. Ranked WorkOS Standalone Connect
+1 (1M MAU free, exact pattern fit), Scalekit 2, Stytch 3. Clerk, Auth0,
+Logto and Keycloak disqualified with reasons recorded.
+
+**Two corrections that came out of it, both already in the spec:**
+
+- **DCR is NOT a hard MCP requirement any more.** Verified in-seat against
+  the 2025-11-25 authorization spec, not taken from the report: CIMD is
+  SHOULD, DCR is MAY and explicitly back-compat, protected-resource metadata
+  (RFC 9728) is MUST on the server, and audience binding via RFC 8707 is
+  MUST. Prefer a vendor with both CIMD and DCR. This widens the field.
+- **The in-house fallback was under-costed in-seat** as "a few hundred
+  lines." Honest sizing is multi-day to multi-week security-sensitive work
+  plus ongoing spec-churn maintenance. Build on `oidc-provider` if ever
+  taken; `oauth2orize` is stale. This makes delegation more clearly right.
 
 **Two premises settled, so nobody re-litigates them:** `.mil`/DoD
 credentials are permanently out (5 CFR 2635.704 — government property,
@@ -175,8 +199,8 @@ specified.
   Render backend was correct — no repoint needed. The F-wave is also
   expected client-only; re-check that assumption if enforcement needs
   server validation.
-- **`effort-wave` at `1a585ed`** — E1 + E2 + docs commits. Gate-passed,
-  merge pending the trigger phrase.
+- **`effort-wave` at `19c2c20`** - E1 + E2 + E3 + docs commits. E1/E2 gate-
+  passed Aug 1; the delta (ad0f313, b043d68, 19c2c20) is NOT yet gated.
 - MW-wave, NT-wave, A-wave, FP-wave all merged and closed; their branches
   plus the lane branches are deletion candidates (gated).
 - FP8 (PWA icons) is the only open FP unit — DRAFT, blocked on Seth
