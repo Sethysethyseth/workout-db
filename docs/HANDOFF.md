@@ -1,14 +1,10 @@
 # HANDOFF — current state
 
-**Next action (human):** **Confirm Vercel actually built `965b2c8` (or at least
-`19c2c20`), then smoke E3+E4 on staging** - Analytics -> Data quality, at the
-page bottom: a visible one-line rationale under the coverage meter, plus a `(?)`
-holding the longer version. E1/E2 were signed off August 1 and are NOT
-re-smoked. The build check is not optional this time: on August 2 the E3 change
-read as "nothing has changed" and the deploy was never confirmed, so a stale
-build has not been ruled out. Then the gate runs SCOPED TO THE DELTA and the
-merge waits on your "push to main". Still yours, not blocking: the
-`docs/parked/*` ruling, and the F-wave-vs-AI sequencing call below.
+**Next action (human):** **Say "push to main" when you want the E-wave merged** -
+smoke passed August 2 and the scoped pre-main gate PASSED the same day, so
+nothing else blocks it. The merge is the RUNBOOK ritual, one command at a time.
+Also yours, not blocking the merge: the F-wave-vs-AI sequencing call below (one
+sentence, needed before either is authored) and the `docs/parked/*` ruling.
 
 > **Standing rule:** the line above is filled on EVERY rewrite and is
 > never empty or deferred — one sentence, the single thing SETH does
@@ -16,17 +12,17 @@ merge waits on your "push to main". Still yours, not blocking: the
 > explicitly. Dogfoods the shell repo's decision-10 no-dangling-next-
 > action requirement; `land-unit` section 5 keeps it maintained.
 
-**Updated:** August 2, 2026, thirty-seventh session (Opus frontier seat —
-**E3 + E4 authored and landed; AI0 RULED and its recon landed; gate now stale
-for the delta**). Prior entry: August 1, thirty-sixth session (Opus — E-wave
-smoke sign-off + pre-main gate PASS; F-wave ruled). Full session logs are
+**Updated:** August 2, 2026, thirty-eighth session (Opus frontier seat —
+**scoped pre-main gate on the E3/E4 delta: PASS; merge awaits the trigger
+phrase**). Prior entry: August 2, thirty-seventh session (Opus — E3 + E4
+authored and landed; AI0 RULED and its recon landed). Full session logs are
 verbatim in `docs/HANDOFF-ARCHIVE.md`.
 
 ---
 
-## The E-wave — 4/4 LANDED, E3+E4 awaiting smoke, gate STALE for the delta
+## The E-wave — 4/4 LANDED, SMOKED, and GATED. Waiting on "push to main".
 
-Branch **`effort-wave`** at **`965b2c8`**, pushed. Branched off `main`
+Branch **`effort-wave`** at **`8b34138`**, pushed. Branched off `main`
 `90248f9`. Client-only throughout; no server code, no schema change, no
 migration.
 
@@ -51,12 +47,24 @@ clean, `check-hex.mjs` exit 0. Each commit touched exactly the files its
 block named (E1 two, E2 two); `schema.prisma` absent from the diff as
 contracted; no scope leakage; no security/auth/cross-user surface.
 
-**That PASS is now STALE FOR THE DELTA.** Everything from `ad0f313` through
-`965b2c8` landed after it — two code commits (`19c2c20` E3, `965b2c8` E4) and
-the docs/queue commits between them. The gate must re-run SCOPED TO THAT RANGE
-before the merge. E1/E2 do not need re-gating — nothing in the delta re-touches
-their files; the only code file involved is `AnalyticsPage.jsx`. Order is
-unchanged and non-negotiable: Seth smokes -> scoped gate -> "push to main".
+**Scoped gate on the delta: PASSED August 2** (Opus frontier seat), covering
+`1a585ed..8b34138` — E3, E4, and the docs/spec/queue commits between them. Seth
+smoked E3+E4 and signed off first, in order. Lanes re-run fresh on the branch:
+204 unit tests / 15 suites green, client build clean, `check-hex.mjs` exit 0.
+The delta's only code file is `AnalyticsPage.jsx` (E1/E2's files are untouched
+by it, so their August 1 PASS still stands); zero server, schema, or migration
+files anywhere in the wave; no scope leakage. Both blocks' contracts met
+verbatim, including E4's grid-SIBLING placement constraint and the
+byte-identical `effortCoverage === null` branch.
+
+**The one cross-unit seam was checked directly, not assumed.** E2 modified the
+SHARED `RirRpeToggleRow`, whose nudge keys off prop ABSENCE (`!useRIR &&
+!useRPE`) — so call sites no block ever named could render it spuriously with a
+green build. Both untouched sites (`EditTemplatePage.jsx:198`,
+`EditBlockTemplatePage.jsx:313`) pass `useRIR`/`useRPE` explicitly. Seam clean.
+
+**Merge mechanics, verified:** `main` is an ancestor of `effort-wave`, so the
+merge is a clean fast-forward with no divergence to reconcile.
 
 ### E3/E4 — the effort rationale, and why it took two units
 
@@ -71,6 +79,18 @@ the field is an imposition. Full rationale in HANDOFF-ARCHIVE.
 The copy reuses E2's smoke-approved line, which is load-bearing for the
 F-wave: E2's nudge fires on `!useRIR && !useRPE`, impossible once one signal
 is always selected, so that copy would otherwise have become dead code.
+
+**Gate note, August 2 — copy drift, for whoever authors the F-wave.** "Reuses"
+above is generous: the "two sets of 10" sentence now ships in THREE hand-varied
+forms — E2's nudge (`RirRpeToggleRow.jsx:22`, colon, "taken to the limit",
+"RIR is how"), E3's `HOW_EFFORT_MATTERS` (hyphen, "taken to the limit", "RIR
+(or RPE) is how"), and E4's `EFFORT_RATIONALE_SHORT` (hyphen, "at the limit",
+"Effort is how"). Each is defensible alone and none is a defect, so this did
+NOT block the gate. But the F-wave plans to repurpose E2's copy into the
+legacy required-choice prompt, which would make a FOURTH variant. Pick one
+canonical wording and a single shared constant at that point instead of
+authoring another — three near-identical strings drifting independently is how
+product voice erodes, and the F-wave is the natural moment to consolidate.
 
 ## NEXT AFTER THE MERGE — the connector auth work, then the AI layer
 
@@ -208,17 +228,21 @@ authored code. A separate pure validator is specified.
 
 ## Repo / deploy state
 
-- **`main` is at `90248f9` (July 21)** — the frontier-parity-wave merge,
-  deployed and prod-smoked clean (Seth, July 28). Prod Vercel/Render
-  track `main`. **Because prod tracks main, any push to main is a
+- **`main` is at `7d1c9ba`** — corrected at the August 2 gate; this file had
+  said `90248f9` (July 21), which is now two DOCS-ONLY commits behind
+  (`869c5f1`, `7d1c9ba` — HANDOFF, the `land-unit` skill, and the poor-mans
+  spec). No code moved on main since the frontier-parity merge `90248f9`, which
+  was prod-smoked clean July 28, and `effort-wave` already contains both. Prod
+  Vercel/Render track `main`. **Because prod tracks main, any push to main is a
   prod-bound push (gate item 2).**
 - **Staging Render tracks `main`** (Seth repointed it July 28). The
   E-wave shipped ZERO server changes, so smoking it against a `main`
   Render backend was correct — no repoint needed. The F-wave is also
   expected client-only; re-check that assumption if enforcement needs
   server validation.
-- **`effort-wave` at `965b2c8`** - E1 + E2 + E3 + E4 + docs commits. E1/E2 gate-
-  passed Aug 1; the delta (ad0f313 through 965b2c8) is NOT yet gated.
+- **`effort-wave` at `8b34138`**, pushed (origin matches) - E1 + E2 + E3 + E4 +
+  docs commits. FULLY GATED: E1/E2 Aug 1, the delta Aug 2. Awaiting only the
+  merge trigger.
 - MW-wave, NT-wave, A-wave, FP-wave all merged and closed; their branches
   plus the lane branches are deletion candidates (gated).
 - FP8 (PWA icons) is the only open FP unit — DRAFT, blocked on Seth
