@@ -67,13 +67,72 @@ models).
 
 ## 4. Lane A - remote MCP server
 
+### 4.0 CORRECTIONS, August 4, 2026 - read before implementing anything below
+
+Three parallel Cursor recon lanes (AIR1 server now-state, AIR2 client now-state,
+AIR3 MCP + WorkOS research) checked this section against the tree and against
+current published documentation. **Five things below this line are wrong or
+stale.** They are corrected here rather than rewritten in place so the drift is
+visible; where this subsection and the text below disagree, THIS subsection
+wins.
+
+1. **There is no `/api` prefix.** Routers mount at the API host root via
+   `app.use("/", routes)` (`server/src/app.js:126`). The live paths are
+   `/analytics/summary` and `/analytics/exercise`. Section 4.1's
+   `/api/analytics/summary` has never been correct.
+2. **The MCP spec has moved to revision `2026-07-28`, and we are deliberately
+   NOT targeting it.** That revision changes Streamable HTTP incompatibly
+   (POST-only, protocol-level sessions and the GET SSE channel removed,
+   `Mcp-Method` / `Mcp-Name` headers required) and formally DEPRECATES dynamic
+   client registration in favour of CIMD. But Anthropic's connector
+   documentation still lists authorization-spec support only through
+   `2025-11-25`. A server built to the newest spec is a server today's Claude
+   cannot talk to. **Target `2025-11-25`; revisit when Anthropic's docs move.**
+   This is a dated decision, not an oversight.
+3. **Use `@modelcontextprotocol/sdk` (the v1 line), not `@modelcontextprotocol/
+   server` (v2).** The v2 packages are ESM-only and require Node >= 20;
+   `server/package.json` declares no `"type": "module"` and no `engines`, so the
+   server is CommonJS. v1 is dual CJS/ESM on Node >= 18.
+4. **Do NOT install `@workos-inc/node`.** Version 10.9.0 does not expose the
+   OAuth completion method this design needs, and it requires Node >= 22.11,
+   which this server does not declare. The completion call is a documented plain
+   HTTPS POST; token verification uses `jose`.
+5. **`buildExerciseDetail` returns no `meta` key**
+   (`server/src/analytics/exerciseDetail.js:254-272`), so the coverage and
+   honesty metadata that section 2 requires to travel WITH the numbers is absent
+   on that surface. The MCP tool must attach it rather than shipping bare
+   numbers - an absent caveat reads as a confident number.
+
+One further finding that changes who this feature serves, though not what we
+build: **custom connectors are available on every Claude tier including Free**
+(one connector on Free), but in **ChatGPT they are limited to Business,
+Enterprise, and Edu workspaces** - not available on free or personal accounts.
+Section 1's "Claude, ChatGPT" framing is therefore half right. Claude is the
+real target; ChatGPT support arrives free with the same server but reaches a
+much narrower audience. User-facing copy must not promise otherwise.
+
+Two operational limits worth designing against: Claude caps tool results at
+roughly 150,000 characters and tool calls at a 300-second timeout, and it
+connects from Anthropic's cloud rather than the user's device - so the server
+must be publicly reachable over HTTPS, and `localhost` never works without a
+tunnel.
+
+Recon also confirmed the two most common real-world failure modes for remote MCP
+servers, both now designed against explicitly in the AI2 task block: a `401`
+whose `WWW-Authenticate` header omits `resource_metadata` (the client never
+discovers where to authenticate and surfaces only "couldn't connect"), and
+CORS / OPTIONS preflight failures on the discovery and MCP routes.
+
 ### 4.1 Data surface (no new plumbing)
 
-Tools read the endpoints that already exist:
+Tools read the endpoints that already exist (paths corrected per 4.0 item 1):
 
-- `GET /api/analytics/summary?from=&to=` -> `server/src/routes/
-  analyticsRoutes.js`, built by `server/src/analytics/summary.js`.
-- The exercise-detail surface -> `server/src/analytics/exerciseDetail.js`.
+- `GET /analytics/summary?from=&to=` -> `server/src/routes/
+  analyticsRoutes.js:11`, built by `server/src/analytics/summary.js`. Both
+  `from` and `to` are REQUIRED and the endpoint 400s without them.
+- `GET /analytics/exercise` -> `server/src/routes/analyticsRoutes.js:13`, built
+  by `server/src/analytics/exerciseDetail.js`. See 4.0 item 5 on its missing
+  `meta`.
 
 Proposed tools, all summary-shaped:
 

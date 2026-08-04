@@ -6,6 +6,108 @@ Statuses: DRAFT / QUEUED / DISPATCHED / AWAITING-REVIEW / LANDED <sha> / BOUNCED
 
 ## Active
 
+AI-wave (the connector: LogChamp inside the user's own AI assistant), opened
+August 4, 2026 (Opus frontier seat). FIVE units on branch `ai-connector-wave`,
+off `main` 59e27dc. Implements `docs/specs/ai-layer.md` Lane A end to end, per
+Seth's August 4 scope ruling ("full connector, end to end"), his WorkOS vendor
+commitment, and his agreement to run one migration this wave.
+
+**Authoring recon: THREE parallel Cursor report lanes, August 4** (AIR1 server
+now-state, AIR2 client/consent surface now-state, AIR3 MCP + WorkOS integration
+research). All three returned clean with the no-edits contract held. They moved
+six decision inputs the seat had wrong, and every one is baked into the blocks:
+
+1. **There is no `/api` prefix.** Routers mount at the host root
+   (`app.js:126`); live paths are `/analytics/summary`, `/sessions`.
+   `ai-layer.md` section 4.1 says `/api/analytics/summary` and is WRONG.
+2. **The MCP spec moved to `2026-07-28`,** which changes the transport
+   incompatibly (POST-only, no protocol sessions, new required headers) - but
+   Anthropic's connector docs still list support only through `2025-11-25`.
+   Building against the newest spec yields a server today's Claude cannot talk
+   to. **Deliberate decision: target `2025-11-25`.**
+3. **Use `@modelcontextprotocol/sdk` v1, not the v2 packages.** v2 is ESM-only
+   and needs Node >= 20; this server is CommonJS with no `engines` field.
+4. **Do NOT install `@workos-inc/node`** - 10.9.0 lacks the completion method
+   and requires Node >= 22.11. The completion call is a plain HTTPS POST.
+5. **No server-persisted user preference exists today** - every pref is
+   localStorage, and `User` holds identity fields only. The consent record is
+   the first of its kind.
+6. **`npm run test:unit` matches ONLY `test/analytics/**` and `test/lib/**`**
+   (`jest.config.js:11-14`), and never loads a route or middleware. Every block
+   therefore mandates its pure tests into `server/test/lib/` and declares its
+   lane gap explicitly - this wave is far less lane-covered than the E and F
+   waves were, and green lanes must not be read as coverage.
+
+**DEPENDENCIES approved by Seth, August 4** (gate item 5): three total, split
+across units - `express-rate-limit` + `jose` (AI2), `@modelcontextprotocol/sdk`
+(AI3). No others; AI4 and AI5 carry no install approval.
+
+**Serialization: STRICTLY SERIAL, all five.** AI2 consumes AI1's
+`connectorAccess()`; AI3 mounts behind AI2's guard; AI4 replaces AI2's verifier
+seam; AI5 extends AI1's page. `server/src/app.js` is touched by AI2 and AI3, and
+`server/src/routes/aiRoutes.js` by AI1 and AI4. In doubt = collide = serialize.
+
+**AI1 is MIGRATION-CARRYING and therefore NOT autonomously dispatchable** -
+`dispatch-unit` section 4 refuses those, and running the migration is Seth's
+manual track (gate item 3). Hand-relay it, or dispatch only after he clears it.
+The block instructs Cursor to WRITE the migration file and explicitly NOT to
+apply it. **AI4 is BLOCKED ON A HUMAN STEP** - the WorkOS account, dashboard
+config, and secrets are Seth's; its code is authorable and lane-checkable now,
+but unsmokeable until that exists. Its block carries his dashboard checklist.
+
+**Two units are cross-user isolation surfaces** (AI2's guard, AI4's token
+verification) and are standing frontier-seat escalations under CLAUDE.md
+regardless of who writes them. The `sub`-to-user mapping in AI4 is the single
+highest-severity line in the wave.
+
+QUEUED | ai1-consent-entitlement-foundation.md | server-side AI consent record +
+entitlement flag + opt-in settings page; the privacy groundwork the spec
+requires to ship with the first AI feature | MODEL auto. MIGRATION-CARRYING (new
+`AiConsent` model + `User.aiConnectorEnabled`). Consent is deliberately ONE ROW
+PER USER, not an audit trail. Policy lives in a pure `server/src/ai/consent.js`
+so the DB-free lane can gate it; `connectorAccess()` is the single gate AI2 and
+AI4 both call rather than re-deriving. Copy specified verbatim in the block.
+
+QUEUED | ai2-connector-perimeter.md | RFC 9728 discovery document, Bearer guard
+with a swappable verifier, scope + consent enforcement, connector-scoped rate
+limiting | MODEL auto. CROSS-USER ISOLATION SURFACE. The verifier seam's v1
+implementation accepts an ordinary LogChamp Bearer token deliberately, so
+`/mcp` is drivable with `curl` before the vendor account exists. Two traps
+designed against by name: a 401 that omits `resource_metadata` (the top
+real-world connector failure - the client shows only "couldn't connect"), and
+CORS/OPTIONS preflight on the discovery routes. The guard must set
+`req.connectorUserId`, NEVER `req.authUserId` - overloading that property would
+let a connector token satisfy every `authRequired` route in the app.
+
+QUEUED | ai3-mcp-server-readonly-tools.md | the MCP server on `/mcp` plus four
+read-only summary-shaped tools over the existing analytics | MODEL auto.
+Enforces the spec's hard boundary by construction - no tool returns raw sets,
+no tool accepts a user id as input (identity comes from the token). Carries a
+payload-size guard: Claude caps tool results near 150k chars and a wide summary
+can exceed it, so trimming is explicit and never silent. AUTHORIZES a
+behaviour-preserving extraction in `analyticsController.js` so the connector and
+the app run one data path and cannot drift.
+
+QUEUED | ai4-workos-connector-auth.md | WorkOS Standalone Connect - Login URI
+handler, completion call, real JWKS verification with audience binding | MODEL
+auto. CROSS-USER ISOLATION SURFACE, and BLOCKED on Seth's WorkOS account. Four
+sourced traps written into the contract: no `@workos-inc/node`, 302 not 303 (a
+303 has been reported to break the Claude connector flow), audience mismatch
+between the Resource Indicator and our metadata, and `aud` arriving as either a
+string or an array (UNCONFIRMED which - handle both). Touches the verifier body
+only, never AI2's guard - that is what the seam was for.
+
+QUEUED | ai5-connector-onboarding-ux.md | the in-app connect surface: copyable
+connector address, four-step instructions, honest tier note, What's New entry |
+MODEL auto. Client-only, no new endpoint - the URL derives from
+`VITE_API_URL`. Copy specified VERBATIM including the tier asymmetry recon
+found: custom connectors work on every Claude plan including free (one only),
+but in ChatGPT are limited to Business/Enterprise/Edu. Carries the E3 lesson
+explicitly - acceptance criteria cannot express "discoverable", so smoke is the
+real test.
+
+---
+
 F-wave (effort MANDATORY), opened August 2, 2026 (Opus frontier seat). FOUR
 units on branch `effort-mandatory-wave`, off `main` 8541bca. Implements Seth's
 August 1 rulings: RIR/RPE either-or (never both), mandatory in the SAME wave as
