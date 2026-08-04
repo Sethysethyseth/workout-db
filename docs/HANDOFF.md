@@ -1,12 +1,14 @@
 # HANDOFF — current state
 
-**Next action (human):** **Rule on how AI1 gets executed** - it is
-migration-carrying, so `dispatch-unit` refuses it and the whole (strictly
-serial) AI-wave is stalled behind that one call; detail in "The AI-wave" below.
-**The WorkOS staging dashboard is now DONE** (August 4, driven in-browser) -
-only the Render env vars remain, and only `WORKOS_API_KEY` is Seth's to paste;
-see "AI4 / WorkOS" below. Still open behind those, blocking nothing: the prod smoke of `main` `59e27dc` (covers the F-wave AND the leftover
-E-wave pass), and the `docs/parked/*` ruling.
+**Next action (human):** **Apply the `AiConsent` migration to staging Neon, then
+set the four WorkOS env vars on the `workout-db-staging` Render service** - AI1's
+migration is written but unapplied anywhere, and `MCP_RESOURCE_URL` being unset
+is now PROVEN to matter (staging's live discovery document advertises
+`http://localhost:3000/mcp`). Both are his manual track; both block any real
+connector smoke. Values and click-path: `docs/specs/workos-staging-handoff.md`
+section 4. Still open behind those, blocking nothing: the prod smoke of `main`
+`59e27dc` (covers the F-wave AND the leftover E-wave pass), and the
+`docs/parked/*` ruling.
 
 > **Standing rule:** the line above is filled on EVERY rewrite and is
 > never empty or deferred — one sentence, the single thing SETH does
@@ -14,68 +16,46 @@ E-wave pass), and the `docs/parked/*` ruling.
 > explicitly. Dogfoods the shell repo's decision-10 no-dangling-next-
 > action requirement; `land-unit` section 5 keeps it maintained.
 
-**Updated:** August 4, 2026, forty-first session (Opus frontier seat — **the
-AI connector wave AUTHORED, AI1-AI5, from three parallel recon lanes**). Prior
-entry: August 4, fortieth session (Opus — F-wave gated, fixed, and merged to
-`main` `59e27dc`). Full session logs are verbatim in
-`docs/HANDOFF-ARCHIVE.md`.
+**Updated:** August 4, 2026, forty-second session (resident relay — **AI-wave
+dispatched and landed 3/5: AI1 `83d82c8`, AI2 `5c051bc`, AI3 `eecd2e9`**, no
+bounces; plus a prod-deploy incident found and closed, see below). A CONCURRENT
+session the same evening drove the WorkOS dashboard to done (`4a8a98c`) — its
+work is folded in under "AI4 / WorkOS" and preserved at
+`docs/specs/workos-staging-handoff.md`. Prior entries: August 4, forty-first
+session (Opus — the AI wave AUTHORED from three recon lanes); August 4, fortieth
+(Opus — F-wave gated and merged to `main` `59e27dc`). Full session logs are
+verbatim in `docs/HANDOFF-ARCHIVE.md`.
+
+### INCIDENT, August 4 — prod Render was building from the wave branch
+
+**Closed, no data impact, but the mechanism is worth remembering.** Prod Render
+`workout-db-l3gc` was pointed at `ai-connector-wave` instead of `main`, so the
+AI1 push auto-deployed unreviewed, ungated server code straight to production.
+Caught by probing both services rather than by reading docs: prod answered
+`GET /ai/consent` with **401** (route mounted) while 404ing `/ai/nonsense`, and
+`git branch -r --contains 83d82c8` returned only `origin/ai-connector-wave` —
+`main` had no `/ai` mount at all. Seth repointed prod back to `main` and moved
+staging onto the wave branch; both re-verified from ground truth afterwards
+(prod `/ai/consent` -> 404, staging -> 401, both `/health` 200).
+
+**No data was at risk** — the migration had not run anywhere, AI1 added no code
+to any existing route, and prod's client had no link to the page. **The durable
+lesson: HANDOFF's deploy topology is a CLAIM, not ground truth.** The relay
+pushed three times on the assumption "this branch is staging-side" because the
+doc said so. Probe the actual services before the first push of any wave that
+carries server code — a 401-vs-404 diff across two hosts costs one command and
+settles it.
 
 ---
 
-## The F-wave (effort MANDATORY) — GATED and MERGED to `main`
+## The F-wave (effort MANDATORY) — CLOSED. Merge record archived August 4.
 
-**Merged August 4 as a clean fast-forward, `8541bca..59e27dc`** (14 commits).
-Smoked by Seth on staging, then gated. **No schema change or migration anywhere
-in it**; F1/F2/F3 are client-only, but F0 IS a `server/` change and is the first
-server code to reach prod in a while — prod smoke is open.
-
-- **F0** `00e06d9` — a template's stored effort signal now reaches the live
-  session (six server selects + a one-time client seed).
-- **F1** `3da8bf5` — either-or signal control (`rir | rpe | null`) plus
-  `effortSignalPref.js`, wired to all five call sites.
-- **F2** `bfa010a` — legacy both-false templates get a REQUIRED CHOICE on open;
-  Save blocked until the user picks; loading one writes nothing.
-- **F3** `0ee258b` — live session either-or control, signal locks after the
-  first effort value, Finish blocked while a core-logged set is missing it.
-
-- **Gate fix** `59e27dc` — the one finding, authored in-seat.
-
-**What the gate caught, and why per-unit review could not.** F1 made the
-device effort-signal pref writable from four template screens; F3's lock is
-signal-AGNOSTIC (any non-blank `rir` OR `rpe` locks the control) while its
-mandate counts only the ACTIVE signal. The live signal is re-seeded on every
-remount from OUTSIDE the session — device pref for quick logs, template
-booleans for template sessions. So changing the pref or the template mid-workout
-re-seeded an in-progress session onto a signal its sets had no values for: the
-control locked (a set carried effort), Finish blocked demanding the other
-signal, and no way back, since the locked control is `pointer-events: none`.
-Exactly the mid-workout dead end F3's own enforcement boundary forbids. **Each
-unit met its contract exactly — the defect existed only where two units met.**
-Both seed branches now prefer the currency already logged on the session's sets.
-**Invariant: a session is never seeded onto a signal it has no values for.**
-
-**Residual, accepted not fixed:** a legacy in-progress session holding MIXED
-`rir` and `rpe` on different sets seeds to RIR, so its rpe-only sets ask for a
-RIR value before Finish. Actionable (the field is visible on every set) and the
-honest reading of the one-currency mandate. Do not "fix" it into a per-set
-exception.
-
-**Merged WITHOUT a re-smoke of the gate fix, by Seth's August 4 ruling** — the
-change is state-seeding only, no markup or CSS, so there is no visual surface
-smoke could have checked. All eight seed cases were walked by reading. If a
-mid-workout Finish-block report ever arrives, start here.
-
-**The durable lesson of this wave: the recurring failure was AUTHORING, not
-execution — three times, in the same shape.** F0's block named
-`FULL_SESSION_RELATIONS`, one of the TWO locations recon had found, so the fix
-landed where it could never fire. F2's block named the required-choice prompt
-but not `RirRpeToggleRow`'s built-in null-state nudge — one of the TWO things
-that render that state — so the same sentence shipped twice on one screen. The
-gate finding is the third: F3's block specified the lock without enumerating
-what could re-seed the signal underneath it. **Generalized rule: when a contract
-touches a state, it must enumerate everything already acting on that state, or
-say why not** — and at wave scale, everything that can WRITE that state from
-another screen.
+**Merged August 4 as a clean fast-forward, `8541bca..59e27dc`** (14 commits):
+F0 `00e06d9`, F1 `3da8bf5`, F2 `bfa010a`, F3 `0ee258b`, gate fix `59e27dc`.
+**The full section — the gate finding, the seed-invariant, the accepted mixed-
+signal residual, and the wave's authoring lesson — moved VERBATIM to the TOP of
+`docs/HANDOFF-ARCHIVE.md`** when this file exceeded its cap during the AI-wave.
+Go there before touching effort seeding. The one item still LIVE is below.
 
 ### PROD smoke — Seth, on production, one combined pass
 
@@ -113,9 +93,35 @@ block the August 2 gate. Consolidating them into one shared module is a known
 follow-up — it should absorb F2's page-to-page import at the same time.
 
 
-## The AI-wave — AUTHORED August 4, 5 units, 0/5 dispatched
+## The AI-wave — **3/5 LANDED August 4**, AI4 and AI5 remain
 
-Branch `ai-connector-wave` off `main` `59e27dc`; blocks at `a1689e0`, pushed.
+Branch `ai-connector-wave` off `main` `59e27dc`; `origin` HEAD `eecd2e9`.
+**Staging Render now tracks THIS BRANCH** (Seth repointed it mid-session, RUNBOOK
+pre-merge step 2), so pushes here deploy to `workout-db-staging` and the
+connector surface is live and probeable there right now.
+
+| Unit | SHA | What landed |
+|---|---|---|
+| AI1 | `83d82c8` | consent record + entitlement flag + `/profile/ai` page; migration WRITTEN not applied |
+| AI2 | `5c051bc` | discovery doc, Bearer guard, scope+consent enforcement, connector rate limit |
+| AI3 | `eecd2e9` | MCP server on `/mcp`, four read-only tools, shared analytics data path |
+| AI4 | — | QUEUED. Human-blocked on Render env vars only (dashboard is done) |
+| AI5 | — | QUEUED, serial behind AI4 |
+
+None of the three bounced. AI1 and AI3 needed no reviewer fix; AI2's one
+deviation was the block being wrong, not the delivery (detail in QUEUE.md).
+**Full per-unit audit reasoning lives in `docs/tasks/QUEUE.md`** — it is long by
+design this wave, because the lanes cover almost nothing here.
+
+**Live staging evidence, August 4, after AI3 deployed** — worth more than any
+lane result this wave: `/health` 200; `/.well-known/oauth-protected-resource`
+200; `GET /mcp` -> 401 carrying
+`WWW-Authenticate: Bearer ..., resource_metadata="...", scope="training:read"`.
+A 401 that omits `resource_metadata` is the top real-world connector failure, so
+that header being present on a real deployment is the single most valuable
+verification in the wave so far.
+
+Blocks at `a1689e0`, pushed.
 Implements `docs/specs/ai-layer.md` Lane A end to end. Per-unit scope and the
 serialization notes are in `docs/tasks/QUEUE.md`; the blocks are AI1-AI5 under
 `docs/tasks/`.
@@ -134,20 +140,34 @@ Existing users, the user table, and the login flow are untouched. A block
 description containing "migrate users" has misread this. (The one migration in
 the wave is AI1's new `AiConsent` table — unrelated to identity.)
 
-**THE WAVE IS STALLED ON ONE CALL, and it is Seth's.** All five units are
-strictly serial and **AI1 is migration-carrying**, which `dispatch-unit`
-section 4 refuses outright. So nothing can start until he either hand-relays
-AI1 or explicitly clears it for dispatch. Worth him knowing when he decides:
-**the block forbids running any migration command** — Cursor writes the `.sql`
-file and stops, so the risk the rule exists to prevent (a bad migration hitting
-live data) is not present in the execution, only in the later manual apply,
-which stays his. That is a genuine argument for clearing it; it is still his
-call, not the agent's.
+**The AI1 stall is RESOLVED — Seth cleared it for autonomous dispatch on August
+4.** The reasoning, so it is not re-litigated: `dispatch-unit` section 4 refuses
+migration-carrying blocks because RUNNING a migration is his manual track, but
+AI1's block forbids Cursor from running any migration command — it hand-writes
+the `.sql` and stops. The apply stays his, unchanged. Cursor honoured that: only
+`prisma generate` was run.
 
-**AI4 is the second blocker and it is worth starting NOW, in parallel** — its
-code is authorable and lane-checkable without the vendor, but unsmokeable until
-the WorkOS staging account, dashboard config, and secrets exist. The ten-step
-checklist is at the bottom of `docs/tasks/ai4-workos-connector-auth.md`.
+### THE TWO HUMAN BLOCKERS, both Seth's, both now provable
+
+1. **The `AiConsent` migration is written and applied NOWHERE.**
+   `server/prisma/migrations/20260804180000_add_ai_consent/migration.sql` —
+   additive only (`CREATE TABLE "AiConsent"`, its unique index and cascade FK,
+   `ALTER TABLE "User" ADD COLUMN "aiConnectorEnabled" BOOLEAN NOT NULL DEFAULT
+   true`), zero `DROP`. Until it is applied to staging Neon, `/profile/ai` and
+   `/ai/consent` error, and the connector guard's consent lookup cannot succeed.
+   The server still BOOTS fine without it (Prisma does not validate against the
+   DB at connect time) and no pre-existing route regressed — verified live.
+2. **Checklist step 9: four env vars on `workout-db-staging` Render.** The
+   dashboard half is DONE (below). This is now demonstrably load-bearing, not
+   bookkeeping: with `MCP_RESOURCE_URL` unset, staging's live discovery document
+   returns `"resource":"http://localhost:3000/mcp"` and the 401's
+   `resource_metadata` points at localhost — **no external client could ever
+   authenticate against that.** Values and the exact click-path (including how
+   Seth reveals `WORKOS_API_KEY` himself, which no agent touches):
+   `docs/specs/workos-staging-handoff.md` section 4.
+
+**AI4 is otherwise unblocked and its code is authorable now** — but read "Three
+findings AI4 must address" below FIRST; two of them are in files AI4 will touch.
 
 ### AI4 / WorkOS — staging dashboard RESOLVED August 4
 
@@ -172,7 +192,40 @@ themselves; the Applications list is for clients you manage, which Claude is
 not. The create dialog forces a consent-model and a PKCE choice, so it was
 backed out of rather than guessed at. (2) The dashboard calls the Login URI
 **"External Sign-in URI"** — Connect -> Configuration. Full hand-off detail for
-whoever finishes this: `workosinstructions.md` (scratchpad, August 4).
+whoever finishes this: **`docs/specs/workos-staging-handoff.md`** (`d814cec`) —
+preserved VERBATIM into the repo from a session scratchpad, because the original
+reference was to a temp directory that would not have survived. Read its section
+0 before touching anything: `WORKOS_API_KEY` is never handled by an agent.
+
+### Three findings AI4 must address — none is an AI3 or AI2 defect
+
+Found during the AI2/AI3 audits. All three are live on the branch now.
+
+1. **The connector rate limiter cannot key on connector identity, by
+   construction.** `app.js` mounts it at `:169-170`; `connectorAuth` does not run
+   until `app.use("/", routes)`, so `req.connectorUserId` is ALWAYS undefined
+   when `keyGenerator` runs. Harmless today — the v1 verifier accepts an ordinary
+   LogChamp token and `attachAuthUser` sets `req.authUserId` from that same
+   token. **After AI4 it silently degrades:** a WorkOS-signed token is not our
+   JWT, so `authUserId` stays unset and every connector request keys by IP. All
+   Claude traffic egresses from a few Anthropic IPs, so every user would share
+   one 300-per-15-min bucket — exactly what the block's keying was written to
+   prevent. Same "defect only where two units meet" shape as the F-wave gate
+   finding. Not fixed in-seat: design change on a security surface.
+2. **`zod` and `jose` are ESM-only on an UNPINNED Node.** `zod` 4.4.3 is
+   `"type": "module"` and is **completely undeclared in `package.json`** — a
+   phantom transitive of the MCP SDK that `mcpServer.js` requires at boot.
+   AI3 deploying successfully PROVES Render's Node is >= 22.12 (below that,
+   `require(esm)` throws and the API would not start at all), so this is not
+   currently broken and `require("jose")` in AI4 will work too. But there is no
+   `engines` field, `.nvmrc`, or `.node-version` anywhere, so a Render default
+   change silently reintroduces a total-outage boot failure. Two cheap fixes,
+   both Seth's call because they touch `package.json` (gate item 5): pin Node,
+   and declare `zod` properly.
+3. **`sub`-to-user mapping is still the highest-severity unverified line in the
+   wave** and cannot be verified until a real WorkOS token flows. See
+   `workos-staging-handoff.md` section 7. No test that mocks WorkOS into
+   agreeing with you counts as verification.
 
 **Six recon findings that changed the design** (three parallel report lanes,
 August 4 — AIR1 server now-state, AIR2 client/consent now-state, AIR3 MCP +
@@ -206,6 +259,15 @@ wave.** AI2's verifier seam exists partly so `/mcp` can be driven with `curl`
 using an ordinary LogChamp token before the vendor exists — that curl evidence
 is worth more at review than any assertion in the criteria lists.
 
+**That curl path is now OPEN and is the next agent's highest-value move.** `/mcp`
+is live on staging behind the guard, and the v1 verifier accepts an ordinary
+LogChamp Bearer token. Once the migration is applied and consent is granted for
+a test account, `tools/list` and `get_training_summary` can be driven end to end
+with `curl` — no WorkOS, no Claude, no vendor account. That exercises AI1+AI2+AI3
+together and is the only way to catch a seam none of the three lanes touch.
+Registering a throwaway staging account via the API is the established pattern
+(FP5 precedent, HANDOFF-ARCHIVE).
+
 **Lane B (the in-app coach) is still unauthored and still second** — BYO-key
 and hosted over one code path. The hard boundary holds on both lanes: the
 deterministic engine computes every number, the model only narrates.
@@ -220,13 +282,14 @@ future effort work needs the WHY rather than the diff.
 
 ### Lane worktree state
 
-All three lanes are FREE as of August 4 (forty-first session). They were
-repointed for the AI-wave recon and now sit on `recon/air1`, `recon/air2`, and
-`recon/air3`, all off `origin/ai-connector-wave` `53235c7`, trees clean. Their
-AIR1-AIR3 DELIVERY.md reports are session-scoped and were NOT preserved as
-findings docs — the six findings that mattered are written into the blocks, the
-QUEUE entry, and `ai-layer.md` section 4.0 instead, so the reports are
-disposable.
+**Lane 1 (`C:\dev\worktrees\cursor-lane`) holds AI3's LANDED delivery** — it sits
+on `cursor/ai3` at `eecd2e9`, tree clean, with AI3's `DELIVERY.md` still present.
+That report is LANDED work, not pending: delete it before the next dispatch so it
+cannot read as a fresh delivery. Lanes 2 and 3 are FREE, still on `recon/air2` /
+`recon/air3` off `53235c7` — repoint them off `origin/ai-connector-wave` before
+use or the delivery lands on the wrong base. The AIR1-AIR3 recon reports were
+session-scoped and deliberately not preserved; their six findings live in the
+blocks, the QUEUE entry, and `ai-layer.md` section 4.0.
 Repoint any lane to a branch off the target wave before dispatching, or
 the delivery lands on the wrong base. Check lane cleanliness by
 DELIVERY.md TIMESTAMP, not `git status` (it is gitignored, so a stale
@@ -264,15 +327,22 @@ authored code. A separate pure validator is specified.
 
 ## Repo / deploy state
 
+- **VERIFY DEPLOY TOPOLOGY FROM THE SERVICES, NOT FROM THIS LIST.** The August 4
+  incident above happened because these lines were trusted. One command settles
+  it: `curl -s -o /dev/null -w "%{http_code}" https://<host>/ai/consent` returns
+  **401** if the host serves the wave branch and **404** if it serves `main`.
 - **`main` is at `59e27dc`** — the F-wave merge, August 4, a clean fast-forward
-  from `8541bca` (14 commits). Prod Vercel/Render track `main`, so this push is
-  deploying to production now — **prod smoke is open and unverified**, and this
-  one matters more than the last: F0 is the first `server/` change to reach prod
-  since the frontier-parity merge. Because prod tracks main, any push to main is
-  a prod-bound push (gate item 2).
-- **Staging Render tracks `main`** (Seth repointed it July 28), so it now picks
-  up F0's server change automatically — no repoint needed, and RUNBOOK step 7 is
-  a no-op for this wave.
+  from `8541bca` (14 commits). **Prod Render `workout-db-l3gc` is back on
+  `main`** as of August 4 (re-verified: `/ai/consent` -> 404, `/health` 200).
+  Prod Vercel tracks `main`. Any push to `main` is a prod-bound push (gate 2).
+  **Prod smoke is still open and unverified** — F0 is the first `server/` change
+  to reach prod since the frontier-parity merge.
+- **Staging Render `workout-db-staging` now tracks `ai-connector-wave`** (Seth
+  repointed it August 4, RUNBOOK pre-merge step 2). So pushes to the wave branch
+  auto-deploy the connector surface to staging — re-verified live
+  (`/ai/consent` -> 401, `/mcp` -> 401, `/health` 200). **RUNBOOK step 7 is NOT a
+  no-op for this wave:** staging must be repointed back to `main` after the
+  merge.
 - **`effort-mandatory-wave` is MERGED and closed** — same shape as `effort-wave`
   below: all its CODE is on `main`, and it now sits one DOCS-ONLY commit ahead
   (this post-merge upkeep). NOT a safe deletion candidate until that commit is
@@ -365,38 +435,25 @@ in `docs/HANDOFF-ARCHIVE.md` — still load-bearing for future dispatches.
   returns 0 and looks like "the run died." Match on the PATH instead.
 - **`DELIVERY.md` is gitignored** — check lane cleanliness by TIMESTAMP
   on the file, not by `git status` (a stale report reads as "clean").
-- **Acceptance criteria cannot express "discoverable."** E3 met every
-  criterion in its block and still failed its purpose — Seth looked at the
-  page and saw nothing, because a 7th `(?)` on a page with six others is
-  invisible. Criteria assert an element EXISTS; only smoke asserts a human
-  NOTICES it. The fix is not vaguer criteria; it is remembering that
-  discoverability is a smoke question. (E4 `965b2c8` is the repair.)
-- **Adding a child to a CSS grid silently reflows it.** E4's line had to be a
-  SIBLING of `.coverage-row` (a `1fr 120px` grid, `index.css:6535`) — as a
-  child it becomes a third grid item squeezed into the narrow first column,
-  with a green build and a wrong layout.
-- **A component keying off prop ABSENCE is a seam risk** — the E2 nudge
-  (`!useRIR && !useRPE`) renders spuriously if any call site omits a
-  prop. Build passes either way. Check every call site, not just the
-  ones the block named.
-- **A component that renders its OWN copy for a state will collide with
-  any copy you add for that state.** F2 shipped the same sentence twice
-  on one screen because the block named the new prompt but not
-  `RirRpeToggleRow`'s built-in null-state nudge. Fixed with a `showNudge`
-  prop (default true). Before adding copy for a state, grep what already
-  renders in it — a green build and a truthful "no deviations" report are
-  both fully compatible with a duplicated paragraph.
-- **Effort presence must be a BLANK test, never a truthiness test.**
-  `rir = 0` means taken to failure — the most important value in the
-  vocabulary — and `!set.rir` treats it as missing. F3 uses
-  `String(v).trim() !== ""` throughout. A truthiness check would have
-  blocked Finish on exactly the sets that matter most, invisibly to both
-  lanes.
-- **`startSession` creates ZERO `WorkoutSet` rows** (`sessionController.js:148`)
-  — only the session and its `sessionExercise` rows. Worth knowing before
-  designing anything that enforces per-set rules: a fresh template session
-  has no sets to enforce against, so there are no pre-filled scaffold rows
-  to accidentally block on.
+- **A deployed service's branch is a CLAIM until you probe it.** August 4: three
+  pushes went to prod believing this file's topology note. A 401-vs-404 diff on
+  one route across two hosts costs one command. Probe before the first push of
+  any wave carrying server code.
+- **An ESM-only package in a CommonJS server is a BOOT risk, not a feature
+  risk.** `zod` and `jose` are both `"type": "module"`; `require()` works only on
+  Node >= 22.12, and nothing in this repo pins Node. If it breaks, the API does
+  not start at all. Also watch for PHANTOM dependencies — `zod` is `require`d by
+  `mcpServer.js` but appears nowhere in `package.json`.
+- **A green lane proves nothing about a server route this wave.**
+  `npm run test:unit` never loads a route, controller, or middleware. Run
+  `node -e "require('./src/app.js')"` to at least prove the module graph loads,
+  and prefer a live `curl` against staging over any assertion.
+- **E-wave and F-wave gotchas** (discoverability vs acceptance criteria, the
+  CSS-grid child reflow, prop-ABSENCE seams, duplicate state copy, the
+  `rir = 0` blank-vs-truthiness trap, `startSession` creating zero
+  `WorkoutSet` rows) moved with their wave sections to
+  `docs/HANDOFF-ARCHIVE.md`. Read them before touching effort or template
+  seeding — the `rir = 0` one in particular is still live in the code.
 - Scene mock PNGs are design references — `docs/design/mocks/`, never
   ship from `client/src/`.
 - A commit can land locally while a redeploy rebuilds the OLD HEAD until

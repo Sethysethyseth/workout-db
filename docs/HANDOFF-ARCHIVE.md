@@ -1,3 +1,65 @@
+## ARCHIVED August 4, 2026 (forty-second session) - the F-wave MERGE RECORD,
+## moved VERBATIM from HANDOFF when it exceeded its cap during the AI-wave.
+## The wave is CLOSED and merged to main as 59e27dc. Its PROD SMOKE checklist
+## was left live in HANDOFF because that pass is still outstanding.
+
+## The F-wave (effort MANDATORY) — GATED and MERGED to `main`
+
+**Merged August 4 as a clean fast-forward, `8541bca..59e27dc`** (14 commits).
+Smoked by Seth on staging, then gated. **No schema change or migration anywhere
+in it**; F1/F2/F3 are client-only, but F0 IS a `server/` change and is the first
+server code to reach prod in a while — prod smoke is open.
+
+- **F0** `00e06d9` — a template's stored effort signal now reaches the live
+  session (six server selects + a one-time client seed).
+- **F1** `3da8bf5` — either-or signal control (`rir | rpe | null`) plus
+  `effortSignalPref.js`, wired to all five call sites.
+- **F2** `bfa010a` — legacy both-false templates get a REQUIRED CHOICE on open;
+  Save blocked until the user picks; loading one writes nothing.
+- **F3** `0ee258b` — live session either-or control, signal locks after the
+  first effort value, Finish blocked while a core-logged set is missing it.
+
+- **Gate fix** `59e27dc` — the one finding, authored in-seat.
+
+**What the gate caught, and why per-unit review could not.** F1 made the
+device effort-signal pref writable from four template screens; F3's lock is
+signal-AGNOSTIC (any non-blank `rir` OR `rpe` locks the control) while its
+mandate counts only the ACTIVE signal. The live signal is re-seeded on every
+remount from OUTSIDE the session — device pref for quick logs, template
+booleans for template sessions. So changing the pref or the template mid-workout
+re-seeded an in-progress session onto a signal its sets had no values for: the
+control locked (a set carried effort), Finish blocked demanding the other
+signal, and no way back, since the locked control is `pointer-events: none`.
+Exactly the mid-workout dead end F3's own enforcement boundary forbids. **Each
+unit met its contract exactly — the defect existed only where two units met.**
+Both seed branches now prefer the currency already logged on the session's sets.
+**Invariant: a session is never seeded onto a signal it has no values for.**
+
+**Residual, accepted not fixed:** a legacy in-progress session holding MIXED
+`rir` and `rpe` on different sets seeds to RIR, so its rpe-only sets ask for a
+RIR value before Finish. Actionable (the field is visible on every set) and the
+honest reading of the one-currency mandate. Do not "fix" it into a per-set
+exception.
+
+**Merged WITHOUT a re-smoke of the gate fix, by Seth's August 4 ruling** — the
+change is state-seeding only, no markup or CSS, so there is no visual surface
+smoke could have checked. All eight seed cases were walked by reading. If a
+mid-workout Finish-block report ever arrives, start here.
+
+**The durable lesson of this wave: the recurring failure was AUTHORING, not
+execution — three times, in the same shape.** F0's block named
+`FULL_SESSION_RELATIONS`, one of the TWO locations recon had found, so the fix
+landed where it could never fire. F2's block named the required-choice prompt
+but not `RirRpeToggleRow`'s built-in null-state nudge — one of the TWO things
+that render that state — so the same sentence shipped twice on one screen. The
+gate finding is the third: F3's block specified the lock without enumerating
+what could re-seed the signal underneath it. **Generalized rule: when a contract
+touches a state, it must enumerate everything already acting on that state, or
+say why not** — and at wave scale, everything that can WRITE that state from
+another screen.
+
+---
+
 ## ARCHIVED August 4, 2026 - the F-wave RULINGS section, moved VERBATIM from
 ## HANDOFF when it exceeded its cap after the merge. The wave is CLOSED, merged
 ## to main as 59e27dc. These are the rulings the four units were built from;

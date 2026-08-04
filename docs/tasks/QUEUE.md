@@ -223,7 +223,7 @@ spring. Do not author AI4 without addressing them.**
    NOT fixed in-seat: it is a design change on a security surface and touches
    `app.js`, which AI3 also edits - a standing frontier-seat escalation.
 
-DISPATCHED | ai3-mcp-server-readonly-tools.md | the MCP server on `/mcp` plus four
+LANDED eecd2e9 | ai3-mcp-server-readonly-tools.md | the MCP server on `/mcp` plus four
 read-only summary-shaped tools over the existing analytics | MODEL auto.
 Enforces the spec's hard boundary by construction - no tool returns raw sets,
 no tool accepts a user id as input (identity comes from the token). Carries a
@@ -231,6 +231,68 @@ payload-size guard: Claude caps tool results near 150k chars and a wide summary
 can exceed it, so trimming is explicit and never silent. AUTHORIZES a
 behaviour-preserving extraction in `analyticsController.js` so the connector and
 the app run one data path and cannot drift.
+
+LANDED August 4 same session, NO BOUNCE, and **VERIFIED LIVE ON STAGING** - the
+first unit of this wave with real deployed evidence rather than lane evidence.
+Scope exact (8 files), lanes re-run FRESH (unit 226/226 in 19 suites, client
+build green, check-hex 0), plus `require('./src/app.js')` executed directly to
+prove the whole module graph loads - the unit lane never loads `app.js`.
+
+**Data-egress surface read in full, not sampled.** Identity is closed over from
+`req.connectorUserId` and never reachable from tool arguments: no `inputSchema`
+on any of the four tools accepts a user id, account id, or email, and
+`handleMcpRequest` 401s defensively if `connectorUserId` is absent even though
+`connectorAuth` already guards the mount. A FRESH `McpServer` + transport is
+built per request in stateless mode (`sessionIdGenerator: undefined`), so there
+is no session map that could carry one identity into another request. Every
+`analyticsAccess` export takes `userId` and scopes its Prisma `where` by it.
+`loadRecentSessions` returns headers only - it maps to exactly four fields
+(date, name, exerciseCount, setCount) off `_count`, so raw sets cannot escape
+through it. Tool descriptions carry the spec's hard boundary explicitly ("every
+number is precomputed - do not recalculate").
+
+**Controller extraction verified behaviour-preserving by reading both sides**:
+the moved `loadSummary` query is identical to the original including the nested
+`templateSets` selects and the `planLookup` harvesting, so plan-vs-actual
+fidelity is unchanged. Prisma relation names used by `_count`
+(`sets`, `sessionExercises`) and `session.name` all exist on `WorkoutSession` -
+checked against `schema.prisma`, because a wrong relation name there throws only
+at runtime and both lanes stay green.
+
+**LIVE STAGING EVIDENCE (staging Render was repointed to this branch by Seth
+mid-session):** `/health` 200; `/.well-known/oauth-protected-resource` 200 with
+AI2's document; `GET /mcp` -> **401 carrying
+`WWW-Authenticate: Bearer error="unauthorized", ...,
+resource_metadata="...", scope="training:read"`**. That header is the single
+most common real-world connector failure when omitted, and it is now confirmed
+present on a real deployment rather than asserted in a test.
+
+**THE `jose` BOOT RISK RECORDED UNDER AI2 IS NOW EMPIRICALLY RESOLVED - and the
+correction matters.** AI3 introduced `require("zod")`, and `zod` 4.4.3 is
+ESM-only (`"type": "module"`) AND completely undeclared in `package.json` (a
+phantom transitive of the MCP SDK - Cursor declared this as its Deviation 4 and
+correctly did NOT install an unapproved package). That require is loaded by
+`app.js` at boot, so if Render's Node were below 22.12 the API would not have
+started at all. **It started.** Therefore Render's Node is >= 22.12, and
+`require("jose")` in AI4 will work the same way. The finding downgrades from
+"will break AI4" to **"works today on an UNPINNED Node"**: there is still no
+`engines` field, `.nvmrc`, or `.node-version` anywhere, so a future Render
+default change silently reintroduces a total-outage boot failure. Two cheap
+fixes remain worth taking, and both are Seth's call (gate item 5 touches
+`package.json`): pin the Node version, and DECLARE `zod` as a real dependency
+instead of relying on a phantom transitive.
+
+**`MCP_RESOURCE_URL` is NOT set on Render, and it is now demonstrably
+load-bearing.** The live discovery document returns
+`"resource":"http://localhost:3000/mcp"` and the 401 header points
+`resource_metadata` at `http://localhost:3000/...` - the code's dev fallback. No
+external client can authenticate against that. This is checklist step 9 and it
+blocks any real connector smoke.
+
+Deviations 1-3 (stateless Streamable HTTP, the 8-week `activeOnly` window
+matching the client's Active lens, and attaching effort coverage to
+`get_exercise_detail` with an explicit "unknown" note when no window is given)
+are all reasonable, declared, and consistent with the honesty requirement.
 DISPATCHED August 4, Channel B AUTO rung (`--model auto`), lane
 `C:\dev\worktrees\cursor-lane` branch `cursor/ai3` off `origin/ai-connector-wave`
 5c051bc (AI2 landed - AI3 mounts behind its guard). AI2's DELIVERY.md deleted
