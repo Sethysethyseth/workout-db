@@ -132,7 +132,7 @@ pre-existing route is untouched, so nothing regresses; but `/profile/ai` will
 error until Seth applies the migration to staging. Code-ahead-of-DB, exactly as
 AGENTS.md describes it, and deliberate here.
 
-DISPATCHED | ai2-connector-perimeter.md | RFC 9728 discovery document, Bearer guard
+LANDED 5c051bc | ai2-connector-perimeter.md | RFC 9728 discovery document, Bearer guard
 with a swappable verifier, scope + consent enforcement, connector-scoped rate
 limiting | MODEL auto. CROSS-USER ISOLATION SURFACE. The verifier seam's v1
 implementation accepts an ordinary LogChamp Bearer token deliberately, so
@@ -151,7 +151,79 @@ contradicts the standing STOP-CONDITION footer's blanket "Do NOT add
 dependencies" - the body wins, and the dispatch says so, so the run does not
 stall on the conflict.
 
-QUEUED | ai3-mcp-server-readonly-tools.md | the MCP server on `/mcp` plus four
+LANDED August 4 same session, NO BOUNCE. Audited per land-unit with the guard
+read LINE BY LINE (cross-user isolation surface - sampling is not allowed here).
+Scope exact (10 files = FILES TO TOUCH; `server/src/ai/consent.js` correctly
+untouched - AI2 consumes AI1, never reopens it). Lanes re-run FRESH in the lane:
+unit 221/221 in 18 suites (up from 213/213 in 16 - both new suites entered the
+gating lane), client build green, check-hex 0. Exactly two dependencies added.
+
+**The guard satisfies every step of the contract, verified by direct read, not
+by the report:** Bearer parsing is BYTE-IDENTICAL to `attachAuthUser.js`'s (the
+block said follow it BY NAME); no token and failed verification both return 401
+WITH the `WWW-Authenticate` header and `return` rather than `next()`; a missing
+scope returns **403, not 401**, so a correctly-authenticated caller is never sent
+into a re-auth loop; `connectorAccess()` is CALLED, never re-derived, and its
+`reason` is passed through verbatim for AI5's UI. **`req.authUserId` appears ZERO
+times in `connectorAuth.js`** - the single highest-severity trap in the unit,
+avoided; success sets `req.connectorUserId` / `req.connectorScopes` only.
+Fail-closed on a missing user row (`aiConnectorEnabled: false` + `consentRow:
+null`). The verifier seam's contract seam also holds: `verifyAuthToken` really
+does return `{ userId }` (`lib/jwt.js:27`), which is what `tokenVerifier`
+destructures - a mismatch there would have made every connector token silently
+invalid with both lanes still green.
+
+**DEVIATION 1 ACCEPTED, and the block was wrong, not the delivery.** The block
+demanded the existing CORS block stay byte-identical AND that connector paths
+accept any origin. Those two requirements are incompatible: `app.use(cors(...))`
+mounted globally still runs on `/.well-known/*` after the connector CORS handler,
+and its `origin` callback returns `callback(new Error("Not allowed by CORS"))`
+for an arbitrary origin - so discovery from `https://claude.ai` would have
+500'd. Cursor kept the options object character-for-character identical
+(`origin` callback body + `credentials: true`) and changed only the MOUNT form,
+skipping connector paths. That is the correct resolution and it was declared.
+Deviations 2-5 (the `ipKeyGenerator` helper required by express-rate-limit v8,
+`classifyConnectorToken` exported for the isolated scope test, `jose` installed
+but unimported, npm alphabetizing devDependencies) are all real and all benign.
+
+**TWO FINDINGS FOR AI4 - neither is an AI2 defect, both are live traps AI4 will
+spring. Do not author AI4 without addressing them.**
+
+1. **`jose` v6.2.8 is ESM-ONLY (`"type": "module"`, no `exports.require`) and
+   this server is CommonJS.** `require("jose")` succeeds locally ONLY because
+   local Node is v22.19.0 and Node's `require(esm)` support landed in 22.12.
+   `server/package.json` has **NO `engines` field**, and there is no `.nvmrc`,
+   `.node-version`, or `render.yaml` anywhere in the repo - so Render chooses
+   its own Node version and can drift on any rebuild. If Render's Node is below
+   22.12, `require("jose")` throws `ERR_REQUIRE_ESM` at module load, `app.js`
+   fails to load, and **the whole API fails to boot** - a total outage, not a
+   degraded feature. This does NOT bite today: AI2 installed `jose` but never
+   imports it (its own declared Deviation 4). It bites the moment AI4 adds the
+   import. Fix before AI4 lands: either pin Node explicitly (`engines` +
+   `.node-version`) or have AI4 use `await import("jose")` instead of `require`.
+   **Note the irony worth remembering: recon rejected `@workos-inc/node` for
+   needing Node >= 22.11 and rejected the MCP v2 packages for being ESM-only,
+   then approved `jose`, which is both.** Same trap, different door.
+
+2. **The rate limiter cannot key on the connector identity, by construction.**
+   `app.js` mounts it at `:169-170`, but `connectorAuth` does not run until
+   `app.use("/", routes)` at `:176` - so `req.connectorUserId` is ALWAYS
+   undefined when `keyGenerator` runs, and `req.connectorUserId ?? req.authUserId`
+   always resolves to the second operand or to IP. Harmless in v1, because the
+   verifier accepts an ordinary LogChamp token and `attachAuthUser` (`:155`)
+   sets `req.authUserId` from that same token. **After AI4 it silently
+   degrades:** a WorkOS-issued token is not signed with our `JWT_SECRET`, so
+   `attachAuthUser` leaves `authUserId` unset and every connector request falls
+   back to `ip:`. All Claude connector traffic egresses from a small set of
+   Anthropic IPs, so all users would share ONE 300-per-15-minutes bucket - which
+   is precisely the "one user's assistant cannot exhaust another's budget"
+   requirement the block wrote the keying to satisfy. AI2 implemented exactly
+   what the block specified; the block specified an ordering that cannot work.
+   Same "defect only where two units meet" shape as the F-wave gate finding.
+   NOT fixed in-seat: it is a design change on a security surface and touches
+   `app.js`, which AI3 also edits - a standing frontier-seat escalation.
+
+DISPATCHED | ai3-mcp-server-readonly-tools.md | the MCP server on `/mcp` plus four
 read-only summary-shaped tools over the existing analytics | MODEL auto.
 Enforces the spec's hard boundary by construction - no tool returns raw sets,
 no tool accepts a user id as input (identity comes from the token). Carries a
@@ -159,6 +231,14 @@ payload-size guard: Claude caps tool results near 150k chars and a wide summary
 can exceed it, so trimming is explicit and never silent. AUTHORIZES a
 behaviour-preserving extraction in `analyticsController.js` so the connector and
 the app run one data path and cannot drift.
+DISPATCHED August 4, Channel B AUTO rung (`--model auto`), lane
+`C:\dev\worktrees\cursor-lane` branch `cursor/ai3` off `origin/ai-connector-wave`
+5c051bc (AI2 landed - AI3 mounts behind its guard). AI2's DELIVERY.md deleted
+from the lane first. Same dependency-conflict override note as AI2 in the
+dispatch line (`@modelcontextprotocol/sdk` is approved by the block body and
+forbidden by the standing footer; the body wins). **This is the last unit
+dispatchable before the WorkOS account exists** - AI4 is blocked on it, and AI5
+is serial behind AI4.
 
 QUEUED | ai4-workos-connector-auth.md | WorkOS Standalone Connect - Login URI
 handler, completion call, real JWKS verification with audience binding | MODEL
