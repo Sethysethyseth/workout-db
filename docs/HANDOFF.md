@@ -1,10 +1,13 @@
 # HANDOFF — current state
 
-**Next action (human):** **Prod-smoke `main` `59e27dc`** - the F-wave is MERGED
-and deploying to production now, and it carries the first `server/` change to
-reach prod in a while (F0's six added selects). One combined pass covers the
-still-open E-wave prod smoke too. Then the `docs/parked/*` ruling. Nothing is
-blocked on him for the next unit - AI1 (connector auth) is authorable today.
+**Next action (human):** **Rule on how AI1 gets executed** - it is
+migration-carrying, so `dispatch-unit` refuses it and the whole (strictly
+serial) AI-wave is stalled behind that one call; detail in "The AI-wave" below.
+**Then create the WorkOS staging account**, so AI4 is not what the wave stalls
+on next - its dashboard checklist is at the bottom of
+`docs/tasks/ai4-workos-connector-auth.md`. Still open behind those, blocking
+nothing: the prod smoke of `main` `59e27dc` (covers the F-wave AND the leftover
+E-wave pass), and the `docs/parked/*` ruling.
 
 > **Standing rule:** the line above is filled on EVERY rewrite and is
 > never empty or deferred — one sentence, the single thing SETH does
@@ -12,10 +15,11 @@ blocked on him for the next unit - AI1 (connector auth) is authorable today.
 > explicitly. Dogfoods the shell repo's decision-10 no-dangling-next-
 > action requirement; `land-unit` section 5 keeps it maintained.
 
-**Updated:** August 4, 2026, fortieth session (Opus frontier seat — **F-wave
-GATED, fixed, and MERGED to `main` `59e27dc`**). Prior entry: August 3,
-thirty-ninth session (Opus — F-wave unparked and completed 4/4). Full session
-logs are verbatim in `docs/HANDOFF-ARCHIVE.md`.
+**Updated:** August 4, 2026, forty-first session (Opus frontier seat — **the
+AI connector wave AUTHORED, AI1-AI5, from three parallel recon lanes**). Prior
+entry: August 4, fortieth session (Opus — F-wave gated, fixed, and merged to
+`main` `59e27dc`). Full session logs are verbatim in
+`docs/HANDOFF-ARCHIVE.md`.
 
 ---
 
@@ -110,48 +114,77 @@ block the August 2 gate. Consolidating them into one shared module is a known
 follow-up — it should absorb F2's page-to-page import at the same time.
 
 
-## NEXT AFTER THE MERGE — the connector auth work, then the AI layer
+## The AI-wave — AUTHORED August 4, 5 units, 0/5 dispatched
 
-**Seth's August 2 instruction:** once the E-wave is merged, the server-side
-auth work is next, "along with the option to add AI." Recorded here so it is
-the first thing the next session reads.
+Branch `ai-connector-wave` off `main` `59e27dc`; blocks at `a1689e0`, pushed.
+Implements `docs/specs/ai-layer.md` Lane A end to end. Per-unit scope and the
+serialization notes are in `docs/tasks/QUEUE.md`; the blocks are AI1-AI5 under
+`docs/tasks/`.
 
-**Naming, stated once so nobody builds the wrong thing.** Seth calls this "the
-server migration." It is NOT a user migration and must never become one - the
-August 2 AI0 ruling is explicitly zero-migration. What actually changes on the
-server is that LogChamp gains the ability to ISSUE scoped OAuth tokens to
+**Seth's August 4 rulings, all three taken as asked:** full connector end to
+end (not a foundation-only wave); **WorkOS** as the vendor and he creates the
+account; and **yes to one migration** this wave. He also approved three npm
+installs (gate item 5): `express-rate-limit` + `jose` in AI2,
+`@modelcontextprotocol/sdk` in AI3. AI4 and AI5 carry no install approval.
+
+**Naming, restated so nobody builds the wrong thing.** Seth calls this "the
+server migration." It is NOT a user migration and must never become one. What
+changes is that LogChamp gains the ability to ISSUE scoped OAuth tokens to
 third-party clients, layered OVER the cookie/JWT auth that already exists.
-Existing users, the user table, and the login flow are untouched. If a future
-block description contains the words "migrate users", it has misread this.
+Existing users, the user table, and the login flow are untouched. A block
+description containing "migrate users" has misread this. (The one migration in
+the wave is AI1's new `AiConsent` table — unrelated to identity.)
 
-**Sequencing: RESOLVED. The F-wave is merged, so AI1 (connector auth) is NEXT
-and is authorable immediately** — it does not wait on the prod smoke. Nothing
-here needs a fresh ruling from Seth; if he wants something else first, that is a
-new instruction, not a pending one.
+**THE WAVE IS STALLED ON ONE CALL, and it is Seth's.** All five units are
+strictly serial and **AI1 is migration-carrying**, which `dispatch-unit`
+section 4 refuses outright. So nothing can start until he either hand-relays
+AI1 or explicitly clears it for dispatch. Worth him knowing when he decides:
+**the block forbids running any migration command** — Cursor writes the `.sql`
+file and stops, so the risk the rule exists to prevent (a bad migration hitting
+live data) is not present in the execution, only in the later manual apply,
+which stays his. That is a genuine argument for clearing it; it is still his
+call, not the agent's.
 
-**The auth unit (AI1), when it is authored.** Per `ai-layer.md` section 4.2 as
-amended, and the recon findings:
+**AI4 is the second blocker and it is worth starting NOW, in parallel** — its
+code is authorable and lane-checkable without the vendor, but unsmokeable until
+the WorkOS staging account, dashboard config, and secrets exist. The ten-step
+checklist is at the bottom of `docs/tasks/ai4-workos-connector-auth.md`.
 
-- Delegate to a vendor supporting OAuth-over-existing-auth. WorkOS Standalone
-  Connect ranked 1 (1M MAU free, exact pattern fit), Scalekit 2, Stytch 3.
-- LogChamp authors only: the Login URI handler (vendor redirects to us, we
-  check the existing session, we call their completion API with the identity),
-  `/.well-known/oauth-protected-resource` (RFC 9728 - a MUST for MCP servers),
-  Bearer validation against the vendor's JWKS WITH audience checking (RFC 8707
-  binding is a MUST), and read-only scope enforcement.
-- **This is a cross-user isolation surface**, so it is a standing frontier-seat
-  escalation under CLAUDE.md regardless of who writes it, and it is the first
-  server-side unit in a long while - re-check the client-only assumptions that
-  the E and F waves have been coasting on.
-- It is NOT migration-carrying and NOT prod-touching by itself, so it does not
-  hit the manual-track gate. Deploying it eventually will.
+**Six recon findings that changed the design** (three parallel report lanes,
+August 4 — AIR1 server now-state, AIR2 client/consent now-state, AIR3 MCP +
+WorkOS research; all three returned clean, no-edits contract held). Full detail
+in the QUEUE entry; the two that would most easily be re-broken later:
 
-**Then the AI layer proper** (`docs/specs/ai-layer.md`, phases AI0-AI6). AI0 is
-resolved; AI1+ are unauthored. Lane A (the remote MCP connector - their
-subscription pays for inference, we pay zero tokens) is deliberately first;
-Lane B (in-app coach, BYO-key and hosted over one code path) second. The hard
-boundary holds on both: the deterministic engine computes every number, the
-model only narrates.
+- **The MCP spec moved to `2026-07-28` and we are deliberately NOT targeting
+  it.** That revision changes the transport incompatibly, and Anthropic's
+  connector docs still list support only through `2025-11-25`. Building to the
+  newest spec yields a server today's Claude cannot talk to. Revisit when
+  Anthropic's docs move — this is a dated decision, not an oversight.
+- **`ai-layer.md` said `/api/analytics/summary`; there is no `/api` prefix.**
+  Routers mount at the host root (`app.js:126`). Corrected in the spec.
+
+`ai-layer.md` now carries a **section 4.0 "CORRECTIONS"** block holding all of
+these; where it and the older prose below it disagree, 4.0 wins.
+
+**Two units are cross-user isolation surfaces** — AI2's Bearer guard and AI4's
+token verification — and are standing frontier-seat escalations under CLAUDE.md
+regardless of who writes them. The `sub`-to-user mapping in AI4 is the single
+highest-severity line in the wave: get it wrong and one user's training data
+reaches another user's assistant.
+
+**Lane coverage is much worse this wave than in E or F, and the blocks say so
+individually.** `npm run test:unit` matches only `test/analytics/**` and
+`test/lib/**` and never loads a route, controller, or middleware; the
+integration lane needs `server/.env`, which no lane worktree has. Every block
+therefore mandates its pure logic into `server/test/lib/` and declares its lane
+gap in writing. **Do not read a green lane as coverage of an endpoint this
+wave.** AI2's verifier seam exists partly so `/mcp` can be driven with `curl`
+using an ordinary LogChamp token before the vendor exists — that curl evidence
+is worth more at review than any assertion in the criteria lists.
+
+**Lane B (the in-app coach) is still unauthored and still second** — BYO-key
+and hosted over one code path. The hard boundary holds on both lanes: the
+deterministic engine computes every number, the model only narrates.
 
 ## The F-wave rulings — ARCHIVED August 4
 
@@ -163,11 +196,13 @@ future effort work needs the WHY rather than the diff.
 
 ### Lane worktree state
 
-Verified from `git worktree list` on August 4, correcting a stale entry: all
-three lanes are FREE. `cursor-lane` is on `cursor/f3` (`0ee258b`), landed and
-ff-merged; `cursor-lane-2` on `recon/f-wave-2` and `cursor-lane-3` on
-`recon/f-wave-3`, both at `8541bca` (the prior HANDOFF said lane-3 was on
-`recon/e1rm-blast` — it is not).
+All three lanes are FREE as of August 4 (forty-first session). They were
+repointed for the AI-wave recon and now sit on `recon/air1`, `recon/air2`, and
+`recon/air3`, all off `origin/ai-connector-wave` `53235c7`, trees clean. Their
+AIR1-AIR3 DELIVERY.md reports are session-scoped and were NOT preserved as
+findings docs — the six findings that mattered are written into the blocks, the
+QUEUE entry, and `ai-layer.md` section 4.0 instead, so the reports are
+disposable.
 Repoint any lane to a branch off the target wave before dispatching, or
 the delivery lands on the wrong base. Check lane cleanliness by
 DELIVERY.md TIMESTAMP, not `git status` (it is gitignored, so a stale
