@@ -1,11 +1,10 @@
 # HANDOFF — current state
 
-**Next action (human):** **Smoke the F-wave on the staging Vercel deploy and
-sign off** - the consolidated checklist is in the F-wave section below. The wave
-is 4/4 LANDED and `origin/effort-mandatory-wave` is at `0ee258b`, so the deploy
-has the code. Nothing ships to `main` until he signs off: smoke comes FIRST,
-then the pre-main gate. Separately open, blocking nothing: prod-smoke the E-wave
-on production (merged `d272930`), and the `docs/parked/*` ruling.
+**Next action (human):** **Prod-smoke `main` `59e27dc`** - the F-wave is MERGED
+and deploying to production now, and it carries the first `server/` change to
+reach prod in a while (F0's six added selects). One combined pass covers the
+still-open E-wave prod smoke too. Then the `docs/parked/*` ruling. Nothing is
+blocked on him for the next unit - AI1 (connector auth) is authorable today.
 
 > **Standing rule:** the line above is filled on EVERY rewrite and is
 > never empty or deferred — one sentence, the single thing SETH does
@@ -13,19 +12,19 @@ on production (merged `d272930`), and the `docs/parked/*` ruling.
 > explicitly. Dogfoods the shell repo's decision-10 no-dangling-next-
 > action requirement; `land-unit` section 5 keeps it maintained.
 
-**Updated:** August 3, 2026, thirty-ninth session (Opus frontier seat — **F-wave
-UNPARKED and COMPLETED 4/4; awaiting Seth's smoke**). Prior entry: August 2,
-thirty-eighth session (Opus — E-wave gated and MERGED to `main`; F-wave opened,
-authored, and PARKED at 2/4 on exhausted Cursor quota). Full session logs are
-verbatim in `docs/HANDOFF-ARCHIVE.md`.
+**Updated:** August 4, 2026, fortieth session (Opus frontier seat — **F-wave
+GATED, fixed, and MERGED to `main` `59e27dc`**). Prior entry: August 3,
+thirty-ninth session (Opus — F-wave unparked and completed 4/4). Full session
+logs are verbatim in `docs/HANDOFF-ARCHIVE.md`.
 
 ---
 
-## The F-wave (effort MANDATORY) — 4/4 LANDED, AWAITING SMOKE
+## The F-wave (effort MANDATORY) — GATED and MERGED to `main`
 
-Branch **`effort-mandatory-wave`** at **`0ee258b`**, pushed, branched off `main`
-`8541bca`. NOT smoked, NOT gated. **No schema change or migration anywhere in
-it, and no `server/` code at all after F0** — F1/F2/F3 are client-only.
+**Merged August 4 as a clean fast-forward, `8541bca..59e27dc`** (14 commits).
+Smoked by Seth on staging, then gated. **No schema change or migration anywhere
+in it**; F1/F2/F3 are client-only, but F0 IS a `server/` change and is the first
+server code to reach prod in a while — prod smoke is open.
 
 - **F0** `00e06d9` — a template's stored effort signal now reaches the live
   session (six server selects + a one-time client seed).
@@ -36,79 +35,60 @@ it, and no `server/` code at all after F0** — F1/F2/F3 are client-only.
 - **F3** `0ee258b` — live session either-or control, signal locks after the
   first effort value, Finish blocked while a core-logged set is missing it.
 
-**The park is closed on its own terms.** Seth ruled August 2 to wait for the
-Cursor auto quota rather than upgrade the plan or waive the no-inline-code rule.
-The August 3 dispatch of F2 doubled as the probe: the quota HAD reset, both
-remaining units ran clean on the auto rung, and the wave cost one day. The
-ruling was right; do not re-litigate it.
+- **Gate fix** `59e27dc` — the one finding, authored in-seat.
 
-**Three things the next session must not re-derive:**
+**What the gate caught, and why per-unit review could not.** F1 made the
+device effort-signal pref writable from four template screens; F3's lock is
+signal-AGNOSTIC (any non-blank `rir` OR `rpe` locks the control) while its
+mandate counts only the ACTIVE signal. The live signal is re-seeded on every
+remount from OUTSIDE the session — device pref for quick logs, template
+booleans for template sessions. So changing the pref or the template mid-workout
+re-seeded an in-progress session onto a signal its sets had no values for: the
+control locked (a set carried effort), Finish blocked demanding the other
+signal, and no way back, since the locked control is `pointer-events: none`.
+Exactly the mid-workout dead end F3's own enforcement boundary forbids. **Each
+unit met its contract exactly — the defect existed only where two units met.**
+Both seed branches now prefer the currency already logged on the session's sets.
+**Invariant: a session is never seeded onto a signal it has no values for.**
 
-1. **The wave's recurring failure is AUTHORING, not execution — twice now, in
-   the same shape.** F0's block named `FULL_SESSION_RELATIONS`, one of the TWO
-   locations recon had found, so the fix landed where it could never fire.
-   F2's block named the required-choice prompt but not `RirRpeToggleRow`'s
-   built-in null-state nudge — one of the TWO things that render that state —
-   so the same "two sets of 10" sentence shipped twice on one screen, in two
-   wordings, above a line claiming effort logging was "off" on a page that
-   demands a choice. Both times: contract followed exactly, green build,
-   truthful no-deviations report, wrong screen. **Generalized rule: when a
-   contract touches a state, it must enumerate everything already acting on
-   that state, or say why not.** F3's block was amended pre-dispatch on this
-   basis and landed with no fix needed.
-2. **F1 landed WITHOUT a delivery report** - a salvaged killed run (code written,
-   `DELIVERY.md` not, quota died in between). Every acceptance criterion was
-   audited directly instead. The pre-main gate must read F1 as first-pass
-   material, not as something already reviewed twice.
-3. **F2 carries a known-ugly seam the gate should not re-diagnose.**
-   `EFFORT_SIGNAL_REQUIRED_CHOICE_HINT` is exported from `EditTemplatePage.jsx`
-   and imported by `EditBlockTemplatePage.jsx`, because that block's FILES TO
-   TOUCH allowed no third module. Zero bundle cost (`App.jsx:11-12` imports both
-   statically). It is the FOURTH variant of the effort-education sentence and
-   belongs to the standing consolidation follow-up, not to a gate finding.
+**Residual, accepted not fixed:** a legacy in-progress session holding MIXED
+`rir` and `rpe` on different sets seeds to RIR, so its rpe-only sets ask for a
+RIR value before Finish. Actionable (the field is visible on every set) and the
+honest reading of the one-currency mandate. Do not "fix" it into a per-set
+exception.
 
-### The consolidated smoke checklist — Seth, on the staging Vercel deploy
+**Merged WITHOUT a re-smoke of the gate fix, by Seth's August 4 ruling** — the
+change is state-seeding only, no markup or CSS, so there is no visual surface
+smoke could have checked. All eight seed cases were walked by reading. If a
+mid-workout Finish-block report ever arrives, start here.
 
-`origin/effort-mandatory-wave` is at `0ee258b`, so the deploy has all four
-units. Smoke ONCE against this list; findings are gate input.
+**The durable lesson of this wave: the recurring failure was AUTHORING, not
+execution — three times, in the same shape.** F0's block named
+`FULL_SESSION_RELATIONS`, one of the TWO locations recon had found, so the fix
+landed where it could never fire. F2's block named the required-choice prompt
+but not `RirRpeToggleRow`'s built-in null-state nudge — one of the TWO things
+that render that state — so the same sentence shipped twice on one screen. The
+gate finding is the third: F3's block specified the lock without enumerating
+what could re-seed the signal underneath it. **Generalized rule: when a contract
+touches a state, it must enumerate everything already acting on that state, or
+say why not** — and at wave scale, everything that can WRITE that state from
+another screen.
 
-**F0 — the signal actually reaches the session** (neither lane can prove this):
-- Build a template with RIR on, start a workout from it, confirm the RIR field
-  appears WITHOUT touching anything.
+### PROD smoke — Seth, on production, one combined pass
 
-**F1 — either-or, and it remembers:**
-- New template / new block template: exactly one of RIR/RPE is on, never both,
-  never neither.
-- Switch to RPE, reload, create another template — still RPE.
+Covers the F-wave AND the still-open E-wave prod smoke. Staging smoke already
+passed on August 4; this is the prod confirmation, and F0 makes it a real one.
 
-**F2 — legacy templates demand a choice:**
-- Open a template saved before the mandate (both toggles off historically):
-  neither signal selected, a prompt explains why and says Save is blocked, and
-  **Save is actually disabled**.
-- Pick a signal → Save enables. Save, reopen → no prompt, normal page.
-- Open a legacy template and navigate AWAY without picking → reopen it and
-  confirm it is unchanged (nothing was written on load).
-- Open a template that already HAS a signal → no prompt, Save enabled, looks
-  exactly as it did before this wave.
-- **Watch for the F2 bug specifically:** the education sentence should appear
-  ONCE on that screen, not twice.
-
-**F3 — the live session, the mandate, and the lock:**
-- Start a template session: the two RIR/RPE checkboxes are GONE, replaced by the
-  same either-or control the quick log uses. The other checkboxes (workout
-  description, exercise notes, set notes) are untouched.
-- Log a set WITH an effort value → the signal control locks, stays visible, and
-  says why. Confirm you cannot switch it.
-- Log two more sets WITHOUT effort → **Finish is disabled and the hint names the
-  count** ("Add RIR on 2 more sets..."), with the empty effort fields softly
-  cued. Fill them → Finish enables.
-- **The one that matters most: enter RIR 0** (taken to failure) and confirm it
-  counts as filled and does NOT keep Finish blocked.
-- A quick log behaves the same way.
-- Open an OLD completed session → no lock messaging, no enforcement, nothing
-  demanded retroactively.
-- If you have a legacy session with no signal ever chosen, confirm it still
-  finishes with no effort values — nobody should be stranded mid-workout.
+- **Login still works.** F0 added six selects to `sessionController`; a broken
+  session read shows up here first.
+- Start a workout from a template with RIR on → the RIR field appears without
+  touching anything (F0, the server change).
+- Log a set with effort → the signal control locks and says why; Finish enables
+  once every core-logged set has a value. **Enter RIR 0 and confirm it counts as
+  filled** — the highest-value case in the vocabulary.
+- Open an OLD completed session → nothing demanded retroactively.
+- E-wave leftovers: the Analytics effort rationale line renders and the legacy
+  nudge reads correctly.
 
 ---
 
@@ -144,11 +124,10 @@ third-party clients, layered OVER the cookie/JWT auth that already exists.
 Existing users, the user table, and the login flow are untouched. If a future
 block description contains the words "migrate users", it has misread this.
 
-**Sequencing: RESOLVED BY EVENTS, August 3.** This was an open priority call
-between the F-wave and the AI/auth work. The F-wave is now 4/4 landed, so the
-question is moot — **the connector auth work (AI1) is next**, once the F-wave
-clears smoke and the gate. Nothing here needs a fresh ruling from Seth; if he
-wants something else first, that is a new instruction, not a pending one.
+**Sequencing: RESOLVED. The F-wave is merged, so AI1 (connector auth) is NEXT
+and is authorable immediately** — it does not wait on the prod smoke. Nothing
+here needs a fresh ruling from Seth; if he wants something else first, that is a
+new instruction, not a pending one.
 
 **The auth unit (AI1), when it is authored.** Per `ai-layer.md` section 4.2 as
 amended, and the recon findings:
@@ -174,64 +153,21 @@ Lane B (in-app coach, BYO-key and hosted over one code path) second. The hard
 boundary holds on both: the deterministic engine computes every number, the
 model only narrates.
 
-## The F-wave rulings — the WHY behind the four landed units
+## The F-wave rulings — ARCHIVED August 4
 
-Kept because the gate and any future effort work need the reasoning, not just
-the diff. All four units are LANDED (see the section at the top); nothing here
-is outstanding. Seth's August 1 rulings, from the E-wave smoke, which superseded
-the "someday" framing of the mandate:
-
-1. **RIR and RPE are EITHER-OR, never both.** Two independent toggles is
-   the wrong model — one effort signal per template/session, RIR default.
-2. **Mandatory lands in the SAME wave as either-or.** He was offered a
-   3-state `RIR | RPE | Off` interim and explicitly chose `RIR | RPE`
-   with no Off state.
-3. **Capture preference must be REMEMBERED, device-local.** Extend the
-   existing `quickWorkoutLogPrefs.js` localStorage pattern (same
-   precedent as `weightUnitPref.js`) to template creation and block
-   templates. Explicitly NOT an account-level column — no schema change,
-   no migration.
-
-**The conflict this creates, and the agreed resolution.** With no Off
-state, an existing template storing both toggles `false` (no backfill
-ever ran, so these exist) renders a control with nothing selected. The
-two naive exits are both wrong: auto-selecting RIR silently rewrites a
-stored user choice — exactly what E-wave smoke item 5 existed to catch —
-and keeping an implicit off-state is the 3-state option in disguise.
-Resolution put to Seth and not contested:
-
-- **New templates, block templates, quick logs:** hard 2-state, one
-  signal always selected, RIR default, remembered from prefs. No Off.
-- **Legacy templates with both off:** a one-time REQUIRED CHOICE on open.
-  Nothing is written until the user picks. E2's copy is not deleted — it
-  is repurposed from a quiet hint into that prompt, which also satisfies
-  the standing "the mandate ships WITH user education" requirement.
-- **Enforcement:** block session completion when a captured-effort set
-  has no value. Already-completed historical sessions untouched.
-
-**Where the pref gap actually is** (verified August 1, not assumed):
-preference memory exists for QUICK LOGS ONLY. `quickWorkoutLogPrefs.js`
-persists `useRIR`/`useRPE`/`useExerciseNotes`, restored at
-`SessionDetailPage.jsx:2199-2206`. Template creation ignores it entirely
-(`CreateTemplatePage.jsx:46-47` hardcodes `useState(true)`/
-`useState(false)`; block equivalents the same), and template-driven live
-sessions take the template's stored booleans via the
-`session.workoutTemplate` branch at `SessionDetailPage.jsx:2190-2196` and
-never consult prefs. Net effect: an RPE user is handed RIR-on/RPE-off on
-every new template, forever. Weight unit DOES already persist
-device-local (`weightUnitPref.js`, defaults lbs) — if it appears to
-forget, that is a SEPARATE bug and needs a repro.
-
-**AUTHORED AND SHIPPED** as F0-F3 (August 2-3). The estimate of ~3 units was
-one short: F0 was added when authoring recon found the stored signal never
-reached the live session at all, which would have made F3 enforce a field the
-session never showed.
+Seth's August 1 either-or / mandatory / remembered-pref rulings, the legacy
+both-false resolution, and the verified pref-gap findings moved VERBATIM to the
+TOP of `docs/HANDOFF-ARCHIVE.md` when this file exceeded its cap after the
+merge. Nothing in them is outstanding — all four units shipped. Go there if
+future effort work needs the WHY rather than the diff.
 
 ### Lane worktree state
 
-`cursor-lane` is on `cursor/f3` (`0ee258b`), landed and ff-merged, so it is
-free. `cursor-lane-2` is on `recon/f-wave-2`; `cursor-lane-3` is untouched on
-`recon/e1rm-blast` (`4078c0b`).
+Verified from `git worktree list` on August 4, correcting a stale entry: all
+three lanes are FREE. `cursor-lane` is on `cursor/f3` (`0ee258b`), landed and
+ff-merged; `cursor-lane-2` on `recon/f-wave-2` and `cursor-lane-3` on
+`recon/f-wave-3`, both at `8541bca` (the prior HANDOFF said lane-3 was on
+`recon/e1rm-blast` — it is not).
 Repoint any lane to a branch off the target wave before dispatching, or
 the delivery lands on the wrong base. Check lane cleanliness by
 DELIVERY.md TIMESTAMP, not `git status` (it is gitignored, so a stale
@@ -269,17 +205,19 @@ authored code. A separate pure validator is specified.
 
 ## Repo / deploy state
 
-- **`main` is at `d272930`** — the E-wave merge, August 2. It is the first
-  CODE to reach main since the frontier-parity merge `90248f9` (July 21,
-  prod-smoked clean July 28); the two commits between them (`869c5f1`,
-  `7d1c9ba`) were docs-only. Prod Vercel/Render track `main`, so this push is
-  deploying to production now — **prod smoke is open and unverified.** Because
-  prod tracks main, any push to main is a prod-bound push (gate item 2).
-- **Staging Render tracks `main`** (Seth repointed it July 28). The
-  E-wave shipped ZERO server changes, so smoking it against a `main`
-  Render backend was correct — no repoint needed. The F-wave is also
-  expected client-only; re-check that assumption if enforcement needs
-  server validation.
+- **`main` is at `59e27dc`** — the F-wave merge, August 4, a clean fast-forward
+  from `8541bca` (14 commits). Prod Vercel/Render track `main`, so this push is
+  deploying to production now — **prod smoke is open and unverified**, and this
+  one matters more than the last: F0 is the first `server/` change to reach prod
+  since the frontier-parity merge. Because prod tracks main, any push to main is
+  a prod-bound push (gate item 2).
+- **Staging Render tracks `main`** (Seth repointed it July 28), so it now picks
+  up F0's server change automatically — no repoint needed, and RUNBOOK step 7 is
+  a no-op for this wave.
+- **`effort-mandatory-wave` is MERGED and closed** — same shape as `effort-wave`
+  below: all its CODE is on `main`, and it now sits one DOCS-ONLY commit ahead
+  (this post-merge upkeep). NOT a safe deletion candidate until that commit is
+  on `main`. Do not delete it to tidy up.
 - **`effort-wave` is MERGED and closed** — all its CODE is on `main`. It now
   sits one or two DOCS-ONLY commits ahead (this post-merge HANDOFF upkeep,
   which is written after the merge and so cannot be part of it). **Therefore
