@@ -60,13 +60,21 @@ verification) and are standing frontier-seat escalations under CLAUDE.md
 regardless of who writes them. The `sub`-to-user mapping in AI4 is the single
 highest-severity line in the wave.
 
-QUEUED | ai1-consent-entitlement-foundation.md | server-side AI consent record +
+DISPATCHED | ai1-consent-entitlement-foundation.md | server-side AI consent record +
 entitlement flag + opt-in settings page; the privacy groundwork the spec
 requires to ship with the first AI feature | MODEL auto. MIGRATION-CARRYING (new
 `AiConsent` model + `User.aiConnectorEnabled`). Consent is deliberately ONE ROW
 PER USER, not an audit trail. Policy lives in a pure `server/src/ai/consent.js`
 so the DB-free lane can gate it; `connectorAccess()` is the single gate AI2 and
 AI4 both call rather than re-deriving. Copy specified verbatim in the block.
+**CLEARED FOR AUTONOMOUS DISPATCH by Seth, August 4** (the forty-second
+session's opening call). The `dispatch-unit` section-4 refusal is aimed at
+RUNNING a migration; this block forbids Cursor from running any migration
+command - it hand-writes the `.sql` and stops - so applying it stays Seth's
+manual track (gate item 3), unchanged. DISPATCHED August 4, Channel B AUTO
+rung (`--model auto`), lane `C:\dev\worktrees\cursor-lane` branch `cursor/ai1`
+off `origin/ai-connector-wave` ea51ea6. Stale AIR1 recon DELIVERY.md deleted
+from the lane first so the incoming report cannot read as landed work.
 
 QUEUED | ai2-connector-perimeter.md | RFC 9728 discovery document, Bearer guard
 with a swappable verifier, scope + consent enforcement, connector-scoped rate
