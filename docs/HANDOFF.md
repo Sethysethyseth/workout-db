@@ -3,10 +3,9 @@
 **Next action (human):** **Rule on how AI1 gets executed** - it is
 migration-carrying, so `dispatch-unit` refuses it and the whole (strictly
 serial) AI-wave is stalled behind that one call; detail in "The AI-wave" below.
-**Then create the WorkOS staging account**, so AI4 is not what the wave stalls
-on next - its dashboard checklist is at the bottom of
-`docs/tasks/ai4-workos-connector-auth.md`. Still open behind those, blocking
-nothing: the prod smoke of `main` `59e27dc` (covers the F-wave AND the leftover
+**The WorkOS staging dashboard is now DONE** (August 4, driven in-browser) -
+only the Render env vars remain, and only `WORKOS_API_KEY` is Seth's to paste;
+see "AI4 / WorkOS" below. Still open behind those, blocking nothing: the prod smoke of `main` `59e27dc` (covers the F-wave AND the leftover
 E-wave pass), and the `docs/parked/*` ruling.
 
 > **Standing rule:** the line above is filled on EVERY rewrite and is
@@ -149,6 +148,31 @@ call, not the agent's.
 code is authorable and lane-checkable without the vendor, but unsmokeable until
 the WorkOS staging account, dashboard config, and secrets exist. The ten-step
 checklist is at the bottom of `docs/tasks/ai4-workos-connector-auth.md`.
+
+### AI4 / WorkOS — staging dashboard RESOLVED August 4
+
+Driven in-browser this session. Staging environment of project "Cool's
+Project". **Checklist steps 1, 2, 3, 5, 6, 7, 8 are DONE** — CIMD and DCR both
+Enabled, resource indicator added and marked Default, sign-in URI set.
+
+- `WORKOS_CLIENT_ID=client_01KZ7E8C99MTQQQ4RC6GEH4DQ2`
+- `MCP_AUTHORIZATION_SERVER=https://scientific-mist-64-staging.authkit.app`
+- `MCP_RESOURCE_URL=https://workout-db-staging.onrender.com/mcp`
+- sign-in URI `https://workout-db-staging.onrender.com/ai/connector/login`
+- `WORKOS_API_KEY` — `sk_test_...1eFc`, NOT retrieved by any agent; Seth
+  reveals and pastes it himself.
+
+**Only step 9 remains** — the four vars on the `workout-db-staging` Render
+service. Step 10 (production) is untouched and deliberate; nothing copies
+across environments.
+
+**Two corrections the block itself does NOT yet carry.** (1) Step 4, "create an
+OAuth application", is UNNECESSARY — with DCR/CIMD enabled, MCP clients register
+themselves; the Applications list is for clients you manage, which Claude is
+not. The create dialog forces a consent-model and a PKCE choice, so it was
+backed out of rather than guessed at. (2) The dashboard calls the Login URI
+**"External Sign-in URI"** — Connect -> Configuration. Full hand-off detail for
+whoever finishes this: `workosinstructions.md` (scratchpad, August 4).
 
 **Six recon findings that changed the design** (three parallel report lanes,
 August 4 — AIR1 server now-state, AIR2 client/consent now-state, AIR3 MCP +
