@@ -342,6 +342,23 @@ function sessionSetHasSignalEffort(set, signal) {
   return true;
 }
 
+/**
+ * The effort currency ALREADY logged on a session's sets, or null. RIR wins
+ * when both appear, matching the stored-boolean mapping on the edit pages.
+ *
+ * Seeding must prefer this over the device pref / template value: the lock is
+ * signal-agnostic (any rir OR rpe locks), so re-seeding a session to a signal
+ * its sets have no values for would lock the control onto that signal AND
+ * block Finish, with no way back - the exact mid-workout dead end F3's
+ * enforcement boundary forbids.
+ */
+function sessionLoggedEffortSignal(sets) {
+  const list = Array.isArray(sets) ? sets : [];
+  if (list.some((s) => sessionSetHasSignalEffort(s, "rir"))) return "rir";
+  if (list.some((s) => sessionSetHasSignalEffort(s, "rpe"))) return "rpe";
+  return null;
+}
+
 function sessionSetDraftDirty(draft, set) {
   const norm = (v) => (v == null ? "" : String(v)).trim();
   return (
@@ -2243,8 +2260,13 @@ export function SessionDetailPage() {
       const tplRIR = Boolean(session.workoutTemplate.useRIR);
       const tplRPE = Boolean(session.workoutTemplate.useRPE);
       // RESOLUTION: RIR wins when both true; both-false stays off (no auto-select).
-      setLiveUseRIR(tplRIR);
-      setLiveUseRPE(tplRPE && !tplRIR);
+      // A currency already on this session's sets outranks the template's
+      // current value - editing the template mid-session must not re-seed a
+      // locked session onto a signal it has no values for.
+      const tplSignal = tplRIR ? "rir" : tplRPE ? "rpe" : null;
+      const seeded = sessionLoggedEffortSignal(setsList) ?? tplSignal;
+      setLiveUseRIR(seeded === "rir");
+      setLiveUseRPE(seeded === "rpe");
       return;
     }
 
@@ -2254,7 +2276,9 @@ export function SessionDetailPage() {
     setLiveUseExerciseNotes(
       typeof p.useExerciseNotes === "boolean" ? p.useExerciseNotes : true
     );
-    const effortSignal = loadEffortSignal();
+    // Same rule as the template branch: what is already logged outranks the
+    // device pref, which any template screen can rewrite mid-workout.
+    const effortSignal = sessionLoggedEffortSignal(session.sets) ?? loadEffortSignal();
     setLiveUseRIR(effortSignal === "rir");
     setLiveUseRPE(effortSignal === "rpe");
     setLiveUseSetNotes(false);
