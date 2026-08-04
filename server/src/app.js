@@ -1,6 +1,7 @@
 const express = require("express");
 const session = require("express-session");
 const cors = require("cors");
+const { rateLimit, ipKeyGenerator } = require("express-rate-limit");
 const pg = require("pg");
 const PgSession = require("connect-pg-simple")(session);
 const routes = require("./routes");
@@ -10,6 +11,10 @@ const errorHandler = require("./middleware/errorHandler");
 const app = express();
 
 const isProduction = process.env.NODE_ENV === "production";
+
+/** Connector surface rate limit - generous for normal assistant use. */
+const CONNECTOR_RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
+const CONNECTOR_RATE_LIMIT_MAX = 300;
 
 if (isProduction && !process.env.SESSION_SECRET) {
   throw new Error("SESSION_SECRET is required in production");
@@ -62,18 +67,48 @@ const allowedOrigins = [
   "http://127.0.0.1:5173",
 ];
 
-app.use(
-  cors({
-    origin(origin, callback) {
-      if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(normalizeOrigin(origin)))
-        return callback(null, true);
-      if (isAllowedVercelPreviewOrigin(origin)) return callback(null, true);
-      return callback(new Error("Not allowed by CORS"));
-    },
-    credentials: true,
-  })
-);
+function isConnectorCorsPath(path) {
+  return (
+    path.startsWith("/.well-known/") ||
+    path === "/mcp" ||
+    path.startsWith("/mcp/")
+  );
+}
+
+// Narrow CORS for the Bearer-protected connector surface only. Any origin,
+// no credentials (wildcard + credentials is a cross-origin data leak).
+app.use((req, res, next) => {
+  if (!isConnectorCorsPath(req.path)) return next();
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    "Authorization, Content-Type, Accept, MCP-Protocol-Version"
+  );
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  if (req.method === "OPTIONS") {
+    return res.status(204).end();
+  }
+  return next();
+});
+
+// Existing app CORS (cookie-authenticated surface). Options object is
+// unchanged; wrapper skips the connector paths so arbitrary MCP client
+// origins are not rejected by the allowlist after connector CORS runs.
+const appCors = cors({
+  origin(origin, callback) {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(normalizeOrigin(origin)))
+      return callback(null, true);
+    if (isAllowedVercelPreviewOrigin(origin)) return callback(null, true);
+    return callback(new Error("Not allowed by CORS"));
+  },
+  credentials: true,
+});
+
+app.use((req, res, next) => {
+  if (isConnectorCorsPath(req.path)) return next();
+  return appCors(req, res, next);
+});
 
 app.use(express.json());
 
@@ -118,6 +153,21 @@ app.use(
 
 // Attach req.authUserId from Bearer token (or session fallback).
 app.use(attachAuthUser);
+
+const connectorRateLimit = rateLimit({
+  windowMs: CONNECTOR_RATE_LIMIT_WINDOW_MS,
+  limit: CONNECTOR_RATE_LIMIT_MAX,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator(req) {
+    const identity = req.connectorUserId ?? req.authUserId;
+    if (identity) return `id:${identity}`;
+    return `ip:${ipKeyGenerator(req.ip)}`;
+  },
+});
+
+app.use("/mcp", connectorRateLimit);
+app.use("/ai", connectorRateLimit);
 
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "ok" });
