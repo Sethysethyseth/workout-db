@@ -1,3 +1,63 @@
+## ARCHIVED August 4, 2026 - the F-wave RULINGS section, moved VERBATIM from
+## HANDOFF when it exceeded its cap after the merge. The wave is CLOSED, merged
+## to main as 59e27dc. These are the rulings the four units were built from;
+## the merge record and the gate finding stay live in HANDOFF.
+
+## The F-wave rulings — the WHY behind the four landed units
+
+Kept because the gate and any future effort work need the reasoning, not just
+the diff. All four units are LANDED (see the section at the top); nothing here
+is outstanding. Seth's August 1 rulings, from the E-wave smoke, which superseded
+the "someday" framing of the mandate:
+
+1. **RIR and RPE are EITHER-OR, never both.** Two independent toggles is
+   the wrong model — one effort signal per template/session, RIR default.
+2. **Mandatory lands in the SAME wave as either-or.** He was offered a
+   3-state `RIR | RPE | Off` interim and explicitly chose `RIR | RPE`
+   with no Off state.
+3. **Capture preference must be REMEMBERED, device-local.** Extend the
+   existing `quickWorkoutLogPrefs.js` localStorage pattern (same
+   precedent as `weightUnitPref.js`) to template creation and block
+   templates. Explicitly NOT an account-level column — no schema change,
+   no migration.
+
+**The conflict this creates, and the agreed resolution.** With no Off
+state, an existing template storing both toggles `false` (no backfill
+ever ran, so these exist) renders a control with nothing selected. The
+two naive exits are both wrong: auto-selecting RIR silently rewrites a
+stored user choice — exactly what E-wave smoke item 5 existed to catch —
+and keeping an implicit off-state is the 3-state option in disguise.
+Resolution put to Seth and not contested:
+
+- **New templates, block templates, quick logs:** hard 2-state, one
+  signal always selected, RIR default, remembered from prefs. No Off.
+- **Legacy templates with both off:** a one-time REQUIRED CHOICE on open.
+  Nothing is written until the user picks. E2's copy is not deleted — it
+  is repurposed from a quiet hint into that prompt, which also satisfies
+  the standing "the mandate ships WITH user education" requirement.
+- **Enforcement:** block session completion when a captured-effort set
+  has no value. Already-completed historical sessions untouched.
+
+**Where the pref gap actually is** (verified August 1, not assumed):
+preference memory exists for QUICK LOGS ONLY. `quickWorkoutLogPrefs.js`
+persists `useRIR`/`useRPE`/`useExerciseNotes`, restored at
+`SessionDetailPage.jsx:2199-2206`. Template creation ignores it entirely
+(`CreateTemplatePage.jsx:46-47` hardcodes `useState(true)`/
+`useState(false)`; block equivalents the same), and template-driven live
+sessions take the template's stored booleans via the
+`session.workoutTemplate` branch at `SessionDetailPage.jsx:2190-2196` and
+never consult prefs. Net effect: an RPE user is handed RIR-on/RPE-off on
+every new template, forever. Weight unit DOES already persist
+device-local (`weightUnitPref.js`, defaults lbs) — if it appears to
+forget, that is a SEPARATE bug and needs a repro.
+
+**AUTHORED AND SHIPPED** as F0-F3 (August 2-3). The estimate of ~3 units was
+one short: F0 was added when authoring recon found the stored signal never
+reached the live session at all, which would have made F3 enforce a field the
+session never showed.
+
+---
+
 ## ARCHIVED August 3, 2026 - the E-wave section, moved VERBATIM from HANDOFF
 ## when it exceeded its cap. The wave is CLOSED, merged to main as d272930.
 
