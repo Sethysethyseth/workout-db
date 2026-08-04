@@ -60,7 +60,7 @@ verification) and are standing frontier-seat escalations under CLAUDE.md
 regardless of who writes them. The `sub`-to-user mapping in AI4 is the single
 highest-severity line in the wave.
 
-DISPATCHED | ai1-consent-entitlement-foundation.md | server-side AI consent record +
+LANDED 83d82c8 | ai1-consent-entitlement-foundation.md | server-side AI consent record +
 entitlement flag + opt-in settings page; the privacy groundwork the spec
 requires to ship with the first AI feature | MODEL auto. MIGRATION-CARRYING (new
 `AiConsent` model + `User.aiConnectorEnabled`). Consent is deliberately ONE ROW
@@ -76,7 +76,63 @@ rung (`--model auto`), lane `C:\dev\worktrees\cursor-lane` branch `cursor/ai1`
 off `origin/ai-connector-wave` ea51ea6. Stale AIR1 recon DELIVERY.md deleted
 from the lane first so the incoming report cannot read as landed work.
 
-QUEUED | ai2-connector-perimeter.md | RFC 9728 discovery document, Bearer guard
+LANDED August 4 same session, NO BOUNCE and NO REVIEWER FIX. Audited per
+land-unit: scope exact (11 delivered files = FILES TO TOUCH exactly;
+`client/src/index.css` correctly absent), full diff read, lanes re-run FRESH in
+the lane (unit 213/213 in 16 suites - up from 204/204 in 15, i.e. the new
+`aiConsent` suite's 9 tests DID enter the gating lane, which was the block's
+sharpest lane requirement; client build green; check-hex exit 0). `npm test` was
+NOT run - `pretest` runs `prisma migrate deploy` and this block is
+migration-carrying.
+
+**Migration WRITTEN, NOT APPLIED, as contracted.** Additive only:
+`ALTER TABLE "User" ADD COLUMN "aiConnectorEnabled" BOOLEAN NOT NULL DEFAULT true`,
+`CREATE TABLE "AiConsent"` + unique index + `@@index` + `ON DELETE CASCADE` FK.
+Zero `DROP` statements. Matches the `20260707130000` idiom. Only `prisma generate`
+was run.
+
+**Five things verified by DIRECT READ, because this wave's lanes cover none of
+them** (the block's own LANE GAP note - no runnable lane loads an Express route):
+
+1. **Every import seam resolves against the tree, not just against `node --check`.**
+   `authRequired` is a bare `module.exports = function` and `aiRoutes.js` imports
+   it bare - matches `analyticsRoutes.js:2`. `aiController.js` uses
+   `require("../lib/prisma")`, the exact idiom of `analyticsController.js:1` and
+   `sessionController.js:1`, and `server/src/lib/prisma.js` exists. `aiApi.js`
+   uses `import { http } from "./http.js"` - `http` IS a named export
+   (`http.js:47`). `AiConnectorPage` is a NAMED export and `App.jsx` imports it
+   named. None of these would fail a build; all would fail at runtime.
+2. **The API-shape/client-read contract seam holds.** The server returns
+   `{ granted, grantedAt, scope, connectorEnabled }`; the page reads
+   `consent?.granted` and `consent?.grantedAt`. `connectorEnabled` is returned
+   but unread - correct for AI1, since the entitlement flag defaults true and
+   surfacing it is not this unit's job.
+3. **Every CSS class the new page leans on already EXISTS in `index.css`** -
+   `settings-page-header`, `settings-page-title`, `settings-section-heading`,
+   `settings-security-actions`, `settings-feedback--success`, `settings-page-back`
+   all resolve. A missing class is silently unstyled with a green build. The page
+   copies `SecurityPage.jsx` structurally as the block required, and
+   `LoadingState`'s `slowLabel` prop is real (`LoadingState.jsx:26`).
+4. **Settings row placement is exactly as contracted** - Appearance, Security,
+   **AI access**, Send feedback, What's new, Dev feedback. NOT gated behind
+   `isProdEnv()`, so it is reachable on staging and therefore smokeable.
+5. **Copy matches the block VERBATIM**, ASCII hyphen included in "leaves
+   LogChamp - totals, trends"; and the unit correctly names neither Claude nor
+   ChatGPT anywhere (that is AI5's surface).
+
+The `// AI4: revoking consent must also revoke issued connector tokens.` seam
+comment is present in `revokeConsent`, and `connectorAccess()` is the single
+exported gate AI2/AI4 must call rather than re-derive.
+
+**SMOKE IS BLOCKED ON THE MIGRATION, and this is the one thing that must not be
+forgotten.** `getConsent` selects `aiConnectorEnabled` and the `aiConsent`
+relation - neither exists in any database yet. The server still BOOTS fine
+(Prisma does not validate schema against the DB at connect time) and every
+pre-existing route is untouched, so nothing regresses; but `/profile/ai` will
+error until Seth applies the migration to staging. Code-ahead-of-DB, exactly as
+AGENTS.md describes it, and deliberate here.
+
+DISPATCHED | ai2-connector-perimeter.md | RFC 9728 discovery document, Bearer guard
 with a swappable verifier, scope + consent enforcement, connector-scoped rate
 limiting | MODEL auto. CROSS-USER ISOLATION SURFACE. The verifier seam's v1
 implementation accepts an ordinary LogChamp Bearer token deliberately, so
@@ -86,6 +142,14 @@ real-world connector failure - the client shows only "couldn't connect"), and
 CORS/OPTIONS preflight on the discovery routes. The guard must set
 `req.connectorUserId`, NEVER `req.authUserId` - overloading that property would
 let a connector token satisfy every `authRequired` route in the app.
+DISPATCHED August 4, Channel B AUTO rung (`--model auto`), lane
+`C:\dev\worktrees\cursor-lane` branch `cursor/ai2` off `origin/ai-connector-wave`
+83d82c8 (AI1 landed - AI2 consumes its `connectorAccess()`). AI1's DELIVERY.md
+deleted from the lane first. **Dispatch line carries an explicit override note**:
+the block's DEPENDENCIES section approves `express-rate-limit` + `jose`, which
+contradicts the standing STOP-CONDITION footer's blanket "Do NOT add
+dependencies" - the body wins, and the dispatch says so, so the run does not
+stall on the conflict.
 
 QUEUED | ai3-mcp-server-readonly-tools.md | the MCP server on `/mcp` plus four
 read-only summary-shaped tools over the existing analytics | MODEL auto.
