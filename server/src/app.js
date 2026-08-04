@@ -6,6 +6,8 @@ const pg = require("pg");
 const PgSession = require("connect-pg-simple")(session);
 const routes = require("./routes");
 const attachAuthUser = require("./middleware/attachAuthUser");
+const connectorAuth = require("./middleware/connectorAuth");
+const { handleMcpRequest } = require("./ai/mcpServer");
 const errorHandler = require("./middleware/errorHandler");
 
 const app = express();
@@ -168,6 +170,10 @@ const connectorRateLimit = rateLimit({
 
 app.use("/mcp", connectorRateLimit);
 app.use("/ai", connectorRateLimit);
+
+// MCP Streamable HTTP (2025-11-25): POST messages + GET SSE channel.
+// connectorAuth sets req.connectorUserId; a fresh server is built per request.
+app.all("/mcp", connectorAuth, handleMcpRequest);
 
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "ok" });

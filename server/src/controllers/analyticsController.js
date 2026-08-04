@@ -1,76 +1,11 @@
-const prisma = require("../lib/prisma");
 const {
-  enrichSet,
-  buildSummary,
-  buildExerciseIndex,
-  buildExerciseDetail,
-} = require("../analytics");
-const { buildUserExerciseIndex } = require("../analytics/userExercises");
+  fetchAllTimeEnrichedSets,
+  loadSummary,
+  loadExerciseDetail,
+} = require("../ai/analyticsAccess");
+const { buildExerciseIndex } = require("../analytics");
 
 const DATE_ONLY_RE = /^\d{4}-\d{2}-\d{2}$/;
-
-// Shared set-include shape for the exercise index/detail queries (identity
-// fields only - no template plan data, which only the summary needs).
-const EXERCISE_SET_INCLUDE = {
-  sets: {
-    include: {
-      sessionExercise: {
-        select: { exerciseName: true, exerciseId: true, userExerciseId: true },
-      },
-      templateExercise: {
-        select: { exerciseName: true, exerciseId: true, userExerciseId: true },
-      },
-    },
-  },
-};
-
-/**
- * All-time enriched sets for one user. Cross-user isolation happens here
- * and only here (same doctrine as getSummary): every set is reached
- * exclusively through a session where-clause scoped by `userId`.
- */
-async function fetchAllTimeEnrichedSets(userId) {
-  const [sessions, userExerciseRows] = await Promise.all([
-    prisma.workoutSession.findMany({
-      where: { userId },
-      include: EXERCISE_SET_INCLUDE,
-    }),
-    prisma.userExercise.findMany({ where: { userId } }),
-  ]);
-
-  const userIndex = buildUserExerciseIndex(userExerciseRows);
-  const enriched = [];
-  for (const session of sessions) {
-    for (const set of session.sets) {
-      enriched.push(
-        enrichSet(
-          {
-            performedAt: session.performedAt,
-            exerciseName:
-              set.sessionExercise?.exerciseName ??
-              set.templateExercise?.exerciseName ??
-              null,
-            exerciseId:
-              set.sessionExercise?.exerciseId ??
-              set.templateExercise?.exerciseId ??
-              null,
-            userExerciseId:
-              set.sessionExercise?.userExerciseId ??
-              set.templateExercise?.userExerciseId ??
-              null,
-            weight: set.weight,
-            reps: set.reps,
-            rir: set.rir,
-            rpe: set.rpe,
-            order: set.order,
-          },
-          userIndex
-        )
-      );
-    }
-  }
-  return enriched;
-}
 
 // Optional date param in getSummary's idiom: date-only `to` bounds at
 // end-of-day. Returns { ok: true, date|null } or { ok: false, error }.
@@ -141,112 +76,9 @@ async function getSummary(req, res, next) {
       });
     }
 
-    // Cross-user isolation happens here and only here: every set is reached
+    // Cross-user isolation happens in loadSummary: every set is reached
     // exclusively through a session owned by the authed user.
-    const [sessions, userExerciseRows] = await Promise.all([
-      prisma.workoutSession.findMany({
-        where: {
-          userId,
-          performedAt: {
-            gte: from,
-            lte: to,
-          },
-        },
-        include: {
-          sets: {
-            include: {
-              sessionExercise: {
-                select: {
-                  exerciseName: true,
-                  exerciseId: true,
-                  userExerciseId: true,
-                  templateExerciseId: true,
-                  templateExercise: {
-                    select: {
-                      id: true,
-                      templateSets: {
-                        select: { order: true, reps: true, weight: true, rir: true, rpe: true },
-                        orderBy: { order: "asc" },
-                      },
-                    },
-                  },
-                },
-              },
-              templateExercise: {
-                select: {
-                  id: true,
-                  exerciseName: true,
-                  exerciseId: true,
-                  userExerciseId: true,
-                  templateSets: {
-                    select: { order: true, reps: true, weight: true, rir: true, rpe: true },
-                    orderBy: { order: "asc" },
-                  },
-                },
-              },
-            },
-          },
-        },
-      }),
-      prisma.userExercise.findMany({
-        where: { userId },
-      }),
-    ]);
-
-    const userIndex = buildUserExerciseIndex(userExerciseRows);
-
-    const enriched = [];
-    // templateExerciseId -> planned sets, harvested from whichever linkage
-    // path (direct set FK or via sessionExercise) surfaced the plan.
-    const planLookup = {};
-    for (const session of sessions) {
-      for (const set of session.sets) {
-        const planSource =
-          set.templateExercise ?? set.sessionExercise?.templateExercise ?? null;
-        if (planSource && planSource.templateSets.length > 0) {
-          planLookup[planSource.id] = planSource.templateSets;
-        }
-        enriched.push(
-          enrichSet(
-            {
-              performedAt: session.performedAt,
-              exerciseName:
-                set.sessionExercise?.exerciseName ??
-                set.templateExercise?.exerciseName ??
-                null,
-              exerciseId:
-                set.sessionExercise?.exerciseId ??
-                set.templateExercise?.exerciseId ??
-                null,
-              userExerciseId:
-                set.sessionExercise?.userExerciseId ??
-                set.templateExercise?.userExerciseId ??
-                null,
-              weight: set.weight,
-              reps: set.reps,
-              rir: set.rir,
-              rpe: set.rpe,
-              order: set.order,
-              templateExerciseId: planSource ? planSource.id : null,
-            },
-            userIndex
-          )
-        );
-      }
-    }
-
-    // Fetch all-time sets for PR detection (PRs need full history to know what came before)
-    const allTimeEnriched = await fetchAllTimeEnrichedSets(userId);
-
-    return res.json(
-      buildSummary(enriched, {
-        from,
-        to,
-        planLookup,
-        userExercises: userExerciseRows,
-        allTimeEnrichedSets: allTimeEnriched,
-      })
-    );
+    return res.json(await loadSummary(userId, { from, to }));
   } catch (err) {
     return next(err);
   }
@@ -305,8 +137,7 @@ async function getExerciseDetail(req, res, next) {
       return res.status(400).json({ error: "from must not be after to" });
     }
 
-    const enriched = await fetchAllTimeEnrichedSets(userId);
-    const detail = buildExerciseDetail(enriched, {
+    const detail = await loadExerciseDetail(userId, {
       exerciseId: hasExerciseId ? rawExerciseId.trim() : undefined,
       userExerciseId: userExerciseId ?? undefined,
       from: fromParsed.date ?? undefined,
