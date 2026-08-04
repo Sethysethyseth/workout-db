@@ -6,6 +6,7 @@ const blockTemplateRoutes = require("./blockTemplateRoutes");
 const sessionRoutes = require("./sessionRoutes");
 const feedbackRoutes = require("./feedbackRoutes");
 const analyticsRoutes = require("./analyticsRoutes");
+const aiRoutes = require("./aiRoutes");
 
 const router = express.Router();
 
@@ -24,5 +25,6 @@ router.use("/block-templates", blockTemplateRoutes);
 router.use("/sessions", sessionRoutes);
 router.use("/feedback", feedbackRoutes);
 router.use("/analytics", analyticsRoutes);
+router.use("/ai", aiRoutes);
 
 module.exports = router;

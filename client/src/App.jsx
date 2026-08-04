@@ -17,6 +17,7 @@ import { StartLogWorkoutPage } from "./pages/StartLogWorkoutPage.jsx";
 import { ProfilePage } from "./pages/ProfilePage.jsx";
 import { AppearancePage } from "./pages/profile/AppearancePage.jsx";
 import { SecurityPage } from "./pages/profile/SecurityPage.jsx";
+import { AiConnectorPage } from "./pages/profile/AiConnectorPage.jsx";
 import { FeedbackPage } from "./pages/profile/FeedbackPage.jsx";
 import { WhatsNewPage } from "./pages/profile/WhatsNewPage.jsx";
 import { DevFeedbackPage } from "./pages/DevFeedbackPage.jsx";
@@ -133,6 +134,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <SecurityPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile/ai"
+          element={
+            <ProtectedRoute>
+              <AiConnectorPage />
             </ProtectedRoute>
           }
         />
