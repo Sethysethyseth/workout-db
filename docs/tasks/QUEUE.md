@@ -302,7 +302,8 @@ forbidden by the standing footer; the body wins). **This is the last unit
 dispatchable before the WorkOS account exists** - AI4 is blocked on it, and AI5
 is serial behind AI4.
 
-DISPATCHED | ai4-workos-connector-auth.md | WorkOS Standalone Connect - Login URI
+LANDED c89570e (COMMITTED, PUSH HELD - see the sequencing note at the end of this
+entry) | ai4-workos-connector-auth.md | WorkOS Standalone Connect - Login URI
 handler, completion call, real JWKS verification with audience binding | MODEL
 auto. CROSS-USER ISOLATION SURFACE, and BLOCKED on Seth's WorkOS account. Four
 sourced traps written into the contract: no `@workos-inc/node`, 302 not 303 (a
@@ -334,6 +335,93 @@ unchanged. Only finding 3, the `sub`-to-user mapping, is in scope, and the block
 already carries it as its highest-severity line. So finding 1 needs its own unit
 and a frontier-seat design call BEFORE the gate - AI4 landing is what ACTIVATES
 it. Flagged to Seth at dispatch; wave N may go 5 -> 6.
+
+LANDED August 5 same session, NO BOUNCE and NO REVIEWER FIX. Audited per
+land-unit with the whole diff read line by line (cross-user isolation surface -
+sampling is not allowed here). Scope is a SUBSET of FILES TO TOUCH: 6 of the 7
+named files, with `server/src/ai/protectedResource.js` deliberately untouched and
+declared. Lanes re-run FRESH in the lane: unit 232/232 in 20 suites (up from
+226/226 in 19, so the new `workosToken` suite's 6 tests DID enter the gating
+lane), client build green, check-hex exit 0, `package.json` unchanged.
+
+**The single highest-risk seam in this unit is the one the block did not name,
+and it HOLDS.** AI4 makes `verify()` async (dynamic `import("jose")`). If AI2's
+guard called it synchronously, a Promise would be truthy, `classifyConnectorToken`
+would read `verified.scopes` as `undefined`, and EVERY connector request would
+403 - with both lanes green. `connectorAuth.js:67` already reads
+`const verified = await verifier.verify(token)`, so the seam is clean. AI2's
+swappable-verifier seam did exactly the job it was built for.
+
+**Verified by direct read / execution, because no runnable lane loads any of it:**
+
+1. **DEVIATION 2 IS TRUE, and the block was wrong about the file.** The block
+   said to supply the real issuer in `protectedResource.js`. That module is PURE
+   (no `process.env` at all); the wiring lives in `routes/index.js:21-32`, whose
+   `getAuthorizationServers()` already reads `MCP_AUTHORIZATION_SERVER`, drops
+   blanks, and passes `[issuer]` into `buildProtectedResourceMetadata`. Editing
+   the named file would have been a no-op at best. Cursor found the real wiring
+   and correctly declined to touch anything - the F0 "block named the wrong
+   object" trap, caught by the delivery instead of by the reviewer this time.
+2. **`req.authUserId` is actually populated for the new route.**
+   `attachAuthUser` mounts at `app.js:157`, routes at `:182`, so the Login URI
+   handler sees it. A public route reading an identity set by later middleware
+   would have silently redirected every logged-in user back to login.
+3. **Schema and contract seams resolve.** `User.aiConsent` (`AiConsent?`) and
+   `User.aiConnectorEnabled` both exist, so the controller's `select` is valid;
+   `connectorAccess({ consentRow, aiConnectorEnabled })` is CALLED, not
+   re-derived, and the destructure matches AI1's exported signature exactly.
+4. **The never-throw verifier contract holds, executed not asserted:** a garbage
+   token, an empty token, and an unconfigured environment all return `null`
+   rather than throwing. A throw here would surface as a 500 from the guard
+   instead of a 401.
+5. **Module graph loads.** `require('./src/app.js')` executed clean (with a
+   localhost `DATABASE_URL`, which `dbHostGuard` permits) - the unit lane never
+   loads `app.js`, and the import strategy changed in this unit.
+6. **No `@workos-inc` anywhere** (finding 1), **no explicit 303** - all three
+   redirects use Express's default 302 (finding 2), and `WORKOS_API_KEY` is read
+   in exactly one module and appears in no log line or response body.
+
+**The `sub`-to-user assumption FAILS CLOSED, which materially lowers its
+severity.** `verify()` returns `userId: payload.sub` directly, assuming WorkOS
+echoes the LogChamp id we supply at completion - the block permitted this and
+required it be checked against a real token, and the delivery declares it
+unverified rather than mocking it green. What the audit adds: LogChamp user ids
+are **`cuid()`** and WorkOS identifiers are `user_...`-prefixed, so the two
+namespaces cannot collide. If the assumption is wrong, `prisma.user.findUnique`
+finds nothing, `connectorAuth:88-89` substitutes `consentRow: null` +
+`aiConnectorEnabled: false`, and the request 403s. So the failure mode is a dead
+connector, NOT one user's data reaching another user's assistant. It still must
+be confirmed against a real token before the gate.
+
+**Deviation 1 (dynamic `import("jose")` instead of `require`) is an improvement
+on the block, not a compromise.** `jose` is ESM and a top-level `require` broke
+the Jest lane. Dynamic import resolves from the module cache after first load, so
+the "one JWK set per process" requirement still holds (`jwksPromise` is
+module-scoped). It also retires the AI2/AI3 boot risk for `jose` specifically:
+`import()` works on every modern Node, so the unpinned-Node `require(esm)`
+threshold no longer applies to this import. `zod`'s phantom-dependency problem is
+untouched and still open.
+
+**Two residuals accepted, neither worth a bounce, both gate notes.** (a) A
+rejected `jwksPromise` would be cached permanently - but `createRemoteJWKSet`
+does not fetch eagerly, so the only rejection paths are permanent config errors
+anyway. (b) `connectorAuthController.js:18` builds the `next` return URL from
+`req.get("host")`, which is request-controlled, and passes it to the client login
+page's `?next=`. Not meaningfully exploitable (a Host header cannot be set via a
+link, so an attacker only redirects themselves), and the block did not specify
+how to build the return URL - flagged rather than fixed, because hardening a
+cross-user surface without a contract is not this seat's call.
+
+**SEQUENCING - WHY THE PUSH IS HELD.** Pushing this auto-deploys staging, and
+AI4 REPLACES the v1 verifier that accepted an ordinary LogChamp Bearer token.
+With `MCP_AUTHORIZATION_SERVER` / `MCP_RESOURCE_URL` still unset on Render,
+`verify()` returns `null` for everything, so `/mcp` will 401 EVERY request the
+moment this deploys. That closes the curl path HANDOFF calls "the next agent's
+highest-value move" - the only way to exercise AI1+AI2+AI3 together without a
+vendor token. That path is currently blocked on the migration, not on this
+commit, so the window is: apply the `AiConsent` migration -> curl-smoke AI1-AI3
+with an ordinary token -> then push AI4. Held for Seth's call rather than spent
+silently.
 
 QUEUED | ai5-connector-onboarding-ux.md | the in-app connect surface: copyable
 connector address, four-step instructions, honest tier note, What's New entry |
