@@ -552,7 +552,7 @@ points at `http://localhost:3000/...`, so `MCP_RESOURCE_URL` remains unset on
 Render. That is Seth's checklist step 9 and it blocks any REAL connector smoke -
 the curl path above deliberately does not need it.
 
-QUEUED | ai6-connector-rate-limit-identity.md | rate-limit the connector by
+LANDED c1398a8 | ai6-connector-rate-limit-identity.md | rate-limit the connector by
 connector identity instead of by IP: pre-auth failure ceiling + post-auth
 per-user budget on `/mcp` | MODEL auto. AUTHORED August 5 at Seth's request,
 after AI4 landed and activated the defect. CROSS-USER-IMPACT SURFACE (a shared
@@ -596,6 +596,66 @@ remains open: `zod` undeclared in `package.json` plus no Node pin
 (`engines`/`.nvmrc`/`.node-version`). Both fixes touch `package.json`, which is
 gate item 5 - Seth's call, and he has not given it. AI6 requires
 `package.json` to come back byte-unchanged.
+
+LANDED August 5 same session, NO BOUNCE and NO REVIEWER FIX. Audited per
+land-unit with the whole diff read line by line (security surface - sampling is
+not allowed here). Scope exact (3 files = FILES TO TOUCH), `server/package.json`
+byte-unchanged, lane re-run FRESH in the lane: **unit 243/243 in 21 suites, up
+from 232/232 in 20** - so the new `rateLimitKeys` suite's 11 tests DID enter the
+gating lane, which was this block's sharpest lane requirement.
+
+**The one line that mattered holds, verified by direct read of the module:**
+`connectorRateLimitKey` (`rateLimitKeys.js:29-33`) reads `req.connectorUserId`
+and falls back to `ipRateLimitKey` - `req.authUserId` appears nowhere in its
+body, and the only `authUserId` reference in the file is inside
+`aiRateLimitKey`, a different surface. The `??` operand is gone from `app.js`
+entirely and was not recreated anywhere.
+
+**Mount order verified by reading the diff, not by trusting the report's
+quotation:** `app.use("/mcp", connectorAuthFailureRateLimit)` precedes
+`app.all("/mcp", connectorAuth, connectorRateLimit, handleMcpRequest)`, so the
+ceiling runs pre-auth and the identity budget runs between `connectorAuth` and
+the handler - which is the entire fix. `attachAuthUser` still precedes the `/ai`
+mount, so `/ai` keeps keying correctly.
+
+**Verified by execution, because no lane loads `app.js`:**
+`node -e "require('./src/app.js')"` exits 0 with a localhost `DATABASE_URL`,
+proving all three limiters CONSTRUCT. That is worth more than a module-graph
+check here: v8.6.2 runs `validations.keyGeneratorIpFallback` at construction
+time and throws `ERR_ERL_KEY_GEN_IPV6` if a custom `keyGenerator` reads `req.ip`
+without going through `ipKeyGenerator`. Also confirmed the `ipKeyGenerator`
+import was removed from `app.js` along with its only use - no dangling
+reference.
+
+**The critical test is a real tripwire, not a tautology.** `rateLimitKeys.test.js:18-24`
+asserts the no-connector-identity case yields `ip:1.2.3.4` AND
+`not.toContain("cku_999")`; the old `??` logic returns `id:cku_999` and fails it.
+The suite also pins IPv6 subnet normalization (two addresses in one /56 collapse
+to one key), so removing the `ipKeyGenerator` helper now breaks a test rather
+than silently letting an IPv6 client rotate addresses to evade the ceiling.
+
+Both declared open choices accepted: three exports rather than one per surface
+(the third is the shared IP fallback, so the `ipKeyGenerator` call exists in
+exactly one place), and `ipRateLimitKey` not guarding a missing `req.ip` - it
+yields `ip:undefined` exactly as the pre-existing code did, and preserving
+behaviour was the right call in a security-adjacent unit.
+
+**Two behaviour changes for the gate to note, both correct and both declared:**
+(a) on a 401/403 the `RateLimit-*` headers now describe the flood ceiling rather
+than the user's remaining budget; (b) a consent-denied 403 counts against the
+IP-keyed ceiling, so an unconsented user's assistant retrying in a loop burns
+shared IP allowance - tolerable at 600/15min, worth revisiting at scale.
+
+**The LANE GAP is real and the delivery states it honestly rather than dressing
+a reading as an execution.** The tests prove the key FUNCTIONS are correct; that
+`app.js` wires them to the right surfaces in the right order is READ, not
+executed. Swapping the two key functions at their mount sites, or moving the
+identity limiter back in front of `connectorAuth`, would pass every lane in this
+unit. Cursor explicitly declined to write a fake-middleware-chain test on the
+grounds that a mock it controls proves only that the mock agrees with it - the
+right call. **Closing this properly needs a live two-identity request check
+against `RateLimit-*` headers, which is only possible once the WorkOS env vars
+are set.**
 
 ---
 

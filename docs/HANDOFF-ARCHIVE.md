@@ -1,3 +1,128 @@
+## ARCHIVED August 5, 2026 (forty-fourth session) - the /doctor pass's EXACT
+## CUTS for workflow-backlog item 4, moved VERBATIM from HANDOFF at the AI-wave
+## rewrite. The backlog ITEM is still open and still summarised in HANDOFF;
+## only this line-level scoping moved here. Read it before doing item 4.
+
+   *Scoped August 5 by a `/doctor` pass (read-only; nothing applied - the
+   AI-wave was mid-flight at 3/5). Exact cuts, ~750 est. tokens/session:*
+
+   - **CLAUDE.md 25-38** - the dated amendment chronology ("Decided July 3,
+     2026 (v3...); amended July 6... July 14... July 20 (v5.3...)"). Move
+     VERBATIM to `docs/specs/autonomous-cursor-dispatch.md`; leave `Three
+     roles:` plus a one-line pointer. ~225 est. tokens. Lines 17-23 (the
+     seat-naming block) STAY - that is a live instruction, not history.
+   - **CLAUDE.md 90-113 + 121-128** - relay steps 1-5 and 7 each restate a
+     skill that already carries the ritual at full fidelity
+     (`author-task-block`, `dispatch-unit`, `land-unit`, `pre-main-review`).
+     Compress to one-line pointers, ~33 lines -> ~8. ~375 est. tokens.
+     **Step 6 stays resident verbatim** - the wave-end HARD STOP is an
+     ordering constraint a session must know BEFORE it picks a skill; buried
+     in a lazy-loaded skill, a session could gate before Seth's smoke.
+     Lines 130-132 (HANDOFF/ARCHIVE channel split) also stay.
+   - **AGENTS.md 32-37, 41-45, 55, 59** - derivable from the repo itself:
+     the framework list (`package.json` says React+Vite/Express/Prisma 6;
+     the repo name is in `git remote`), the standard `npm install -> npm run
+     dev` recipe, the `npm run build` line, and two pure-location Structure
+     entries (`client/src/components`, `server/`). ~150 est. tokens. KEEP the
+     hosting targets, "SEPARATE prod and staging projects", the
+     `prisma.config.ts, not package.json` note, `npm run dev:mobile`, and the
+     whole test-lanes block (46-54) - gotchas, not derivable.
+
+   Same doctor pass found the rest of the setup clean: install, version
+   (2.1.222 = latest), auto mode already default, no hooks, no unused
+   skills/plugins/MCP servers, and no allow-rule gaps. Its only other action
+   was deleting two auto-memory entries that duplicated these files
+   (`cursor-relay-v52-workflow`, `fable-withheld-opus-executes`).
+
+---
+## ARCHIVED August 5, 2026 (forty-fourth session) - three CLOSED sections moved
+## VERBATIM from HANDOFF when it exceeded its cap at the end of the AI-wave:
+## the August 4 prod-deploy incident, the WorkOS staging-dashboard record, and
+## the August 5 relay-tooling changes. All three are done; nothing in them is
+## outstanding. The AI4 "three findings" section is NOT here - findings 2 and 3
+## are still open and stayed in HANDOFF.
+
+### INCIDENT, August 4 — prod Render was building from the wave branch
+
+**Closed, no data impact, but the mechanism is worth remembering.** Prod Render
+`workout-db-l3gc` was pointed at `ai-connector-wave` instead of `main`, so the
+AI1 push auto-deployed unreviewed, ungated server code straight to production.
+Caught by probing both services rather than by reading docs: prod answered
+`GET /ai/consent` with **401** (route mounted) while 404ing `/ai/nonsense`, and
+`git branch -r --contains 83d82c8` returned only `origin/ai-connector-wave` —
+`main` had no `/ai` mount at all. Seth repointed prod back to `main` and moved
+staging onto the wave branch; both re-verified from ground truth afterwards
+(prod `/ai/consent` -> 404, staging -> 401, both `/health` 200).
+
+**No data was at risk** — the migration had not run anywhere, AI1 added no code
+to any existing route, and prod's client had no link to the page. **The durable
+lesson: HANDOFF's deploy topology is a CLAIM, not ground truth.** The relay
+pushed three times on the assumption "this branch is staging-side" because the
+doc said so. Probe the actual services before the first push of any wave that
+carries server code — a 401-vs-404 diff across two hosts costs one command and
+settles it.
+
+### AI4 / WorkOS — staging dashboard RESOLVED August 4
+
+Driven in-browser this session. Staging environment of project "Cool's
+Project". **Checklist steps 1, 2, 3, 5, 6, 7, 8 are DONE** — CIMD and DCR both
+Enabled, resource indicator added and marked Default, sign-in URI set.
+
+- `WORKOS_CLIENT_ID=client_01KZ7E8C99MTQQQ4RC6GEH4DQ2`
+- `MCP_AUTHORIZATION_SERVER=https://scientific-mist-64-staging.authkit.app`
+- `MCP_RESOURCE_URL=https://workout-db-staging.onrender.com/mcp`
+- sign-in URI `https://workout-db-staging.onrender.com/ai/connector/login`
+- `WORKOS_API_KEY` — `sk_test_...1eFc`, NOT retrieved by any agent; Seth
+  reveals and pastes it himself.
+
+**Only step 9 remains** — the four vars on the `workout-db-staging` Render
+service. Step 10 (production) is untouched and deliberate; nothing copies
+across environments.
+
+**Two corrections the block itself does NOT yet carry.** (1) Step 4, "create an
+OAuth application", is UNNECESSARY — with DCR/CIMD enabled, MCP clients register
+themselves; the Applications list is for clients you manage, which Claude is
+not. The create dialog forces a consent-model and a PKCE choice, so it was
+backed out of rather than guessed at. (2) The dashboard calls the Login URI
+**"External Sign-in URI"** — Connect -> Configuration. Full hand-off detail for
+whoever finishes this: **`docs/specs/workos-staging-handoff.md`** (`d814cec`) —
+preserved VERBATIM into the repo from a session scratchpad, because the original
+reference was to a temp directory that would not have survived. Read its section
+0 before touching anything: `WORKOS_API_KEY` is never handled by an agent.
+
+## Relay tooling — August 5 (workflow session, no product code)
+
+Two changes, both mid-wave-safe. AI4/AI5 stay QUEUED and nothing about how a
+block is authored, dispatched, or landed moved.
+
+1. **Gate item 3 split** (`AGENTS.md`). Staging migrations are agent-run behind
+   the verbatim trigger phrase **"migrate staging"**, one command at a time with
+   approval before each, `prisma migrate status` reported after. Prod migrations
+   are unchanged: Seth runs them, item 2 stacks on top, an agent may only print
+   the sequence. The ordering invariant (DB before dependent code deploys) is
+   now stated once, in item 3, and the duplicate paragraph lower in AGENTS.md
+   points at it. `dispatch-unit` section 4 was corrected to match — a
+   migration-carrying block IS dispatchable, because the block only ever has
+   Cursor WRITE the migration; a lane still never runs `prisma migrate`.
+   Rationale: the original any-environment rule was written defensively around a
+   weaker non-Anthropic model, and `dbHostGuard.assertSafeForBoot()` already
+   makes staging's blast radius mechanical rather than procedural.
+
+2. **`scripts/cursor-watch.mjs` is now the whole relay's dashboard**, not one
+   lane's. It watches every existing lane in the v5.2 pool (`cursor-lane`, `-2`,
+   `-3`) from ONE server on one port, so fan-out no longer means three tabs —
+   the auto-open and notify controllers moved onto a shared hub and are consumed
+   once, by whichever lane stirs first. It also parses `docs/tasks/QUEUE.md` for
+   the live wave rail (the contiguous leading run of same-prefix units in
+   `## Active`, which is what keeps the AI-wave at five instead of swallowing
+   the F-wave below it) and renders n/N. `--lane` now repeats to pin an explicit
+   set; omitted, it auto-discovers. The Startup shortcut needs no change — it
+   already passes `--open-on-activity --notify` and now covers all three lanes.
+   Verified live: three lanes discovered, wave parsed `AI-wave 3/5`,
+   `AI1..AI3 LANDED / AI4 AI5 QUEUED`.
+
+---
+
 ## ARCHIVED August 4, 2026 (forty-second session) - the F-wave MERGE RECORD,
 ## moved VERBATIM from HANDOFF when it exceeded its cap during the AI-wave.
 ## The wave is CLOSED and merged to main as 59e27dc. Its PROD SMOKE checklist
