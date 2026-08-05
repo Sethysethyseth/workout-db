@@ -1,16 +1,63 @@
-const { verifyAuthToken } = require("../lib/jwt");
-const { CONNECTOR_SCOPE } = require("./consent");
+const AUTHORIZATION_SERVER = process.env.MCP_AUTHORIZATION_SERVER?.trim();
+const MCP_RESOURCE_URL = process.env.MCP_RESOURCE_URL?.trim();
+let jwksPromise = null;
+
+function getJwks() {
+  if (!jwksPromise) {
+    jwksPromise = import("jose").then(({ createRemoteJWKSet }) =>
+      createRemoteJWKSet(
+        new URL(`${AUTHORIZATION_SERVER.replace(/\/+$/, "")}/oauth2/jwks`)
+      )
+    );
+  }
+  return jwksPromise;
+}
+
+function hasExpectedAudience(audience, expectedAudience) {
+  if (typeof audience === "string") {
+    return audience === expectedAudience;
+  }
+  if (Array.isArray(audience)) {
+    return audience.includes(expectedAudience);
+  }
+  return false;
+}
+
+function normalizeScopes(payload) {
+  if (typeof payload.scope === "string") {
+    return payload.scope.split(/\s+/).filter(Boolean);
+  }
+  if (Array.isArray(payload.scopes)) {
+    return payload.scopes.filter((scope) => typeof scope === "string");
+  }
+  return [];
+}
 
 function createTokenVerifier() {
-  // AI4 replaces this implementation with WorkOS JWKS verification (jose) + audience binding. The interface does not change.
   return {
     async verify(token) {
       try {
-        const verified = verifyAuthToken(token);
-        if (!verified || typeof verified.userId !== "string" || !verified.userId) {
+        if (!AUTHORIZATION_SERVER || !MCP_RESOURCE_URL) {
           return null;
         }
-        return { userId: verified.userId, scopes: [CONNECTOR_SCOPE] };
+        const [{ jwtVerify }, jwks] = await Promise.all([
+          import("jose"),
+          getJwks(),
+        ]);
+        const { payload } = await jwtVerify(token, jwks, {
+          issuer: AUTHORIZATION_SERVER,
+          audience: MCP_RESOURCE_URL,
+        });
+        if (!hasExpectedAudience(payload.aud, MCP_RESOURCE_URL)) {
+          return null;
+        }
+        if (typeof payload.sub !== "string" || !payload.sub) {
+          return null;
+        }
+        return {
+          userId: payload.sub,
+          scopes: normalizeScopes(payload),
+        };
       } catch {
         return null;
       }
@@ -20,4 +67,6 @@ function createTokenVerifier() {
 
 module.exports = {
   createTokenVerifier,
+  hasExpectedAudience,
+  normalizeScopes,
 };
