@@ -7,8 +7,11 @@ Statuses: DRAFT / QUEUED / DISPATCHED / AWAITING-REVIEW / LANDED <sha> / BOUNCED
 ## Active
 
 AI-wave (the connector: LogChamp inside the user's own AI assistant), opened
-August 4, 2026 (Opus frontier seat). FIVE units on branch `ai-connector-wave`,
-off `main` 59e27dc. Implements `docs/specs/ai-layer.md` Lane A end to end, per
+August 4, 2026 (Opus frontier seat). **SIX units** on branch
+`ai-connector-wave`, off `main` 59e27dc - **N went 5 -> 6 on August 5**, when
+Seth asked for the rate-limiter finding to be authored as its own unit (AI6)
+rather than carried into the gate as a known defect. That finding was predicted
+at AI4's dispatch to need its own unit; AI4 landing is what activated it. Implements `docs/specs/ai-layer.md` Lane A end to end, per
 Seth's August 4 scope ruling ("full connector, end to end"), his WorkOS vendor
 commitment, and his agreement to run one migration this wave.
 
@@ -504,6 +507,51 @@ unauthenticated probe.
 points at `http://localhost:3000/...`, so `MCP_RESOURCE_URL` remains unset on
 Render. That is Seth's checklist step 9 and it blocks any REAL connector smoke -
 the curl path above deliberately does not need it.
+
+QUEUED | ai6-connector-rate-limit-identity.md | rate-limit the connector by
+connector identity instead of by IP: pre-auth failure ceiling + post-auth
+per-user budget on `/mcp` | MODEL auto. AUTHORED August 5 at Seth's request,
+after AI4 landed and activated the defect. CROSS-USER-IMPACT SURFACE (a shared
+bucket is one user throttling every other user), so it is a standing
+frontier-seat concern even though it moves no data.
+
+**The defect is where AI2 and AI4 MEET - neither unit is wrong alone.** The
+limiter's `keyGenerator` reads `req.connectorUserId ?? req.authUserId`
+(`app.js:165`) but is mounted at `:171`, while `connectorAuth` does not run until
+`:176` - so the first operand is dead code on `/mcp`. It worked until AI4 only
+because the v1 verifier accepted an ordinary LogChamp token that `attachAuthUser`
+could read. A WorkOS token is not our JWT, so every `/mcp` request now keys by
+`ip:`, and all Claude traffic egresses from a few Anthropic IPs - one shared
+300/15min bucket for every user. AI2 implemented its block exactly; the block
+specified an ordering that cannot work. Same shape as the F-wave gate finding.
+
+**Reading the code closed one question the finding left open: `/ai` is NOT
+affected.** `attachAuthUser` (`:157`) runs BEFORE the `/ai` limiter mount
+(`:172`), so `req.authUserId` is populated there and `/ai` keys correctly today.
+The block says so explicitly, so nobody "fixes" a working surface.
+
+**Design decisions made in-seat, so they are not re-litigated at review:**
+(1) TWO limiters on `/mcp`, not one moved - moving the existing limiter behind
+`connectorAuth` would leave the unauthenticated surface with no ceiling, so a
+client looping on a rejected token would hit signature verification unthrottled.
+(2) The pre-auth ceiling uses `skipSuccessfulRequests: true` (verified present in
+the INSTALLED v8.6.2 `.d.ts`, not assumed), so successful connector traffic from
+Anthropic's shared IPs consumes nothing from it - without that flag the fix would
+reintroduce the shared-bucket bug one layer earlier. (3) `/ai` gets its own
+limiter instance, splitting a bucket the two surfaces currently share. (4) The
+connector key function must NEVER fall back to `req.authUserId` - different
+issuers are different identities, and substituting one for the other on a
+security surface is the actual bug, not the symptom.
+
+Serialization: FILES TO TOUCH are `server/`-only and **fully disjoint from AI5**
+(client-only), so the two do not collide. Sequenced after AI5 by Seth's
+instruction, not by a file conflict.
+
+**Finding 2 from the AI2/AI3 audits is deliberately NOT in this block** and
+remains open: `zod` undeclared in `package.json` plus no Node pin
+(`engines`/`.nvmrc`/`.node-version`). Both fixes touch `package.json`, which is
+gate item 5 - Seth's call, and he has not given it. AI6 requires
+`package.json` to come back byte-unchanged.
 
 ---
 
