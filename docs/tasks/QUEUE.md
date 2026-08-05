@@ -302,7 +302,7 @@ forbidden by the standing footer; the body wins). **This is the last unit
 dispatchable before the WorkOS account exists** - AI4 is blocked on it, and AI5
 is serial behind AI4.
 
-QUEUED | ai4-workos-connector-auth.md | WorkOS Standalone Connect - Login URI
+DISPATCHED | ai4-workos-connector-auth.md | WorkOS Standalone Connect - Login URI
 handler, completion call, real JWKS verification with audience binding | MODEL
 auto. CROSS-USER ISOLATION SURFACE, and BLOCKED on Seth's WorkOS account. Four
 sourced traps written into the contract: no `@workos-inc/node`, 302 not 303 (a
@@ -310,6 +310,30 @@ sourced traps written into the contract: no `@workos-inc/node`, 302 not 303 (a
 between the Resource Indicator and our metadata, and `aud` arriving as either a
 string or an array (UNCONFIRMED which - handle both). Touches the verifier body
 only, never AI2's guard - that is what the seam was for.
+
+DISPATCHED August 5, Channel B AUTO rung (`--model auto`), lane
+`C:\dev\worktrees\cursor-lane` branch `cursor/ai4` off `origin/ai-connector-wave`
+14be859. AI3's LANDED DELIVERY.md deleted from the lane first so the incoming
+report cannot read as landed work. **The dashboard half of the human blocker is
+DONE** (WorkOS staging configured August 4, `docs/specs/workos-staging-handoff.md`);
+only checklist step 9 - the four Render env vars - remains, and that gates SMOKE,
+not the code. The block anticipates exactly this state and instructs the run to
+implement fully, verify what the lanes reach, and declare the live flow
+unverified rather than stub it; the dispatch line repeats that instruction and
+forbids mocking anything into passing. No dependency-conflict override note was
+needed this time - unlike AI2/AI3, the block body and the standing footer AGREE
+(`NO NEW DEPENDENCIES`; `jose` was already installed by AI2).
+
+**Two of HANDOFF's "three findings AI4 must address" CANNOT be addressed by this
+unit, and that is a contract fact, not a delivery risk to score against the run.**
+Finding 1 (the connector rate limiter keying by IP once a WorkOS-signed token
+stops setting `req.authUserId`) lives in `server/src/app.js`, and finding 2 (`zod`
+undeclared + no Node pin) lives in `server/package.json` - NEITHER is in AI4's
+FILES TO TOUCH, and the block explicitly requires `package.json` to come back
+unchanged. Only finding 3, the `sub`-to-user mapping, is in scope, and the block
+already carries it as its highest-severity line. So finding 1 needs its own unit
+and a frontier-seat design call BEFORE the gate - AI4 landing is what ACTIVATES
+it. Flagged to Seth at dispatch; wave N may go 5 -> 6.
 
 QUEUED | ai5-connector-onboarding-ux.md | the in-app connect surface: copyable
 connector address, four-step instructions, honest tier note, What's New entry |
