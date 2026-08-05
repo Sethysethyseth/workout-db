@@ -198,5 +198,11 @@ the audit needs to know who actually delivered).
   into a branch review, `/code-review`, or any merge prep - Seth smokes
   first, then a frontier seat runs `pre-main-review`. This seat does
   not run the gate.
-- A migration-carrying or prod-touching block -> this skill refuses;
-  those are Seth's manual track, full stop.
+- A prod-touching block -> this skill refuses. Seth's manual track,
+  full stop.
+- A migration-carrying block -> dispatchable, because the block only ever
+  has Cursor WRITE the migration file, never apply it. Applying it is a
+  separate step under gate item 3: staging needs the "migrate staging"
+  trigger phrase, prod is Seth. Dispatch the block, land the unit, then
+  ask for the phrase before the schema goes anywhere. Never let a lane
+  run `prisma migrate`.

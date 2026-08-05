@@ -4,19 +4,32 @@
 // Dev tooling only - never imported by client or server runtime.
 //
 // Usage:
-//   node scripts/cursor-watch.mjs [--lane <dir>] [--port <n>] [--log <file>]
+//   node scripts/cursor-watch.mjs [--lane <dir>]... [--port <n>] [--log <file>]
 //     [--open] [--open-on-activity] [--open-cmd <command>]
 //     [--notify] [--notify-cmd <command>]
 //
-// Defaults: lane C:\dev\worktrees\cursor-lane, port 4646.
+// Defaults: every existing lane in the v5.2 pool (cursor-lane, -2, -3),
+// port 4646. `--lane` may repeat to pin an explicit set.
+// One server, one tab, all lanes - the wave rail comes from QUEUE.md.
 // Binds 127.0.0.1 only. Node built-ins only.
 
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { spawn } from 'node:child_process';
 
 const DEFAULT_LANE = 'C:\\dev\\worktrees\\cursor-lane';
+// v5.2 fan-out pool - width cap 3, one agent per worktree.
+const LANE_POOL = [
+  DEFAULT_LANE,
+  'C:\\dev\\worktrees\\cursor-lane-2',
+  'C:\\dev\\worktrees\\cursor-lane-3',
+];
+// This script lives in <repo>/scripts, so QUEUE.md is one level up.
+const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const QUEUE_PATH = path.join(REPO_ROOT, 'docs', 'tasks', 'QUEUE.md');
+const QUEUE_POLL_MS = 5000;
 const DEFAULT_PORT = 4646;
 const GIT_POLL_MS = 3000;
 const WATCH_DEBOUNCE_MS = 180;
@@ -46,7 +59,7 @@ const IGNORE_FILE_RE =
 
 function parseArgs(argv) {
   const out = {
-    lane: DEFAULT_LANE,
+    lanes: [],
     port: DEFAULT_PORT,
     log: null,
     open: false,
@@ -58,8 +71,9 @@ function parseArgs(argv) {
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--lane') {
-      out.lane = argv[++i];
-      if (!out.lane) throw new Error('--lane requires a path');
+      const laneArg = argv[++i];
+      if (!laneArg) throw new Error('--lane requires a path');
+      out.lanes.push(laneArg);
     } else if (a === '--port') {
       const raw = argv[++i];
       const n = Number(raw);
@@ -92,11 +106,14 @@ function parseArgs(argv) {
 }
 
 function printHelp() {
-  console.log(`Usage: node scripts/cursor-watch.mjs [--lane <dir>] [--port <n>] [--log <file>]
+  console.log(`Usage: node scripts/cursor-watch.mjs [--lane <dir>]... [--port <n>] [--log <file>]
                         [--open] [--open-on-activity] [--open-cmd <command>]
                         [--notify] [--notify-cmd <command>]
-Defaults: lane ${DEFAULT_LANE}, port ${DEFAULT_PORT}
+Defaults: every existing lane in the pool, port ${DEFAULT_PORT}
+Pool: ${LANE_POOL.join(', ')}
 Binds 127.0.0.1 only. Open the printed URL in a browser.
+  --lane <dir>        Pin one lane; repeat for several. Omit to auto-discover
+                      the pool. All lanes share ONE server and ONE tab.
   --open              Launch the default browser once after the server binds
   --open-on-activity  Launch on first run activity (re-arms when DELIVERY.md
                       disappears or the lane branch changes)
@@ -468,8 +485,26 @@ async function collectFileDiffExcerpt(lane, relPath) {
 // State
 // ---------------------------------------------------------------------------
 
-function createState(lane, logPath) {
+/**
+ * The hub owns everything shared across lanes: the SSE client set, the wave
+ * rail parsed from QUEUE.md, and the SINGLE auto-open / notify controller.
+ * Sharing those controllers is what keeps three busy lanes from opening
+ * three tabs - the armed flag is consumed once, by whichever lane stirs first.
+ */
+function createHub() {
   return {
+    lanes: [],
+    clients: new Set(),
+    wave: { name: null, units: [], landed: 0, total: 0 },
+    autoOpen: null,
+    notify: null,
+  };
+}
+
+function createState(lane, logPath, id, hub) {
+  return {
+    id,
+    hub,
     lane,
     logPath,
     branch: '(unknown)',
@@ -481,9 +516,16 @@ function createState(lane, logPath) {
     lastChangedPath: null,
     excerpt: { path: null, text: '', kind: 'none' },
     logLines: [],
-    clients: new Set(),
-    autoOpen: null, // set in main when --open-on-activity
-    notify: null, // set in main when --notify
+    // clients / autoOpen / notify live on the hub - see createHub.
+    get clients() {
+      return this.hub.clients;
+    },
+    get autoOpen() {
+      return this.hub.autoOpen;
+    },
+    get notify() {
+      return this.hub.notify;
+    },
   };
 }
 
@@ -503,9 +545,9 @@ function derivePhase(state) {
   return 'WAITING';
 }
 
-function snapshotPayload(state) {
+function lanePayload(state) {
   return {
-    type: 'snapshot',
+    id: state.id,
     lane: state.lane,
     branch: state.branch,
     phase: state.phase,
@@ -521,15 +563,107 @@ function snapshotPayload(state) {
   };
 }
 
-function broadcast(state, event) {
+function snapshotPayload(hub) {
+  return {
+    type: 'snapshot',
+    serverNow: Date.now(),
+    wave: hub.wave,
+    lanes: hub.lanes.map(lanePayload),
+  };
+}
+
+function broadcastHub(hub, event) {
   const data = `data: ${JSON.stringify(event)}\n\n`;
-  for (const res of state.clients) {
+  for (const res of hub.clients) {
     try {
       res.write(data);
     } catch {
-      state.clients.delete(res);
+      hub.clients.delete(res);
     }
   }
+}
+
+/** Lane-scoped broadcast - stamps the lane id so the client can route it. */
+function broadcast(state, event) {
+  broadcastHub(state.hub, { ...event, id: state.id });
+}
+
+// ---------------------------------------------------------------------------
+// Wave rail (QUEUE.md)
+// ---------------------------------------------------------------------------
+
+const UNIT_LINE_RE =
+  /^(DRAFT|QUEUED|DISPATCHED|AWAITING-REVIEW|LANDED|BOUNCED)\b[^|]*\|\s*([A-Za-z0-9._-]+\.md)\s*\|\s*(.*)$/;
+
+/**
+ * Parse the CURRENT wave out of QUEUE.md's `## Active` section.
+ *
+ * `## Active` accumulates landed units from older waves too, so "current
+ * wave" is the CONTIGUOUS leading run of units sharing the first unit's
+ * id prefix (`ai1-...` -> `ai`). The run stops at the first foreign prefix,
+ * which is what keeps the AI-wave at five units instead of swallowing the
+ * F-wave below it.
+ */
+function parseWave(text) {
+  const lines = text.split(/\r?\n/);
+  const start = lines.findIndex((l) => /^##\s+Active\b/.test(l));
+  if (start === -1) return { name: null, units: [], landed: 0, total: 0 };
+
+  let name = null;
+  const units = [];
+  let prefix = null;
+
+  for (let i = start + 1; i < lines.length; i++) {
+    const line = lines[i];
+    if (/^##\s/.test(line)) break;
+    if (!name) {
+      const m = line.match(/^([A-Za-z0-9-]*[Ww]ave\b[^,(]*)/);
+      if (m) name = m[1].trim();
+    }
+    const m = line.match(UNIT_LINE_RE);
+    if (!m) continue;
+
+    const [, status, file, scope] = m;
+    const id = (file.match(/^([a-z]+\d+)/i) || [, file.replace(/\.md$/, '')])[1];
+    const unitPrefix = (id.match(/^([a-z]+)/i) || [, id])[1].toLowerCase();
+    if (prefix === null) prefix = unitPrefix;
+    if (unitPrefix !== prefix) break; // next wave down - stop the run
+
+    units.push({
+      id: id.toUpperCase(),
+      file,
+      status,
+      scope: scope.trim().slice(0, 120),
+    });
+  }
+
+  return {
+    name,
+    units,
+    landed: units.filter((u) => u.status === 'LANDED').length,
+    total: units.length,
+  };
+}
+
+function readWave() {
+  try {
+    return parseWave(fs.readFileSync(QUEUE_PATH, 'utf8'));
+  } catch {
+    return { name: null, units: [], landed: 0, total: 0 };
+  }
+}
+
+function startWavePoll(hub) {
+  const tick = () => {
+    const next = readWave();
+    if (JSON.stringify(next) !== JSON.stringify(hub.wave)) {
+      hub.wave = next;
+      broadcastHub(hub, { type: 'wave', wave: next, serverNow: Date.now() });
+    }
+  };
+  tick();
+  const t = setInterval(tick, QUEUE_POLL_MS);
+  t.unref?.();
 }
 
 function pushActivity(state, entry) {
@@ -801,1084 +935,895 @@ function send(res, status, body, headers = {}) {
 }
 
 function dashboardHtml() {
-  // Fully embedded. No external URLs. Relative EventSource to /events.
-  return `<!DOCTYPE html>
-<html lang="en">
+  // One self-contained page. No external fetches - this runs offline on
+  // 127.0.0.1 and must never depend on a CDN. No backticks or template
+  // literals inside the client script: this whole file IS a template
+  // literal, and string concatenation keeps the escaping honest.
+  return `<!doctype html>
+<html lang="en" data-theme="dark">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>CURSOR WATCH - waiting</title>
-<link rel="icon" id="favicon" href="">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Relay - lane watch</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='6' fill='none' stroke='%238b9bff' stroke-width='2'/%3E%3C/svg%3E" />
 <style>
   :root {
-    --bg: #07090d;
-    --bg-elev: #0e131a;
-    --bg-panel: #0b1016;
-    --stroke: rgba(255, 255, 255, 0.06);
-    --shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
-    --text: #e4ebf2;
-    --muted: #8494a6;
-    --dim: #525e6c;
-    --add: #3dff9a;
-    --del: #ff5c7a;
-    --warn: #ffc14a;
-    --accent: #6b7a8a;
-    --accent-rgb: 107, 122, 138;
-    --accent-glow: rgba(107, 122, 138, 0.28);
-    --ease: ease-out;
-    --mono: "Cascadia Code", "JetBrains Mono", "Fira Code", "SF Mono", Consolas, monospace;
-    --sans: "Segoe UI", system-ui, sans-serif;
-    --radius: 8px;
+    /* Pulled from LogChamp's dark champ palette so the tool reads as part
+       of the same world - periwinkle signal, amber ready, forest landed. */
+    --ink: #05070f;
+    --panel: #0a0f1e;
+    --panel-2: #0d1426;
+    --edge: #1a2440;
+    --edge-hot: #2b3a63;
+    --txt: #e8edff;
+    --dim: #8494b4;
+    --signal: #8b9bff;
+    --ready: #f5a623;
+    --landed: #4ade80;
+    --bounced: #f87171;
+    --idle: #3a4a6b;
+
+    --display: "Bahnschrift", "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+    --mono: "Cascadia Mono", "Cascadia Code", Consolas, ui-monospace, monospace;
+
+    --gap: 18px;
+    --radius: 3px;
   }
-  html[data-phase="WAITING"] {
-    --accent: #6b7a8a;
-    --accent-rgb: 107, 122, 138;
-    --accent-glow: rgba(107, 122, 138, 0.22);
-  }
-  html[data-phase="WORKING"] {
-    --accent: #3dff9a;
-    --accent-rgb: 61, 255, 154;
-    --accent-glow: rgba(61, 255, 154, 0.28);
-  }
-  html[data-phase="DELIVERY"] {
-    --accent: #5cc8ff;
-    --accent-rgb: 92, 200, 255;
-    --accent-glow: rgba(92, 200, 255, 0.32);
-  }
+
   * { box-sizing: border-box; }
+
   html, body {
-    margin: 0; padding: 0; height: 100%;
-    background: var(--bg); color: var(--text);
-    font-family: var(--sans);
+    margin: 0;
+    background: var(--ink);
+    color: var(--txt);
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.5;
   }
+
   body {
-    background:
-      radial-gradient(980px 520px at 12% -8%, color-mix(in srgb, var(--accent) 14%, transparent) 0%, transparent 58%),
-      radial-gradient(820px 460px at 100% 0%, rgba(40, 70, 110, 0.18) 0%, transparent 52%),
-      radial-gradient(700px 400px at 50% 120%, rgba(20, 30, 45, 0.5) 0%, transparent 60%),
-      var(--bg);
-    background-attachment: fixed;
-    transition: background 250ms var(--ease);
-  }
-  .shell {
-    display: grid;
-    grid-template-rows: auto 1fr;
-    height: 100vh;
-    max-height: 100vh;
-    position: relative;
-  }
-  .wash {
-    pointer-events: none;
-    position: fixed;
-    inset: 0;
-    z-index: 40;
-    opacity: 0;
-    background: radial-gradient(circle at 50% 30%,
-      rgba(var(--accent-rgb), 0.55) 0%,
-      rgba(var(--accent-rgb), 0.18) 35%,
-      transparent 70%);
-  }
-  .wash.go {
-    animation: washSweep 600ms var(--ease) forwards;
-  }
-  @keyframes washSweep {
-    0% { opacity: 0; }
-    35% { opacity: 1; }
-    100% { opacity: 0; }
-  }
-  header.bar {
+    min-height: 100vh;
+    padding: var(--gap);
     display: flex;
-    align-items: center;
-    gap: 16px;
-    padding: 14px 20px;
-    margin: 12px 12px 0;
+    flex-direction: column;
+    gap: var(--gap);
+    /* A single faint vignette, not a gradient wash - the canvas is the
+       only thing allowed to glow. */
+    background-image: radial-gradient(120% 80% at 50% 0%, #0a1122 0%, var(--ink) 62%);
+  }
+
+  h2 {
+    font-family: var(--display);
+    font-variation-settings: "wght" 600, "wdth" 75;
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--dim);
+    margin: 0 0 10px;
+  }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--edge);
     border-radius: var(--radius);
-    background: var(--bg-elev);
-    box-shadow: var(--shadow), inset 0 0 0 1px var(--stroke);
-    transition: background 250ms var(--ease), box-shadow 250ms var(--ease);
-    position: relative;
-    z-index: 2;
   }
-  header.bar.delivery-lockup {
-    flex-wrap: wrap;
-    padding: 20px 24px;
-    gap: 12px 20px;
-    background: linear-gradient(180deg, #0f2433, #0a1822);
-    box-shadow: var(--shadow), inset 0 0 0 1px rgba(92, 200, 255, 0.22),
-      0 0 40px rgba(92, 200, 255, 0.12);
-  }
-  .brand {
+
+  /* ---------------------------------------------------------------- bar */
+
+  .bar {
     display: flex;
-    align-items: center;
-    gap: 12px;
-    min-width: 0;
+    align-items: baseline;
+    gap: 16px;
+    padding: 12px 16px;
+    background: var(--panel);
+    border: 1px solid var(--edge);
+    border-radius: var(--radius);
   }
-  .presence {
-    width: 28px; height: 28px;
-    border-radius: 50%;
-    position: relative;
-    flex-shrink: 0;
+
+  .mark {
+    font-family: var(--display);
+    font-variation-settings: "wght" 700, "wdth" 75;
+    font-size: 20px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
   }
-  .presence .orb {
-    position: absolute; inset: 4px;
-    border-radius: 50%;
-    background: var(--accent);
-    box-shadow: 0 0 12px var(--accent-glow);
-    transition: background 250ms var(--ease), box-shadow 250ms var(--ease);
-  }
-  .presence .ring {
-    position: absolute; inset: 0;
-    border-radius: 50%;
-    border: 1px solid rgba(var(--accent-rgb), 0.45);
-    opacity: 0.7;
-  }
-  html[data-phase="WORKING"] .presence .orb {
-    animation: orbPulse var(--pulse-ms, 1800ms) ease-in-out infinite;
-  }
-  html[data-phase="WORKING"] .presence .ring {
-    animation: ringPulse var(--pulse-ms, 1800ms) ease-in-out infinite;
-  }
-  @keyframes orbPulse {
-    0%, 100% { transform: scale(1); opacity: 0.85; }
-    50% { transform: scale(1.12); opacity: 1; }
-  }
-  @keyframes ringPulse {
-    0%, 100% { transform: scale(1); opacity: 0.35; }
-    50% { transform: scale(1.35); opacity: 0; }
-  }
-  .brand-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-  .brand .who {
-    font-family: var(--mono);
-    font-weight: 700;
-    font-size: 1.05rem;
-    letter-spacing: 0.1em;
-    color: var(--accent);
-    text-shadow: 0 0 18px var(--accent-glow);
-    transition: color 250ms var(--ease), text-shadow 250ms var(--ease);
-  }
-  .brand .unit {
-    font-family: var(--mono);
-    font-size: 0.7rem;
-    color: var(--muted);
-    letter-spacing: 0.04em;
-    white-space: nowrap;
+  .mark span { color: var(--signal); }
+
+  .wavename {
+    font-size: 12px;
+    color: var(--dim);
+    letter-spacing: 0.05em;
+    flex: 1;
     overflow: hidden;
     text-overflow: ellipsis;
+    white-space: nowrap;
   }
-  .delivery-hero {
-    display: none;
-    flex-direction: column;
-    gap: 4px;
-    min-width: 0;
+
+  .count {
+    font-family: var(--display);
+    font-variation-settings: "wght" 700, "wdth" 75;
+    font-size: 26px;
+    line-height: 1;
+    letter-spacing: 0.02em;
   }
-  header.bar.delivery-lockup .brand { display: none; }
-  header.bar.delivery-lockup .delivery-hero { display: flex; }
-  .delivery-hero .ready {
-    font-family: var(--mono);
-    font-weight: 700;
-    font-size: 1.35rem;
-    letter-spacing: 0.08em;
-    color: var(--accent);
-    text-shadow: 0 0 22px var(--accent-glow);
-  }
-  .delivery-hero .summary {
-    font-family: var(--mono);
-    font-size: 0.72rem;
-    color: var(--muted);
-  }
-  .delivery-hero .summary strong { color: var(--text); font-weight: 500; }
-  .phase {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font-family: var(--mono);
-    font-size: 0.72rem;
-    letter-spacing: 0.12em;
-    padding: 6px 12px;
-    border-radius: 999px;
-    border: 1px solid rgba(var(--accent-rgb), 0.35);
-    color: var(--accent);
-    background: rgba(var(--accent-rgb), 0.08);
-    transition: color 250ms var(--ease), border-color 250ms var(--ease), background 250ms var(--ease);
-  }
-  .phase .dot {
-    width: 7px; height: 7px; border-radius: 50%;
-    background: var(--accent);
-    box-shadow: 0 0 8px var(--accent-glow);
-  }
-  html[data-phase="WORKING"] .phase .dot {
-    animation: dotBlink var(--pulse-ms, 1800ms) ease-in-out infinite;
-  }
-  @keyframes dotBlink {
-    0%, 100% { opacity: 0.45; transform: scale(0.9); }
-    50% { opacity: 1; transform: scale(1.15); }
-  }
-  .meta {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 12px;
-    margin-left: auto;
-    font-family: var(--mono);
-    font-size: 0.72rem;
-    color: var(--muted);
-  }
-  .meta strong { color: var(--text); font-weight: 500; }
-  .meta .elapsed strong { font-variant-numeric: tabular-nums; }
-  .chip {
-    display: inline-flex;
-    gap: 6px;
-    align-items: center;
-    padding: 4px 10px;
-    border-radius: 6px;
-    background: rgba(255, 255, 255, 0.03);
-    box-shadow: inset 0 0 0 1px var(--stroke);
-  }
-  .chip .a { color: var(--add); }
-  .chip .d { color: var(--del); }
-  .spark {
-    display: flex;
-    align-items: flex-end;
-    gap: 2px;
-    height: 22px;
-    width: 96px;
-    padding: 2px 4px;
-    border-radius: 6px;
-    background: rgba(255, 255, 255, 0.03);
-    box-shadow: inset 0 0 0 1px var(--stroke);
-  }
-  .spark i {
-    display: block;
-    flex: 1;
-    min-width: 2px;
-    border-radius: 1px 1px 0 0;
-    background: var(--accent);
-    opacity: 0.7;
-    height: 2px;
-    transition: height 200ms var(--ease), background 250ms var(--ease);
-  }
-  .mute-btn {
-    font-family: var(--mono);
-    font-size: 0.65rem;
-    letter-spacing: 0.06em;
-    color: var(--muted);
-    background: transparent;
-    border: 1px solid var(--stroke);
-    border-radius: 6px;
-    padding: 4px 8px;
-    cursor: pointer;
-  }
-  .mute-btn:hover { color: var(--text); border-color: rgba(var(--accent-rgb), 0.35); }
+  .count b { color: var(--landed); font-weight: inherit; }
+  .count span { color: var(--dim); font-size: 16px; }
+
   .conn {
-    width: 8px; height: 8px; border-radius: 50%;
-    background: var(--dim);
-    transition: background 200ms var(--ease), box-shadow 200ms var(--ease);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--dim);
+    display: flex;
+    align-items: center;
+    gap: 7px;
   }
-  .conn.on { background: var(--accent); box-shadow: 0 0 8px var(--accent-glow); }
-  .conn.bad { background: var(--del); box-shadow: none; }
-  .grid {
-    display: grid;
-    grid-template-columns: 1.1fr 1fr 1.15fr;
-    grid-template-rows: 1fr auto;
-    gap: 12px;
-    padding: 12px;
-    min-height: 0;
+  .conn::before {
+    content: "";
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--landed);
   }
-  @media (max-width: 1100px) {
-    .grid { grid-template-columns: 1fr; grid-template-rows: auto; overflow: auto; }
+  .conn[data-live="0"] { color: var(--bounced); }
+  .conn[data-live="0"]::before { background: var(--bounced); }
+
+  /* --------------------------------------------------------------- rail */
+
+  .rail {
+    padding: 20px 22px 16px;
+    overflow-x: auto;
   }
-  .panel {
+
+  .units {
+    display: flex;
+    align-items: flex-start;
+    min-width: min-content;
+  }
+
+  .unit {
     display: flex;
     flex-direction: column;
-    min-height: 0;
-    background: var(--bg-panel);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow), inset 0 0 0 1px var(--stroke);
+    align-items: center;
+    gap: 9px;
+    flex: 0 0 auto;
+    width: 108px;
+    text-align: center;
+  }
+
+  .dot {
+    width: 15px; height: 15px;
+    border-radius: 50%;
+    border: 1.5px solid var(--idle);
+    background: transparent;
+    position: relative;
+  }
+  .unit[data-status="LANDED"] .dot { background: var(--landed); border-color: var(--landed); }
+  .unit[data-status="DISPATCHED"] .dot,
+  .unit[data-status="AWAITING-REVIEW"] .dot {
+    border-color: var(--signal);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--signal) 18%, transparent);
+    animation: breathe 2.4s ease-in-out infinite;
+  }
+  .unit[data-status="BOUNCED"] .dot { border-color: var(--bounced); background: var(--bounced); }
+  .unit[data-status="DRAFT"] .dot { border-style: dashed; }
+
+  @keyframes breathe {
+    0%, 100% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--signal) 14%, transparent); }
+    50%      { box-shadow: 0 0 0 7px color-mix(in srgb, var(--signal) 4%, transparent); }
+  }
+
+  /* The connector is the wave's sequence made literal: solid behind
+     landed work, dotted ahead of it. */
+  .link {
+    flex: 1 1 auto;
+    height: 1px;
+    margin-top: 7px;
+    min-width: 12px;
+    background: var(--idle);
+  }
+  .link[data-done="0"] {
+    background: none;
+    border-top: 1px dashed var(--edge-hot);
+  }
+
+  .uid {
+    font-family: var(--display);
+    font-variation-settings: "wght" 600, "wdth" 75;
+    font-size: 13px;
+    letter-spacing: 0.12em;
+  }
+  .ustatus {
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--dim);
+  }
+  .unit[data-status="LANDED"] .ustatus { color: var(--landed); }
+  .unit[data-status="DISPATCHED"] .ustatus,
+  .unit[data-status="AWAITING-REVIEW"] .ustatus { color: var(--signal); }
+  .unit[data-status="BOUNCED"] .ustatus { color: var(--bounced); }
+
+  .uscope {
+    font-size: 10px;
+    color: var(--dim);
+    opacity: 0.62;
+    line-height: 1.35;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
     overflow: hidden;
   }
-  .panel h2 {
-    margin: 0;
-    padding: 12px 16px;
-    font-family: var(--mono);
-    font-size: 0.68rem;
+
+  /* ------------------------------------------------------------ synapse */
+
+  .synapse {
+    position: relative;
+    height: 210px;
+    overflow: hidden;
+    background: var(--panel);
+  }
+  .synapse canvas { display: block; width: 100%; height: 100%; }
+
+  .legend {
+    position: absolute;
+    left: 16px; bottom: 12px;
+    display: flex;
+    gap: 16px;
+    font-size: 9px;
     letter-spacing: 0.16em;
     text-transform: uppercase;
-    color: var(--muted);
-    border-bottom: 1px solid var(--stroke);
-    background: rgba(255, 255, 255, 0.02);
-  }
-  .panel-body {
-    flex: 1;
-    overflow: auto;
-    padding: 8px;
-    min-height: 0;
-  }
-  .feed-card {
-    display: grid;
-    grid-template-columns: 28px 1fr auto;
-    gap: 8px 10px;
-    align-items: start;
-    padding: 10px 12px;
-    margin-bottom: 6px;
-    border-radius: 6px;
-    background: rgba(255, 255, 255, 0.025);
-    box-shadow: inset 0 0 0 1px var(--stroke);
-    font-family: var(--mono);
-    font-size: 0.78rem;
-  }
-  .feed-card.enter {
-    animation: cardIn 180ms var(--ease) both;
-    box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb), 0.45),
-      0 0 16px rgba(var(--accent-rgb), 0.12);
-  }
-  @keyframes cardIn {
-    from { opacity: 0; transform: translateY(6px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  .feed-card .glyph {
-    width: 28px; height: 28px;
-    border-radius: 6px;
-    display: grid; place-items: center;
-    font-size: 0.85rem;
-    color: var(--accent);
-    background: rgba(var(--accent-rgb), 0.1);
-    box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb), 0.2);
-  }
-  .feed-card .glyph.unlink { color: var(--del); background: rgba(255, 92, 122, 0.1);
-    box-shadow: inset 0 0 0 1px rgba(255, 92, 122, 0.25); }
-  .feed-card .glyph.add { color: var(--add); background: rgba(61, 255, 154, 0.1);
-    box-shadow: inset 0 0 0 1px rgba(61, 255, 154, 0.25); }
-  .feed-card .glyph.delivery { color: #5cc8ff; background: rgba(92, 200, 255, 0.1);
-    box-shadow: inset 0 0 0 1px rgba(92, 200, 255, 0.25); }
-  .feed-card .name { color: var(--text); word-break: break-all; font-weight: 600; }
-  .feed-card .name .base { color: var(--accent); }
-  .feed-card .meta-line {
-    grid-column: 2 / 3;
-    font-size: 0.65rem;
     color: var(--dim);
+    pointer-events: none;
   }
-  .feed-card .ts {
-    font-size: 0.65rem;
-    color: var(--dim);
-    font-variant-numeric: tabular-nums;
-  }
-  .empty {
-    padding: 20px 12px;
-    color: var(--dim);
-    font-family: var(--mono);
-    font-size: 0.78rem;
-  }
-  .stat-totals {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 12px;
-    margin-bottom: 6px;
-    border-radius: 6px;
-    background: rgba(var(--accent-rgb), 0.06);
-    box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb), 0.18);
-    font-family: var(--mono);
-    font-size: 0.72rem;
-    color: var(--muted);
-    position: sticky;
-    top: 0;
-    z-index: 1;
-    backdrop-filter: blur(6px);
-  }
-  .stat-totals .a { color: var(--add); }
-  .stat-totals .d { color: var(--del); }
-  .stat-row {
-    padding: 10px 12px;
-    margin-bottom: 4px;
-    border-radius: 6px;
-    background: rgba(255, 255, 255, 0.02);
-    box-shadow: inset 0 0 0 1px var(--stroke);
-  }
-  .stat-row .name {
-    font-family: var(--mono);
-    font-size: 0.75rem;
-    margin-bottom: 6px;
-    word-break: break-all;
-  }
-  .stat-row .name .base { color: var(--accent); font-weight: 600; }
-  .bars {
-    display: flex;
-    height: 6px;
-    border-radius: 3px;
-    overflow: hidden;
-    background: rgba(255, 255, 255, 0.04);
-    margin-bottom: 4px;
-  }
-  .bars .a, .bars .d {
-    height: 100%;
-    width: 0;
-    transition: width 200ms var(--ease);
-  }
-  .bars .a { background: var(--add); }
-  .bars .d { background: var(--del); }
-  .counts {
-    font-family: var(--mono);
-    font-size: 0.68rem;
-    color: var(--muted);
-  }
-  .counts .a { color: var(--add); }
-  .counts .d { color: var(--del); }
-  .file-tab {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 14px;
-    font-family: var(--mono);
-    font-size: 0.72rem;
-    color: var(--muted);
-    border-bottom: 1px solid var(--stroke);
-    background: rgba(255, 255, 255, 0.02);
-    min-height: 40px;
-  }
-  .file-tab .tab {
+  .legend i {
+    font-style: normal;
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 4px 10px;
-    border-radius: 6px 6px 0 0;
-    background: rgba(var(--accent-rgb), 0.08);
-    box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb), 0.2);
-    color: var(--text);
-    max-width: 100%;
+  }
+  .legend i::before {
+    content: "";
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+  .legend .w { color: var(--signal); }
+  .legend .r { color: var(--ready); }
+  .legend .i { color: var(--idle); }
+
+  /* -------------------------------------------------------------- lanes */
+
+  .lanes {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: var(--gap);
+  }
+
+  .lane {
+    padding: 14px 16px;
+    border-left: 2px solid var(--idle);
+    cursor: pointer;
+    transition: background 180ms ease-out, border-color 180ms ease-out;
+  }
+  .lane:hover { background: var(--panel-2); }
+  .lane[aria-selected="true"] { background: var(--panel-2); border-color: var(--signal); }
+  .lane[data-phase="WORKING"] { border-left-color: var(--signal); }
+  .lane[data-phase="DELIVERY"] { border-left-color: var(--ready); }
+
+  .lane-top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .lane-id {
+    font-family: var(--display);
+    font-variation-settings: "wght" 700, "wdth" 75;
+    font-size: 15px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+  .phase {
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--dim);
+  }
+  .lane[data-phase="WORKING"] .phase { color: var(--signal); }
+  .lane[data-phase="DELIVERY"] .phase { color: var(--ready); }
+
+  .lane-branch {
+    margin-top: 8px;
+    font-size: 11px;
+    color: var(--dim);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  .file-tab .tab .dot {
-    width: 6px; height: 6px; border-radius: 50%;
-    background: var(--accent); flex-shrink: 0;
+  .lane-stats {
+    margin-top: 10px;
+    display: flex;
+    gap: 18px;
+    font-size: 11px;
+    color: var(--dim);
   }
-  .excerpt-wrap {
-    font-family: var(--mono);
-    font-size: 0.74rem;
-    line-height: 1.45;
-    padding: 12px 14px;
+  .lane-stats b {
+    color: var(--txt);
+    font-weight: 400;
+    font-family: var(--display);
+    font-variation-settings: "wght" 600, "wdth" 75;
+    font-size: 14px;
+  }
+  .lane-last {
+    margin-top: 9px;
+    font-size: 10px;
+    color: var(--dim);
+    opacity: 0.7;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* -------------------------------------------------------------- split */
+
+  .split {
+    display: grid;
+    grid-template-columns: minmax(260px, 1fr) minmax(0, 1.5fr);
+    gap: var(--gap);
+    flex: 1;
+    min-height: 260px;
+  }
+  .split > section { padding: 14px 16px; overflow: hidden; display: flex; flex-direction: column; }
+
+  ol.feed {
+    list-style: none;
+    margin: 0; padding: 0;
+    overflow-y: auto;
+    flex: 1;
+  }
+  ol.feed li {
+    display: flex;
+    gap: 10px;
+    padding: 3px 0;
+    font-size: 11px;
+    border-bottom: 1px solid color-mix(in srgb, var(--edge) 45%, transparent);
+  }
+  ol.feed .t { color: var(--dim); opacity: 0.6; flex: 0 0 auto; }
+  ol.feed .k {
+    flex: 0 0 46px;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--signal);
+  }
+  ol.feed .k[data-kind="unlink"] { color: var(--bounced); }
+  ol.feed .k[data-kind="add"] { color: var(--landed); }
+  ol.feed .p { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  ol.feed .lane-tag { color: var(--dim); opacity: 0.55; flex: 0 0 auto; }
+
+  pre.scope {
+    margin: 0;
+    overflow: auto;
+    flex: 1;
+    font-size: 11px;
+    line-height: 1.55;
+    color: var(--dim);
     white-space: pre-wrap;
     word-break: break-word;
   }
-  .ln-add { color: #9dffc4; }
-  .ln-del { color: #ff9aab; }
-  .ln-meta { color: var(--dim); }
-  .ln-hunk { color: #5cc8ff; }
-  .caret {
-    display: inline-block;
-    width: 0.55ch;
-    margin-left: 1px;
-    background: var(--accent);
-    animation: blink 1s steps(1) infinite;
-    vertical-align: -1px;
-    height: 1em;
-    transition: background 250ms var(--ease);
+  pre.scope .add { color: var(--landed); }
+  pre.scope .del { color: var(--bounced); }
+  pre.scope .hdr { color: var(--signal); }
+
+  .tabs { display: flex; gap: 14px; margin: 0 0 10px; }
+  .tabs button {
+    background: none;
+    border: none;
+    padding: 0 0 4px;
+    cursor: pointer;
+    font-family: var(--display);
+    font-variation-settings: "wght" 600, "wdth" 75;
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--dim);
+    border-bottom: 1px solid transparent;
   }
-  @keyframes blink {
-    0%, 50% { opacity: 1; }
-    50.01%, 100% { opacity: 0; }
+  .tabs button[aria-selected="true"] { color: var(--txt); border-bottom-color: var(--signal); }
+  .tabs button:focus-visible { outline: 2px solid var(--signal); outline-offset: 3px; }
+
+  .empty { color: var(--dim); opacity: 0.55; font-size: 11px; }
+
+  @media (max-width: 860px) {
+    .split { grid-template-columns: 1fr; }
+    .synapse { height: 150px; }
   }
-  .log-panel {
-    grid-column: 1 / -1;
-    max-height: 22vh;
-  }
-  .log-body {
-    font-family: var(--mono);
-    font-size: 0.7rem;
-    padding: 8px 14px 12px;
-    color: var(--muted);
-    overflow: auto;
-    max-height: calc(22vh - 2.5rem);
-  }
-  .log-body div { white-space: pre-wrap; word-break: break-all; }
-  .log-body .fresh { color: var(--text); }
+
   @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after {
-      animation-duration: 0.01ms !important;
-      animation-iteration-count: 1 !important;
-      transition-duration: 0.01ms !important;
-    }
-    .wash.go { animation: none; opacity: 0; }
-    .feed-card.enter { animation: none; }
+    * { animation: none !important; transition: none !important; }
   }
 </style>
 </head>
 <body>
-<div class="wash" id="wash"></div>
-<div class="shell">
-  <header class="bar" id="bar">
-    <div class="brand">
-      <div class="presence" id="presence" aria-hidden="true">
-        <span class="ring"></span>
-        <span class="orb"></span>
-      </div>
-      <div class="brand-text">
-        <span class="who">CURSOR</span>
-        <span class="unit" id="unitName">WATCH</span>
-      </div>
-    </div>
-    <div class="delivery-hero" id="deliveryHero">
-      <div class="ready">DELIVERY READY</div>
-      <div class="summary" id="deliverySummary"></div>
-    </div>
-    <div class="phase" id="phase"><span class="dot"></span><span id="phaseText">WAITING</span></div>
-    <div class="conn" id="conn" title="SSE"></div>
-    <div class="meta">
-      <div class="spark" id="spark" title="Activity (last 2 min)" aria-hidden="true"></div>
-      <div class="chip" id="totalsChip"><span class="a">+0</span> / <span class="d">-0</span> · 0 files</div>
-      <div class="elapsed">elapsed <strong id="elapsed">0:00</strong></div>
-      <button type="button" class="mute-btn" id="muteBtn" title="Toggle delivery chime">CHIME OFF</button>
-    </div>
-  </header>
-  <div class="grid">
-    <section class="panel">
-      <h2>Live activity</h2>
-      <div class="panel-body" id="feed"><div class="empty">Waiting for file events…</div></div>
-    </section>
-    <section class="panel">
-      <h2>Diff stats</h2>
-      <div class="panel-body" id="stats"><div class="empty">No uncommitted changes yet.</div></div>
-    </section>
-    <section class="panel" id="writePanel">
-      <h2>Now writing</h2>
-      <div class="file-tab" id="fileTab"><span class="ln-meta">Idle</span></div>
-      <div class="panel-body" id="excerptScroll"><div class="excerpt-wrap" id="excerpt"><span class="ln-meta">Idle — watching the lane.</span><span class="caret"></span></div></div>
-    </section>
-    <section class="panel log-panel" id="logPanel" hidden>
-      <h2>CLI log</h2>
-      <div class="log-body" id="logBody"></div>
-    </section>
+
+<header class="bar">
+  <div class="mark">Re<span>l</span>ay</div>
+  <div class="wavename" id="wavename">reading QUEUE.md...</div>
+  <div class="count"><b id="landed">0</b><span id="total">/0</span></div>
+  <div class="conn" id="conn" data-live="1">live</div>
+</header>
+
+<section class="panel rail">
+  <h2>Wave</h2>
+  <div class="units" id="units"></div>
+</section>
+
+<section class="panel synapse">
+  <canvas id="cv"></canvas>
+  <div class="legend">
+    <i class="w">working</i>
+    <i class="r">delivery ready</i>
+    <i class="i">idle</i>
   </div>
-</div>
+</section>
+
+<section class="lanes" id="lanes"></section>
+
+<section class="split">
+  <section class="panel">
+    <h2>Activity</h2>
+    <ol class="feed" id="feed"><li class="empty">Nothing yet. Lanes are quiet.</li></ol>
+  </section>
+  <section class="panel">
+    <div class="tabs">
+      <button id="tabDiff" aria-selected="true">Excerpt</button>
+      <button id="tabLog" aria-selected="false">Agent log</button>
+    </div>
+    <pre class="scope" id="scope"><span class="empty">Select a lane to inspect its latest change.</span></pre>
+  </section>
+</section>
+
 <script>
 (function () {
-  const phaseEl = document.getElementById('phase');
-  const phaseText = document.getElementById('phaseText');
-  const barEl = document.getElementById('bar');
-  const unitEl = document.getElementById('unitName');
-  const elapsedEl = document.getElementById('elapsed');
-  const feedEl = document.getElementById('feed');
-  const statsEl = document.getElementById('stats');
-  const excerptEl = document.getElementById('excerpt');
-  const excerptScroll = document.getElementById('excerptScroll');
-  const fileTab = document.getElementById('fileTab');
-  const logPanel = document.getElementById('logPanel');
-  const logBody = document.getElementById('logBody');
-  const connEl = document.getElementById('conn');
-  const sparkEl = document.getElementById('spark');
-  const totalsChip = document.getElementById('totalsChip');
-  const washEl = document.getElementById('wash');
-  const muteBtn = document.getElementById('muteBtn');
-  const deliverySummary = document.getElementById('deliverySummary');
-  const faviconEl = document.getElementById('favicon');
-  const root = document.documentElement;
+  'use strict';
 
-  const LS_MUTE = 'cursor-watch-chime-muted';
-  const reduceMotion = window.matchMedia('(prefers-reduced-motion: no-preference)');
-  const SPARK_BARS = 24;
-  const SPARK_WINDOW_MS = 120000;
+  var lanes = [];          // server order; id -> index via laneIndex()
+  var wave = { name: null, units: [], landed: 0, total: 0 };
+  var selected = null;     // lane id being inspected
+  var tab = 'diff';
+  var feed = [];           // merged cross-lane activity
+  var FEED_CAP = 120;
+  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  let phase = 'WAITING';
-  let branch = '';
-  let unitName = 'WATCH';
-  let firstActivityAt = null;
-  let deliveryAt = null;
-  let clockSkew = 0;
-  let revealTimer = null;
-  let revealTarget = '';
-  let revealPos = 0;
-  let files = [];
-  /** @type {number[]} */
-  let eventTimes = [];
-  /** @type {Map<string, number>} */
-  const lastTouched = new Map();
-  let sweepPlayed = false;
-  let userInteracted = false;
-  let chimeMuted = true;
-  try {
-    chimeMuted = localStorage.getItem(LS_MUTE) !== '0';
-  } catch (e) { chimeMuted = true; }
-  let audioCtx = null;
+  var el = {
+    wavename: document.getElementById('wavename'),
+    landed: document.getElementById('landed'),
+    total: document.getElementById('total'),
+    conn: document.getElementById('conn'),
+    units: document.getElementById('units'),
+    lanes: document.getElementById('lanes'),
+    feed: document.getElementById('feed'),
+    scope: document.getElementById('scope'),
+    tabDiff: document.getElementById('tabDiff'),
+    tabLog: document.getElementById('tabLog'),
+    cv: document.getElementById('cv')
+  };
 
-  function fmtElapsed(ms) {
-    if (ms == null || ms < 0) ms = 0;
-    const s = Math.floor(ms / 1000);
-    const m = Math.floor(s / 60);
-    const h = Math.floor(m / 60);
-    const ss = String(s % 60).padStart(2, '0');
-    const mm = String(m % 60).padStart(2, '0');
-    return h > 0 ? h + ':' + mm + ':' + ss : m + ':' + ss;
+  function laneIndex(id) {
+    for (var i = 0; i < lanes.length; i++) if (lanes[i].id === id) return i;
+    return -1;
   }
-
-  function now() { return Date.now() + clockSkew; }
-
+  function laneById(id) {
+    var i = laneIndex(id);
+    return i === -1 ? null : lanes[i];
+  }
   function esc(s) {
-    return String(s)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+  function clock(ts) {
+    var d = new Date(ts);
+    function p(n) { return (n < 10 ? '0' : '') + n; }
+    return p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds());
+  }
+  function elapsed(from) {
+    if (!from) return '--';
+    var s = Math.max(0, Math.round((Date.now() - from) / 1000));
+    var m = Math.floor(s / 60);
+    if (m < 60) return m + 'm ' + (s % 60) + 's';
+    return Math.floor(m / 60) + 'h ' + (m % 60) + 'm';
+  }
+  function shortLane(p) {
+    var parts = String(p).split(/[\\\\/]/);
+    return parts[parts.length - 1] || p;
   }
 
-  function parseUnit(b) {
-    if (!b || b === '(unknown)' || b === '(no-git)') return 'WATCH';
-    if (b.indexOf('cursor/') === 0) return b.slice(7) || 'WATCH';
-    return b;
-  }
+  /* ------------------------------------------------------------- render */
 
-  function fileParts(p) {
-    if (!p) return { dir: '', base: '' };
-    const parts = p.split('/');
-    const base = parts.pop();
-    return { dir: parts.join('/'), base: base };
-  }
+  function renderWave() {
+    el.wavename.textContent = wave.name || 'no active wave in QUEUE.md';
+    el.landed.textContent = wave.landed;
+    el.total.textContent = '/' + wave.total;
 
-  function fileLabel(p) {
-    const parts = fileParts(p);
-    return (parts.dir ? '<span class="dir">' + esc(parts.dir) + '/</span>' : '') +
-      '<span class="base">' + esc(parts.base) + '</span>';
-  }
-
-  function fmtTime(ts) {
-    const d = new Date(ts);
-    return String(d.getHours()).padStart(2, '0') + ':' +
-      String(d.getMinutes()).padStart(2, '0') + ':' +
-      String(d.getSeconds()).padStart(2, '0');
-  }
-
-  function glyphFor(kind) {
-    if (kind === 'add' || kind === 'rename') return '+';
-    if (kind === 'unlink') return '×';
-    if (kind === 'delivery') return '✓';
-    return '✎';
-  }
-
-  function updateMuteBtn() {
-    muteBtn.textContent = chimeMuted ? 'CHIME OFF' : 'CHIME ON';
-  }
-  updateMuteBtn();
-
-  muteBtn.addEventListener('click', function () {
-    userInteracted = true;
-    chimeMuted = !chimeMuted;
-    try { localStorage.setItem(LS_MUTE, chimeMuted ? '1' : '0'); } catch (e) {}
-    updateMuteBtn();
-  });
-  document.addEventListener('pointerdown', function () { userInteracted = true; }, { once: false });
-  document.addEventListener('keydown', function () { userInteracted = true; }, { once: false });
-
-  function setFavicon(kind) {
-    const canvas = document.createElement('canvas');
-    canvas.width = 32; canvas.height = 32;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    ctx.clearRect(0, 0, 32, 32);
-    if (kind === 'delivery') {
-      ctx.fillStyle = '#5cc8ff';
-      ctx.beginPath();
-      ctx.arc(16, 16, 12, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.strokeStyle = '#07090d';
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.moveTo(9, 16);
-      ctx.lineTo(14, 21);
-      ctx.lineTo(23, 11);
-      ctx.stroke();
-    } else if (kind === 'working') {
-      ctx.fillStyle = '#3dff9a';
-      ctx.beginPath();
-      ctx.arc(16, 16, 10, 0, Math.PI * 2);
-      ctx.fill();
-    } else {
-      ctx.fillStyle = '#6b7a8a';
-      ctx.beginPath();
-      ctx.arc(16, 16, 10, 0, Math.PI * 2);
-      ctx.fill();
-    }
-    faviconEl.href = canvas.toDataURL('image/png');
-  }
-
-  function updateTitle() {
-    if (phase === 'WORKING') {
-      document.title = '● CURSOR WORKING - ' + unitName;
-    } else if (phase === 'DELIVERY') {
-      document.title = '✓ DELIVERY READY - ' + unitName;
-    } else {
-      document.title = 'CURSOR WATCH - waiting';
-    }
-  }
-
-  function playChime() {
-    if (chimeMuted || !userInteracted) return;
-    if (!reduceMotion.matches) {
-      /* still allow chime under reduced motion - audio is not visual */
-    }
-    try {
-      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      const t0 = audioCtx.currentTime;
-      const notes = [523.25, 659.25, 783.99];
-      notes.forEach(function (freq, i) {
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = 'sine';
-        osc.frequency.value = freq;
-        gain.gain.setValueAtTime(0.0001, t0);
-        gain.gain.exponentialRampToValueAtTime(0.08, t0 + 0.02 + i * 0.08);
-        gain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.35 + i * 0.08);
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.start(t0 + i * 0.08);
-        osc.stop(t0 + 0.4 + i * 0.08);
-      });
-    } catch (e) { /* ignore */ }
-  }
-
-  function triggerSweepOnce() {
-    if (sweepPlayed) return;
-    sweepPlayed = true;
-    if (reduceMotion.matches) {
-      washEl.classList.remove('go');
-      void washEl.offsetWidth;
-      washEl.classList.add('go');
-    }
-    playChime();
-  }
-
-  function setPhase(p) {
-    const prev = phase;
-    phase = p;
-    root.setAttribute('data-phase', p);
-    barEl.classList.toggle('delivery-lockup', p === 'DELIVERY');
-    if (p === 'WAITING') {
-      phaseText.textContent = 'WAITING';
-      setFavicon('waiting');
-    } else if (p === 'WORKING') {
-      phaseText.textContent = 'WORKING';
-      setFavicon('working');
-    } else {
-      phaseText.textContent = 'DELIVERY';
-      setFavicon('delivery');
-      updateDeliverySummary();
-      if (prev !== 'DELIVERY') triggerSweepOnce();
-    }
-    updateTitle();
-  }
-
-  function updateDeliverySummary() {
-    const tot = sumFiles(files);
-    const el = firstActivityAt
-      ? fmtElapsed((deliveryAt || now()) - firstActivityAt)
-      : '0:00';
-    deliverySummary.innerHTML =
-      'elapsed <strong>' + esc(el) + '</strong> · ' +
-      '<strong>' + tot.n + '</strong> files · ' +
-      '<span class="a">+' + tot.a + '</span> / <span class="d">-' + tot.d + '</span>';
-  }
-
-  function sumFiles(list) {
-    let a = 0, d = 0, n = (list && list.length) || 0;
-    (list || []).forEach(function (f) {
-      a += f.additions || 0;
-      d += f.deletions || 0;
-    });
-    return { a: a, d: d, n: n };
-  }
-
-  function updateTotalsChip() {
-    const tot = sumFiles(files);
-    totalsChip.innerHTML =
-      '<span class="a">+' + tot.a + '</span> / <span class="d">-' + tot.d + '</span> · ' +
-      tot.n + ' file' + (tot.n === 1 ? '' : 's');
-    if (phase === 'DELIVERY') updateDeliverySummary();
-  }
-
-  function noteEventTs(ts) {
-    const t = ts || now();
-    eventTimes.push(t);
-    const cutoff = now() - SPARK_WINDOW_MS;
-    while (eventTimes.length && eventTimes[0] < cutoff) eventTimes.shift();
-    updateSparkAndPulse();
-  }
-
-  function updateSparkAndPulse() {
-    const cutoff = now() - SPARK_WINDOW_MS;
-    const bucket = SPARK_WINDOW_MS / SPARK_BARS;
-    const counts = new Array(SPARK_BARS).fill(0);
-    for (let i = 0; i < eventTimes.length; i++) {
-      const t = eventTimes[i];
-      if (t < cutoff) continue;
-      let idx = Math.floor((t - cutoff) / bucket);
-      if (idx < 0) idx = 0;
-      if (idx >= SPARK_BARS) idx = SPARK_BARS - 1;
-      counts[idx]++;
-    }
-    const max = Math.max(1, ...counts);
-    let html = '';
-    for (let i = 0; i < SPARK_BARS; i++) {
-      const h = Math.max(2, Math.round((counts[i] / max) * 18));
-      html += '<i style="height:' + h + 'px"></i>';
-    }
-    sparkEl.innerHTML = html;
-
-    const recent = eventTimes.filter(function (t) { return t >= now() - 8000; }).length;
-    // Idle ~1800ms pulse; busy down toward ~500ms
-    const pulseMs = Math.max(500, 1800 - recent * 180);
-    root.style.setProperty('--pulse-ms', pulseMs + 'ms');
-  }
-
-  // Seed empty sparkline
-  updateSparkAndPulse();
-
-  function tickElapsed() {
-    if (!firstActivityAt) {
-      elapsedEl.textContent = '0:00';
+    if (!wave.units.length) {
+      el.units.innerHTML = '<span class="empty">No units parsed from the Active section.</span>';
       return;
     }
-    const end = phase === 'DELIVERY' && deliveryAt ? deliveryAt : now();
-    elapsedEl.textContent = fmtElapsed(end - firstActivityAt);
-  }
-  setInterval(tickElapsed, 250);
-  setInterval(updateSparkAndPulse, 1000);
-
-  function prependFeed(item, animate) {
-    const empty = feedEl.querySelector('.empty');
-    if (empty) empty.remove();
-    if (item.path) lastTouched.set(item.path, item.ts || now());
-    noteEventTs(item.ts);
-    const row = document.createElement('div');
-    const k = item.kind || 'change';
-    row.className = 'feed-card' + (animate && reduceMotion.matches ? ' enter' : '');
-    const parts = fileParts(item.path);
-    row.innerHTML =
-      '<span class="glyph ' + esc(k) + '">' + esc(glyphFor(k)) + '</span>' +
-      '<span class="name">' + (parts.base ? esc(parts.base) : esc(item.path || '')) + '</span>' +
-      '<span class="ts">' + esc(fmtTime(item.ts)) + '</span>' +
-      '<span class="meta-line">' +
-        (parts.dir ? esc(parts.dir) + ' · ' : '') + esc(k) +
-      '</span>';
-    feedEl.insertBefore(row, feedEl.firstChild);
-    if (animate && reduceMotion.matches) {
-      setTimeout(function () { row.classList.remove('enter'); }, 220);
+    var html = '';
+    for (var i = 0; i < wave.units.length; i++) {
+      var u = wave.units[i];
+      if (i > 0) {
+        var done = wave.units[i - 1].status === 'LANDED' ? '1' : '0';
+        html += '<div class="link" data-done="' + done + '"></div>';
+      }
+      html += '<div class="unit" data-status="' + esc(u.status) + '" title="' + esc(u.scope) + '">'
+        + '<span class="dot"></span>'
+        + '<span class="uid">' + esc(u.id) + '</span>'
+        + '<span class="ustatus">' + esc(u.status) + '</span>'
+        + '<span class="uscope">' + esc(u.scope) + '</span>'
+        + '</div>';
     }
-    while (feedEl.children.length > 80) {
-      feedEl.removeChild(feedEl.lastChild);
-    }
-    if (files.length) renderStats(files);
+    el.units.innerHTML = html;
   }
 
-  function renderStats(list) {
-    files = list || [];
-    updateTotalsChip();
-    if (!files.length) {
-      statsEl.innerHTML = '<div class="empty">No uncommitted changes yet.</div>';
+  function renderLanes() {
+    if (!lanes.length) {
+      el.lanes.innerHTML = '<div class="panel lane"><span class="empty">No lanes.</span></div>';
       return;
     }
-    const sorted = files.slice().sort(function (a, b) {
-      const ta = lastTouched.get(a.path) || 0;
-      const tb = lastTouched.get(b.path) || 0;
-      if (tb !== ta) return tb - ta;
-      return a.path.localeCompare(b.path);
-    });
-    const max = Math.max(
-      1,
-      ...sorted.map(function (f) { return (f.additions || 0) + (f.deletions || 0); })
-    );
-    const tot = sumFiles(files);
-    let html = '<div class="stat-totals"><span>Totals</span><span>' +
-      '<span class="a">+' + tot.a + '</span> / <span class="d">-' + tot.d + '</span> · ' +
-      tot.n + ' files</span></div>';
-    html += sorted.map(function (f) {
-      const a = f.additions || 0;
-      const d = f.deletions || 0;
-      const totLines = a + d;
-      const aw = totLines ? (a / max) * 100 : 0;
-      const dw = totLines ? (d / max) * 100 : 0;
-      return '<div class="stat-row">' +
-        '<div class="name">' + fileLabel(f.path) + '</div>' +
-        '<div class="bars"><div class="a" data-w="' + aw + '"></div>' +
-        '<div class="d" data-w="' + dw + '"></div></div>' +
-        '<div class="counts"><span class="a">+' + a + '</span> / <span class="d">-' + d + '</span>' +
-        (f.untracked ? ' · untracked' : '') + '</div></div>';
-    }).join('');
-    statsEl.innerHTML = html;
-    requestAnimationFrame(function () {
-      statsEl.querySelectorAll('.bars .a, .bars .d').forEach(function (el) {
-        el.style.width = (el.getAttribute('data-w') || '0') + '%';
-      });
-    });
+    var html = '';
+    for (var i = 0; i < lanes.length; i++) {
+      var L = lanes[i];
+      var since = L.phase === 'DELIVERY' ? L.deliveryAt : L.firstActivityAt;
+      html += '<div class="panel lane" data-id="' + esc(L.id) + '" data-phase="' + esc(L.phase) + '"'
+        + ' role="button" tabindex="0" aria-selected="' + (selected === L.id) + '">'
+        + '<div class="lane-top"><span class="lane-id">' + esc(L.id) + '</span>'
+        + '<span class="phase">' + esc(L.phase) + '</span></div>'
+        + '<div class="lane-branch">' + esc(L.branch || '(unknown)') + '</div>'
+        + '<div class="lane-stats">'
+        + '<span><b>' + (L.files ? L.files.length : 0) + '</b> files</span>'
+        + '<span><b>' + elapsed(since) + '</b> ' + (L.phase === 'DELIVERY' ? 'ready' : 'active') + '</span>'
+        + '</div>'
+        + '<div class="lane-last">' + esc(shortLane(L.lane)) + (L.lastChangedPath ? ' - ' + esc(L.lastChangedPath) : '') + '</div>'
+        + '</div>';
+    }
+    el.lanes.innerHTML = html;
   }
 
-  function colorizeDiff(text) {
-    return text.split('\\n').map(function (line) {
-      if (line.startsWith('+++') || line.startsWith('---') || line.startsWith('diff ')) {
-        return '<span class="ln-meta">' + esc(line) + '</span>';
+  function renderFeed() {
+    if (!feed.length) {
+      el.feed.innerHTML = '<li class="empty">Nothing yet. Lanes are quiet.</li>';
+      return;
+    }
+    var html = '';
+    for (var i = 0; i < feed.length; i++) {
+      var e = feed[i];
+      html += '<li><span class="t">' + clock(e.ts) + '</span>'
+        + '<span class="lane-tag">' + esc(e.id) + '</span>'
+        + '<span class="k" data-kind="' + esc(e.kind) + '">' + esc(e.kind) + '</span>'
+        + '<span class="p">' + esc(e.path) + '</span></li>';
+    }
+    el.feed.innerHTML = html;
+  }
+
+  function renderScope() {
+    var L = selected ? laneById(selected) : null;
+    if (!L) {
+      el.scope.innerHTML = '<span class="empty">Select a lane to inspect its latest change.</span>';
+      return;
+    }
+    if (tab === 'log') {
+      var lines = L.logLines || [];
+      if (!lines.length) {
+        el.scope.innerHTML = '<span class="empty">No agent log for ' + esc(L.id)
+          + '. Channel B writes cursor-run.log into the lane.</span>';
+        return;
       }
-      if (line.startsWith('@@')) {
-        return '<span class="ln-hunk">' + esc(line) + '</span>';
-      }
-      if (line.startsWith('+')) {
-        return '<span class="ln-add">' + esc(line) + '</span>';
-      }
-      if (line.startsWith('-')) {
-        return '<span class="ln-del">' + esc(line) + '</span>';
-      }
-      return esc(line);
+      el.scope.textContent = lines.join('\\n');
+      el.scope.scrollTop = el.scope.scrollHeight;
+      return;
+    }
+    var ex = L.excerpt || {};
+    if (!ex.text) {
+      el.scope.innerHTML = '<span class="empty">No excerpt yet for ' + esc(L.id) + '.</span>';
+      return;
+    }
+    // Colourise a unified diff without a highlighter dependency.
+    var out = ex.text.split('\\n').map(function (line) {
+      var cls = '';
+      if (/^\\+/.test(line) && !/^\\+\\+\\+/.test(line)) cls = 'add';
+      else if (/^-/.test(line) && !/^---/.test(line)) cls = 'del';
+      else if (/^(@@|diff |index |\\+\\+\\+|---)/.test(line)) cls = 'hdr';
+      return cls ? '<span class="' + cls + '">' + esc(line) + '</span>' : esc(line);
     }).join('\\n');
+    el.scope.innerHTML = '<span class="hdr">' + esc(ex.path || '') + '</span>\\n' + out;
   }
 
-  function scrollToCaret() {
-    excerptScroll.scrollTop = excerptScroll.scrollHeight;
+  /* ------------------------------------------------------ synapse canvas
+     The signature. Each lane is an axon running left to right. Every REAL
+     filesystem event injects a travelling pulse on that lane's axon - the
+     motion is data, not decoration, so a still canvas genuinely means a
+     still agent. Idle lanes keep a slow carrier wave so "connected but
+     quiet" is visibly different from "dead". */
+
+  var ctx = el.cv.getContext('2d');
+  var W = 0, H = 0, DPR = 1;
+  var pulses = [];   // { row, x, born, strength }
+  var t0 = performance.now();
+
+  function resize() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    var r = el.cv.getBoundingClientRect();
+    W = Math.max(1, Math.round(r.width));
+    H = Math.max(1, Math.round(r.height));
+    el.cv.width = Math.round(W * DPR);
+    el.cv.height = Math.round(H * DPR);
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  }
+  window.addEventListener('resize', resize);
+
+  function laneColor(phase) {
+    if (phase === 'DELIVERY') return [245, 166, 35];
+    if (phase === 'WORKING') return [139, 155, 255];
+    return [58, 74, 107];
+  }
+  function rgba(c, a) {
+    return 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + a + ')';
   }
 
-  function startReveal(text) {
-    revealTarget = text || '';
-    revealPos = 0;
-    if (revealTimer) clearInterval(revealTimer);
-    if (!revealTarget) {
-      excerptEl.innerHTML = '<span class="ln-meta">No diff yet for this file.</span><span class="caret"></span>';
-      return;
-    }
-    if (!reduceMotion.matches) {
-      excerptEl.innerHTML = colorizeDiff(revealTarget) + '<span class="caret"></span>';
-      scrollToCaret();
-      return;
-    }
-    const chunk = Math.max(8, Math.floor(revealTarget.length / 60));
-    revealTimer = setInterval(function () {
-      revealPos = Math.min(revealTarget.length, revealPos + chunk);
-      const slice = revealTarget.slice(0, revealPos);
-      excerptEl.innerHTML = colorizeDiff(slice) + '<span class="caret"></span>';
-      scrollToCaret();
-      if (revealPos >= revealTarget.length) {
-        clearInterval(revealTimer);
-        revealTimer = null;
+  function rowY(i, n) {
+    var pad = 44;
+    if (n === 1) return H / 2;
+    return pad + (i * (H - pad * 2)) / (n - 1);
+  }
+
+  function axonY(i, n, x, t) {
+    // A shallow travelling wave keeps the line alive without reading as noise.
+    var base = rowY(i, n);
+    var amp = reduced ? 0 : 5;
+    return base + Math.sin(x * 0.012 + t * 0.0009 + i * 1.7) * amp;
+  }
+
+  function draw(now) {
+    var t = now - t0;
+    ctx.clearRect(0, 0, W, H);
+    var n = Math.max(1, lanes.length);
+
+    // Cross-connections: an X-lattice between adjacent axons, one cell per
+    // station gap. This is the "network" - it never carries data, so it
+    // stays at the very bottom of the contrast stack.
+    var stations = 9;
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = 'rgba(43,58,99,0.5)';
+    for (var s = 0; s < stations; s++) {
+      var xa = (W * s) / stations;
+      var xb = (W * (s + 1)) / stations;
+      for (var i = 0; i < n - 1; i++) {
+        ctx.beginPath();
+        ctx.moveTo(xa, axonY(i, n, xa, t));
+        ctx.lineTo(xb, axonY(i + 1, n, xb, t));
+        ctx.moveTo(xa, axonY(i + 1, n, xa, t));
+        ctx.lineTo(xb, axonY(i, n, xb, t));
+        ctx.stroke();
       }
-    }, 28);
-  }
-
-  function applyExcerpt(excerpt) {
-    if (!excerpt || !excerpt.path) {
-      fileTab.innerHTML = '<span class="ln-meta">Idle</span>';
-      excerptEl.innerHTML = '<span class="ln-meta">Idle — watching the lane.</span><span class="caret"></span>';
-      return;
     }
-    const parts = fileParts(excerpt.path);
-    fileTab.innerHTML = '<span class="tab"><span class="dot"></span>' +
-      esc(parts.base || excerpt.path) +
-      (excerpt.kind ? ' · ' + esc(excerpt.kind) : '') + '</span>';
-    startReveal(excerpt.text || '');
-  }
 
-  function appendLog(line, fresh) {
-    logPanel.hidden = false;
-    const div = document.createElement('div');
-    if (fresh) div.className = 'fresh';
-    div.textContent = line;
-    logBody.appendChild(div);
-    while (logBody.children.length > 200) {
-      logBody.removeChild(logBody.firstChild);
-    }
-    logBody.scrollTop = logBody.scrollHeight;
-  }
+    for (var r = 0; r < n; r++) {
+      var L = lanes[r] || { phase: 'WAITING' };
+      var c = laneColor(L.phase);
 
-  function setBranch(b) {
-    branch = b || '';
-    unitName = parseUnit(branch);
-    unitEl.textContent = unitName;
-    updateTitle();
-  }
-
-  function applySnapshot(s) {
-    if (s.serverNow) clockSkew = s.serverNow - Date.now();
-    setBranch(s.branch);
-    firstActivityAt = s.firstActivityAt;
-    deliveryAt = s.deliveryAt;
-    if (s.phase === 'DELIVERY') sweepPlayed = true; // mid-attach: no sweep replay
-    setPhase(s.phase || 'WAITING');
-    tickElapsed();
-    feedEl.innerHTML = '';
-    eventTimes = [];
-    lastTouched.clear();
-    if (s.activity && s.activity.length) {
-      for (let i = s.activity.length - 1; i >= 0; i--) {
-        prependFeed(s.activity[i], false);
+      // Axon
+      ctx.beginPath();
+      for (var x = 0; x <= W; x += 6) {
+        var y = axonY(r, n, x, t);
+        if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
       }
-    } else {
-      feedEl.innerHTML = '<div class="empty">Waiting for file events…</div>';
-      updateSparkAndPulse();
+      ctx.strokeStyle = rgba(c, L.phase === 'WAITING' ? 0.42 : 0.62);
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+
+      // Stations. A station brightens as a pulse crosses it - that flash is
+      // what makes a lane look like it is firing rather than just drawn.
+      for (var s2 = 0; s2 <= stations; s2++) {
+        var nx = (W * s2) / stations;
+        var ny = axonY(r, n, nx, t);
+        var near = Infinity;
+        for (var q = 0; q < pulses.length; q++) {
+          if (pulses[q].row !== r) continue;
+          var d = Math.abs(pulses[q].x - nx);
+          if (d < near) near = d;
+        }
+        var hit = near < 55 ? 1 - near / 55 : 0;
+        ctx.beginPath();
+        ctx.arc(nx, ny, 2 + hit * 2.6, 0, Math.PI * 2);
+        ctx.fillStyle = rgba(c, (L.phase === 'WAITING' ? 0.5 : 0.85) + hit * 0.15);
+        ctx.fill();
+      }
+
+      // A delivery-ready lane holds a standing glow at its terminus - the
+      // one thing on this canvas that does not move, because it is done.
+      if (L.phase === 'DELIVERY') {
+        var ty = axonY(r, n, W - 14, t);
+        var pulse = reduced ? 0.5 : 0.5 + 0.5 * Math.sin(t * 0.0035);
+        var g = ctx.createRadialGradient(W - 14, ty, 0, W - 14, ty, 26);
+        g.addColorStop(0, rgba(c, 0.55 + 0.2 * pulse));
+        g.addColorStop(1, rgba(c, 0));
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(W - 14, ty, 26, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Idle carrier: one slow, dim traveller so a connected-but-quiet
+      // lane is distinguishable from a dead page.
+      if (!reduced && L.phase === 'WAITING') {
+        var cx = ((t * 0.02 + r * 140) % (W + 120)) - 60;
+        var cy = axonY(r, n, cx, t);
+        ctx.beginPath();
+        ctx.arc(cx, cy, 2.2, 0, Math.PI * 2);
+        ctx.fillStyle = rgba(c, 0.5);
+        ctx.fill();
+      }
     }
-    renderStats(s.files || []);
-    applyExcerpt(s.excerpt);
-    if (s.logPath) logPanel.hidden = false;
-    if (s.logLines && s.logLines.length) {
-      logBody.innerHTML = '';
-      s.logLines.forEach(function (l) { appendLog(l, false); });
+
+    // Travelling pulses - one per real file event.
+    for (var p = pulses.length - 1; p >= 0; p--) {
+      var P = pulses[p];
+      var age = now - P.born;
+      var speed = reduced ? 0 : 0.19;
+      P.x = age * speed;
+      if (P.x > W + 40) { pulses.splice(p, 1); continue; }
+
+      var pr = Math.min(P.row, n - 1);
+      var py = axonY(pr, n, P.x, t);
+      var pc = laneColor((lanes[pr] || {}).phase);
+      var fade = Math.max(0, 1 - P.x / (W + 40));
+
+      // Comet tail reads as direction of travel: left is behind.
+      var grad = ctx.createLinearGradient(P.x - 70, py, P.x, py);
+      grad.addColorStop(0, rgba(pc, 0));
+      grad.addColorStop(1, rgba(pc, 0.5 * fade));
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(P.x - 70, py);
+      ctx.lineTo(P.x, py);
+      ctx.stroke();
+
+      var head = ctx.createRadialGradient(P.x, py, 0, P.x, py, 13);
+      head.addColorStop(0, rgba(pc, 0.95 * fade));
+      head.addColorStop(1, rgba(pc, 0));
+      ctx.fillStyle = head;
+      ctx.beginPath();
+      ctx.arc(P.x, py, 13, 0, Math.PI * 2);
+      ctx.fill();
     }
+
+    requestAnimationFrame(draw);
   }
 
-  function onEvent(ev) {
-    if (!ev || !ev.type) return;
+  function firePulse(id) {
+    var i = laneIndex(id);
+    if (i === -1) i = 0;
+    if (pulses.length > 90) pulses.shift();
+    pulses.push({ row: i, x: 0, born: performance.now() });
+  }
+
+  /* --------------------------------------------------------------- wire */
+
+  el.lanes.addEventListener('click', function (ev) {
+    var card = ev.target.closest('.lane');
+    if (!card || !card.dataset.id) return;
+    selected = card.dataset.id;
+    renderLanes();
+    renderScope();
+  });
+  el.lanes.addEventListener('keydown', function (ev) {
+    if (ev.key !== 'Enter' && ev.key !== ' ') return;
+    var card = ev.target.closest('.lane');
+    if (!card || !card.dataset.id) return;
+    ev.preventDefault();
+    selected = card.dataset.id;
+    renderLanes();
+    renderScope();
+  });
+
+  function setTab(next) {
+    tab = next;
+    el.tabDiff.setAttribute('aria-selected', String(next === 'diff'));
+    el.tabLog.setAttribute('aria-selected', String(next === 'log'));
+    renderScope();
+  }
+  el.tabDiff.addEventListener('click', function () { setTab('diff'); });
+  el.tabLog.addEventListener('click', function () { setTab('log'); });
+
+  function applyLane(id, patch) {
+    var L = laneById(id);
+    if (!L) return null;
+    for (var k in patch) if (Object.prototype.hasOwnProperty.call(patch, k)) L[k] = patch[k];
+    return L;
+  }
+
+  function handle(ev) {
     if (ev.type === 'snapshot') {
-      applySnapshot(ev);
+      lanes = ev.lanes || [];
+      wave = ev.wave || wave;
+      if (!selected && lanes.length) selected = lanes[0].id;
+      // Seed the feed from whatever each lane already recorded.
+      feed = [];
+      for (var i = 0; i < lanes.length; i++) {
+        var acts = lanes[i].activity || [];
+        for (var j = 0; j < acts.length; j++) {
+          feed.push({ ts: acts[j].ts, path: acts[j].path, kind: acts[j].kind, id: lanes[i].id });
+        }
+      }
+      feed.sort(function (a, b) { return b.ts - a.ts; });
+      feed = feed.slice(0, FEED_CAP);
+      renderWave(); renderLanes(); renderFeed(); renderScope();
+      return;
+    }
+    if (ev.type === 'wave') {
+      wave = ev.wave;
+      renderWave();
       return;
     }
     if (ev.type === 'file') {
-      prependFeed(ev, true);
-      if (!firstActivityAt) firstActivityAt = ev.ts || now();
-      if (phase === 'WAITING') setPhase('WORKING');
+      feed.unshift({ ts: ev.ts, path: ev.path, kind: ev.kind, id: ev.id });
+      if (feed.length > FEED_CAP) feed.length = FEED_CAP;
+      applyLane(ev.id, { lastChangedPath: ev.path });
+      firePulse(ev.id);
+      renderFeed(); renderLanes();
       return;
     }
-    if (ev.type === 'diff') {
-      if (ev.branch) setBranch(ev.branch);
-      renderStats(ev.files || []);
-      if (ev.firstActivityAt) firstActivityAt = ev.firstActivityAt;
-      if (ev.deliveryAt) deliveryAt = ev.deliveryAt;
-      if (ev.phase) setPhase(ev.phase);
-      return;
-    }
-    if (ev.type === 'state') {
-      if (ev.branch) setBranch(ev.branch);
-      firstActivityAt = ev.firstActivityAt;
-      deliveryAt = ev.deliveryAt;
-      setPhase(ev.phase);
+    if (ev.type === 'state' || ev.type === 'diff') {
+      applyLane(ev.id, {
+        phase: ev.phase,
+        branch: ev.branch,
+        files: ev.files,
+        firstActivityAt: ev.firstActivityAt,
+        deliveryAt: ev.deliveryAt
+      });
+      renderLanes();
       return;
     }
     if (ev.type === 'excerpt') {
-      applyExcerpt(ev.excerpt);
+      applyLane(ev.id, { excerpt: ev.excerpt });
+      if (selected === ev.id) renderScope();
       return;
     }
     if (ev.type === 'log') {
-      appendLog(ev.line, true);
+      var L = laneById(ev.id);
+      if (!L) return;
+      L.logLines = (L.logLines || []).concat([ev.line]).slice(-200);
+      if (selected === ev.id && tab === 'log') renderScope();
+      return;
     }
   }
 
   function connect() {
-    const es = new EventSource('/events');
-    es.onopen = function () {
-      connEl.className = 'conn on';
+    var src = new EventSource('/events');
+    src.onmessage = function (m) {
+      try { handle(JSON.parse(m.data)); } catch (e) { /* ignore malformed frame */ }
     };
-    es.onerror = function () {
-      connEl.className = 'conn bad';
-    };
-    es.onmessage = function (msg) {
-      try {
-        onEvent(JSON.parse(msg.data));
-      } catch (e) { /* ignore */ }
+    src.onopen = function () { el.conn.dataset.live = '1'; el.conn.textContent = 'live'; };
+    src.onerror = function () {
+      el.conn.dataset.live = '0';
+      el.conn.textContent = 'reconnecting';
     };
   }
-  root.setAttribute('data-phase', 'WAITING');
-  setFavicon('waiting');
-  updateTitle();
+
+  resize();
+  requestAnimationFrame(draw);
   connect();
+  // Elapsed counters are derived from timestamps, so a cheap tick is enough.
+  setInterval(renderLanes, 1000);
 })();
 </script>
 </body>
 </html>`;
 }
 
-function createServer(state, port) {
+function createServer(hub, port) {
   const html = dashboardHtml();
   const server = http.createServer((req, res) => {
     const url = new URL(req.url || '/', 'http://127.0.0.1');
@@ -1890,7 +1835,7 @@ function createServer(state, port) {
       return;
     }
     if (req.method === 'GET' && url.pathname === '/api/snapshot') {
-      send(res, 200, JSON.stringify(snapshotPayload(state)), {
+      send(res, 200, JSON.stringify(snapshotPayload(hub)), {
         'Content-Type': 'application/json; charset=utf-8',
         'Cache-Control': 'no-store',
       });
@@ -1902,8 +1847,8 @@ function createServer(state, port) {
         'Cache-Control': 'no-cache, no-transform',
         Connection: 'keep-alive',
       });
-      res.write(`data: ${JSON.stringify(snapshotPayload(state))}\n\n`);
-      state.clients.add(res);
+      res.write(`data: ${JSON.stringify(snapshotPayload(hub))}\n\n`);
+      hub.clients.add(res);
       // Heartbeat keeps proxies / browsers from timing out
       const hb = setInterval(() => {
         try {
@@ -1914,7 +1859,7 @@ function createServer(state, port) {
       }, 15000);
       req.on('close', () => {
         clearInterval(hb);
-        state.clients.delete(res);
+        hub.clients.delete(res);
       });
       return;
     }
@@ -1944,52 +1889,72 @@ async function main() {
     process.exit(0);
   }
 
-  const lane = path.resolve(args.lane);
-  if (!fs.existsSync(lane) || !fs.statSync(lane).isDirectory()) {
+  // Explicit --lane wins; otherwise take every pool lane that exists on disk.
+  const requested = args.lanes.length ? args.lanes : LANE_POOL;
+  const lanes = requested
+    .map((l) => path.resolve(l))
+    .filter((l) => fs.existsSync(l) && fs.statSync(l).isDirectory());
+
+  if (!lanes.length) {
     console.error(
-      `cursor-watch: lane directory does not exist: ${lane}`,
+      args.lanes.length
+        ? `cursor-watch: none of the given lanes exist: ${requested.join(', ')}`
+        : `cursor-watch: no lane worktrees found in the pool: ${LANE_POOL.join(', ')}`,
     );
     process.exit(1);
   }
 
-  let logPath = args.log ? path.resolve(args.log) : null;
-  if (!logPath) {
-    const defaultLog = path.join(lane, 'cursor-run.log');
-    if (fs.existsSync(defaultLog)) logPath = defaultLog;
-  }
-
-  const state = createState(lane, logPath);
-  // Seed phase from existing DELIVERY.md (e.g. mid-audit attach)
-  if (deliveryExists(lane)) {
-    state.phase = 'DELIVERY';
-    state.deliveryAt = Date.now();
-    state.firstActivityAt = state.firstActivityAt || Date.now();
-  }
-
-  const server = await createServer(state, args.port);
+  const hub = createHub();
   const url = `http://127.0.0.1:${args.port}`;
 
+  // ONE controller for the whole hub - three busy lanes still open one tab.
   if (args.openOnActivity) {
-    state.autoOpen = createAutoOpenController({
+    hub.autoOpen = createAutoOpenController({
       openOnActivity: true,
       openCmd: args.openCmd,
       url,
     });
   }
-
   if (args.notify) {
-    state.notify = createNotifyController({
+    hub.notify = createNotifyController({
       notify: true,
       notifyCmd: args.notifyCmd,
     });
   }
 
-  startFileWatch(state);
-  startGitPoll(state);
-  startLogTail(state);
+  lanes.forEach((lane, i) => {
+    // --log pins the first lane's log only; the rest use their own default.
+    let logPath = i === 0 && args.log ? path.resolve(args.log) : null;
+    if (!logPath) {
+      const defaultLog = path.join(lane, 'cursor-run.log');
+      if (fs.existsSync(defaultLog)) logPath = defaultLog;
+    }
 
-  console.log(`cursor-watch: watching ${lane}`);
-  if (logPath) console.log(`cursor-watch: tailing log ${logPath}`);
+    const state = createState(lane, logPath, `lane${i + 1}`, hub);
+    // Seed phase from an existing DELIVERY.md (e.g. mid-audit attach)
+    if (deliveryExists(lane)) {
+      state.phase = 'DELIVERY';
+      state.deliveryAt = Date.now();
+      state.firstActivityAt = Date.now();
+    }
+    hub.lanes.push(state);
+
+    startFileWatch(state);
+    startGitPoll(state);
+    startLogTail(state);
+
+    console.log(`cursor-watch: watching ${state.id} ${lane}`);
+    if (logPath) console.log(`cursor-watch: tailing log ${logPath}`);
+  });
+
+  startWavePoll(hub);
+  const server = await createServer(hub, args.port);
+
+  if (hub.wave.total) {
+    console.log(
+      `cursor-watch: wave ${hub.wave.name || '(unnamed)'} ${hub.wave.landed}/${hub.wave.total}`,
+    );
+  }
   console.log(`cursor-watch: open ${url}`);
 
   // --open: launch once after bind. Failure must not kill the server.

@@ -1,14 +1,16 @@
 # HANDOFF — current state
 
-**Next action (human):** **Apply the `AiConsent` migration to staging Neon, then
-set the four WorkOS env vars on the `workout-db-staging` Render service** - AI1's
-migration is written but unapplied anywhere, and `MCP_RESOURCE_URL` being unset
-is now PROVEN to matter (staging's live discovery document advertises
-`http://localhost:3000/mcp`). Both are his manual track; both block any real
-connector smoke. Values and click-path: `docs/specs/workos-staging-handoff.md`
-section 4. Still open behind those, blocking nothing: the prod smoke of `main`
-`59e27dc` (covers the F-wave AND the leftover E-wave pass), and the
-`docs/parked/*` ruling.
+**Next action (human):** **Say "migrate staging" to unblock the `AiConsent`
+migration, then set the four WorkOS env vars on the `workout-db-staging` Render
+service.** The migration is no longer his to run - gate item 3 was split on
+August 5 and staging migrations are now agent-run behind that trigger phrase
+(prod is still his, always). The Render dashboard stays his. AI1's migration is
+written but unapplied anywhere, and `MCP_RESOURCE_URL` being unset is now PROVEN
+to matter (staging's live discovery document advertises
+`http://localhost:3000/mcp`). Both block any real connector smoke. Values and
+click-path: `docs/specs/workos-staging-handoff.md` section 4. Still open behind
+those, blocking nothing: the prod smoke of `main` `59e27dc` (covers the F-wave
+AND the leftover E-wave pass), and the `docs/parked/*` ruling.
 
 > **Standing rule:** the line above is filled on EVERY rewrite and is
 > never empty or deferred — one sentence, the single thing SETH does
@@ -16,7 +18,10 @@ section 4. Still open behind those, blocking nothing: the prod smoke of `main`
 > explicitly. Dogfoods the shell repo's decision-10 no-dangling-next-
 > action requirement; `land-unit` section 5 keeps it maintained.
 
-**Updated:** August 4, 2026, forty-second session (resident relay — **AI-wave
+**Updated:** August 5, 2026, forty-third session (Opus, workflow — gate item 3
+split staging/prod, and `cursor-watch` rebuilt as a single multi-lane wave
+dashboard; see "Relay tooling" below. No product code touched, wave state
+untouched at 3/5). Prior: August 4, forty-second session (resident relay — **AI-wave
 dispatched and landed 3/5: AI1 `83d82c8`, AI2 `5c051bc`, AI3 `eecd2e9`**, no
 bounces; plus a prod-deploy incident found and closed, see below). A CONCURRENT
 session the same evening drove the WorkOS dashboard to done (`4a8a98c`) — its
@@ -147,7 +152,12 @@ AI1's block forbids Cursor from running any migration command — it hand-writes
 the `.sql` and stops. The apply stays his, unchanged. Cursor honoured that: only
 `prisma generate` was run.
 
-### THE TWO HUMAN BLOCKERS, both Seth's, both now provable
+### THE TWO BLOCKERS — one is now AGENT-RUN behind a phrase (August 5)
+
+Blocker 1 stopped being a human task when gate item 3 was split: a staging
+migration is agent-run once Seth says **"migrate staging"** verbatim, one
+command at a time with approval before each. Prod migrations are unchanged and
+remain his. Blocker 2 is still entirely his (Render dashboard).
 
 1. **The `AiConsent` migration is written and applied NOWHERE.**
    `server/prisma/migrations/20260804180000_add_ai_consent/migration.sql` —
@@ -324,6 +334,37 @@ not merely unavailable. Detail in `ai-layer.md` section 3 and the archive.
 gate AI-generated palettes — it scans a git diff (`check-hex.mjs:23`), so
 runtime-generated output never reaches it. It stays the right tripwire for
 authored code. A separate pure validator is specified.
+
+## Relay tooling — August 5 (workflow session, no product code)
+
+Two changes, both mid-wave-safe. AI4/AI5 stay QUEUED and nothing about how a
+block is authored, dispatched, or landed moved.
+
+1. **Gate item 3 split** (`AGENTS.md`). Staging migrations are agent-run behind
+   the verbatim trigger phrase **"migrate staging"**, one command at a time with
+   approval before each, `prisma migrate status` reported after. Prod migrations
+   are unchanged: Seth runs them, item 2 stacks on top, an agent may only print
+   the sequence. The ordering invariant (DB before dependent code deploys) is
+   now stated once, in item 3, and the duplicate paragraph lower in AGENTS.md
+   points at it. `dispatch-unit` section 4 was corrected to match — a
+   migration-carrying block IS dispatchable, because the block only ever has
+   Cursor WRITE the migration; a lane still never runs `prisma migrate`.
+   Rationale: the original any-environment rule was written defensively around a
+   weaker non-Anthropic model, and `dbHostGuard.assertSafeForBoot()` already
+   makes staging's blast radius mechanical rather than procedural.
+
+2. **`scripts/cursor-watch.mjs` is now the whole relay's dashboard**, not one
+   lane's. It watches every existing lane in the v5.2 pool (`cursor-lane`, `-2`,
+   `-3`) from ONE server on one port, so fan-out no longer means three tabs —
+   the auto-open and notify controllers moved onto a shared hub and are consumed
+   once, by whichever lane stirs first. It also parses `docs/tasks/QUEUE.md` for
+   the live wave rail (the contiguous leading run of same-prefix units in
+   `## Active`, which is what keeps the AI-wave at five instead of swallowing
+   the F-wave below it) and renders n/N. `--lane` now repeats to pin an explicit
+   set; omitted, it auto-discovers. The Startup shortcut needs no change — it
+   already passes `--open-on-activity --notify` and now covers all three lanes.
+   Verified live: three lanes discovered, wave parsed `AI-wave 3/5`,
+   `AI1..AI3 LANDED / AI4 AI5 QUEUED`.
 
 ## Repo / deploy state
 

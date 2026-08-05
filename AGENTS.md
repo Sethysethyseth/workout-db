@@ -172,8 +172,25 @@ ASK BEFORE RUNNING (the short gate):
 2. PRODUCTION touches - prod Neon (`ep-solitary-sea-an56mioq`), prod Render
    (`workout-db-l3gc`), any prod data operation, or any `git push` that deploys
    to production. Staging pushes are fine; prod-bound pushes ask first.
-3. MIGRATIONS - ANY environment. Separate manual track. Code push != DB migrate.
-   A bad migration corrupts live data and is not locally reversible.
+3. MIGRATIONS - split by environment since August 5, 2026. Code push != DB
+   migrate in either case, and the ordering invariant below is absolute.
+   - **STAGING migrations: trigger-phrase tier** (same shape as item 1). Do
+     not start until the user says "migrate staging" verbatim. Then run ONE
+     command at a time, waiting for explicit approval before each next one -
+     never batch, never auto-run the sequence. Report what applied
+     (migration name, target host, `prisma migrate status` output) before
+     considering it done. The safety here is mechanical, not procedural:
+     `dbHostGuard.assertSafeForBoot()` already makes it impossible for
+     `server/.env` to point at prod, so the gate governs sequencing, not
+     blast radius.
+   - **PRODUCTION migrations: Seth runs them personally.** Item 2 stacks on
+     top of this. An agent may prepare and display the exact command
+     sequence; it never executes one. A bad prod migration corrupts live
+     data and is not locally reversible.
+
+   **Ordering invariant (both environments, never relaxed):** the DB
+   migration lands BEFORE the code that depends on it deploys. Code ahead of
+   DB crashes login. Steps: `docs/RUNBOOK.md` -> "Schema-change deploy."
 4. LOCAL-DESTRUCTIVE / IRREVERSIBLE ops - `reset --hard`, `git clean`,
    `push --force`, branch deletion. These can destroy work on disk.
 5. DEPENDENCY installs - anything mutating `package.json` / lockfiles.
@@ -182,9 +199,8 @@ ASK BEFORE RUNNING (the short gate):
 Everything else - reads, dev server, scoped file edits, branch creation,
 individual staging, local commits, and pushes to staging - runs without asking.
 
-Schema changes specifically: DB migration always lands before the code that
-depends on it deploys (code-ahead-of-DB crashes prod login). Exact steps:
-`docs/RUNBOOK.md` -> "Schema-change deploy."
+Schema changes: see gate item 3 above - it carries the environment split, the
+trigger phrase, and the ordering invariant in one place.
 
 ## Verify-before-trust (still holds, even when hands-off)
 
@@ -218,5 +234,6 @@ pre-main review and big-picture work).
   `assertSafeForReset()` covers the test/reset path (`test/jest.setup.js`)
   and must be called explicitly by any new DB-connecting script at the top
   of `main()`.
-- Migrations are a separate manual track - pushing code does not migrate any
-  DB.
+- Migrations are a separate track from deploys - pushing code does not migrate
+  any DB. Who runs them is gate item 3: staging behind the "migrate staging"
+  trigger phrase, prod always Seth.
