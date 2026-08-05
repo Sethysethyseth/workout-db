@@ -410,6 +410,36 @@ block is authored, dispatched, or landed moved.
 icon PNGs; the Cursor model-routing question; the `docs/parked/*` ruling;
 the F-wave shape confirmation.
 
+### Workflow modernisation backlog — OPEN, agreed August 5, none started
+
+From Seth's August 5 brainstorm against the six Claude-5 guidance rules
+(judgement over rules, interfaces over examples, progressive disclosure,
+simple tool descriptions, auto-memory, rich references). Two items shipped
+that session (gate split, wave dashboard — see "Relay tooling"); these four
+did not. Do them one at a time between waves, never mid-wave:
+
+1. **Rules -> tooling.** Fold `land-unit` section 2's three "things a green
+   build cannot catch" into a runnable `scripts/audit-seams.mjs` (unresolved
+   `var(--...)` names; identifiers removed but still referenced; server
+   response shape vs client destructure). `check-hex.mjs` is the precedent —
+   a check that RUNS beats a check the reviewer must remember.
+2. **Structured `DELIVERY.md`.** Fixed schema per acceptance criterion
+   (criterion -> command -> verbatim output) instead of free prose, so a
+   report-vs-tree mismatch is mechanically visible. Cheap Cursor rungs fill
+   a schema more reliably than they write prose. Template lives in
+   `docs/tasks/cursor-task-block-template.md`.
+3. **Preferences -> auto-memory.** `land-unit` carries Seth's standing asks
+   (smoke-on-Vercel, the n/N line, keep-the-report-brief) with dates. Those
+   are user preference, not ritual; the repo contract stays in AGENTS.md
+   because Cursor reads it, but the preferences belong in Claude Code memory.
+4. **Trim provenance out of hot paths.** CLAUDE.md's seat history (the Fable
+   departure, three amendment layers) and the dated "backported here July 28"
+   notes are archive material sitting in files loaded every session. Live
+   instructions on top, history to a `docs/specs/` file.
+
+Also agreed in principle, not decided: relaxing gate item 5 so `devDependencies`
+installs are hands-off while new RUNTIME deps still ask. Seth's call.
+
 **PARKED by Seth — the block builder.** "don't do anything with the block
 builder for now, that's for another wave." Evidence in
 `docs/specs/block-execution-gap.md` (`267271c`): the multi-week layer is
