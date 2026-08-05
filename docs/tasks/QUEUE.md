@@ -426,7 +426,7 @@ commit, so the window is: apply the `AiConsent` migration -> curl-smoke AI1-AI3
 with an ordinary token -> then push AI4. Held for Seth's call rather than spent
 silently.
 
-DISPATCHED | ai5-connector-onboarding-ux.md | the in-app connect surface: copyable
+LANDED 9a2f63a | ai5-connector-onboarding-ux.md | the in-app connect surface: copyable
 connector address, four-step instructions, honest tier note, What's New entry |
 MODEL auto. Client-only, no new endpoint - the URL derives from
 `VITE_API_URL`. Copy specified VERBATIM including the tier asymmetry recon
@@ -434,6 +434,50 @@ found: custom connectors work on every Claude plan including free (one only),
 but in ChatGPT are limited to Business/Enterprise/Edu. Carries the E3 lesson
 explicitly - acceptance criteria cannot express "discoverable", so smoke is the
 real test.
+
+LANDED August 5 same session, NO BOUNCE and NO REVIEWER FIX. Audited per
+land-unit: scope exact (2 delivered files = FILES TO TOUCH; `index.css`
+correctly untouched), full diff read, lanes re-run FRESH in the lane (client
+build green, check-hex exit 0). No server lane applies - client-only unit.
+
+**Verified by direct read, because a green build proves none of it:**
+
+1. **Every one of the TEN CSS classes the new section uses already exists in
+   `index.css`** - `settings-section` (:1239), `settings-section-heading`
+   (:1250), `settings-group` (:1217), `settings-security-form` (:1438),
+   `settings-row__label` (:1290), `settings-row__value` (:1225),
+   `settings-feedback` (:1453), `settings-feedback--success` (:1462),
+   `field-hint-warn` (:2563), `btn` (:1474). A missing class here is silently
+   unstyled with a green build, which is exactly why Deviation 1 (not touching
+   `index.css`) had to be checked rather than accepted.
+2. **The new copy is pure ASCII.** The only non-ASCII lines in the file are
+   three PRE-EXISTING AI1 ellipses ("Waking up the server...", "Turning
+   off/on..."). So the block's character-for-character requirement holds for
+   apostrophes too, not just the em-dash check the report ran.
+3. **Consent gating is real.** `const granted = Boolean(consent?.granted)`
+   (`:98`) guards `{granted ? (...) : null}`, so with consent absent the entire
+   connection section - including step 1 - does not render.
+4. **DEVIATION 3 IS SAFE, and the reasoning is the part worth keeping.**
+   `buildConnectorUrl()` falls back to `window.location.hostname:3000` only when
+   `import.meta.env.DEV`; in a production build with `VITE_API_URL` unset it
+   would yield a bare `/mcp`. That path is UNREACHABLE in any working deploy,
+   because `http.js:5-9` THROWS on a missing `VITE_API_URL` in a production
+   build - the whole app fails to boot before this page can render. `client/.env`
+   is not committed (only `.env.example`), so Vercel supplies the value.
+
+Deviations 1-3 all real and accepted. Deviation 2 (a `"AI access"` section
+heading in the What's New entry) is a structural necessity - `RELEASES` entries
+require `sections[].heading`, and the block specified only Title and Body; using
+the established page label is the right resolution.
+
+**Two cosmetic residuals accepted, neither worth a bounce, both smoke items.**
+(a) The word "Copied" appears TWICE on success - the button label flips to
+`Copied` AND a `settings-feedback--success` div renders `Copied`. Both are
+specified by the block, so the delivery is contract-correct and the redundancy
+is an authoring artefact; Seth may want one of them dropped. (b) `copyStatus`
+never resets, so the button reads `Copied` until the section re-renders, and the
+copy-FAILURE line is a bare `<p>` with no class (the block named no class for
+it).
 
 DISPATCHED August 5, Channel B AUTO rung (`--model auto`), lane
 `C:\dev\worktrees\cursor-lane` branch `cursor/ai5` off `origin/ai-connector-wave`
