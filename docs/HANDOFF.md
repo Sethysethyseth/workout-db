@@ -1,16 +1,17 @@
 # HANDOFF — current state
 
-**Next action (human):** **Say "migrate staging" to unblock the `AiConsent`
-migration, then set the four WorkOS env vars on the `workout-db-staging` Render
-service.** The migration is no longer his to run - gate item 3 was split on
-August 5 and staging migrations are now agent-run behind that trigger phrase
-(prod is still his, always). The Render dashboard stays his. AI1's migration is
-written but unapplied anywhere, and `MCP_RESOURCE_URL` being unset is now PROVEN
-to matter (staging's live discovery document advertises
-`http://localhost:3000/mcp`). Both block any real connector smoke. Values and
-click-path: `docs/specs/workos-staging-handoff.md` section 4. Still open behind
-those, blocking nothing: the prod smoke of `main` `59e27dc` (covers the F-wave
-AND the leftover E-wave pass), and the `docs/parked/*` ruling.
+**Next action (human):** **Set the four WorkOS env vars on the
+`workout-db-staging` Render service** — that is now the ONLY thing blocking a
+real connector smoke. The migration blocker is CLOSED: Seth gave the "migrate
+staging" phrase on August 5 and the first command run under it found the
+`AiConsent` migration already applied (August 4, by Render's own build — detail
+below), so no migration command was needed or run. `MCP_RESOURCE_URL` being
+unset is re-proven to matter: staging's live 401 still advertises
+`resource_metadata="http://localhost:3000/..."`, which no external client can
+authenticate against. Values and click-path:
+`docs/specs/workos-staging-handoff.md` section 4. Still open behind that,
+blocking nothing: the prod smoke of `main` `59e27dc` (covers the F-wave AND the
+leftover E-wave pass), and the `docs/parked/*` ruling.
 
 > **Standing rule:** the line above is filled on EVERY rewrite and is
 > never empty or deferred — one sentence, the single thing SETH does
@@ -110,8 +111,8 @@ connector surface is live and probeable there right now.
 | AI1 | `83d82c8` | consent record + entitlement flag + `/profile/ai` page; migration WRITTEN not applied |
 | AI2 | `5c051bc` | discovery doc, Bearer guard, scope+consent enforcement, connector rate limit |
 | AI3 | `eecd2e9` | MCP server on `/mcp`, four read-only tools, shared analytics data path |
-| AI4 | — | QUEUED. Human-blocked on Render env vars only (dashboard is done) |
-| AI5 | — | QUEUED, serial behind AI4 |
+| AI4 | `c89570e` | WorkOS JWKS verification + Login URI. Landed Aug 5; push released Aug 5 after the curl smoke |
+| AI5 | — | DISPATCHED Aug 5, auto rung, lane 1 off `083c2f3` |
 
 None of the three bounced. AI1 and AI3 needed no reviewer fix; AI2's one
 deviation was the block being wrong, not the delivery (detail in QUEUE.md).
@@ -152,21 +153,25 @@ AI1's block forbids Cursor from running any migration command — it hand-writes
 the `.sql` and stops. The apply stays his, unchanged. Cursor honoured that: only
 `prisma generate` was run.
 
-### THE TWO BLOCKERS — one is now AGENT-RUN behind a phrase (August 5)
+### THE TWO BLOCKERS — blocker 1 is CLOSED (August 5); only blocker 2 remains
 
-Blocker 1 stopped being a human task when gate item 3 was split: a staging
-migration is agent-run once Seth says **"migrate staging"** verbatim, one
-command at a time with approval before each. Prod migrations are unchanged and
-remain his. Blocker 2 is still entirely his (Render dashboard).
+1. **~~The `AiConsent` migration~~ — APPLIED to staging since August 4, and the
+   claim that it was "applied NOWHERE" was wrong against the database.** Seth
+   gave the "migrate staging" phrase on August 5; the first command run under it,
+   `npx prisma migrate status`, reported `Database schema is up to date!`, and a
+   direct read of `_prisma_migrations` confirmed `20260804180000_add_ai_consent`
+   finished at **2026-08-04T22:51:48.737Z**, not rolled back. `AiConsent` exists
+   with all three indexes and `User.aiConnectorEnabled` is `boolean NOT NULL
+   DEFAULT true`. No migration command was needed and none was run — the
+   authorization is unspent.
 
-1. **The `AiConsent` migration is written and applied NOWHERE.**
-   `server/prisma/migrations/20260804180000_add_ai_consent/migration.sql` —
-   additive only (`CREATE TABLE "AiConsent"`, its unique index and cascade FK,
-   `ALTER TABLE "User" ADD COLUMN "aiConnectorEnabled" BOOLEAN NOT NULL DEFAULT
-   true`), zero `DROP`. Until it is applied to staging Neon, `/profile/ai` and
-   `/ai/consent` error, and the connector guard's consent lookup cannot succeed.
-   The server still BOOTS fine without it (Prisma does not validate against the
-   DB at connect time) and no pre-existing route regressed — verified live.
+   **Mechanism, and this is the part to remember:** `server/package.json`'s
+   `render-build` is `prisma generate && prisma migrate deploy`. When staging
+   Render was repointed at this branch on August 4 and AI3 deployed, **the build
+   applied the migration.** "Migrations are a separate track from deploys" holds
+   for prod and for local, but NOT for a Render service whose build command runs
+   `migrate deploy` — there, a deploy IS a migration. Check prod Render's build
+   command before assuming prod behaves differently.
 2. **Checklist step 9: four env vars on `workout-db-staging` Render.** The
    dashboard half is DONE (below). This is now demonstrably load-bearing, not
    bookkeeping: with `MCP_RESOURCE_URL` unset, staging's live discovery document
@@ -269,14 +274,29 @@ wave.** AI2's verifier seam exists partly so `/mcp` can be driven with `curl`
 using an ordinary LogChamp token before the vendor exists — that curl evidence
 is worth more at review than any assertion in the criteria lists.
 
-**That curl path is now OPEN and is the next agent's highest-value move.** `/mcp`
-is live on staging behind the guard, and the v1 verifier accepts an ordinary
-LogChamp Bearer token. Once the migration is applied and consent is granted for
-a test account, `tools/list` and `get_training_summary` can be driven end to end
-with `curl` — no WorkOS, no Claude, no vendor account. That exercises AI1+AI2+AI3
-together and is the only way to catch a seam none of the three lanes touch.
-Registering a throwaway staging account via the API is the established pattern
-(FP5 precedent, HANDOFF-ARCHIVE).
+**That curl path was EXECUTED on August 5 — 26 checks, 26 passed, 0 failed —
+and it is now CLOSED by the AI4 push.** Two throwaway staging accounts were
+registered via `POST /auth/register` (FP5 precedent) and the whole chain was
+driven with real HTTP before AI4 replaced the v1 verifier. What it proved, none
+of which any lane in this wave reaches:
+
+- **AI1** — `/ai/consent` returns `{granted:false, connectorEnabled:true}` for a
+  fresh user; grant sets `grantedAt`; revoke clears it.
+- **AI2** — authenticated-but-unconsented -> **403 `{"error":"forbidden",
+  "reason":"no_consent"}`**, not a 401, so a good caller is never sent into a
+  re-auth loop; garbage token -> 401 with `WWW-Authenticate` carrying
+  `resource_metadata` and `scope="training:read"`; **revoking consent closes
+  `/mcp` on the next request.**
+- **AI3** — `initialize` negotiates **`2025-11-25`** (the deliberately targeted
+  revision); exactly four read-only tools, none accepting a user id/account/email
+  input; `get_training_summary` returns the real analytics shape with
+  `meta.honestyNotes` intact and no raw set array; a second account sees only its
+  own empty world. **Statelessness held across separate HTTP requests** — the
+  property AI3 was designed for, never before exercised over the wire.
+
+The window is gone until the Render env vars are set: AI4's verifier rejects
+ordinary LogChamp tokens, so `/mcp` now 401s everything on staging. That is
+expected, not a regression.
 
 **Lane B (the in-app coach) is still unauthored and still second** — BYO-key
 and hosted over one code path. The hard boundary holds on both lanes: the

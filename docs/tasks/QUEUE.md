@@ -423,7 +423,7 @@ commit, so the window is: apply the `AiConsent` migration -> curl-smoke AI1-AI3
 with an ordinary token -> then push AI4. Held for Seth's call rather than spent
 silently.
 
-QUEUED | ai5-connector-onboarding-ux.md | the in-app connect surface: copyable
+DISPATCHED | ai5-connector-onboarding-ux.md | the in-app connect surface: copyable
 connector address, four-step instructions, honest tier note, What's New entry |
 MODEL auto. Client-only, no new endpoint - the URL derives from
 `VITE_API_URL`. Copy specified VERBATIM including the tier asymmetry recon
@@ -431,6 +431,79 @@ found: custom connectors work on every Claude plan including free (one only),
 but in ChatGPT are limited to Business/Enterprise/Edu. Carries the E3 lesson
 explicitly - acceptance criteria cannot express "discoverable", so smoke is the
 real test.
+
+DISPATCHED August 5, Channel B AUTO rung (`--model auto`), lane
+`C:\dev\worktrees\cursor-lane` branch `cursor/ai5` off `origin/ai-connector-wave`
+083c2f3 - i.e. WITH AI4's `c89570e` in the base, since AI5 is serial behind it.
+The lane was already clean on `cursor/ai5` at that SHA with no DELIVERY.md
+present, so no stale report could read as landed work. Block body and the
+standing footer AGREE this time (`Do NOT add dependencies` both ways), so no
+override note was needed in the dispatch line - unlike AI2/AI3.
+
+**The AI4 push was RELEASED immediately before this dispatch**, and the hold was
+discharged on its own stated terms rather than abandoned. That sequence was:
+apply the `AiConsent` migration -> curl-smoke AI1-AI3 with an ordinary LogChamp
+token -> then push AI4. Step 1 was ALREADY DONE (see the migration correction
+below); step 2 ran live against staging and passed 26/26; step 3 followed.
+`origin/ai-connector-wave` is now `083c2f3`.
+
+### CORRECTION, August 5: the `AiConsent` migration was applied on August 4, by Render
+
+HANDOFF and this file both said the migration was "applied NOWHERE" and that
+applying it was a blocked human step. **That was wrong against the database.**
+Seth gave the "migrate staging" trigger phrase this session; the first command
+run under it - `npx prisma migrate status` - reported `Database schema is up to
+date!`, and a direct read of `_prisma_migrations` confirmed
+`20260804180000_add_ai_consent` finished at **2026-08-04T22:51:48.737Z**, not
+rolled back. `AiConsent` exists with all three indexes
+(`AiConsent_pkey`, `AiConsent_userId_key`, `AiConsent_userId_idx`) and
+`User.aiConnectorEnabled` is `boolean NOT NULL DEFAULT true`. **No migration
+command was needed and none was run.**
+
+**Mechanism, and it is the durable lesson:** `server/package.json`'s
+`render-build` script is `prisma generate && prisma migrate deploy`. When Seth
+repointed staging Render at this branch on August 4 and AI3 deployed, the BUILD
+applied the migration. So "migrations are a separate manual track from deploys"
+is true for prod and for local, but **NOT for a Render service whose build
+command runs `migrate deploy`** - a staging deploy IS a staging migration. Worth
+knowing before the next migration-carrying wave, and worth checking against prod
+Render's build command before anyone assumes prod behaves differently.
+
+### LIVE END-TO-END EVIDENCE, August 5 - AI1+AI2+AI3 driven with real HTTP
+
+The curl path HANDOFF called "the next agent's highest-value move" was executed
+before the AI4 push closed it (AI4 replaces the v1 verifier that accepts an
+ordinary LogChamp Bearer token). Two throwaway staging accounts registered via
+`POST /auth/register` (FP5 precedent). **26 checks, 26 passed, 0 failed.** This
+is the first evidence in the wave that is neither a lane result nor a single
+unauthenticated probe.
+
+- **AI1:** `GET /ai/consent` -> 200 `{granted:false, connectorEnabled:true}` for
+  a fresh user; `POST` sets `grantedAt`; `DELETE` clears it. The consent record
+  and the entitlement column are functionally live, not merely present.
+- **AI2:** authenticated-but-unconsented -> **403 `{"error":"forbidden",
+  "reason":"no_consent"}`**, NOT a 401 - so a correctly-authenticated caller is
+  never sent into a re-auth loop, which is the criterion the block wrote the
+  403/401 split to satisfy. Garbage token -> 401 carrying
+  `WWW-Authenticate: Bearer error="unauthorized", ...,
+  resource_metadata="...", scope="training:read"`. **Revoking consent closes
+  `/mcp` on the very next request (403)** - the AI1/AI2 seam, confirmed live.
+- **AI3:** `initialize` negotiates **`2025-11-25`**, the deliberately targeted
+  revision; `tools/list` returns exactly the four read-only tools and none
+  accepts a user id, account, or email input; `get_training_summary` returns the
+  real analytics shape (`range, workoutCount, perMuscle, perExercise, prs,
+  balance, execution, meta`) with `meta.honestyNotes` intact and no raw set array;
+  `get_recent_sessions` returns `{"sessions":[]}`. A second account sees only its
+  own empty world.
+- **Statelessness holds ACROSS separate HTTP requests** - `tools/list` and
+  `tools/call` succeeded without any persisted session, which is how a real
+  connector talks to a `sessionIdGenerator: undefined` server. That property was
+  designed in AI3 and had never been exercised over the wire until now.
+
+**Re-confirmed with fresh evidence, still open:** the 401's `resource_metadata`
+points at `http://localhost:3000/...`, so `MCP_RESOURCE_URL` remains unset on
+Render. That is Seth's checklist step 9 and it blocks any REAL connector smoke -
+the curl path above deliberately does not need it.
 
 ---
 
