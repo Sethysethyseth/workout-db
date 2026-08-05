@@ -16,6 +16,19 @@
  */
 export const RELEASES = [
   {
+    id: "2026-08-ai-assistant",
+    date: "2026-08-05",
+    title: "Ask your AI assistant about your training",
+    sections: [
+      {
+        heading: "AI access",
+        items: [
+          "You can now connect LogChamp to Claude and ask about your own training - what's moving, what's stalled, how hard you've actually been working. Only your computed summary is shared, never your individual sets, and it stays off until you turn it on. Find it under Profile, then AI access.",
+        ],
+      },
+    ],
+  },
+  {
     id: "2026-07-exercises-tab",
     date: "2026-07-10",
     title: "Every exercise, in one place",
