@@ -437,6 +437,37 @@ did not. Do them one at a time between waves, never mid-wave:
    notes are archive material sitting in files loaded every session. Live
    instructions on top, history to a `docs/specs/` file.
 
+   *Scoped August 5 by a `/doctor` pass (read-only; nothing applied — the
+   AI-wave was mid-flight at 3/5). Exact cuts, ~750 est. tokens/session:*
+
+   - **CLAUDE.md 25-38** — the dated amendment chronology ("Decided July 3,
+     2026 (v3...); amended July 6... July 14... July 20 (v5.3...)"). Move
+     VERBATIM to `docs/specs/autonomous-cursor-dispatch.md`; leave `Three
+     roles:` plus a one-line pointer. ~225 est. tokens. Lines 17-23 (the
+     seat-naming block) STAY — that is a live instruction, not history.
+   - **CLAUDE.md 90-113 + 121-128** — relay steps 1-5 and 7 each restate a
+     skill that already carries the ritual at full fidelity
+     (`author-task-block`, `dispatch-unit`, `land-unit`, `pre-main-review`).
+     Compress to one-line pointers, ~33 lines -> ~8. ~375 est. tokens.
+     **Step 6 stays resident verbatim** — the wave-end HARD STOP is an
+     ordering constraint a session must know BEFORE it picks a skill; buried
+     in a lazy-loaded skill, a session could gate before Seth's smoke.
+     Lines 130-132 (HANDOFF/ARCHIVE channel split) also stay.
+   - **AGENTS.md 32-37, 41-45, 55, 59** — derivable from the repo itself:
+     the framework list (`package.json` says React+Vite/Express/Prisma 6;
+     the repo name is in `git remote`), the standard `npm install -> npm run
+     dev` recipe, the `npm run build` line, and two pure-location Structure
+     entries (`client/src/components`, `server/`). ~150 est. tokens. KEEP the
+     hosting targets, "SEPARATE prod and staging projects", the
+     `prisma.config.ts, not package.json` note, `npm run dev:mobile`, and the
+     whole test-lanes block (46-54) — gotchas, not derivable.
+
+   Same doctor pass found the rest of the setup clean: install, version
+   (2.1.222 = latest), auto mode already default, no hooks, no unused
+   skills/plugins/MCP servers, and no allow-rule gaps. Its only other action
+   was deleting two auto-memory entries that duplicated these files
+   (`cursor-relay-v52-workflow`, `fable-withheld-opus-executes`).
+
 Also agreed in principle, not decided: relaxing gate item 5 so `devDependencies`
 installs are hands-off while new RUNTIME deps still ask. Seth's call.
 
