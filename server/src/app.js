@@ -1,13 +1,18 @@
 const express = require("express");
 const session = require("express-session");
 const cors = require("cors");
-const { rateLimit, ipKeyGenerator } = require("express-rate-limit");
+const { rateLimit } = require("express-rate-limit");
 const pg = require("pg");
 const PgSession = require("connect-pg-simple")(session);
 const routes = require("./routes");
 const attachAuthUser = require("./middleware/attachAuthUser");
 const connectorAuth = require("./middleware/connectorAuth");
 const { handleMcpRequest } = require("./ai/mcpServer");
+const {
+  ipRateLimitKey,
+  connectorRateLimitKey,
+  aiRateLimitKey,
+} = require("./ai/rateLimitKeys");
 const errorHandler = require("./middleware/errorHandler");
 
 const app = express();
@@ -17,6 +22,17 @@ const isProduction = process.env.NODE_ENV === "production";
 /** Connector surface rate limit - generous for normal assistant use. */
 const CONNECTOR_RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
 const CONNECTOR_RATE_LIMIT_MAX = 300;
+
+// Pre-auth ceiling for /mcp, per IP, counting FAILED requests only. This number
+// is a deliberate scale-dependent choice, not a security threshold: it is a
+// flood ceiling against a misbehaving client retrying a rejected token in a
+// loop. It is NOT a credential-guessing defence (guessing a JWT signature is
+// infeasible, so that is not the threat) and NOT a usage budget - the budget is
+// CONNECTOR_RATE_LIMIT_MAX, keyed per identity behind connectorAuth. A 401 is a
+// normal part of an OAuth expiry cycle, so revisit this if the connector ever
+// has many concurrent users behind one egress IP.
+const CONNECTOR_AUTH_FAILURE_WINDOW_MS = 15 * 60 * 1000;
+const CONNECTOR_AUTH_FAILURE_MAX = 600;
 
 if (isProduction && !process.env.SESSION_SECRET) {
   throw new Error("SESSION_SECRET is required in production");
@@ -156,24 +172,44 @@ app.use(
 // Attach req.authUserId from Bearer token (or session fallback).
 app.use(attachAuthUser);
 
+// Runs before connectorAuth, where no connector identity exists yet, so it can
+// only key by IP. skipSuccessfulRequests keeps that tolerable: legitimate
+// connector traffic returns 200 and consumes nothing here, so Anthropic's shared
+// egress IPs do not land every user in one bucket.
+const connectorAuthFailureRateLimit = rateLimit({
+  windowMs: CONNECTOR_AUTH_FAILURE_WINDOW_MS,
+  limit: CONNECTOR_AUTH_FAILURE_MAX,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: true,
+  keyGenerator: ipRateLimitKey,
+});
+
+// The real connector budget. Mounted after connectorAuth so req.connectorUserId
+// is populated when the key is derived.
 const connectorRateLimit = rateLimit({
   windowMs: CONNECTOR_RATE_LIMIT_WINDOW_MS,
   limit: CONNECTOR_RATE_LIMIT_MAX,
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator(req) {
-    const identity = req.connectorUserId ?? req.authUserId;
-    if (identity) return `id:${identity}`;
-    return `ip:${ipKeyGenerator(req.ip)}`;
-  },
+  keyGenerator: connectorRateLimitKey,
 });
 
-app.use("/mcp", connectorRateLimit);
-app.use("/ai", connectorRateLimit);
+// Separate instance, so a connector flood cannot consume the /ai allowance.
+const aiRateLimit = rateLimit({
+  windowMs: CONNECTOR_RATE_LIMIT_WINDOW_MS,
+  limit: CONNECTOR_RATE_LIMIT_MAX,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: aiRateLimitKey,
+});
+
+app.use("/mcp", connectorAuthFailureRateLimit);
+app.use("/ai", aiRateLimit);
 
 // MCP Streamable HTTP (2025-11-25): POST messages + GET SSE channel.
 // connectorAuth sets req.connectorUserId; a fresh server is built per request.
-app.all("/mcp", connectorAuth, handleMcpRequest);
+app.all("/mcp", connectorAuth, connectorRateLimit, handleMcpRequest);
 
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "ok" });
