@@ -657,6 +657,45 @@ right call. **Closing this properly needs a live two-identity request check
 against `RateLimit-*` headers, which is only possible once the WorkOS env vars
 are set.**
 
+QUEUED | ai7-drop-unissuable-connector-scope.md | stop advertising and requiring
+`training:read`, a scope WorkOS AuthKit cannot issue | MODEL auto. **N goes
+6 -> 7 on August 6.** Authored from a LIVE smoke failure, not a lane: with the
+four Render env vars finally set, adding the custom connector in Claude died at
+`https://claude.ai/api/mcp/auth_callback?error=invalid_scope`, surfaced to the
+user as the misleading `state: Field required` (Claude's callback validating
+`state` on an ERROR redirect, which by definition carries none). AuthKit's
+metadata advertises a FIXED vocabulary - `["email","offline_access","openid",
+"profile"]` - and the dashboard has no affordance to add a custom scope
+(Connect -> Configuration, MCP Auth, and MCP resource indicators all checked
+live in-browser, August 6; nothing was changed, every dialog cancelled).
+
+**Provenance of the defect, so the class of mistake is visible.**
+`ai-layer.md:285` asserts "the tokens are opaque to third-party clients, **the
+scopes are ours**, and the user mapping stays in our database". That is TRUE
+under Path 2 (the in-house authorization server) and FALSE under Path 1 (the
+vendor), and the sentence sits inside the paragraph arguing Path 1's lock-in
+risk is bounded - so a Path-2 property was carried across the pivot as though
+it survived it. AI1 then hardcoded it as contract ("`CONNECTOR_SCOPE` - the
+single v1 scope string ... never a literal at a call site"), AI2 built 403
+`insufficient_scope` enforcement on it, and nothing downstream re-derived the
+premise against what WorkOS can actually issue.
+
+**Why NO evidence in this wave could have caught it.** AIR3 recon enumerated
+audience mismatch, 302-vs-303, and `aud` string-vs-array, but never asked
+whether the AS could ISSUE our scope. The lanes never load a route. And the
+wave's strongest evidence - the live 26/26 run of August 5 - went through AI2's
+swappable verifier seam with ordinary LogChamp tokens, which never consults
+AuthKit's scope vocabulary at all. **The seam that made early verification
+possible is the same seam that made this class of defect invisible.** That is
+the durable lesson: a verification seam that stands in for the vendor cannot
+test the vendor's constraints.
+
+Removing the scope is NOT a security relaxation of anything load-bearing:
+audience validation (`tokenVerifier.js:49-52`), the `sub`-to-user mapping, the
+consent kill switch, the entitlement flag, and four read-only tools that accept
+no user identifier are all untouched. The scope was a fourth belt the
+authorization server has no buckle for. Seth cleared authoring on August 6.
+
 ---
 
 F-wave (effort MANDATORY), opened August 2, 2026 (Opus frontier seat). FOUR

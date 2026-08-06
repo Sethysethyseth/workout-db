@@ -103,6 +103,34 @@ wins.
    on that surface. The MCP tool must attach it rather than shipping bare
    numbers - an absent caveat reads as a confident number.
 
+**CORRECTION 6, added August 6, 2026 - "the scopes are ours" is FALSE on
+Path 1.** Section 4.2 below says, in the vendor-lock-in paragraph: "the tokens
+are opaque to third-party clients, **the scopes are ours**, and the user mapping
+stays in our database". The middle clause is true only under **Path 2** (the
+in-house authorization server). On **Path 1 - the path actually taken** - the
+scope vocabulary belongs to the VENDOR. WorkOS AuthKit issues a fixed set
+(`email`, `offline_access`, `openid`, `profile`) and offers no dashboard
+affordance to define a custom one; verified live in the WorkOS dashboard on
+August 6. The custom scope `training:read` that AI1 introduced and AI2 enforced
+was therefore unissuable from the day the vendor was chosen, and it broke the
+real connector handshake with `error=invalid_scope` at the first live attempt.
+AI7 removes it.
+
+**The generalisable rule, which is the point of recording this:** when a
+capability is delegated to a vendor, every property the design assumed while it
+was still in-house must be RE-DERIVED against that vendor's actual limits, not
+inherited. A pivot in who provides a capability invalidates the premises that
+were true only because we provided it. The lock-in paragraph was arguing
+reversibility and reached for properties that made the argument work; nothing
+downstream re-checked them.
+
+**Corollary about verification seams.** AI2's swappable token verifier let the
+chain be exercised end to end before the vendor existed - genuinely valuable,
+and it produced the wave's 26/26 live run. But a seam that STANDS IN for a
+vendor cannot test that vendor's constraints, and the green result read as
+broader coverage than it was. Any seam of this shape must carry an explicit
+written list of what it cannot prove.
+
 One further finding that changes who this feature serves, though not what we
 build: **custom connectors are available on every Claude tier including Free**
 (one connector on Free), but in **ChatGPT they are limited to Business,
