@@ -1,5 +1,11 @@
 # HANDOFF — current state
 
+> **WHERE WE ARE (Aug 8):** AI-wave **7/7 landed**, `ai-connector-wave` at
+> `cac1363`, staging deployed. Waiting on ONE thing: Seth's smoke, Part B —
+> the connector handshake in Claude, which AI7 just unblocked. Gate is
+> blocked behind that sign-off. Nothing is in flight; no agent action is
+> pending.
+
 **Next action (human):** **Re-try the connector handshake in Claude against
 staging, then sign off on the wave.** AI7 removed the `training:read` scope that
 killed your August 6 attempt at `error=invalid_scope`, and it is deployed —
