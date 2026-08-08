@@ -7,8 +7,11 @@ Statuses: DRAFT / QUEUED / DISPATCHED / AWAITING-REVIEW / LANDED <sha> / BOUNCED
 ## Active
 
 AI-wave (the connector: LogChamp inside the user's own AI assistant), opened
-August 4, 2026 (Opus frontier seat). **SIX units** on branch
-`ai-connector-wave`, off `main` 59e27dc - **N went 5 -> 6 on August 5**, when
+August 4, 2026 (Opus frontier seat). **NINE units** on branch
+`ai-connector-wave`, off `main` 59e27dc - N went 5 -> 6 on August 5, 6 -> 7 on
+August 6, and **7 -> 9 on August 8** when Seth's Part B smoke finally ran and
+failed (AI8 the auth fix, AI9 the per-client instructions - both authored from
+that failure; see the end of this wave's section). The August 5 bump was when
 Seth asked for the rate-limiter finding to be authored as its own unit (AI6)
 rather than carried into the gate as a known defect. That finding was predicted
 at AI4's dispatch to need its own unit; AI4 landing is what activated it. Implements `docs/specs/ai-layer.md` Lane A end to end, per
@@ -788,6 +791,106 @@ in this delivery demonstrates that the Claude connector handshake now COMPLETES
 Seth can run. AI7 removes the one cause identified from the August 6 live
 failure; it cannot show there is no second cause behind it. Treat a successful
 Part B smoke as the first real evidence, not a confirmation.
+
+**That Part B smoke RAN on August 8 and FAILED - N goes 7 -> 9.** The prediction
+directly above was correct: there was a second cause behind the scope defect,
+and in fact three stacked ones. Adding the connector in Claude died on a Vercel
+`404 DEPLOYMENT_NOT_FOUND`. Diagnosis was done in-seat (Opus) rather than via a
+diagnosis lane, because the surface is connector auth - a standing frontier
+escalation trigger. The three defects, all verified rather than reasoned:
+
+1. `connectorAuthController.js:7-15` used the FIRST entry of `CLIENT_ORIGIN` - a
+   CORS ALLOWLIST - as the canonical app origin. On staging that entry is a dead
+   per-deployment Vercel URL. The app itself was unaffected because
+   `isAllowedVercelPreviewOrigin` (`app.js:68-79`) pattern-matches
+   `workout-*.vercel.app` for CORS, so the stale entry never mattered until
+   something derived a REDIRECT from it.
+2. `LoginPage.jsx:30/39` cannot follow an absolute cross-origin `next`. Proven by
+   executing react-router's own resolver:
+   `resolvePath("https://workout-db-staging.onrender.com/ai/connector/login?...", "/login")`
+   -> `/login/https:/workout-db-staging.onrender.com/ai/connector/login`, which
+   matches `App.jsx`'s `<Route path="*">` and silently bounces to `/`. AI4's block
+   said to follow ProtectedRoute's `?next=` convention, but ProtectedRoute only
+   ever passes RELATIVE paths - the convention did not cover this case.
+3. **The structural one.** The session cookie carries `Partitioned`
+   (`app.js:161-168`) - proven by serializing the real config through
+   express-session's own `Cookie` class, yielding
+   `HttpOnly; Secure; Partitioned; SameSite=None`. CHIPS keys the cookie to the
+   TOP-LEVEL site, so an API-origin Login URI reached by top-level navigation
+   from WorkOS is in a different partition and can NEVER see the session.
+   Fixing 1 and 2 alone yields an infinite login loop. There is no config-only
+   workaround.
+
+Root cause of all three: AI4 placed the Login URI on the API origin. AI8 moves it
+to the client origin, which removes all three at once.
+
+**Authoring recon: TWO parallel Cursor report lanes, August 8** (R1 WorkOS
+Standalone Connect doc facts, R2 per-client MCP connector setup steps). Both
+session-scoped, both report-only, logged here rather than as QUEUE units. What
+they moved:
+
+1. **The fix is permitted.** WorkOS documents no same-origin or allowlist
+   constraint tying the Login URI to the MCP resource - separate dashboard
+   settings, and WorkOS's own example Login URI is an app hostname. AI8 rests
+   on this.
+2. **The completion call must stay server-side** - docs authenticate it with the
+   secret `WORKOS_API_KEY`. AI8's XHR-to-our-API shape already respects this;
+   now sourced rather than assumed.
+3. **A documented behaviour we violate:** WorkOS recommends handling an invalid
+   `external_auth_id` gracefully; `connectorAuthController.js:76-82` returns a
+   plain 500. AI8 changes this to a 409 with a human-readable client message -
+   it matters more after AI8, because the flow now includes a login detour.
+4. **Four things are UNDOCUMENTED and stay unknown:** `external_auth_id` TTL,
+   single-use semantics, repeat-`complete` behaviour, and `redirect_uri` expiry.
+   R1 searched properly and returned COULD NOT SOURCE rather than inventing a
+   number. AI8 therefore cannot assume a window - it degrades gracefully and the
+   real answer comes from smoke.
+5. **Grok DOES support custom remote MCP connectors** (`docs.x.ai/grok/connectors`),
+   so Seth's four-client scope is viable.
+6. **The shipped ChatGPT copy is wrong.** OpenAI's own docs put custom MCP behind
+   Settings -> Security and login -> Developer mode, then Plugins - NOT
+   "Settings -> Connectors", which appears only in third-party blogs.
+7. **Protocol targeting holds.** Claude's connector docs explicitly list
+   `2025-11-25` among supported auth specs, and no vendor doc says any of the
+   three requires `2026-07-28` or dropped `2025-11-25`. Ecosystem note for a
+   FUTURE unit, deliberately not scoped here: MCP's current revision is now
+   `2026-07-28`, which drops `initialize` and `Mcp-Session-Id` entirely.
+
+**A dispatch-ritual gap this recon exposed, worth fixing in the skill.**
+`dispatch-unit` section 2 gates a lane on `git status` being clean, but
+`DELIVERY.md` is gitignored (`.gitignore:48`), so a worktree holding an unlanded
+delivery reads as CLEAN. Both recon lanes still had August 4 AIR2/AIR3
+`DELIVERY.md` files sitting in them, and a naive readiness check matched those
+stale reports as if they were fresh. Caught by timestamp, not by the
+precondition. Mitigations used here: report written to a distinct filename
+(`RECON-R1.md` / `RECON-R2.md`), and freshness confirmed by mtime before being
+read as fuel.
+
+**Serialization: AI8 and AI9 may run in PARALLEL.** FILES TO TOUCH are fully
+disjoint - AI8 is `App.jsx` / `LoginPage.jsx` / `aiApi.js` / `ConnectorLoginPage.jsx`
+plus the server side; AI9 is `AiConnectorPage.jsx` / a new component / `index.css`.
+No file, test, CSS, or barrel overlap. They still land SERIALLY through one
+reviewer.
+
+QUEUED | ai8-connector-login-uri-to-client.md | move the WorkOS Login URI to the
+client origin as a React route that XHRs the API, killing the dead-origin
+redirect, the absolute-`next` dead end, and the partitioned-cookie loop |
+MODEL auto. Deletes the server-side browser flow (`GET /ai/connector/login`,
+`getClientOrigin`, `currentRequestUrl`) rather than patching it, so nothing
+derives a redirect base from a CORS allowlist any more. Adds
+`POST /ai/connector/authorize` behind `authRequired` plus a pure
+`connectorAuthorizeDecision` helper in `server/test/lib/` reach. **Inert until
+Seth repoints the Login URI in the WorkOS dashboard** - human checklist in the
+block.
+
+QUEUED | ai9-per-client-connector-instructions.md | replace the single hardcoded
+"In Claude" step list with a four-client accordion (Claude open by default,
+ChatGPT, Grok, generic) | MODEL auto. All copy is VERBATIM SPEC sourced from
+RECON-R2 with primary-vendor citations; the block forbids Cursor rewriting any
+menu path from its own knowledge and names both stale paths that must not
+reappear. Introduces the codebase's FIRST accordion pattern - there is none to
+copy, so the block carries the a11y contract (real button, `aria-expanded`,
+`aria-controls`, `useId`, independent open/close).
 
 ---
 
