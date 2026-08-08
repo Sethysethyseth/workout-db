@@ -872,7 +872,7 @@ plus the server side; AI9 is `AiConnectorPage.jsx` / a new component / `index.cs
 No file, test, CSS, or barrel overlap. They still land SERIALLY through one
 reviewer.
 
-QUEUED | ai8-connector-login-uri-to-client.md | move the WorkOS Login URI to the
+LANDED bca098b | ai8-connector-login-uri-to-client.md | move the WorkOS Login URI to the
 client origin as a React route that XHRs the API, killing the dead-origin
 redirect, the absolute-`next` dead end, and the partitioned-cookie loop |
 MODEL auto. Deletes the server-side browser flow (`GET /ai/connector/login`,
@@ -883,7 +883,33 @@ derives a redirect base from a CORS allowlist any more. Adds
 Seth repoints the Login URI in the WorkOS dashboard** - human checklist in the
 block.
 
-QUEUED | ai9-per-client-connector-instructions.md | replace the single hardcoded
+DISPATCHED August 8, Channel B AUTO rung (`--model auto`), lane
+`C:\dev\worktrees\cursor-lane` on `cursor/ai8` off `ai-connector-wave` 4349cc1,
+in PARALLEL with AI9. LANDED August 8 same session, NO BOUNCE, ONE REVIEWER FIX.
+Scope exact (8 files = FILES TO TOUCH). Lanes re-run FRESH by the reviewer in
+the lane, never read from the report: **unit 247/247 in 22 suites** (up from
+242/21 - the +5/+1 is `connectorAuthorize.test.js`, matching the block's five
+mandated input->output pairs), client build green, `require('./src/app.js')`
+exit 0, all four acceptance greps empty, check-hex clean.
+
+**REVIEWER FIX: the completion call was not latched.** The delivery guarded
+late `setState` with a `cancelled` flag, which does NOT prevent a second POST.
+`main.jsx:12` has StrictMode on (double-invokes effects in dev), and the
+effect's dep array carries `currentUser` - an OBJECT whose identity changes on
+any auth refresh - so a second `authorizeConnector` call was reachable. Since
+R1 could not source whether `external_auth_id` is single-use, a duplicate
+completion could burn a handshake that actually succeeded and 409 the user out
+of it. Fixed with a `useRef` latch keyed on the id, comment explaining why.
+
+**Seams no lane can reach, read directly and clean:** the contract seam holds
+(server returns `{ redirectUri }`, `ConnectorLoginPage:31` reads
+`data.redirectUri`; 403 -> consent, 409 -> expired both mapped off
+`ApiError.status`); the new route is ungated inside `AuthLayout` alongside
+`/login`, so a signed-out hit renders rather than losing the id to
+`ProtectedRoute`; `grep -rn "connectorLogin"` across `server/src`, `server/test`,
+and `client/src` is EMPTY, so the deleted export left no dangling reference.
+
+LANDED 43a4ceb | ai9-per-client-connector-instructions.md | replace the single hardcoded
 "In Claude" step list with a four-client accordion (Claude open by default,
 ChatGPT, Grok, generic) | MODEL auto. All copy is VERBATIM SPEC sourced from
 RECON-R2 with primary-vendor citations; the block forbids Cursor rewriting any
@@ -891,6 +917,44 @@ menu path from its own knowledge and names both stale paths that must not
 reappear. Introduces the codebase's FIRST accordion pattern - there is none to
 copy, so the block carries the a11y contract (real button, `aria-expanded`,
 `aria-controls`, `useId`, independent open/close).
+
+DISPATCHED August 8, Channel B AUTO rung (`--model auto`), lane
+`C:\dev\worktrees\cursor-lane-2` on `cursor/ai9` off `ai-connector-wave` 4349cc1,
+in PARALLEL with AI8 - the wave's FIRST parallel content lanes, permitted
+because FILES TO TOUCH were fully disjoint. Both landed serially through one
+reviewer, as the fan-out rule requires. LANDED August 8 same session, NO BOUNCE,
+ONE REVIEWER FIX. Scope exact (3 files = FILES TO TOUCH).
+
+**The copy was audited line-by-line against the block, because fabricated menu
+paths were this unit's entire risk surface.** All four sections match the
+verbatim spec; both forbidden paths are absent (`grep` for
+`Settings > Integrations\|Settings -> Connectors` empty). REVIEWER FIX: one copy
+inconsistency, and it was the BLOCK's error faithfully reproduced, not Cursor's -
+"organisation Owner" sitting beside the literal menu name "Organization
+settings" in the same sentence. Corrected to American spelling.
+
+**Accepted deviation, verified real:** Vite/rolldown rejects a bare `>` in JSX
+text, so `Customize > Connectors` ships as a string expression
+(`{"Go to Customize > Connectors."}`). Rendered copy is unchanged and the
+acceptance grep still matches. A parser constraint, not a copy rewrite.
+
+**The `var()` check `check-hex` cannot do:** all five custom properties the new
+accordion CSS references (`--color-border`, `--color-interactive`,
+`--color-surface-2`, `--color-text`, `--color-text-secondary`) were grepped
+against `index.css` and all resolve. An undefined token is silently transparent
+and green in every lane.
+
+**LANE ENVIRONMENT NOTE, not a regression - worth knowing before the gate.**
+Two suites failed to RUN in `cursor-lane-2` (`Cannot find module
+'express-rate-limit'`), and the MAIN TREE fails the same way: `server/node_modules`
+in `C:\Users\Sethy\OneDrive\Desktop\Cursor\workout-db` has never been installed
+since AI2 declared `express-rate-limit` on August 4, because every unit of this
+wave was built and verified in lane worktrees. Zero assertion failures in either
+case - purely a missing package. Authoritative verification was therefore run in
+`cursor-lane` (which has correct `node_modules`) checked out at the FINAL merged
+HEAD 43a4ceb: **22 suites / 247 tests green**, plus client build and check-hex
+green in the main tree. Seth may want to `npm install` in `server/` at some
+point; it is not blocking and was deliberately NOT run unasked (gate item 5).
 
 ---
 

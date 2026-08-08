@@ -1,3 +1,60 @@
+## ARCHIVED August 8, 2026 (forty-sixth session, Opus) - two AI-wave sections
+## moved verbatim out of HANDOFF at the AI8/AI9 landing, newest first. Both are
+## closed history: AI7's defect is superseded by AI8's, and the 26/26 run is
+## fixed August 5 evidence. Neither was summarized.
+
+### (from HANDOFF) AI7 and the August 6 live failure
+
+### AI7 and the August 6 live failure — read this before smoking Part B
+
+With the four Render env vars finally set, adding the custom connector in Claude
+died at `https://claude.ai/api/mcp/auth_callback?error=invalid_scope`, surfaced
+to the user as the misleading `state: Field required` (Claude's callback
+validating `state` on an ERROR redirect, which by definition carries none).
+**Cause: WorkOS AuthKit advertises a FIXED scope vocabulary** —
+`["email","offline_access","openid","profile"]` — with no dashboard affordance
+for a custom one, while our protected-resource metadata advertised
+`scopes_supported: ["training:read"]`. Claude dutifully requested it; AuthKit
+refused. AI7 removes the scope as a protocol assertion and as an access control.
+
+**Not a security relaxation.** Audience validation
+(`tokenVerifier.js:49-52`), the `sub`-to-user mapping, the consent kill switch,
+the entitlement flag, and four read-only tools that accept no user identifier
+are all untouched. `CONNECTOR_SCOPE` survives as a local descriptor on the
+`AiConsent` audit row. The scope was a fourth belt the authorization server has
+no buckle for.
+
+**The durable lesson, worth more than the fix.** `ai-layer.md:285` asserted "the
+scopes are ours" — TRUE under Path 2 (in-house authorization server), FALSE
+under Path 1 (the vendor), and it was carried across the pivot as though it
+survived. AI1 hardcoded it, AI2 enforced it, nothing re-derived it against what
+WorkOS can actually issue. **And no evidence in this wave could have caught it:**
+the lanes never load a route, and the wave's strongest evidence — the live 26/26
+run — went through AI2's swappable verifier seam with ordinary LogChamp tokens,
+which never consults AuthKit's scope vocabulary at all. **A verification seam
+that stands in for the vendor cannot test the vendor's constraints.**
+
+**AI7 proves the cause is removed; it does NOT prove the handshake completes.**
+Every lane is pure-function. Treat a successful Part B smoke as the first real
+evidence, not a confirmation.
+
+
+### (from HANDOFF) The live 26/26 run, August 5
+
+### The wave's other strongest evidence — the live 26/26 run, August 5
+
+Before AI4 closed the window, the whole chain was driven against staging with
+real HTTP using two throwaway accounts. **26 checks, 26 passed** — consent
+grant/revoke, 403-not-401 for unconsented, `WWW-Authenticate` carrying
+`resource_metadata`, revocation closing `/mcp` on the next request, `initialize`
+negotiating `2025-11-25`, exactly four tools none taking a user id, a second
+account seeing only its own world, and statelessness holding across separate
+HTTP requests. Detail in QUEUE.md. That window is closed (AI4's verifier rejects
+ordinary LogChamp tokens); Part B is its successor.
+
+---
+
+
 ## ARCHIVED August 8, 2026 (forty-fifth session, Opus resident relay) - the AI7
 ## SALVAGE. Session log, verbatim, newest first.
 

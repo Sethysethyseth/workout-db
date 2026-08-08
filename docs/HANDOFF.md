@@ -1,18 +1,22 @@
 # HANDOFF — current state
 
-> **WHERE WE ARE (Aug 8):** AI-wave **7/7 landed**, `ai-connector-wave` at
-> `cac1363`, staging deployed. Waiting on ONE thing: Seth's smoke, Part B —
-> the connector handshake in Claude, which AI7 just unblocked. Gate is
-> blocked behind that sign-off. Nothing is in flight; no agent action is
-> pending.
+> **WHERE WE ARE (Aug 8, later):** AI-wave **9/9 landed**,
+> `ai-connector-wave` at `43a4ceb`, staging deployed. The Part B smoke RAN
+> and FAILED on a Vercel 404; AI8 fixes the three stacked defects behind it
+> and AI9 adds per-client setup instructions. Waiting on ONE thing: Seth
+> repoints the WorkOS Login URI (AI8 is INERT until he does), then re-smokes.
+> Gate is blocked behind that sign-off. Nothing is in flight; no agent
+> action is pending.
 
-**Next action (human):** **Re-try the connector handshake in Claude against
-staging, then sign off on the wave.** AI7 removed the `training:read` scope that
-killed your August 6 attempt at `error=invalid_scope`, and it is deployed —
-`origin/ai-connector-wave` is at `d925bd2`. Part B of "CONSOLIDATED WAVE SMOKE"
-below is the pass that matters; Part A is quick regression. The four Render env
-vars are already set, so nothing blocks you this time. Nothing goes to the
-pre-main gate until you sign off. Open behind that, blocking nothing: the prod
+**Next action (human):** **Repoint the WorkOS Login URI to the CLIENT origin,
+then re-try the connector handshake.** In the WorkOS dashboard (Connect ->
+Configuration, labelled "External Sign-in URI"), change it from
+`https://workout-db-staging.onrender.com/ai/connector/login` to
+`https://<staging client origin>/connector/login`. **AI8 does nothing until this
+is done** — the server-side route it replaced has been deleted, so the old value
+now points at nothing. Then run Part B of "CONSOLIDATED WAVE SMOKE" below;
+`origin/ai-connector-wave` is at `43a4ceb`. Nothing goes to the pre-main gate
+until you sign off. Open behind that, blocking nothing: the prod
 smoke of `main` `59e27dc` (covers the F-wave AND the leftover E-wave pass), the
 `docs/parked/*` ruling, and the gate-item-5 call on declaring `zod` / pinning
 Node.
@@ -23,8 +27,17 @@ Node.
 > explicitly. Dogfoods the shell repo's decision-10 no-dangling-next-
 > action requirement; `land-unit` section 5 keeps it maintained.
 
-**Updated:** August 8, 2026, forty-fifth session (Opus, resident relay — **the
-AI7 SALVAGE; the wave is now 7/7**). This session opened cold, found HANDOFF
+**Updated:** August 8, 2026, forty-sixth session (Opus, frontier + resident relay
+— **the Part B smoke FAILED; AI8+AI9 authored, dispatched in parallel, and
+landed; the wave is now 9/9**). Seth hit `404 DEPLOYMENT_NOT_FOUND` adding the
+connector. Diagnosed in-seat: three stacked defects, all root-caused to AI4's
+Login URI placement, the third (partitioned cookie) structural and not
+config-fixable. Two Cursor recon lanes settled the WorkOS doc facts and the
+per-client setup steps; both blocks were authored from them and run as the
+wave's first parallel content lanes. Full session log verbatim at the top of
+`docs/HANDOFF-ARCHIVE.md`. Prior: August 8, forty-fifth session (Opus, resident
+relay — **the
+AI7 SALVAGE; the wave went 7/7**). That session opened cold, found HANDOFF
 three days stale and wrong about reality, swept ground truth, discovered the
 August 6 AI7 run had died mid-flight with its code complete and its evidence
 missing, salvaged it by re-dispatching into the same dirty lane under a
@@ -35,7 +48,7 @@ item 3 split, `cursor-watch` rebuilt); August 4, forty-second (AI1–AI3 + the
 prod-deploy incident); August 4, forty-first (the AI wave authored); August 4,
 fortieth (F-wave gated and merged to `main` `59e27dc`). All archived.
 
-**THE WAVE IS AT ITS HARD STOP.** Seven units landed, nothing queued, nothing in
+**THE WAVE IS AT ITS HARD STOP.** Nine units landed, nothing queued, nothing in
 flight. Per `land-unit` section 6 the relay session ends here: Seth smokes
 FIRST, then a frontier seat runs `pre-main-review`. Do not start the gate, do
 not run `/code-review`, do not read the branch diff for review purposes until
@@ -44,9 +57,9 @@ partly re-run after it.
 
 ---
 
-## The AI-wave — **7/7 LANDED. AWAITING SETH'S SMOKE.**
+## The AI-wave — **9/9 LANDED. AWAITING SETH'S SMOKE.**
 
-Branch `ai-connector-wave` off `main` `59e27dc`; `origin` HEAD `d925bd2`.
+Branch `ai-connector-wave` off `main` `59e27dc`; `origin` HEAD `43a4ceb`.
 **Staging Render tracks THIS BRANCH**, so every push here deploys to
 `workout-db-staging`. **RUNBOOK step 7 is NOT a no-op for this wave** — staging
 must be repointed back to `main` after the merge.
@@ -60,48 +73,78 @@ must be repointed back to `main` after the merge.
 | AI5 | `9a2f63a` | the connect surface: copyable address, four steps, tier note |
 | AI6 | `c1398a8` | rate-limit the connector by identity, not IP (fixes finding 1) |
 | AI7 | `d925bd2` | drop `training:read` — the scope AuthKit cannot issue |
+| AI8 | `bca098b` | move the Login URI to the client origin (the Aug 8 smoke fix) |
+| AI9 | `43a4ceb` | per-client setup instructions: Claude, ChatGPT, Grok, generic |
 
 **N went 5 -> 6 on August 5** (Seth asked for the rate-limiter finding to be its
-own unit) and **6 -> 7 on August 6** (the live handshake failure). ZERO bounces
-across all seven units; two reviewer fixes in the whole wave, both in early
-units. **Full per-unit audit reasoning lives in `docs/tasks/QUEUE.md`** — long
-by design this wave, because the lanes cover almost nothing here.
+own unit), **6 -> 7 on August 6** (the live handshake failure), and **7 -> 9 on
+August 8** (the Part B smoke ran and failed — AI8 the fix, AI9 the instructions).
+ZERO bounces across all nine units; four reviewer fixes total. **Full per-unit
+audit reasoning lives in `docs/tasks/QUEUE.md`** — long by design this wave,
+because the lanes cover almost nothing here.
 
-Implements `docs/specs/ai-layer.md` Lane A end to end. Blocks are AI1–AI7 under
+Implements `docs/specs/ai-layer.md` Lane A end to end. Blocks are AI1–AI9 under
 `docs/tasks/`.
 
-### AI7 and the August 6 live failure — read this before smoking Part B
+### AI8 and the August 8 live failure — the connector 404
 
-With the four Render env vars finally set, adding the custom connector in Claude
-died at `https://claude.ai/api/mcp/auth_callback?error=invalid_scope`, surfaced
-to the user as the misleading `state: Field required` (Claude's callback
-validating `state` on an ERROR redirect, which by definition carries none).
-**Cause: WorkOS AuthKit advertises a FIXED scope vocabulary** —
-`["email","offline_access","openid","profile"]` — with no dashboard affordance
-for a custom one, while our protected-resource metadata advertised
-`scopes_supported: ["training:read"]`. Claude dutifully requested it; AuthKit
-refused. AI7 removes the scope as a protocol assertion and as an access control.
+Adding the connector died on Vercel's `404 DEPLOYMENT_NOT_FOUND`. Diagnosed
+in-seat (Opus — connector auth is a standing escalation trigger). **Three
+stacked defects, all verified rather than reasoned**, root-caused to AI4 putting
+the Login URI on the API origin:
 
-**Not a security relaxation.** Audience validation
-(`tokenVerifier.js:49-52`), the `sub`-to-user mapping, the consent kill switch,
-the entitlement flag, and four read-only tools that accept no user identifier
-are all untouched. `CONNECTOR_SCOPE` survives as a local descriptor on the
-`AiConsent` audit row. The scope was a fourth belt the authorization server has
-no buckle for.
+1. The redirect base was the FIRST entry of `CLIENT_ORIGIN` — a CORS
+   ALLOWLIST — whose staging value is a dead per-deployment Vercel URL. The app
+   was unaffected because `isAllowedVercelPreviewOrigin` pattern-matches
+   `workout-*.vercel.app`, so the stale entry never mattered until something
+   derived a REDIRECT from it.
+2. `LoginPage` could not follow an absolute cross-origin `next`. Proven by
+   running react-router's own resolver: it returns
+   `/login/https:/workout-db-staging.onrender.com/ai/connector/login`, which the
+   catch-all route silently bounces to `/`.
+3. **The structural one:** the session cookie carries `Partitioned` (proven by
+   serializing the real config: `HttpOnly; Secure; Partitioned; SameSite=None`).
+   CHIPS keys it to the TOP-LEVEL site, so an API-origin Login URI reached by
+   top-level navigation from WorkOS is in a different partition and can NEVER
+   see the session. Fixing 1 and 2 alone yields an INFINITE LOGIN LOOP — there
+   was no config-only workaround.
 
-**The durable lesson, worth more than the fix.** `ai-layer.md:285` asserted "the
-scopes are ours" — TRUE under Path 2 (in-house authorization server), FALSE
-under Path 1 (the vendor), and it was carried across the pivot as though it
-survived. AI1 hardcoded it, AI2 enforced it, nothing re-derived it against what
-WorkOS can actually issue. **And no evidence in this wave could have caught it:**
-the lanes never load a route, and the wave's strongest evidence — the live 26/26
-run — went through AI2's swappable verifier seam with ordinary LogChamp tokens,
-which never consults AuthKit's scope vocabulary at all. **A verification seam
-that stands in for the vendor cannot test the vendor's constraints.**
+**Two Cursor recon lanes (R1 WorkOS docs, R2 per-client setup) fed both blocks.**
+R1 confirmed WorkOS documents no same-origin constraint, so the move is
+permitted, and that the completion call must stay server-side (secret API key).
+**R1 could NOT source four things and they remain unknown:** `external_auth_id`
+TTL, single-use semantics, repeat-`complete` behaviour, and `redirect_uri`
+expiry. AI8 therefore assumes no window and degrades gracefully; only smoke can
+answer these. R2 found the shipped ChatGPT copy pointed at a path that exists
+only in third-party blogs, and confirmed no vendor requires MCP `2026-07-28`
+yet — so this wave's `2025-11-25` targeting holds.
 
-**AI7 proves the cause is removed; it does NOT prove the handshake completes.**
-Every lane is pure-function. Treat a successful Part B smoke as the first real
-evidence, not a confirmation.
+**Deferred, deliberately not scoped:** MCP's current revision is now
+`2026-07-28`, which drops `initialize` and `Mcp-Session-Id` entirely. Hosted
+assistants have not moved, so nothing is broken — but a dual-era server is a
+future unit.
+
+**A dispatch-ritual gap this session exposed.** `dispatch-unit` gates a lane on
+`git status` being clean, but `DELIVERY.md` is gitignored, so a worktree holding
+an unlanded delivery reads as CLEAN. Two recon lanes still held August 4
+`DELIVERY.md` files and a naive readiness check matched them as fresh; caught by
+timestamp, not by the precondition. Worth adding `--ignored` or an explicit
+`DELIVERY.md` check to the skill.
+
+**Main-tree `node_modules` is stale** — `express-rate-limit` (declared by AI2)
+was never installed there, because every unit of this wave was built in lane
+worktrees. Two suites fail to LOAD in the main tree as a result. Not a
+regression, zero assertion failures; final verification was run in
+`cursor-lane` at the merged HEAD (247/247). An `npm install` in `server/` would
+clear it — deliberately not run unasked (gate item 5).
+
+### AI7 and the August 6 invalid_scope failure - archived
+
+Moved VERBATIM to `docs/HANDOFF-ARCHIVE.md` (forty-sixth session header).
+Superseded: AI7 fixed that defect, and the August 8 smoke then hit the 404
+chain AI8 fixes. The one durable lesson is carried into the smoke list above -
+capture the exact callback URL and its error= value first, because the
+client-surfaced message misled badly last time.
 
 ### The three AI2/AI3 findings — one FIXED, two still open
 
@@ -145,9 +188,20 @@ loads a route, controller, or middleware; the integration lane needs
 
 ### CONSOLIDATED WAVE SMOKE — Seth, on the staging Vercel deploy
 
-`origin/ai-connector-wave` is at `d925bd2`; confirm the Vercel staging deploy
+`origin/ai-connector-wave` is at `43a4ceb`; confirm the Vercel staging deploy
 has built that SHA before starting. Both parts are live — the four Render env
 vars are set.
+
+> **DO PART 0 FIRST — Part B cannot pass without it.** In the WorkOS dashboard
+> (Connect -> Configuration, "External Sign-in URI"), repoint the Login URI to
+> `https://<staging client origin>/connector/login`. AI8 DELETED the old
+> server-side route, so the previous value now points at nothing. One Login URI
+> per environment, so staging and prod are configured separately.
+>
+> Optional while you are in there: clear the dead per-deployment Vercel URL out
+> of `CLIENT_ORIGIN` on the staging Render service. Nothing derives a redirect
+> from it any more, so it is inert — but it is a live trap for the next thing
+> that reads it.
 
 **Part A — the user-facing surface (AI1 + AI5), quick regression:**
 
@@ -156,7 +210,15 @@ vars are set.
 - **Before consent, only the consent statement and the toggle show** — no
   connector address, no setup steps. That gating is the AI5 contract.
 - **Turn AI access ON** → the connection section appears: "Connect your AI
-  assistant", the address, four Claude steps, the tier note.
+  assistant", the address, and (AI9) a four-section accordion.
+- **AI9's accordion (new):** Claude is open by default; ChatGPT, Grok, and
+  "Any other AI assistant" are collapsed. Each opens and closes independently
+  and they do not collapse each other. Check it on your phone too — this is the
+  codebase's first disclosure pattern, so nothing else exercises it.
+- **Read the ChatGPT steps carefully.** They changed: it is Settings ->
+  "Security and login" -> Developer mode, then Plugins. The old copy pointed at
+  a path that exists only in third-party blogs. If you have a ChatGPT account
+  that qualifies, walking it once would be worth more than reading it.
 - **The address reads `https://workout-db-staging.onrender.com/mcp`** — staging,
   not prod, not `localhost`, not a bare `/mcp`. Wrong ⇒ `VITE_API_URL` on Vercel
   is wrong.
@@ -172,13 +234,26 @@ vars are set.
 
 **Part B — the real connector. THIS IS THE PASS THAT MATTERS:**
 
-- Add the address in Claude -> Settings -> Connectors -> Add custom connector.
-- **You should get past `invalid_scope` this time** — that is what AI7 fixed. You
-  should be redirected to LogChamp to sign in, then come straight back.
+- Add the address in Claude -> Customize -> Connectors -> Add custom connector.
+- **You should get past both prior failures now** — `invalid_scope` (AI7) and the
+  Vercel 404 (AI8). You should land on LogChamp's own page, then come straight
+  back.
+- **Run it SIGNED OUT of LogChamp at least once.** This is the path AI8 changed
+  most and the one no lane can reach: sign out first, then add the connector.
+  You should get LogChamp's login form, and after signing in be returned
+  straight to the handshake rather than dumped on the home page.
+  **This is also the only way to probe the biggest remaining unknown** — WorkOS
+  does not document an `external_auth_id` TTL, so taking your time on the
+  password screen is the real test. If you see "This connection link expired",
+  that unknown just became a known and it needs a follow-up unit.
+- **Also try it already signed in** — that path should be near-instant, with no
+  login detour at all.
 - **If it fails again, capture the exact callback URL and its `error=` value
   before anything else.** August 6's real error was only visible there; Claude's
   surfaced message (`state: Field required`) was misleading and would have sent
   a debugger down the wrong path entirely.
+- **Consent-blocked path:** with AI access OFF, hitting the connector flow should
+  land you on `/profile/ai` (where the toggle is), not on an error page.
 - Ask Claude "how has my bench press moved this month?" and confirm the numbers
   match the Analytics page — the deterministic engine computes them, the model
   only narrates.
@@ -189,18 +264,11 @@ vars are set.
 mapping (finding 3) and AI6's two-identity `RateLimit-*` header check. Both need
 a real WorkOS token in flight; a successful Part B is what makes them checkable.
 
-### The wave's other strongest evidence — the live 26/26 run, August 5
+### The live 26/26 run, August 5 - archived
 
-Before AI4 closed the window, the whole chain was driven against staging with
-real HTTP using two throwaway accounts. **26 checks, 26 passed** — consent
-grant/revoke, 403-not-401 for unconsented, `WWW-Authenticate` carrying
-`resource_metadata`, revocation closing `/mcp` on the next request, `initialize`
-negotiating `2025-11-25`, exactly four tools none taking a user id, a second
-account seeing only its own world, and statelessness holding across separate
-HTTP requests. Detail in QUEUE.md. That window is closed (AI4's verifier rejects
-ordinary LogChamp tokens); Part B is its successor.
-
----
+Moved VERBATIM to `docs/HANDOFF-ARCHIVE.md` (forty-sixth session header).
+26 checks, 26 passed against staging with two throwaway accounts, before AI4
+closed the window. Still the wave's strongest non-smoke evidence.
 
 ## Prior waves — CLOSED, detail archived
 
@@ -259,12 +327,27 @@ Covers the F-wave AND the still-open E-wave prod smoke. Staging passed August 4.
 
 ### Lane worktree state
 
-**Lane 1 (`C:\dev\worktrees\cursor-lane`) is CLEAN** — on `cursor/ai7` at
-`d925bd2`, AI7's landed `DELIVERY.md` deleted at landing. Lanes 2 and 3 are FREE
-but still on `recon/air2` / `recon/air3` off `53235c7` — **repoint them off the
-target wave branch before use or the delivery lands on the wrong base.** Check
-lane cleanliness by DELIVERY.md TIMESTAMP, not `git status` (it is gitignored, so
-a stale report reads as "clean").
+**All three lanes are CLEAN and FREE.** Lane 1 on `cursor/ai8` and lane 2 on
+`cursor/ai9`, both at `43a4ceb`; lane 3 on `recon/ai9-r2` at `892d610` —
+**repoint any lane off the target wave branch before use or the delivery lands
+on the wrong base.** Every landed `DELIVERY.md` was deleted at landing, and the
+recon reports were folded into the session log above (copies also in the
+session scratchpad).
+
+**Check lane cleanliness by DELIVERY.md TIMESTAMP, not `git status`** — it is
+gitignored, so a stale report reads as "clean". **This warning was already in
+HANDOFF on August 8 and the trap still fired**: two recon lanes held August 4
+`DELIVERY.md` files, a readiness check matched them as fresh, and one was read
+several paragraphs deep before the date gave it away. The written warning was
+not enough on its own; what actually caught it was checking mtime. Prefer a
+DISTINCT report filename per lane run (this session used `RECON-R1.md` /
+`RECON-R2.md`) so a stale file cannot impersonate a fresh one at all.
+
+**Lane `node_modules` drift is real.** Lane 2's server deps predated
+`express-rate-limit`, so two suites failed to LOAD there with zero assertion
+failures. The main tree has the SAME gap. When a lane's failures are
+`Cannot find module`, suspect the environment before the code, and verify in a
+lane known to be current.
 
 ## Other open items
 
