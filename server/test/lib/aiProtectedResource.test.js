@@ -12,7 +12,6 @@ describe("buildProtectedResourceMetadata", () => {
     const doc = buildProtectedResourceMetadata({
       resourceUrl: RESOURCE_URL,
       authorizationServers: [],
-      scopes: ["training:read"],
     });
     expect(doc.resource).toBe(RESOURCE_URL);
   });
@@ -21,37 +20,25 @@ describe("buildProtectedResourceMetadata", () => {
     const doc = buildProtectedResourceMetadata({
       resourceUrl: RESOURCE_URL,
       authorizationServers: ["https://as.example.com"],
-      scopes: ["training:read"],
     });
     expect(doc.bearer_methods_supported).toEqual(["header"]);
   });
 
-  test("does not emit keys with undefined values", () => {
+  test("does not include scopes_supported when scopes are omitted (routes contract)", () => {
     const doc = buildProtectedResourceMetadata({
       resourceUrl: RESOURCE_URL,
       authorizationServers: [],
-      scopes: undefined,
     });
-    expect(Object.prototype.hasOwnProperty.call(doc, "scopes_supported")).toBe(
-      false
-    );
+    expect("scopes_supported" in doc).toBe(false);
   });
 });
 
 describe("buildWwwAuthenticateHeader", () => {
-  test('output contains resource_metadata="<url>" substring', () => {
-    const header = buildWwwAuthenticateHeader({
-      resourceMetadataUrl: METADATA_URL,
-      scope: "training:read",
-    });
-    expect(header).toContain(`resource_metadata="${METADATA_URL}"`);
-  });
-
-  test("omits scope= entirely when no scope is passed", () => {
+  test("sendUnauthorized contract: resource_metadata present, no scope=", () => {
     const header = buildWwwAuthenticateHeader({
       resourceMetadataUrl: METADATA_URL,
     });
-    expect(header).not.toMatch(/scope=/);
     expect(header).toContain(`resource_metadata="${METADATA_URL}"`);
+    expect(header).not.toContain("scope=");
   });
 });

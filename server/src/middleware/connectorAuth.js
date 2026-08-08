@@ -1,8 +1,5 @@
 const prisma = require("../lib/prisma");
-const {
-  CONNECTOR_SCOPE,
-  connectorAccess,
-} = require("../ai/consent");
+const { connectorAccess } = require("../ai/consent");
 const {
   buildWwwAuthenticateHeader,
 } = require("../ai/protectedResource");
@@ -31,16 +28,13 @@ function resourceMetadataUrl() {
 }
 
 /**
- * Pure scope/auth classification for unit tests and the guard.
- * Distinguishes authentication failure (401) from missing scope (403).
+ * Pure auth classification for unit tests and the guard.
+ * A verified token is accepted regardless of scopes (AuthKit cannot issue
+ * custom scopes); only a falsy/unverified token fails.
  */
 function classifyConnectorToken(verified) {
   if (!verified) {
     return { ok: false, status: 401, failure: "unauthorized" };
-  }
-  const scopes = verified.scopes;
-  if (!Array.isArray(scopes) || !scopes.includes(CONNECTOR_SCOPE)) {
-    return { ok: false, status: 403, failure: "insufficient_scope" };
   }
   return { ok: true, status: 200, failure: null };
 }
@@ -48,7 +42,6 @@ function classifyConnectorToken(verified) {
 function sendUnauthorized(res) {
   const header = buildWwwAuthenticateHeader({
     resourceMetadataUrl: resourceMetadataUrl(),
-    scope: CONNECTOR_SCOPE,
   });
   res.setHeader("WWW-Authenticate", header);
   return res.status(401).json({
@@ -68,12 +61,6 @@ async function connectorAuth(req, res, next) {
     const classified = classifyConnectorToken(verified);
     if (!classified.ok && classified.status === 401) {
       return sendUnauthorized(res);
-    }
-    if (!classified.ok && classified.status === 403) {
-      return res.status(403).json({
-        error: "forbidden",
-        error_description: "Missing required scope",
-      });
     }
 
     const user = await prisma.user.findUnique({
@@ -105,4 +92,3 @@ async function connectorAuth(req, res, next) {
 
 module.exports = connectorAuth;
 module.exports.classifyConnectorToken = classifyConnectorToken;
-module.exports.CONNECTOR_SCOPE = CONNECTOR_SCOPE;

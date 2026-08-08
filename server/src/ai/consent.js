@@ -1,3 +1,7 @@
+// LOCAL descriptor for the AiConsent audit row only. Must never again be
+// advertised in protected-resource metadata, sent in a WWW-Authenticate
+// header, or required of an access token - the authorization server
+// (WorkOS AuthKit) cannot issue this custom scope.
 const CONNECTOR_SCOPE = "training:read";
 
 function isConsentActive(row) {

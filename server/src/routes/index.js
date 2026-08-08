@@ -10,7 +10,6 @@ const aiRoutes = require("./aiRoutes");
 const {
   buildProtectedResourceMetadata,
 } = require("../ai/protectedResource");
-const { CONNECTOR_SCOPE } = require("../ai/consent");
 
 const router = express.Router();
 
@@ -30,7 +29,6 @@ function protectedResourceHandler(req, res) {
   const doc = buildProtectedResourceMetadata({
     resourceUrl: getMcpResourceUrl(),
     authorizationServers: getAuthorizationServers(),
-    scopes: [CONNECTOR_SCOPE],
   });
   res.status(200).type("application/json").json(doc);
 }
