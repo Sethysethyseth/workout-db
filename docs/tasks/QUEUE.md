@@ -657,8 +657,10 @@ right call. **Closing this properly needs a live two-identity request check
 against `RateLimit-*` headers, which is only possible once the WorkOS env vars
 are set.**
 
-QUEUED | ai7-drop-unissuable-connector-scope.md | stop advertising and requiring
-`training:read`, a scope WorkOS AuthKit cannot issue | MODEL auto. **N goes
+DISPATCHED | ai7-drop-unissuable-connector-scope.md | stop advertising and
+requiring `training:read`, a scope WorkOS AuthKit cannot issue | MODEL auto.
+DISPATCHED August 6, Channel B AUTO rung (`--model auto`), lane
+`C:\dev\worktrees\cursor-lane` on `cursor/ai7` off `ai-connector-wave` e7b52f0. **N goes
 6 -> 7 on August 6.** Authored from a LIVE smoke failure, not a lane: with the
 four Render env vars finally set, adding the custom connector in Claude died at
 `https://claude.ai/api/mcp/auth_callback?error=invalid_scope`, surfaced to the
@@ -695,6 +697,38 @@ audience validation (`tokenVerifier.js:49-52`), the `sub`-to-user mapping, the
 consent kill switch, the entitlement flag, and four read-only tools that accept
 no user identifier are all untouched. The scope was a fourth belt the
 authorization server has no buckle for. Seth cleared authoring on August 6.
+
+**THE AUGUST 6 RUN DIED MID-FLIGHT, AND THE DELIVERY IS A SALVAGE OF IT. Two
+runs produced this unit - the audit must know that, because a single
+`DELIVERY.md` will otherwise read as a single run's work.** State found on
+August 8: no `cursor-agent` process alive, lane files last written August 6 at
+1:56 PM, and NO `DELIVERY.md` at all. The lane held five modified files matching
+FILES TO TOUCH exactly, with all five CHANGE items implemented - so the run
+completed the CODE and died before running a single lane or writing the report.
+Nothing was lost; what was missing was the evidence, which is precisely the part
+the reviewer cannot take on faith.
+
+**Salvage decision, August 8 (frontier seat, in-session):** RE-DISPATCH INTO THE
+SAME DIRTY LANE rather than re-run from scratch. `dispatch-unit` section 2 marks
+a dirty lane UNAVAILABLE because it normally means another unit's delivery is
+unlanded; the exception it names - "stop if the dirty delivery is the very unit
+in question" - is exactly this case, so the dirtiness is the asset, not the
+hazard. The working diff was backed up to the session scratchpad
+(`ai7-lane-salvage-backup.patch`, 7613 bytes) BEFORE any agent was pointed at
+the tree, so a run that ignores its instructions and rewrites the work cannot
+destroy it. The dispatch line orders the run to VERIFY the existing
+implementation against the block and NOT redo it, then run every allowed lane
+and write the report. Same Channel B AUTO rung as the dead run.
+
+**What the salvage re-dispatch does NOT relieve the reviewer of.** The code in
+that lane was written by a run that never proved anything about it, and a second
+run that inherits the diff has every incentive to bless what it finds. So the
+`land-unit` audit reads this diff line by line against the block on its own
+authority - the report is evidence of the LANES, not of the correctness. Two
+things in it are worth reading first because a lane cannot reach either: that
+the consent-based 403 (`access.allowed`, the kill switch) survived the removal
+of the scope-based 403 next to it, and that `sendUnauthorized` still emits
+`resource_metadata` after losing its `scope` argument.
 
 ---
 
