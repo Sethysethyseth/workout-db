@@ -1,3 +1,79 @@
+## ARCHIVED August 8, 2026 (forty-fifth session, Opus resident relay) - the AI7
+## SALVAGE. Session log, verbatim, newest first.
+
+Session opened cold with a state-summary request. HANDOFF was three days stale
+(last written August 5 at the 6/6 wave close) and did NOT describe reality:
+between then and now Seth had set the four Render env vars, attempted the real
+connector handshake in Claude, hit `error=invalid_scope`, and an AI7 block had
+been authored and dispatched on August 6. QUEUE.md carried all of that; HANDOFF
+carried none of it. **The lesson is the one already written at the bottom of
+HANDOFF and it earned its place again: if this file looks stale, verify from
+ground truth before trusting it.** QUEUE.md was the file that was current,
+because `land-unit` writes it per unit while HANDOFF is rewritten per session -
+and a session that ends by dying writes neither.
+
+**Ground-truth sweep found the August 6 run DEAD, not finished.** No
+`cursor-agent` process alive; lane `C:\dev\worktrees\cursor-lane` on `cursor/ai7`
+off `e7b52f0` held five modified files last written August 6 at 1:56 PM; NO
+`DELIVERY.md` at all. Reading the diff showed all five of the block's CHANGE
+items fully implemented across exactly the five FILES TO TOUCH. So the run had
+completed the CODE and died before running a single lane or writing a line of
+report - it lost the evidence, not the work. Per the standing memory note
+(`cursor-plan-is-auto-rung-only`): check the lane for salvageable work when a run
+dies mid-flight. There was some.
+
+**Salvage decision: re-dispatch into the same DIRTY lane rather than re-run from
+scratch.** `dispatch-unit` section 2 normally marks a dirty lane UNAVAILABLE,
+because dirty usually means another unit's delivery is unlanded; the exception it
+names - "stop if the dirty delivery is the very unit in question" - is exactly
+this case, so here the dirtiness was the asset. Three guards made that safe:
+(1) the working diff was backed up to the session scratchpad
+(`ai7-lane-salvage-backup.patch`, 7613 bytes) BEFORE any agent was pointed at the
+tree, so a run that ignored its instructions and rewrote the work could not
+destroy it; (2) the dispatch line ordered the run to VERIFY-not-redo, in caps,
+with an explicit "do not rewrite working code just to put your own stamp on it";
+(3) the report was ordered to label every acceptance criterion INHERITED vs
+written-this-run, so the reviewer could see which code had a run behind it.
+
+Channel B AUTO rung, same as the dead run. Run took under three minutes and
+changed zero code, exactly as instructed.
+
+**The salvage claim was then verified MECHANICALLY rather than accepted.**
+`Get-FileHash` on the pre-dispatch backup and the post-run diff matched BYTE FOR
+BYTE. This is the durable technique worth keeping: **back the lane up before a
+salvage re-dispatch, and the agent's "I changed nothing" becomes a checkable
+claim instead of a trust exercise.** Without the backup there is no way to
+distinguish "verified the inherited work" from "quietly rewrote it and liked the
+result."
+
+**Why a salvage delivery gets a HARDER audit, not a softer one.** The code in
+that lane was written by a run that never proved anything about it, and a second
+run inheriting a diff has every incentive to bless what it finds - its cheapest
+path to a green report is to declare the tree good. So the report was treated as
+evidence of the LANES only, and correctness was read in-seat: the two seams no
+lane can reach (the consent kill switch surviving the removal of the adjacent
+scope 403; `resource_metadata` surviving the loss of `sendUnauthorized`'s `scope`
+argument) were read directly, plus a repo-wide dangling-ref sweep for
+`CONNECTOR_SCOPE` that the block's own acceptance criteria did not cover
+(criterion 9 greps `server/src` only, while the deleted export was imported by a
+file under `server/test/`). All clean. Full audit record in QUEUE.md.
+
+Lanes re-run FRESH by the reviewer: unit 242/242 in 21 suites, client build
+green, `require('./src/app.js')` exit 0. The 243 -> 242 decrement was chased
+rather than waved through - it is one deliberately deleted assertion folded into
+another test, not a dropped suite.
+
+LANDED `d925bd2`, rebased off `6f1b476` and ff-merged onto `ai-connector-wave`,
+pushed. **Wave is 7/7 and at its HARD STOP for Seth's smoke.** No gate, no
+`/code-review`, no branch diff reading until he signs off.
+
+**What AI7 does NOT prove, recorded because it is the whole point of the unit:**
+nothing in the delivery shows the connector handshake now COMPLETES. Every lane
+is pure-function; the module-graph check only proves boot. AI7 removes the one
+cause identified from the August 6 live failure and cannot show there is no
+second cause behind it. A successful Part B smoke is the FIRST real evidence,
+not a confirmation of something already established.
+
 ## ARCHIVED August 5, 2026 (forty-fourth session) - the /doctor pass's EXACT
 ## CUTS for workflow-backlog item 4, moved VERBATIM from HANDOFF at the AI-wave
 ## rewrite. The backlog ITEM is still open and still summarised in HANDOFF;

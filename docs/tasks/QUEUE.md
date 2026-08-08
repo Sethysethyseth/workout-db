@@ -657,7 +657,7 @@ right call. **Closing this properly needs a live two-identity request check
 against `RateLimit-*` headers, which is only possible once the WorkOS env vars
 are set.**
 
-DISPATCHED | ai7-drop-unissuable-connector-scope.md | stop advertising and
+LANDED d925bd2 | ai7-drop-unissuable-connector-scope.md | stop advertising and
 requiring `training:read`, a scope WorkOS AuthKit cannot issue | MODEL auto.
 DISPATCHED August 6, Channel B AUTO rung (`--model auto`), lane
 `C:\dev\worktrees\cursor-lane` on `cursor/ai7` off `ai-connector-wave` e7b52f0. **N goes
@@ -729,6 +729,65 @@ things in it are worth reading first because a lane cannot reach either: that
 the consent-based 403 (`access.allowed`, the kill switch) survived the removal
 of the scope-based 403 next to it, and that `sendUnauthorized` still emits
 `resource_metadata` after losing its `scope` argument.
+
+LANDED August 8 same session, NO BOUNCE and NO REVIEWER FIX. Scope exact (5
+files = FILES TO TOUCH). Lanes re-run FRESH by the reviewer in the lane, never
+read from the report: **unit 242/242 in 21 suites** (DOWN one test from AI6's
+243/243, and that decrement is correct rather than a silently dropped suite -
+the two rewritten files net out exactly one deleted assertion, the standalone
+"omits scope= when no scope is passed" case, folded into the `sendUnauthorized`
+contract test); client build green; `node -e "require('./src/app.js')"` exit 0
+with a localhost `DATABASE_URL`.
+
+**The salvage claim was verified mechanically, not accepted.** The delivery says
+it inherited every line from the dead run and wrote no code. The reviewer had
+backed the dead run's diff up to the session scratchpad BEFORE dispatching, so
+the claim was checkable: `Get-FileHash` on the pre-dispatch backup and the
+post-run diff MATCH BYTE FOR BYTE. So the "INHERITED" label on all ten
+acceptance criteria is true, and the report is evidence of the LANES only - the
+correctness read below is the reviewer's own, on its own authority.
+
+**The two seams no lane can reach, both read directly and both clean:**
+
+1. **The consent kill switch SURVIVED the removal of the scope 403 sitting
+   directly above it.** `connectorAuth.js:74-83` still calls `connectorAccess()`
+   and still returns 403 `{error:"forbidden", reason}` when `!access.allowed`,
+   with the fail-closed posture intact (`user ? user.aiConsent : null` /
+   `aiConnectorEnabled: false` on a missing row). This was the single highest
+   risk in the unit: two adjacent 403 branches, one to delete and one to keep,
+   and a green lane either way.
+2. **`sendUnauthorized` still emits `resource_metadata` after losing its `scope`
+   argument.** It calls `buildWwwAuthenticateHeader({ resourceMetadataUrl })`
+   and `protectedResource.js` is untouched, so the helper's existing
+   omit-when-empty behaviour was used rather than edited - exactly as CHANGE
+   items 2 and 3 required. A 401 that drops `resource_metadata` is the top
+   real-world connector failure mode, and AI2 was authored specifically against
+   it; removing the scope must not have taken it out too.
+
+**Dangling-ref sweep, which the acceptance criteria did NOT cover.** Criterion 9
+greps only `server/src`, but AI7 deletes `module.exports.CONNECTOR_SCOPE` from
+`connectorAuth.js`, and a test importing it from there would have been a
+build-green runtime break. Swept the whole worktree: every live consumer
+(`aiController.js:3`, `test/lib/aiConsent.test.js:5`) imports from
+`../../src/ai/consent`, which still exports it. No dangling reference anywhere.
+`test/lib/workosToken.test.js` still uses the literal `"training:read"` as a
+sample string for `normalizeScopes` - correct and deliberately untouched, since
+the verifier must still PARSE whatever scopes arrive even though nothing is now
+REQUIRED of them.
+
+`protectedResource.js:14` still builds a `scopes_supported` key from its
+`scopes` argument. That is correct and contracted: the helper keeps the
+capability, `routes/index.js` simply stops passing anything, and the helper's
+undefined-key deletion does the rest - asserted by `"scopes_supported" in doc
+=== false`, not merely `undefined`.
+
+**WHAT THIS UNIT DOES NOT PROVE, and it is the whole point of the unit.** Every
+lane here is pure-function and the module-graph check only proves boot. Nothing
+in this delivery demonstrates that the Claude connector handshake now COMPLETES
+- that requires a live add-custom-connector attempt against staging, which only
+Seth can run. AI7 removes the one cause identified from the August 6 live
+failure; it cannot show there is no second cause behind it. Treat a successful
+Part B smoke as the first real evidence, not a confirmation.
 
 ---
 
