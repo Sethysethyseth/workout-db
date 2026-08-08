@@ -3,48 +3,15 @@ const { connectorAccess } = require("../ai/consent");
 const {
   completeConnectorAuthorization,
 } = require("../ai/workosClient");
+const {
+  connectorAuthorizeDecision,
+} = require("../lib/connectorAuthorize");
 
-function getClientOrigin() {
-  const configured = process.env.CLIENT_ORIGIN;
-  if (typeof configured !== "string") return null;
-  const origin = configured
-    .split(",")
-    .map((value) => value.trim())
-    .find(Boolean);
-  return origin ? origin.replace(/\/+$/, "") : null;
-}
-
-function currentRequestUrl(req) {
-  return `${req.protocol}://${req.get("host")}${req.originalUrl}`;
-}
-
-async function connectorLogin(req, res) {
+async function connectorAuthorize(req, res) {
   const externalAuthId =
-    typeof req.query.external_auth_id === "string"
-      ? req.query.external_auth_id
+    typeof req.body?.external_auth_id === "string"
+      ? req.body.external_auth_id
       : "";
-  if (!externalAuthId.trim()) {
-    return res
-      .status(400)
-      .type("text/plain")
-      .send("This connector login link is missing required information.");
-  }
-
-  const clientOrigin = getClientOrigin();
-  if (!clientOrigin) {
-    console.error(
-      "Connector authorization failed: CLIENT_ORIGIN is not configured"
-    );
-    return res
-      .status(500)
-      .type("text/plain")
-      .send("Connector authorization is temporarily unavailable.");
-  }
-
-  if (!req.authUserId) {
-    const next = encodeURIComponent(currentRequestUrl(req));
-    return res.redirect(`${clientOrigin}/login?next=${next}`);
-  }
 
   try {
     const user = await prisma.user.findUnique({
@@ -64,24 +31,38 @@ async function connectorLogin(req, res) {
       consentRow: user.aiConsent,
       aiConnectorEnabled: user.aiConnectorEnabled,
     });
-    if (!access.allowed) {
-      return res.redirect(`${clientOrigin}/profile/ai`);
+    const decision = connectorAuthorizeDecision({
+      authUserId: req.authUserId,
+      externalAuthId,
+      access,
+    });
+
+    if (!decision.ok) {
+      if (decision.reason === "missing_external_auth_id") {
+        return res.status(400).json({ error: "missing_external_auth_id" });
+      }
+      if (decision.reason === "consent_required") {
+        return res.status(403).json({ error: "consent_required" });
+      }
+      return res.status(401).json({ error: "unauthenticated" });
     }
 
-    const redirectUri = await completeConnectorAuthorization(
-      { id: user.id, email: user.email },
-      externalAuthId
-    );
-    return res.redirect(redirectUri);
+    try {
+      const redirectUri = await completeConnectorAuthorization(
+        { id: user.id, email: user.email },
+        externalAuthId.trim()
+      );
+      return res.status(200).json({ redirectUri });
+    } catch (error) {
+      console.error("Connector authorization completion failed", error);
+      return res.status(409).json({ error: "authorization_expired" });
+    }
   } catch (error) {
-    console.error("Connector authorization completion failed", error);
-    return res
-      .status(500)
-      .type("text/plain")
-      .send("We could not finish connecting your LogChamp account.");
+    console.error("Connector authorization failed", error);
+    return res.status(500).json({ error: "authorization_failed" });
   }
 }
 
 module.exports = {
-  connectorLogin,
+  connectorAuthorize,
 };

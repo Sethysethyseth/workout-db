@@ -11,11 +11,10 @@ export function LoginPage() {
 
   const nextUrl = useMemo(() => {
     const raw = params.get("next") || "/";
-    try {
-      return decodeURIComponent(raw);
-    } catch {
-      return raw;
+    if (!raw.startsWith("/") || raw.startsWith("//")) {
+      return "/";
     }
+    return raw;
   }, [params]);
 
   const [login, setLogin] = useState("");

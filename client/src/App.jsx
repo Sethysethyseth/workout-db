@@ -5,6 +5,7 @@ import { AuthLayout } from "./components/AuthLayout.jsx";
 import { DashboardPage } from "./pages/DashboardPage.jsx";
 import { LoginPage } from "./pages/LoginPage.jsx";
 import { RegisterPage } from "./pages/RegisterPage.jsx";
+import { ConnectorLoginPage } from "./pages/ConnectorLoginPage.jsx";
 import { MyTemplatesPage } from "./pages/MyTemplatesPage.jsx";
 import { PublicTemplatesPage } from "./pages/PublicTemplatesPage.jsx";
 import { CreateTemplatePage } from "./pages/CreateTemplatePage.jsx";
@@ -29,6 +30,7 @@ export default function App() {
       <Route element={<AuthLayout />}>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/connector/login" element={<ConnectorLoginPage />} />
       </Route>
 
       <Route element={<Layout />}>

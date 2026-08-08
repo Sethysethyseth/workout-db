@@ -11,3 +11,10 @@ export function grantAiConsent() {
 export function revokeAiConsent() {
   return http("/ai/consent", { method: "DELETE" });
 }
+
+export function authorizeConnector(externalAuthId) {
+  return http("/ai/connector/authorize", {
+    method: "POST",
+    body: { external_auth_id: externalAuthId },
+  });
+}
