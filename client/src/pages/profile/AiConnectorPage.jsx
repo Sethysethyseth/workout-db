@@ -1,8 +1,92 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import * as aiApi from "../../api/aiApi.js";
+import { ConnectorSetupAccordion } from "../../components/ai/ConnectorSetupAccordion.jsx";
 import { ErrorMessage } from "../../components/ErrorMessage.jsx";
 import { LoadingState } from "../../components/LoadingState.jsx";
+
+const CONNECTOR_SETUP_SECTIONS = [
+  {
+    id: "claude",
+    label: "Claude",
+    content: (
+      <>
+        <ol>
+          <li>{"Go to Customize > Connectors."}</li>
+          <li>
+            Click the "+" next to Connectors, then choose "Add custom
+            connector."
+          </li>
+          <li>Paste the address above, give it a name, and click Add.</li>
+          <li>
+            Sign in to LogChamp when prompted. You'll come straight back.
+          </li>
+        </ol>
+        <p>
+          Works on Free, Pro, Max, Team, and Enterprise plans. Free accounts
+          can add only one custom connector. On Team and Enterprise, an
+          organization Owner has to add it under{" "}
+          {"Organization settings > Connectors"} first.
+        </p>
+      </>
+    ),
+  },
+  {
+    id: "chatgpt",
+    label: "ChatGPT",
+    content: (
+      <>
+        <ol>
+          <li>
+            On ChatGPT on the web, open Settings, then "Security and login",
+            and turn on Developer mode.
+          </li>
+          <li>Go to ChatGPT Plugins and click the plus button.</li>
+          <li>
+            Enter a name and paste the address above as the MCP server URL.
+          </li>
+          <li>Sign in to LogChamp when prompted.</li>
+        </ol>
+        <p>
+          Developer mode is available on Pro, Plus, Business, Enterprise, and
+          Education accounts, and only on the web - not the mobile apps. On
+          Business, Enterprise, and Education an admin may need to enable it
+          for your workspace first.
+        </p>
+      </>
+    ),
+  },
+  {
+    id: "grok",
+    label: "Grok",
+    content: (
+      <>
+        <ol>
+          <li>Go to grok.com/connectors.</li>
+          <li>Click New Connector, then choose Custom.</li>
+          <li>Enter the address above and complete the sign-in.</li>
+        </ol>
+        <p>
+          On Grok Business and Enterprise, a team admin has to add the
+          connector in the console before you can connect to it.
+        </p>
+      </>
+    ),
+  },
+  {
+    id: "other",
+    label: "Any other AI assistant",
+    content: (
+      <p>
+        Any assistant that accepts a remote MCP server address will work. Paste
+        the address above wherever it asks for an MCP server URL, then complete
+        the LogChamp sign-in in your browser when prompted. Your assistant
+        needs to support remote servers over the internet - some only support
+        ones running on your own machine.
+      </p>
+    ),
+  },
+];
 
 function formatGrantDate(value) {
   if (!value) return null;
@@ -201,27 +285,14 @@ export function AiConnectorPage() {
               ) : null}
             </div>
 
-            <p>
-              <strong>In Claude</strong>
-            </p>
-            <ol>
-              <li>Open Settings, then Connectors.</li>
-              <li>Choose Add custom connector.</li>
-              <li>Paste the address above and connect.</li>
-              <li>
-                Sign in to LogChamp when prompted. You'll come straight back.
-              </li>
-            </ol>
+            <ConnectorSetupAccordion
+              sections={CONNECTOR_SETUP_SECTIONS}
+              defaultOpenIds={["claude"]}
+            />
 
             <p>
               Then just ask - "how has my bench press moved this month?"
             </p>
-
-            <span className="field-hint-warn">
-              Custom connectors work on every Claude plan, including the free
-              one, though free accounts can add only one. In ChatGPT they're
-              currently limited to Business, Enterprise, and Edu workspaces.
-            </span>
           </div>
         </section>
       ) : null}
