@@ -1,25 +1,23 @@
 # HANDOFF — current state
 
-> **WHERE WE ARE (Aug 8, later):** AI-wave **9/9 landed**,
-> `ai-connector-wave` at `43a4ceb`, staging deployed. The Part B smoke RAN
-> and FAILED on a Vercel 404; AI8 fixes the three stacked defects behind it
-> and AI9 adds per-client setup instructions. Waiting on ONE thing: Seth
-> repoints the WorkOS Login URI (AI8 is INERT until he does), then re-smokes.
-> Gate is blocked behind that sign-off. Nothing is in flight; no agent
-> action is pending.
+> **WHERE WE ARE (Aug 14):** AI-wave **9/9 landed**, `ai-connector-wave` at
+> `43a4ceb`, staging deployed. **Part 0 is DONE and Part B's server side now
+> PASSES END TO END** — driven live in-seat on Aug 14 with a real WorkOS
+> token, not a mock (see "The Aug 14 live handshake" below). Three gate items
+> closed; one NEW finding opened (stale AuthKit session binds the wrong
+> identity). Nothing is in flight; no agent action is pending.
 
-**Next action (human):** **Repoint the WorkOS Login URI to the CLIENT origin,
-then re-try the connector handshake.** In the WorkOS dashboard (Connect ->
-Configuration, labelled "External Sign-in URI"), change it from
-`https://workout-db-staging.onrender.com/ai/connector/login` to
-`https://<staging client origin>/connector/login`. **AI8 does nothing until this
-is done** — the server-side route it replaced has been deleted, so the old value
-now points at nothing. Then run Part B of "CONSOLIDATED WAVE SMOKE" below;
-`origin/ai-connector-wave` is at `43a4ceb`. Nothing goes to the pre-main gate
-until you sign off. Open behind that, blocking nothing: the prod
-smoke of `main` `59e27dc` (covers the F-wave AND the leftover E-wave pass), the
-`docs/parked/*` ruling, and the gate-item-5 call on declaring `zod` / pinning
-Node.
+**Next action (human):** **Re-run the parts of Part B only you can do, then
+decide on the identity-binding finding.** The connector's server side is
+proven, so what's left is (a) confirm the handshake from *your real account*
+rather than the `smoke-b8@example.com` throwaway the AuthKit session is stuck
+on, and (b) the two-identity `RateLimit-*` check, which needs a second
+LogChamp account only you can create (register in a SEPARATE browser profile
+so the `smoke-b8` session survives; then an agent can drive the rest). Nothing
+goes to the pre-main gate until you sign off. Open behind that, blocking
+nothing: the prod smoke of `main` `59e27dc` (covers the F-wave AND the
+leftover E-wave pass), the `docs/parked/*` ruling, and the gate-item-5 call on
+declaring `zod` / pinning Node.
 
 > **Standing rule:** the line above is filled on EVERY rewrite and is
 > never empty or deferred — one sentence, the single thing SETH does
@@ -27,7 +25,13 @@ Node.
 > explicitly. Dogfoods the shell repo's decision-10 no-dangling-next-
 > action requirement; `land-unit` section 5 keeps it maintained.
 
-**Updated:** August 8, 2026, forty-sixth session (Opus, frontier + resident relay
+**Updated:** August 14, 2026, forty-seventh session (Opus, frontier — **the live
+handshake probe**). No code changed. Seth said the connector still did not work
+and asked for it to be tested in-seat; the whole OAuth + MCP chain was driven
+end to end against staging with a real WorkOS token. Server side passes;
+findings 1 and 3 closed, the AuthKit identity-binding finding opened, and the
+300s `external_auth_id` TTL answered. Details in "The Aug 14 live handshake".
+Prior: August 8, 2026, forty-sixth session (Opus, frontier + resident relay
 — **the Part B smoke FAILED; AI8+AI9 authored, dispatched in parallel, and
 landed; the wave is now 9/9**). Seth hit `404 DEPLOYMENT_NOT_FOUND` adding the
 connector. Diagnosed in-seat: three stacked defects, all root-caused to AI4's
@@ -53,7 +57,8 @@ flight. Per `land-unit` section 6 the relay session ends here: Seth smokes
 FIRST, then a frontier seat runs `pre-main-review`. Do not start the gate, do
 not run `/code-review`, do not read the branch diff for review purposes until
 he signs off — his findings are review input, and a gate run before smoke gets
-partly re-run after it.
+partly re-run after it. **The Aug 14 in-seat run below does NOT constitute that
+sign-off** — it is smoke EVIDENCE that narrows what he still has to check.
 
 ---
 
@@ -85,6 +90,70 @@ because the lanes cover almost nothing here.
 
 Implements `docs/specs/ai-layer.md` Lane A end to end. Blocks are AI1–AI9 under
 `docs/tasks/`.
+
+### The Aug 14 live handshake — the server side PASSES
+
+Run in-seat (Opus) against staging with a REAL WorkOS token: a throwaway OAuth
+client registered via AuthKit's DCR endpoint, a real `/oauth2/authorize` driven
+in Seth's browser, PKCE code exchange, then direct calls to `/mcp`. Not a mock,
+not a lane. **Every server-side item passed.**
+
+- **Discovery** — `/mcp` 401s with a correct `WWW-Authenticate` +
+  `resource_metadata`; `/.well-known/oauth-protected-resource` points at
+  `https://scientific-mist-64-staging.authkit.app`.
+- **AI8 confirmed live.** Part 0 IS done — WorkOS's External Sign-in URI is
+  `https://workout-db-git-ai-connector-wave-sethysethyseths-projects.vercel.app/connector/login`.
+  Signed out, authorize -> that URL -> `/login?next=%2Fconnector%2Flogin%3F
+  external_auth_id%3D...`: **relative, and the id survives.** No Vercel 404.
+- **`initialize`, `tools/list`, and all four `tools/call` return correct
+  per-user data.** Protocol `2025-11-25`, `serverInfo: logchamp 1.0.0`.
+- **Refresh works** (`offline_access`) — new `jti`, same `sub`.
+
+**Finding 3 (`sub`-to-user mapping) is CLOSED — it PASSES.** The token's
+`sub` is `cmrp90q100000em21f4bomlz1` — a LogChamp **cuid**, NOT a `user_`-
+prefixed WorkOS id. WorkOS echoes back the id `completeConnectorAuthorization`
+sent it, so `payload.sub` -> `findUnique({ id })` resolves to the right user;
+`/auth/me` on the same session returns that exact id. This was the wave's
+highest-severity unverified line. It needed a real token and now has one.
+
+**Finding 1's residual is effectively closed.** Two distinct buckets observed
+live on `/mcp`: authenticated `ratelimit-limit: 300` counting the caller's own
+calls, unauthenticated `600` in a separate bucket. Better, the counter
+continued across a DIFFERENT access token for the same `sub` (295 -> 292, new
+`jti`, no reset) — so the key is identity, not token or client. Only a literal
+two-user check remains, and it needs a second account (Seth's to create).
+
+**Consent kill-switch — PASS, verified live rather than by curl.** AI access
+OFF -> the connect section vanishes (AI5's gating contract) AND an
+already-issued, unexpired token gets `403 {"error":"forbidden","reason":
+"no_consent"}` on both `tools/call` and `tools/list`, with no cache lag. Back
+ON -> 200 and data again. **Side effect: this rewrote `smoke-b8`'s consent
+row**, so `/profile/ai` now reads "turned it on on Aug 14, 2026" (was Aug 6).
+
+**NEW FINDING, probably its own unit: a stale AuthKit session silently binds
+the wrong identity, and there is no escape hatch.** Signed in, authorize
+skipped the External Sign-in URI entirely and went straight to consent reading
+"Logged in as smoke-b8@example.com" — a July 17 throwaway. **`prompt=login` is
+IGNORED**; AuthKit reuses the cached WorkOS session regardless. So a user who
+lands on the wrong LogChamp account once is bound to it with no visible way to
+re-choose, and the connector will confidently answer with the wrong account's
+data. This is the most likely mechanism behind "I added it and it still didn't
+work." Not config-fixable from the client side.
+
+**One more R1 unknown answered: `external_auth_id` TTL is 300 seconds.**
+AuthKit sets `external_auth=...; Max-Age=300` alongside the redirect. AI8's
+"assume no window and degrade gracefully" stance holds, but the window is real
+and a slow password screen can genuinely expire a handshake.
+
+**Trap worth clearing before prod:** the Login URI host is a Vercel PREVIEW
+deploy behind Deployment Protection. Any cold context (curl, no cookies) gets
+302'd to `vercel.com/sso-api` instead of the page; Seth's browser passes only
+because it holds `_vercel_jwt`. Staging-only — prod's domain is public — but
+nothing except his own browser can reach that URL today.
+
+**Still NOT settled by this run:** the handshake from Seth's REAL account
+(blocked by the stale AuthKit session), and the two-identity `RateLimit-*`
+check (needs a second LogChamp account).
 
 ### AI8 and the August 8 live failure — the connector 404
 
@@ -151,9 +220,10 @@ client-surfaced message misled badly last time.
 1. **~~Connector rate limiter cannot key on connector identity~~ — FIXED by AI6
    `c1398a8`.** Three limiters now: pre-auth failure ceiling (IP-keyed,
    `skipSuccessfulRequests`), per-identity budget mounted AFTER `connectorAuth`,
-   separate instance for `/ai`. **Residual for the gate:** no lane can prove the
-   wiring, only the key functions — closing it needs a live two-identity check
-   of the `RateLimit-*` headers.
+   separate instance for `/ai`. **Residual for the gate — mostly closed Aug 14:** the
+   wiring IS now proven live (two distinct buckets; the identity counter
+   continued across a different token without resetting). Only a literal
+   two-identity check remains, and it needs a second LogChamp account.
 2. **`zod` and `jose` are ESM-only on an UNPINNED Node.** `zod` 4.4.3 is
    `"type": "module"` and is **completely undeclared in `package.json`** — a
    phantom transitive of the MCP SDK that `mcpServer.js` requires at boot. AI3
@@ -162,12 +232,11 @@ client-surfaced message misled badly last time.
    Render default change silently reintroduces a total-outage boot failure. Two
    cheap fixes, both Seth's call (gate item 5, touches `package.json`): pin Node,
    declare `zod`.
-3. **`sub`-to-user mapping is still the highest-severity unverified line in the
-   wave** and needs a real WorkOS token. See `workos-staging-handoff.md` section
-   7. It FAILS CLOSED (LogChamp ids are `cuid()`, WorkOS ids are `user_`-
-   prefixed, so no collision; a miss yields a dead connector, not cross-user
-   data), but must be confirmed. No test that mocks WorkOS into agreeing with
-   you counts as verification.
+3. **~~`sub`-to-user mapping unverified~~ — CLOSED Aug 14, it PASSES.** Proven
+   with a real WorkOS token in-seat: `sub` comes back as a LogChamp `cuid()`,
+   not a `user_`-prefixed WorkOS id, because WorkOS echoes the id that
+   `completeConnectorAuthorization` sent it. Detail in "The Aug 14 live
+   handshake" above; background in `workos-staging-handoff.md` section 7.
 
 **The design decision most easily re-broken later: the MCP spec moved to
 `2026-07-28` and we are deliberately NOT targeting it.** That revision changes
@@ -232,7 +301,13 @@ vars are set.
   Analytics, start and finish a workout.
 - **What's New does NOT appear on staging** — prod-gated by design.
 
-**Part B — the real connector. THIS IS THE PASS THAT MATTERS:**
+**Part B — the real connector. THIS IS THE PASS THAT MATTERS.**
+**Aug 14 update:** Part 0 is DONE, and everything below that a token can reach
+already passed in-seat — the discovery/authorize/exchange/`initialize`/
+`tools/list`/`tools/call` chain, the `sub` mapping, and the consent kill-switch.
+Two items below still need YOU: the handshake **from your real account** (the
+AuthKit session is stuck on `smoke-b8@example.com` and `prompt=login` will not
+shake it), and adding the connector inside Claude itself.
 
 - Add the address in Claude -> Customize -> Connectors -> Add custom connector.
 - **You should get past both prior failures now** — `invalid_scope` (AI7) and the
