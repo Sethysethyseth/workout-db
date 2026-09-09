@@ -49,6 +49,15 @@ export function getCoachStatus({ byoKey } = {}) {
   });
 }
 
+/** Generate a palette from a description; resolves { palette, source }. */
+export function generatePalette({ description, byoKey } = {}) {
+  return http("/coach/palette", {
+    method: "POST",
+    body: { description },
+    headers: byoKey ? { [BYO_KEY_HEADER]: byoKey } : undefined,
+  });
+}
+
 function parseSseBlock(raw) {
   let event = null;
   const dataLines = [];

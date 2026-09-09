@@ -7,9 +7,17 @@ const {
   buildCoachPrompt,
   openCoachStream,
 } = require("../coach/askCoach");
-const { CoachProviderError } = require("../coach/provider");
+const { CoachProviderError, completeAnthropic } = require("../coach/provider");
+const {
+  PALETTE_JSON_SCHEMA,
+  PALETTE_SYSTEM_PROMPT,
+  parseDescription,
+  validatePalette,
+  mockPaletteFor,
+} = require("../coach/palette");
 
 const BYO_KEY_HEADER = "x-coach-key";
+const PALETTE_MAX_TOKENS = 800;
 
 function readByoKey(req) {
   const raw = req.get(BYO_KEY_HEADER);
@@ -155,4 +163,71 @@ async function askCoach(req, res, next) {
   }
 }
 
-module.exports = { getCoachStatus, askCoach, BYO_KEY_HEADER };
+/**
+ * POST /coach/palette { description } - ai-theming.md. The model returns a
+ * fixed-shape token record (structured output, never CSS); the server-side
+ * validator is authoritative and rejects rather than repairs. Nothing is
+ * persisted here: the client keeps the palette per device.
+ */
+async function generatePalette(req, res, next) {
+  try {
+    const description = parseDescription(req.body && req.body.description);
+    if (!description) {
+      return res.status(400).json({ error: "description is required" });
+    }
+
+    const access = await loadCoachAccess(req.authUserId);
+    if (!access) return res.status(404).json({ error: "User not found" });
+    if (!access.consentGranted) {
+      return res.status(403).json({ error: "forbidden", reason: "no_consent" });
+    }
+
+    const resolved = resolveCoachProvider({
+      byoKey: readByoKey(req),
+      entitled: access.entitled,
+    });
+    if (!resolved.ok) {
+      return res.status(resolved.status).json({ error: resolved.error, reason: resolved.reason });
+    }
+
+    let candidate;
+    if (resolved.keyInfo.source === "mock") {
+      candidate = mockPaletteFor(description);
+    } else {
+      const message = await completeAnthropic({
+        apiKey: resolved.keyInfo.key,
+        model: resolved.config.model,
+        system: [{ type: "text", text: PALETTE_SYSTEM_PROMPT }],
+        messages: [{ role: "user", content: `Design a palette for: ${description}` }],
+        effort: resolved.config.effort,
+        maxTokens: PALETTE_MAX_TOKENS,
+        outputFormat: { type: "json_schema", schema: PALETTE_JSON_SCHEMA },
+      });
+      if (message && message.stop_reason === "refusal") {
+        return res.status(422).json({ error: "palette_refused" });
+      }
+      const text = (Array.isArray(message && message.content) ? message.content : [])
+        .filter((block) => block && block.type === "text" && typeof block.text === "string")
+        .map((block) => block.text)
+        .join("");
+      try {
+        candidate = JSON.parse(text);
+      } catch {
+        return res.status(502).json({ error: "palette_invalid", errors: ["The model did not return a palette."] });
+      }
+    }
+
+    const validated = validatePalette(candidate);
+    if (!validated.ok) {
+      return res.status(422).json({ error: "palette_invalid", errors: validated.errors.slice(0, 6) });
+    }
+    return res.json({ palette: validated.palette, source: resolved.keyInfo.source });
+  } catch (err) {
+    if (err instanceof CoachProviderError) {
+      return res.status(502).json({ error: err.code, message: err.message });
+    }
+    return next(err);
+  }
+}
+
+module.exports = { getCoachStatus, askCoach, generatePalette, BYO_KEY_HEADER };
