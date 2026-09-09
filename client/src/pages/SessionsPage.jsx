@@ -3,11 +3,20 @@ import { Link } from "react-router-dom";
 import * as sessionApi from "../api/sessionApi.js";
 import { ErrorMessage } from "../components/ErrorMessage.jsx";
 import { LoadingState } from "../components/LoadingState.jsx";
+import { formatRepsValue } from "../lib/repsDisplay.js";
 import {
   compareSessionsByRecentActivity,
   sessionActivityTimestamp,
   sessionDisplayTitle,
 } from "../lib/sessionDisplay.js";
+import {
+  formatTonnage,
+  sessionDurationLabel,
+  sessionTonnage,
+  sessionTopSet,
+} from "../lib/sessionFacts.js";
+import { formatWeight } from "../lib/weightDisplay.js";
+import { loadWeightUnit } from "../lib/weightUnitPref.js";
 
 function dateParts(value) {
   const d = new Date(value);
@@ -25,18 +34,12 @@ function monthKey(value) {
   return d.toLocaleDateString(undefined, { month: "long", year: "numeric" });
 }
 
-function CheckIcon() {
-  return (
-    <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M3 8.5l3 3 7-7" />
-    </svg>
-  );
-}
-
 export function SessionsPage() {
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadedOnce, setLoadedOnce] = useState(false);
   const [error, setError] = useState(null);
+  const unit = loadWeightUnit();
 
   async function load() {
     setLoading(true);
@@ -44,6 +47,7 @@ export function SessionsPage() {
     try {
       const data = await sessionApi.getMySessions();
       setSessions(data.sessions || []);
+      setLoadedOnce(true);
     } catch (err) {
       setError(err);
     } finally {
@@ -78,9 +82,9 @@ export function SessionsPage() {
       <div className="row page-head">
         <div>
           <h1 className="page-title">History</h1>
-          <p className="muted sessions-intro">
-            {loading && sessions.length === 0
-              ? "Every session you started or finished."
+          <p className="muted sessions-intro" aria-live="polite">
+            {!loadedOnce
+              ? " "
               : completedCount === 0
                 ? "Nothing finished yet."
                 : `${completedCount} finished ${completedCount === 1 ? "workout" : "workouts"} · ${totalSets} sets logged`}
@@ -93,7 +97,7 @@ export function SessionsPage() {
 
       <ErrorMessage error={error} />
       {loading && sessions.length === 0 ? (
-        <LoadingState tone="skeleton" variant="list" rows={4} slowLabel="Taking longer than usual…" />
+        <LoadingState tone="skeleton" variant="history" rows={5} slowLabel="Taking longer than usual…" />
       ) : null}
 
       {!loading && sessions.length === 0 ? (
@@ -116,9 +120,12 @@ export function SessionsPage() {
             {group.items.map((s) => {
               const title = sessionDisplayTitle(s);
               const live = !s.completedAt;
-              const sets = s._count?.sets ?? "—";
-              const exercises = s._count?.sessionExercises ?? "—";
+              const sets = s._count?.sets ?? null;
+              const exercises = s._count?.sessionExercises ?? null;
               const when = dateParts(sessionActivityTimestamp(s));
+              const duration = live ? null : sessionDurationLabel(s);
+              const tonnage = formatTonnage(sessionTonnage(s), unit);
+              const top = sessionTopSet(s);
               return (
                 <Link
                   key={s.id}
@@ -133,10 +140,18 @@ export function SessionsPage() {
                     <span className="history-row__title">{title}</span>
                     <span className="history-row__meta muted small">
                       {when.time}
-                      <span aria-hidden="true"> · </span>
-                      {exercises} {exercises === 1 ? "exercise" : "exercises"}
-                      <span aria-hidden="true"> · </span>
-                      {sets} {sets === 1 ? "set" : "sets"}
+                      {exercises != null ? (
+                        <>
+                          <span aria-hidden="true"> · </span>
+                          {exercises} {exercises === 1 ? "exercise" : "exercises"}
+                        </>
+                      ) : null}
+                      {sets != null ? (
+                        <>
+                          <span aria-hidden="true"> · </span>
+                          {sets} {sets === 1 ? "set" : "sets"}
+                        </>
+                      ) : null}
                       {s.workoutTemplate ? (
                         <>
                           <span aria-hidden="true"> · </span>
@@ -148,8 +163,28 @@ export function SessionsPage() {
                   {live ? (
                     <span className="history-row__status history-row__status--live">In progress</span>
                   ) : (
-                    <span className="history-row__done" title="Finished">
-                      <CheckIcon />
+                    <span className="history-row__facts" aria-label="Workout totals">
+                      <span className="history-row__fact">
+                        <span className="history-row__fact-value">
+                          {top ? (
+                            <>
+                              {formatWeight(top.weight, unit)}
+                              {top.reps != null ? ` × ${formatRepsValue(top.reps)}` : ""}
+                            </>
+                          ) : (
+                            "—"
+                          )}
+                        </span>
+                        <span className="history-row__fact-label">top set</span>
+                      </span>
+                      <span className="history-row__fact">
+                        <span className="history-row__fact-value">{tonnage || "—"}</span>
+                        <span className="history-row__fact-label">volume</span>
+                      </span>
+                      <span className="history-row__fact history-row__fact--duration">
+                        <span className="history-row__fact-value">{duration || "—"}</span>
+                        <span className="history-row__fact-label">time</span>
+                      </span>
                     </span>
                   )}
                   <span className="history-row__chevron" aria-hidden="true" />

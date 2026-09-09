@@ -319,6 +319,10 @@ html[data-theme="dark"][data-palette="iron"] {
   --scene-image: url("./assets/scenes/iron.jpg");
 }
 
+html[data-theme="dark"][data-palette="iron"] body::before {
+  filter: blur(18px) saturate(1.25) brightness(0.85);
+}
+
 html[data-palette="forest"] {
   --scene-glow: color-mix(in srgb, var(--color-interactive) 5%, transparent);
   --scene-glow-shape: ellipse 120% 40% at 50% -10%;
@@ -378,14 +382,20 @@ html[data-theme="dark"] body::before {
 html:not([data-theme="dark"]) body::before {
   content: "";
   position: fixed;
-  inset: -8%;
+  inset: 0;
   z-index: 0;
   pointer-events: none;
-  background: var(--scene-image) center 40% / cover no-repeat;
-  filter: blur(22px) saturate(0.75) brightness(1.55) contrast(0.8);
-  opacity: 0.24;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-interactive) 6%, var(--color-bg)) 0%,
+      var(--color-bg) 42%,
+      color-mix(in srgb, var(--color-interactive) 9%, var(--color-bg)) 100%
+    );
 }
 
+/* The band stays pixel-sharp: no blur, no smoothing, a daylight lift so the
+   night raster reads as a pale skyline behind white cards. */
 html:not([data-theme="dark"]) body::after {
   content: "";
   position: fixed;
@@ -396,10 +406,12 @@ html:not([data-theme="dark"]) body::after {
   z-index: 0;
   pointer-events: none;
   background: var(--scene-image) center bottom / cover no-repeat;
-  filter: saturate(0.7) brightness(1.3);
-  opacity: 0.42;
-  -webkit-mask-image: linear-gradient(to top, rgba(0, 0, 0, 1) 0, rgba(0, 0, 0, 1) 28%, rgba(0, 0, 0, 0) 100%);
-  mask-image: linear-gradient(to top, rgba(0, 0, 0, 1) 0, rgba(0, 0, 0, 1) 28%, rgba(0, 0, 0, 0) 100%);
+  image-rendering: pixelated;
+  filter: saturate(0.55) brightness(1.75) contrast(0.78);
+  opacity: 0.5;
+  mix-blend-mode: multiply;
+  -webkit-mask-image: linear-gradient(to top, rgba(0, 0, 0, 1) 0, rgba(0, 0, 0, 1) 30%, rgba(0, 0, 0, 0) 100%);
+  mask-image: linear-gradient(to top, rgba(0, 0, 0, 1) 0, rgba(0, 0, 0, 1) 30%, rgba(0, 0, 0, 0) 100%);
 }
 
 /* Layer 2 - the sharp band. Dark only. Covers the full width at the bottom
@@ -494,9 +506,15 @@ a {
   position: sticky;
   top: 0;
   z-index: 5;
-  background: color-mix(in srgb, var(--color-surface-1) 55%, transparent);
-  border-bottom: 1px solid color-mix(in srgb, var(--color-border) 35%, transparent);
+  background: color-mix(in srgb, var(--color-bg) 62%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-border) 30%, transparent);
   backdrop-filter: saturate(1.1) blur(10px);
+}
+
+/* Boot: the main links are held back until the session resolves; the row
+   keeps its height so the page does not jump when they arrive. */
+.nav-main-links {
+  min-height: 44px;
 }
 
 .nav-inner {
@@ -1047,11 +1065,116 @@ html[data-theme="dark"] .loading-state {
 .skeleton__caption {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 10px;
-  padding: 0 4px;
+  padding: 6px 4px 0;
   font-size: 13px;
   font-weight: 600;
   color: var(--color-text-secondary);
+}
+
+/* History: month label + rows that carry the date-chip silhouette. */
+.skeleton__label {
+  width: 120px;
+  height: 12px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-text-secondary) 20%, transparent);
+  margin: 4px 0 0 2px;
+}
+
+.skeleton__group {
+  display: grid;
+  gap: 0;
+  padding: 4px 0;
+  border-radius: var(--radius-card);
+  border: 1px solid color-mix(in srgb, var(--color-border) 40%, transparent);
+  background: var(--color-skeleton-base);
+  overflow: hidden;
+}
+
+.skeleton__group .skeleton__row {
+  border: none;
+  border-radius: 0;
+  border-top: 1px solid color-mix(in srgb, var(--color-border) 35%, transparent);
+  background: transparent;
+  animation: none;
+}
+
+.skeleton__group .skeleton__row:first-child {
+  border-top: none;
+}
+
+.skeleton__row--dated {
+  min-height: 66px;
+  padding-left: 70px;
+}
+
+.skeleton__row--dated::before {
+  left: 70px;
+  top: 18px;
+}
+
+.skeleton__row--dated::after {
+  left: 70px;
+  top: 40px;
+}
+
+.skeleton__group .skeleton__row--dated {
+  position: relative;
+}
+
+.skeleton__group .skeleton__row--dated > * {
+  display: none;
+}
+
+.skeleton__row--dated {
+  background-image:
+    linear-gradient(
+      color-mix(in srgb, var(--color-interactive) 12%, var(--color-surface-2)),
+      color-mix(in srgb, var(--color-interactive) 12%, var(--color-surface-2))
+    );
+  background-size: 44px 46px;
+  background-position: 12px 10px;
+  background-repeat: no-repeat;
+}
+
+/* Analytics: the coach row and view tabs as slabs, then a chart card whose
+   rows step down like the real bars. */
+.skeleton__bar {
+  height: 58px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--color-border) 40%, transparent);
+  background: var(--color-skeleton-base);
+}
+
+.skeleton__tabs {
+  height: 52px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--color-border) 40%, transparent);
+  background: var(--color-skeleton-base);
+}
+
+.skeleton__block--chart {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  padding: 64px 16px 20px 130px;
+  min-height: 460px;
+}
+
+.skeleton__block--chart::before {
+  left: 16px;
+  top: 18px;
+  width: 30%;
+  height: 16px;
+}
+
+.skeleton__chart-row {
+  display: block;
+  width: var(--w, 60%);
+  height: 14px;
+  border-radius: 0 4px 4px 0;
+  background: color-mix(in srgb, var(--color-text-secondary) 16%, transparent);
 }
 
 .skeleton__caption .barbell--inline {
@@ -1294,8 +1417,46 @@ html[data-theme="dark"] .loading-state {
 .profile-hub-stats {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
+  gap: 10px;
   margin-bottom: 4px;
+}
+
+@media (min-width: 900px) {
+  .settings-page.profile-page.stack {
+    max-width: 62rem;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas:
+      "head settings"
+      "stats settings"
+      "error settings"
+      "logout settings";
+    column-gap: 32px;
+    align-items: start;
+    align-content: start;
+  }
+
+  .profile-hub-header {
+    grid-area: head;
+  }
+
+  .profile-hub-stats {
+    grid-area: stats;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .profile-hub-settings {
+    grid-area: settings;
+    margin-top: 4px;
+  }
+
+  .settings-page.profile-page .card.error {
+    grid-area: error;
+  }
+
+  .settings-logout-region {
+    grid-area: logout;
+  }
 }
 
 .profile-hub-stat-tile {
@@ -1484,11 +1645,53 @@ html[data-theme="dark"] .settings-group {
   accent-color: var(--color-interactive);
 }
 
+.settings-theme-seg {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+  margin: 12px 14px 2px;
+  padding: 4px;
+  border-radius: 12px;
+  background: var(--color-surface-2);
+  border: 1px solid color-mix(in srgb, var(--color-border) 55%, transparent);
+}
+
+.settings-theme-seg__btn {
+  min-height: 38px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background var(--motion-fast) var(--ease-standard),
+    color var(--motion-fast) var(--ease-standard),
+    box-shadow var(--motion-fast) var(--ease-standard);
+}
+
+.settings-theme-seg__btn:hover {
+  color: var(--color-text);
+}
+
+.settings-theme-seg__btn--active {
+  background: var(--color-surface-1);
+  color: var(--color-text);
+  border-color: color-mix(in srgb, var(--color-interactive) 40%, var(--color-border));
+  box-shadow: var(--shadow-ring-accent);
+}
+
+.settings-theme-seg__btn:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--color-interactive) 55%, transparent);
+  outline-offset: 1px;
+}
+
 .settings-palette-block {
   display: grid;
   gap: 8px;
   padding: 12px 14px 14px;
-  border-top: 1px solid color-mix(in srgb, var(--color-border) 55%, transparent);
 }
 
 .settings-palette-block__label {
@@ -6305,9 +6508,16 @@ html[data-theme="dark"] .auth-page .auth-form.card {
 }
 
 .weekly-report__stats {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px 20px;
+}
+
+@media (max-width: 599px) {
+  .weekly-report__stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px 14px;
+  }
 }
 
 .weekly-report__stat {
@@ -6594,8 +6804,51 @@ html[data-theme="dark"] .auth-page .auth-form.card {
 .mv-bar--effective {
   top: 0;
   height: 18px;
-  background: color-mix(in srgb, var(--chart-context) 55%, transparent);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--chart-context) 90%, transparent);
+  background: color-mix(in srgb, var(--chart-accent) 14%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--chart-accent) 45%, transparent);
+}
+
+.mv-axis {
+  display: grid;
+  grid-template-columns: minmax(74px, 112px) 1fr auto;
+  gap: 10px;
+  margin-top: -2px;
+}
+
+.mv-axis__ticks {
+  position: relative;
+  height: 14px;
+}
+
+.mv-axis__tick {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-secondary);
+}
+
+.mv-axis__tick:first-child {
+  transform: none;
+}
+
+.mv-axis__tick:last-child {
+  transform: translateX(-100%);
+}
+
+.mv-axis__spacer {
+  min-width: 5.2em;
+}
+
+@media (max-width: 479px) {
+  .mv-axis {
+    grid-template-columns: 1fr;
+  }
+
+  .mv-axis__spacer {
+    display: none;
+  }
 }
 
 .mv-bar--stimulating {
@@ -6633,17 +6886,17 @@ html[data-theme="dark"] .auth-page .auth-form.card {
    ramp step 1: "didn't train" must never read as "trained a little." */
 
 .analytics-page {
-  --hm-step-1: color-mix(in srgb, var(--chart-accent) 51%, var(--color-surface-2));
-  --hm-step-2: color-mix(in srgb, var(--chart-accent) 66%, var(--color-surface-2));
-  --hm-step-3: color-mix(in srgb, var(--chart-accent) 81%, var(--color-surface-2));
+  --hm-step-1: color-mix(in srgb, var(--chart-accent) 22%, var(--color-surface-2));
+  --hm-step-2: color-mix(in srgb, var(--chart-accent) 48%, var(--color-surface-2));
+  --hm-step-3: color-mix(in srgb, var(--chart-accent) 74%, var(--color-surface-2));
   --hm-step-4: var(--chart-accent);
   --hm-empty: color-mix(in srgb, var(--color-border) 38%, transparent);
 }
 
 html[data-theme="dark"] .analytics-page {
-  --hm-step-1: color-mix(in srgb, var(--chart-accent) 40%, var(--color-surface-2));
-  --hm-step-2: color-mix(in srgb, var(--chart-accent) 60%, var(--color-surface-2));
-  --hm-step-3: color-mix(in srgb, var(--chart-accent) 80%, var(--color-surface-2));
+  --hm-step-1: color-mix(in srgb, var(--chart-accent) 18%, var(--color-surface-2));
+  --hm-step-2: color-mix(in srgb, var(--chart-accent) 42%, var(--color-surface-2));
+  --hm-step-3: color-mix(in srgb, var(--chart-accent) 70%, var(--color-surface-2));
   --hm-step-4: var(--chart-accent);
 }
 
@@ -6692,7 +6945,7 @@ html[data-theme="dark"][data-palette="iron"] .analytics-page {
    cell grids stay horizontally aligned (same idiom as the old multiples). */
 .hm-row {
   display: grid;
-  grid-template-columns: minmax(74px, 108px) 1fr 36px;
+  grid-template-columns: minmax(74px, 108px) minmax(0, 360px) 44px;
   align-items: center;
   gap: 10px;
 }
@@ -6717,9 +6970,31 @@ html[data-theme="dark"][data-palette="iron"] .analytics-page {
 }
 
 .hm-cell {
-  height: 21px;
-  border-radius: 4px;
+  height: 26px;
+  border-radius: 5px;
   min-width: 0;
+}
+
+.hm-cells:not(.hm-cells--day) {
+  gap: 4px;
+}
+
+.hm-col-heads {
+  align-items: end;
+}
+
+.hm-col-head {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hm-cells--day .hm-col-head {
+  font-size: 9.5px;
 }
 
 /* Day cells (14 columns at the 2W range) are smaller and are not focus
@@ -6902,6 +7177,15 @@ html[data-theme="dark"][data-palette="iron"] .analytics-page {
 .st-delta--up {
   color: var(--color-success-text);
   font-weight: 600;
+}
+
+.st-delta__label {
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.st-compact-delta .st-delta__label {
+  display: none;
 }
 
 .st-matched {
@@ -7966,9 +8250,9 @@ html[data-theme="dark"][data-palette="iron"] .analytics-page {
 
 @media (max-width: 719px) {
   .coach-chips--launch {
-    -webkit-mask-image: linear-gradient(to right, black 0, black calc(100% - 40px), transparent 100%);
-    mask-image: linear-gradient(to right, black 0, black calc(100% - 40px), transparent 100%);
-    padding-right: 32px;
+    -webkit-mask-image: linear-gradient(to right, black 0, black calc(100% - 72px), transparent 100%);
+    mask-image: linear-gradient(to right, black 0, black calc(100% - 72px), transparent 100%);
+    padding-right: 56px;
   }
 }
 
@@ -8688,8 +8972,24 @@ html:not([data-theme="dark"])[data-palette="chill"] {
 }
 
 .recent-row__facts {
+  display: grid;
+  justify-items: end;
+  gap: 1px;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
+}
+
+.recent-row__fact {
+  font-family: var(--font-display);
+  font-size: 13.5px;
+  font-weight: 700;
+}
+
+.recent-row__fact--muted {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
 }
 
 .recent-row__chevron {
@@ -8946,6 +9246,65 @@ html:not([data-theme="dark"])[data-palette="chill"] {
   padding: 10px 14px 10px 12px;
 }
 
+.history-row__facts {
+  display: grid;
+  grid-auto-flow: column;
+  gap: 18px;
+  align-items: center;
+}
+
+.history-row__fact {
+  display: grid;
+  gap: 1px;
+  min-width: 5.5em;
+  text-align: right;
+}
+
+.history-row__fact-value {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.history-row__fact-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+@media (max-width: 719px) {
+  .history-row__fact--duration {
+    display: none;
+  }
+
+  .history-row__facts {
+    gap: 12px;
+  }
+
+  .history-row__fact {
+    min-width: 0;
+  }
+
+  .history-row__fact-value {
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 419px) {
+  .history-row__facts {
+    grid-auto-flow: row;
+    gap: 2px;
+  }
+
+  .history-row__fact-label {
+    display: none;
+  }
+}
+
 .history-row__date {
   display: grid;
   justify-items: center;
@@ -9065,4 +9424,390 @@ html:not([data-theme="dark"])[data-palette="chill"] {
   .stat-tile-value {
     font-size: 22px;
   }
+}
+
+/* Session detail head: on phones the Back control sits above the title
+   instead of wedging between the subtitle lines. */
+@media (max-width: 599px) {
+  .session-detail-head {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .session-detail-head > .btn {
+    align-self: flex-start;
+    min-height: 36px;
+    padding: 6px 12px;
+  }
+}
+
+/* --- AI access: switch row, facts list, address field --- */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.ai-switch-card {
+  display: grid;
+  gap: 12px;
+  padding: 14px 16px 16px;
+}
+
+.ai-switch-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.ai-switch-row__text {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.ai-switch-row__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.ai-switch-row__sub {
+  margin: 0;
+  line-height: 1.4;
+}
+
+.ai-switch {
+  position: relative;
+  flex: 0 0 auto;
+  width: 52px;
+  height: 30px;
+  padding: 0;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--color-border) 90%, transparent);
+  background: var(--color-surface-3);
+  cursor: pointer;
+  transition: background var(--motion-base) var(--ease-standard), border-color var(--motion-base) var(--ease-standard);
+}
+
+.ai-switch__knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--color-surface-1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  transition: transform var(--motion-base) var(--ease-standard), background var(--motion-base) var(--ease-standard);
+}
+
+.ai-switch--on {
+  background: var(--color-interactive);
+  border-color: var(--color-interactive);
+}
+
+.ai-switch--on .ai-switch__knob {
+  transform: translateX(22px);
+  background: var(--color-btn-primary-fg);
+}
+
+.ai-switch:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.ai-switch:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--color-interactive) 55%, transparent);
+  outline-offset: 2px;
+}
+
+.ai-facts {
+  margin: 0;
+  padding: 10px 0 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+  border-top: 1px solid color-mix(in srgb, var(--color-border) 55%, transparent);
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--color-text-secondary);
+}
+
+.ai-facts li {
+  position: relative;
+  padding-left: 16px;
+}
+
+.ai-facts li::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 0.55em;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--color-interactive);
+}
+
+.ai-facts strong {
+  color: var(--color-text);
+}
+
+.ai-coach-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--color-border) 55%, transparent);
+  color: var(--color-text-secondary);
+}
+
+.ai-coach-status--ready {
+  color: var(--color-text);
+  background: transparent;
+  border-color: color-mix(in srgb, var(--color-border) 55%, transparent);
+}
+
+.ai-coach-status__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--color-text-secondary);
+  flex-shrink: 0;
+}
+
+.ai-coach-status--ready .ai-coach-status__dot {
+  background: var(--color-success-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-success-accent) 22%, transparent);
+}
+
+.ai-address {
+  display: grid;
+  gap: 6px;
+}
+
+.ai-address__label {
+  margin: 0;
+}
+
+.ai-address__field {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 4px 4px 12px;
+  border-radius: var(--radius-control);
+  border: 1px solid var(--color-input-border);
+  background: var(--color-surface-1);
+}
+
+.ai-address__value {
+  font-size: 13px;
+  overflow-wrap: anywhere;
+  color: var(--color-text);
+}
+
+.ai-address__copy {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  border: 1px solid transparent;
+  background: var(--color-surface-2);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: background var(--motion-fast) var(--ease-standard), color var(--motion-fast) var(--ease-standard);
+}
+
+.ai-address__copy:hover {
+  background: var(--color-nav-active-bg);
+  color: var(--color-text);
+}
+
+.ai-address__copy--done {
+  color: var(--color-success-text);
+  background: var(--color-success-bg);
+}
+
+/* Section labels sit on the scene band on long pages: a faint scrim keeps
+   them legible over the artwork without reading as a badge. */
+.settings-section-heading {
+  justify-self: start;
+  width: fit-content;
+  margin-left: -6px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--color-bg) 62%, transparent);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+
+/* --- Analytics > Exercises: rows carry numbers --- */
+.exercise-roster {
+  gap: 4px;
+}
+
+.exercise-roster-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) 96px minmax(6.5em, auto) minmax(5.5em, auto) minmax(6em, auto);
+  align-items: center;
+  gap: 14px;
+  padding: 10px 14px;
+}
+
+.exercise-roster-row--idle {
+  opacity: 0.72;
+}
+
+.exercise-roster-main {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.exercise-roster-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.exercise-roster-spark .st-sparkline--compact {
+  margin: 0;
+}
+
+.exercise-roster-spark .st-sparkline-svg {
+  height: 24px;
+  opacity: 0.9;
+}
+
+.exercise-roster-spark .st-sparkline-dot-ring,
+.exercise-roster-spark .st-sparkline-dot {
+  stroke-width: 0;
+}
+
+.exercise-roster-spark .st-sparkline-area {
+  fill: none;
+}
+
+.exercise-roster-stat {
+  display: grid;
+  gap: 1px;
+  text-align: right;
+}
+
+.exercise-roster-stat__value {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--color-text);
+}
+
+.exercise-roster-stat__value.is-up {
+  color: var(--color-success-text);
+}
+
+.exercise-roster-stat__value.is-down {
+  color: var(--color-warn-text);
+}
+
+.exercise-roster-stat__label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+@media (max-width: 719px) {
+  .exercise-roster-row {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-areas:
+      "main top delta"
+      "spark spark spark";
+    gap: 8px 12px;
+  }
+
+  .exercise-roster-main {
+    grid-area: main;
+  }
+
+  .exercise-roster-spark {
+    grid-area: spark;
+    display: none;
+  }
+
+  .exercise-roster-stat:nth-of-type(1) {
+    grid-area: top;
+  }
+
+  .exercise-roster-stat:nth-of-type(2) {
+    display: none;
+  }
+
+  .exercise-roster-stat--delta {
+    grid-area: delta;
+  }
+}
+
+/* --- Execution empty-state diagram --- */
+.analytics-ghost-diagram {
+  display: block;
+  width: 100%;
+  height: 84px;
+  overflow: visible;
+}
+
+.analytics-ghost-diagram__planned {
+  fill: none;
+  stroke: color-mix(in srgb, var(--color-interactive) 55%, var(--color-border));
+  stroke-width: 1.5;
+  stroke-dasharray: 4 3;
+  vector-effect: non-scaling-stroke;
+}
+
+.analytics-ghost-diagram__actual {
+  fill: color-mix(in srgb, var(--color-interactive) 35%, transparent);
+}
+
+.analytics-ghost-diagram__legend {
+  display: flex;
+  gap: 14px;
+  font-size: 11px;
+  color: var(--color-text-secondary);
+}
+
+.analytics-ghost-diagram__legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.analytics-ghost-diagram__key {
+  display: inline-block;
+  width: 14px;
+  height: 8px;
+  border-radius: 2px;
+}
+
+.analytics-ghost-diagram__key--planned {
+  border: 1.5px dashed color-mix(in srgb, var(--color-interactive) 55%, var(--color-border));
+}
+
+.analytics-ghost-diagram__key--actual {
+  background: color-mix(in srgb, var(--color-interactive) 35%, transparent);
 }

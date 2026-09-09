@@ -271,50 +271,51 @@ export function AiConnectorPage() {
       <ErrorMessage error={error} />
 
       <section className="settings-section" aria-labelledby="settings-ai-heading">
-        <h2 id="settings-ai-heading" className="settings-section-heading">
-          AI access
+        <h2 id="settings-ai-heading" className="settings-section-heading visually-hidden">
+          AI access switch
         </h2>
-        <div className="settings-group settings-security-form">
+        <div className="settings-group ai-switch-card">
           {success ? (
             <div className="settings-feedback settings-feedback--success" role="status">
               {success}
             </div>
           ) : null}
-          <p>
-            LogChamp can explain your training in plain words: the coach on the
-            Analytics page, a debrief after each workout, and answers inside an
-            AI assistant you already use. This is off until you turn it on.
-          </p>
-          <p>
-            Only your computed summary leaves LogChamp - totals, trends,
-            personal records, and how complete your effort data is. Your
-            individual sets, notes, and account details are never sent.
-          </p>
-          <p>
-            You can turn this off at any time, which immediately cuts off
-            access everywhere.
-          </p>
-          <p className="ai-consent-state">
-            {granted && grantDate
-              ? `AI access is on. You turned it on on ${grantDate}.`
-              : "AI access is off."}
-          </p>
-          <div className="settings-security-actions">
+          <div className="ai-switch-row">
+            <div className="ai-switch-row__text">
+              <p className="ai-switch-row__title">
+                {granted ? "AI access is on" : "AI access is off"}
+              </p>
+              <p className="muted small ai-switch-row__sub">
+                {granted && grantDate
+                  ? `Since ${grantDate}. Turning it off cuts access everywhere at once.`
+                  : "Off until you turn it on. Nothing about your training is shared."}
+              </p>
+            </div>
             <button
-              className="btn"
               type="button"
+              role="switch"
+              aria-checked={granted}
+              aria-label={granted ? "Turn off AI access" : "Turn on AI access"}
+              className={`ai-switch${granted ? " ai-switch--on" : ""}`}
               disabled={submitting}
               onClick={() => void onToggle()}
             >
-              {submitting
-                ? granted
-                  ? "Turning off…"
-                  : "Turning on…"
-                : granted
-                  ? "Turn off AI access"
-                  : "Turn on AI access"}
+              <span className="ai-switch__knob" aria-hidden="true" />
             </button>
           </div>
+          <ul className="ai-facts">
+            <li>
+              <strong>What it unlocks.</strong> The coach on Analytics, a debrief after each
+              workout, and answers inside an AI assistant you already use.
+            </li>
+            <li>
+              <strong>What leaves LogChamp.</strong> Only your computed summary: totals, trends,
+              personal records, and how complete your effort data is.
+            </li>
+            <li>
+              <strong>What never leaves.</strong> Individual sets, notes, and account details.
+            </li>
+          </ul>
         </div>
       </section>
 
@@ -331,6 +332,7 @@ export function AiConnectorPage() {
             </p>
             {coachStatus ? (
               <p className={`ai-coach-status${coachStatus.available ? " ai-coach-status--ready" : ""}`}>
+                <span className="ai-coach-status__dot" aria-hidden="true" />
                 {coachStatusLine(coachStatus, Boolean(savedKey))}
               </p>
             ) : null}
@@ -410,22 +412,34 @@ export function AiConnectorPage() {
               your training the way you'd ask a coach.
             </p>
 
-            <div>
-              <p className="settings-row__label">Your LogChamp connector address</p>
-              <p className="settings-row__value ai-connector-address" style={{ userSelect: "all" }}>
-                {connectorUrl}
-              </p>
-              <button
-                className="btn"
-                type="button"
-                onClick={() => void onCopyAddress()}
-              >
-                {copyStatus === "copied" ? "Copied ✓" : "Copy address"}
-              </button>
+            <div className="ai-address">
+              <p className="settings-row__label ai-address__label">Your LogChamp connector address</p>
+              <div className="ai-address__field">
+                <code className="ai-address__value" style={{ userSelect: "all" }}>
+                  {connectorUrl}
+                </code>
+                <button
+                  className={`ai-address__copy${copyStatus === "copied" ? " ai-address__copy--done" : ""}`}
+                  type="button"
+                  onClick={() => void onCopyAddress()}
+                  aria-label={copyStatus === "copied" ? "Copied" : "Copy address"}
+                  title={copyStatus === "copied" ? "Copied" : "Copy address"}
+                >
+                  {copyStatus === "copied" ? (
+                    <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M3 8.5l3 3 7-7" />
+                    </svg>
+                  ) : (
+                    <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <rect x="5.5" y="5.5" width="8" height="8" rx="1.5" />
+                      <path d="M10.5 5.5v-2a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2" />
+                    </svg>
+                  )}
+                </button>
+              </div>
               {copyStatus === "failed" ? (
-                <p>
-                  Couldn't copy automatically - select the address above and
-                  copy it.
+                <p className="muted small" style={{ margin: 0 }}>
+                  Couldn't copy automatically - select the address and copy it.
                 </p>
               ) : null}
             </div>

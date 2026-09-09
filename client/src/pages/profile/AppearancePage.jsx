@@ -198,37 +198,23 @@ export function AppearancePage() {
         </h2>
         <div className="settings-group settings-group--tight">
           <p className="settings-group-hint muted small">Applies to this device only.</p>
-          <div className="settings-theme-list" role="radiogroup" aria-label="Theme">
-            <label className="settings-theme-row">
-              <span className="settings-theme-row__label">Light</span>
-              <input
-                type="radio"
-                name="theme"
-                value="light"
-                checked={theme === "light"}
-                onChange={() => setTheme("light")}
-              />
-            </label>
-            <label className="settings-theme-row">
-              <span className="settings-theme-row__label">Dark</span>
-              <input
-                type="radio"
-                name="theme"
-                value="dark"
-                checked={theme === "dark"}
-                onChange={() => setTheme("dark")}
-              />
-            </label>
-            <label className="settings-theme-row">
-              <span className="settings-theme-row__label">System</span>
-              <input
-                type="radio"
-                name="theme"
-                value="system"
-                checked={theme === "system"}
-                onChange={() => setTheme("system")}
-              />
-            </label>
+          <div className="settings-theme-seg" role="radiogroup" aria-label="Theme">
+            {[
+              ["light", "Light"],
+              ["dark", "Dark"],
+              ["system", "System"],
+            ].map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                role="radio"
+                aria-checked={theme === value}
+                className={`settings-theme-seg__btn${theme === value ? " settings-theme-seg__btn--active" : ""}`}
+                onClick={() => setTheme(value)}
+              >
+                {label}
+              </button>
+            ))}
           </div>
           <div className="settings-palette-block">
             <span className="settings-palette-block__label muted small">Accent color</span>

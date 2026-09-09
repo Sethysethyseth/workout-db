@@ -99,9 +99,7 @@ export function MuscleVolumeHeatmap({ perMuscle, granularity = "week", effortCov
 
   const series = rows[0].series ?? [];
   const isDay = granularity === "day";
-  const firstLabel = series.length > 0 ? periodLabel(series[0], granularity) : null;
-  const lastLabel =
-    series.length > 1 ? periodLabel(series[series.length - 1], granularity) : null;
+  const anyEmpty = rows.some((m) => (m.series ?? []).some((p) => p.effectiveSets <= 0));
 
   return (
     <div className="hm-chart stack">
@@ -112,13 +110,29 @@ export function MuscleVolumeHeatmap({ perMuscle, granularity = "week", effortCov
         <i className="hm-cellkey hm-cellkey--3" />
         <i className="hm-cellkey hm-cellkey--4" />
         <span>more</span>
-        <span className="hm-legend-empty">
-          <i className="hm-cellkey hm-cellkey--0" /> not trained
-        </span>
+        {anyEmpty ? (
+          <span className="hm-legend-empty">
+            <i className="hm-cellkey hm-cellkey--0" /> not trained
+          </span>
+        ) : null}
       </div>
       <div className="hm-row hm-head-row" aria-hidden="true">
         <span />
-        <span />
+        <div
+          className={`hm-cells hm-col-heads${isDay ? " hm-cells--day" : ""}`}
+          style={{ gridTemplateColumns: `repeat(${series.length}, 1fr)` }}
+        >
+          {series.map((p, i) => {
+            const label = periodLabel(p, granularity).replace(/^wk of /, "");
+            /* Day view: label every other column so 14 labels do not collide. */
+            const show = !isDay || i % 2 === 0;
+            return (
+              <span key={p.periodStart} className="hm-col-head muted">
+                {show ? label : ""}
+              </span>
+            );
+          })}
+        </div>
         <span className="hm-avg-head muted">avg/wk</span>
       </div>
       <div className="hm-rows">
@@ -158,14 +172,6 @@ export function MuscleVolumeHeatmap({ perMuscle, granularity = "week", effortCov
             </div>
           );
         })}
-      </div>
-      <div className="hm-row hm-x-caption" aria-hidden="true">
-        <span />
-        <div className="hm-x-labels row">
-          <span className="muted small">{firstLabel}</span>
-          <span className="muted small">{lastLabel}</span>
-        </div>
-        <span />
       </div>
     </div>
   );

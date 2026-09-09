@@ -2826,8 +2826,8 @@ export function SessionDetailPage() {
 
   return (
     <div className={`stack session-detail-page${!isCompleted ? " session-detail-page--live" : ""}`}>
-      <div className="row">
-        <div>
+      <div className="row session-detail-head">
+        <div className="session-detail-head__text">
           <h1 style={{ marginBottom: 6 }}>{pageTitle}</h1>
           <p className="muted small" style={{ margin: 0 }}>
             {isCompleted ? (
@@ -3072,7 +3072,6 @@ export function SessionDetailPage() {
             setsByExercise={setsByExercise}
             weightUnit={weightUnit}
             setHasPR={setHasPR}
-            prCount={sessionPRs.length}
             renderTracked={(se) => {
               const status = trackedStatusByExerciseId.get(se.id) ?? null;
               if (!status) return null;

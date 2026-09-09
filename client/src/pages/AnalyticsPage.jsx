@@ -251,10 +251,11 @@ function PerMuscleSection({ perMuscle, granularity, effortCoverage }) {
         cardName="Weekly volume by muscle"
         sub={
           <>
-            Effective <HowCalculatedButton title="Effective sets/wk" copy={HOW_EFFECTIVE_SETS} />{" "}
-            vs. stimulating{" "}
-            <HowCalculatedButton title="Stimulating sets/wk" copy={HOW_STIMULATING_SETS} /> sets
-            per week over the selected range.
+            Effective vs. stimulating sets per week over the selected range.{" "}
+            <HowCalculatedButton
+              title="Effective and stimulating sets"
+              copy={`Effective: ${HOW_EFFECTIVE_SETS} Stimulating: ${HOW_STIMULATING_SETS}`}
+            />
           </>
         }
         view={view}
@@ -863,6 +864,7 @@ export function AnalyticsPage() {
               <ExercisesView
                 weeks={weeks}
                 range={rangeForWeeks(weeks)}
+                perExercise={summary?.perExercise ?? []}
                 exerciseParam={searchParams.get("exercise")}
                 onExerciseParamChange={setExerciseParam}
               />

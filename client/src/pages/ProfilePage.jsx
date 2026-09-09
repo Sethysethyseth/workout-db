@@ -81,27 +81,24 @@ export function ProfilePage() {
       </header>
 
       <div className="profile-hub-stats" aria-label="Workout stats">
-        <div className="profile-hub-stat-tile">
-          <span className="profile-hub-stat-tile__value">
-            {formatStatValue(statsPending, workoutCount)}
-          </span>
-          <span className="profile-hub-stat-tile__label muted small">Workouts</span>
+        <div className="card stat-tile">
+          <span className="stat-tile-label muted small">Workouts</span>
+          <span className="stat-tile-value">{formatStatValue(statsPending, workoutCount)}</span>
+          <span className="stat-tile-sub muted small">finished, all time</span>
         </div>
-        <div className="profile-hub-stat-tile">
-          <span className="profile-hub-stat-tile__value">
-            {formatStatValue(statsPending, thisWeekCount)}
-          </span>
-          <span className="profile-hub-stat-tile__label muted small">This week</span>
+        <div className="card stat-tile">
+          <span className="stat-tile-label muted small">This week</span>
+          <span className="stat-tile-value">{formatStatValue(statsPending, thisWeekCount)}</span>
+          <span className="stat-tile-sub muted small">since Monday</span>
         </div>
-        <div className="profile-hub-stat-tile">
-          <span className="profile-hub-stat-tile__value">
-            {statsPending ? "\u2014" : `${streak} wk`}
-          </span>
-          <span className="profile-hub-stat-tile__label muted small">Week streak</span>
+        <div className="card stat-tile">
+          <span className="stat-tile-label muted small">Week streak</span>
+          <span className="stat-tile-value">{statsPending ? "\u2014" : `${streak} wk`}</span>
+          <span className="stat-tile-sub muted small">consecutive weeks trained</span>
         </div>
       </div>
 
-      <section className="settings-section" aria-labelledby="profile-settings-heading">
+      <section className="settings-section profile-hub-settings" aria-labelledby="profile-settings-heading">
         <h2 id="profile-settings-heading" className="settings-section-heading">
           Settings
         </h2>

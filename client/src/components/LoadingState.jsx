@@ -54,7 +54,9 @@ const SKELETON_VARIANTS = {
       ))}
     </div>
   ),
-  /* Analytics: KPI tiles, then a chart-sized block. */
+  /* Analytics: KPI tiles, the coach row, the view tabs, then a chart card
+     with a stack of bar-shaped rows so the height lands where the real
+     chart will. */
   analytics: () => (
     <div className="skeleton skeleton--analytics">
       <div className="skeleton__tiles">
@@ -63,7 +65,24 @@ const SKELETON_VARIANTS = {
         <div className="skeleton__tile" />
         <div className="skeleton__tile" />
       </div>
-      <div className="skeleton__block" />
+      <div className="skeleton__bar" />
+      <div className="skeleton__tabs" />
+      <div className="skeleton__block skeleton__block--chart">
+        {Array.from({ length: 10 }, (_, i) => (
+          <span key={i} className="skeleton__chart-row" style={{ "--w": `${88 - i * 6}%` }} />
+        ))}
+      </div>
+    </div>
+  ),
+  /* History: a month label, then rows that carry the date-chip shape. */
+  history: ({ rows }) => (
+    <div className="skeleton skeleton--history">
+      <div className="skeleton__label" />
+      <div className="skeleton__group">
+        {Array.from({ length: rows }, (_, i) => (
+          <div key={i} className="skeleton__row skeleton__row--dated" />
+        ))}
+      </div>
     </div>
   ),
   /* A workout or template: a title line, then exercise blocks. */

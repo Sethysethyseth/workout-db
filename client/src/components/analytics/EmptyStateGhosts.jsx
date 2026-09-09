@@ -75,16 +75,31 @@ export function ExercisesEmptyGhost() {
   );
 }
 
+/** Planned-vs-logged as an outline drawing: dashed "planned" bars with a
+    thinner "actual" bar beside each, so it reads as a diagram of what will
+    appear, never as content still loading. */
 export function ExecutionEmptyGhost() {
+  const rows = [
+    [82, 74],
+    [64, 66],
+    [48, 40],
+  ];
   return (
     <div className="analytics-ghost analytics-ghost--execution" aria-hidden="true">
-      <div className="exec-row analytics-ghost-exec-row">
-        <span className="analytics-ghost-label-bar" style={{ width: "46%" }} />
-        <span className="analytics-ghost-stat-bar" style={{ width: "72%" }} />
-        <div className="analytics-ghost-exec-meters">
-          <span className="analytics-ghost-stat-bar" />
-          <span className="analytics-ghost-stat-bar" />
-        </div>
+      <svg viewBox="0 0 200 84" className="analytics-ghost-diagram" preserveAspectRatio="none">
+        {rows.map(([planned, actual], i) => {
+          const y = 8 + i * 26;
+          return (
+            <g key={i}>
+              <rect x="0" y={y} width={planned * 2} height="10" rx="3" className="analytics-ghost-diagram__planned" />
+              <rect x="0" y={y + 13} width={actual * 2} height="6" rx="3" className="analytics-ghost-diagram__actual" />
+            </g>
+          );
+        })}
+      </svg>
+      <div className="analytics-ghost-diagram__legend">
+        <span><i className="analytics-ghost-diagram__key analytics-ghost-diagram__key--planned" /> planned</span>
+        <span><i className="analytics-ghost-diagram__key analytics-ghost-diagram__key--actual" /> logged</span>
       </div>
     </div>
   );

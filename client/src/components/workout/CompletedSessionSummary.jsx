@@ -58,7 +58,6 @@ export function CompletedSessionSummary({
   setsByExercise,
   weightUnit,
   setHasPR,
-  prCount = 0,
   renderTracked = null,
 }) {
   const stats = useMemo(() => {
@@ -86,6 +85,18 @@ export function CompletedSessionSummary({
     () => (Array.isArray(session?.sets) ? session.sets : []).some((s) => s.side),
     [session]
   );
+  /* The headline PR count is the number of exercises that carry a chip
+     below, so the number and the marks in the tables always agree. */
+  const prExerciseCount = useMemo(() => {
+    if (!setHasPR) return 0;
+    let n = 0;
+    for (const se of exercises) {
+      const sets = (setsByExercise.get(se.id) || []).filter(setIsLogged);
+      if (sets.some((s) => setHasPR(se, s.weight, s.reps))) n += 1;
+    }
+    return n;
+  }, [exercises, setsByExercise, setHasPR]);
+
   const showNotes = useMemo(
     () => (Array.isArray(session?.sets) ? session.sets : []).some((s) => s.notes && String(s.notes).trim()),
     [session]
@@ -110,9 +121,9 @@ export function CompletedSessionSummary({
           <span className="session-summary__stat-label">Volume</span>
           <span className="session-summary__stat-value">{formatVolume(stats.volume, weightUnit)}</span>
         </div>
-        <div className={`session-summary__stat${prCount > 0 ? " session-summary__stat--pr" : ""}`}>
+        <div className={`session-summary__stat${prExerciseCount > 0 ? " session-summary__stat--pr" : ""}`}>
           <span className="session-summary__stat-label">PRs</span>
-          <span className="session-summary__stat-value">{prCount}</span>
+          <span className="session-summary__stat-value">{prExerciseCount}</span>
         </div>
       </section>
 

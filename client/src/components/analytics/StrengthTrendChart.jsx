@@ -32,6 +32,7 @@ function DeltaChip({ delta, topSet }) {
   const up = delta > 0;
   return (
     <span className={`st-delta${up ? " st-delta--up" : ""}`}>
+      <span className="st-delta__label">top set </span>
       {up ? "+" : "−"}
       {formatWeight(Math.abs(delta))}
       {topSetNote(topSet)}
@@ -49,7 +50,7 @@ function paddedRange(min, max) {
   return { min: min - pad, max: max + pad };
 }
 
-function SparklinePlot({ series, compact = false }) {
+export function SparklinePlot({ series, compact = false }) {
   const first = series[0];
   const last = series[series.length - 1];
   const values = series.map((p) => p.weight);

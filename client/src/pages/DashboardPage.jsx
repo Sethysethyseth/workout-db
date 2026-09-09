@@ -12,6 +12,8 @@ import { useActiveSession } from "../context/ActiveSessionContext.jsx";
 import { readCurrentProgram } from "../lib/currentProgramStorage.js";
 import { ACTIVE_WORKOUT_ERROR, startAdHocWorkoutAndNavigate } from "../lib/startAdHocWorkoutFlow.js";
 import { sessionDisplayTitle } from "../lib/sessionDisplay.js";
+import { formatTonnage, sessionDurationLabel, sessionTonnage } from "../lib/sessionFacts.js";
+import { loadWeightUnit } from "../lib/weightUnitPref.js";
 
 function formatLoggedWhen(value) {
   if (!value) return "—";
@@ -23,6 +25,17 @@ function formatLoggedWhen(value) {
     hour: "numeric",
     minute: "2-digit",
   });
+}
+
+function formatRelativeDay(value) {
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "";
+  const startOf = (x) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const days = Math.round((startOf(new Date()) - startOf(d)) / 86400000);
+  if (days <= 0) return "today";
+  if (days === 1) return "yesterday";
+  if (days < 7) return `${days} days ago`;
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
 export function DashboardPage() {
@@ -131,6 +144,7 @@ export function DashboardPage() {
   }
 
   const hasActive = Boolean(activeSession);
+  const unit = loadWeightUnit();
   const mastheadDate = new Date().toLocaleDateString(undefined, {
     weekday: "long",
     month: "long",
@@ -184,7 +198,14 @@ export function DashboardPage() {
           onResume={() => navigate(`/sessions/${activeSession.id}`)}
         />
       ) : (
-        <StartWorkoutHero onOpenPicker={() => setPickerOpen(true)} />
+        <StartWorkoutHero
+          onOpenPicker={() => setPickerOpen(true)}
+          lastSessionLabel={
+            completedRecent[0]
+              ? `${sessionDisplayTitle(completedRecent[0])}, ${formatRelativeDay(completedRecent[0].completedAt)}`
+              : null
+          }
+        />
       )}
 
       <WeeklyReport weekStrip={<WeekStrip sessions={sessions} />} />
@@ -213,19 +234,32 @@ export function DashboardPage() {
               const title = sessionDisplayTitle(s);
               const exercises = s._count?.sessionExercises ?? null;
               const sets = s._count?.sets ?? null;
+              const duration = sessionDurationLabel(s);
+              const tonnage = formatTonnage(sessionTonnage(s), unit);
               return (
                 <Link key={s.id} to={`/sessions/${s.id}`} className="recent-row">
                   <span className="recent-row__main">
                     <span className="recent-row__title">{title}</span>
-                    <span className="recent-row__when muted small">{when}</span>
-                  </span>
-                  {exercises != null || sets != null ? (
-                    <span className="recent-row__facts muted small">
-                      {exercises != null ? `${exercises} ${exercises === 1 ? "exercise" : "exercises"}` : null}
-                      {exercises != null && sets != null ? <span aria-hidden="true"> · </span> : null}
-                      {sets != null ? `${sets} ${sets === 1 ? "set" : "sets"}` : null}
+                    <span className="recent-row__when muted small">
+                      {when}
+                      {exercises != null ? (
+                        <>
+                          <span aria-hidden="true"> · </span>
+                          {exercises} {exercises === 1 ? "exercise" : "exercises"}
+                        </>
+                      ) : null}
+                      {sets != null ? (
+                        <>
+                          <span aria-hidden="true"> · </span>
+                          {sets} {sets === 1 ? "set" : "sets"}
+                        </>
+                      ) : null}
                     </span>
-                  ) : null}
+                  </span>
+                  <span className="recent-row__facts">
+                    {tonnage ? <span className="recent-row__fact">{tonnage}</span> : null}
+                    {duration ? <span className="recent-row__fact recent-row__fact--muted">{duration}</span> : null}
+                  </span>
                   <span className="recent-row__chevron" aria-hidden="true" />
                 </Link>
               );

@@ -11,6 +11,7 @@ import { formatRepsValue } from "../../lib/repsDisplay.js";
 import { loadWeightUnit } from "../../lib/weightUnitPref.js";
 import { formatEstimate, formatWeight, roundToPlate } from "../../lib/weightDisplay.js";
 import { ExercisesEmptyGhost } from "./EmptyStateGhosts.jsx";
+import { SparklinePlot } from "./StrengthTrendChart.jsx";
 
 /** Trailing window for the Active roster lens (most recent session). */
 const ACTIVE_WINDOW_WEEKS = 8;
@@ -474,7 +475,83 @@ function ExerciseDetailPanel({ detail, weeks, loading, error, onClose }) {
   );
 }
 
-export function ExercisesView({ weeks, range, exerciseParam, onExerciseParamChange }) {
+/** Range stats keyed by catalog id and by name, so a roster row (whole
+    history) can show what happened inside the selected range. */
+function indexRangeStats(perExercise) {
+  const byId = new Map();
+  const byName = new Map();
+  for (const ex of Array.isArray(perExercise) ? perExercise : []) {
+    if (ex.exerciseId) byId.set(ex.exerciseId, ex);
+    if (ex.name) byName.set(ex.name.toLowerCase(), ex);
+  }
+  return { byId, byName };
+}
+
+function rangeStatsFor(row, stats) {
+  const id = row.identity?.exerciseId;
+  if (id && stats.byId.has(id)) return stats.byId.get(id);
+  return stats.byName.get(String(row.name || "").toLowerCase()) || null;
+}
+
+function RosterRow({ row, stats, selected, weeks, onSelect }) {
+  const ago = daysAgo(row.lastPerformed);
+  const agoLabel = ago === 0 ? "today" : ago === 1 ? "yesterday" : `${ago}d ago`;
+  const series = Array.isArray(stats?.topSetSeries) ? stats.topSetSeries : [];
+  const inRange = series.length;
+  const delta = series.length >= 2 ? series[series.length - 1].weight - series[0].weight : null;
+  const top = stats?.topSet ?? null;
+  const best = stats?.e1rmTrend?.best ?? null;
+  return (
+    <li>
+      <button
+        type="button"
+        className={`exercise-roster-row${selected ? " is-selected" : ""}${inRange ? "" : " exercise-roster-row--idle"}`}
+        aria-pressed={selected}
+        onClick={onSelect}
+      >
+        <span className="exercise-roster-main">
+          <span className="exercise-roster-name">{row.name}</span>
+          <span className="exercise-roster-meta muted small">
+            last {agoLabel}
+            <span aria-hidden="true"> · </span>
+            {row.sessionCount} session{row.sessionCount === 1 ? "" : "s"} all time
+            {inRange ? (
+              <>
+                <span aria-hidden="true"> · </span>
+                {inRange} in {weeks}w
+              </>
+            ) : null}
+          </span>
+        </span>
+        <span className="exercise-roster-spark" aria-hidden="true">
+          {series.length > 1 ? <SparklinePlot series={series} compact /> : null}
+        </span>
+        <span className="exercise-roster-stat">
+          <span className="exercise-roster-stat__value">
+            {top
+              ? `${formatWeight(top.weight)}${top.reps != null ? ` × ${formatRepsValue(top.reps)}` : ""}`
+              : "—"}
+          </span>
+          <span className="exercise-roster-stat__label">top set</span>
+        </span>
+        <span className="exercise-roster-stat">
+          <span className="exercise-roster-stat__value">{best != null ? formatEstimate(best) : "—"}</span>
+          <span className="exercise-roster-stat__label">best e1RM</span>
+        </span>
+        <span className="exercise-roster-stat exercise-roster-stat--delta">
+          <span
+            className={`exercise-roster-stat__value${delta > 0 ? " is-up" : ""}${delta < 0 ? " is-down" : ""}`}
+          >
+            {delta == null ? "—" : delta === 0 ? "no change" : `${delta > 0 ? "+" : "−"}${formatWeight(Math.abs(delta))}`}
+          </span>
+          <span className="exercise-roster-stat__label">top set, {weeks}w</span>
+        </span>
+      </button>
+    </li>
+  );
+}
+
+export function ExercisesView({ weeks, range, perExercise = [], exerciseParam, onExerciseParamChange }) {
   const [index, setIndex] = useState(null);
   const [indexLoading, setIndexLoading] = useState(true);
   const [indexError, setIndexError] = useState(null);
@@ -561,6 +638,24 @@ export function ExercisesView({ weeks, range, exerciseParam, onExerciseParamChan
   }, [lensed, query]);
 
   const activeEmpty = rosterLens === "active" && exercises.length > 0 && lensed.length === 0;
+  const rangeStats = useMemo(() => indexRangeStats(perExercise), [perExercise]);
+  /* Rows with activity in the selected range float up, biggest top-set move first. */
+  const ordered = useMemo(() => {
+    const scored = filtered.map((row) => {
+      const st = rangeStatsFor(row, rangeStats);
+      const series = Array.isArray(st?.topSetSeries) ? st.topSetSeries : [];
+      const delta = series.length >= 2 ? series[series.length - 1].weight - series[0].weight : null;
+      return { row, st, inRange: series.length, delta };
+    });
+    scored.sort((a, b) => {
+      if ((b.inRange > 0) !== (a.inRange > 0)) return b.inRange > 0 ? 1 : -1;
+      const da = a.delta == null ? -Infinity : Math.abs(a.delta);
+      const db = b.delta == null ? -Infinity : Math.abs(b.delta);
+      if (db !== da) return db - da;
+      return a.row.name.localeCompare(b.row.name);
+    });
+    return scored;
+  }, [filtered, rangeStats]);
 
   function selectRow(row) {
     const param = serializeExerciseParam(row.identity);
@@ -641,26 +736,18 @@ export function ExercisesView({ weeks, range, exerciseParam, onExerciseParamChan
         <p className="muted small">No exercises match &ldquo;{query.trim()}&rdquo;.</p>
       ) : (
         <ul className="exercise-roster" role="list">
-          {filtered.map((row) => {
+          {ordered.map(({ row, st }) => {
             const key = identityKey(row.identity);
             const selected = exerciseParam === serializeExerciseParam(row.identity);
-            const ago = daysAgo(row.lastPerformed);
-            const agoLabel = ago === 0 ? "today" : `${ago}d ago`;
             return (
-              <li key={key}>
-                <button
-                  type="button"
-                  className={`exercise-roster-row${selected ? " is-selected" : ""}`}
-                  aria-pressed={selected}
-                  onClick={() => selectRow(row)}
-                >
-                  <span className="exercise-roster-name">{row.name}</span>
-                  <span className="exercise-roster-meta muted small">
-                    last trained {agoLabel} · {row.sessionCount} session
-                    {row.sessionCount === 1 ? "" : "s"}
-                  </span>
-                </button>
-              </li>
+              <RosterRow
+                key={key}
+                row={row}
+                stats={st}
+                selected={selected}
+                weeks={weeks}
+                onSelect={() => selectRow(row)}
+              />
             );
           })}
         </ul>

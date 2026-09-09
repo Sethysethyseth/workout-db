@@ -676,6 +676,14 @@ async function getMySessions(req, res, next) {
             sessionExercises: true,
           },
         },
+        // Just enough per set for list rows to show tonnage and the top
+        // set without a second request; the detail route carries the rest.
+        sets: {
+          select: {
+            weight: true,
+            reps: true,
+          },
+        },
       },
     });
 

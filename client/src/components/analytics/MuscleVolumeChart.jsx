@@ -69,6 +69,17 @@ export function MuscleVolumeChart({ perMuscle }) {
           );
         })}
       </div>
+      <div className="mv-axis" aria-hidden="true">
+        <span />
+        <div className="mv-axis__ticks">
+          {[0, 1, 2, 3, 4].map((i) => (
+            <span key={i} className="mv-axis__tick" style={{ left: `${i * 25}%` }}>
+              {fmt1((max * i) / 4).replace(/\.0$/, "")}
+            </span>
+          ))}
+        </div>
+        <span className="mv-axis__spacer" />
+      </div>
       {anyLocked ? (
         <p className="muted small analytics-chart-note">
           Muscles without RIR or RPE logged show effective sets only.
