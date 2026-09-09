@@ -1,9 +1,16 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import * as aiApi from "../../api/aiApi.js";
+import { getCoachStatus } from "../../api/coachApi.js";
 import { ConnectorSetupAccordion } from "../../components/ai/ConnectorSetupAccordion.jsx";
 import { ErrorMessage } from "../../components/ErrorMessage.jsx";
 import { LoadingState } from "../../components/LoadingState.jsx";
+import {
+  clearCoachKey,
+  loadCoachKey,
+  looksLikeAnthropicKey,
+  saveCoachKey,
+} from "../../lib/coachKeyPref.js";
 
 const CONNECTOR_SETUP_SECTIONS = [
   {
@@ -88,6 +95,8 @@ const CONNECTOR_SETUP_SECTIONS = [
   },
 ];
 
+const COPIED_RESET_MS = 2500;
+
 function formatGrantDate(value) {
   if (!value) return null;
   const d = new Date(value);
@@ -114,6 +123,21 @@ function buildConnectorUrl() {
   return `${base}/mcp`;
 }
 
+function coachStatusLine(status, hasOwnKey) {
+  if (!status) return null;
+  if (!status.consentGranted) return "Waiting for AI access to be turned on.";
+  if (status.available) {
+    if (status.source === "mock") return "Running in mock mode on this server: canned answers, no model.";
+    if (status.source === "byo") return "Ready, using the key saved in this browser tab.";
+    return "Ready. Hosted by LogChamp on this server.";
+  }
+  if (hasOwnKey && status.reason === "bad_key_format") {
+    return "The key saved in this tab doesn't look like an Anthropic key.";
+  }
+  if (status.reason === "not_entitled") return "Not included for your account yet. Your own key still works.";
+  return "Not set up on this server yet. Your own key still works.";
+}
+
 export function AiConnectorPage() {
   const [consent, setConsent] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -121,6 +145,10 @@ export function AiConnectorPage() {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [copyStatus, setCopyStatus] = useState(null); // null | "copied" | "failed"
+  const [coachStatus, setCoachStatus] = useState(null);
+  const [keyDraft, setKeyDraft] = useState("");
+  const [savedKey, setSavedKey] = useState(() => loadCoachKey());
+  const [keyNotice, setKeyNotice] = useState(null);
 
   const connectorUrl = buildConnectorUrl();
 
@@ -143,6 +171,28 @@ export function AiConnectorPage() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (!consent) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await getCoachStatus({ byoKey: savedKey });
+        if (!cancelled) setCoachStatus(data);
+      } catch {
+        if (!cancelled) setCoachStatus(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [consent, savedKey]);
+
+  useEffect(() => {
+    if (copyStatus !== "copied") return;
+    const id = window.setTimeout(() => setCopyStatus(null), COPIED_RESET_MS);
+    return () => window.clearTimeout(id);
+  }, [copyStatus]);
 
   async function onToggle() {
     if (!consent || submitting) return;
@@ -175,12 +225,32 @@ export function AiConnectorPage() {
     }
   }
 
+  function onSaveKey(e) {
+    e.preventDefault();
+    const trimmed = keyDraft.trim();
+    if (!looksLikeAnthropicKey(trimmed)) {
+      setKeyNotice({ tone: "error", text: "That doesn't look like an Anthropic key. They start with sk-ant-." });
+      return;
+    }
+    saveCoachKey(trimmed);
+    setSavedKey(trimmed);
+    setKeyDraft("");
+    setKeyNotice({ tone: "success", text: "Key saved for this browser tab." });
+  }
+
+  function onForgetKey() {
+    clearCoachKey();
+    setSavedKey(null);
+    setKeyNotice({ tone: "success", text: "Key forgotten." });
+  }
+
   if (loading) {
     return <LoadingState slowLabel="Waking up the server…" />;
   }
 
   const granted = Boolean(consent?.granted);
   const grantDate = formatGrantDate(consent?.grantedAt);
+  const maskedKey = savedKey ? `${savedKey.slice(0, 10)}…${savedKey.slice(-4)}` : null;
 
   return (
     <div className="settings-page stack">
@@ -189,6 +259,9 @@ export function AiConnectorPage() {
       </Link>
       <header className="settings-page-header">
         <h1 className="settings-page-title">AI access</h1>
+        <p className="settings-page-subtitle muted small">
+          One switch for the in-app coach and for outside AI assistants.
+        </p>
       </header>
 
       <ErrorMessage error={error} />
@@ -197,15 +270,16 @@ export function AiConnectorPage() {
         <h2 id="settings-ai-heading" className="settings-section-heading">
           AI access
         </h2>
-        <div className="settings-group">
+        <div className="settings-group settings-security-form">
           {success ? (
             <div className="settings-feedback settings-feedback--success" role="status">
               {success}
             </div>
           ) : null}
           <p>
-            LogChamp can answer questions about your training inside an AI
-            assistant you already use. This is off until you turn it on.
+            LogChamp can explain your training in plain words: the coach on the
+            Analytics page, a debrief after each workout, and answers inside an
+            AI assistant you already use. This is off until you turn it on.
           </p>
           <p>
             Only your computed summary leaves LogChamp - totals, trends,
@@ -214,9 +288,9 @@ export function AiConnectorPage() {
           </p>
           <p>
             You can turn this off at any time, which immediately cuts off
-            access.
+            access everywhere.
           </p>
-          <p>
+          <p className="ai-consent-state">
             {granted && grantDate
               ? `AI access is on. You turned it on on ${grantDate}.`
               : "AI access is off."}
@@ -241,6 +315,81 @@ export function AiConnectorPage() {
       </section>
 
       {granted ? (
+        <section className="settings-section" aria-labelledby="settings-coach-heading">
+          <h2 id="settings-coach-heading" className="settings-section-heading">
+            Coach in the app
+          </h2>
+          <div className="settings-group settings-security-form">
+            <p>
+              The coach lives on the Analytics page and on every finished
+              workout. It reads the same numbers you see and explains them; it
+              never computes a stat of its own.
+            </p>
+            {coachStatus ? (
+              <p className={`ai-coach-status${coachStatus.available ? " ai-coach-status--ready" : ""}`}>
+                {coachStatusLine(coachStatus, Boolean(savedKey))}
+              </p>
+            ) : null}
+
+            <details className="ai-key-details">
+              <summary className="ai-key-details__summary">
+                Use your own Anthropic key
+              </summary>
+              <div className="ai-key-details__body stack">
+                <p className="muted small" style={{ margin: 0 }}>
+                  The key stays in this browser tab, is sent with each question, and is
+                  never stored by LogChamp. Closing the tab forgets it. Calls bill
+                  your Anthropic account.
+                </p>
+                {savedKey ? (
+                  <div className="ai-key-row">
+                    <code className="ai-key-row__mask">{maskedKey}</code>
+                    <button type="button" className="btn btn-secondary btn--toolbar" onClick={onForgetKey}>
+                      Forget key
+                    </button>
+                  </div>
+                ) : (
+                  <form className="ai-key-form" onSubmit={onSaveKey}>
+                    <input
+                      type="password"
+                      autoComplete="off"
+                      spellCheck={false}
+                      placeholder="sk-ant-…"
+                      aria-label="Anthropic API key"
+                      value={keyDraft}
+                      onChange={(e) => {
+                        setKeyDraft(e.target.value);
+                        setKeyNotice(null);
+                      }}
+                    />
+                    <button type="submit" className="btn btn--toolbar" disabled={!keyDraft.trim()}>
+                      Save key
+                    </button>
+                  </form>
+                )}
+                {keyNotice ? (
+                  <p
+                    className={
+                      keyNotice.tone === "error"
+                        ? "settings-feedback-inline-error"
+                        : "settings-feedback settings-feedback--success"
+                    }
+                    role="status"
+                    style={{ margin: 0, padding: keyNotice.tone === "error" ? 0 : undefined }}
+                  >
+                    {keyNotice.text}
+                  </p>
+                ) : null}
+              </div>
+            </details>
+            <p className="muted small" style={{ margin: 0 }}>
+              <Link to="/analytics">Open Analytics</Link> to ask the coach.
+            </p>
+          </div>
+        </section>
+      ) : null}
+
+      {granted ? (
         <section
           className="settings-section"
           aria-labelledby="settings-ai-connect-heading"
@@ -249,7 +398,7 @@ export function AiConnectorPage() {
             id="settings-ai-connect-heading"
             className="settings-section-heading"
           >
-            Connect your AI assistant
+            Connect an outside AI assistant
           </h2>
           <div className="settings-group settings-security-form">
             <p>
@@ -259,7 +408,7 @@ export function AiConnectorPage() {
 
             <div>
               <p className="settings-row__label">Your LogChamp connector address</p>
-              <p className="settings-row__value" style={{ userSelect: "all" }}>
+              <p className="settings-row__value ai-connector-address" style={{ userSelect: "all" }}>
                 {connectorUrl}
               </p>
               <button
@@ -267,16 +416,8 @@ export function AiConnectorPage() {
                 type="button"
                 onClick={() => void onCopyAddress()}
               >
-                {copyStatus === "copied" ? "Copied" : "Copy address"}
+                {copyStatus === "copied" ? "Copied ✓" : "Copy address"}
               </button>
-              {copyStatus === "copied" ? (
-                <div
-                  className="settings-feedback settings-feedback--success"
-                  role="status"
-                >
-                  Copied
-                </div>
-              ) : null}
               {copyStatus === "failed" ? (
                 <p>
                   Couldn't copy automatically - select the address above and

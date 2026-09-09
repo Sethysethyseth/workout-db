@@ -21,6 +21,7 @@ import { WorkoutTemplateTableView } from "../components/templates/WorkoutTemplat
 import { WorkoutSetRowShell } from "../components/workout/WorkoutSetRowShell.jsx";
 import { MetricInfoButton } from "../components/workout/MetricInfoButton.jsx";
 import { AddExerciseToLibrarySheet } from "../components/workout/AddExerciseToLibrarySheet.jsx";
+import { CoachPanel } from "../components/coach/CoachPanel.jsx";
 import { getAdHocSessionTitle, setAdHocSessionTitle } from "../lib/adHocSessionTitle.js";
 import { sessionDisplayTitle } from "../lib/sessionDisplay.js";
 import { smartWorkoutNameFromSessionExercises } from "../lib/smartWorkoutName.js";
@@ -3091,6 +3092,13 @@ export function SessionDetailPage() {
               );
             })}
           </div>
+
+          <CoachPanel
+            mode="debrief"
+            focus={{ type: "session", sessionId }}
+            collapsedLabel="Debrief this workout"
+            autoAsk="Debrief this workout."
+          />
 
           {confirmReopen ? (
             <div className="stack" style={{ gap: 8 }}>

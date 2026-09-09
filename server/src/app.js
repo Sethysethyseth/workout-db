@@ -34,6 +34,10 @@ const CONNECTOR_RATE_LIMIT_MAX = 300;
 const CONNECTOR_AUTH_FAILURE_WINDOW_MS = 15 * 60 * 1000;
 const CONNECTOR_AUTH_FAILURE_MAX = 600;
 
+/** In-app coach budget: each call is a paid model completion. */
+const COACH_RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
+const COACH_RATE_LIMIT_MAX = 40;
+
 if (isProduction && !process.env.SESSION_SECRET) {
   throw new Error("SESSION_SECRET is required in production");
 }
@@ -204,8 +208,24 @@ const aiRateLimit = rateLimit({
   keyGenerator: aiRateLimitKey,
 });
 
+// The in-app coach spends real model tokens per call, so its budget is far
+// tighter than the read-only surfaces above. Keyed by the signed-in identity
+// (attachAuthUser has run), never shared with /ai or /mcp.
+const coachRateLimit = rateLimit({
+  windowMs: COACH_RATE_LIMIT_WINDOW_MS,
+  limit: COACH_RATE_LIMIT_MAX,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: aiRateLimitKey,
+  message: {
+    error: "rate_limited",
+    message: "The coach is taking a breather. Try again in a few minutes.",
+  },
+});
+
 app.use("/mcp", connectorAuthFailureRateLimit);
 app.use("/ai", aiRateLimit);
+app.use("/coach", coachRateLimit);
 
 // MCP Streamable HTTP (2025-11-25): POST messages + GET SSE channel.
 // connectorAuth sets req.connectorUserId; a fresh server is built per request.

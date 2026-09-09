@@ -11,6 +11,9 @@ if (!BASE_URL) {
 
 const normalizedBaseUrl = BASE_URL.replace(/\/+$/, "");
 
+/** Resolved API origin, for callers that must stream (coach) instead of reading JSON. */
+export const API_BASE_URL = normalizedBaseUrl;
+
 if (import.meta.env.DEV) {
   console.log("[API] BASE_URL =", BASE_URL);
 }
@@ -34,7 +37,7 @@ export class ApiError extends Error {
   }
 }
 
-function readAuthToken() {
+export function readAuthToken() {
   try {
     if (typeof window === "undefined") return null;
     const t = window.localStorage.getItem("authToken");

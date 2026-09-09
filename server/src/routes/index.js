@@ -7,6 +7,7 @@ const sessionRoutes = require("./sessionRoutes");
 const feedbackRoutes = require("./feedbackRoutes");
 const analyticsRoutes = require("./analyticsRoutes");
 const aiRoutes = require("./aiRoutes");
+const coachRoutes = require("./coachRoutes");
 const {
   buildProtectedResourceMetadata,
 } = require("../ai/protectedResource");
@@ -56,5 +57,6 @@ router.use("/sessions", sessionRoutes);
 router.use("/feedback", feedbackRoutes);
 router.use("/analytics", analyticsRoutes);
 router.use("/ai", aiRoutes);
+router.use("/coach", coachRoutes);
 
 module.exports = router;

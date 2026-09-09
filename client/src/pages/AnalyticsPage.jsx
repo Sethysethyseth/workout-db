@@ -11,6 +11,8 @@ import { MuscleVolumeChart } from "../components/analytics/MuscleVolumeChart.jsx
 import { MuscleVolumeHeatmap } from "../components/analytics/MuscleVolumeHeatmap.jsx";
 import { StrengthTrendChart } from "../components/analytics/StrengthTrendChart.jsx";
 import { ExercisesView } from "../components/analytics/ExercisesView.jsx";
+import { CoachPanel } from "../components/coach/CoachPanel.jsx";
+import { buildSuggestedQuestions } from "../lib/coachSuggestions.js";
 import { Meter } from "../components/analytics/Meter.jsx";
 import { BalanceScale } from "../components/analytics/BalanceScale.jsx";
 import {
@@ -719,6 +721,12 @@ export function AnalyticsPage() {
   const indexExerciseCount = exerciseIndex?.exercises?.length ?? 0;
   const isNewUser = indexReady && exerciseIndex != null && indexExerciseCount === 0;
 
+  const coachRange = useMemo(() => rangeForWeeks(weeks), [weeks]);
+  const coachSuggestions = useMemo(
+    () => (summary ? buildSuggestedQuestions(summary, { view }) : []),
+    [summary, view]
+  );
+
   return (
     <div className="stack analytics-page">
       <div>
@@ -812,6 +820,13 @@ export function AnalyticsPage() {
         ) : (
           <div className={`stack analytics-content${loading ? " is-refreshing" : ""}`}>
             <StatTiles summary={summary} />
+            <CoachPanel
+              mode="ask"
+              range={coachRange}
+              weeks={weeks}
+              focus={{ type: "view", view }}
+              suggestions={coachSuggestions}
+            />
             <AnalyticsViewTabs value={view} onChange={setView} />
             {view === "muscles" ? (
               <>
