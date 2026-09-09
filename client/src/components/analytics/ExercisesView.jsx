@@ -365,7 +365,7 @@ function ExerciseDetailPanel({ detail, weeks, loading, error, onClose }) {
   if (loading) {
     return (
       <section className="card ex-detail-panel">
-        <LoadingState slowLabel="Loading exercise detail…" />
+        <LoadingState tone="skeleton" variant="session" rows={2} slowLabel="Loading exercise detail…" />
       </section>
     );
   }
@@ -576,7 +576,7 @@ export function ExercisesView({ weeks, range, exerciseParam, onExerciseParamChan
   }
 
   if (indexLoading) {
-    return <LoadingState slowLabel="Loading your exercises…" />;
+    return <LoadingState tone="skeleton" variant="list" rows={4} slowLabel="Loading your exercises…" />;
   }
 
   if (indexError) {

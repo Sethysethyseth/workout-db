@@ -275,18 +275,117 @@ html[data-theme="dark"][data-palette="chill"] {
 }
 
 /* --- Palette scenes (decorative full-viewport layer) ---
-   One clearly-delimited block per palette; future variant blocks (T2d) sit
-   alongside. The layer is a fixed body::before behind all app content; #root
-   is lifted above it (positioned pseudo-elements otherwise paint over
-   non-positioned content). Light mode re-declares each scene with alphas at
-   ~0.4x of dark (champ glow at half). */
+   Dark mode shows the palette's photograph twice, on two fixed layers that
+   together fill EVERY viewport: body::before is the photograph as a blurred,
+   darkened, full-bleed backdrop (the atmosphere), and body::after is the
+   sharp band anchored at the bottom, feathered into the backdrop with a
+   mask so there is never a seam. The glow sits on #root::before so it reads
+   at full strength over both. Light mode keeps the tinted-paper look: glow
+   only, no photograph.
 
-body::before {
+   Every colour here derives from --color-interactive, so a palette - shipped
+   or generated at runtime - gets a matching glow for free. Only the glow
+   SHAPE and the photograph are per-palette art direction. The photograph
+   sources are small (~700px wide): the blurred backdrop carries the fill,
+   the sharp band stays where its detail reads. #root is lifted above all
+   three layers. */
+
+:root {
+  --scene-glow: color-mix(in srgb, var(--color-interactive) 11%, transparent);
+  --scene-glow-shape: ellipse 120% 50% at 50% -10%;
+  --scene-band-h: 320px;
+  --scene-backdrop-opacity: 0.94;
+}
+
+html[data-theme="dark"] {
+  --scene-glow: color-mix(in srgb, var(--color-interactive) 22%, transparent);
+  --scene-image: url("./assets/scenes/champ.jpg");
+}
+
+html[data-palette="iron"] {
+  --scene-glow: color-mix(in srgb, var(--color-interactive) 7%, transparent);
+  --scene-glow-shape: ellipse 140% 45% at 52% 92%;
+}
+
+html[data-theme="dark"][data-palette="iron"] {
+  --scene-glow: color-mix(in srgb, var(--color-interactive) 18%, transparent);
+  --scene-image: url("./assets/scenes/iron.jpg");
+}
+
+html[data-palette="forest"] {
+  --scene-glow: color-mix(in srgb, var(--color-interactive) 5%, transparent);
+  --scene-glow-shape: ellipse 120% 40% at 50% -10%;
+}
+
+html[data-theme="dark"][data-palette="forest"] {
+  --scene-glow: color-mix(in srgb, var(--color-interactive) 10%, transparent);
+  --scene-image: url("./assets/scenes/forest.jpg");
+}
+
+html[data-palette="crimson"] {
+  --scene-glow: color-mix(in srgb, var(--color-interactive) 12%, transparent);
+  --scene-glow-shape: circle 26vmin at 82% 12%;
+}
+
+html[data-theme="dark"][data-palette="crimson"] {
+  --scene-glow: color-mix(in srgb, var(--color-interactive) 30%, transparent);
+  --scene-image: url("./assets/scenes/crimson.jpg");
+}
+
+html[data-palette="chill"] {
+  --scene-glow: color-mix(in srgb, var(--color-interactive) 7%, transparent);
+  --scene-glow-shape: circle 30vmin at 56% 14%;
+}
+
+html[data-theme="dark"][data-palette="chill"] {
+  --scene-glow: color-mix(in srgb, var(--color-interactive) 16%, transparent);
+  --scene-image: url("./assets/scenes/chill.jpg");
+}
+
+@media (max-width: 719px) {
+  :root {
+    --scene-band-h: 240px;
+  }
+}
+
+/* Layer 1 - the backdrop. Dark only. Oversized by 8% so the blur never
+   shows a transparent edge; brightness pulled down so cards stay legible
+   on top of any photograph. */
+html[data-theme="dark"] body::before {
   content: "";
   position: fixed;
-  inset: 0;
+  inset: -8%;
   z-index: 0;
   pointer-events: none;
+  background: var(--scene-image) center 45% / cover no-repeat;
+  filter: blur(28px) saturate(1.15) brightness(0.52);
+  opacity: var(--scene-backdrop-opacity);
+}
+
+/* Layer 2 - the sharp band. Dark only. Covers the full width at the bottom
+   and fades upward into the backdrop. */
+html[data-theme="dark"] body::after {
+  content: "";
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: var(--scene-band-h);
+  z-index: 0;
+  pointer-events: none;
+  background: var(--scene-image) center bottom / cover no-repeat;
+  -webkit-mask-image: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 1) 0,
+    rgba(0, 0, 0, 1) 38%,
+    rgba(0, 0, 0, 0) 100%
+  );
+  mask-image: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 1) 0,
+    rgba(0, 0, 0, 1) 38%,
+    rgba(0, 0, 0, 0) 100%
+  );
 }
 
 #root {
@@ -294,164 +393,33 @@ body::before {
   z-index: 1;
 }
 
-/* === Scene: CHAMP (default — applies when data-palette is absent/unknown) === */
-
-/* Champ light: blue glow only (scene image is dark-mode-only) */
-body::before {
-  background: radial-gradient(ellipse 120% 50% at 50% -10%, rgba(91, 110, 232, 0.09), transparent 60%);
+/* Layer 3 - the glow (both modes), plus iron's chalk grain. Lives inside
+   #root's stacking context at z-index -1: above the photographs, below
+   every card. */
+#root::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(var(--scene-glow-shape), var(--scene-glow), transparent 68%);
+  background-repeat: no-repeat;
 }
 
-/* Champ dark: blue glow + night-skyline photo band */
-html[data-theme="dark"] body::before {
+html[data-palette="iron"] #root::before {
   background:
-    radial-gradient(ellipse 120% 50% at 50% -10%, rgba(91, 110, 232, 0.18), transparent 60%),
-    url("./assets/scenes/champ.jpg");
-  background-repeat: no-repeat, no-repeat;
-  background-size: auto, auto 320px;
-  background-position: 0 0, center bottom;
-}
-
-/* === Scene: IRON (chalk barbell sketch + grain) === */
-
-/* Iron light: forge glow + grain (scene image is dark-mode-only) */
-html[data-palette="iron"] body::before {
-  background:
-    radial-gradient(ellipse 140% 45% at 52% 92%, rgba(255, 174, 61, 0.06), transparent 65%),
+    radial-gradient(var(--scene-glow-shape), var(--scene-glow), transparent 68%),
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0.84 0 0 0 0 0.79 0 0 0 0 0.72 0 0 0 0.02 0'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)'/%3E%3C/svg%3E");
   background-repeat: no-repeat, repeat;
   background-size: auto, 240px 240px;
-  background-position: 0 0, 0 0;
 }
 
-/* Iron dark: forge glow + forge/anvil photo band + grain */
-html[data-theme="dark"][data-palette="iron"] body::before {
+html[data-theme="dark"][data-palette="iron"] #root::before {
   background:
-    radial-gradient(ellipse 140% 45% at 52% 92%, rgba(255, 174, 61, 0.16), transparent 65%),
-    url("./assets/scenes/iron.jpg"),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0.84 0 0 0 0 0.79 0 0 0 0 0.72 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)'/%3E%3C/svg%3E");
-  background-repeat: no-repeat, no-repeat, repeat;
-  background-size: auto, auto 320px, 240px 240px;
-  background-position: 0 0, center bottom, 0 0;
-}
-
-/* === Scene: FOREST (canopy treeline photo band) === */
-
-/* Forest light: canopy glow only (scene image is dark-mode-only) */
-html[data-palette="forest"] body::before {
-  background: radial-gradient(ellipse 120% 40% at 50% -10%, rgba(74, 222, 128, 0.03), transparent 60%);
-}
-
-/* Forest dark: canopy glow + treeline photo band */
-html[data-theme="dark"][data-palette="forest"] body::before {
-  background:
-    radial-gradient(ellipse 120% 40% at 50% -10%, rgba(74, 222, 128, 0.07), transparent 60%),
-    url("./assets/scenes/forest.jpg");
-  background-repeat: no-repeat, no-repeat;
-  background-size: auto, auto 320px;
-  background-position: 0 0, center bottom;
-}
-
-/* === Scene: CRIMSON (blood moon + wolf band photo) === */
-
-/* Crimson light: blood-moon glow only (scene image is dark-mode-only) */
-html[data-palette="crimson"] body::before {
-  background: radial-gradient(circle 26vmin at 82% 12%, rgba(248, 113, 113, 0.11), rgba(248, 113, 113, 0.04) 45%, transparent 70%);
-}
-
-/* Crimson dark: blood-moon glow + wolf photo band */
-html[data-theme="dark"][data-palette="crimson"] body::before {
-  background:
-    radial-gradient(circle 26vmin at 82% 12%, rgba(248, 113, 113, 0.28), rgba(248, 113, 113, 0.1) 45%, transparent 70%),
-    url("./assets/scenes/crimson.jpg");
-  background-repeat: no-repeat, no-repeat;
-  background-size: auto, auto 320px;
-  background-position: 0 0, center bottom;
-}
-
-/* === Scene: CHILL (moonlit mountain ridgeline) === */
-
-/* Chill light: moonlight glow only (scene image is dark-mode-only) */
-html[data-palette="chill"] body::before {
-  background: radial-gradient(circle 30vmin at 56% 14%, rgba(159, 176, 216, 0.05), transparent 70%);
-}
-
-/* Chill dark: moonlight glow + pine-treeline photo band */
-html[data-theme="dark"][data-palette="chill"] body::before {
-  background:
-    radial-gradient(circle 30vmin at 56% 14%, rgba(159, 176, 216, 0.12), transparent 70%),
-    url("./assets/scenes/chill.jpg");
-  background-repeat: no-repeat, no-repeat;
-  background-size: auto, auto 320px;
-  background-position: 0 0, center bottom;
-}
-
-/* Home (.workout-tab) owns champ scene — suppress global champ photo so only one layer paints */
-html[data-theme="dark"][data-palette="champ"]:has(.workout-tab) body::before,
-html[data-theme="dark"]:not([data-palette]):has(.workout-tab) body::before {
-  background: radial-gradient(ellipse 120% 70% at 50% -10%, rgba(91, 110, 232, 0.18), transparent 88%);
-  background-repeat: no-repeat;
-  background-size: auto;
-  background-position: 0 0;
-}
-
-/* Home (.workout-tab) owns iron scene — suppress global iron.jpg, keep forge glow + grain */
-html[data-theme="dark"][data-palette="iron"]:has(.workout-tab) body::before {
-  background:
-    radial-gradient(ellipse 140% 65% at 52% 92%, rgba(255, 174, 61, 0.16), transparent 90%),
+    radial-gradient(var(--scene-glow-shape), var(--scene-glow), transparent 68%),
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0.84 0 0 0 0 0.79 0 0 0 0 0.72 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)'/%3E%3C/svg%3E");
   background-repeat: no-repeat, repeat;
   background-size: auto, 240px 240px;
-  background-position: 0 0, 0 0;
-}
-
-/* Home (.workout-tab) owns chill scene — suppress global chill.jpg so only one layer paints */
-html[data-theme="dark"][data-palette="chill"]:has(.workout-tab) body::before {
-  background: radial-gradient(circle 50vmin at 56% 14%, rgba(159, 176, 216, 0.12), transparent 85%);
-  background-repeat: no-repeat;
-  background-size: auto;
-  background-position: 0 0;
-}
-
-/* Home (.workout-tab) owns forest scene — suppress global forest.jpg so only one layer paints */
-html[data-theme="dark"][data-palette="forest"]:has(.workout-tab) body::before {
-  background: radial-gradient(ellipse 120% 60% at 50% -10%, rgba(74, 222, 128, 0.09), transparent 88%);
-  background-repeat: no-repeat;
-  background-size: auto;
-  background-position: 0 0;
-}
-
-/* Home (.workout-tab) owns crimson scene — suppress global crimson.jpg so only one layer paints */
-html[data-theme="dark"][data-palette="crimson"]:has(.workout-tab) body::before {
-  background: radial-gradient(circle 45vmin at 82% 12%, rgba(248, 113, 113, 0.28), rgba(248, 113, 113, 0.1) 55%, transparent 88%);
-  background-repeat: no-repeat;
-  background-size: auto;
-  background-position: 0 0;
-}
-
-/* --- Auth scene source token (dark-only; consumed by .auth-page) ---
-   One declaration per palette so the later forest/crimson raster swap is a
-   one-liner. Deliberately dark-only: in light mode the auth card sits on plain
-   --color-bg with no scene (mirrors the global scenes being dark-only). */
-html[data-theme="dark"] {
-  --scene-image: url("./assets/scenes/champ.jpg");
-}
-html[data-theme="dark"][data-palette="iron"] {
-  --scene-image: url("./assets/scenes/iron.jpg");
-}
-html[data-theme="dark"][data-palette="chill"] {
-  --scene-image: url("./assets/scenes/chill.jpg");
-}
-html[data-theme="dark"][data-palette="forest"] {
-  --scene-image: url("./assets/scenes/forest.jpg");
-}
-html[data-theme="dark"][data-palette="crimson"] {
-  --scene-image: url("./assets/scenes/crimson.jpg");
-}
-
-@media (max-width: 719px) {
-  body:has(.bottom-nav)::before {
-    bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px));
-  }
 }
 
 * {
@@ -462,10 +430,6 @@ body {
   margin: 0;
   color: var(--color-text);
   background: var(--color-bg);
-}
-
-.main {
-  padding: 12px 0 36px;
 }
 
 /* Horizontal overflow should be solved at the source (no global masking). */
@@ -520,9 +484,10 @@ a {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 13px;
+  font-family: var(--font-display);
+  font-size: 14px;
   font-weight: 700;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
   color: var(--color-text);
 }
 
@@ -642,6 +607,7 @@ a {
 }
 
 .bottom-nav__item {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -651,6 +617,31 @@ a {
   padding: 6px 4px 4px;
   color: var(--color-text-secondary);
   transition: color var(--motion-fast) var(--ease-standard);
+}
+
+/* Active tab: a short accent bar at the top edge, grown in from the centre. */
+.bottom-nav__item::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 28px;
+  height: 3px;
+  border-radius: 0 0 3px 3px;
+  background: var(--color-interactive);
+  transform: translateX(-50%) scaleX(0);
+  transform-origin: center;
+  transition: transform var(--motion-base) var(--ease-standard);
+}
+
+.bottom-nav__item.active::before {
+  transform: translateX(-50%) scaleX(1);
+}
+
+.bottom-nav__item:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--color-interactive) 55%, transparent);
+  outline-offset: -2px;
+  border-radius: 10px;
 }
 
 .bottom-nav__icon {
@@ -700,6 +691,13 @@ h2,
 h3 {
   margin: 0 0 8px;
   letter-spacing: -0.02em;
+}
+
+/* Page-level titles wear the display face; section h2/h3 stay in the body
+   face so the hierarchy is carried by the face itself, not just by size. */
+h1 {
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
 }
 
 p {
@@ -838,10 +836,19 @@ html[data-theme="dark"] .card .card {
   font-size: 12px;
 }
 
+/* --- Loading: three tones, one motif ---
+   soft: the inline barbell beside the copy, for a section that is fetching.
+   skeleton: shape-matched ghost rows under a slow shimmer, for layouts whose
+   shape is known before the data is (History, Library, Analytics).
+   page: the cold-start splash - wordmark, the barbell, and copy that
+   cross-fades to something honest when the wait turns out to be long.
+   All three obey the 400ms reveal delay in LoadingState.jsx, so a fast load
+   never flashes a loader. The barbell itself is defined near the coach. */
+
 .loading-state {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   padding: 12px 14px;
   border-radius: 12px;
   background: color-mix(in srgb, var(--color-surface-2) 82%, var(--color-bg));
@@ -855,41 +862,9 @@ html[data-theme="dark"] .loading-state {
   box-shadow: none;
 }
 
-.loading-state__dots {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  flex-shrink: 0;
-}
-
-.loading-state__dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: color-mix(in srgb, var(--color-interactive) 55%, var(--color-text-secondary));
-  animation: loading-dot-pulse 1.2s var(--ease-standard) infinite;
-}
-
-.loading-state__dot:nth-child(2) {
-  animation-delay: 0.15s;
-}
-
-.loading-state__dot:nth-child(3) {
-  animation-delay: 0.3s;
-}
-
-@keyframes loading-dot-pulse {
-  0%,
-  80%,
-  100% {
-    opacity: 0.35;
-    transform: scale(0.85);
-  }
-
-  40% {
-    opacity: 1;
-    transform: scale(1);
-  }
+.loading-state .barbell--inline {
+  --bb-w: 52px;
+  --bb-h: 16px;
 }
 
 .loading-state__text {
@@ -898,11 +873,155 @@ html[data-theme="dark"] .loading-state {
   color: var(--color-text-secondary);
 }
 
+/* -- Skeletons -- */
+
+.skeleton-wrap,
+.skeleton {
+  display: grid;
+  gap: 10px;
+}
+
+.skeleton__row,
+.skeleton__tile,
+.skeleton__block,
+.skeleton__title {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-card);
+  border: 1px solid color-mix(in srgb, var(--color-border) 40%, transparent);
+  background:
+    linear-gradient(
+        100deg,
+        transparent 32%,
+        color-mix(in srgb, var(--color-skeleton-highlight) 85%, var(--color-surface-1)) 50%,
+        transparent 68%
+      )
+      no-repeat,
+    var(--color-skeleton-base);
+  background-size: 220% 100%, auto;
+  background-position: 150% 0, 0 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .skeleton__row,
+  .skeleton__tile,
+  .skeleton__block,
+  .skeleton__title {
+    animation: skeleton-shimmer 1.7s linear infinite;
+  }
+}
+
+@keyframes skeleton-shimmer {
+  from {
+    background-position: 150% 0, 0 0;
+  }
+  to {
+    background-position: -70% 0, 0 0;
+  }
+}
+
+/* Ghost text lines, so a row reads as a row and a tile as a tile. */
+.skeleton__row::before,
+.skeleton__row::after,
+.skeleton__tile::before,
+.skeleton__tile::after,
+.skeleton__block::before {
+  content: "";
+  position: absolute;
+  left: 14px;
+  height: 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-text-secondary) 20%, transparent);
+}
+
+.skeleton__row {
+  min-height: 62px;
+}
+
+.skeleton__row::before {
+  top: 16px;
+  width: 42%;
+  height: 12px;
+}
+
+.skeleton__row::after {
+  top: 36px;
+  width: 64%;
+  height: 8px;
+  opacity: 0.7;
+}
+
+.skeleton__tiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+@media (min-width: 720px) {
+  .skeleton__tiles {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.skeleton__tile {
+  min-height: 86px;
+}
+
+.skeleton__tile::before {
+  top: 14px;
+  width: 46%;
+  height: 8px;
+}
+
+.skeleton__tile::after {
+  top: 34px;
+  width: 38%;
+  height: 22px;
+  border-radius: 6px;
+}
+
+.skeleton__block {
+  min-height: 220px;
+}
+
+.skeleton__block--short {
+  min-height: 120px;
+}
+
+.skeleton__block::before {
+  top: 14px;
+  width: 34%;
+  height: 12px;
+}
+
+.skeleton__title {
+  height: 30px;
+  width: 52%;
+  border-radius: 8px;
+}
+
+.skeleton__caption {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.skeleton__caption .barbell--inline {
+  --bb-w: 40px;
+  --bb-h: 13px;
+}
+
+/* -- Cold-start splash -- */
+
 .loading-page {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 40vh;
+  min-height: min(68vh, 640px);
   padding: 24px;
 }
 
@@ -910,115 +1029,60 @@ html[data-theme="dark"] .loading-state {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 20px;
+  gap: 22px;
 }
 
+/* The wordmark PNG is white letters with a transparent crown. Painted as a
+   mask it takes the text colour in both modes; the crown is a SIBLING mask
+   in the accent (a child would be clipped by the parent's mask). */
 .loading-page__mark {
   position: relative;
-  width: auto;
-  height: auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  width: 196px;
+  aspect-ratio: 1024 / 231;
+  animation: splash-breathe 2.4s ease-in-out infinite;
 }
 
-.loading-page__ring {
+.loading-page__wordmark,
+.loading-page__crown {
   position: absolute;
   inset: 0;
-  border-radius: 50%;
-  border: 2px solid color-mix(in srgb, var(--color-interactive) 22%, transparent);
-  animation: loading-page-breathe 1.4s ease-in-out infinite;
-}
-
-.loading-page__ring::after {
-  content: "";
-  position: absolute;
-  inset: 11px;
-  border-radius: 50%;
-  background: color-mix(in srgb, var(--color-interactive) 14%, transparent);
-  animation: loading-page-core-pulse 1.4s ease-in-out infinite;
-}
-
-@keyframes loading-page-breathe {
-  0%,
-  100% {
-    transform: scale(0.92);
-    opacity: 0.55;
-  }
-
-  50% {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-
-@keyframes loading-page-core-pulse {
-  0%,
-  100% {
-    opacity: 0.4;
-    transform: scale(0.88);
-  }
-
-  50% {
-    opacity: 0.75;
-    transform: scale(1);
-  }
-}
-
-.loading-page__lifter {
-  display: block;
-  width: 120px;
-  height: 92px;
-  background-color: var(--color-interactive);
-  -webkit-mask-image: url("./assets/brand/lifter.png");
-  mask-image: url("./assets/brand/lifter.png");
   -webkit-mask-repeat: no-repeat;
   mask-repeat: no-repeat;
   -webkit-mask-size: contain;
   mask-size: contain;
   -webkit-mask-position: center;
   mask-position: center;
-  transform-origin: center;
-  animation: coldstart-lift 1.8s ease-in-out infinite,
-    coldstart-glow 1.8s ease-in-out infinite;
-  will-change: transform, filter;
 }
 
-@keyframes coldstart-lift {
-  0% {
-    transform: translateY(6%) scaleY(0.97);
-  }
-
-  10% {
-    transform: translateY(6%) scaleY(0.96);
-  }
-
-  38% {
-    transform: translateY(-8%) scaleY(1.03);
-  }
-
-  55% {
-    transform: translateY(-8%) scaleY(1.02);
-  }
-
-  100% {
-    transform: translateY(6%) scaleY(0.97);
-  }
+.loading-page__wordmark {
+  background-color: var(--color-text);
+  -webkit-mask-image: url("./assets/brand/wordmark_white.png");
+  mask-image: url("./assets/brand/wordmark_white.png");
 }
 
-@keyframes coldstart-glow {
+.loading-page__crown {
+  background-color: var(--color-interactive);
+  -webkit-mask-image: url("./assets/brand/wordmark_crown_mask.png");
+  mask-image: url("./assets/brand/wordmark_crown_mask.png");
+}
+
+@keyframes splash-breathe {
   0%,
   100% {
-    filter: drop-shadow(0 2px 4px color-mix(in srgb, var(--color-interactive) 0%, transparent));
+    opacity: 0.78;
   }
+  50% {
+    opacity: 1;
+  }
+}
 
-  46% {
-    filter: drop-shadow(0 4px 12px color-mix(in srgb, var(--color-interactive) 38%, transparent));
-  }
+.loading-page__barbell {
+  --bb-w: 140px;
+  --bb-h: 36px;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .loading-page__lifter {
+  .loading-page__mark {
     animation: none;
   }
 }
@@ -1034,7 +1098,8 @@ html[data-theme="dark"] .loading-state {
   font-weight: 600;
   color: var(--color-text-secondary);
   text-align: center;
-  transition: opacity var(--motion-base) var(--ease-standard);
+  letter-spacing: 0.01em;
+  transition: opacity var(--motion-slow) var(--ease-standard);
 }
 
 .loading-page__text--primary {
@@ -1056,6 +1121,18 @@ html[data-theme="dark"] .loading-state {
 
 .loading-page__text--slow.loading-page__text--visible {
   opacity: 1;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 /* --- Profile / Account settings (mobile settings–style) --- */
@@ -1080,9 +1157,10 @@ html[data-theme="dark"] .loading-state {
 .settings-page-title,
 .page-title {
   margin: 0 0 4px;
-  font-size: clamp(1.45rem, 4.5vw, 1.65rem);
-  font-weight: 800;
-  letter-spacing: -0.03em;
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 4.5vw, 1.7rem);
+  font-weight: 700;
+  letter-spacing: -0.01em;
   line-height: 1.15;
 }
 
@@ -1189,9 +1267,10 @@ html[data-theme="dark"] .profile-hub-stat-tile {
 }
 
 .profile-hub-stat-tile__value {
-  font-size: 1.25rem;
-  font-weight: 800;
-  letter-spacing: -0.02em;
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
   line-height: 1.15;
   color: var(--color-text);
 }
@@ -4081,44 +4160,9 @@ html[data-theme="dark"] .exercise-name-suggestions {
   padding-bottom: 24px;
 }
 
-/* Home scene (dark-only): bottom-band via --scene-image, shared across ALL palettes
-   (--scene-image already resolves per palette), auth hard rule — never cover.
-   Band ~220px tall anchored center bottom. Overlay ramps from transparent at the very
-   bottom (scene reads) to fully solid --color-bg by ~200px, so the bright top edge of the
-   image is hidden and there is no hard seam below the cards. Top wash (first layer) reaches
-   the opposite end - a faint --color-interactive tint anchored at the very top so the page
-   doesn't go flat solid behind the navbar; fades out well before the bottom band so the two
-   never overlap/muddy each other. */
-html[data-theme="dark"] .workout-tab::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  background-image:
-    radial-gradient(
-      ellipse 130% 65% at 50% 0%,
-      color-mix(in srgb, var(--color-interactive) 10%, transparent),
-      transparent 70%
-    ),
-    linear-gradient(
-      to top,
-      transparent 0,
-      color-mix(in srgb, var(--color-bg) 55%, transparent) 90px,
-      var(--color-bg) 200px,
-      var(--color-bg) 100%
-    ),
-    var(--scene-image);
-  background-repeat: no-repeat, no-repeat, no-repeat;
-  background-size: auto, auto, auto 220px;
-  background-position: center top, center top, center bottom;
-}
-
-@media (max-width: 719px) {
-  html[data-theme="dark"] .workout-tab::before {
-    bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px));
-  }
-}
+/* Home used to paint its own copy of the scene band; the global two-layer
+   scene (body::before backdrop + body::after band) now covers every route,
+   so the tab only keeps its glints and the lifted card stack. */
 
 .workout-tab.stack > * {
   position: relative;
@@ -4189,9 +4233,10 @@ html[data-theme="dark"] .workout-tab::before {
 
 .home-masthead__wordmark {
   margin: 0;
-  font-size: 1.35rem;
-  font-weight: 800;
-  letter-spacing: -0.03em;
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
   color: var(--color-text);
 }
 
@@ -4243,10 +4288,11 @@ html[data-theme="dark"] .workout-hero.card--notched::before {
 .workout-hero__title,
 .workout-hero__headline {
   margin: 0;
-  font-size: clamp(1.5rem, 5vw, 1.85rem);
-  font-weight: 800;
-  letter-spacing: -0.03em;
-  line-height: 1.15;
+  font-family: var(--font-display);
+  font-size: clamp(1.55rem, 5vw, 1.95rem);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.12;
 }
 
 .workout-hero__headline {
@@ -5226,48 +5272,41 @@ html[data-theme="dark"] .start-workout-picker__sheet {
 /* --- Auth layout (navbar-less, scene-backed, centered card) --- */
 
 .auth-shell {
-  min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 16px;
 }
 
-/* Opaque base occludes the global body::before scene band on auth routes, so
-   the old scrolling-page band never reappears here. Light mode stops here:
-   plain --color-bg, no scene. */
+/* The auth routes sit directly on the global two-layer scene (blurred
+   backdrop + sharp band), so the card floats over the same atmosphere the
+   app has. Nothing is painted here; the card's own blur does the rest. */
 .auth-page {
-  background-color: var(--color-bg);
+  background: transparent;
 }
 
-/* Scene is dark-only (gated below); anchored center bottom, auto height,
-   no-repeat per the scene hard rule (never cover). The darken-top gradient
-   quiets the area behind the card, then fades to transparent by ~58% so the
-   scene reads clearly through the lower third. Overlay alphas are tokenized so
-   individual palettes (champ) can lighten them without redeclaring the scene. */
-html[data-theme="dark"] .auth-page {
-  --auth-overlay-top: 90%;
-  --auth-overlay-mid: 42%;
-  background-image:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--color-bg) var(--auth-overlay-top), transparent) 0%,
-      color-mix(in srgb, var(--color-bg) var(--auth-overlay-mid), transparent) 26%,
-      transparent 58%
-    ),
-    var(--scene-image);
-  background-repeat: no-repeat, no-repeat;
-  background-size: auto, auto 460px;
-  background-position: center top, center bottom;
+/* The wordmark PNG is white; in light mode it would vanish, so it becomes
+   a mask painted with the text colour instead. Same box either way, so the
+   accent crown overlay stays registered. */
+html:not([data-theme="dark"]) .wordmark img {
+  opacity: 0;
 }
 
-/* Champ skyline is the darkest source (bottom-band avg ~15/255); ease its
-   overlay so what's there reads. NOTE: source asset is a dark night export,
-   flagged for re-vendor — this only mitigates, it can't brighten silhouettes. */
-html[data-theme="dark"][data-palette="champ"] .auth-page,
-html[data-theme="dark"]:not([data-palette]) .auth-page {
-  --auth-overlay-top: 68%;
-  --auth-overlay-mid: 22%;
+html:not([data-theme="dark"]) .wordmark::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-color: var(--color-text);
+  -webkit-mask-image: url("./assets/brand/wordmark_white.png");
+  mask-image: url("./assets/brand/wordmark_white.png");
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-position: center top;
+  mask-position: center top;
+  pointer-events: none;
 }
 
 .auth-card-wrap {
@@ -5837,9 +5876,11 @@ html[data-theme="dark"] .auth-page .auth-form.card {
 
 /* Proportional figures on purpose: tabular-nums reads loose at display size. */
 .stat-tile-value {
-  font-size: 26px;
-  font-weight: 650;
-  line-height: 1.15;
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
   color: var(--color-text);
 }
 
@@ -5904,8 +5945,9 @@ html[data-theme="dark"] .auth-page .auth-form.card {
 }
 
 .weekly-report__stat-value {
-  font-size: 18px;
-  font-weight: 650;
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 700;
   line-height: 1.2;
   color: var(--color-text);
 }
@@ -6765,6 +6807,8 @@ html[data-theme="dark"][data-palette="iron"] .analytics-page {
 }
 
 .ex-total-val {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
@@ -7757,5 +7801,221 @@ html[data-theme="dark"][data-palette="iron"] .analytics-page {
 
 .ai-connector-address {
   word-break: break-all;
+}
+
+/* ---------------------------------------------------------------------------
+   Analytics polish: a quiet entrance and a sharper KPI row. Cards rise 6px
+   and fade in once, staggered by row; a range refetch keeps the existing
+   dim-in-place behaviour and never replays the entrance. */
+
+@media (prefers-reduced-motion: no-preference) {
+  .analytics-content > * {
+    animation: rise-in var(--motion-slow) var(--ease-standard) both;
+  }
+
+  .analytics-content > :nth-child(2) {
+    animation-delay: 40ms;
+  }
+
+  .analytics-content > :nth-child(3) {
+    animation-delay: 80ms;
+  }
+
+  .analytics-content > :nth-child(4) {
+    animation-delay: 120ms;
+  }
+
+  .analytics-content > :nth-child(n + 5) {
+    animation-delay: 160ms;
+  }
+
+  .analytics-kpis > .stat-tile {
+    animation: rise-in var(--motion-slow) var(--ease-standard) both;
+  }
+
+  .analytics-kpis > .stat-tile:nth-child(2) {
+    animation-delay: 30ms;
+  }
+
+  .analytics-kpis > .stat-tile:nth-child(3) {
+    animation-delay: 60ms;
+  }
+
+  .analytics-kpis > .stat-tile:nth-child(4) {
+    animation-delay: 90ms;
+  }
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* KPI tiles: an accent hairline along the top edge gives the headline row a
+   read of its own without borrowing the live-workout L-bar. */
+.stat-tile {
+  position: relative;
+  overflow: hidden;
+  padding: 14px 14px 12px;
+}
+
+.stat-tile::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    var(--color-interactive),
+    color-mix(in srgb, var(--color-interactive) 25%, transparent) 70%,
+    transparent
+  );
+  opacity: 0.85;
+}
+
+.stat-tile-label {
+  color: var(--color-text-secondary);
+}
+
+.stat-tile-value--up::after {
+  content: "";
+  display: inline-block;
+  width: 0.42em;
+  height: 0.42em;
+  margin-left: 0.28em;
+  vertical-align: 0.12em;
+  border-top: 3px solid currentColor;
+  border-right: 3px solid currentColor;
+  transform: rotate(-45deg);
+  opacity: 0.9;
+}
+
+/* Range chips read as one control, like the view tabs below them. */
+.analytics-range-chips {
+  gap: 6px;
+}
+
+.range-chip {
+  min-height: 36px;
+  font-family: var(--font-display);
+  letter-spacing: 0.02em;
+  transition:
+    border-color var(--motion-fast) var(--ease-standard),
+    background var(--motion-fast) var(--ease-standard),
+    box-shadow var(--motion-fast) var(--ease-standard);
+}
+
+/* Heatmap cells: a faint inset edge so the darkest bins keep their shape
+   against the card in dark mode. */
+.hm-cell {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-text) 5%, transparent);
+}
+
+/* ---------------------------------------------------------------------------
+   History: rows grouped by month, each row one tappable line. */
+
+.history-group {
+  display: grid;
+  gap: 8px;
+}
+
+.history-group__label {
+  margin: 4px 0 0;
+  padding: 0 2px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.history-list {
+  padding: 4px 0;
+}
+
+.history-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 12px;
+  align-items: center;
+  gap: 12px;
+  min-height: 60px;
+  padding: 10px 14px;
+  color: inherit;
+  text-decoration: none;
+  border-top: 1px solid color-mix(in srgb, var(--color-border) 55%, transparent);
+  transition: background var(--motion-fast) var(--ease-standard);
+}
+
+.history-list > .history-row:first-child {
+  border-top: none;
+}
+
+.history-row:hover {
+  background: var(--color-surface-2);
+}
+
+.history-row:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--color-interactive) 55%, transparent);
+  outline-offset: -2px;
+  border-radius: 8px;
+}
+
+.history-row--live {
+  box-shadow: inset 3px 0 0 0 var(--color-interactive);
+}
+
+.history-row__main {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.history-row__title {
+  font-weight: 700;
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.history-row__meta {
+  line-height: 1.35;
+}
+
+.history-row__status {
+  flex-shrink: 0;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
+  background: var(--color-surface-2);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.history-row__status--live {
+  border-color: color-mix(in srgb, var(--color-interactive) 45%, var(--color-border));
+  background: var(--color-nav-active-bg);
+  color: var(--color-interactive);
+}
+
+.history-row__chevron {
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid var(--color-text-secondary);
+  border-bottom: 2px solid var(--color-text-secondary);
+  transform: rotate(-45deg);
+  opacity: 0.6;
 }
 

@@ -83,6 +83,17 @@ export function ThemeProvider({ children }) {
     document.documentElement.dataset.palette = palette;
   }, [palette]);
 
+  // Browser chrome (mobile address bar, PWA title bar) follows the page
+  // ground, so a palette change never leaves a mismatched strip at the top.
+  useEffect(() => {
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (!meta) return;
+    const bg = getComputedStyle(document.documentElement)
+      .getPropertyValue("--color-bg")
+      .trim();
+    if (bg) meta.setAttribute("content", bg);
+  }, [resolved, palette]);
+
   useEffect(() => {
     if (theme !== "system") return undefined;
     const mq = window.matchMedia("(prefers-color-scheme: dark)");

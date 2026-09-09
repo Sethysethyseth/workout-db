@@ -245,7 +245,7 @@ export function AiConnectorPage() {
   }
 
   if (loading) {
-    return <LoadingState slowLabel="Waking up the server…" />;
+    return <LoadingState tone="skeleton" variant="settings" slowLabel="Waking up the server…" />;
   }
 
   const granted = Boolean(consent?.granted);

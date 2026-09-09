@@ -4,9 +4,13 @@ import { useGuardedNav } from "../../lib/useGuardedNav.js";
 import { canReviewFeedback } from "../../lib/reviewerEmails.js";
 
 export function Navbar() {
-  const { currentUser } = useAuth();
+  const { currentUser, authLoading } = useAuth();
   const { guardedClick } = useGuardedNav();
   const showDevFeedback = canReviewFeedback(currentUser);
+  // While the session is still resolving (the cold-start splash), the bar
+  // shows the brand only - never a flash of Login / Register for someone
+  // who is about to be signed in.
+  const settled = !authLoading;
 
   return (
     <header className="nav">
@@ -24,7 +28,7 @@ export function Navbar() {
           ) : null}
         </div>
         <nav className="links nav-main-links" aria-label="Main">
-          {currentUser ? (
+          {!settled ? null : currentUser ? (
             <>
               <NavLink to="/" end onClick={guardedClick("/", { end: true })}>
                 Workout

@@ -230,7 +230,7 @@ export function EditBlockTemplatePage() {
   }
 
   if (loading) {
-    return <LoadingState slowLabel="Waking up the server…" />;
+    return <LoadingState tone="skeleton" variant="session" rows={3} slowLabel="Waking up the server…" />;
   }
 
   if (!blockWeeks) {

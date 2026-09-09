@@ -397,7 +397,9 @@ export function MyTemplatesPage() {
             </div>
           ) : null}
 
-          {loading ? <LoadingState slowLabel="Waking up the server…" /> : null}
+          {loading ? (
+            <LoadingState tone="skeleton" variant="list" rows={3} slowLabel="Waking up the server…" />
+          ) : null}
 
           {tab !== "exercises" && emptyAll ? (
             <div className="card stack">

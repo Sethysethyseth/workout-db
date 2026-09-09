@@ -9,11 +9,26 @@ import {
   sessionDisplayTitle,
 } from "../lib/sessionDisplay.js";
 
-function formatDate(value) {
+function formatWhen(value) {
   if (!value) return "—";
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return String(value);
-  return d.toLocaleString();
+  const now = new Date();
+  const sameYear = d.getFullYear() === now.getFullYear();
+  return d.toLocaleString(undefined, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    ...(sameYear ? {} : { year: "numeric" }),
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+function monthKey(value) {
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "Undated";
+  return d.toLocaleDateString(undefined, { month: "long", year: "numeric" });
 }
 
 export function SessionsPage() {
@@ -38,18 +53,35 @@ export function SessionsPage() {
     load();
   }, []);
 
-  const sortedSessions = useMemo(() => {
+  /* Newest activity first, grouped by month so a long history scans by
+     eye instead of by scrolling. */
+  const groups = useMemo(() => {
     const list = Array.isArray(sessions) ? [...sessions] : [];
     list.sort(compareSessionsByRecentActivity);
-    return list;
+    const out = [];
+    for (const s of list) {
+      const key = monthKey(sessionActivityTimestamp(s));
+      const last = out[out.length - 1];
+      if (last && last.key === key) last.items.push(s);
+      else out.push({ key, items: [s] });
+    }
+    return out;
   }, [sessions]);
+
+  const completedCount = sessions.filter((s) => s?.completedAt).length;
 
   return (
     <div className="stack sessions-page">
       <div className="row">
         <div>
           <h1 className="page-title">History</h1>
-          <p className="muted sessions-intro">Started and completed sessions.</p>
+          <p className="muted sessions-intro">
+            {loading && sessions.length === 0
+              ? "Every session you started or finished."
+              : completedCount === 1
+                ? "1 finished workout so far."
+                : `${completedCount} finished workouts so far.`}
+          </p>
         </div>
         <button className="btn btn-secondary btn--toolbar" type="button" onClick={load} disabled={loading}>
           Refresh
@@ -57,7 +89,9 @@ export function SessionsPage() {
       </div>
 
       <ErrorMessage error={error} />
-      {loading ? <LoadingState slowLabel="Waking up the server…" /> : null}
+      {loading && sessions.length === 0 ? (
+        <LoadingState tone="skeleton" variant="list" rows={4} slowLabel="Waking up the server…" />
+      ) : null}
 
       {!loading && sessions.length === 0 ? (
         <div className="card stack">
@@ -67,44 +101,47 @@ export function SessionsPage() {
         </div>
       ) : null}
 
-      {sortedSessions.length > 0 ? (
-        <div className="card sub-card-list">
-          {sortedSessions.map((s) => {
-            const title = sessionDisplayTitle(s);
-            return (
-              <div key={s.id} className="sub-card stack">
-                <div className="row">
-                  <div>
-                    <h2 style={{ marginBottom: 6 }}>
-                      <Link to={`/sessions/${s.id}`}>{title}</Link>
-                    </h2>
-                    <div className="muted small">Session #{s.id}</div>
-                    <div className="muted small">
-                      Last activity: {formatDate(sessionActivityTimestamp(s))}
-                    </div>
-                    <div className="muted small">Started: {formatDate(s.startedAt)}</div>
-                  </div>
-                  <div className="stack" style={{ alignItems: "flex-end" }}>
-                    <span className="pill">{s.completedAt ? "Completed" : "In progress"}</span>
-                    <span className="pill">
-                      Sets: {s._count?.sets ?? "—"} · Exercises:{" "}
-                      {s._count?.sessionExercises ?? "—"}
+      {groups.map((group) => (
+        <section key={group.key} className="history-group" aria-label={group.key}>
+          <h2 className="history-group__label">{group.key}</h2>
+          <div className="card history-list">
+            {group.items.map((s) => {
+              const title = sessionDisplayTitle(s);
+              const live = !s.completedAt;
+              const sets = s._count?.sets ?? "—";
+              const exercises = s._count?.sessionExercises ?? "—";
+              return (
+                <Link
+                  key={s.id}
+                  to={`/sessions/${s.id}`}
+                  className={`history-row${live ? " history-row--live" : ""}`}
+                >
+                  <span className="history-row__main">
+                    <span className="history-row__title">{title}</span>
+                    <span className="history-row__meta muted small">
+                      {formatWhen(sessionActivityTimestamp(s))}
+                      <span aria-hidden="true"> · </span>
+                      {exercises} {exercises === 1 ? "exercise" : "exercises"}
+                      <span aria-hidden="true"> · </span>
+                      {sets} {sets === 1 ? "set" : "sets"}
+                      {s.workoutTemplate ? (
+                        <>
+                          <span aria-hidden="true"> · </span>
+                          from {s.workoutTemplate.name}
+                        </>
+                      ) : null}
                     </span>
-                  </div>
-                </div>
-
-                <div className="muted small">
-                  {s.workoutTemplate ? (
-                    <>From Saved Workout (started from a saved workout template).</>
-                  ) : (
-                    <>One-time session (not started from a saved workout).</>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      ) : null}
+                  </span>
+                  <span className={`history-row__status${live ? " history-row__status--live" : ""}`}>
+                    {live ? "In progress" : "Done"}
+                  </span>
+                  <span className="history-row__chevron" aria-hidden="true" />
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+      ))}
     </div>
   );
 }
