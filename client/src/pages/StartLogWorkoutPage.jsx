@@ -50,5 +50,5 @@ export function StartLogWorkoutPage() {
     );
   }
 
-  return <LoadingState label="Starting workout…" slowLabel="Waking up the server…" />;
+  return <LoadingState label="Starting workout…" slowLabel="Taking longer than usual…" />;
 }

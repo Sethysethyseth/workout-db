@@ -75,7 +75,7 @@ export function ConnectorLoginPage() {
       <LoadingState
         tone="page"
         label="Loading session…"
-        slowLabel="Waking up the server…"
+        slowLabel="Taking longer than usual…"
       />
     );
   }

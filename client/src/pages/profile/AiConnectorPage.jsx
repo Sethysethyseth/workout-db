@@ -127,7 +127,11 @@ function coachStatusLine(status, hasOwnKey) {
   if (!status) return null;
   if (!status.consentGranted) return "Waiting for AI access to be turned on.";
   if (status.available) {
-    if (status.source === "mock") return "Running in mock mode on this server: canned answers, no model.";
+    if (status.source === "mock") {
+      return import.meta.env.DEV
+        ? "Running in mock mode on this server: canned answers, no model."
+        : "Ready.";
+    }
     if (status.source === "byo") return "Ready, using the key saved in this browser tab.";
     return "Ready. Hosted by LogChamp on this server.";
   }
@@ -245,7 +249,7 @@ export function AiConnectorPage() {
   }
 
   if (loading) {
-    return <LoadingState tone="skeleton" variant="settings" slowLabel="Waking up the server…" />;
+    return <LoadingState tone="skeleton" variant="settings" slowLabel="Taking longer than usual…" />;
   }
 
   const granted = Boolean(consent?.granted);

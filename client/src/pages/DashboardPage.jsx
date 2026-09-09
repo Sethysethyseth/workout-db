@@ -7,6 +7,7 @@ import { WeeklyReport } from "../components/analytics/WeeklyReport.jsx";
 import { ActiveWorkoutHero } from "../components/workout/ActiveWorkoutHero.jsx";
 import { StartWorkoutHero } from "../components/workout/StartWorkoutHero.jsx";
 import { StartWorkoutPicker } from "../components/workout/StartWorkoutPicker.jsx";
+import { WeekStrip } from "../components/workout/WeekStrip.jsx";
 import { useActiveSession } from "../context/ActiveSessionContext.jsx";
 import { readCurrentProgram } from "../lib/currentProgramStorage.js";
 import { ACTIVE_WORKOUT_ERROR, startAdHocWorkoutAndNavigate } from "../lib/startAdHocWorkoutFlow.js";
@@ -30,7 +31,7 @@ export function DashboardPage() {
   const { sessions, activeSession, refresh, loading: sessionsLoading } = useActiveSession();
 
   const [templates, setTemplates] = useState([]);
-  const [templatesLoading, setTemplatesLoading] = useState(true);
+  const [, setTemplatesLoading] = useState(true);
   const [startingTemplateId, setStartingTemplateId] = useState(null);
   const [startError, setStartError] = useState(null);
   const [quickStartError, setQuickStartError] = useState(null);
@@ -57,7 +58,7 @@ export function DashboardPage() {
   const completedRecent = useMemo(() => {
     const list = Array.isArray(sessions) ? sessions.filter((s) => s?.completedAt) : [];
     list.sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt));
-    return list.slice(0, 3);
+    return list.slice(0, 5);
   }, [sessions]);
 
   useEffect(() => {
@@ -186,7 +187,7 @@ export function DashboardPage() {
         <StartWorkoutHero onOpenPicker={() => setPickerOpen(true)} />
       )}
 
-      <WeeklyReport />
+      <WeeklyReport weekStrip={<WeekStrip sessions={sessions} />} />
 
       <section className="workout-tab-recent" aria-labelledby="workout-recent-heading">
         <div className="row workout-tab-recent__head">
@@ -206,17 +207,27 @@ export function DashboardPage() {
             Completed workouts show up here.
           </p>
         ) : (
-          <div className="card sub-card-list">
+          <div className="card recent-list">
             {completedRecent.map((s) => {
               const when = formatLoggedWhen(s.completedAt);
               const title = sessionDisplayTitle(s);
+              const exercises = s._count?.sessionExercises ?? null;
+              const sets = s._count?.sets ?? null;
               return (
-                <div key={s.id} className="sub-card stack">
-                  <Link to={`/sessions/${s.id}`} className="workout-tab-recent__row-title">
-                    {title}
-                  </Link>
-                  <span className="muted small workout-tab-recent__row-when">{when}</span>
-                </div>
+                <Link key={s.id} to={`/sessions/${s.id}`} className="recent-row">
+                  <span className="recent-row__main">
+                    <span className="recent-row__title">{title}</span>
+                    <span className="recent-row__when muted small">{when}</span>
+                  </span>
+                  {exercises != null || sets != null ? (
+                    <span className="recent-row__facts muted small">
+                      {exercises != null ? `${exercises} ${exercises === 1 ? "exercise" : "exercises"}` : null}
+                      {exercises != null && sets != null ? <span aria-hidden="true"> · </span> : null}
+                      {sets != null ? `${sets} ${sets === 1 ? "set" : "sets"}` : null}
+                    </span>
+                  ) : null}
+                  <span className="recent-row__chevron" aria-hidden="true" />
+                </Link>
               );
             })}
           </div>

@@ -15,7 +15,7 @@ function round2(n) {
 }
 
 const HONESTY_FRONT_REAR_DELT =
-  "frontRearDelt cannot be computed: the exercise catalog's muscle taxonomy has no separate front/rear deltoid distinction (single 'shoulders' bucket).";
+  "Front vs. rear delt balance isn't tracked yet: the exercise catalog files every shoulder exercise under one 'shoulders' bucket.";
 
 function identityKeyOf(set) {
   if (!set.resolution.resolved || !set.resolution.catalogEntry) return null;

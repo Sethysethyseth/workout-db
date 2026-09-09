@@ -134,7 +134,7 @@ export function CommunityProgramsSection() {
 
       <ErrorMessage error={error} />
       {loading ? (
-        <LoadingState tone="skeleton" variant="list" rows={3} slowLabel="Waking up the server…" />
+        <LoadingState tone="skeleton" variant="list" rows={3} slowLabel="Taking longer than usual…" />
       ) : null}
 
       {empty ? <div className="card">No public programs found.</div> : null}

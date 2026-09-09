@@ -266,7 +266,7 @@ export function MyTemplatesPage() {
     <div className="stack programs-page">
       <div className="row">
         <div>
-          <h1 className="page-title">Programs</h1>
+          <h1 className="page-title">Library</h1>
           <p className="muted programs-intro">Your workouts, blocks, and community programs.</p>
         </div>
         <button
@@ -398,22 +398,16 @@ export function MyTemplatesPage() {
           ) : null}
 
           {loading ? (
-            <LoadingState tone="skeleton" variant="list" rows={3} slowLabel="Waking up the server…" />
+            <LoadingState tone="skeleton" variant="list" rows={3} slowLabel="Taking longer than usual…" />
           ) : null}
 
           {tab !== "exercises" && emptyAll ? (
-            <div className="card stack">
-              <p className="muted" style={{ margin: 0 }}>
-                Nothing saved yet. Create a block or a workout to add to your library.
+            <div className="card stack library-empty">
+              <p className="library-empty__title">Your library is empty</p>
+              <p className="muted small" style={{ margin: 0 }}>
+                Saved workouts and blocks live here. Start one with the buttons above, or log
+                a workout live and save it afterwards.
               </p>
-              <div className="row" style={{ flexWrap: "wrap" }}>
-                <Link className="btn programs-create-primary" to="/create-template?type=block">
-                  Create block
-                </Link>
-                <Link className="btn btn-secondary" to="/create-template?type=workout">
-                  Create workout
-                </Link>
-              </div>
             </div>
           ) : null}
 

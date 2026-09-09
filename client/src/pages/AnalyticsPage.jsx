@@ -522,11 +522,22 @@ function ExecutionSection({ execution }) {
         onViewChange={setView}
       />
       {execution.length === 0 ? (
-        <div className="analytics-chart-body stack analytics-empty-surface">
-          <ExecutionEmptyGhost />
-          <p className="muted small analytics-chart-note">
-            Log workouts from a template with planned sets to unlock execution fidelity.
-          </p>
+        <div className="analytics-chart-body">
+          <div className="analytics-empty-state">
+            <div className="analytics-empty-state__ghost">
+              <ExecutionEmptyGhost />
+            </div>
+            <div className="analytics-empty-state__body">
+              <p className="analytics-empty-state__title">Nothing to compare yet</p>
+              <p className="muted small analytics-empty-state__copy">
+                Execution compares what a workout planned with what you logged. It fills in once
+                you log a workout from a saved template with planned sets.
+              </p>
+              <Link className="btn btn-secondary btn--compact" to="/templates">
+                Browse saved workouts
+              </Link>
+            </div>
+          </div>
         </div>
       ) : view === "chart" ? (
         <div className="analytics-chart-body">
@@ -612,7 +623,12 @@ function DataQualitySection({ meta }) {
               Effort (RIR or RPE) logged on {Math.round(meta.effortCoverage * 100)}% of sets{" "}
               <HowCalculatedButton title="Effort logging" copy={HOW_EFFORT_MATTERS} />
             </p>
-            <Meter value={meta.effortCoverage} />
+            <div className="coverage-meter">
+              <Meter value={meta.effortCoverage} />
+              <span className="coverage-meter__value">
+                {Math.round(meta.effortCoverage * 100)}%
+              </span>
+            </div>
           </div>
           <p className="muted small" style={{ margin: 0 }}>
             {EFFORT_RATIONALE_SHORT}
@@ -754,7 +770,7 @@ export function AnalyticsPage() {
       {/* Skeleton only on first load; a range refetch dims the previous
           render in place instead of flashing it away. */}
       {loading && !summary ? (
-        <LoadingState tone="skeleton" variant="analytics" slowLabel="Waking up the server…" />
+        <LoadingState tone="skeleton" variant="analytics" slowLabel="Taking longer than usual…" />
       ) : null}
 
       {!error && summary ? (

@@ -8,7 +8,7 @@ const {
 const BENCH = "Barbell Bench Press - Medium Grip";
 
 const FRONT_REAR_NOTE =
-  "frontRearDelt cannot be computed: the exercise catalog's muscle taxonomy has no separate front/rear deltoid distinction (single 'shoulders' bucket).";
+  "Front vs. rear delt balance isn't tracked yet: the exercise catalog files every shoulder exercise under one 'shoulders' bucket.";
 
 const from = "2026-06-01T00:00:00Z";
 const to = "2026-06-15T00:00:00Z";

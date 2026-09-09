@@ -264,7 +264,7 @@ function DigestSection({ currentSummary, priorSummary, priorEmpty }) {
   );
 }
 
-export function WeeklyReport() {
+export function WeeklyReport({ weekStrip = null }) {
   const windows = useMemo(() => weeklyReportWindows(), []);
   const [currentSummary, setCurrentSummary] = useState(null);
   const [priorSummary, setPriorSummary] = useState(null);
@@ -326,6 +326,7 @@ export function WeeklyReport() {
             See analytics →
           </Link>
         </div>
+        {weekStrip ? <div className="weekly-report__strip">{weekStrip}</div> : null}
         <p className="weekly-report__nudge muted small">
           No workouts yet this week - last week you logged {priorWorkouts}.
         </p>
@@ -352,6 +353,7 @@ export function WeeklyReport() {
           See analytics →
         </Link>
       </div>
+      {weekStrip ? <div className="weekly-report__strip">{weekStrip}</div> : null}
       <div className="weekly-report__stats">
         <ReportStat
           label="Workouts"

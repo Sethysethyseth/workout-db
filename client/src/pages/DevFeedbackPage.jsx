@@ -67,7 +67,7 @@ export function DevFeedbackPage() {
           variant="list"
           rows={3}
           label="Loading feedback…"
-          slowLabel="Waking up the server…"
+          slowLabel="Taking longer than usual…"
         />
       ) : null}
 

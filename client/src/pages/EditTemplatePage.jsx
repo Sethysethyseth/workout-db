@@ -125,7 +125,7 @@ export function EditTemplatePage() {
   const effortSignalRequired = effortSignal == null;
 
   if (loading) {
-    return <LoadingState tone="skeleton" variant="session" rows={3} slowLabel="Waking up the server…" />;
+    return <LoadingState tone="skeleton" variant="session" rows={3} slowLabel="Taking longer than usual…" />;
   }
 
   if (!workoutExercises) {

@@ -49,7 +49,7 @@ function paddedRange(min, max) {
   return { min: min - pad, max: max + pad };
 }
 
-function SparklinePlot({ series }) {
+function SparklinePlot({ series, compact = false }) {
   const first = series[0];
   const last = series[series.length - 1];
   const values = series.map((p) => p.weight);
@@ -85,14 +85,16 @@ function SparklinePlot({ series }) {
 
   return (
     <div
-      className="st-sparkline chart-tip-host"
-      tabIndex={0}
+      className={`st-sparkline chart-tip-host${compact ? " st-sparkline--compact" : ""}`}
+      tabIndex={compact ? -1 : 0}
       aria-label={tip}
-      data-tip={tip}
+      data-tip={compact ? undefined : tip}
     >
-      <span className="st-sparkline-val st-sparkline-val--first">
-        {series.length > 1 ? bareWeight(first.weight) : null}
-      </span>
+      {compact ? null : (
+        <span className="st-sparkline-val st-sparkline-val--first">
+          {series.length > 1 ? bareWeight(first.weight) : null}
+        </span>
+      )}
       <svg
         className="st-sparkline-svg"
         viewBox={`0 0 ${W} ${H}`}
@@ -115,7 +117,9 @@ function SparklinePlot({ series }) {
         <path className="st-sparkline-dot-ring" d={`M ${endX} ${endY} l 0.0001 0`} />
         <path className="st-sparkline-dot" d={`M ${endX} ${endY} l 0.0001 0`} />
       </svg>
-      <span className="st-sparkline-val st-sparkline-val--last">{bareWeight(last.weight)}</span>
+      {compact ? null : (
+        <span className="st-sparkline-val st-sparkline-val--last">{bareWeight(last.weight)}</span>
+      )}
     </div>
   );
 }
@@ -138,7 +142,31 @@ function buildTrendRows(perExercise) {
     .filter((ex) => ex.series.length > 0 || ex.topSet != null);
 }
 
-function StrengthTrendRow({ ex }) {
+/** Compact form for the long tail: name, delta, a slim sparkline. */
+function StrengthCompactRow({ ex }) {
+  const { series } = ex;
+  const up = ex.delta > 0;
+  const down = ex.delta < 0;
+  return (
+    <div className="st-compact-row">
+      <span className="st-name">{ex.name}</span>
+      <span className="st-compact-spark" aria-hidden="true">
+        {series.length > 1 ? <SparklinePlot series={series} compact /> : null}
+      </span>
+      <span
+        className={`st-compact-delta${up ? " st-compact-delta--up" : ""}${down ? " st-compact-delta--down" : ""}`}
+      >
+        {series.length <= 1
+          ? "1 session"
+          : ex.delta === 0
+            ? "no change"
+            : `${up ? "+" : "−"}${formatWeight(Math.abs(ex.delta))}`}
+      </span>
+    </div>
+  );
+}
+
+function StrengthTrendRow({ ex, featured = false }) {
   const { series } = ex;
   if (series.length === 0) {
     return (
@@ -157,7 +185,7 @@ function StrengthTrendRow({ ex }) {
       : `${ex.name}: top set ${formatWeight(series[0].weight)} → ${formatWeight(series[series.length - 1].weight)} · ${series.length} sessions`;
 
   return (
-    <div className="st-row" aria-label={tip}>
+    <div className={`st-row${featured ? " st-row--featured" : ""}`} aria-label={tip}>
       <div className="row st-row-head">
         <span className="st-name">{ex.name}</span>
         {series.length === 1 ? (
@@ -205,17 +233,38 @@ export function StrengthTrendChart({ perExercise, betweenRows = null, afterPerEx
     );
   }
 
+  /* The caller orders rows by |matched-effort delta|, so the first few are
+     the movers: they get the full card treatment; the rest read as a
+     compact list, so a long roster is a ranking instead of a wall. */
+  const FEATURED = 4;
+  const featured = rows.slice(0, FEATURED);
+  const tail = rows.slice(FEATURED);
+
   return (
     <div className="st-chart stack">
-      <div className="st-rows">
-        {rows.map((ex) => (
-          <StrengthTrendRow key={ex.exerciseId} ex={ex} />
-        ))}
-        {betweenRows}
-        {afterRows.map((ex) => (
-          <StrengthTrendRow key={ex.exerciseId} ex={ex} />
-        ))}
-      </div>
+      {featured.length > 0 ? (
+        <div className="st-featured">
+          {featured.map((ex) => (
+            <StrengthTrendRow key={ex.exerciseId} ex={ex} featured />
+          ))}
+        </div>
+      ) : null}
+      {tail.length > 0 ? (
+        <div className="st-compact">
+          <p className="st-compact__label muted small">Everything else in range</p>
+          {tail.map((ex) => (
+            <StrengthCompactRow key={ex.exerciseId} ex={ex} />
+          ))}
+        </div>
+      ) : null}
+      {betweenRows}
+      {afterRows.length > 0 ? (
+        <div className="st-compact">
+          {afterRows.map((ex) => (
+            <StrengthCompactRow key={ex.exerciseId} ex={ex} />
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }

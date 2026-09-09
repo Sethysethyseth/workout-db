@@ -8,9 +8,6 @@ import { niceScale } from "../../lib/chartScale.js";
  * chart never gates a value behind color or hover.
  */
 
-/* Leave room at the right edge of every track for the tip label. */
-const LABEL_GUTTER_PX = 44;
-
 function fmt1(n) {
   return Number(n).toFixed(1);
 }
@@ -32,7 +29,7 @@ export function MuscleVolumeChart({ perMuscle }) {
           Stimulating (effort-weighted)
         </span>
       </div>
-      <div className="mv-rows">
+      <div className="mv-rows" style={{ "--mv-ticks": 4 }}>
         {rows.map((m) => {
           const effFrac = Math.min(m.effectiveSets / max, 1);
           const stimFrac =
@@ -53,21 +50,21 @@ export function MuscleVolumeChart({ perMuscle }) {
               <div className="mv-track">
                 <span
                   className="mv-bar mv-bar--effective"
-                  style={{ width: `calc((100% - ${LABEL_GUTTER_PX}px) * ${effFrac})` }}
+                  style={{ width: `${effFrac * 100}%` }}
                 />
                 {stimFrac !== null ? (
                   <span
                     className="mv-bar mv-bar--stimulating"
-                    style={{ width: `calc((100% - ${LABEL_GUTTER_PX}px) * ${stimFrac})` }}
+                    style={{ width: `${stimFrac * 100}%` }}
                   />
                 ) : null}
-                <span
-                  className="mv-val"
-                  style={{ left: `calc((100% - ${LABEL_GUTTER_PX}px) * ${effFrac} + 8px)` }}
-                >
-                  {fmt1(m.effectiveSets)}
-                </span>
               </div>
+              <span className="mv-val">
+                {fmt1(m.effectiveSets)}
+                {m.stimulatingSets !== null ? (
+                  <span className="mv-val__stim">{fmt1(m.stimulatingSets)}</span>
+                ) : null}
+              </span>
             </div>
           );
         })}

@@ -22,6 +22,7 @@ import { WorkoutSetRowShell } from "../components/workout/WorkoutSetRowShell.jsx
 import { MetricInfoButton } from "../components/workout/MetricInfoButton.jsx";
 import { AddExerciseToLibrarySheet } from "../components/workout/AddExerciseToLibrarySheet.jsx";
 import { CoachPanel } from "../components/coach/CoachPanel.jsx";
+import { CompletedSessionSummary } from "../components/workout/CompletedSessionSummary.jsx";
 import { getAdHocSessionTitle, setAdHocSessionTitle } from "../lib/adHocSessionTitle.js";
 import { sessionDisplayTitle } from "../lib/sessionDisplay.js";
 import { smartWorkoutNameFromSessionExercises } from "../lib/smartWorkoutName.js";
@@ -202,7 +203,12 @@ function formatDate(value) {
   if (!value) return "—";
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return String(value);
-  return d.toLocaleString();
+  return d.toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
 }
 
 function nextSetOrder(session) {
@@ -2717,7 +2723,7 @@ export function SessionDetailPage() {
         variant="session"
         rows={3}
         label="Loading workout…"
-        slowLabel="Waking up the server…"
+        slowLabel="Taking longer than usual…"
       />
     );
   }
@@ -2751,7 +2757,6 @@ export function SessionDetailPage() {
   const effortMandateOk = liveEffortSignal == null || setsMissingEffort === 0;
   const canFinishWorkout = totalSetsLogged >= 1 && effortMandateOk;
   const highlightMissingEffort = !isCompleted && setsMissingEffort > 0;
-  const workoutTitle = session ? sessionDisplayTitle(session) : "Workout";
   const readonlyWorkoutName = isFromTemplate
     ? session.workoutTemplate.name
     : sessionDisplayTitle(session);
@@ -2827,7 +2832,7 @@ export function SessionDetailPage() {
           <p className="muted small" style={{ margin: 0 }}>
             {isCompleted ? (
               <>
-                Read-only · {sourceSummary} · finished {formatDate(session?.completedAt)}
+                Finished {formatDate(session?.completedAt)} · {sourceSummary}
               </>
             ) : (
               <>
@@ -3060,48 +3065,29 @@ export function SessionDetailPage() {
           ) : null}
         </div>
       ) : (
-        <div className="card stack session-log-workout-form">
-          <label>
-            Name
-            <input readOnly value={workoutTitle} className="session-readonly-input" />
-          </label>
-
-          {isFromTemplate ? (
-            <label>
-              Description (optional)
-              <textarea readOnly value={session.notes ?? ""} placeholder="—" />
-            </label>
-          ) : null}
-
-          <div className="stack session-completed-blocks">
-            {sessionExercises.map((se) => {
-              const sets = setsByExercise.get(se.id) || [];
+        <div className="stack session-completed">
+          <CompletedSessionSummary
+            session={session}
+            exercises={sessionExercises}
+            setsByExercise={setsByExercise}
+            weightUnit={weightUnit}
+            setHasPR={setHasPR}
+            prCount={sessionPRs.length}
+            renderTracked={(se) => {
+              const status = trackedStatusByExerciseId.get(se.id) ?? null;
+              if (!status) return null;
+              const interactive = status === "unresolved";
               return (
-                <SessionExerciseBlock
-                  key={se.id}
-                  se={se}
-                  sets={sets}
-                  sessionId={sessionId}
-                  isCompleted
-                  showPlannedTargets={isFromTemplate}
-                  useRIR={liveUseRIR}
-                  useRPE={liveUseRPE}
-                  useExerciseNotes={liveUseExerciseNotes}
-                  useSetNotes={isFromTemplate && liveUseSetNotes}
-                  isQuickLog={isQuickLog}
-                  trackedStatus={trackedStatusByExerciseId.get(se.id) ?? null}
-                  onOpenAddToLibrary={() => openAddToLibrarySheet(se.exerciseName, se.id)}
-                  onSaved={load}
-                  onCreateSet={onCreateSetForExercise}
-                  onUpdateSet={onUpdateSet}
-                  onDeleteSet={onDeleteSet}
-                  onAdjustSetCount={onAdjustSetCountForExercise}
-                  setCountBusy={false}
-                  setHasPR={setHasPR}
+                <ExerciseTrackedIndicator
+                  status={status}
+                  interactive={interactive}
+                  onOpenAddToLibrary={
+                    interactive ? () => openAddToLibrarySheet(se.exerciseName, se.id) : undefined
+                  }
                 />
               );
-            })}
-          </div>
+            }}
+          />
 
           <CoachPanel
             mode="debrief"
