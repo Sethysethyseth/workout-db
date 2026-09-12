@@ -1,3 +1,218 @@
+## ARCHIVED September 12, 2026 (forty-eighth session, Opus) - three AI-wave
+## sections moved verbatim out of HANDOFF during the Lane-B audit rewrite,
+## newest first. All three are closed or superseded history: the Aug 14
+## handshake evidence is now carried as conclusions in HANDOFF, the Aug 8
+## 404 chain was fixed by AI8, and the consolidated wave smoke was rewritten
+## because Fable's Sept 9 AI-access rebuild made Part A's checklist stale
+## (the "Copied appears TWICE" residual it describes is gone). Nothing was
+## summarized.
+
+### (from HANDOFF) The Aug 14 live handshake, and the Aug 8 connector 404
+
+### The Aug 14 live handshake — the server side PASSES
+
+Run in-seat (Opus) against staging with a REAL WorkOS token: a throwaway OAuth
+client registered via AuthKit's DCR endpoint, a real `/oauth2/authorize` driven
+in Seth's browser, PKCE code exchange, then direct calls to `/mcp`. Not a mock,
+not a lane. **Every server-side item passed.**
+
+- **Discovery** — `/mcp` 401s with a correct `WWW-Authenticate` +
+  `resource_metadata`; `/.well-known/oauth-protected-resource` points at
+  `https://scientific-mist-64-staging.authkit.app`.
+- **AI8 confirmed live.** Part 0 IS done — WorkOS's External Sign-in URI is
+  `https://workout-db-git-ai-connector-wave-sethysethyseths-projects.vercel.app/connector/login`.
+  Signed out, authorize -> that URL -> `/login?next=%2Fconnector%2Flogin%3F
+  external_auth_id%3D...`: **relative, and the id survives.** No Vercel 404.
+- **`initialize`, `tools/list`, and all four `tools/call` return correct
+  per-user data.** Protocol `2025-11-25`, `serverInfo: logchamp 1.0.0`.
+- **Refresh works** (`offline_access`) — new `jti`, same `sub`.
+
+**Finding 3 (`sub`-to-user mapping) is CLOSED — it PASSES.** The token's
+`sub` is `cmrp90q100000em21f4bomlz1` — a LogChamp **cuid**, NOT a `user_`-
+prefixed WorkOS id. WorkOS echoes back the id `completeConnectorAuthorization`
+sent it, so `payload.sub` -> `findUnique({ id })` resolves to the right user;
+`/auth/me` on the same session returns that exact id. This was the wave's
+highest-severity unverified line. It needed a real token and now has one.
+
+**Finding 1's residual is effectively closed.** Two distinct buckets observed
+live on `/mcp`: authenticated `ratelimit-limit: 300` counting the caller's own
+calls, unauthenticated `600` in a separate bucket. Better, the counter
+continued across a DIFFERENT access token for the same `sub` (295 -> 292, new
+`jti`, no reset) — so the key is identity, not token or client. Only a literal
+two-user check remains, and it needs a second account (Seth's to create).
+
+**Consent kill-switch — PASS, verified live rather than by curl.** AI access
+OFF -> the connect section vanishes (AI5's gating contract) AND an
+already-issued, unexpired token gets `403 {"error":"forbidden","reason":
+"no_consent"}` on both `tools/call` and `tools/list`, with no cache lag. Back
+ON -> 200 and data again. **Side effect: this rewrote `smoke-b8`'s consent
+row**, so `/profile/ai` now reads "turned it on on Aug 14, 2026" (was Aug 6).
+
+**NEW FINDING, probably its own unit: a stale AuthKit session silently binds
+the wrong identity, and there is no escape hatch.** Signed in, authorize
+skipped the External Sign-in URI entirely and went straight to consent reading
+"Logged in as smoke-b8@example.com" — a July 17 throwaway. **`prompt=login` is
+IGNORED**; AuthKit reuses the cached WorkOS session regardless. So a user who
+lands on the wrong LogChamp account once is bound to it with no visible way to
+re-choose, and the connector will confidently answer with the wrong account's
+data. This is the most likely mechanism behind "I added it and it still didn't
+work." Not config-fixable from the client side.
+
+**One more R1 unknown answered: `external_auth_id` TTL is 300 seconds.**
+AuthKit sets `external_auth=...; Max-Age=300` alongside the redirect. AI8's
+"assume no window and degrade gracefully" stance holds, but the window is real
+and a slow password screen can genuinely expire a handshake.
+
+**Trap worth clearing before prod:** the Login URI host is a Vercel PREVIEW
+deploy behind Deployment Protection. Any cold context (curl, no cookies) gets
+302'd to `vercel.com/sso-api` instead of the page; Seth's browser passes only
+because it holds `_vercel_jwt`. Staging-only — prod's domain is public — but
+nothing except his own browser can reach that URL today.
+
+**Still NOT settled by this run:** the handshake from Seth's REAL account
+(blocked by the stale AuthKit session), and the two-identity `RateLimit-*`
+check (needs a second LogChamp account).
+
+### AI8 and the August 8 live failure — the connector 404
+
+Adding the connector died on Vercel's `404 DEPLOYMENT_NOT_FOUND`. Diagnosed
+in-seat (Opus — connector auth is a standing escalation trigger). **Three
+stacked defects, all verified rather than reasoned**, root-caused to AI4 putting
+the Login URI on the API origin:
+
+1. The redirect base was the FIRST entry of `CLIENT_ORIGIN` — a CORS
+   ALLOWLIST — whose staging value is a dead per-deployment Vercel URL. The app
+   was unaffected because `isAllowedVercelPreviewOrigin` pattern-matches
+   `workout-*.vercel.app`, so the stale entry never mattered until something
+   derived a REDIRECT from it.
+2. `LoginPage` could not follow an absolute cross-origin `next`. Proven by
+   running react-router's own resolver: it returns
+   `/login/https:/workout-db-staging.onrender.com/ai/connector/login`, which the
+   catch-all route silently bounces to `/`.
+3. **The structural one:** the session cookie carries `Partitioned` (proven by
+   serializing the real config: `HttpOnly; Secure; Partitioned; SameSite=None`).
+   CHIPS keys it to the TOP-LEVEL site, so an API-origin Login URI reached by
+   top-level navigation from WorkOS is in a different partition and can NEVER
+   see the session. Fixing 1 and 2 alone yields an INFINITE LOGIN LOOP — there
+   was no config-only workaround.
+
+**Two Cursor recon lanes (R1 WorkOS docs, R2 per-client setup) fed both blocks.**
+R1 confirmed WorkOS documents no same-origin constraint, so the move is
+permitted, and that the completion call must stay server-side (secret API key).
+**R1 could NOT source four things and they remain unknown:** `external_auth_id`
+TTL, single-use semantics, repeat-`complete` behaviour, and `redirect_uri`
+expiry. AI8 therefore assumes no window and degrades gracefully; only smoke can
+answer these. R2 found the shipped ChatGPT copy pointed at a path that exists
+only in third-party blogs, and confirmed no vendor requires MCP `2026-07-28`
+yet — so this wave's `2025-11-25` targeting holds.
+
+**Deferred, deliberately not scoped:** MCP's current revision is now
+`2026-07-28`, which drops `initialize` and `Mcp-Session-Id` entirely. Hosted
+assistants have not moved, so nothing is broken — but a dual-era server is a
+future unit.
+
+**A dispatch-ritual gap this session exposed.** `dispatch-unit` gates a lane on
+`git status` being clean, but `DELIVERY.md` is gitignored, so a worktree holding
+an unlanded delivery reads as CLEAN. Two recon lanes still held August 4
+`DELIVERY.md` files and a naive readiness check matched them as fresh; caught by
+timestamp, not by the precondition. Worth adding `--ignored` or an explicit
+`DELIVERY.md` check to the skill.
+
+**Main-tree `node_modules` is stale** — `express-rate-limit` (declared by AI2)
+was never installed there, because every unit of this wave was built in lane
+worktrees. Two suites fail to LOAD in the main tree as a result. Not a
+regression, zero assertion failures; final verification was run in
+`cursor-lane` at the merged HEAD (247/247). An `npm install` in `server/` would
+clear it — deliberately not run unasked (gate item 5).
+
+
+### (from HANDOFF) CONSOLIDATED WAVE SMOKE as written August 8-14 - SUPERSEDED
+
+### CONSOLIDATED WAVE SMOKE — Seth, on the staging Vercel deploy
+
+`origin/ai-connector-wave` is at `43a4ceb`; confirm the Vercel staging deploy
+has built that SHA before starting. Both parts are live — the four Render env
+vars are set.
+
+> **DO PART 0 FIRST — Part B cannot pass without it.** In the WorkOS dashboard
+> (Connect -> Configuration, "External Sign-in URI"), repoint the Login URI to
+> `https://<staging client origin>/connector/login`. AI8 DELETED the old
+> server-side route, so the previous value now points at nothing. One Login URI
+> per environment, so staging and prod are configured separately.
+>
+> Optional while you are in there: clear the dead per-deployment Vercel URL out
+> of `CLIENT_ORIGIN` on the staging Render service. Nothing derives a redirect
+> from it any more, so it is inert — but it is a live trap for the next thing
+> that reads it.
+
+**Part A — the user-facing surface (AI1 + AI5), quick regression:**
+
+- **Profile -> AI access exists and is reachable** (not gated behind
+  `isProdEnv()`, so it is on staging).
+- **Before consent, only the consent statement and the toggle show** — no
+  connector address, no setup steps. That gating is the AI5 contract.
+- **Turn AI access ON** → the connection section appears: "Connect your AI
+  assistant", the address, and (AI9) a four-section accordion.
+- **AI9's accordion (new):** Claude is open by default; ChatGPT, Grok, and
+  "Any other AI assistant" are collapsed. Each opens and closes independently
+  and they do not collapse each other. Check it on your phone too — this is the
+  codebase's first disclosure pattern, so nothing else exercises it.
+- **Read the ChatGPT steps carefully.** They changed: it is Settings ->
+  "Security and login" -> Developer mode, then Plugins. The old copy pointed at
+  a path that exists only in third-party blogs. If you have a ChatGPT account
+  that qualifies, walking it once would be worth more than reading it.
+- **The address reads `https://workout-db-staging.onrender.com/mcp`** — staging,
+  not prod, not `localhost`, not a bare `/mcp`. Wrong ⇒ `VITE_API_URL` on Vercel
+  is wrong.
+- **Copy address works.** Known cosmetic residual: "Copied" appears TWICE (button
+  label flips AND a success line renders), and the button keeps reading "Copied"
+  until re-render. Both block-specified — say if you want one dropped.
+- **Read the copy as a user, not a reviewer** (the E3 lesson): does the tier note
+  read honest rather than discouraging? Is four steps enough to actually do it?
+- **Turn AI access OFF** → the connection section disappears.
+- **Regression check, because AI6 touched `app.js`:** log out and back in, load
+  Analytics, start and finish a workout.
+- **What's New does NOT appear on staging** — prod-gated by design.
+
+**Part B — the real connector. THIS IS THE PASS THAT MATTERS.**
+**Aug 14 update:** Part 0 is DONE, and everything below that a token can reach
+already passed in-seat — the discovery/authorize/exchange/`initialize`/
+`tools/list`/`tools/call` chain, the `sub` mapping, and the consent kill-switch.
+Two items below still need YOU: the handshake **from your real account** (the
+AuthKit session is stuck on `smoke-b8@example.com` and `prompt=login` will not
+shake it), and adding the connector inside Claude itself.
+
+- Add the address in Claude -> Customize -> Connectors -> Add custom connector.
+- **You should get past both prior failures now** — `invalid_scope` (AI7) and the
+  Vercel 404 (AI8). You should land on LogChamp's own page, then come straight
+  back.
+- **Run it SIGNED OUT of LogChamp at least once.** This is the path AI8 changed
+  most and the one no lane can reach: sign out first, then add the connector.
+  You should get LogChamp's login form, and after signing in be returned
+  straight to the handshake rather than dumped on the home page.
+  **This is also the only way to probe the biggest remaining unknown** — WorkOS
+  does not document an `external_auth_id` TTL, so taking your time on the
+  password screen is the real test. If you see "This connection link expired",
+  that unknown just became a known and it needs a follow-up unit.
+- **Also try it already signed in** — that path should be near-instant, with no
+  login detour at all.
+- **If it fails again, capture the exact callback URL and its `error=` value
+  before anything else.** August 6's real error was only visible there; Claude's
+  surfaced message (`state: Field required`) was misleading and would have sent
+  a debugger down the wrong path entirely.
+- **Consent-blocked path:** with AI access OFF, hitting the connector flow should
+  land you on `/profile/ai` (where the toggle is), not on an error page.
+- Ask Claude "how has my bench press moved this month?" and confirm the numbers
+  match the Analytics page — the deterministic engine computes them, the model
+  only narrates.
+- **Turn AI access OFF in LogChamp, then ask Claude again — it must fail.** The
+  consent kill-switch, verified live rather than by curl.
+
+**What smoke CANNOT settle, and stays open into the gate:** the `sub`-to-user
+mapping (finding 3) and AI6's two-identity `RateLimit-*` header check. Both need
+a real WorkOS token in flight; a successful Part B is what makes them checkable.
+
+
 ## ARCHIVED August 8, 2026 (forty-sixth session, Opus) - two AI-wave sections
 ## moved verbatim out of HANDOFF at the AI8/AI9 landing, newest first. Both are
 ## closed history: AI7's defect is superseded by AI8's, and the 26/26 run is
