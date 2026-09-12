@@ -6,6 +6,44 @@ Statuses: DRAFT / QUEUED / DISPATCHED / AWAITING-REVIEW / LANDED <sha> / BOUNCED
 
 ## Active
 
+**Lane-B audit wave, opened September 12, 2026 (Opus frontier seat).** The
+September 9 session landed FIVE commits on `ai-connector-wave` (`8455059`,
+`4f364ee`, `d28989b`, `2080128`, `932fa25`) WITHOUT passing through
+`land-unit` - no per-unit audit, no QUEUE entry, no HANDOFF record. A
+September 12 frontier audit swept them. Clean: ZERO Lane A regression (
+`ai/mcpServer.js`, `connectorAuth.js`, `connectorAuthorize.js`,
+`connectorAuthController.js` are byte-identical to `43a4ceb`; `aiApi.js`
+untouched; AI9's per-client accordions survive the AI-access rebuild intact),
+`test:unit` 295/295 in 27 suites, client build clean, `check-hex` clean across
+the whole range despite +3485 lines of `index.css`, and no schema change so no
+migration is owed. Not clean: **every Lane B path has only ever run against
+`COACH_PROVIDER=mock`** - `server/.env` carries no `COACH_*` keys and the unit
+lane injects `fetchImpl` - and the critic loop that shaped the UI stopped one
+pass short of its own 8+ exit bar. Two units follow.
+
+QUEUED | ai10-ai-layer-live-proof.md | raise the two `max_tokens` ceilings that
+adaptive thinking silently shares on Sonnet 5, branch on `stop_reason:
+"max_tokens"` so a truncated answer never reads as a complete one, give the
+thinking pause a face in CoachPanel, and leave `scripts/smoke-coach.mjs` +
+`scripts/smoke-connector.mjs` behind so "does the AI layer work" becomes one
+command per lane | MODEL auto, MODE 1-relay. Authored from the September 12
+audit, so no recon lane was dispatched - the file:line evidence is in the block.
+The scripts are WRITTEN but NOT RUN by Cursor (no key, no `server/.env` in the
+lane); running them against staging is the reviewer's or Seth's step, and
+`smoke-connector.mjs` makes the August 14 in-seat connector probe repeatable
+for the first time. Fix ruling baked into the block: thinking STAYS ON, the
+caps go up - do not let a later unit "optimize" 8000/3000 back down.
+
+FINDINGS | cr2-critic-round-2-FINDINGS.md | the September 9 critic loop's round-2
+report (7.5/10), preserved verbatim on September 12 from gitignored
+`.playwright-mcp/critic/round-2.md` | NOT a dispatchable block. Its ten ranked
+fixes and twelve bugs are UNWORKED - the loop wrote this report 11 minutes
+after the last commit and stopped. A UI block should be authored FROM it rather
+than from memory. The reusable loop recipe is now at `docs/design/critic-brief.md`
+(also rescued from gitignore). One listed bug is already ruled out: the
+identical `1h 2m` durations are uniform seed data, not a defect.
+
+
 AI-wave (the connector: LogChamp inside the user's own AI assistant), opened
 August 4, 2026 (Opus frontier seat). **NINE units** on branch
 `ai-connector-wave`, off `main` 59e27dc - N went 5 -> 6 on August 5, 6 -> 7 on
