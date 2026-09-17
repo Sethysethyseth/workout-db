@@ -67,6 +67,51 @@ sign-off** - both are evidence that narrows what he still has to check.
 
 ---
 
+## ROAD TO MAIN - the ordered work order (TRANSIENT: delete this section once the merge lands)
+
+Compiled September 17, 2026 (Opus) from a ground-truth readiness pass over the
+branch, NOT from prose. **This section is scratch, not permanent state** - the
+agent that finishes the merge deletes it wholesale in the post-merge HANDOFF
+rewrite. Keep it ordered; items 1-2 can veto everything below them.
+
+**Already verified, do NOT re-derive:** the branch is 43 commits ahead of
+`main` with **zero** commits on `main` that it lacks (clean ff merge, no
+conflict risk); the wave's one migration `20260804180000_add_ai_consent` is
+**additive** (new table + `User.aiConnectorEnabled BOOLEAN NOT NULL DEFAULT
+true`), applied on staging, NOT on prod; all three new runtime deps are
+declared (`@modelcontextprotocol/sdk`, `express-rate-limit`, `jose`); missing
+coach config **degrades honestly** rather than crashing (`keyResolver` ->
+`no_key`, `askCoach` -> `coach_unavailable`, `/coach/status` ->
+`available:false`); and Sept 12's 295/295 unit lane still binds because
+`932fa25..HEAD` is docs-only.
+
+| # | Do | Owner | Blocks because |
+|---|---|---|---|
+| 1 | **VETO CHECK:** prod Render Node >= 22.12 (`workout-db-l3gc` -> Settings, and the `NODE_VERSION` env var, which wins) | Seth | `app.js:10` requires `ai/mcpServer` unconditionally at boot -> ESM-only `zod` (undeclared phantom) + `jose`; `require()` of ESM needs Node >= 22.12 and NOTHING in the repo pins it. Old Node = **total boot failure**, not a dead feature. Fix = set `NODE_VERSION` on the service (no repo change) |
+| 2 | **VETO CHECK:** prod Render build command runs `npm run render-build` | Seth | `render-build` = `prisma generate && prisma migrate deploy`, which applies the migration at BUILD time, before the new code starts - that is what satisfies the ordering invariant automatically. A different command = migration never applies, Prisma selects `User.aiConnectorEnabled` against a missing column, **every default-selection User query fails, login included** |
+| 3 | **DECISION:** hosted coach key on prod, or ship Lane B dark (BYO-only)? | Seth | decides whether #4 is a blocker or a follow-up. Dark is cheaper and makes AI10 non-blocking - but then #13 must not promise a coach |
+| 4 | Dispatch + land **AI10** (`docs/tasks/ai10-ai-layer-live-proof.md`, QUEUED, MODEL auto) - ONLY if #3 says a hosted key ships | agent -> Cursor | `MAX_TOKENS=1500` / `PALETTE_MAX_TOKENS=800` are shared with adaptive thinking on Sonnet 5 -> truncated coach answers and `502 palette_invalid`. Ruling baked into the block: **thinking stays ON, the caps go up (8000/3000)** - do not let a later unit optimize them back down |
+| 5 | **DECISION:** ship or fix the stale-AuthKit **wrong-identity bind** | Seth | `prompt=login` is IGNORED; AuthKit reuses its cached session, so a user bound to the wrong LogChamp account stays bound and the connector answers confidently **with another account's data**. Cross-user isolation surface = standing frontier escalation. **Recommendation on record: fix first, as its own unit** |
+| 6 | Put a REAL key on staging (`COACH_API_KEY` on staging Render, or smoke via the BYO field on Profile -> AI access) | Seth | **no Lane B path has ever reached `api.anthropic.com`** - five commits, 48 tests and a full UI, all against `COACH_PROVIDER=mock`. Without a key #7 cannot test the coach at all, and AI10's smoke scripts have nothing to run against |
+| 7 | **THE SMOKE: Part A surfaces + Part B connector from Seth's REAL account** (checklist below in this file) | Seth | the hard stop. The gate does not start until he signs off; a gate run before smoke gets partly re-run after it. A smoke defect re-enters as a diagnosis block and RESETS the sign-off |
+| 8 | **DECISION (optional):** work CR2 to its 8+ bar, or ship at 7.5 | Seth | `docs/tasks/cr2-critic-round-2-FINDINGS.md` is the work order; a UI block must be authored FROM it, not from memory. Product polish only - does not block a merge |
+| 9 | Pre-main gate review - the `pre-main-review` skill, frontier seat (Opus), gate fuel fanned out to **Cursor report lanes, never Claude subagents** | agent | nothing merges without a PASS. Grep `HANDOFF-ARCHIVE.md` for this wave's session history as review fuel. A BLOCKED verdict sends fixes back through the relay |
+| 10 | `npm install` in main-tree `server/` (gate item 5 - ask first) | agent | `express-rate-limit` was never installed in the main tree (every unit was built in lane worktrees), so two suites fail to LOAD there - zero assertion failures, but it blocks the gate's fresh green run |
+| 11 | Create a **PROD** AuthKit environment; set its External Sign-in URI to `<prod client origin>/connector/login` (RUNBOOK 10c) | Seth | an AuthKit environment has exactly ONE External Sign-in URI, so **prod and staging cannot share one** - pointing it at prod breaks the staging connector and vice versa. Today it points at this branch's Vercel PREVIEW host |
+| 12 | Set prod env vars on `workout-db-l3gc`: `MCP_RESOURCE_URL`, `MCP_AUTHORIZATION_SERVER`, `WORKOS_API_KEY` (+ `COACH_*` per #3) - RUNBOOK 10b | Seth | `MCP_RESOURCE_URL` unset **silently defaults to `http://localhost:3000/mcp`** (`routes/index.js:18`, `middleware/connectorAuth.js:21`) - discovery advertises localhost and every real token fails the audience check with no error anywhere. `MCP_AUTHORIZATION_SERVER` is read at MODULE LOAD (`ai/tokenVerifier.js:1-2`), so it needs a RESTART to take effect |
+| 13 | **DECISION:** write a What's New entry for the September 9 wave, or hold the announcement | Seth | entry `2026-08-ai-assistant` (dated Aug 5) is prod-gated via `lib/appEnv.js` and **fires for every prod user on this deploy**. It describes the CONNECTOR ONLY - it predates the coach, the palette studio and the entire Sept 9 redesign - and advertises a feature that does nothing until #11 and #12 are complete |
+| 14 | Gate-item-5 call: declare `zod` in `package.json` and pin Node in-repo | Seth | the permanent fix for #1. Touches `package.json`, so it asks first |
+| 15 | Seth says **"push to main"** verbatim -> merge, ONE command at a time with approval before each | Seth | gate item 1. Report commits, SHAs and confirmed `origin/main` HEAD after the push |
+| 16 | Post-merge: repoint staging Render to `main` (**RUNBOOK step 7 is NOT a no-op this wave**), run RUNBOOK 10d verification, then the prod smoke | Seth + agent | staging Render tracks THIS BRANCH today. 10d's most informative check is simply **logging in on prod** - the migration adds a NOT NULL column to `User`, so if login works the ordering held |
+
+**Full cutover detail is `docs/RUNBOOK.md` section 10** (vetoes, env matrix,
+AuthKit ruling, verification curls, known-at-cutover defects, rollback). Do not
+re-write that content here. **Rollback is cheap:** the migration is additive
+with a `DEFAULT`, so reverting `main` to `59e27dc` is safe and needs no
+down-migration - leave the table and column in place.
+
+---
+
 ## The AI-wave - Lane A 9/9 LANDED, Lane B landed UNAUDITED and now swept
 
 Branch `ai-connector-wave` off `main` `59e27dc`; `origin` HEAD `932fa25`.
