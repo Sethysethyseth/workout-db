@@ -439,6 +439,28 @@ Do them one at a time between waves, never mid-wave:
    saved); that scoping is in the archive - read it first, it also records what
    must NOT be cut.*
 
+5. **TODO: a workflow that works from ANY device, seamlessly.** Added
+   September 17, 2026. Today the relay only runs from Seth's laptop. A Sept 17
+   audit confirmed the repo itself is cloud-complete (439 files: all entry
+   points, both lockfiles, all four `.claude/skills/`, `.claude/settings.json`,
+   every spec/block/QUEUE/HANDOFF, and both `.env.example` files), so a cloud
+   session can already clone, `npm ci`, run `test:unit` and build. **Four
+   things are what actually pin the workflow to one machine:**
+   (a) **agent auto-memory does not travel** - it lives under
+   `C:\Users\Sethy\.claude\projects\...` and nothing memory-shaped is tracked,
+   so a cloud agent starts without the standing preferences and rulings;
+   (b) **no secrets** - `server/.env` / `client/.env` are correctly untracked,
+   so no server boot, no integration lane, no DB inspection;
+   (c) **the dispatch relay is path-bound** - `dispatch-unit` Channel B drives
+   headless Cursor in `C:\dev\worktrees\cursor-lane`, which exists only here;
+   (d) **`.claude/settings.local.json` is per-machine**, so every new device
+   re-prompts for permissions this one already allows.
+   Shape worth considering: export the durable half of memory into `docs/` as
+   a committed file (the machine-specific half stays local), a documented
+   secret-provisioning step for a fresh environment, and a dispatch channel
+   that is not tied to a hardcoded Windows path. Do it BETWEEN waves like the
+   other four.
+
 Also agreed in principle, not decided: relaxing gate item 5 so `devDependencies`
 installs are hands-off while new RUNTIME deps still ask. Seth's call.
 
