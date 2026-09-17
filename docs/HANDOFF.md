@@ -12,7 +12,15 @@
 > than died mid-flight, and closed the one gap it left: the critic loop's
 > full round 0-2 ladder is now in-repo instead of in gitignore.
 
-**Next action (human):** **decide how the coach gets a REAL key on staging** -
+**Next action (human):** **run the two pre-flight vetoes in RUNBOOK section
+10a** - prod Render's Node version (must be >= 22.12) and its build command
+(must run `render-build`). Read-only dashboard checks, five minutes, and
+EITHER ONE STOPS THE MERGE: an old Node is a total boot failure on deploy
+(`app.js:10` requires `ai/mcpServer` unconditionally -> ESM `zod`/`jose`, and
+nothing in this repo pins Node), and a build command that is not `render-build`
+never applies this wave's `AiConsent` migration, so the deployed code selects a
+column prod does not have and login breaks. Behind that: **decide how the coach
+gets a REAL key on staging** -
 set `COACH_API_KEY` on the staging Render service, or plan to smoke with your
 own key pasted into the BYO field on Profile -> AI access. **Every Lane B path
 in the repo has only ever run against `COACH_PROVIDER=mock`**, so not one line
@@ -306,6 +314,16 @@ Covers the F-wave AND the still-open E-wave prod smoke. Staging passed Aug 4.
 
 ## Repo / deploy state
 
+- **THE PROD CUTOVER IS WRITTEN DOWN NOW - `docs/RUNBOOK.md` section 10**,
+  added Sept 17. Merging this wave does NOT give prod a working AI layer: it
+  needs three env vars (`MCP_RESOURCE_URL` unset silently defaults to
+  `localhost`, which rejects every real connector token), a PROD AuthKit
+  environment whose External Sign-in URI is the prod client origin, and a
+  ruling on whether prod shares staging's AuthKit - **it cannot; one
+  environment has ONE sign-in URI, so sharing means prod and staging take
+  turns being broken.** Section 10 carries the vetoes, the env matrix, the
+  post-deploy verification curls, and the rollback note (the migration is
+  additive, so reverting to `59e27dc` needs no down-migration).
 - **VERIFY DEPLOY TOPOLOGY FROM THE SERVICES, NOT FROM THIS LIST.** The August 4
   incident (archived) happened because these lines were trusted. One command
   settles it: a GET of `/ai/consent` on a host returns **401** if that host

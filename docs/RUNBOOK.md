@@ -50,6 +50,10 @@ git log origin/<branch> -1 --oneline
 #    merges without a PASS. A BLOCKED verdict sends fixes back through the
 #    relay and restarts at step 1.
 # 5. If the unit includes a schema change → run section 3 BEFORE merging.
+# 5b. If the wave ships NEW PROD CONFIG (env vars, a third-party identity
+#     provider, a new runtime dep with a Node floor) → section 10 FIRST.
+#     For `ai-connector-wave` it is mandatory: it carries two pre-flight
+#     vetoes that can stop the merge outright.
 # 6. Merge (manual, ff-only preferred):
 ```
 ```powershell
@@ -206,3 +210,146 @@ git worktree remove C:\dev\worktrees\<unit-id>
 - Never paste prod connection strings into local files or ad-hoc CLI. Prod SQL = Neon SQL editor only.
 - Never disable `dbHostGuard` to make a test pass. New DB-connecting scripts call `assertSafeForReset(process.env.DATABASE_URL)` at top of `main()`.
 - All git merge/commit/push and all prod DB ops: manual, by Seth, never Cursor.
+
+---
+
+## 10. AI-layer prod cutover (`ai-connector-wave` → main)
+
+Merging the code does NOT give prod a working AI layer. The connector needs
+three env vars and an identity-provider configuration that has only ever
+existed for staging; the coach needs a deliberate key decision. Written
+September 17, 2026, before the merge — read top to bottom, in order.
+
+### 10a. Pre-flight VETOES — run these first, either one stops the merge
+
+```
+# V1 — PROD NODE VERSION. Render -> workout-db-l3gc -> Settings (and the
+#      NODE_VERSION env var, which wins if set).
+#      REQUIRED: >= 22.12.
+#      WHY: src/app.js requires ./ai/mcpServer UNCONDITIONALLY at boot, which
+#      pulls in `zod` (a phantom transitive of @modelcontextprotocol/sdk,
+#      declared NOWHERE in package.json) and `jose`. Both are "type":"module";
+#      require() of an ESM package works only on Node >= 22.12. NOTHING in
+#      this repo pins Node - no .node-version, no .nvmrc, no engines field.
+#      Staging booting this code proves STAGING's Node, not prod's.
+#      FAILURE MODE: total boot failure on deploy. Not a degraded feature -
+#      the whole API is down.
+#      FIX BEFORE MERGING: set NODE_VERSION on the prod service (fastest, no
+#      repo change), or add .node-version. An `engines` field touches
+#      package.json = gate item 5.
+#
+# V2 — PROD BUILD COMMAND. Render -> workout-db-l3gc -> Settings -> Build.
+#      REQUIRED: it runs `npm run render-build`
+#      (= `prisma generate && prisma migrate deploy`).
+#      WHY: this wave carries migration 20260804180000_add_ai_consent, which
+#      is on staging but NOT on prod. render-build applies it at BUILD time,
+#      before the new code starts - that is what satisfies the ordering
+#      invariant automatically.
+#      FAILURE MODE if the command differs: the migration never applies, the
+#      generated Prisma client selects User.aiConnectorEnabled against a
+#      column that does not exist, and EVERY default-selection User query
+#      fails - login included. Prod outage.
+#      FIX BEFORE MERGING: correct the build command, or apply the migration
+#      by hand via section 3 and verify with section 4 before pushing.
+```
+
+Do not treat staging's configuration as evidence for either one. The August 4
+incident happened by trusting exactly that kind of assumption.
+
+### 10b. Prod env vars — set on `workout-db-l3gc` BEFORE the deploy
+
+```
+# MCP_RESOURCE_URL        = https://workout-db-l3gc.onrender.com/mcp
+#   UNSET DEFAULTS TO http://localhost:3000/mcp (routes/index.js:18,
+#   middleware/connectorAuth.js:21). The connector then advertises localhost
+#   in discovery and rejects every real token on the audience check - silently,
+#   with no error anywhere. This is the quietest failure in the whole wave.
+#
+# MCP_AUTHORIZATION_SERVER = <the PROD AuthKit issuer URL>
+#   Read at MODULE LOAD (ai/tokenVerifier.js:1-2), so setting it after boot
+#   does nothing until the service RESTARTS.
+#
+# WORKOS_API_KEY           = <the PROD WorkOS API key>
+#   Only thrown at call time (ai/workosClient.js:4-7), so a missing key does
+#   not block boot - it breaks the handshake when a user actually tries.
+#
+# COACH_API_KEY / COACH_PROVIDER - ONLY if Lane B ships with a hosted key.
+#   CAREFUL: COACH_PROVIDER unset means "anthropic", NOT mock
+#   (coach/config.js:18). With no COACH_API_KEY the coach degrades honestly
+#   (keyResolver -> no_key, /coach/status -> available:false) - it does not
+#   crash. Shipping with NO key is a valid choice: the panel renders
+#   unavailable and BYO keys still work.
+```
+
+`server/.env.example` already carries the intended prod values as comments —
+use it as the reference, not memory.
+
+### 10c. WorkOS / AuthKit — the decision that has to come first
+
+```
+# DECIDE: does prod get its OWN AuthKit environment, or share staging's?
+#   Staging currently uses scientific-mist-64-staging.authkit.app, and its
+#   External Sign-in URI points at this BRANCH's Vercel PREVIEW host.
+#   An AuthKit environment has ONE External Sign-in URI. So if prod and
+#   staging share one, pointing it at prod BREAKS the staging connector, and
+#   pointing it back breaks prod. A separate prod environment is the only
+#   configuration in which both work.
+#
+# THEN: set the prod environment's External Sign-in URI to
+#   <prod client origin>/connector/login  (the AI8 fix: client origin, NOT
+#   the API host - a Vercel 404 here is what killed the August 8 smoke).
+#
+# NOTE: external_auth_id has a 300-second TTL (AuthKit sets Max-Age=300).
+#   A slow password screen can genuinely expire a handshake.
+```
+
+### 10d. Verify AFTER the deploy (in this order)
+
+```powershell
+# 1. AI routes are live at all (404 = still serving pre-wave main):
+curl.exe -s -o NUL -w "%{http_code}`n" https://workout-db-l3gc.onrender.com/ai/consent
+#    EXPECT 401. A 404 means the deploy did not ship this wave.
+
+# 2. Discovery advertises PROD, not localhost - this is the V-for-MCP_RESOURCE_URL check:
+curl.exe -s https://workout-db-l3gc.onrender.com/.well-known/oauth-protected-resource
+
+# 3. The connector challenges correctly:
+curl.exe -si https://workout-db-l3gc.onrender.com/mcp | Select-String "HTTP/|WWW-Authenticate"
+#    EXPECT 401 + WWW-Authenticate carrying resource_metadata.
+
+# 4. What the coach is actually running on:
+curl.exe -s https://workout-db-l3gc.onrender.com/coach/status
+```
+```
+# 5. Migration landed - run section 4's history diff (prod vs staging), or the
+#    information_schema query in section 3 against "AiConsent".
+# 6. LOG IN ON PROD. The migration adds a NOT NULL column to User; if login
+#    works, the ordering invariant held. This is the single most informative
+#    check on this list - do not skip it because the curls passed.
+# 7. Then the connector end to end from a real account, per the wave's
+#    consolidated smoke (HANDOFF, Part B).
+```
+
+### 10e. Known-at-cutover — decide BEFORE, not during
+
+```
+# - STALE AUTHKIT SESSION BINDS THE WRONG IDENTITY. prompt=login is ignored;
+#   a user who lands on the wrong LogChamp account stays bound to it and the
+#   connector then answers with ANOTHER ACCOUNT'S DATA. Cross-user surface,
+#   open, not config-fixable from the client. Ship or fix - but decide.
+# - AI10 IS NOT LANDED. If a hosted COACH_API_KEY goes on prod, coach answers
+#   truncate mid-sentence and palette generation returns 502 (max_tokens
+#   shared with adaptive thinking). Moot if the coach ships with no key.
+# - WHAT'S NEW FIRES ON THIS DEPLOY. Entry `2026-08-ai-assistant` is
+#   prod-gated (lib/appEnv.js keys off the prod API host) and dated Aug 5 -
+#   it describes the CONNECTOR ONLY and predates the coach, palette studio
+#   and the entire September 9 redesign. It also advertises a feature that
+#   does nothing until 10b and 10c are complete.
+```
+
+### 10f. Rollback
+
+The migration is purely additive (new `AiConsent` table; `User.aiConnectorEnabled`
+BOOLEAN NOT NULL **DEFAULT true**), so pre-wave code runs fine against the
+migrated schema. Reverting `main` to `59e27dc` is therefore safe and needs NO
+down-migration. Leave the table and column in place.
