@@ -1,6 +1,6 @@
 # HANDOFF — current state
 
-> **WHERE WE ARE (Sept 12):** the AI wave has TWO lanes on one branch.
+> **WHERE WE ARE (Sept 17):** the AI wave has TWO lanes on one branch.
 > **Lane A (the connector, AI1-AI9) is 9/9 landed** and parked at its hard
 > stop awaiting Seth's smoke. **Lane B (the in-app coach + palette studio)
 > landed on September 9 in FIVE commits that never passed through
@@ -8,6 +8,9 @@
 > A September 12 frontier audit swept them: Lane A is untouched, the lanes
 > are green, and nothing is in flight. `ai-connector-wave` is at `932fa25`,
 > pushed, staging deployed. One unit (AI10) is QUEUED and NOT dispatched.
+> A Sept 17 integrity check CONFIRMS that Sept 12 rewrite completed rather
+> than died mid-flight, and closed the one gap it left: the critic loop's
+> full round 0-2 ladder is now in-repo instead of in gitignore.
 
 **Next action (human):** **decide how the coach gets a REAL key on staging** -
 set `COACH_API_KEY` on the staging Render service, or plan to smoke with your
@@ -26,8 +29,14 @@ declaring `zod` / pinning Node.
 > explicitly. Dogfoods the shell repo's decision-10 no-dangling-next-
 > action requirement; `land-unit` section 5 keeps it maintained.
 
-**Updated:** September 12, 2026, forty-eighth session (Opus, frontier - **the
-Lane-B audit**). No code changed. Swept the five unaudited September 9 commits
+**Updated:** September 17, 2026, forty-ninth session (Opus, frontier - **a
+state-integrity check**). No code changed. Confirmed the Sept 12 rewrite
+COMPLETED: HANDOFF, archive, QUEUE, AI10 and both rescues all present and
+pushed; `932fa25..HEAD` is docs-only, so the September 9 work is untouched;
+all three lanes clean, free, and carrying no `DELIVERY.md`. Closed the one gap
+that pass left - critic rounds 0 and 1 rescued out of gitignore as
+`cr0-`/`cr1-critic-round-*-FINDINGS.md`. Prior: September 12, forty-eighth
+session (Opus, frontier - **the Lane-B audit**). No code changed. Swept the five unaudited September 9 commits
 against Lane A and the specs, authored AI10 from the findings, and rescued two
 files that were living only in gitignored paths (`docs/design/critic-brief.md`,
 `docs/tasks/cr2-critic-round-2-FINDINGS.md`). Three HANDOFF sections moved
@@ -135,7 +144,12 @@ Sept 12 from gitignored `.playwright-mcp/critic/round-2.md`). **Not a
 dispatchable block** - its ten ranked fixes and twelve bugs are the outstanding
 work order, and **a UI block should be authored FROM it rather than from
 memory.** The reusable loop recipe is `docs/design/critic-brief.md` (also
-rescued from gitignore). What holds the product under 8 is no longer any single
+rescued from gitignore). **Rounds 0 and 1 were rescued Sept 17** as
+`cr0-critic-round-0-FINDINGS.md` (the 5/10 baseline) and
+`cr1-critic-round-1-FINDINGS.md` (7/10) - both WORKED and superseded, kept for
+the baseline itself and for CR1's "Round-0 fixes status", the only item-by-item
+audit of what `2080128` delivered. **CR2 is the one live work order of the
+three;** do not author against CR0 or CR1, their lists were re-ranked twice. What holds the product under 8 is no longer any single
 broken screen but unfinished micro-detail: labels repeated per row instead of
 set once as a column header, a "Tracked" badge that distinguishes nothing,
 em-dash placeholders standing in for real empty states, four hero sparklines
@@ -429,9 +443,12 @@ deprecation. Also parked: `round-7-unify-set-row` (`f6c2a6f`), decision pending.
   next session opened blind and had to reconstruct them from the diff. If a
   session ships outside the relay, write the QUEUE entry anyway.
 - **Anything an agent writes into a gitignored path is one `git clean` from
-  gone.** The round-2 critic report and the critic brief lived only in
-  `.playwright-mcp/` and were rescued by luck. Preserve report-shaped output
-  as a `-FINDINGS.md` doc at landing (FP0 precedent).
+  gone.** All four critic-loop documents (rounds 0-2 plus the brief) lived only
+  in `.playwright-mcp/`, and the rescue took TWO passes - Sept 12 took round 2
+  and the brief, Sept 17 caught rounds 0 and 1 that the first pass walked past.
+  Preserve report-shaped output as a `-FINDINGS.md` doc at landing (FP0
+  precedent), and when rescuing, sweep the whole directory rather than the one
+  file you came for. Round screenshots stay local-only by choice.
 - **A killed run can leave COMPLETE work with ZERO evidence - check the lane
   before re-running from scratch.** August 6's AI7 run wrote every line and died
   before writing `DELIVERY.md`.

@@ -43,6 +43,23 @@ than from memory. The reusable loop recipe is now at `docs/design/critic-brief.m
 (also rescued from gitignore). One listed bug is already ruled out: the
 identical `1h 2m` durations are uniform seed data, not a defect.
 
+FINDINGS | cr0-critic-round-0-FINDINGS.md | the critic loop's round-0 BASELINE
+(5/10), preserved verbatim on September 17 from gitignored
+`.playwright-mcp/critic/round-0.md` | NOT a dispatchable block, and NOT a work
+order - **WORKED and superseded** by commit `2080128`, which was authored
+directly against its ranked ten. CR1's "Round-0 fixes status" audits the result
+item by item: 5 RESOLVED, 5 PARTIALLY RESOLVED. Keep it as the baseline the
+whole September 9 UI wave is measured against - it is the only record of what
+the product looked like before the loop ran.
+
+FINDINGS | cr1-critic-round-1-FINDINGS.md | the critic loop's round-1 report
+(7/10), preserved verbatim on September 17 from gitignored
+`.playwright-mcp/critic/round-1.md` | NOT a dispatchable block, and NOT a work
+order - **WORKED and superseded** by commit `932fa25`; round 2 recorded that
+eight of its ten landed properly. Its load-bearing section is "Round-0 fixes
+status", the ONLY item-by-item audit of what `2080128` actually delivered -
+which is why the middle rung is worth keeping and not just the last one.
+
 
 AI-wave (the connector: LogChamp inside the user's own AI assistant), opened
 August 4, 2026 (Opus frontier seat). **NINE units** on branch

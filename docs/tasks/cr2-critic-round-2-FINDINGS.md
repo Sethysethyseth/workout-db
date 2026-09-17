@@ -3,10 +3,13 @@
 > **Provenance.** This is the verbatim round-2 report from the September 9
 > critic loop, preserved here on September 12 because it was living only in
 > gitignored `.playwright-mcp/critic/round-2.md` and would have been lost.
-> The loop ran round 0 (5/10) -> commit `2080128` -> round 1 (7/10) -> commit
+> The loop ran round 0 (5/10, `cr0-critic-round-0-FINDINGS.md`) -> commit
+> `2080128` -> round 1 (7/10, `cr1-critic-round-1-FINDINGS.md`) -> commit
 > `932fa25` -> **round 2 (7.5/10), written 11 minutes after the last commit and
-> never acted on.** `CRITIC_BRIEF.md` sets the exit bar at 8+, so the loop
-> stopped one pass short of its own condition.
+> never acted on.** `CRITIC_BRIEF.md` (rescued as `docs/design/critic-brief.md`)
+> sets the exit bar at 8+, so the loop stopped one pass short of its own
+> condition. Rounds 0 and 1 were rescued on September 17; both are WORKED
+> history, and **this file is the only live work order of the three.**
 >
 > **Status: nothing below has been fixed.** The "Round-1 fixes status" section
 > describes what the round-2 COMMIT already landed; the "Top 10 fixes" and
