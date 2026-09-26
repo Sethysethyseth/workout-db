@@ -18,7 +18,15 @@ function normalizeKey(raw) {
   return trimmed ? trimmed : null;
 }
 
-function resolveCoachKey({ byoKey, hostedKey, entitled }) {
+/**
+ * Resolve the key AND which provider it belongs to.
+ *   - A well-shaped BYO key is always Anthropic, regardless of hostedProvider.
+ *   - Hosted keys skip KEY_FORMAT_RE: a Cursor key is not `sk-ant-` shaped
+ *     and only has to be non-empty. hostedProvider is accepted so callers
+ *     pass the config provider through this function rather than a parallel
+ *     resolver; it is not used to format-check the hosted key.
+ */
+function resolveCoachKey({ byoKey, hostedKey, entitled, hostedProvider }) {
   const byo = normalizeKey(byoKey);
   if (byo) {
     if (!KEY_FORMAT_RE.test(byo)) {
@@ -34,6 +42,10 @@ function resolveCoachKey({ byoKey, hostedKey, entitled }) {
   if (!entitled) {
     return { source: null, key: null, reason: "not_entitled" };
   }
+  // Hosted Cursor keys are a different shape than sk-ant-; never apply
+  // KEY_FORMAT_RE here. hostedProvider is the config value ("cursor" /
+  // "anthropic") so this function stays the single resolver.
+  void hostedProvider;
   return { source: "hosted", key: hosted, reason: null };
 }
 

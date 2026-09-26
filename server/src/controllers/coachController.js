@@ -8,6 +8,7 @@ const {
   openCoachStream,
 } = require("../coach/askCoach");
 const { CoachProviderError, completeAnthropic } = require("../coach/provider");
+const { completeCursor, extractFirstJsonText } = require("../coach/cursorProvider");
 const {
   PALETTE_JSON_SCHEMA,
   PALETTE_SYSTEM_PROMPT,
@@ -64,14 +65,16 @@ async function getCoachStatus(req, res, next) {
       config,
     });
 
+    const provider = resolved.ok ? resolved.provider : config.provider;
+    const model = resolved.ok ? resolved.config.model : config.model;
     return res.json({
       consentGranted: access.consentGranted,
       entitled: access.entitled,
       available: access.consentGranted && resolved.ok,
       source: resolved.ok ? resolved.keyInfo.source : null,
       reason: access.consentGranted ? (resolved.ok ? null : resolved.reason) : "no_consent",
-      provider: config.provider,
-      model: config.provider === "mock" ? "mock" : config.model,
+      provider,
+      model: provider === "mock" ? "mock" : model,
     });
   } catch (err) {
     return next(err);
@@ -148,6 +151,7 @@ async function askCoach(req, res, next) {
         request,
         data,
         signal: controller.signal,
+        provider: resolved.provider,
       });
       for await (const item of stream) {
         if (controller.signal.aborted) break;
@@ -217,6 +221,30 @@ async function generatePalette(req, res, next) {
     let candidate;
     if (resolved.keyInfo.source === "mock") {
       candidate = mockPaletteFor(description);
+    } else if (resolved.provider === "cursor") {
+      const raw = await completeCursor({
+        apiKey: resolved.keyInfo.key,
+        model: resolved.config.model,
+        system: [
+          {
+            type: "text",
+            text: [
+              PALETTE_SYSTEM_PROMPT,
+              "",
+              "Return ONLY one JSON object matching this schema. No prose before or after. A ```json fence is allowed.",
+              JSON.stringify(PALETTE_JSON_SCHEMA),
+            ].join("\n"),
+          },
+        ],
+        messages: [{ role: "user", content: `Design a palette for: ${description}` }],
+      });
+      const jsonText = extractFirstJsonText(raw);
+      try {
+        if (!jsonText) throw new Error("no json");
+        candidate = JSON.parse(jsonText);
+      } catch {
+        return res.status(502).json({ error: "palette_invalid", errors: ["The model did not return a palette."] });
+      }
     } else {
       const message = await completeAnthropic({
         apiKey: resolved.keyInfo.key,

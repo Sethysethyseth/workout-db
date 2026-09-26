@@ -18,7 +18,11 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "engines": {
+    "node": ">=22.13 <23"
+  },
   "dependencies": {
+    "@cursor/sdk": "^1.0.32",
     "@modelcontextprotocol/sdk": "^1.30.0",
     "@prisma/client": "^6.19.2",
     "bcrypt": "^6.0.0",

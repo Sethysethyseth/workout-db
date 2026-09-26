@@ -10,7 +10,7 @@ const prisma = require("../lib/prisma");
 const { isConsentActive } = require("../ai/consent");
 const { loadSummary } = require("../ai/analyticsAccess");
 const { resolveCoachKey } = require("./keyResolver");
-const { getCoachConfig } = require("./config");
+const { getCoachConfig, DEFAULT_MODEL } = require("./config");
 const {
   compactSummaryForCoach,
   buildCoachSystemBlocks,
@@ -18,6 +18,7 @@ const {
 } = require("./prompt");
 const { streamAnthropic } = require("./provider");
 const { streamMock } = require("./mockProvider");
+const { streamCursor } = require("./cursorProvider");
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const DEFAULT_WEEKS = 4;
@@ -63,12 +64,18 @@ async function loadCoachAccess(userId) {
  */
 function resolveCoachProvider({ byoKey, entitled, config = getCoachConfig() }) {
   if (config.provider === "mock") {
-    return { ok: true, config, keyInfo: { source: "mock", key: null, reason: null } };
+    return {
+      ok: true,
+      config,
+      keyInfo: { source: "mock", key: null, reason: null },
+      provider: "mock",
+    };
   }
   const keyInfo = resolveCoachKey({
     byoKey,
     hostedKey: config.hostedKey,
     entitled,
+    hostedProvider: config.provider,
   });
   if (!keyInfo.source) {
     return {
@@ -77,9 +84,25 @@ function resolveCoachProvider({ byoKey, entitled, config = getCoachConfig() }) {
       error: "coach_unavailable",
       reason: keyInfo.reason,
       config,
+      provider: null,
     };
   }
-  return { ok: true, config, keyInfo };
+  // BYO is always the Anthropic path, even when the hosted provider is cursor.
+  // COACH_MODEL names the HOSTED provider's model, so BYO honors it only when
+  // that provider is anthropic too - otherwise a cursor `COACH_MODEL=auto`
+  // would be sent to Anthropic and every BYO request would fail.
+  if (keyInfo.source === "byo") {
+    const model =
+      config.provider === "anthropic" && config.modelExplicit ? config.model : DEFAULT_MODEL;
+    const resolvedConfig = { ...config, provider: "anthropic", model };
+    return {
+      ok: true,
+      config: resolvedConfig,
+      keyInfo,
+      provider: "anthropic",
+    };
+  }
+  return { ok: true, config, keyInfo, provider: config.provider };
 }
 
 /**
@@ -169,7 +192,7 @@ function buildCoachPrompt({ request, data, now = new Date() }) {
 }
 
 /** Pick the stream for the resolved provider. */
-function openCoachStream({ keyInfo, config, system, messages, request, data, signal }) {
+function openCoachStream({ keyInfo, config, system, messages, request, data, signal, provider }) {
   if (keyInfo.source === "mock") {
     return streamMock({
       primary: data.primary,
@@ -177,6 +200,16 @@ function openCoachStream({ keyInfo, config, system, messages, request, data, sig
       question: request.question,
       unit: request.unit,
       focus: request.focus,
+    });
+  }
+  const resolvedProvider = provider || config.provider;
+  if (resolvedProvider === "cursor") {
+    return streamCursor({
+      apiKey: keyInfo.key,
+      model: config.model,
+      system,
+      messages,
+      signal,
     });
   }
   return streamAnthropic({
