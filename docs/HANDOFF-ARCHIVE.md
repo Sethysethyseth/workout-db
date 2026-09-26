@@ -1,3 +1,230 @@
+## ARCHIVED September 26, 2026 (fiftieth session, Opus) - HANDOFF sections
+## moved verbatim when the AI wave closed out (AI10, ID1 and CP1 all LANDED;
+## the wave is at its hard stop for Seth's smoke). Superseded, not
+## summarized: the Sept 17 header and session line, the Sept 12 audit and its
+## AI10 follow-up (AI10 landed `ce51242`), the Aug 14 carry-forward and the
+## three AI2/AI3 findings (now carried as a compact list in HANDOFF), the
+## Sept 12 consolidated smoke (rewritten for ID1 + CP1), and the old lane
+## state.
+
+### (from HANDOFF) The Sept 17 header - WHERE WE ARE + session line
+
+> **WHERE WE ARE (Sept 17):** the AI wave has TWO lanes on one branch.
+> **Lane A (the connector, AI1-AI9) is 9/9 landed** and parked at its hard
+> stop awaiting Seth's smoke. **Lane B (the in-app coach + palette studio)
+> landed on September 9 in FIVE commits that never passed through
+> `land-unit`** - no per-unit audit, no QUEUE entry, no HANDOFF record.
+> A September 12 frontier audit swept them: Lane A is untouched, the lanes
+> are green, and nothing is in flight. `ai-connector-wave` is at `932fa25`,
+> pushed, staging deployed. One unit (AI10) is QUEUED and NOT dispatched.
+> A Sept 17 integrity check CONFIRMS that Sept 12 rewrite completed rather
+> than died mid-flight, and closed the one gap it left: the critic loop's
+> full round 0-2 ladder is now in-repo instead of in gitignore.
+
+**Updated:** September 17, 2026, forty-ninth session (Opus, frontier - **a
+state-integrity check**). No code changed. Confirmed the Sept 12 rewrite
+COMPLETED: HANDOFF, archive, QUEUE, AI10 and both rescues all present and
+pushed; `932fa25..HEAD` is docs-only, so the September 9 work is untouched;
+all three lanes clean, free, and carrying no `DELIVERY.md`. Closed the one gap
+that pass left - critic rounds 0 and 1 rescued out of gitignore as
+`cr0-`/`cr1-critic-round-*-FINDINGS.md`. Prior: September 12, forty-eighth
+session (Opus, frontier - **the Lane-B audit**). No code changed. Swept the five unaudited September 9 commits
+against Lane A and the specs, authored AI10 from the findings, and rescued two
+files that were living only in gitignored paths (`docs/design/critic-brief.md`,
+`docs/tasks/cr2-critic-round-2-FINDINGS.md`). Three HANDOFF sections moved
+VERBATIM to the archive in this rewrite. Prior: August 14, forty-seventh
+session (Opus - the live handshake probe: the connector's server side passes
+end to end with a real WorkOS token; findings 1 and 3 closed, the AuthKit
+identity-binding finding opened). Prior: August 8, forty-sixth (the Part B
+smoke FAILED; AI8+AI9 authored, dispatched in parallel, landed - wave 9/9);
+August 8, forty-fifth (the AI7 salvage); August 5, forty-fourth (AI5+AI6, the
+live 26/26 run); August 5, forty-third (workflow - gate item 3 split); August
+4, forty-second (AI1-AI3 + the prod-deploy incident); August 4, forty-first
+(the AI wave authored); August 4, fortieth (F-wave gated and merged to `main`
+`59e27dc`). All archived.
+
+### (from HANDOFF) The September 12 audit + AI10 as QUEUED
+
+### The September 12 audit - what it cleared, and what it did not
+
+**Clean:**
+
+- **ZERO Lane A regression.** `ai/mcpServer.js`, `connectorAuth.js`,
+  `connectorAuthorize.js` and `connectorAuthController.js` are BYTE-IDENTICAL
+  to `43a4ceb`; `aiApi.js` untouched; AI9's per-client accordions survive the
+  AI-access rebuild intact.
+- `npm run test:unit` **295/295 in 27 suites** (the +28 coach tests are real).
+- Client build clean; `node scripts/check-hex.mjs` clean across the whole
+  range despite **+3485 lines** of `index.css`.
+- **No schema change, so no migration is owed** by this lane.
+
+**Not clean - the two findings that produced the follow-up work:**
+
+1. **Lane B has never made a real API call.** `server/.env` carries no
+   `COACH_*` keys at all and the unit lane injects `fetchImpl`, so every coach
+   and palette path has only ever run against `COACH_PROVIDER=mock`. Three
+   budget-shaped defects follow from that and are AI10's contract: adaptive
+   thinking on `claude-sonnet-5` shares `max_tokens` with the answer (the code
+   deliberately sends no `thinking` parameter, pinned by
+   `coachProvider.test.js:113`), so `MAX_TOKENS = 1500` invites a truncated
+   answer; `PALETTE_MAX_TOKENS = 800` is the same bug with a harder failure
+   (`JSON.parse` throws -> `502 palette_invalid`, and the controller branches
+   on `stop_reason: "refusal"` but not `"max_tokens"`); and `CoachPanel.jsx:322`
+   renders a bare caret while the model thinks, which reads as hung.
+2. **The critic loop stopped one pass short of its own exit bar.** Round 0
+   5/10 -> `2080128` -> round 1 7/10 -> `932fa25` -> **round 2 7.5/10, written
+   11 minutes after the last commit and never acted on.** The brief sets the
+   exit bar at 8+.
+
+### AI10 - QUEUED, authored Sept 12, NOT dispatched
+
+`docs/tasks/ai10-ai-layer-live-proof.md`, MODEL auto, MODE 1-relay. Raises both
+ceilings (1500 -> 8000, 800 -> 3000), branches on `stop_reason: "max_tokens"` on
+both paths so a truncated answer never reads as complete, gives the thinking
+pause a face in `CoachPanel`, and leaves behind `scripts/smoke-coach.mjs` +
+`scripts/smoke-connector.mjs`. **Ruling baked into the block: thinking STAYS
+ON, the caps go up** - an unused ceiling costs nothing, because billing follows
+emitted tokens. Do not let a later unit "optimize" 8000/3000 back down.
+The scripts are WRITTEN but NOT RUN by Cursor (no key, no `server/.env` in the
+lane); running them is the reviewer's or Seth's step, and `smoke-connector.mjs`
+makes the August 14 in-seat connector probe repeatable for the first time.
+
+### (from HANDOFF) Lane A carry-forward + the three AI2/AI3 findings
+
+### Lane A carry-forward - what the Aug 14 live probe settled
+
+Full detail moved VERBATIM to `docs/HANDOFF-ARCHIVE.md` (forty-eighth session
+header). The conclusions that still govern:
+
+- **The server side PASSES end to end** with a real WorkOS token: discovery,
+  authorize, PKCE exchange, `initialize`, `tools/list`, all four `tools/call`,
+  and refresh. Protocol `2025-11-25`, `serverInfo: logchamp 1.0.0`.
+- **AI8 is confirmed live** - the External Sign-in URI is the client origin and
+  the `external_auth_id` survives the login detour. No Vercel 404.
+- **Consent kill-switch PASSES live**, on both `tools/call` and `tools/list`,
+  with no cache lag.
+- **`external_auth_id` TTL is 300 seconds** (AuthKit sets `Max-Age=300`). AI8's
+  "assume no window and degrade gracefully" stance holds, but a slow password
+  screen can genuinely expire a handshake.
+- **OPEN FINDING, probably its own unit: a stale AuthKit session silently binds
+  the WRONG identity, with no escape hatch.** `prompt=login` is IGNORED; AuthKit
+  reuses its cached session, so a user who lands on the wrong LogChamp account
+  once stays bound to it and the connector answers confidently with the wrong
+  account's data. Most likely mechanism behind "I added it and it still didn't
+  work." Not config-fixable from the client side.
+- **Trap before prod:** the staging Login URI host is a Vercel PREVIEW deploy
+  behind Deployment Protection - any cold context (curl, no cookies) gets 302'd
+  to `vercel.com/sso-api`. Staging-only (prod's domain is public), but nothing
+  except Seth's own browser can reach that URL today.
+
+### The three AI2/AI3 findings - two closed, one open
+
+1. **~~Rate limiter cannot key on connector identity~~ - FIXED by AI6
+   `c1398a8`, and the wiring is now proven live** (two distinct buckets; the
+   identity counter continued across a DIFFERENT token for the same `sub`
+   without resetting). Only a literal two-identity check remains; it needs a
+   second LogChamp account, Seth's to create.
+2. **OPEN: `zod` and `jose` are ESM-only on an UNPINNED Node.** `zod` 4.4.3 is
+   `"type": "module"` and is **completely undeclared in `package.json`** - a
+   phantom transitive of the MCP SDK that `mcpServer.js` requires at boot. AI3
+   deploying PROVES Render's Node is >= 22.12, so nothing is broken today, but
+   a Render default change silently reintroduces a total-outage boot failure.
+   Two cheap fixes, both Seth's call (gate item 5, touches `package.json`):
+   pin Node, declare `zod`.
+3. **~~`sub`-to-user mapping unverified~~ - CLOSED Aug 14, it PASSES.** `sub`
+   comes back as a LogChamp `cuid()`, not a `user_`-prefixed WorkOS id, because
+   WorkOS echoes the id `completeConnectorAuthorization` sent it.
+
+**The design decision most easily re-broken later: MCP's current revision is
+`2026-07-28` and we are deliberately NOT targeting it.** That revision changes
+the transport incompatibly and drops `initialize`/`Mcp-Session-Id`; Anthropic's
+connector docs still list support only through `2025-11-25`. Dated decision,
+not oversight - `ai-layer.md` **section 4.0 "CORRECTIONS"** is authoritative
+where it and older prose disagree. A dual-era server is a future unit.
+
+**Two units are cross-user isolation surfaces** - AI2's Bearer guard and AI4's
+token verification - and are standing frontier-seat escalations regardless of
+who writes them.
+
+**DO NOT READ A GREEN LANE AS COVERAGE OF AN ENDPOINT THIS WAVE.**
+`npm run test:unit` matches only `test/analytics/**` and `test/lib/**` and never
+loads a route, controller, or middleware; the integration lane needs
+`server/.env`, which no lane worktree has.
+
+### (from HANDOFF) The Sept 12 consolidated wave smoke
+
+### CONSOLIDATED WAVE SMOKE - Seth, on the staging Vercel deploy
+
+**REWRITTEN September 12** - the August version's Part A is superseded (the
+Sept 9 rebuild changed the AI-access page and killed the double-"Copied"
+residual it described); the old text is verbatim in the archive. Confirm the
+Vercel staging deploy has built `932fa25` before starting.
+
+**Part 0 is DONE** (the External Sign-in URI points at the client origin) and
+the four Render env vars are set. **Probe `GET /coach/status` on staging FIRST**
+- it tells you whether the coach is running on a hosted key, on mock, or is
+unavailable, and every coach check below depends on that answer.
+
+**Part A - the surfaces, including everything Sept 9 changed:**
+
+- **Profile -> AI access**: switch row + state line, three facts, the quiet
+  coach status, and the mono address with copy. Before consent, only the
+  consent statement and the toggle show; turning AI access ON reveals the
+  connection section. **The address reads
+  `https://workout-db-staging.onrender.com/mcp`** - wrong means `VITE_API_URL`
+  on Vercel is wrong.
+- **AI9's per-client accordion survived the rebuild** (audited): Claude open by
+  default, ChatGPT / Grok / generic collapsed, each independent. Check on phone.
+- **The coach panel on Analytics** - opens in place, range/view-aware, the
+  suggested questions derive from the summary. **Ask it something and watch the
+  answer END** - if it stops mid-sentence you have just reproduced AI10's
+  truncation finding on a live key.
+- **The session debrief** - one tap on a finished workout.
+- **BYO key** on Profile -> AI access (sessionStorage only, never stored).
+- **Palette studio** on Profile -> Appearance: describe a look, live preview,
+  keep / try another / discard / forget. Kept palettes are **per device**.
+  A failure reading "The model did not return a palette" is AI10's finding 2.
+- **The Sept 9 UI pass**, read as a user: full-bleed scenes in dark mode, light
+  mode as crisp pixel art rather than fog, the barbell loading motif and
+  shape-matched skeletons, month-grouped History rows with top set / tonnage /
+  duration, the Home date + greeting hero, Exercises as real analytics.
+  **Check iron and crimson** - the critic scored both scenes well below champ.
+- **Regression:** log out and back in, load Analytics, start and finish a
+  workout. **What's New does NOT appear on staging** - prod-gated by design.
+
+**Part B - the real connector. THIS IS THE PASS THAT MATTERS.**
+Everything a token can reach already passed in-seat on Aug 14. Two items still
+need YOU:
+
+- **The handshake from your REAL account.** The AuthKit session is stuck on the
+  `smoke-b8@example.com` throwaway and `prompt=login` will not shake it - clear
+  AuthKit cookies or use a fresh browser profile.
+- **Adding the connector inside Claude itself**: Customize -> Connectors -> Add
+  custom connector. Run it SIGNED OUT at least once (the path AI8 changed most
+  and no lane can reach), and once already signed in (should be near-instant).
+- **If it fails, capture the exact callback URL and its `error=` value BEFORE
+  anything else.** August 6's real error was only visible there; the
+  client-surfaced message was actively misleading.
+- **Consent-blocked path:** with AI access OFF, the connector flow should land
+  on `/profile/ai`, not an error page.
+- Ask Claude "how has my bench press moved this month?" and confirm the numbers
+  match the Analytics page. Then turn AI access OFF and ask again - **it must
+  fail.**
+- **A second LogChamp account** (register in a SEPARATE browser profile so the
+  existing session survives) is the one thing that closes AI6's two-identity
+  `RateLimit-*` check.
+
+### (from HANDOFF) Lane worktree state as of Sept 17
+
+### Lane worktree state
+
+**All three lanes are CLEAN and FREE.** Lane 1 on `cursor/ai8` and lane 2 on
+`cursor/ai9`, both at `43a4ceb`; lane 3 on `recon/ai9-r2` at `892d610` -
+**repoint any lane off the target wave branch before use or the delivery lands
+on the wrong base.**
+
+---
+
 ## ARCHIVED September 12, 2026 (forty-eighth session, Opus) - three AI-wave
 ## sections moved verbatim out of HANDOFF during the Lane-B audit rewrite,
 ## newest first. All three are closed or superseded history: the Aug 14

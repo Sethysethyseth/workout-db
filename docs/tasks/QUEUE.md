@@ -38,7 +38,7 @@ Dispatched Sept 25 (Opus seat, on Seth's "hosted key ships" ruling): Channel B,
 build, hex); reviewer fix: AppearancePage maps `palette_truncated`. Smoke
 scripts written, still unrun live.
 
-DISPATCHED | cp1-coach-on-cursor-key.md | run the HOSTED coach + palette studio
+LANDED 8ab7dcf | cp1-coach-on-cursor-key.md | run the HOSTED coach + palette studio
 on a Cursor API key via `@cursor/sdk` (local agent, `tools: []`, scratch cwd,
 lazy-loaded); BYO keys stay Anthropic | MODEL auto. Seth's ruling Sept 25: the
 hosted coach ships on a Cursor key. Seth approved the `@cursor/sdk` dependency
@@ -57,6 +57,33 @@ THE SAME DIRTY LANE** (the AI7 precedent). The diff was backed up to the session
 scratchpad FIRST (`cp1-salvage/tracked.patch` sha256 `ceba200d...`, plus the
 three untracked files) so the inherited-vs-changed claim is checkable. Channel
 B, `--model auto`, now under a 45-minute hard kill.
+**Salvage run: 6.5 minutes, exit 0.** It verified CHANGE A-G against the
+installed SDK's `.d.ts`, left the package files alone, and ran the live smoke
+FIRST - which FAILED: `[invalid_argument] unknown option '--system-prompt'`
+arrived as `wait()` -> `{ status: "error" }`, not as the `send()` throw the
+recon predicted, so the inherited retry never fired. It fixed only that (a
+wait()-shaped gate error now triggers the same single inline retry, +1 fake-SDK
+test) and, per the block, stopped without re-running live.
+LANDED 8ab7dcf Sept 26 (Opus seat), NO bounce, ONE reviewer fix. **Salvage
+claim verified mechanically:** the seven tracked files' diff is byte-identical
+to the pre-dispatch backup (`ceba200d...`); the only delta is the 10-line
+retry in `cursorProvider.js` plus its test. **The reviewer ran the live smoke**
+(relay key, `node v22.19.0`): `STREAM pong`, `VERDICT systemPrompt=inline-
+fallback model=auto chars=4 stopReason=end_turn`, `PALETTE validatePalette=pass`.
+**Reviewer fix:** BYO keys inherited `COACH_MODEL` whenever it was set, so a
+cursor `COACH_MODEL=auto` (which `.env.example` now suggests) would have been
+sent to Anthropic and broken every BYO request - BYO now honors `COACH_MODEL`
+only when the hosted provider is anthropic; pinned by a test. Lanes fresh in
+the lane: unit 319/319 in 29 suites (318 + the fix's test), client build,
+check-hex clean; `require('./src/app')` leaves `@cursor/sdk` out of
+`require.cache`; the SDK `require` sits only inside `loadCursorSdk`; the
+lockfile diff is additions only (`@cursor/sdk` + its tree, incl.
+`sdk-linux-x64` for Render). Combined with ID1: 324/324 in 30 suites. Scope
+exact (10 files). **Follow-ups for a CP2, not blockers:** the account is gated,
+so every hosted request pays one failing attempt before the inline fallback
+(memoize per process); the SDK prints six "Ripgrep path not configured" stack
+traces per request (Render log noise); the persona now rides inside the user
+message rather than a true system prompt.
 
 LANDED ebf7b80 | id1-connector-identity-bind.md | close the connector's
 wrong-identity bind: explicit "Continue as <email>" on `/connector/login`, a
