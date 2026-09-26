@@ -45,6 +45,18 @@ hosted coach ships on a Cursor key. Seth approved the `@cursor/sdk` dependency
 (gate item 5) in the same message; the block also adds `engines` `>=22.13 <23`
 (the SDK's floor). Recon: `cp1-recon-FINDINGS.md`. Disjoint from ID1 - runs in
 parallel (lane `cursor-lane-2`).
+**The Sept 25 run DIED MID-FLIGHT (found Sept 26, Opus seat).** Its output log
+ends in three "Connection lost, reconnecting" retries, then `ActionRequiredError:
+Authentication error`, exit 1 at 11:59 the next morning - it hung ~13 hours
+because no hard timeout wrapped it. Lane files last written 22:26; NO
+`DELIVERY.md`. The lane holds all nine FILES TO TOUCH (seven modified incl. the
+`@cursor/sdk` install, three new) - code present, evidence absent, the AI7
+shape. `cursor-agent status` the next day: logged in, so the auth error was
+fallout of the dropped connection, not a dead key. **Salvage: RE-DISPATCH INTO
+THE SAME DIRTY LANE** (the AI7 precedent). The diff was backed up to the session
+scratchpad FIRST (`cp1-salvage/tracked.patch` sha256 `ceba200d...`, plus the
+three untracked files) so the inherited-vs-changed claim is checkable. Channel
+B, `--model auto`, now under a 45-minute hard kill.
 
 DISPATCHED | id1-connector-identity-bind.md | close the connector's
 wrong-identity bind: explicit "Continue as <email>" on `/connector/login`, a
