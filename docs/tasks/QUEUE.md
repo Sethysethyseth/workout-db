@@ -21,7 +21,7 @@ migration is owed. Not clean: **every Lane B path has only ever run against
 lane injects `fetchImpl` - and the critic loop that shaped the UI stopped one
 pass short of its own 8+ exit bar. Two units follow.
 
-DISPATCHED | ai10-ai-layer-live-proof.md | raise the two `max_tokens` ceilings that
+LANDED ce51242 | ai10-ai-layer-live-proof.md | raise the two `max_tokens` ceilings that
 adaptive thinking silently shares on Sonnet 5, branch on `stop_reason:
 "max_tokens"` so a truncated answer never reads as a complete one, give the
 thinking pause a face in CoachPanel, and leave `scripts/smoke-coach.mjs` +
@@ -33,7 +33,7 @@ lane); running them against staging is the reviewer's or Seth's step, and
 `smoke-connector.mjs` makes the August 14 in-seat connector probe repeatable
 for the first time. Fix ruling baked into the block: thinking STAYS ON, the
 caps go up - do not let a later unit "optimize" 8000/3000 back down.
-DISPATCHED Sept 25 (Opus seat, on Seth's "hosted key ships" ruling): Channel B,
+Dispatched Sept 25 (Opus seat, on Seth's "hosted key ships" ruling): Channel B,
 `--model auto`, lane `C:\dev\worktrees\cursor-lane` on `cursor/ai10`.
 
 FINDINGS | cr2-critic-round-2-FINDINGS.md | the September 9 critic loop's round-2
