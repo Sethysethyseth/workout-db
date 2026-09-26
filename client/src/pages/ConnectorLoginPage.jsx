@@ -174,8 +174,10 @@ export function ConnectorLoginPage() {
         Connect LogChamp as <strong>{currentUser.email}</strong>?
       </p>
       <p className="muted">
-        This link expires within a few minutes. If it does, start the
-        connection again from the assistant.
+        Only continue if you just started connecting from your own AI
+        assistant - anyone who sends you this link could otherwise read your
+        training data. This link expires within a few minutes. If it does,
+        start the connection again from the assistant.
       </p>
       <div className="row">
         <button
