@@ -58,7 +58,7 @@ scratchpad FIRST (`cp1-salvage/tracked.patch` sha256 `ceba200d...`, plus the
 three untracked files) so the inherited-vs-changed claim is checkable. Channel
 B, `--model auto`, now under a 45-minute hard kill.
 
-DISPATCHED | id1-connector-identity-bind.md | close the connector's
+LANDED ebf7b80 | id1-connector-identity-bind.md | close the connector's
 wrong-identity bind: explicit "Continue as <email>" on `/connector/login`, a
 "Sign out of connected assistants" route that revokes the user's WorkOS
 sessions + authorized apps, the same cleanup best-effort on consent revoke, and
@@ -67,6 +67,28 @@ SURFACE - lands under a frontier-seat audit, never a Sonnet one. Recon:
 `id1-recon-FINDINGS.md`. Residual it cannot close from code: a stale session
 belonging to an account the user cannot sign in as - covered only by the WorkOS
 dashboard session lifetime (Seth). Lane `cursor-lane-3`.
+LANDED ebf7b80 Sept 26 under a FRONTIER audit (Opus), NO bounce, NO reviewer
+fix. Delivered clean on the Sept 25 run (the lane had no `node_modules`; the
+agent junctioned `cursor-lane`'s installs - no source effect). Scope exact (8
+files, all in FILES TO TOUCH). Lanes re-run fresh in the lane: unit 307/307 in
+29 suites, client build, check-hex clean. Read line by line: identity for the
+signout comes ONLY from `req.authUserId` behind `authRequired`, never the body;
+the stamp is display-only and closed over `connectorUserId` as before; every
+tool payload is an object (roster/sessions return `{ exercises }` / `{...}`),
+so the spread cannot mangle an array; `authorizeConnector` is click-only and
+`useEffect` is gone from the page; "Use a different account" rides
+`AuthContext.logout` (clears `currentUser` synchronously) into the existing
+`!currentUser` -> `/login?next=` branch; the Profile section sits outside every
+conditional. Gate notes, not bounces: (1) the "500 on any step" test covers
+only the lookup step - later steps share `workosJson` and were read, not
+tested; (2) the ~250-char stamp is added AFTER `guardPayloadSize`, outside the
+budget; (3) `revokeConsent` now makes a LIVE WorkOS call wherever
+`WORKOS_API_KEY` is set - including the integration lane if `server/.env`
+carries it. **Unproven until smoke:** that WorkOS files our `User.id` as the
+WorkOS user's `external_id` (the recon's reading of `oauth2/complete`). After a
+real connect, "Sign out of connected assistants" must say "Signed out", NOT
+"Nothing to sign out" - the latter means the lookup key is wrong and Door A is
+still open.
 
 FINDINGS | cr2-critic-round-2-FINDINGS.md | the September 9 critic loop's round-2
 report (7.5/10), preserved verbatim on September 12 from gitignored
