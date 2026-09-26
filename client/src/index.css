@@ -8473,6 +8473,27 @@ html[data-theme="dark"][data-palette="iron"] .analytics-page {
   font-weight: 600;
 }
 
+.coach-msg__truncated {
+  margin: 8px 0 0;
+  color: var(--color-muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.coach-working {
+  display: inline-block;
+  color: var(--color-muted);
+  font-size: 13px;
+  font-weight: 500;
+  opacity: 0.72;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .coach-working {
+    opacity: 0.85;
+  }
+}
+
 .coach-caret {
   display: inline-block;
   width: 2px;

@@ -10,7 +10,11 @@
 const DEFAULT_MODEL = "claude-sonnet-5";
 const DEFAULT_EFFORT = "medium";
 const EFFORT_LEVELS = new Set(["low", "medium", "high", "xhigh", "max"]);
-const MAX_TOKENS = 1500;
+// Adaptive thinking on Sonnet 5 shares this ceiling with the visible
+// answer: max_tokens is a hard cap on thinking PLUS response text. An
+// unused ceiling costs nothing (billing follows emitted tokens, not the
+// cap). Do not lower this to "save" budget - 1500 truncates after thought.
+const MAX_TOKENS = 8000;
 
 function getCoachConfig(env = process.env) {
   const hostedKey = (env.COACH_API_KEY || "").trim() || null;

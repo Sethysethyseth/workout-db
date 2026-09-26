@@ -17,7 +17,31 @@ const {
 } = require("../coach/palette");
 
 const BYO_KEY_HEADER = "x-coach-key";
-const PALETTE_MAX_TOKENS = 800;
+// Same shared thinking+response budget as MAX_TOKENS. A complete JSON
+// palette is a few hundred tokens; 3000 leaves room for thinking so
+// stop_reason: max_tokens does not become a 502. Do not lower this.
+const PALETTE_MAX_TOKENS = 3000;
+
+/**
+ * Palette completions that did not finish cleanly. Shape matches the
+ * existing palette_refused branch: 422 + { error }. max_tokens is its
+ * own code so a truncated record is never mistaken for palette_invalid.
+ */
+function paletteErrorForStopReason(stopReason) {
+  if (stopReason === "refusal") {
+    return { status: 422, body: { error: "palette_refused" } };
+  }
+  if (stopReason === "max_tokens") {
+    return {
+      status: 422,
+      body: {
+        error: "palette_truncated",
+        message: "The model ran out of room.",
+      },
+    };
+  }
+  return null;
+}
 
 function readByoKey(req) {
   const raw = req.get(BYO_KEY_HEADER);
@@ -203,8 +227,9 @@ async function generatePalette(req, res, next) {
         maxTokens: PALETTE_MAX_TOKENS,
         outputFormat: { type: "json_schema", schema: PALETTE_JSON_SCHEMA },
       });
-      if (message && message.stop_reason === "refusal") {
-        return res.status(422).json({ error: "palette_refused" });
+      const stopErr = paletteErrorForStopReason(message && message.stop_reason);
+      if (stopErr) {
+        return res.status(stopErr.status).json(stopErr.body);
       }
       const text = (Array.isArray(message && message.content) ? message.content : [])
         .filter((block) => block && block.type === "text" && typeof block.text === "string")
@@ -230,4 +255,10 @@ async function generatePalette(req, res, next) {
   }
 }
 
-module.exports = { getCoachStatus, askCoach, generatePalette, BYO_KEY_HEADER };
+module.exports = {
+  getCoachStatus,
+  askCoach,
+  generatePalette,
+  BYO_KEY_HEADER,
+  paletteErrorForStopReason,
+};

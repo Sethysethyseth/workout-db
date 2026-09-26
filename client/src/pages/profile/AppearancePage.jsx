@@ -55,6 +55,7 @@ function paletteErrorMessage(err) {
       return "That one didn't come out readable. Try describing it a different way.";
     }
     if (body.error === "palette_refused") return "The model passed on that one. Try different words.";
+    if (body.error === "palette_truncated") return "The model ran out of room on that one. Try a shorter description.";
     if (body.reason === "no_consent") return coachErrorMessage("no_consent");
     if (body.reason) return coachErrorMessage(body.reason);
     if (body.error) return coachErrorMessage(body.error);

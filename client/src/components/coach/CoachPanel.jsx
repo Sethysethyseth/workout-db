@@ -55,6 +55,11 @@ function makeMessage(role, content, extra = {}) {
   return { id: nextMessageId, role, content, ...extra };
 }
 
+/** Quiet one-liner when the stream ended because the token cap was hit. */
+export function coachTruncationNotice(stopReason) {
+  return stopReason === "max_tokens" ? "This answer was cut short." : null;
+}
+
 export function CoachPanel({
   mode = "ask",
   range = null,
@@ -123,7 +128,7 @@ export function CoachPanel({
       const controller = new AbortController();
       abortRef.current = controller;
       try {
-        await askCoachStream({
+        const result = await askCoachStream({
           question,
           range: mode === "debrief" ? null : range,
           unit: loadWeightUnit(),
@@ -141,7 +146,11 @@ export function CoachPanel({
           },
         });
         setThread((prev) =>
-          prev.map((m) => (m.id === pending.id ? { ...m, pending: false } : m))
+          prev.map((m) =>
+            m.id === pending.id
+              ? { ...m, pending: false, stopReason: result.stopReason ?? null }
+              : m
+          )
         );
       } catch (err) {
         if (err && err.name === "AbortError") return;
@@ -319,8 +328,15 @@ export function CoachPanel({
                     <span className="coach-msg__crown" aria-hidden="true" />
                     <div className="coach-msg__body">
                       {m.content ? <CoachMarkdown text={m.content} /> : null}
-                      {m.pending ? (
+                      {m.pending && !m.content ? (
+                        <span className="coach-working" aria-label="The coach is working">
+                          Working…
+                        </span>
+                      ) : m.pending ? (
                         <span className="coach-caret" aria-label="The coach is writing" />
+                      ) : null}
+                      {coachTruncationNotice(m.stopReason) ? (
+                        <p className="coach-msg__truncated">{coachTruncationNotice(m.stopReason)}</p>
                       ) : null}
                       {m.error ? <p className="coach-msg__error">{m.error}</p> : null}
                     </div>
