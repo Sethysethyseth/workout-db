@@ -12,24 +12,12 @@
 > than died mid-flight, and closed the one gap it left: the critic loop's
 > full round 0-2 ladder is now in-repo instead of in gitignore.
 
-**Next action (human):** **run the two pre-flight vetoes in RUNBOOK section
-10a** - prod Render's Node version (must be >= 22.12) and its build command
-(must run `render-build`). Read-only dashboard checks, five minutes, and
-EITHER ONE STOPS THE MERGE: an old Node is a total boot failure on deploy
-(`app.js:10` requires `ai/mcpServer` unconditionally -> ESM `zod`/`jose`, and
-nothing in this repo pins Node), and a build command that is not `render-build`
-never applies this wave's `AiConsent` migration, so the deployed code selects a
-column prod does not have and login breaks. Behind that: **decide how the coach
-gets a REAL key on staging** -
-set `COACH_API_KEY` on the staging Render service, or plan to smoke with your
-own key pasted into the BYO field on Profile -> AI access. **Every Lane B path
-in the repo has only ever run against `COACH_PROVIDER=mock`**, so not one line
-of the coach or the palette studio has ever reached `api.anthropic.com`; until
-a real call goes out, nothing about Lane B is proven and AI10's smoke scripts
-have nothing to run against. Behind that, still yours and still open: the
-connector handshake **from your real account** (Part B below), the prod smoke
-of `main` `59e27dc`, the `docs/parked/*` ruling, and the gate-item-5 call on
-declaring `zod` / pinning Node.
+**Next action (human):** **create an Anthropic API key** (console.anthropic.com,
+with a monthly spend cap) and put it on STAGING Render as `COACH_API_KEY` - the
+coach speaks only Anthropic, so a Cursor key will not work. Also paste the
+prod migration SQL from RUNBOOK 10a (V2 RESULT) into the PROD Neon SQL editor
+any time before the merge (prod's build command does not migrate). AI10 is with
+Cursor. Then the smoke (ROAD TO MAIN #7) and the wrong-identity ruling (#5).
 
 > **Standing rule:** the line above is filled on EVERY rewrite and is
 > never empty or deferred - one sentence, the single thing SETH does
@@ -87,10 +75,10 @@ coach config **degrades honestly** rather than crashing (`keyResolver` ->
 
 | # | Do | Owner | Blocks because |
 |---|---|---|---|
-| 1 | **VETO CHECK:** prod Render Node >= 22.12 (`workout-db-l3gc` -> Settings, and the `NODE_VERSION` env var, which wins) | Seth | `app.js:10` requires `ai/mcpServer` unconditionally at boot -> ESM-only `zod` (undeclared phantom) + `jose`; `require()` of ESM needs Node >= 22.12 and NOTHING in the repo pins it. Old Node = **total boot failure**, not a dead feature. Fix = set `NODE_VERSION` on the service (no repo change) |
-| 2 | **VETO CHECK:** prod Render build command runs `npm run render-build` | Seth | `render-build` = `prisma generate && prisma migrate deploy`, which applies the migration at BUILD time, before the new code starts - that is what satisfies the ordering invariant automatically. A different command = migration never applies, Prisma selects `User.aiConnectorEnabled` against a missing column, **every default-selection User query fails, login included** |
-| 3 | **DECISION:** hosted coach key on prod, or ship Lane B dark (BYO-only)? | Seth | decides whether #4 is a blocker or a follow-up. Dark is cheaper and makes AI10 non-blocking - but then #13 must not promise a coach |
-| 4 | Dispatch + land **AI10** (`docs/tasks/ai10-ai-layer-live-proof.md`, QUEUED, MODEL auto) - ONLY if #3 says a hosted key ships | agent -> Cursor | `MAX_TOKENS=1500` / `PALETTE_MAX_TOKENS=800` are shared with adaptive thinking on Sonnet 5 -> truncated coach answers and `502 palette_invalid`. Ruling baked into the block: **thinking stays ON, the caps go up (8000/3000)** - do not let a later unit optimize them back down |
+| 1 | ~~VETO CHECK: prod Render Node >= 22.12~~ **CLEARED Sept 25 (Seth checked the dashboard)** | Seth | was: `app.js:10` requires ESM `zod`/`jose` at boot. #14 is still the permanent fix |
+| 2 | **VETO FIRED Sept 25, path chosen:** prod build is `npm install && npx prisma generate` - it does NOT migrate. Keep it (prod migrations stay Seth's). **Seth hand-applies the migration via the ready-to-paste SQL in RUNBOOK 10a (V2 RESULT), then runs RUNBOOK section 4, BEFORE the merge** | Seth | without it the new code selects `User.aiConnectorEnabled` against a missing column and login breaks. Safe to run any time - `main` never reads the new table and the column has a DEFAULT |
+| 3 | ~~DECISION: hosted key or dark~~ **DECIDED Sept 25: a hosted key ships.** It must be an ANTHROPIC API key (console.anthropic.com) - `coach/config.js:18` supports only `anthropic` or `mock`; a Cursor key cannot reach `api.anthropic.com` | Seth | makes #4 a blocker and #13 must describe the coach |
+| 4 | **AI10 DISPATCHED Sept 25** (Channel B, auto, `cursor-lane` on `cursor/ai10`) - land via `land-unit` | agent -> Cursor | caps 1500/800 truncate under adaptive thinking on Sonnet 5. Ruling baked in: **thinking stays ON, caps go up (8000/3000)** |
 | 5 | **DECISION:** ship or fix the stale-AuthKit **wrong-identity bind** | Seth | `prompt=login` is IGNORED; AuthKit reuses its cached session, so a user bound to the wrong LogChamp account stays bound and the connector answers confidently **with another account's data**. Cross-user isolation surface = standing frontier escalation. **Recommendation on record: fix first, as its own unit** |
 | 6 | Put a REAL key on staging (`COACH_API_KEY` on staging Render, or smoke via the BYO field on Profile -> AI access) | Seth | **no Lane B path has ever reached `api.anthropic.com`** - five commits, 48 tests and a full UI, all against `COACH_PROVIDER=mock`. Without a key #7 cannot test the coach at all, and AI10's smoke scripts have nothing to run against |
 | 7 | **THE SMOKE: Part A surfaces + Part B connector from Seth's REAL account** (checklist below in this file) | Seth | the hard stop. The gate does not start until he signs off; a gate run before smoke gets partly re-run after it. A smoke defect re-enters as a diagnosis block and RESETS the sign-off |

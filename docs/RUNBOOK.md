@@ -253,6 +253,39 @@ September 17, 2026, before the merge — read top to bottom, in order.
 #      by hand via section 3 and verify with section 4 before pushing.
 ```
 
+**V2 RESULT (Sept 25, Seth): prod's build command is `npm install && npx
+prisma generate` - it does NOT migrate.** Keep it that way (prod migrations
+stay Seth's hands, gate item 3) and hand-apply BEFORE the merge. Paste into the
+PROD Neon SQL editor (confirm `ep-solitary-sea-an56mioq` in the URL bar first),
+then run the section 4 diff - prod must now match staging on this row:
+
+```sql
+BEGIN;
+ALTER TABLE "User" ADD COLUMN "aiConnectorEnabled" BOOLEAN NOT NULL DEFAULT true;
+CREATE TABLE "AiConsent" (
+    "id" SERIAL NOT NULL,
+    "userId" TEXT NOT NULL,
+    "scope" TEXT NOT NULL,
+    "grantedAt" TIMESTAMP(3) NOT NULL,
+    "revokedAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    CONSTRAINT "AiConsent_pkey" PRIMARY KEY ("id")
+);
+CREATE UNIQUE INDEX "AiConsent_userId_key" ON "AiConsent"("userId");
+CREATE INDEX "AiConsent_userId_idx" ON "AiConsent"("userId");
+ALTER TABLE "AiConsent" ADD CONSTRAINT "AiConsent_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+-- checksum read from STAGING's _prisma_migrations row, Sept 25:
+INSERT INTO "_prisma_migrations"
+  (id, checksum, finished_at, migration_name, logs, rolled_back_at, started_at, applied_steps_count)
+VALUES
+  (gen_random_uuid(), 'f29ce1c28b7bf8aa96f252523a059f74a9ea8264f009ef5e7ccbcb34d3325587', now(), '20260804180000_add_ai_consent', NULL, NULL, now(), 1);
+COMMIT;
+```
+
+Safe on today's `main` code - the column has a DEFAULT and nothing on `main`
+reads the new table (section 10f), so this can run any time before the merge.
+
 Do not treat staging's configuration as evidence for either one. The August 4
 incident happened by trusting exactly that kind of assumption.
 
