@@ -117,7 +117,7 @@ real connect, "Sign out of connected assistants" must say "Signed out", NOT
 "Nothing to sign out" - the latter means the lookup key is wrong and Door A is
 still open.
 
-DISPATCHED | sf1-smoke-fixes-connector-register.md | Seth's Sept 26 staging smoke
+LANDED ab35aca | sf1-smoke-fixes-connector-register.md | Seth's Sept 26 staging smoke
 fixes: an account created through the connector link still connects (`next`
 survives the Login <-> Register crosslinks; a 403 `consent_required` on
 `/connector/login` becomes an inline "Turn on AI access and connect" step
@@ -133,6 +133,23 @@ not discoverable - he saw the key field but no way to chat. Seth ruled Sept 26:
 INLINE consent on the connect page, and the facts OPEN when AI access is OFF
 (both as the block says). Dispatched Sept 26: Channel B, `--model auto`, lane
 `cursor-lane-2` on `cursor/sf1`, 45-minute hard kill.
+LANDED ab35aca Sept 26 (Opus, frontier audit - consent surface), NO bounce, ONE
+reviewer fix. Run: 2.5 minutes, exit 0. Scope exact (7 files = FILES TO TOUCH).
+Lanes fresh in the lane: client build, check-hex clean, unit 324/324 in 30
+suites (no server file touched). Read line by line: LoginPage's guard moved
+verbatim into `safeNextPath`; both crosslinks carry `next` only when it is not
+`/`; Register navigates to the guarded path. On the connect page the 403 no
+longer navigates - the consent step renders after the `error` / `connecting`
+checks, and `onTurnOnAndConnect` runs only if the first attempt already
+latched this id, sets a distinct `::consent` sentinel (a double click cannot
+POST twice), grants, and authorizes once more; a grant failure never reaches
+authorize. The `<details open>` prop is `true` only while AI access is off, so
+toggling the switch re-folds or re-opens it through React's reconcile. New CSS
+uses `--color-text-secondary`, `--motion-fast`, `--ease-standard` - all
+defined. **Reviewer fix:** the guard (inherited from LoginPage) let `/\evil.com`
+through; URL parsing treats `\` as `/`, making it protocol-relative - pushState
+would throw rather than redirect, but `safeNextPath` now rejects a `/\` prefix
+too (proven by the node one-liner: `/\evil.com` -> `/`).
 
 FINDINGS | cr2-critic-round-2-FINDINGS.md | the September 9 critic loop's round-2
 report (7.5/10), preserved verbatim on September 12 from gitignored

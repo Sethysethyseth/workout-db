@@ -6,13 +6,36 @@
 > September 12; the three follow-up units are ALL LANDED - AI10 `ce51242`
 > (budgets + truncation), ID1 `ebf7b80` (the wrong-identity bind, frontier
 > audit) and CP1 `8ab7dcf` (the hosted coach on a Cursor key, proven live
-> in-seat). `ai-connector-wave` is pushed and staging Render deploys it.
-> Nothing is in flight; all three lanes are clean.
+> in-seat). Seth's Sept 26 smoke PASSED bar two findings, fixed by SF1
+> `ab35aca` (wave 4/4); only SF1's re-smoke stands between the wave and the
+> gate. `ai-connector-wave` is pushed and staging Render deploys it. Nothing is
+> in flight; all three lanes are clean (lane 2 now on `cursor/sf1`).
 
-**Next action (human):** put your NEW Cursor key on staging Render
-(`workout-db-staging` -> Environment: `COACH_PROVIDER=cursor` and
-`COACH_API_KEY=<the new key>`, leave `COACH_MODEL` unset), check that deploy's
-log shows Node >= 22.13, then run the consolidated smoke below.
+**Next action (human):** re-smoke ONLY SF1's two fixes on staging (the
+"SF1 RE-SMOKE" list below), then say whether the wave is signed off.
+
+**SMOKE RESULT, Sept 26 (Seth):** PASSED except two findings, both fixed by
+SF1 `ab35aca` - the Cursor key is live on staging (`COACH_PROVIDER=cursor`,
+`COACH_API_KEY` set, `/coach/status` `available: true`); **the connector works
+inside Claude from Seth's real account**; AI access OFF redirects correctly.
+Findings: (1) registering a NEW account through the connector link landed in
+the app unconnected (the Register link dropped `next`, and a new account's
+consent 403 redirected away) - FIXED with an inline "Turn on AI access and
+connect" step (Seth's ruling); (2) the three consent facts should fold behind
+a pale "More info" - FIXED, open while AI access is off (Seth's ruling).
+**Deferred to a later wave by Seth:** the in-app coach is not discoverable -
+he saw the BYO-key field but found no way to chat (the panel sits under the
+Analytics stat tiles and on finished workouts; make it findable).
+
+**SF1 RE-SMOKE (Seth, staging, after the `ab35aca` deploy):**
+- Signed out, start a connect from Claude -> on the login page press "Need an
+  account? Register" -> create a NEW account -> you land back on "Continue as
+  <new email>" -> Continue -> the "Turn on AI access and connect" step shows
+  the three facts -> press it -> Claude connects as the new account.
+- "Not now" on that step goes to Profile -> AI access.
+- Plain register/login with no connector involved still lands on Home.
+- Profile -> AI access: with AI access ON the facts sit behind a pale
+  "More info" (click opens/closes); turn it OFF and they show open.
 
 > **Standing rule:** the line above is filled on EVERY rewrite and is
 > never empty or deferred - one sentence, the single thing SETH does
@@ -141,6 +164,7 @@ in `docs/tasks/QUEUE.md`.
 | AI10 | `ce51242` | coach/palette caps 8000/3000 (thinking STAYS ON - never lower them), `max_tokens` handled on both paths, the thinking pause given a face, `scripts/smoke-coach.mjs` + `smoke-connector.mjs` (still unrun live) |
 | ID1 | `ebf7b80` | the wrong-identity bind: "Continue as <email>" / "Use a different account" on `/connector/login`, `POST /ai/connector/signout` (revokes the user's WorkOS sessions + authorized apps), the same cleanup best-effort on consent revoke, `boundAccount` on every tool result |
 | CP1 | `8ab7dcf` | the HOSTED coach + palette studio on a Cursor key: `@cursor/sdk` local agent, `tools: []`, fresh tmp cwd, lazy-loaded; BYO keys stay Anthropic; `scripts/smoke-cursor-coach.mjs` passed live Sept 26 |
+| SF1 | `ab35aca` | Seth's smoke fixes: `next` survives Login <-> Register (`lib/safeNext.js`), an inline consent step on `/connector/login` so a new account still connects, the consent facts in one component (`AiConsentFacts`) folded behind "More info" when AI access is on |
 
 **Follow-ups surfaced at landing - candidates for a CP2, NOT merge blockers:**
 
