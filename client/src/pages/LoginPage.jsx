@@ -3,19 +3,14 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { ErrorMessage } from "../components/ErrorMessage.jsx";
 import { PasswordInput } from "../components/auth/PasswordInput.jsx";
+import { safeNextPath } from "../lib/safeNext.js";
 
 export function LoginPage() {
   const { login: signIn, currentUser } = useAuth();
   const navigate = useNavigate();
   const [params] = useSearchParams();
 
-  const nextUrl = useMemo(() => {
-    const raw = params.get("next") || "/";
-    if (!raw.startsWith("/") || raw.startsWith("//")) {
-      return "/";
-    }
-    return raw;
-  }, [params]);
+  const nextUrl = useMemo(() => safeNextPath(params), [params]);
 
   const [login, setLogin] = useState("");
   const [password, setPassword] = useState("");
@@ -70,7 +65,14 @@ export function LoginPage() {
         <button className="btn" disabled={submitting}>
           {submitting ? "Logging in…" : "Login"}
         </button>
-        <Link className="muted auth-crosslink" to="/register">
+        <Link
+          className="muted auth-crosslink"
+          to={
+            nextUrl !== "/"
+              ? `/register?next=${encodeURIComponent(nextUrl)}`
+              : "/register"
+          }
+        >
           Need an account? Register
         </Link>
       </div>

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import * as aiApi from "../../api/aiApi.js";
 import { getCoachStatus } from "../../api/coachApi.js";
+import { AiConsentFacts } from "../../components/ai/AiConsentFacts.jsx";
 import { ConnectorSetupAccordion } from "../../components/ai/ConnectorSetupAccordion.jsx";
 import { ErrorMessage } from "../../components/ErrorMessage.jsx";
 import { LoadingState } from "../../components/LoadingState.jsx";
@@ -333,19 +334,10 @@ export function AiConnectorPage() {
               <span className="ai-switch__knob" aria-hidden="true" />
             </button>
           </div>
-          <ul className="ai-facts">
-            <li>
-              <strong>What it unlocks.</strong> The coach on Analytics, a debrief after each
-              workout, and answers inside an AI assistant you already use.
-            </li>
-            <li>
-              <strong>What leaves LogChamp.</strong> Only your computed summary: totals, trends,
-              personal records, and how complete your effort data is.
-            </li>
-            <li>
-              <strong>What never leaves.</strong> Individual sets, notes, and account details.
-            </li>
-          </ul>
+          <details className="ai-facts-more" open={!granted ? true : undefined}>
+            <summary className="ai-facts-more__summary">More info</summary>
+            <AiConsentFacts />
+          </details>
         </div>
       </section>
 

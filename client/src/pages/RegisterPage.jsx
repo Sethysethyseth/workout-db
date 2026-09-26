@@ -1,13 +1,16 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useMemo, useState } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { ErrorMessage } from "../components/ErrorMessage.jsx";
 import { PasswordInput } from "../components/auth/PasswordInput.jsx";
+import { safeNextPath } from "../lib/safeNext.js";
 import { validateUsername } from "../lib/username.js";
 
 export function RegisterPage() {
   const { register } = useAuth();
   const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const nextUrl = useMemo(() => safeNextPath(params), [params]);
 
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
@@ -31,7 +34,7 @@ export function RegisterPage() {
     setSubmitting(true);
     try {
       await register({ email, password, username });
-      navigate("/", { replace: true });
+      navigate(nextUrl, { replace: true });
     } catch (err) {
       setError(err);
     } finally {
@@ -89,7 +92,14 @@ export function RegisterPage() {
         <button className="btn" disabled={submitting}>
           {submitting ? "Creating…" : "Create account"}
         </button>
-        <Link className="muted auth-crosslink" to="/login">
+        <Link
+          className="muted auth-crosslink"
+          to={
+            nextUrl !== "/"
+              ? `/login?next=${encodeURIComponent(nextUrl)}`
+              : "/login"
+          }
+        >
           Already have an account? Login
         </Link>
       </div>

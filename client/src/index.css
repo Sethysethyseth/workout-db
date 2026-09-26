@@ -9584,6 +9584,41 @@ html:not([data-theme="dark"])[data-palette="chill"] {
   color: var(--color-text);
 }
 
+.ai-facts-more {
+  margin: 0;
+}
+
+.ai-facts-more__summary {
+  padding: 10px 0 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  list-style: none;
+}
+
+.ai-facts-more__summary::-webkit-details-marker {
+  display: none;
+}
+
+.ai-facts-more__summary::after {
+  content: "";
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin: 0 0 1px 8px;
+  border-right: 2px solid var(--color-text-secondary);
+  border-bottom: 2px solid var(--color-text-secondary);
+  transform: rotate(45deg);
+  transition: transform var(--motion-fast) var(--ease-standard);
+  vertical-align: middle;
+}
+
+.ai-facts-more[open] .ai-facts-more__summary::after {
+  transform: rotate(-135deg);
+  margin-bottom: -2px;
+}
+
 .ai-coach-status {
   display: flex;
   align-items: center;
