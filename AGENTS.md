@@ -89,10 +89,11 @@ Rebrand text lives in: rendered UI, `<title>`, PWA manifest name fields.
 ## UI architecture - palettes/tokens (load-bearing, read before touching styles)
 
 - Two independent axes on `<html>`: `data-theme` (light/dark/system) x
-  `data-palette` (`champ | iron | forest | crimson`). Absent/unknown palette
-  renders as champ.
+  `data-palette` (`champ | iron | chill | forest | crimson`, plus `custom` -
+  an AI-generated palette applied per device as inline tokens). Absent/unknown
+  palette renders as champ.
 - **Tokens-only.** Never hardcode colors - every surface must render correctly
-  across all 4 palettes x 2 modes (8 combos). New colors go through the CSS
+  across all 5 palettes x 2 modes (10 combos). New colors go through the CSS
   custom properties in `client/src/index.css`.
 - Accent-adjacent states (rings, nav-active, pills) derive from
   `--color-interactive` via `color-mix` - follow this pattern so new palettes

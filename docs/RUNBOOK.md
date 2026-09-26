@@ -310,8 +310,13 @@ incident happened by trusting exactly that kind of assumption.
 #   not block boot - it breaks the handshake when a user actually tries.
 #
 # COACH_API_KEY / COACH_PROVIDER - ONLY if Lane B ships with a hosted key.
+#   The hosted coach ships on a CURSOR key (Seth, Sept 25; CP1): set
+#   COACH_PROVIDER=cursor + COACH_API_KEY=<a Cursor user API key, NOT the
+#   relay's>, and leave COACH_MODEL unset (defaults to `auto`). Staging has
+#   run exactly this since Sept 26. Turn on Privacy Mode for the Cursor
+#   account that owns the key first - user training summaries go through it.
 #   CAREFUL: COACH_PROVIDER unset means "anthropic", NOT mock
-#   (coach/config.js:18). With no COACH_API_KEY the coach degrades honestly
+#   (coach/config.js). With no COACH_API_KEY the coach degrades honestly
 #   (keyResolver -> no_key, /coach/status -> available:false) - it does not
 #   crash. Shipping with NO key is a valid choice: the panel renders
 #   unavailable and BYO keys still work.
@@ -369,13 +374,12 @@ curl.exe -s https://workout-db-l3gc.onrender.com/coach/status
 ### 10e. Known-at-cutover — decide BEFORE, not during
 
 ```
-# - STALE AUTHKIT SESSION BINDS THE WRONG IDENTITY. prompt=login is ignored;
-#   a user who lands on the wrong LogChamp account stays bound to it and the
-#   connector then answers with ANOTHER ACCOUNT'S DATA. Cross-user surface,
-#   open, not config-fixable from the client. Ship or fix - but decide.
-# - AI10 IS NOT LANDED. If a hosted COACH_API_KEY goes on prod, coach answers
-#   truncate mid-sentence and palette generation returns 502 (max_tokens
-#   shared with adaptive thinking). Moot if the coach ships with no key.
+# - STALE AUTHKIT SESSION BINDS THE WRONG IDENTITY - FIXED as far as code
+#   can by ID1 (ebf7b80): "Continue as <email>" confirm step, "Sign out of
+#   connected assistants", boundAccount on every tool result. Residual: set a
+#   SHORT AuthKit session lifetime in the PROD environment's dashboard too.
+# - AI10 LANDED (ce51242): the Anthropic caps are 8000/3000 and truncation is
+#   handled. The Cursor path (CP1) has no max_tokens concept.
 # - WHAT'S NEW FIRES ON THIS DEPLOY. Entry `2026-08-ai-assistant` is
 #   prod-gated (lib/appEnv.js keys off the prod API host) and dated Aug 5 -
 #   it describes the CONNECTOR ONLY and predates the coach, palette studio

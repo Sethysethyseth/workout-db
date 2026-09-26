@@ -76,6 +76,9 @@ MCP_RESOURCE_URL=https://workout-db-staging.onrender.com/mcp
 Configured in the dashboard:
 - MCP resource indicator: `https://workout-db-staging.onrender.com/mcp` (Default)
 - External Sign-in URI: `https://workout-db-staging.onrender.com/ai/connector/login`
+  - **SUPERSEDED Aug 8 by AI8 (`bca098b`):** the URI is now the CLIENT origin +
+    `/connector/login` (`client/src/App.jsx`); the API route above no longer
+    exists. Current value and the prod rule: `docs/RUNBOOK.md` section 10c.
 
 Staging API host is the Render service `workout-db-staging`
 (`https://workout-db-staging.onrender.com`). Production is `workout-db-l3gc` —

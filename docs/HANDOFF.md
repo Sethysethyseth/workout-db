@@ -1,18 +1,17 @@
 # HANDOFF — current state
 
-> **WHERE WE ARE (Sept 26):** the AI wave is **COMPLETE and at its hard stop -
-> Seth smokes next.** Lane A (the connector, AI1-AI9) landed in August; Lane B
+> **WHERE WE ARE (Sept 26):** the AI wave is **SMOKED, SIGNED OFF and GATED -
+> PASS WITH FIXES.** Lane A (the connector, AI1-AI9) landed in August; Lane B
 > (the in-app coach + palette studio) landed September 9 and was audited
-> September 12; the three follow-up units are ALL LANDED - AI10 `ce51242`
-> (budgets + truncation), ID1 `ebf7b80` (the wrong-identity bind, frontier
-> audit) and CP1 `8ab7dcf` (the hosted coach on a Cursor key, proven live
-> in-seat). Seth's Sept 26 smoke PASSED bar two findings, fixed by SF1
-> `ab35aca` (wave 4/4); only SF1's re-smoke stands between the wave and the
-> gate. `ai-connector-wave` is pushed and staging Render deploys it. Nothing is
-> in flight; all three lanes are clean (lane 2 now on `cursor/sf1`).
+> September 12; the follow-ups are ALL LANDED - AI10 `ce51242`, ID1 `ebf7b80`,
+> CP1 `8ab7dcf` and SF1 `ab35aca` (wave 4/4). Seth's smoke passed, SF1's
+> re-smoke passed, and the pre-main gate's in-seat fixes are landed. What is
+> left is Seth's: two calls, one Cursor setting, and the prod prerequisites in
+> ROAD TO MAIN, then "push to main". Nothing is in flight.
 
-**Next action (human):** re-smoke ONLY SF1's two fixes on staging (the
-"SF1 RE-SMOKE" list below), then say whether the wave is signed off.
+**Next action (human):** make the two gate calls below (privacy page; What's
+New), turn on Privacy Mode for the Cursor account that owns the coach key, then
+work ROAD TO MAIN #2, #11 and #12 before saying "push to main".
 
 **SMOKE RESULT, Sept 26 (Seth):** PASSED except two findings, both fixed by
 SF1 `ab35aca` - the Cursor key is live on staging (`COACH_PROVIDER=cursor`,
@@ -27,7 +26,7 @@ a pale "More info" - FIXED, open while AI access is off (Seth's ruling).
 he saw the BYO-key field but found no way to chat (the panel sits under the
 Analytics stat tiles and on finished workouts; make it findable).
 
-**SF1 RE-SMOKE (Seth, staging, after the `ab35aca` deploy):**
+**SF1 RE-SMOKE - PASSED (Seth, Sept 26: "looks good"):**
 - Signed out, start a connect from Claude -> on the login page press "Need an
   account? Register" -> create a NEW account -> you land back on "Continue as
   <new email>" -> Continue -> the "Turn on AI access and connect" step shows
@@ -65,12 +64,54 @@ road-to-main answers; AI10 landed `ce51242`; CP1 + ID1 authored and dispatched
 in parallel; the session ended before either returned, without a HANDOFF
 session line). Older sessions archived.
 
-**THE WAVE IS AT ITS HARD STOP.** Per `land-unit` section 6: Seth smokes FIRST,
-then a frontier seat runs `pre-main-review`. Do not start the gate, do not run
-`/code-review`, do not read the branch diff for review purposes until he signs
-off. The in-seat probes (the Aug 14 connector handshake, the Sept 26
-`smoke-cursor-coach.mjs` run) are evidence that narrows what he checks - they
-are NOT that sign-off.
+**PRE-MAIN GATE, Sept 26 (Opus) - VERDICT: PASS WITH FIXES.** Scope: the
+whole unmerged branch (`59e27dc..HEAD`, ~110 code files - Lane A, the five
+unblocked Sept 9 commits, AI10, ID1, CP1, SF1). Fresh lanes on the gate head:
+unit 324/324 in 30 suites, client build clean, `check-hex origin/main...HEAD`
+clean, `require('./src/app')` loads without `@cursor/sdk`. Gate fuel: three
+Cursor report lanes on the auto rung (R1 AI1-AI9 criterion coverage + cross-unit
+seams; R2 AI10/ID1/CP1/SF1 coverage + the coach/palette code against
+`ai-layer.md` and `ai-theming.md` + client/server contract seams; R3 tokens,
+scope leakage, cross-doc drift, dangling references), each ~5 minutes, each
+kept its no-edits contract; reports were left untracked in the lanes.
+**Read directly (never delegated):** CORS split (wildcard WITHOUT credentials
+on connector paths only, allowlist unchanged elsewhere); `tokenVerifier`
+(issuer + audience pinned via `jose`, `sub` required, null on any failure);
+`connectorAuth` (identity only from the verified token, never the cookie
+session; consent + kill-switch every request; unknown `sub` fails closed);
+`analyticsAccess` (every read goes through `fetchAllTimeEnrichedSets(userId)`,
+so model-supplied exercise ids only filter the caller's own sets); coach +
+palette routes (`authRequired` on all three; consent on ask + palette - status
+reports it instead); BYO key (tab `sessionStorage`, per-request header, never
+stored, logged or echoed); `CoachMarkdown` (React nodes only, no `innerHTML`
+anywhere in `client/src`); palette apply (client re-checks hex, `scene` goes
+through the `SCENE_URLS` whitelist before `url()`); the additive migration.
+**No cross-unit contract drift:** every earlier contract a later unit changed
+was changed on purpose (AI7 dropped the scope 403, AI8 moved the Login URI, SF1
+replaced the consent redirect, Sept 9 rewrote copy).
+**Fixes applied in-seat (landed with the verdict):** (1) the connect confirm
+step now warns "Only continue if you just started connecting from your own AI
+assistant" - the residual of the login-CSRF class: the page cannot name the
+requesting client, so a phishing link opened inside the 300s window still
+needs only a click or two; (2) doc drift - `ai-layer.md` CORRECTION 7
+(as-built: engines pinned, `/coach/*` paths, BYO never stored, provider
+`anthropic|cursor|mock`, roadmap ids, the unmet privacy item), an AS-BUILT
+note atop `ai-theming.md`, RUNBOOK 10b/10e (Cursor key + Privacy Mode; ID1 and
+AI10 landed), AGENTS.md palette enum (`chill` + `custom`, 10 combos), the
+superseded Login URI in `workos-staging-handoff.md`, QUEUE's stale Active
+header.
+**Seth's calls before merge:** (a) `ai-layer.md` section 6 requires a privacy
+policy + ToS "in the SAME wave" and the app has NONE - recommendation: do not
+block the merge on it, but HOLD the What's New announcement (#13) until a short
+plain-language privacy page exists (first unit of the next wave), since users'
+training summaries now reach Cursor (hosted coach), Anthropic (BYO) and the
+assistant they connect; (b) turn on **Privacy Mode** for the Cursor account
+that owns `COACH_API_KEY` before the prod key goes on (#12).
+**Follow-ups, not blockers:** show the requesting client's name on the confirm
+step if WorkOS exposes it; CP2 (memoize the systemPrompt gate, quiet the
+ripgrep log noise); make the in-app coach discoverable (Seth, deferred);
+`4255782` put ~1.7 MB of PNGs under `claudefiledrop/` onto the branch - they
+will ride into `main`.
 
 ---
 
@@ -104,8 +145,8 @@ is **324/324 in 30 suites** on the combined AI10 + ID1 + CP1 tree (Sept 26).
 | 6 | **UNBLOCKED Sept 26 (CP1 landed; Seth has minted the separate key).** Put it on STAGING Render: `COACH_PROVIDER=cursor` + `COACH_API_KEY=<the new key>`, `COACH_MODEL` left UNSET (defaults to `auto`). Never reuse the relay's `CURSOR_API_KEY`, so revoking one never kills the other. CP1 added `engines` `>=22.13 <23`, so Render should pick Node 22.x itself - confirm the version in the deploy log (a `NODE_VERSION` env var on the service overrides `engines`) | Seth | only the in-seat smoke script has reached the real model; no deployed coach path has. Without it #7 cannot test the coach |
 | 7 | **THE SMOKE: Part A surfaces + Part B connector from Seth's REAL account** (checklist below in this file) | Seth | the hard stop. The gate does not start until he signs off; a gate run before smoke gets partly re-run after it. A smoke defect re-enters as a diagnosis block and RESETS the sign-off |
 | 8 | **DECISION (optional):** work CR2 to its 8+ bar, or ship at 7.5 | Seth | `docs/tasks/cr2-critic-round-2-FINDINGS.md` is the work order; a UI block must be authored FROM it, not from memory. Product polish only - does not block a merge |
-| 9 | Pre-main gate review - the `pre-main-review` skill, frontier seat (Opus), gate fuel fanned out to **Cursor report lanes, never Claude subagents** | agent | nothing merges without a PASS. Grep `HANDOFF-ARCHIVE.md` for this wave's session history as review fuel. A BLOCKED verdict sends fixes back through the relay |
-| 10 | `npm install` in main-tree `server/` (gate item 5 - ask first) | agent | `express-rate-limit` was never installed in the main tree (every unit was built in lane worktrees), so two suites fail to LOAD there - zero assertion failures, but it blocks the gate's fresh green run. CP1's `@cursor/sdk` is missing there too - the same install covers both |
+| 9 | ~~Pre-main gate review~~ **DONE Sept 26: PASS WITH FIXES** (verdict block near the top of this file; fixes landed). Two Seth calls came out of it: the privacy page (hold #13 until it exists?) and Cursor Privacy Mode before #12 | Seth | the gate itself is cleared |
+| 10 | `npm install` in main-tree `server/` (gate item 5 - ask first) | agent | housekeeping only now - the gate ran its fresh lanes in `cursor-lane-2` (full install). The main tree still lacks `express-rate-limit` and `@cursor/sdk`, so two suites fail to LOAD there |
 | 11 | Create a **PROD** AuthKit environment; set its External Sign-in URI to `<prod client origin>/connector/login` (RUNBOOK 10c) | Seth | an AuthKit environment has exactly ONE External Sign-in URI, so **prod and staging cannot share one** - pointing it at prod breaks the staging connector and vice versa. Today it points at this branch's Vercel PREVIEW host |
 | 12 | Set prod env vars on `workout-db-l3gc`: `MCP_RESOURCE_URL`, `MCP_AUTHORIZATION_SERVER`, `WORKOS_API_KEY` (+ `COACH_*` per #3) - RUNBOOK 10b | Seth | `MCP_RESOURCE_URL` unset **silently defaults to `http://localhost:3000/mcp`** (`routes/index.js:18`, `middleware/connectorAuth.js:21`) - discovery advertises localhost and every real token fails the audience check with no error anywhere. `MCP_AUTHORIZATION_SERVER` is read at MODULE LOAD (`ai/tokenVerifier.js:1-2`), so it needs a RESTART to take effect |
 | 13 | **DECISION:** write a What's New entry for the September 9 wave, or hold the announcement | Seth | entry `2026-08-ai-assistant` (dated Aug 5) is prod-gated via `lib/appEnv.js` and **fires for every prod user on this deploy**. It describes the CONNECTOR ONLY - it predates the coach, the palette studio and the entire Sept 9 redesign - and advertises a feature that does nothing until #11 and #12 are complete |

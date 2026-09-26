@@ -19,7 +19,10 @@ the whole range despite +3485 lines of `index.css`, and no schema change so no
 migration is owed. Not clean: **every Lane B path has only ever run against
 `COACH_PROVIDER=mock`** - `server/.env` carries no `COACH_*` keys and the unit
 lane injects `fetchImpl` - and the critic loop that shaped the UI stopped one
-pass short of its own 8+ exit bar. Two units follow.
+pass short of its own 8+ exit bar. Two units follow. **(Sept 26: superseded -
+the mock-only finding is CLOSED; CP1 proved the hosted path live and staging
+runs on a real Cursor key. The wave grew to AI10 + ID1 + CP1 + SF1, all
+LANDED; pre-main gate PASS WITH FIXES the same day.)**
 
 LANDED ce51242 | ai10-ai-layer-live-proof.md | raise the two `max_tokens` ceilings that
 adaptive thinking silently shares on Sonnet 5, branch on `stop_reason:

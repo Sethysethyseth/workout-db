@@ -4,6 +4,19 @@
 brainstorm. SPEC ONLY - no task blocks authored, no code this pass (his
 decision 4). Companion to `ai-layer.md`; independent of it in build order.*
 
+> **AS BUILT (shipped in `d28989b`, recorded at the Sept 26 pre-main gate) -
+> where this note and the text below disagree, this note wins.** The shipped
+> palette ids are `champ | iron | chill | forest | crimson` plus the reserved
+> `custom` (the generated palette's `data-palette` value). The validated record
+> carries `name` and `scene` besides the hex tokens, and `scene` must be one of
+> the SHIPPED scene rasters (the "no scene for v1" recommendation in section 5
+> was not taken). Storage is per DEVICE in `localStorage`
+> (`workoutdb-custom-palette`, `client/src/lib/customPalette.js`), not a
+> per-user schema - nothing is persisted server-side, and the client re-checks
+> shape + hex on read. The server validator stays authoritative for generation
+> and rejects rather than repairs. Generation runs on the hosted coach provider
+> (Cursor on staging, CP1) or a BYO Anthropic key.
+
 ## 1. What this is
 
 The user describes a look in words ("a 90s basement gym", "cold and clinical",

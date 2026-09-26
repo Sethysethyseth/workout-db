@@ -151,6 +151,36 @@ whose `WWW-Authenticate` header omits `resource_metadata` (the client never
 discovers where to authenticate and surfaces only "couldn't connect"), and
 CORS / OPTIONS preflight failures on the discovery and MCP routes.
 
+**CORRECTION 7, added September 26, 2026 (pre-main gate, Opus) - AS BUILT.**
+Where sections 3-7 below disagree with what shipped on `ai-connector-wave`,
+this list wins:
+
+- **Node is pinned now.** `server/package.json` declares `"engines": { "node":
+  ">=22.13 <23" }` (CP1 `8ab7dcf`, the `@cursor/sdk` floor). Still no
+  `"type": "module"`. The "no `engines`" / "Node 22.11 undeclared" statements
+  in item 3 above are history.
+- **The coach route is `POST /coach/ask`** (plus `GET /coach/status`,
+  `POST /coach/palette`) - no `/api` prefix, per correction 1. Section 5's
+  `/api/coach/ask` and section 7's roadmap path are stale.
+- **BYO keys are NEVER stored server-side.** Section 5's "per-user stored key"
+  and section 6's "encrypted at rest" assumed a stored key; as built, the key
+  lives in the user's browser tab only (`sessionStorage`,
+  `client/src/lib/coachKeyPref.js`), travels per request in the `x-coach-key`
+  header, and is never persisted, logged or echoed by the server
+  (`coach/keyResolver.js`, `controllers/coachController.js`). Stricter than
+  the spec, so the section 6 bullet is satisfied by construction.
+- **The hosted provider is chosen by `COACH_PROVIDER`: `anthropic` (unset
+  default) | `cursor` | `mock`.** Staging's hosted coach runs on a Cursor API
+  key via `@cursor/sdk` (Seth, Sept 25). BYO keys are always Anthropic.
+  Section 5's "Sonnet-class default" describes only the anthropic provider,
+  and section 8's "multi-provider adapters beyond the first" is partly done.
+- **Roadmap IDs drifted.** Section 7's AI4/AI5 names do not match the units
+  that shipped (AI4 = WorkOS auth, AI5 = connect UX; the coach landed as the
+  unblocked `8455059` + AI10 + CP1). `docs/tasks/QUEUE.md` is the record.
+- **OPEN at the gate: section 6's "privacy policy and ToS updated in the SAME
+  wave" is UNMET** - the client has no privacy or terms page at all. Seth's
+  call at the Sept 26 gate; see HANDOFF.
+
 ### 4.1 Data surface (no new plumbing)
 
 Tools read the endpoints that already exist (paths corrected per 4.0 item 1):
