@@ -225,7 +225,10 @@ September 17, 2026, before the merge — read top to bottom, in order.
 ```
 # V1 — PROD NODE VERSION. Render -> workout-db-l3gc -> Settings (and the
 #      NODE_VERSION env var, which wins if set).
-#      REQUIRED: >= 22.12.
+#      REQUIRED: >= 22.12 - RAISED to >= 22.13 by CP1 (@cursor/sdk engines
+#      floor; server/package.json engines ">=22.13 <23"). V1 was checked
+#      Sept 25 at >= 22.12 only - re-confirm the patch, or unset NODE_VERSION
+#      so the engines range governs.
 #      WHY: src/app.js requires ./ai/mcpServer UNCONDITIONALLY at boot, which
 #      pulls in `zod` (a phantom transitive of @modelcontextprotocol/sdk,
 #      declared NOWHERE in package.json) and `jose`. Both are "type":"module";

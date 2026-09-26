@@ -12,12 +12,12 @@
 > than died mid-flight, and closed the one gap it left: the critic loop's
 > full round 0-2 ladder is now in-repo instead of in gitignore.
 
-**Next action (human):** **create an Anthropic API key** (console.anthropic.com,
-with a monthly spend cap) and put it on STAGING Render as `COACH_API_KEY` - the
-coach speaks only Anthropic, so a Cursor key will not work. Also paste the
-prod migration SQL from RUNBOOK 10a (V2 RESULT) into the PROD Neon SQL editor
-any time before the merge (prod's build command does not migrate). AI10 is with
-Cursor. Then the smoke (ROAD TO MAIN #7) and the wrong-identity ruling (#5).
+**Next action (human):** nothing is blocked on you while CP1 (coach on a
+Cursor key) and ID1 (wrong-account fix) run in Cursor. The things you CAN do now:
+mint a separate Cursor API key for the coach, confirm prod AND staging Render
+Node are >= **22.13** (the Cursor SDK's floor, one above what was checked),
+shorten the AuthKit session lifetime in the WorkOS staging dashboard, and paste
+the prod migration SQL from RUNBOOK 10a (V2 RESULT) into the PROD Neon editor.
 
 > **Standing rule:** the line above is filled on EVERY rewrite and is
 > never empty or deferred - one sentence, the single thing SETH does
@@ -77,10 +77,10 @@ coach config **degrades honestly** rather than crashing (`keyResolver` ->
 |---|---|---|---|
 | 1 | ~~VETO CHECK: prod Render Node >= 22.12~~ **CLEARED Sept 25 (Seth checked the dashboard)** | Seth | was: `app.js:10` requires ESM `zod`/`jose` at boot. #14 is still the permanent fix |
 | 2 | **VETO FIRED Sept 25, path chosen:** prod build is `npm install && npx prisma generate` - it does NOT migrate. Keep it (prod migrations stay Seth's). **Seth hand-applies the migration via the ready-to-paste SQL in RUNBOOK 10a (V2 RESULT), then runs RUNBOOK section 4, BEFORE the merge** | Seth | without it the new code selects `User.aiConnectorEnabled` against a missing column and login breaks. Safe to run any time - `main` never reads the new table and the column has a DEFAULT |
-| 3 | ~~DECISION: hosted key or dark~~ **DECIDED Sept 25: a hosted key ships.** It must be an ANTHROPIC API key (console.anthropic.com) - `coach/config.js:18` supports only `anthropic` or `mock`; a Cursor key cannot reach `api.anthropic.com` | Seth | makes #4 a blocker and #13 must describe the coach |
-| 4 | **AI10 DISPATCHED Sept 25** (Channel B, auto, `cursor-lane` on `cursor/ai10`) - land via `land-unit` | agent -> Cursor | caps 1500/800 truncate under adaptive thinking on Sonnet 5. Ruling baked in: **thinking stays ON, caps go up (8000/3000)** |
-| 5 | **DECISION:** ship or fix the stale-AuthKit **wrong-identity bind** | Seth | `prompt=login` is IGNORED; AuthKit reuses its cached session, so a user bound to the wrong LogChamp account stays bound and the connector answers confidently **with another account's data**. Cross-user isolation surface = standing frontier escalation. **Recommendation on record: fix first, as its own unit** |
-| 6 | Put a REAL key on staging (`COACH_API_KEY` on staging Render, or smoke via the BYO field on Profile -> AI access) | Seth | **no Lane B path has ever reached `api.anthropic.com`** - five commits, 48 tests and a full UI, all against `COACH_PROVIDER=mock`. Without a key #7 cannot test the coach at all, and AI10's smoke scripts have nothing to run against |
+| 3 | ~~DECISION: hosted key or dark~~ **DECIDED Sept 25: the hosted coach ships on a CURSOR API key** (Seth: "im not using an anthropic one"). Built by **CP1** (`@cursor/sdk` local agent, `tools: []`); BYO keys stay Anthropic. Seth approved the dependency | Seth -> CP1 | CP1 must land + pass its live smoke before the merge; #13 must describe the coach |
+| 4 | ~~AI10~~ **LANDED `ce51242` Sept 25** (8000/3000 caps, truncation handled, smoke scripts) | done | still applies to BYO Anthropic keys. Its smoke scripts are unrun live |
+| 5 | ~~DECISION: ship or fix the wrong-identity bind~~ **FIX - ID1 dispatched Sept 25** (confirm step on `/connector/login`, "Sign out of connected assistants" revoking WorkOS sessions, `boundAccount` on tool output). Cross-user surface: lands under a FRONTIER audit only. Residual Seth step: shorten the AuthKit session lifetime in the WorkOS dashboard (Applications -> Sessions), staging now and the prod env at #11 | agent -> Cursor, then Seth | a stale AuthKit session belonging to an account the user cannot sign in as is only covered by session expiry |
+| 6 | Put the hosted key on STAGING Render: `COACH_PROVIDER=cursor` + `COACH_API_KEY=<a Cursor user API key>` (mint a SEPARATE key from the relay's, so revoking one never kills the other). Confirm staging Node >= 22.13 | Seth, after CP1 lands | no Lane B path has ever reached a real model. Without it #7 cannot test the coach |
 | 7 | **THE SMOKE: Part A surfaces + Part B connector from Seth's REAL account** (checklist below in this file) | Seth | the hard stop. The gate does not start until he signs off; a gate run before smoke gets partly re-run after it. A smoke defect re-enters as a diagnosis block and RESETS the sign-off |
 | 8 | **DECISION (optional):** work CR2 to its 8+ bar, or ship at 7.5 | Seth | `docs/tasks/cr2-critic-round-2-FINDINGS.md` is the work order; a UI block must be authored FROM it, not from memory. Product polish only - does not block a merge |
 | 9 | Pre-main gate review - the `pre-main-review` skill, frontier seat (Opus), gate fuel fanned out to **Cursor report lanes, never Claude subagents** | agent | nothing merges without a PASS. Grep `HANDOFF-ARCHIVE.md` for this wave's session history as review fuel. A BLOCKED verdict sends fixes back through the relay |

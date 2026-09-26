@@ -34,7 +34,27 @@ lane); running them against staging is the reviewer's or Seth's step, and
 for the first time. Fix ruling baked into the block: thinking STAYS ON, the
 caps go up - do not let a later unit "optimize" 8000/3000 back down.
 Dispatched Sept 25 (Opus seat, on Seth's "hosted key ships" ruling): Channel B,
-`--model auto`, lane `C:\dev\worktrees\cursor-lane` on `cursor/ai10`.
+`--model auto`, lane `cursor-lane`. LANDED ce51242 - audit clean (302/302,
+build, hex); reviewer fix: AppearancePage maps `palette_truncated`. Smoke
+scripts written, still unrun live.
+
+DISPATCHED | cp1-coach-on-cursor-key.md | run the HOSTED coach + palette studio
+on a Cursor API key via `@cursor/sdk` (local agent, `tools: []`, scratch cwd,
+lazy-loaded); BYO keys stay Anthropic | MODEL auto. Seth's ruling Sept 25: the
+hosted coach ships on a Cursor key. Seth approved the `@cursor/sdk` dependency
+(gate item 5) in the same message; the block also adds `engines` `>=22.13 <23`
+(the SDK's floor). Recon: `cp1-recon-FINDINGS.md`. Disjoint from ID1 - runs in
+parallel (lane `cursor-lane-2`).
+
+DISPATCHED | id1-connector-identity-bind.md | close the connector's
+wrong-identity bind: explicit "Continue as <email>" on `/connector/login`, a
+"Sign out of connected assistants" route that revokes the user's WorkOS
+sessions + authorized apps, the same cleanup best-effort on consent revoke, and
+`boundAccount` stamped on every tool result | MODEL auto. CROSS-USER ISOLATION
+SURFACE - lands under a frontier-seat audit, never a Sonnet one. Recon:
+`id1-recon-FINDINGS.md`. Residual it cannot close from code: a stale session
+belonging to an account the user cannot sign in as - covered only by the WorkOS
+dashboard session lifetime (Seth). Lane `cursor-lane-3`.
 
 FINDINGS | cr2-critic-round-2-FINDINGS.md | the September 9 critic loop's round-2
 report (7.5/10), preserved verbatim on September 12 from gitignored
