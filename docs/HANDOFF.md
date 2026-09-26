@@ -1,49 +1,115 @@
 # HANDOFF — current state
 
-> **WHERE WE ARE (Sept 26):** the AI wave is **SMOKED, SIGNED OFF and GATED -
-> PASS WITH FIXES.** Lane A (the connector, AI1-AI9) landed in August; Lane B
-> (the in-app coach + palette studio) landed September 9 and was audited
-> September 12; the follow-ups are ALL LANDED - AI10 `ce51242`, ID1 `ebf7b80`,
-> CP1 `8ab7dcf` and SF1 `ab35aca` (wave 4/4). Seth's smoke passed, SF1's
-> re-smoke passed, and the pre-main gate's in-seat fixes are landed. What is
-> left is Seth's: two calls, one Cursor setting, and the prod prerequisites in
-> ROAD TO MAIN, then "push to main". Nothing is in flight.
+> **WHERE WE ARE (Sept 26, end of session):** the AI wave is **LANDED (4/4),
+> SMOKED, SIGNED OFF and GATED - PASS WITH FIXES** (fixes landed; branch head
+> `7206ff7`, 62 commits ahead of `main`, 0 behind, clean ff). No agent work is
+> left before the merge. Everything below is SETH's: two calls (plus two optional), two
+> dashboard settings, three prod prerequisites, then "push to main". Nothing is
+> in flight.
 
-**Next action (human):** make the two gate calls below (privacy page; What's
-New), turn on Privacy Mode for the Cursor account that owns the coach key, then
-work ROAD TO MAIN #2, #11 and #12 before saying "push to main".
+**Next action (human):** work the PICK UP HERE checklist below, top to bottom -
+start with the calls C1-C2 and the Cursor Privacy Mode setting S1.
 
-**SMOKE RESULT, Sept 26 (Seth):** PASSED except two findings, both fixed by
-SF1 `ab35aca` - the Cursor key is live on staging (`COACH_PROVIDER=cursor`,
-`COACH_API_KEY` set, `/coach/status` `available: true`); **the connector works
-inside Claude from Seth's real account**; AI access OFF redirects correctly.
-Findings: (1) registering a NEW account through the connector link landed in
-the app unconnected (the Register link dropped `next`, and a new account's
-consent 403 redirected away) - FIXED with an inline "Turn on AI access and
-connect" step (Seth's ruling); (2) the three consent facts should fold behind
-a pale "More info" - FIXED, open while AI access is off (Seth's ruling).
-**Deferred to a later wave by Seth:** the in-app coach is not discoverable -
-he saw the BYO-key field but found no way to chat (the panel sits under the
-Analytics stat tiles and on finished workouts; make it findable).
+## ▶ PICK UP HERE - Seth's checklist to `main`
 
-**SF1 RE-SMOKE - PASSED (Seth, Sept 26: "looks good"):**
-- Signed out, start a connect from Claude -> on the login page press "Need an
-  account? Register" -> create a NEW account -> you land back on "Continue as
-  <new email>" -> Continue -> the "Turn on AI access and connect" step shows
-  the three facts -> press it -> Claude connects as the new account.
-- "Not now" on that step goes to Profile -> AI access.
-- Plain register/login with no connector involved still lands on Home.
-- Profile -> AI access: with AI access ON the facts sit behind a pale
-  "More info" (click opens/closes); turn it OFF and they show open.
+> **Agent reading this for Seth: show him THIS checklist first, as-is, and ask
+> which item he is on.** Do not start the gate again (it PASSED), do not
+> dispatch anything, and never run a prod step - agents may DISPLAY prod
+> commands, Seth executes them (AGENTS.md gate items 1-3). If any CODE lands on
+> the branch after `7206ff7`, the gate verdict no longer covers it - a frontier
+> seat re-reviews that delta before the merge. Tick items here as Seth reports
+> them done.
 
-> **Standing rule:** the line above is filled on EVERY rewrite and is
+**Calls - Seth decides, tells the agent:**
+
+- [ ] **C1. Privacy page.** `docs/specs/ai-layer.md` section 6 requires a
+  privacy policy + ToS "in the SAME wave"; the app has NONE. Users' training
+  summaries now go to Cursor (hosted coach), Anthropic (BYO keys) and whatever
+  assistant they connect. **Recommendation:** merge anyway, but HOLD the
+  What's New announcement (C2) until a short plain-language privacy page ships
+  as the first unit of the next wave. Alternative: author the page now and
+  merge after it lands.
+- [ ] **C2. What's New (road #13).** Entry `2026-08-ai-assistant` is prod-gated
+  and **fires for every prod user on the merge deploy**; it describes the
+  connector only (no coach, palette studio or Sept 9 redesign). Options: hold
+  it, rewrite it for the whole wave, or ship it as is. **Recommendation:** hold
+  it until C1's page exists. Holding or rewriting is a small code change - an
+  agent does it, then a frontier seat checks that delta.
+- [ ] **C3 (optional, road #8).** Work CR2's critic findings to the 8+ bar, or
+  ship at 7.5. Product polish; does not block.
+- [ ] **C4 (optional, road #14).** Declare `zod` in `server/package.json` (gate
+  item 5 - touches a package file). The Node-pin half is already done (CP1).
+
+**Settings - Seth, in dashboards:**
+
+- [ ] **S1. Cursor Privacy Mode ON** for the Cursor account that owns the
+  coach key (Cursor dashboard -> Settings -> Privacy). Do this BEFORE P3 puts
+  the key on prod - user training summaries pass through it.
+- [ ] **S2. AuthKit session lifetime, STAGING** - shorten it in the WorkOS
+  dashboard (staging environment -> Sessions). ID1's residual: a stale session
+  for an account the user cannot sign in as is only covered by expiry.
+
+**Prod prerequisites - Seth runs them (agents display, never execute):**
+
+- [ ] **P1. Prod migration by hand (road #2).** Paste the SQL block under
+  "V2 RESULT" in `docs/RUNBOOK.md` section 10a into the PROD Neon SQL editor -
+  confirm `ep-solitary-sea-an56mioq` in the URL bar first - then run RUNBOOK
+  section 4 (migration history diff): prod must match staging on
+  `20260804180000_add_ai_consent`. Additive and safe on today's `main`; it MUST
+  land before the merge or prod login breaks.
+- [ ] **P2. PROD AuthKit environment (road #11).** RUNBOOK 10c: a SEPARATE prod
+  environment (one environment has ONE External Sign-in URI, so prod and
+  staging cannot share). Set its External Sign-in URI to
+  `<prod client origin>/connector/login`, and set a short session lifetime
+  there too (S2's prod twin).
+- [ ] **P3. Prod env vars on `workout-db-l3gc` (road #12).** RUNBOOK 10b:
+  `MCP_RESOURCE_URL` = `https://<prod API host>/mcp` (unset silently means
+  localhost and every real token fails); `MCP_AUTHORIZATION_SERVER` = the PROD
+  AuthKit issuer from P2 (read at module load - needs a restart);
+  `WORKOS_API_KEY` = the prod key; `COACH_PROVIDER` = `cursor`;
+  `COACH_API_KEY` = a Cursor key (after S1; staging's key or a separate prod
+  one). Leave `COACH_MODEL` unset, and set no `NODE_VERSION` (the `engines`
+  field pins Node 22.x). No duplicate keys - Render takes one value per name.
+
+**Merge - Seth's trigger:**
+
+- [ ] **M1. Say "push to main"** (verbatim). The agent then runs RUNBOOK
+  section 2 and the merge ONE command at a time, waiting for your approval
+  before each - in a temp git worktree, never stash + checkout (OneDrive).
+  It reports the merged commits, SHAs and confirmed `origin/main` HEAD.
+- [ ] **M2. Post-merge (road #16).** Repoint staging Render back to `main`
+  (RUNBOOK step 7 is NOT a no-op this wave), then RUNBOOK 10d in order - the
+  single most informative check is **logging in on prod**. Then the connector
+  from a real prod account, and the still-open F/E-wave prod smoke (section
+  "PROD smoke" below).
+
+**Already DONE - do not redo:** road #1 (prod Node >= 22.12, cleared Sept 25),
+#3 (CP1), #4 (AI10), #5 code half (ID1), #6 (Cursor key on staging, live),
+#7 (smoke + SF1 re-smoke signed off), #9 (gate PASS WITH FIXES). Road #10
+(main-tree `npm install`) is housekeeping only.
+
+**Smoke record, Sept 26 (Seth):** PASSED - the connector works inside Claude
+from his real account, AI access OFF redirects correctly, `/coach/status`
+`available: true` on the Cursor key. Two findings, both fixed by SF1 `ab35aca`
+and re-smoked ("looks good"): registering a NEW account through the connector
+link now returns to "Continue as <email>" and connects via an inline "Turn on
+AI access and connect" step; the consent facts fold behind a pale "More info"
+(open while AI access is off). **Deferred by Seth to a later wave:** the in-app
+coach is not discoverable - he found the BYO-key field but no way to chat (the
+panel sits under the Analytics stat tiles and on finished workouts).
+
+> **Standing rule:** the Next action line is filled on EVERY rewrite and is
 > never empty or deferred - one sentence, the single thing SETH does
 > next (not the agent). If nothing is blocked on him, it says so
 > explicitly. Dogfoods the shell repo's decision-10 no-dangling-next-
 > action requirement; `land-unit` section 5 keeps it maintained.
 
 **Updated:** September 26, 2026, fiftieth session (Opus, frontier - **the wave
-closed out**). Found the Sept 25 session had stopped mid-relay: ID1 had
+closed out, smoked, fixed and gated**). In order: salvage + land CP1, land
+ID1, Seth's staging smoke (passed bar two findings), SF1 authored, dispatched
+and landed, Seth's SF1 re-smoke (passed), then the pre-main gate (PASS WITH
+FIXES, verdict block below), then this file restructured around the PICK UP
+HERE checklist at Seth's request. The first half, in detail: found the Sept 25 session had stopped mid-relay: ID1 had
 delivered clean, but CP1's run had DIED - connection lost, then an
 `ActionRequiredError` auth error, after hanging ~13 hours with no timeout
 around it and leaving no `DELIVERY.md`. `cursor-agent status` showed the relay
