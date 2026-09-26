@@ -3,6 +3,9 @@ const {
   CONNECTOR_SCOPE,
   consentStateFor,
 } = require("../ai/consent");
+const {
+  revokeWorkosConnectorBinding,
+} = require("../ai/workosClient");
 
 async function loadConsentPayload(userId) {
   const user = await prisma.user.findUnique({
@@ -91,7 +94,49 @@ async function revokeConsent(req, res, next) {
     if (!payload) {
       return res.status(404).json({ error: "User not found" });
     }
+
+    // Best-effort: end the AuthKit session and authorized apps so a later
+    // connect cannot silently re-bind the same WorkOS identity. Failure is
+    // logged with the counts actually achieved; the consent row stays the
+    // authoritative block.
+    try {
+      await revokeWorkosConnectorBinding(userId);
+    } catch (err) {
+      console.error("[ai] WorkOS cleanup after revokeConsent failed", {
+        userId,
+        status: err.status,
+        sessionsRevoked: err.sessionsRevoked ?? 0,
+        applicationsRemoved: err.applicationsRemoved ?? 0,
+        message: err.message,
+      });
+    }
+
     return res.json(payload);
+  } catch (err) {
+    return next(err);
+  }
+}
+
+async function signOutConnector(req, res, next) {
+  try {
+    const userId = req.authUserId;
+    if (!userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    try {
+      const result = await revokeWorkosConnectorBinding(userId);
+      return res.json(result);
+    } catch (err) {
+      console.error("[ai] WorkOS connector signout failed", {
+        userId,
+        status: err.status,
+        sessionsRevoked: err.sessionsRevoked ?? 0,
+        applicationsRemoved: err.applicationsRemoved ?? 0,
+        message: err.message,
+      });
+      return res.status(502).json({ error: "workos_unavailable" });
+    }
   } catch (err) {
     return next(err);
   }
@@ -101,4 +146,5 @@ module.exports = {
   getConsent,
   grantConsent,
   revokeConsent,
+  signOutConnector,
 };

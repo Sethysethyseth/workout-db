@@ -4,6 +4,7 @@ const {
   getConsent,
   grantConsent,
   revokeConsent,
+  signOutConnector,
 } = require("../controllers/aiController");
 const {
   connectorAuthorize,
@@ -12,6 +13,7 @@ const {
 const router = express.Router();
 
 router.post("/connector/authorize", authRequired, connectorAuthorize);
+router.post("/connector/signout", authRequired, signOutConnector);
 router.get("/consent", authRequired, getConsent);
 router.post("/consent", authRequired, grantConsent);
 router.delete("/consent", authRequired, revokeConsent);

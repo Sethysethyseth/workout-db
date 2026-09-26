@@ -153,6 +153,8 @@ export function AiConnectorPage() {
   const [keyDraft, setKeyDraft] = useState("");
   const [savedKey, setSavedKey] = useState(() => loadCoachKey());
   const [keyNotice, setKeyNotice] = useState(null);
+  const [signingOut, setSigningOut] = useState(false);
+  const [signOutResult, setSignOutResult] = useState(null);
 
   const connectorUrl = buildConnectorUrl();
 
@@ -246,6 +248,34 @@ export function AiConnectorPage() {
     clearCoachKey();
     setSavedKey(null);
     setKeyNotice({ tone: "success", text: "Key forgotten." });
+  }
+
+  async function onSignOutConnector() {
+    if (signingOut) return;
+    setSigningOut(true);
+    setSignOutResult(null);
+    setError(null);
+    try {
+      const data = await aiApi.signOutConnector();
+      if (data?.found) {
+        setSignOutResult({
+          tone: "success",
+          text: "Signed out of connected assistants.",
+        });
+      } else {
+        setSignOutResult({
+          tone: "success",
+          text: "Nothing to sign out.",
+        });
+      }
+    } catch {
+      setSignOutResult({
+        tone: "error",
+        text: "Couldn't reach the sign-in service.",
+      });
+    } finally {
+      setSigningOut(false);
+    }
   }
 
   if (loading) {
@@ -455,6 +485,52 @@ export function AiConnectorPage() {
           </div>
         </section>
       ) : null}
+
+      <section
+        className="settings-section"
+        aria-labelledby="settings-ai-signout-heading"
+      >
+        <h2
+          id="settings-ai-signout-heading"
+          className="settings-section-heading"
+        >
+          Connected assistants
+        </h2>
+        <div className="settings-group settings-security-form">
+          <p className="muted small" style={{ margin: 0 }}>
+            Use this if an assistant is showing the wrong account's data,
+            then reconnect from the assistant.
+          </p>
+          <div className="settings-security-actions">
+            <button
+              type="button"
+              className="btn btn-secondary"
+              disabled={signingOut}
+              onClick={() => void onSignOutConnector()}
+            >
+              {signingOut
+                ? "Signing out…"
+                : "Sign out of connected assistants"}
+            </button>
+          </div>
+          {signOutResult ? (
+            <p
+              className={
+                signOutResult.tone === "error"
+                  ? "settings-feedback-inline-error"
+                  : "settings-feedback settings-feedback--success"
+              }
+              role="status"
+              style={{
+                margin: 0,
+                padding: signOutResult.tone === "error" ? 0 : undefined,
+              }}
+            >
+              {signOutResult.text}
+            </p>
+          ) : null}
+        </div>
+      </section>
     </div>
   );
 }

@@ -18,3 +18,7 @@ export function authorizeConnector(externalAuthId) {
     body: { external_auth_id: externalAuthId },
   });
 }
+
+export function signOutConnector() {
+  return http("/ai/connector/signout", { method: "POST" });
+}

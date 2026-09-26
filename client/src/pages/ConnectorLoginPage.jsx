@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Link, Navigate, useLocation, useSearchParams } from "react-router-dom";
 import { authorizeConnector } from "../api/aiApi.js";
 import { ApiError } from "../api/http.js";
@@ -7,7 +7,7 @@ import { LoadingState } from "../components/LoadingState.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 
 export function ConnectorLoginPage() {
-  const { currentUser, authLoading } = useAuth();
+  const { currentUser, authLoading, logout } = useAuth();
   const location = useLocation();
   const [params] = useSearchParams();
   const externalAuthId = params.get("external_auth_id") || "";
@@ -16,48 +16,50 @@ export function ConnectorLoginPage() {
   const [error, setError] = useState(null);
   const [expired, setExpired] = useState(false);
   const [needsConsent, setNeedsConsent] = useState(false);
+  const [connecting, setConnecting] = useState(false);
+  const [switching, setSwitching] = useState(false);
 
   // Latch the completion call to at most ONE attempt per external_auth_id.
-  // A `cancelled` flag stops a late setState but does NOT stop a second POST,
-  // and this effect can re-fire twice over: StrictMode double-invokes it in
-  // dev, and `currentUser` is an object whose identity changes on any auth
-  // refresh. WorkOS does not document whether external_auth_id is single-use
-  // (recon R1: COULD NOT SOURCE), so a duplicate completion could burn the id
-  // and 409 the user out of a handshake that actually succeeded.
+  // A double click must not POST twice. WorkOS does not document whether
+  // external_auth_id is single-use (recon R1: COULD NOT SOURCE), so a
+  // duplicate completion could burn the id and 409 a handshake that succeeded.
   const attemptedIdRef = useRef(null);
 
-  useEffect(() => {
-    if (authLoading || !currentUser || !hasId) return;
+  async function onContinue() {
     if (attemptedIdRef.current === externalAuthId) return;
     attemptedIdRef.current = externalAuthId;
 
-    let cancelled = false;
-    async function run() {
-      setError(null);
-      setExpired(false);
-      setNeedsConsent(false);
-      try {
-        const data = await authorizeConnector(externalAuthId.trim());
-        if (cancelled) return;
-        window.location.assign(data.redirectUri);
-      } catch (err) {
-        if (cancelled) return;
-        if (err instanceof ApiError && err.status === 403) {
-          setNeedsConsent(true);
-          return;
-        }
-        if (err instanceof ApiError && err.status === 409) {
-          setExpired(true);
-          return;
-        }
-        setError(err);
+    setConnecting(true);
+    setError(null);
+    setExpired(false);
+    setNeedsConsent(false);
+    try {
+      const data = await authorizeConnector(externalAuthId.trim());
+      window.location.assign(data.redirectUri);
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 403) {
+        setNeedsConsent(true);
+        return;
       }
+      if (err instanceof ApiError && err.status === 409) {
+        setExpired(true);
+        return;
+      }
+      setError(err);
+      setConnecting(false);
     }
-    void run();
-    return () => {
-      cancelled = true;
-    };
-  }, [authLoading, currentUser, hasId, externalAuthId]);
+  }
+
+  async function onUseDifferentAccount() {
+    if (switching) return;
+    setSwitching(true);
+    try {
+      await logout();
+    } catch {
+      // Local session is already cleared; the unauthenticated branch below
+      // sends us to /login?next=<this path + query>.
+    }
+  }
 
   if (!hasId) {
     return (
@@ -106,11 +108,43 @@ export function ConnectorLoginPage() {
     return <ErrorMessage error={error} />;
   }
 
+  if (connecting) {
+    return (
+      <LoadingState
+        tone="page"
+        label="Connecting…"
+        slowLabel="Finishing the connection…"
+      />
+    );
+  }
+
   return (
-    <LoadingState
-      tone="page"
-      label="Connecting…"
-      slowLabel="Finishing the connection…"
-    />
+    <div className="card stack">
+      <p>
+        Connect LogChamp as <strong>{currentUser.email}</strong>?
+      </p>
+      <p className="muted">
+        This link expires within a few minutes. If it does, start the
+        connection again from the assistant.
+      </p>
+      <div className="row">
+        <button
+          type="button"
+          className="btn"
+          disabled={switching}
+          onClick={() => void onContinue()}
+        >
+          Continue as {currentUser.email}
+        </button>
+        <button
+          type="button"
+          className="btn btn-secondary"
+          disabled={switching}
+          onClick={() => void onUseDifferentAccount()}
+        >
+          Use a different account
+        </button>
+      </div>
+    </div>
   );
 }

@@ -3,6 +3,7 @@ const { McpServer } = require("@modelcontextprotocol/sdk/server/mcp.js");
 const {
   StreamableHTTPServerTransport,
 } = require("@modelcontextprotocol/sdk/server/streamableHttp.js");
+const prisma = require("../lib/prisma");
 const {
   loadSummary,
   loadExerciseDetail,
@@ -19,17 +20,47 @@ const {
 
 const DATE_ONLY_RE = /^\d{4}-\d{2}-\d{2}$/;
 
+const BOUND_ACCOUNT_NOTE =
+  'If this is not the account the user expects, tell them to use "Sign out of connected assistants" under Profile -> AI access in LogChamp and reconnect.';
+
+function withBoundAccount(payload, email) {
+  const base = payload && typeof payload === "object" ? payload : {};
+  return {
+    ...base,
+    boundAccount: { email },
+    boundAccountNote: BOUND_ACCOUNT_NOTE,
+  };
+}
+
 function toolText(payload) {
   return {
     content: [{ type: "text", text: JSON.stringify(payload) }],
   };
 }
 
-function toolError(message) {
+function toolError(message, boundEmail) {
   return {
     isError: true,
-    content: [{ type: "text", text: JSON.stringify({ error: message }) }],
+    content: [
+      {
+        type: "text",
+        text: JSON.stringify(withBoundAccount({ error: message }, boundEmail)),
+      },
+    ],
   };
+}
+
+async function loadBoundAccountEmail(connectorUserId) {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: connectorUserId },
+      select: { email: true },
+    });
+    return typeof user?.email === "string" ? user.email : "";
+  } catch (err) {
+    console.error("[mcp] bound-account email lookup failed", err);
+    return "";
+  }
 }
 
 function parseRequiredDate(raw, name, endOfDay = false) {
@@ -87,11 +118,12 @@ function guardPayloadSize(payload) {
  * Fresh McpServer per call, closed over connectorUserId so tool handlers
  * never read identity from model-supplied arguments.
  */
-function createMcpServerForUser(connectorUserId) {
+function createMcpServerForUser(connectorUserId, boundEmail) {
   const server = new McpServer({
     name: "logchamp",
     version: "1.0.0",
   });
+  const stamp = (payload) => withBoundAccount(payload, boundEmail);
 
   server.registerTool(
     "get_training_summary",
@@ -117,11 +149,11 @@ function createMcpServerForUser(connectorUserId) {
     },
     async ({ from: rawFrom, to: rawTo }) => {
       const fromParsed = parseRequiredDate(rawFrom, "from");
-      if (!fromParsed.ok) return toolError(fromParsed.error);
+      if (!fromParsed.ok) return toolError(fromParsed.error, boundEmail);
       const toParsed = parseRequiredDate(rawTo, "to", true);
-      if (!toParsed.ok) return toolError(toParsed.error);
+      if (!toParsed.ok) return toolError(toParsed.error, boundEmail);
       if (fromParsed.date.getTime() > toParsed.date.getTime()) {
-        return toolError("from must not be after to");
+        return toolError("from must not be after to", boundEmail);
       }
 
       const summary = await loadSummary(connectorUserId, {
@@ -131,7 +163,7 @@ function createMcpServerForUser(connectorUserId) {
       const trimmed = fitSummaryForTool(summary, {
         maxExercises: DEFAULT_MAX_EXERCISES,
       });
-      return toolText(guardPayloadSize(trimmed));
+      return toolText(stamp(guardPayloadSize(trimmed)));
     }
   );
 
@@ -178,7 +210,8 @@ function createMcpServerForUser(connectorUserId) {
 
       if (hasExerciseId === hasUserExerciseId) {
         return toolError(
-          "exactly one of exerciseId or userExerciseId is required"
+          "exactly one of exerciseId or userExerciseId is required",
+          boundEmail
         );
       }
 
@@ -186,20 +219,20 @@ function createMcpServerForUser(connectorUserId) {
       if (hasUserExerciseId) {
         userExerciseId = Number(rawUserExerciseId.trim());
         if (!Number.isInteger(userExerciseId)) {
-          return toolError("userExerciseId must be an integer");
+          return toolError("userExerciseId must be an integer", boundEmail);
         }
       }
 
       const fromParsed = parseOptionalDate(args.from, "from");
-      if (!fromParsed.ok) return toolError(fromParsed.error);
+      if (!fromParsed.ok) return toolError(fromParsed.error, boundEmail);
       const toParsed = parseOptionalDate(args.to, "to", true);
-      if (!toParsed.ok) return toolError(toParsed.error);
+      if (!toParsed.ok) return toolError(toParsed.error, boundEmail);
       if (
         fromParsed.date &&
         toParsed.date &&
         fromParsed.date.getTime() > toParsed.date.getTime()
       ) {
-        return toolError("from must not be after to");
+        return toolError("from must not be after to", boundEmail);
       }
 
       const detail = await loadExerciseDetail(connectorUserId, {
@@ -210,7 +243,7 @@ function createMcpServerForUser(connectorUserId) {
       });
 
       if (detail === null) {
-        return toolError("No logged sets for that exercise");
+        return toolError("No logged sets for that exercise", boundEmail);
       }
 
       // buildExerciseDetail has no meta - attach coverage from the same window.
@@ -251,7 +284,7 @@ function createMcpServerForUser(connectorUserId) {
         );
       }
 
-      return toolText(guardPayloadSize(payload));
+      return toolText(stamp(guardPayloadSize(payload)));
     }
   );
 
@@ -278,7 +311,7 @@ function createMcpServerForUser(connectorUserId) {
       const roster = await loadExerciseRoster(connectorUserId, {
         activeOnly: activeOnly !== false,
       });
-      return toolText(guardPayloadSize(roster));
+      return toolText(stamp(guardPayloadSize(roster)));
     }
   );
 
@@ -308,7 +341,7 @@ function createMcpServerForUser(connectorUserId) {
       const result = await loadRecentSessions(connectorUserId, {
         limit: capped,
       });
-      return toolText(guardPayloadSize(result));
+      return toolText(stamp(guardPayloadSize(result)));
     }
   );
 
@@ -328,7 +361,8 @@ async function handleMcpRequest(req, res) {
     });
   }
 
-  const server = createMcpServerForUser(connectorUserId);
+  const boundEmail = await loadBoundAccountEmail(connectorUserId);
+  const server = createMcpServerForUser(connectorUserId, boundEmail);
   const transport = new StreamableHTTPServerTransport({
     // Stateless: no shared session map across tenants. Fresh instance per request.
     sessionIdGenerator: undefined,
@@ -359,4 +393,6 @@ async function handleMcpRequest(req, res) {
 module.exports = {
   handleMcpRequest,
   createMcpServerForUser,
+  withBoundAccount,
+  BOUND_ACCOUNT_NOTE,
 };
