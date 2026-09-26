@@ -117,6 +117,20 @@ real connect, "Sign out of connected assistants" must say "Signed out", NOT
 "Nothing to sign out" - the latter means the lookup key is wrong and Door A is
 still open.
 
+QUEUED | sf1-smoke-fixes-connector-register.md | Seth's Sept 26 staging smoke
+fixes: an account created through the connector link still connects (`next`
+survives the Login <-> Register crosslinks; a 403 `consent_required` on
+`/connector/login` becomes an inline "Turn on AI access and connect" step
+instead of a redirect that drops the `external_auth_id`), and Profile -> AI
+access folds the three consent facts behind a pale "More info" | MODEL auto,
+client only. Authored Sept 26 (Opus) from the smoke - no recon lane; grounding
+read directly (`LoginPage.jsx:73` bare `/register`, `RegisterPage.jsx:34`
+`navigate("/")`, the consent 403 precedes any WorkOS call in
+`connectorAuthController.js`). CONSENT SURFACE - frontier audit at landing.
+Smoke otherwise PASSED (connector live in Claude from Seth's account; AI access
+OFF redirects correctly). Deferred by Seth to a later wave: the in-app coach is
+not discoverable - he saw the key field but no way to chat.
+
 FINDINGS | cr2-critic-round-2-FINDINGS.md | the September 9 critic loop's round-2
 report (7.5/10), preserved verbatim on September 12 from gitignored
 `.playwright-mcp/critic/round-2.md` | NOT a dispatchable block. Its ten ranked
