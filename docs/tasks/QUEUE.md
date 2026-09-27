@@ -6,6 +6,25 @@ Statuses: DRAFT / QUEUED / DISPATCHED / AWAITING-REVIEW / LANDED <sha> / BOUNCED
 
 ## Active
 
+**Post-merge patch wave, opened September 27, 2026 (Opus frontier seat).**
+Two prod issues found right after the AI-wave merge (`bdad1c1`). P-A (the
+connector will not connect on prod) is a WorkOS dashboard fix for Seth, no
+block unless it still fails after that. P-B (slow hosted coach) is CP2. The
+patch lands on `ai-connector-wave` (= `main` + docs only, still what staging
+Render tracks), so the merge stays a fast-forward and staging needs no
+repoint. Wave N = 1.
+
+QUEUED | cp2-coach-latency.md | hosted coach: remember the account's
+systemPrompt gate per process (one agent run per question after the first),
+feed the SDK the `rg` binary its platform package already ships (kills the
+six "Ripgrep path not configured" traces), one `[coach] cursor` timing log
+line per request, smoke script measures BEFORE/AFTER | MODEL auto, MODE
+1-relay. Authored from the Sept 27 read-only research (HANDOFF P-B), no recon
+lane - the file:line evidence is in the block. Lane `cursor-lane-2` (its
+`server` install carries `@cursor/sdk`). Mandatory LIVE smoke, run by Cursor
+before AND after the change. Isolation invariant baked in: one fresh agent +
+scratch dir per request, never pooled.
+
 **Lane-B audit wave, opened September 12, 2026 (Opus frontier seat).** The
 September 9 session landed FIVE commits on `ai-connector-wave` (`8455059`,
 `4f364ee`, `d28989b`, `2080128`, `932fa25`) WITHOUT passing through

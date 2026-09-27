@@ -7,19 +7,22 @@
 > PATCH to `main`**: **P-A** the Claude connector will not connect on prod -
 > DIAGNOSED as a WorkOS CONFIG error, most likely no code at all; **P-B** the
 > hosted coach works but is SLOW - known causes, a small code unit (CP2).
-> Nothing is in flight. No block is authored yet.
+> **CP2 is AUTHORED and DISPATCHED (Sept 27)** - `docs/tasks/cp2-coach-latency.md`,
+> lane `cursor-lane-2`, landing on `ai-connector-wave` (staging needs no
+> repoint). Wave N = 1.
 
 **Next action (human):** fix the prod WorkOS External Sign-in URI (P-A step 1)
-and retry the connector from Claude with the PROD address; then tell the agent
-to author CP2.
+and retry the connector from Claude with the PROD address; while CP2 runs,
+note the prod coach's current speed (Network tab, `POST /coach/ask`) as the
+BEFORE number.
 
 ## ▶ PICK UP HERE - the post-merge patch
 
 > **Agent reading this:** research is DONE (Opus, Sept 27, read-only) - do not
 > redo it. P-A is Seth's dashboard step first; only if it still fails after
-> that does it become a diagnosis block. P-B needs an authored block (frontier
-> seat, `author-task-block`) before anything is dispatched. Sonnet does not
-> author - if you are Sonnet, stop at "CP2 needs authoring" and say so.
+> that does it become a diagnosis block. P-B = CP2, AUTHORED Sept 27 (Opus);
+> the block supersedes the "CP2 block shape" notes below. Land it with
+> `land-unit` from `cursor-lane-2`.
 
 ### P-A. The connector will not connect on prod (AI access ON) - CONFIG
 
@@ -104,13 +107,14 @@ user message (weaker separation, no tools so blast radius is text only).
 
 ### How the patch reaches `main`
 
-- **Branch the patch off `ai-connector-wave` HEAD, not `main`.** The branch is
-  `main` plus docs-only HANDOFF commits (this file lives there); `main` is
-  still an ancestor, so the merge stays a clean fast-forward.
+- **The patch lands ON `ai-connector-wave` itself (Opus, Sept 27)** - not a
+  new branch. It is `main` plus docs-only HANDOFF commits, `main` stays an
+  ancestor, so the merge is a clean fast-forward; and staging already tracks
+  it, which saves Seth a Render repoint.
 - **Staging Render `workout-db-staging` still tracks `ai-connector-wave`**
-  unless Seth has repointed it (post-merge M2, not confirmed done). For the
-  smoke, point it at the patch branch; after the patch merges, point it at
-  `main` (RUNBOOK step 7).
+  unless Seth has repointed it (post-merge M2, not confirmed done) - confirm
+  before the smoke. After the patch merges, point it at `main` (RUNBOOK
+  step 7).
 - The relay as usual: author -> dispatch -> `land-unit` -> Seth smokes on
   staging -> `pre-main-review` on the small delta -> Seth says "push to main"
   -> temp worktree, one command at a time with approval. No migration, no new
