@@ -8,12 +8,13 @@
 > DIAGNOSED as a WorkOS CONFIG error, most likely no code at all; **P-B** the
 > hosted coach works but is SLOW - known causes, a small code unit (CP2).
 > **Patch wave, N = 3, landing on `ai-connector-wave` (Sept 27):** CP2 coach
-> latency LANDED `b9dd0ae` (1/3); CQ1 weekly coach cap DISPATCHED, lane 1 (7 per
+> latency LANDED `b9dd0ae`; CQ1 weekly coach cap LANDED `b07fea2` (7 per
 > rolling week, owner exempt via `COACH_UNCAPPED_EMAILS`); WD1 discard-a-workout
-> X (with a `reopenedAt` marker so a reopened finished workout can never be
-> discarded). CQ1 and WD1 each carry a MIGRATION - each landing push to
-> `ai-connector-wave` migrates staging, so it waits for "migrate staging";
-> prod needs both applied by Seth before the merge. Ledger: `docs/tasks/QUEUE.md`.
+> X LANDED `712b696` (with a `reopenedAt` marker so a reopened finished workout
+> can never be discarded). **3/3 complete.** Both migrations APPLIED TO STAGING
+> Sept 27 (Seth's "migrate staging"); prod needs both applied by Seth BEFORE the
+> merge. Seth chose to SKIP smoke and go straight to the pre-main gate (Opus,
+> same session). Ledger: `docs/tasks/QUEUE.md`.
 
 **Next action (human):** fix the prod WorkOS External Sign-in URI (P-A step 1)
 and retry the connector from Claude with the PROD address, and check whether
@@ -36,6 +37,18 @@ notes).
   inline agentRuns=... ttft_ms=... total_ms=...` line per question, and NO
   "Ripgrep path not configured" stack traces. Palette studio still generates
   a valid palette.
+- **CQ1 (`b07fea2`):** set `COACH_UNCAPPED_EMAILS=sethjknisel@gmail.com` on
+  staging Render first. As Seth: no cap line in the coach panel. As a
+  non-exempt test account on the hosted key: "N of 7 questions left this week"
+  drops by one per answered question; after 7 the ask box is disabled and says
+  when the next frees up (local time); a BYO-key user sees no cap; the palette
+  studio is never capped.
+- **WD1 (`712b696`):** start a workout, log nothing, tap X -> straight to Home,
+  "Workout discarded", no resume bar. Start one, log a set, tap X -> inline
+  confirm; "Keep logging" changes nothing; "Discard workout" -> Home; Back does
+  not return to it. Reopen a FINISHED workout -> NO X. Type into a set and tap
+  X at once -> no error toast afterward. Check the X at 360px wide and in a
+  couple of palettes, light and dark.
 
 ### P-A. The connector will not connect on prod (AI access ON) - CONFIG
 

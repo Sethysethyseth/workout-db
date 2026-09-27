@@ -55,7 +55,7 @@ to `ai-connector-wave` MIGRATES STAGING (staging's Render build runs
 phrase. Prod: Seth hand-applies both migrations BEFORE the merge (ordering
 invariant), and sets `COACH_UNCAPPED_EMAILS` on prod + staging Render.
 
-DISPATCHED | cq1-coach-weekly-cap.md | hosted coach capped at 7 questions per
+LANDED b07fea2 | cq1-coach-weekly-cap.md | hosted coach capped at 7 questions per
 ROLLING 7 days per user; BYO and mock never count; palette studio and the
 Claude connector untouched; owner exempt via `COACH_UNCAPPED_EMAILS`; a
 question counts only if an answer was delivered; `/coach/status` reports
@@ -65,8 +65,16 @@ rolling 7 days, hosted key only. New `CoachUsage` table (who + when, NO
 content). Lane `cursor-lane`.
 Dispatched Sept 27 (Opus seat): Channel B, `--model auto`, lane `cursor-lane`
 on `cursor/cq1` @ `2bef295`, 45-minute hard kill.
+Run: 6.4 minutes, exit 0. LANDED b07fea2 Sept 27 (Opus seat), NO bounce, ONE
+reviewer fix: `nextAvailableAt` took the OLDEST in-window row, wrong when
+concurrent asks overshoot to 8+ (the next slot frees when row `used - 7`
+ages out) - fixed + pinned by a test. Lanes fresh: unit 334/334 in 31 suites
+in the lane, build, check-hex clean. Scope exact (10 files). `generatePalette`
+untouched; status JSON does not echo the email; a bad BYO key is still
+`bad_key_format` (no cap bypass). Refund: row deleted in `askCoach`'s
+`finally` unless a non-empty text delta was sent.
 
-QUEUED | wd1-discard-workout.md | a small X on a live workout to discard it:
+LANDED 712b696 | wd1-discard-workout.md | a small X on a live workout to discard it:
 immediate when nothing is logged, inline confirm when sets exist, never
 offered on a reopened finished workout (new `WorkoutSession.reopenedAt`,
 server-side `POST /sessions/:id/discard` rule returns 409 for it), 14
@@ -75,6 +83,20 @@ stale URL, theming) | MODEL auto. The reopen hazard found Sept 27:
 `reopenSession` only nulls `completedAt`, so without the marker an X could
 erase a finished workout's history. Waits for CQ1 to land (schema +
 index.css collision).
+Dispatched Sept 27 (Opus seat) after CQ1 committed: Channel B, `--model auto`,
+lane `cursor-lane` on `cursor/wd1` @ `b07fea2`. Run: 5.6 minutes, exit 0.
+LANDED 712b696 Sept 27, NO bounce, NO reviewer fix. Lanes fresh: unit 348/348
+in 32 suites, build, check-hex clean; every new `var(--...)` resolves. Scope
+exact (10 files); `deleteSession` byte-identical; discard's `deleteMany`
+WHERE carries userId + completedAt null + reopenedAt null (race-safe, cross-
+user safe). Known nit: the confirm's "N logged sets" counts saved rows,
+including blank rows made by "+ Add set" (same count Finish already uses).
+Known residual: a workout reopened BEFORE this migration and still open has
+`reopenedAt` null, so it is discardable - no data can tell it apart.
+**Staging migrated Sept 27 on Seth's "migrate staging"** (one command at a
+time, each approved): `migrate deploy` applied `20260927120000_add_coach_usage`
++ `20260927130000_add_session_reopened_at` to `ep-bitter-breeze-am81izlh`;
+`migrate status` -> "Database schema is up to date!". Wave 3/3 complete.
 
 **Lane-B audit wave, opened September 12, 2026 (Opus frontier seat).** The
 September 9 session landed FIVE commits on `ai-connector-wave` (`8455059`,
