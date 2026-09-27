@@ -14,7 +14,7 @@ patch lands on `ai-connector-wave` (= `main` + docs only, still what staging
 Render tracks), so the merge stays a fast-forward and staging needs no
 repoint. Wave N = 1.
 
-QUEUED | cp2-coach-latency.md | hosted coach: remember the account's
+DISPATCHED | cp2-coach-latency.md | hosted coach: remember the account's
 systemPrompt gate per process (one agent run per question after the first),
 feed the SDK the `rg` binary its platform package already ships (kills the
 six "Ripgrep path not configured" traces), one `[coach] cursor` timing log
@@ -24,6 +24,9 @@ lane - the file:line evidence is in the block. Lane `cursor-lane-2` (its
 `server` install carries `@cursor/sdk`). Mandatory LIVE smoke, run by Cursor
 before AND after the change. Isolation invariant baked in: one fresh agent +
 scratch dir per request, never pooled.
+Dispatched Sept 27 (Opus seat): Channel B, `--model auto`, lane
+`cursor-lane-2` on `cursor/cp2` @ `2359c82`, 45-minute hard kill. The lane
+also holds the stale untracked Sept 26 `GATE-R1.md` - not part of CP2.
 
 **Lane-B audit wave, opened September 12, 2026 (Opus frontier seat).** The
 September 9 session landed FIVE commits on `ai-connector-wave` (`8455059`,
