@@ -8,7 +8,7 @@
 > DIAGNOSED as a WorkOS CONFIG error, most likely no code at all; **P-B** the
 > hosted coach works but is SLOW - known causes, a small code unit (CP2).
 > **Patch wave, N = 3, landing on `ai-connector-wave` (Sept 27):** CP2 coach
-> latency (delivered, lane 2, awaiting review); CQ1 weekly coach cap (7 per
+> latency LANDED `b9dd0ae` (1/3); CQ1 weekly coach cap DISPATCHED, lane 1 (7 per
 > rolling week, owner exempt via `COACH_UNCAPPED_EMAILS`); WD1 discard-a-workout
 > X (with a `reopenedAt` marker so a reopened finished workout can never be
 > discarded). CQ1 and WD1 each carry a MIGRATION - each landing push to
@@ -16,9 +16,9 @@
 > prod needs both applied by Seth before the merge. Ledger: `docs/tasks/QUEUE.md`.
 
 **Next action (human):** fix the prod WorkOS External Sign-in URI (P-A step 1)
-and retry the connector from Claude with the PROD address; while CP2 runs,
-note the prod coach's current speed (Network tab, `POST /coach/ask`) as the
-BEFORE number.
+and retry the connector from Claude with the PROD address, and check whether
+prod Render's instance type spins down when idle (decides a CP3, see QUEUE CP2
+notes).
 
 ## ▶ PICK UP HERE - the post-merge patch
 
@@ -27,6 +27,15 @@ BEFORE number.
 > that does it become a diagnosis block. P-B = CP2, AUTHORED Sept 27 (Opus);
 > the block supersedes the "CP2 block shape" notes below. Land it with
 > `land-unit` from `cursor-lane-2`.
+
+### Patch-wave smoke items (carried forward - handed over ONCE at wave end)
+
+- **CP2 (`b9dd0ae`):** on staging, ask the coach two questions in a row - the
+  second should answer in a few seconds (the first after a deploy still pays
+  one slow probe, by design). Staging Render logs: one `[coach] cursor mode=
+  inline agentRuns=... ttft_ms=... total_ms=...` line per question, and NO
+  "Ripgrep path not configured" stack traces. Palette studio still generates
+  a valid palette.
 
 ### P-A. The connector will not connect on prod (AI access ON) - CONFIG
 

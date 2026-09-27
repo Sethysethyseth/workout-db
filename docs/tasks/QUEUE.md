@@ -14,7 +14,7 @@ patch lands on `ai-connector-wave` (= `main` + docs only, still what staging
 Render tracks), so the merge stays a fast-forward and staging needs no
 repoint. Wave N = 3 (CP2, CQ1, WD1 - see below).
 
-DISPATCHED | cp2-coach-latency.md | hosted coach: remember the account's
+LANDED b9dd0ae | cp2-coach-latency.md | hosted coach: remember the account's
 systemPrompt gate per process (one agent run per question after the first),
 feed the SDK the `rg` binary its platform package already ships (kills the
 six "Ripgrep path not configured" traces), one `[coach] cursor` timing log
@@ -27,6 +27,24 @@ scratch dir per request, never pooled.
 Dispatched Sept 27 (Opus seat): Channel B, `--model auto`, lane
 `cursor-lane-2` on `cursor/cp2` @ `2359c82`, 45-minute hard kill. The lane
 also holds the stale untracked Sept 26 `GATE-R1.md` - not part of CP2.
+Run: 8.7 minutes, exit 0. LANDED b9dd0ae Sept 27 (Opus seat), NO bounce, NO
+reviewer fix. Lanes fresh in the lane: unit 334/334 in 30 suites (324 + 10),
+client build clean. Scope exact (3 files); no pre-existing test assertion
+removed (the only `-` line is the fake SDK's return gaining `agents`). Memo is
+a module boolean + `resetCursorProviderMemos()` seam; scratch dir and agent
+are still per request (isolation invariant holds - read in the diff). LIVE
+smoke by Cursor on the relay key, BEFORE -> AFTER: RUN 1 26.2s/2 runs ->
+23.6s/2 (the probe, by design); RUN 2 19.1s/2 -> 3.2s/1; palette 30.4s/2 ->
+10.9s/1; `PALETTE validatePalette=pass`. Ripgrep: the SDK's locator walks up
+from argv[1]/execPath and never `require.resolve`s the platform package, so
+on Render it misses; the hook sets an absolute `CURSOR_RIPGREP_PATH` from
+`@cursor/sdk-<platform>-<arch>/bin/rg`. Windows count was 0 before and after,
+so the Linux proof is the STAGING RENDER LOG (no "Ripgrep path not configured"
+after this deploy). **Follow-up, not a blocker:** the memo resets whenever the
+process restarts, so the FIRST question after every deploy - and after every
+idle spin-down if prod's Render tier spins down - still pays the ~20s probe.
+If Seth's instance-type check shows a spin-down tier, the fix is a small
+config switch to skip the probe (inline-first) - a CP3.
 
 **Wave grew to N = 3 (Seth, Sept 27, same session):** a weekly coach cap and
 a way to stop a started workout. Both units are MIGRATION-CARRYING and both
@@ -37,7 +55,7 @@ to `ai-connector-wave` MIGRATES STAGING (staging's Render build runs
 phrase. Prod: Seth hand-applies both migrations BEFORE the merge (ordering
 invariant), and sets `COACH_UNCAPPED_EMAILS` on prod + staging Render.
 
-QUEUED | cq1-coach-weekly-cap.md | hosted coach capped at 7 questions per
+DISPATCHED | cq1-coach-weekly-cap.md | hosted coach capped at 7 questions per
 ROLLING 7 days per user; BYO and mock never count; palette studio and the
 Claude connector untouched; owner exempt via `COACH_UNCAPPED_EMAILS`; a
 question counts only if an answer was delivered; `/coach/status` reports
@@ -45,6 +63,8 @@ question counts only if an answer was delivered; `/coach/status` reports
 Seth's rulings Sept 27 (asked + answered in session): coach questions only,
 rolling 7 days, hosted key only. New `CoachUsage` table (who + when, NO
 content). Lane `cursor-lane`.
+Dispatched Sept 27 (Opus seat): Channel B, `--model auto`, lane `cursor-lane`
+on `cursor/cq1` @ `2bef295`, 45-minute hard kill.
 
 QUEUED | wd1-discard-workout.md | a small X on a live workout to discard it:
 immediate when nothing is logged, inline confirm when sets exist, never
