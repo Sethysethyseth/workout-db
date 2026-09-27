@@ -125,6 +125,8 @@ model WorkoutSession {
   performedAt       DateTime          @default(now())
   startedAt         DateTime          @default(now())
   completedAt       DateTime?
+  /** Set when a finished workout is reopened; never cleared. Marks "finished at least once". */
+  reopenedAt        DateTime?
   /** Display name for quick-log sessions; template-based sessions use the template name. */
   name              String?
   notes             String?

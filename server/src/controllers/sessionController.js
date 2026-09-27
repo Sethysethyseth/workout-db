@@ -4,6 +4,7 @@ const { validateOptionalNonNegDecimal } = require("../lib/numericValidators");
 const { buildUserExerciseIndex } = require("../analytics/userExercises");
 const { loadCatalog } = require("../analytics");
 const { stampExerciseIdentityWithIndex } = require("../lib/exerciseIdentity");
+const { canDiscardSession } = require("../lib/sessionDiscard");
 
 const FULL_SESSION_RELATIONS = {
   workoutTemplate: {
@@ -1445,6 +1446,7 @@ async function reopenSession(req, res, next) {
       },
       data: {
         completedAt: null,
+        reopenedAt: new Date(),
       },
       include: {
         workoutTemplate: {
@@ -1512,6 +1514,64 @@ async function deleteSession(req, res, next) {
     if (result.count === 0) {
       return res.status(404).json({
         error: "Session not found",
+      });
+    }
+
+    return res.sendStatus(204);
+  } catch (err) {
+    return next(err);
+  }
+}
+
+async function discardSession(req, res, next) {
+  try {
+    const userId = req.authUserId;
+
+    if (!userId) {
+      return res.status(401).json({
+        error: "Authentication required",
+      });
+    }
+
+    const sessionId = parsePositiveInt(req.params && req.params.id);
+
+    if (!sessionId) {
+      return res.status(400).json({
+        error: "Session id must be a positive integer",
+      });
+    }
+
+    const result = await prisma.workoutSession.deleteMany({
+      where: {
+        id: sessionId,
+        userId,
+        completedAt: null,
+        reopenedAt: null,
+      },
+    });
+
+    if (result.count === 0) {
+      const existing = await prisma.workoutSession.findFirst({
+        where: {
+          id: sessionId,
+          userId,
+        },
+        select: {
+          completedAt: true,
+          reopenedAt: true,
+        },
+      });
+
+      if (!existing) {
+        return res.status(404).json({
+          error: "Session not found",
+        });
+      }
+
+      const verdict = canDiscardSession(existing);
+      return res.status(409).json({
+        error: "not_discardable",
+        reason: verdict.reason,
       });
     }
 
@@ -1700,6 +1760,7 @@ module.exports = {
   completeSession,
   reopenSession,
   deleteSession,
+  discardSession,
   deleteSet,
   deleteSessionExercise,
 };

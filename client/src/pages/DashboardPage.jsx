@@ -52,6 +52,7 @@ export function DashboardPage() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [heroNow, setHeroNow] = useState(() => Date.now());
   const [workoutSavedFlash, setWorkoutSavedFlash] = useState(false);
+  const [workoutDiscardedFlash, setWorkoutDiscardedFlash] = useState(false);
 
   const quickPickTemplates = useMemo(() => {
     const list = Array.isArray(templates) ? [...templates] : [];
@@ -101,9 +102,16 @@ export function DashboardPage() {
 
   useEffect(() => {
     const st = location.state;
-    if (!st || typeof st !== "object" || !st.workoutSaved) return;
-    setWorkoutSavedFlash(true);
-    navigate("/", { replace: true, state: {} });
+    if (!st || typeof st !== "object") return;
+    if (st.workoutSaved) {
+      setWorkoutSavedFlash(true);
+      navigate("/", { replace: true, state: {} });
+      return;
+    }
+    if (st.workoutDiscarded) {
+      setWorkoutDiscardedFlash(true);
+      navigate("/", { replace: true, state: {} });
+    }
   }, [location.state, navigate]);
 
   useEffect(() => {
@@ -111,6 +119,12 @@ export function DashboardPage() {
     const id = window.setTimeout(() => setWorkoutSavedFlash(false), 8000);
     return () => window.clearTimeout(id);
   }, [workoutSavedFlash]);
+
+  useEffect(() => {
+    if (!workoutDiscardedFlash) return;
+    const id = window.setTimeout(() => setWorkoutDiscardedFlash(false), 8000);
+    return () => window.clearTimeout(id);
+  }, [workoutDiscardedFlash]);
 
   async function onStartFromTemplate(templateId) {
     if (activeSession) return;
@@ -167,6 +181,11 @@ export function DashboardPage() {
           <p className="muted small" style={{ margin: "6px 0 0" }}>
             {"You're done. It's in History and Recent workouts below."}
           </p>
+        </div>
+      ) : null}
+      {workoutDiscardedFlash ? (
+        <div className="workout-tab__discard-flash card muted" role="status">
+          Workout discarded
         </div>
       ) : null}
 

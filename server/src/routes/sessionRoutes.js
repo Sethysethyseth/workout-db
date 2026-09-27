@@ -13,6 +13,7 @@ const {
   completeSession,
   reopenSession,
   deleteSession,
+  discardSession,
   deleteSet,
   deleteSessionExercise,
 } = require("../controllers/sessionController");
@@ -27,6 +28,7 @@ router.post("/:id/exercises", authRequired, addSessionExercise);
 router.get("/:id", authRequired, getSessionById);
 router.post("/:id/complete", authRequired, completeSession);
 router.post("/:id/reopen", authRequired, reopenSession);
+router.post("/:id/discard", authRequired, discardSession);
 router.patch("/:id", authRequired, updateSession);
 router.delete("/:id", authRequired, deleteSession);
 router.post("/:id/sets", authRequired, createSetForSession);

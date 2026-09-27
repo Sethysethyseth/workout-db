@@ -57,6 +57,20 @@ export async function deleteSession(id) {
   return data;
 }
 
+export async function discardSession(id) {
+  try {
+    const data = await http(`/sessions/${id}/discard`, { method: "POST" });
+    notifySessionsChanged({ type: "deleted", sessionId: id });
+    return data;
+  } catch (err) {
+    if (err && err.status === 404) {
+      notifySessionsChanged({ type: "deleted", sessionId: id });
+      return null;
+    }
+    throw err;
+  }
+}
+
 export async function completeSession(id, body = undefined) {
   const data = await http(`/sessions/${id}/complete`, {
     method: "POST",

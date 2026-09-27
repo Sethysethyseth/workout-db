@@ -441,6 +441,8 @@ function SessionExerciseFields({
   onInteractStart,
   /** Live session: report draft tracked/untracked status while typing (write-free). */
   onDraftTrackedStatusChange,
+  /** After a successful discard, skip any remaining blur/debounce writes. */
+  writesFrozenRef,
 }) {
   const nameInputId = `session-ex-name-${sessionExercise.id}`;
   const suggestionsListId = `${nameInputId}-suggestions`;
@@ -557,10 +559,11 @@ function SessionExerciseFields({
   }, [disabled]);
 
   async function commitExercise(patch) {
-    if (disabled) return;
+    if (disabled || writesFrozenRef?.current) return;
     setFieldError(null);
     try {
       const data = await sessionApi.updateSessionExercise(sessionId, sessionExercise.id, patch);
+      if (writesFrozenRef?.current) return;
       const row = data?.sessionExercise;
       if (row && onExerciseCommitted) {
         onExerciseCommitted(row);
@@ -568,6 +571,7 @@ function SessionExerciseFields({
         await onSaved();
       }
     } catch (err) {
+      if (writesFrozenRef?.current) return;
       setName(sessionExerciseNameForInput(sessionExercise.exerciseName));
       setNotes(sessionExercise.notes ?? "");
       pendingIdentityRef.current = null;
@@ -844,6 +848,8 @@ const SessionSetRow = memo(function SessionSetRow({
   hasPR = false,
   /** Soft cue: core-logged set missing the active effort signal value. */
   highlightMissingEffort = false,
+  /** After a successful discard, skip remaining debounce/blur writes. */
+  writesFrozenRef,
 }) {
   const rootRef = useRef(null);
   const [draft, setDraft] = useState(() =>
@@ -953,6 +959,7 @@ const SessionSetRow = memo(function SessionSetRow({
 
   const tryPromote = useCallback(async () => {
     if (!isDraft) return;
+    if (writesFrozenRef?.current) return;
     if (promotingRef.current) return;
     const cur = draftRef.current;
     if (sessionSetRowIsBlank(cur)) return;
@@ -965,6 +972,7 @@ const SessionSetRow = memo(function SessionSetRow({
     promotingRef.current = true;
     try {
       const created = await onPromoteDraft(cur);
+      if (writesFrozenRef?.current) return;
       lastSentKeyRef.current = k;
       // The POST above sent a snapshot (`cur`) taken before the await; keystrokes
       // typed into this same row while it was in flight already live in local
@@ -997,7 +1005,7 @@ const SessionSetRow = memo(function SessionSetRow({
   }, [isDraft, onPromoteDraft, onUpdateSet]);
 
   function flushNow() {
-    if (isDraft || disabled) return;
+    if (isDraft || disabled || writesFrozenRef?.current) return;
     if (isNonIntegerRirValue(draftRef.current.rir)) {
       setRirGateHint("Whole numbers only — decimal RIR won't count.");
       return;
@@ -1034,6 +1042,7 @@ const SessionSetRow = memo(function SessionSetRow({
   }
 
   useEffect(() => {
+    if (writesFrozenRef?.current) return;
     if (isDraft) {
       const cur = draftRef.current;
       if (sessionSetRowIsBlank(cur)) return;
@@ -1041,6 +1050,7 @@ const SessionSetRow = memo(function SessionSetRow({
       const k = payloadKey(promotionPayloadFromDraft(cur));
       if (k === lastSentKeyRef.current) return;
       const t = setTimeout(() => {
+        if (writesFrozenRef?.current) return;
         void tryPromote();
       }, 900);
       return () => clearTimeout(t);
@@ -1050,6 +1060,7 @@ const SessionSetRow = memo(function SessionSetRow({
     const latest = payloadFromDraft(draft);
     if (payloadKey(latest) === lastSentKeyRef.current) return;
     const t = setTimeout(() => {
+      if (writesFrozenRef?.current) return;
       if (isNonIntegerRirValue(draftRef.current.rir)) return;
       const cur = payloadFromDraft(draftRef.current);
       const k = payloadKey(cur);
@@ -1414,6 +1425,9 @@ function SessionExerciseBlock({
   setHasPR = () => false,
   /** Soft-cue missing effort fields on core-logged sets when finish is blocked. */
   highlightMissingEffort = false,
+  /** Discard in flight / succeeded: freeze field writes without flipping completed chrome. */
+  writesFrozen = false,
+  writesFrozenRef,
 }) {
   const [draftResumeVersion, setDraftResumeVersion] = useState(0);
   const [draftTrackedStatus, setDraftTrackedStatus] = useState(null);
@@ -1451,14 +1465,14 @@ function SessionExerciseBlock({
 
   /** Live path only: one L/R pair via createSetPairForExercise when mode is on and sets are empty. */
   const maybeAutoCreateFirstPair = useCallback(() => {
-    if (isCompleted) return;
+    if (isCompleted || writesFrozen) return;
     if (sets.length > 0) return;
     if (autoCreateBusyRef.current || setCountBusy) return;
     autoCreateBusyRef.current = true;
     Promise.resolve(onCreateSet(se.id, { perSide: true })).finally(() => {
       autoCreateBusyRef.current = false;
     });
-  }, [isCompleted, sets.length, setCountBusy, onCreateSet, se.id]);
+  }, [isCompleted, writesFrozen, sets.length, setCountBusy, onCreateSet, se.id]);
 
   const handleExerciseCommitted = useCallback(
     (row) => {
@@ -1499,6 +1513,7 @@ function SessionExerciseBlock({
 
   const handleDeleteSet = useCallback(
     (setId, unit) => {
+      if (writesFrozen) return;
       if (!onDeleteSet) return;
       if (perSideMode && unit?.type === "pair" && unit.sets.length === 2) {
         const filled = unit.sets.some((s) => !sessionSetRowIsBlank(s));
@@ -1516,7 +1531,7 @@ function SessionExerciseBlock({
       }
       void onDeleteSet(setId);
     },
-    [onDeleteSet, perSideMode]
+    [onDeleteSet, perSideMode, writesFrozen]
   );
 
   const namePart =
@@ -1661,13 +1676,14 @@ function SessionExerciseBlock({
           <SessionExerciseFields
             sessionExercise={se}
             sessionId={sessionId}
-            disabled={isCompleted}
+            disabled={isCompleted || writesFrozen}
             useExerciseNotes={useExerciseNotes}
             stackExerciseNotes={Boolean(isQuickLog && useExerciseNotes)}
             onExerciseCommitted={exerciseCommitted}
             onSaved={onSaved}
-            onInteractStart={!isCompleted ? onActivateExercise : undefined}
-            onDraftTrackedStatusChange={!isCompleted ? setDraftTrackedStatus : undefined}
+            onInteractStart={!isCompleted && !writesFrozen ? onActivateExercise : undefined}
+            onDraftTrackedStatusChange={!isCompleted && !writesFrozen ? setDraftTrackedStatus : undefined}
+            writesFrozenRef={writesFrozenRef}
           />
 
           {showPlannedTargets ? (
@@ -1689,7 +1705,7 @@ function SessionExerciseBlock({
                   <PlanningSetCountControl
                     {...(perSideMode ? { label: "Pairs" } : {})}
                     value={pairCount}
-                    disabled={setCountBusy}
+                    disabled={setCountBusy || writesFrozen}
                     onChange={(n) =>
                       onAdjustSetCount(se.id, n, perSideMode ? { perSide: true } : undefined)
                     }
@@ -1727,7 +1743,7 @@ function SessionExerciseBlock({
                     onActivateExercise?.();
                     onCreateSet(se.id, perSideMode ? { perSide: true } : undefined);
                   }}
-                  disabled={setCountBusy}
+                  disabled={setCountBusy || writesFrozen}
                 >
                   + Add set
                 </button>
@@ -1755,6 +1771,8 @@ function SessionExerciseBlock({
                       onInteractStart={onActivateExercise}
                       onPromoteDraft={(d) => onPromoteDraftSet(se.id, d)}
                       onUpdateSet={onUpdateSet}
+                      writesFrozenRef={writesFrozenRef}
+                      disabled={writesFrozen}
                     />
                   )
                 ) : (
@@ -1773,7 +1791,7 @@ function SessionExerciseBlock({
                               partnerSet={s.side === "L" ? rightSet : null}
                               onAutofillPartnerWeight={onAutofillPartnerWeight}
                               lockSetOrder
-                              disabled={isCompleted}
+                              disabled={isCompleted || writesFrozen}
                               useRIR={useRIR}
                               useRPE={useRPE}
                               useSetNotes={useSetNotes}
@@ -1782,11 +1800,12 @@ function SessionExerciseBlock({
                                 nextIncompleteSetId != null &&
                                 s.id === nextIncompleteSetId
                               }
-                              onInteractStart={!isCompleted ? onActivateExercise : undefined}
+                              onInteractStart={!isCompleted && !writesFrozen ? onActivateExercise : undefined}
                               onUpdateSet={onUpdateSet}
                               onDeleteSet={() => handleDeleteSet(s.id, unit)}
                               hasPR={isCompleted && setHasPR(se, s.weight, s.reps)}
                               highlightMissingEffort={highlightMissingEffort}
+                              writesFrozenRef={writesFrozenRef}
                             />
                           ))}
                         </div>
@@ -1803,7 +1822,7 @@ function SessionExerciseBlock({
                         }
                         sideBadgeLetter={perSideMode && (s.side === "L" || s.side === "R") ? s.side : null}
                         lockSetOrder
-                        disabled={isCompleted}
+                        disabled={isCompleted || writesFrozen}
                         useRIR={useRIR}
                         useRPE={useRPE}
                         useSetNotes={useSetNotes}
@@ -1812,11 +1831,12 @@ function SessionExerciseBlock({
                           nextIncompleteSetId != null &&
                           s.id === nextIncompleteSetId
                         }
-                        onInteractStart={!isCompleted ? onActivateExercise : undefined}
+                        onInteractStart={!isCompleted && !writesFrozen ? onActivateExercise : undefined}
                         onUpdateSet={onUpdateSet}
                         onDeleteSet={() => handleDeleteSet(s.id, unit)}
                         hasPR={isCompleted && setHasPR(se, s.weight, s.reps)}
                         highlightMissingEffort={highlightMissingEffort}
+                        writesFrozenRef={writesFrozenRef}
                       />
                     );
                   })
@@ -1831,7 +1851,7 @@ function SessionExerciseBlock({
                       onActivateExercise?.();
                       onCreateSet(se.id, perSideMode ? { perSide: true } : undefined);
                     }}
-                    disabled={setCountBusy}
+                    disabled={setCountBusy || writesFrozen}
                   >
                     + Add set
                   </button>
@@ -1870,6 +1890,9 @@ export function SessionDetailPage() {
   const [completeBusy, setCompleteBusy] = useState(false);
   const [reopenBusy, setReopenBusy] = useState(false);
   const [confirmReopen, setConfirmReopen] = useState(false);
+  const [discardBusy, setDiscardBusy] = useState(false);
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const [discardMessage, setDiscardMessage] = useState(null);
   const [resolutionTick, setResolutionTick] = useState(0);
   const [addToLibrarySheet, setAddToLibrarySheet] = useState(null);
   const [sessionPRs, setSessionPRs] = useState([]);
@@ -1925,6 +1948,10 @@ export function SessionDetailPage() {
   const { setActive: setLiveLoggingGuard } = useSessionLiveLoggingGuard();
   const lastUserScrollAtRef = useRef(0);
   const lastViewportShiftAtRef = useRef(0);
+  const writesFrozenRef = useRef(false);
+  const discardLeavingRef = useRef(false);
+  const discardBtnRef = useRef(null);
+  const keepLoggingBtnRef = useRef(null);
 
   function isElementInViewport(el, { padTop = 0, padBottom = 0 } = {}) {
     if (!el) return false;
@@ -2149,7 +2176,7 @@ export function SessionDetailPage() {
   }, [sessionId]);
 
   useEffect(() => {
-    if (!session || session.completedAt) {
+    if (discardLeavingRef.current || !session || session.completedAt) {
       setLiveLoggingGuard(false);
       return;
     }
@@ -2162,6 +2189,7 @@ export function SessionDetailPage() {
   useEffect(() => {
     if (!session || session.completedAt) return;
     const onBeforeUnload = (e) => {
+      if (discardLeavingRef.current) return;
       e.preventDefault();
       e.returnValue = "";
     };
@@ -2318,6 +2346,30 @@ export function SessionDetailPage() {
     return () => clearTimeout(t);
   }, [confirmReopen, reopenBusy]);
 
+  useEffect(() => {
+    if (!confirmDiscard || discardBusy) return;
+    const t = setTimeout(() => setConfirmDiscard(false), 10000);
+    return () => clearTimeout(t);
+  }, [confirmDiscard, discardBusy]);
+
+  useEffect(() => {
+    if (!confirmDiscard || discardBusy) return;
+    keepLoggingBtnRef.current?.focus();
+  }, [confirmDiscard, discardBusy]);
+
+  useEffect(() => {
+    if (!confirmDiscard) return;
+    function onKeyDown(e) {
+      if (e.key !== "Escape") return;
+      if (discardBusy) return;
+      e.preventDefault();
+      setConfirmDiscard(false);
+      discardBtnRef.current?.focus();
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [confirmDiscard, discardBusy]);
+
   const pendingSetSavesRef = useRef(new Set());
   const setPatchChainsRef = useRef(new Map());
 
@@ -2383,8 +2435,60 @@ export function SessionDetailPage() {
     }
   }
 
+  function cancelDiscardConfirm() {
+    if (discardBusy) return;
+    setConfirmDiscard(false);
+    discardBtnRef.current?.focus();
+  }
+
+  function requestDiscard() {
+    if (discardBusy || writesFrozenRef.current) return;
+    if (!session || session.completedAt || session.reopenedAt != null) return;
+    setDiscardMessage(null);
+    const savedSets = Array.isArray(session.sets) ? session.sets.length : 0;
+    if (savedSets === 0) {
+      void onDiscard();
+      return;
+    }
+    setConfirmDiscard(true);
+  }
+
+  async function onDiscard() {
+    if (discardBusy) return;
+    setDiscardMessage(null);
+    setError(null);
+    writesFrozenRef.current = true;
+    setDiscardBusy(true);
+    setLiveLoggingGuard(false);
+    try {
+      await sessionApi.discardSession(sessionId);
+      discardLeavingRef.current = true;
+      setConfirmDiscard(false);
+      navigate("/", { replace: true, state: { workoutDiscarded: true } });
+    } catch (err) {
+      writesFrozenRef.current = false;
+      setDiscardBusy(false);
+      if (err?.status === 409) {
+        setConfirmDiscard(false);
+        setDiscardMessage("This workout was already finished.");
+        try {
+          const data = await sessionApi.getSessionById(sessionId);
+          setSession(data.session);
+        } catch (loadErr) {
+          setError(loadErr);
+        }
+        return;
+      }
+      if (session && !session.completedAt) {
+        setLiveLoggingGuard(true);
+      }
+      setDiscardMessage("Couldn't discard. Check your connection and try again.");
+    }
+  }
+
   const onCreateSetForExercise = useCallback(
     async (sessionExerciseId, options) => {
+      if (writesFrozenRef.current) return;
       const perSide = options?.perSide === true;
       setError(null);
       try {
@@ -2412,12 +2516,14 @@ export function SessionDetailPage() {
         const last = setsList.length ? setsList[setsList.length - 1] : null;
         const body = buildCreateSetBodyFromLast(last, sessionExerciseId, order, null);
         const data = await sessionApi.createSet(sessionId, body);
+        if (writesFrozenRef.current) return;
         if (data?.set) {
           appendSetRow(data.set);
         } else {
           await load();
         }
       } catch (err) {
+        if (writesFrozenRef.current) return;
         setError(err);
         await load();
       }
@@ -2427,6 +2533,7 @@ export function SessionDetailPage() {
 
   const promoteDraftSet = useCallback(
     async (sessionExerciseId, draft) => {
+      if (writesFrozenRef.current) return null;
       setError(null);
       try {
         const sess = sessionRef.current;
@@ -2438,6 +2545,7 @@ export function SessionDetailPage() {
         const body = { sessionExerciseId, order, ...promotionPayloadFromDraft(draft) };
 
         const data = await sessionApi.createSet(sessionId, body);
+        if (writesFrozenRef.current) return null;
         if (data?.set) {
           appendSetRow(data.set);
           return data.set;
@@ -2445,6 +2553,7 @@ export function SessionDetailPage() {
         await load();
         return null;
       } catch (err) {
+        if (writesFrozenRef.current) return null;
         setError(err);
         await load();
         throw err;
@@ -2459,6 +2568,7 @@ export function SessionDetailPage() {
   );
 
   async function onAdjustSetCountForExercise(sessionExerciseId, targetCount, options) {
+    if (writesFrozenRef.current) return;
     if (!Number.isInteger(targetCount) || targetCount < 1) return;
     const perSide = options?.perSide === true;
     setError(null);
@@ -2557,6 +2667,7 @@ export function SessionDetailPage() {
       const end = await sessionApi.getSessionById(sessionId);
       if (end?.session) setSession(end.session);
     } catch (err) {
+      if (writesFrozenRef.current) return;
       setError(err);
       await load();
     } finally {
@@ -2565,9 +2676,11 @@ export function SessionDetailPage() {
   }
 
   const applyUpdateSet = useCallback(async (setId, patch) => {
+    if (writesFrozenRef.current) return;
     setError(null);
     try {
       const data = await sessionApi.updateSet(setId, patch);
+      if (writesFrozenRef.current) return;
       const apiSet = data?.set;
       if (apiSet && typeof apiSet === "object") {
         setSession((prev) => {
@@ -2591,6 +2704,7 @@ export function SessionDetailPage() {
         await load();
       }
     } catch (err) {
+      if (writesFrozenRef.current) return;
       setError(err);
       await load();
     }
@@ -2602,6 +2716,7 @@ export function SessionDetailPage() {
   // in-flight write so onComplete can drain them before completing.
   const onUpdateSet = useCallback(
     (setId, patch) => {
+      if (writesFrozenRef.current) return Promise.resolve();
       const chains = setPatchChainsRef.current;
       const prev = chains.get(setId) ?? Promise.resolve();
       const next = prev.then(() => applyUpdateSet(setId, patch));
@@ -2619,12 +2734,15 @@ export function SessionDetailPage() {
 
   const onDeleteSet = useCallback(
     async (setId, { skipConfirm = false } = {}) => {
+      if (writesFrozenRef.current) return;
       if (!skipConfirm && !confirm("Delete this set?")) return;
       setError(null);
       try {
         await sessionApi.deleteSet(setId);
+        if (writesFrozenRef.current) return;
         removeSetRow(setId);
       } catch (err) {
+        if (writesFrozenRef.current) return;
         setError(err);
         await load();
       }
@@ -2634,11 +2752,14 @@ export function SessionDetailPage() {
 
   const onDeleteExercise = useCallback(
     async (sessionExerciseId) => {
+      if (writesFrozenRef.current) return;
       setError(null);
       try {
         await sessionApi.deleteSessionExercise(sessionExerciseId);
+        if (writesFrozenRef.current) return;
         await load();
       } catch (err) {
+        if (writesFrozenRef.current) return;
         setError(err);
       }
     },
@@ -2672,6 +2793,7 @@ export function SessionDetailPage() {
   }, []);
 
   const onAppendExercise = useCallback(async () => {
+    if (writesFrozenRef.current) return;
     setError(null);
     setAddingExercise(true);
     try {
@@ -2691,13 +2813,14 @@ export function SessionDetailPage() {
         await load();
       }
     } catch (err) {
-      setError(err);
+      if (!writesFrozenRef.current) setError(err);
     } finally {
       setAddingExercise(false);
     }
   }, [sessionId, appendSessionExerciseRow, load, activateExercise]);
 
   async function commitSessionNotes() {
+    if (writesFrozenRef.current) return;
     if (!session || session.completedAt) return;
     const n = sessionNotesDraft.trim();
     const prev = (session.notes ?? "").trim();
@@ -2711,6 +2834,7 @@ export function SessionDetailPage() {
         await load();
       }
     } catch (err) {
+      if (writesFrozenRef.current) return;
       setError(err);
       setSessionNotesDraft(session.notes ?? "");
     }
@@ -2791,6 +2915,7 @@ export function SessionDetailPage() {
   );
 
   async function commitQuickTitle() {
+    if (writesFrozenRef.current) return;
     if (!session || session.workoutTemplate || session.completedAt) return;
     const trimmed = quickTitleDraft.trim();
     const prev = (session.name ?? "").trim();
@@ -2805,6 +2930,7 @@ export function SessionDetailPage() {
         await load();
       }
     } catch (err) {
+      if (writesFrozenRef.current) return;
       setError(err);
       setQuickTitleDraft(prev || getAdHocSessionTitle(sessionId) || "");
     }
@@ -2842,10 +2968,62 @@ export function SessionDetailPage() {
             )}
           </p>
         </div>
-        <button type="button" className="btn btn-secondary" onClick={goBackFromSession}>
-          Back
-        </button>
+        <div className="session-detail-head__actions">
+          {session && !isCompleted && session.reopenedAt == null ? (
+            <button
+              ref={discardBtnRef}
+              type="button"
+              className="session-discard-x"
+              aria-label="Discard workout"
+              disabled={discardBusy}
+              aria-busy={discardBusy || undefined}
+              onClick={() => requestDiscard()}
+            >
+              <span aria-hidden="true">×</span>
+            </button>
+          ) : null}
+          <button type="button" className="btn btn-secondary" onClick={goBackFromSession}>
+            Back
+          </button>
+        </div>
       </div>
+
+      {confirmDiscard ? (
+        <div className="stack session-discard-confirm">
+          <p className="muted small session-discard-confirm__title">
+            Discard this workout?
+          </p>
+          <p className="muted small session-discard-confirm__body">
+            {`Your ${totalSetsLogged} logged ${totalSetsLogged === 1 ? "set" : "sets"} will be deleted. This can't be undone.`}
+          </p>
+          <div className="row session-discard-confirm__actions">
+            <button
+              type="button"
+              className="session-discard-confirm__discard"
+              onClick={() => void onDiscard()}
+              disabled={discardBusy}
+              aria-busy={discardBusy || undefined}
+            >
+              Discard workout
+            </button>
+            <button
+              ref={keepLoggingBtnRef}
+              type="button"
+              className="btn btn-secondary"
+              onClick={cancelDiscardConfirm}
+              disabled={discardBusy}
+            >
+              Keep logging
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      {discardMessage ? (
+        <p className="session-discard-message" role="status">
+          {discardMessage}
+        </p>
+      ) : null}
 
       {isCompleted && isQuickLog ? (
         <p className="muted small session-summary-footnote" style={{ margin: 0 }}>
@@ -2866,6 +3044,7 @@ export function SessionDetailPage() {
                 value={quickTitleDraft}
                 onChange={(e) => setQuickTitleDraft(e.target.value)}
                 onBlur={() => void commitQuickTitle()}
+                disabled={discardBusy}
               />
             )}
           </label>
@@ -2884,6 +3063,7 @@ export function SessionDetailPage() {
                 onChange={(e) => setSessionNotesDraft(e.target.value)}
                 onBlur={() => void commitSessionNotes()}
                 placeholder="e.g. upper day, how you felt, equipment notes"
+                disabled={discardBusy}
               />
             </label>
           ) : null}
@@ -3047,6 +3227,8 @@ export function SessionDetailPage() {
                       onActivateExercise={() => activateExercise(se.id)}
                       nextIncompleteSetId={nextIncompleteSetId}
                       highlightMissingEffort={highlightMissingEffort}
+                      writesFrozen={discardBusy}
+                      writesFrozenRef={writesFrozenRef}
                     />
                   </div>
                 );
@@ -3056,7 +3238,7 @@ export function SessionDetailPage() {
                   type="button"
                   className="btn btn-secondary workout-append-row-btn"
                   onClick={() => void onAppendExercise()}
-                  disabled={addingExercise}
+                  disabled={addingExercise || discardBusy}
                 >
                   {addingExercise ? "Adding…" : "+ Add exercise"}
                 </button>
@@ -3167,7 +3349,7 @@ export function SessionDetailPage() {
               type="button"
               className="btn session-finish-btn session-finish-dock__btn"
               onClick={() => void onComplete()}
-              disabled={!canFinishWorkout || completeBusy}
+              disabled={!canFinishWorkout || completeBusy || discardBusy}
               aria-busy={completeBusy}
             >
               {completeBusy ? "Saving…" : "Finish workout"}

@@ -4841,6 +4841,11 @@ html[data-theme="dark"] .exercise-name-suggestions {
   background: var(--color-success-flash-bg);
 }
 
+.workout-tab__discard-flash {
+  padding: 12px 14px;
+  color: var(--color-text-secondary);
+}
+
 .workout-hero {
   padding: 18px 16px 20px;
   border-color: color-mix(in srgb, var(--color-interactive) 32%, var(--color-border));
@@ -9452,6 +9457,94 @@ html:not([data-theme="dark"])[data-palette="chill"] {
   }
 }
 
+.session-detail-head__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.session-discard-x {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: none;
+}
+
+.session-discard-x:hover:not(:disabled) {
+  background: var(--color-surface-2);
+  color: var(--color-text);
+}
+
+.session-discard-x:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.session-discard-confirm {
+  gap: 8px;
+}
+
+.session-discard-confirm__title {
+  margin: 0;
+  font-weight: 600;
+}
+
+.session-discard-confirm__body {
+  margin: 0;
+}
+
+.session-discard-confirm__actions {
+  justify-content: flex-start;
+  gap: 8px;
+}
+
+.session-discard-confirm__discard {
+  min-height: 44px;
+  padding: 10px 14px;
+  border-radius: var(--radius-control);
+  border: 1px solid color-mix(in srgb, var(--color-error-text) 22%, var(--color-border));
+  background: color-mix(in srgb, var(--color-error-hover-bg) 65%, var(--color-surface-1));
+  color: color-mix(in srgb, var(--color-error-text) 92%, var(--color-text));
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.session-discard-confirm__discard:hover:not(:disabled) {
+  background: var(--color-error-hover-bg);
+  border-color: color-mix(in srgb, var(--color-error-text) 36%, var(--color-border));
+}
+
+.session-discard-confirm__discard:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+html[data-theme="dark"] .session-discard-confirm__discard {
+  color: var(--color-error-text);
+  background: color-mix(in srgb, var(--color-error-hover-bg) 45%, transparent);
+}
+
+.session-discard-message {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-error-text);
+}
+
 /* Session detail head: on phones the Back control sits above the title
    instead of wedging between the subtitle lines. */
 @media (max-width: 599px) {
@@ -9460,8 +9553,12 @@ html:not([data-theme="dark"])[data-palette="chill"] {
     align-items: stretch;
   }
 
-  .session-detail-head > .btn {
-    align-self: flex-start;
+  .session-detail-head__actions {
+    justify-content: space-between;
+    align-self: stretch;
+  }
+
+  .session-detail-head__actions > .btn {
     min-height: 36px;
     padding: 6px 12px;
   }
