@@ -405,7 +405,7 @@ Covers the F-wave AND the still-open E-wave prod smoke. Staging passed Aug 4.
 
 ### Lane worktree state
 
-**All three lanes are FREE but NOT on a usable base (Sept 27):** `cursor-lane`
+**SUPERSEDED by "Loose ends" at the top (late Sept 27).** Earlier that day: `cursor-lane`
 on `recon/gate-r3`, `cursor-lane-2` on `recon/gate-r1`, `cursor-lane-3` on
 `recon/gate-r2`, all at `ecb672c`, each holding ONE untracked Sept 26 gate
 report (`GATE-R3.md` / `GATE-R1.md` / `GATE-R2.md`) and no `DELIVERY.md`. **Repoint a lane
