@@ -28,12 +28,12 @@ check) - do S1 (Cursor Privacy Mode) and S2, then P1-P3.
   AS IS, connector only, "nothing more".** It already says exactly that, so
   NO code change - it fires for every prod user on the merge deploy.
 - [x] **C3. CR2 polish - SKIPPED (Seth, Sept 26).** Ship at 7.5.
-- [ ] **C4. Declare `zod` - APPROVED (Seth, Sept 26).** `npm install
-  zod@4.4.3 --save` ran in main-tree `server/` (adds `"zod": "^4.4.3"`; the
-  Cursor SDK keeps its own nested zod 3). **UNCOMMITTED - awaiting the unit
-  lane + `require('./src/app')` boot check** (the agent's run was blocked by
-  the permission classifier). Code after `7206ff7`: a frontier seat checks the
-  2-file delta before the merge.
+- [x] **C4. Declare `zod` - DONE Sept 26 (approved by Seth).** `"zod":
+  "^4.4.3"` in `server/package.json` (the Cursor SDK keeps its own nested zod
+  3); the lockfile adds only that line plus CP1's `engines` sync, no resolved
+  version moves. Unit lane 324/324 in 30 suites. Frontier check of this
+  post-gate delta (Opus): clean. Road #10 also cleared - the install
+  refreshed the main-tree `node_modules`.
 
 **Settings - Seth, in dashboards:**
 
