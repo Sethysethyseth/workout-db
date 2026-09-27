@@ -7,8 +7,8 @@
 > dashboard settings, three prod prerequisites, then "push to main". Nothing is
 > in flight.
 
-**Next action (human):** work the PICK UP HERE checklist below, top to bottom -
-start with the calls C1-C2 and the Cursor Privacy Mode setting S1.
+**Next action (human):** calls are made (C1-C3 decided, C4 awaiting its lane
+check) - do S1 (Cursor Privacy Mode) and S2, then P1-P3.
 
 ## ▶ PICK UP HERE - Seth's checklist to `main`
 
@@ -22,23 +22,18 @@ start with the calls C1-C2 and the Cursor Privacy Mode setting S1.
 
 **Calls - Seth decides, tells the agent:**
 
-- [ ] **C1. Privacy page.** `docs/specs/ai-layer.md` section 6 requires a
-  privacy policy + ToS "in the SAME wave"; the app has NONE. Users' training
-  summaries now go to Cursor (hosted coach), Anthropic (BYO keys) and whatever
-  assistant they connect. **Recommendation:** merge anyway, but HOLD the
-  What's New announcement (C2) until a short plain-language privacy page ships
-  as the first unit of the next wave. Alternative: author the page now and
-  merge after it lands.
-- [ ] **C2. What's New (road #13).** Entry `2026-08-ai-assistant` is prod-gated
-  and **fires for every prod user on the merge deploy**; it describes the
-  connector only (no coach, palette studio or Sept 9 redesign). Options: hold
-  it, rewrite it for the whole wave, or ship it as is. **Recommendation:** hold
-  it until C1's page exists. Holding or rewriting is a small code change - an
-  agent does it, then a frontier seat checks that delta.
-- [ ] **C3 (optional, road #8).** Work CR2's critic findings to the 8+ bar, or
-  ship at 7.5. Product polish; does not block.
-- [ ] **C4 (optional, road #14).** Declare `zod` in `server/package.json` (gate
-  item 5 - touches a package file). The Node-pin half is already done (CP1).
+- [x] **C1. Privacy page - DECIDED Sept 26 (Seth): next wave.** Merge without
+  it; the privacy page + ToS (`ai-layer.md` section 6) is the next wave's work.
+- [x] **C2. What's New - DECIDED Sept 26 (Seth): ship `2026-08-ai-assistant`
+  AS IS, connector only, "nothing more".** It already says exactly that, so
+  NO code change - it fires for every prod user on the merge deploy.
+- [x] **C3. CR2 polish - SKIPPED (Seth, Sept 26).** Ship at 7.5.
+- [ ] **C4. Declare `zod` - APPROVED (Seth, Sept 26).** `npm install
+  zod@4.4.3 --save` ran in main-tree `server/` (adds `"zod": "^4.4.3"`; the
+  Cursor SDK keeps its own nested zod 3). **UNCOMMITTED - awaiting the unit
+  lane + `require('./src/app')` boot check** (the agent's run was blocked by
+  the permission classifier). Code after `7206ff7`: a frontier seat checks the
+  2-file delta before the merge.
 
 **Settings - Seth, in dashboards:**
 
