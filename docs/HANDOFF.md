@@ -52,6 +52,22 @@ check) - do S1 (Cursor Privacy Mode) and S2, then P1-P3.
   section 4 (migration history diff): prod must match staging on
   `20260804180000_add_ai_consent`. Additive and safe on today's `main`; it MUST
   land before the merge or prod login breaks.
+- [x] **P1 DONE Sept 26 (Seth).** SQL run on prod; section 4 diff shows
+  `20260804180000_add_ai_consent` on prod with the SAME checksum as staging.
+  **Older drift found, pre-wave, NOT a merge blocker** (prod build never runs
+  `migrate deploy`): checksums differ on `20260325143000_block_weeks` and
+  `20260707130000_add_exercise_fk_linkage`; staging alone carries a stray
+  `20260527120000_add_exercise_catalog` row and a DUPLICATE
+  `20260707120000_add_exercise_catalog` row. Reconcile before anyone ever
+  points `migrate deploy` at prod.
+- [x] **P3 DONE Sept 26 (Seth)** - all prod Render env vars set.
+- [ ] **P2 - IN PROGRESS Sept 26.** Billing added and prod API key
+  `logchamp_prod` created (Seth); DCR + CIMD ENABLED (agent). Prod AuthKit
+  issuer = `https://palatable-frog-16.authkit.app`. **Seth still (the auto-mode
+  classifier refuses agent writes to prod auth config, twice):** resource
+  indicator `https://workout-db-l3gc.onrender.com/mcp` (Default), External
+  Sign-in URI `<prod client origin>/connector/login`, prod session lifetime.
+  Not a merge blocker - the prod connector is dead until they are set.
 - [ ] **P2. PROD AuthKit environment (road #11).** RUNBOOK 10c: a SEPARATE prod
   environment (one environment has ONE External Sign-in URI, so prod and
   staging cannot share). Set its External Sign-in URI to
