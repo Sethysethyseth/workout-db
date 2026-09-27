@@ -16,10 +16,65 @@
 > merge. Seth chose to SKIP smoke and go straight to the pre-main gate (Opus,
 > same session). Ledger: `docs/tasks/QUEUE.md`.
 
-**Next action (human):** fix the prod WorkOS External Sign-in URI (P-A step 1)
-and retry the connector from Claude with the PROD address, and check whether
-prod Render's instance type spins down when idle (decides a CP3, see QUEUE CP2
-notes).
+**Next action (human):** set `COACH_UNCAPPED_EMAILS=sethjknisel@gmail.com` on
+prod (and staging) Render, run the prod SQL in "PRE-MERGE" below in the PROD Neon
+editor, then say "push to main".
+
+## PRE-MERGE - patch wave gate verdict + prod steps (Opus, Sept 27)
+
+**Gate verdict: PASS** (Seth waived smoke: "Skip smoke, review now"). Range
+`origin/main..ai-connector-wave` = CP2 `b9dd0ae`, CQ1 `b07fea2`, WD1 `712b696`
++ docs. Fresh on the branch tip: unit 348/348 in 32 suites, client build clean,
+`check-hex origin/main` clean. Scope: every code file maps to exactly one block;
+the only other paths are docs (RUNBOOK `3770a35` is last session's). No Cursor
+gate-fuel lanes: this seat read every unit diff in full at landing (~1100 code
+lines). Cross-unit seams read directly: CP2's stream items feed CQ1's refund
+(`deliveredAnswer` set only on a non-empty text delta; a client disconnect
+`break`s the loop, which runs CP2's `finally`); the probe attempt yields no text
+before the gate error, so it never counts a question. Security read directly:
+discard's `deleteMany` WHERE carries `userId` (cross-user safe) and the rule
+columns (race-safe); `/coach/status` never returns the email; an invalid BYO
+header is still `bad_key_format` (no cap bypass). Not blockers: the palette
+studio stays uncapped (Seth's ruling); pre-migration reopened-and-still-open
+workouts read `reopenedAt` null (discardable, no data can tell); the confirm's
+set count includes blank rows; CP3 if prod Render spins down.
+
+**ORDER IS LOAD-BEARING.** WD1's `reopenedAt` is read by every session fetch
+(`include` selects all scalars), so code ahead of the prod column breaks Home,
+History and every workout page. DB first, then code.
+
+1. **Seth, Render:** `COACH_UNCAPPED_EMAILS=sethjknisel@gmail.com` on
+   `workout-db-l3gc` (prod) and `workout-db-staging`.
+2. **Seth, PROD Neon SQL editor** - confirm host `ep-solitary-sea-an56mioq`
+   in the URL bar, then run (checksums copied from staging's rows):
+```sql
+CREATE TABLE "CoachUsage" (
+    "id" SERIAL NOT NULL,
+    "userId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "CoachUsage_pkey" PRIMARY KEY ("id")
+);
+CREATE INDEX "CoachUsage_userId_createdAt_idx" ON "CoachUsage"("userId", "createdAt");
+ALTER TABLE "CoachUsage" ADD CONSTRAINT "CoachUsage_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+INSERT INTO "_prisma_migrations" (id, checksum, finished_at, migration_name, logs, rolled_back_at, started_at, applied_steps_count)
+VALUES (gen_random_uuid(), '9f351f23ba0a01578f581a09dd573d11dc1e5f3640a34210f99f668f10180125', now(), '20260927120000_add_coach_usage', NULL, NULL, now(), 1);
+
+ALTER TABLE "WorkoutSession" ADD COLUMN "reopenedAt" TIMESTAMP(3);
+INSERT INTO "_prisma_migrations" (id, checksum, finished_at, migration_name, logs, rolled_back_at, started_at, applied_steps_count)
+VALUES (gen_random_uuid(), '5c915adace825938f9b6bb33563781f4b82c5332d015dc9fb1b3af2a6af5fefe', now(), '20260927130000_add_session_reopened_at', NULL, NULL, now(), 1);
+
+-- verify: expect 1 row, 0, and both migration rows
+SELECT column_name FROM information_schema.columns WHERE table_name = 'WorkoutSession' AND column_name = 'reopenedAt';
+SELECT count(*) FROM "CoachUsage";
+SELECT migration_name, checksum FROM "_prisma_migrations" WHERE migration_name LIKE '20260927%';
+```
+3. **"push to main"** -> RUNBOOK merge ritual in a temp worktree, fast-forward
+   `main` to the `ai-connector-wave` tip, one command at a time, each approved.
+4. **After the deploy:** RUNBOOK 5 (Render SHA = `main` HEAD); on prod: log in,
+   open Home + a past workout (the `reopenedAt` column path), start and discard
+   an empty workout, ask the coach twice (second answer fast; Render log shows
+   `[coach] cursor ... agentRuns=1` and no "Ripgrep path not configured").
+5. **Then M2:** repoint staging Render to `main`.
 
 ## ▶ PICK UP HERE - the post-merge patch
 
