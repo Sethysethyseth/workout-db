@@ -9,11 +9,14 @@ import { API_BASE_URL, http, readAuthToken } from "./http.js";
 const BYO_KEY_HEADER = "x-coach-key";
 
 export class CoachError extends Error {
-  constructor(code, message, { status = null } = {}) {
+  constructor(code, message, { status = null, limit = null, used = null, nextAvailableAt = null } = {}) {
     super(message);
     this.name = "CoachError";
     this.code = code;
     this.status = status;
+    this.limit = limit;
+    this.used = used;
+    this.nextAvailableAt = nextAvailableAt;
   }
 }
 
@@ -36,6 +39,8 @@ export function coachErrorMessage(code, fallback) {
       return "The coach isn't available on this server yet.";
     case "session_not_found":
       return "That workout isn't available to debrief.";
+    case "weekly_limit":
+      return "You've used this week's questions.";
     case "network":
       return "Couldn't reach LogChamp. Check your connection and try again.";
     default:
@@ -43,6 +48,7 @@ export function coachErrorMessage(code, fallback) {
   }
 }
 
+/** Status JSON, including `weeklyCap` when the hosted weekly limit applies, else that field is null. */
 export function getCoachStatus({ byoKey } = {}) {
   return http("/coach/status", {
     headers: byoKey ? { [BYO_KEY_HEADER]: byoKey } : undefined,
@@ -126,6 +132,9 @@ export async function askCoachStream({
       (res.status === 429 ? "rate_limited" : "provider_error");
     throw new CoachError(code, coachErrorMessage(code, data && data.message), {
       status: res.status,
+      limit: data && data.limit,
+      used: data && data.used,
+      nextAvailableAt: data && data.nextAvailableAt,
     });
   }
   if (!res.body) {

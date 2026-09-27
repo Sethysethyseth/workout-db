@@ -8540,6 +8540,11 @@ html[data-theme="dark"][data-palette="iron"] .analytics-page {
   line-height: 1.35;
 }
 
+.coach-panel__cap {
+  margin: 0;
+  line-height: 1.35;
+}
+
 /* AI access page: consent state, coach status, own-key disclosure */
 
 .ai-consent-state {

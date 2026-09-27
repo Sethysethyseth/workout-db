@@ -60,6 +60,27 @@ export function coachTruncationNotice(stopReason) {
   return stopReason === "max_tokens" ? "This answer was cut short." : null;
 }
 
+function formatNextQuestionTime(iso) {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  const weekday = d.toLocaleDateString(undefined, { weekday: "short" });
+  const time = d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  return `${weekday} at ${time}`;
+}
+
+function weeklyCapRemainingCopy(weeklyCap) {
+  if (!weeklyCap || weeklyCap.remaining <= 0) return null;
+  return `${weeklyCap.remaining} of ${weeklyCap.limit} questions left this week`;
+}
+
+function weeklyCapUsedCopy(weeklyCap) {
+  if (!weeklyCap || weeklyCap.remaining > 0) return null;
+  const when = formatNextQuestionTime(weeklyCap.nextAvailableAt);
+  if (when) return `You've used this week's questions. Your next question frees up ${when}.`;
+  return "You've used this week's questions.";
+}
+
 export function CoachPanel({
   mode = "ask",
   range = null,
@@ -116,6 +137,7 @@ export function CoachPanel({
     async (questionRaw) => {
       const question = String(questionRaw ?? "").trim();
       if (!question || streaming) return;
+      if (status?.weeklyCap && status.weeklyCap.remaining <= 0) return;
       const history = thread
         .filter((m) => !m.error && m.content)
         .map((m) => ({ role: m.role, content: m.content }));
@@ -152,8 +174,37 @@ export function CoachPanel({
               : m
           )
         );
+        if (status?.weeklyCap) {
+          try {
+            const next = await getCoachStatus({ byoKey });
+            setStatus(next);
+          } catch {
+            setStatus((prev) => {
+              if (!prev?.weeklyCap) return prev;
+              const used = prev.weeklyCap.used + 1;
+              const remaining = Math.max(0, prev.weeklyCap.limit - used);
+              return {
+                ...prev,
+                weeklyCap: { ...prev.weeklyCap, used, remaining },
+              };
+            });
+          }
+        }
       } catch (err) {
         if (err && err.name === "AbortError") return;
+        if (err instanceof CoachError && err.code === "weekly_limit") {
+          setStatus((prev) => ({
+            ...(prev || {}),
+            weeklyCap: {
+              limit: err.limit ?? prev?.weeklyCap?.limit ?? null,
+              used: err.used ?? prev?.weeklyCap?.used ?? null,
+              remaining: 0,
+              nextAvailableAt: err.nextAvailableAt ?? prev?.weeklyCap?.nextAvailableAt ?? null,
+            },
+          }));
+          setThread((prev) => prev.filter((m) => m.id !== pending.id && m.id !== userMsg.id));
+          return;
+        }
         const message =
           err instanceof CoachError ? err.message : coachErrorMessage("provider_error");
         setThread((prev) =>
@@ -164,12 +215,13 @@ export function CoachPanel({
         setStreaming(false);
       }
     },
-    [streaming, thread, mode, range, focus, byoKey]
+    [streaming, thread, mode, range, focus, byoKey, status]
   );
 
   useEffect(() => {
     if (!open || !autoAsk || autoAskedRef.current) return;
     if (!status || !status.available) return;
+    if (status.weeklyCap && status.weeklyCap.remaining <= 0) return;
     autoAskedRef.current = true;
     void ask(autoAsk);
   }, [open, autoAsk, status, ask]);
@@ -190,6 +242,7 @@ export function CoachPanel({
 
   useEffect(() => {
     if (!open || !status?.available || !pendingQuestionRef.current) return;
+    if (status.weeklyCap && status.weeklyCap.remaining <= 0) return;
     const q = pendingQuestionRef.current;
     pendingQuestionRef.current = null;
     void ask(q);
@@ -259,6 +312,10 @@ export function CoachPanel({
 
   const unavailableReason = status && !status.available ? status.reason || "no_key" : null;
   const unavailable = unavailableReason ? UNAVAILABLE_COPY[unavailableReason] || UNAVAILABLE_COPY.no_key : null;
+  const weeklyCap = status?.weeklyCap ?? null;
+  const capped = Boolean(weeklyCap && weeklyCap.remaining <= 0);
+  const remainingCopy = weeklyCapRemainingCopy(weeklyCap);
+  const usedCopy = weeklyCapUsedCopy(weeklyCap);
 
   return (
     <section className="card card--notched coach-panel" aria-labelledby={headingId}>
@@ -344,7 +401,7 @@ export function CoachPanel({
                 )
               )}
             </div>
-          ) : suggestions.length > 0 ? (
+          ) : suggestions.length > 0 && !capped ? (
             <div className="coach-chips" aria-label="Suggested questions">
               {suggestions.map((q) => (
                 <button key={q} type="button" className="coach-chip" onClick={() => void ask(q)}>
@@ -353,6 +410,11 @@ export function CoachPanel({
               ))}
             </div>
           ) : null}
+
+          {remainingCopy ? (
+            <p className="coach-panel__cap muted small">{remainingCopy}</p>
+          ) : null}
+          {usedCopy ? <p className="coach-panel__cap muted small">{usedCopy}</p> : null}
 
           <form className="coach-composer" onSubmit={onSubmit}>
             <textarea
@@ -364,14 +426,14 @@ export function CoachPanel({
               aria-label="Ask the coach"
               onChange={onInputChange}
               onKeyDown={onKeyDown}
-              disabled={streaming}
+              disabled={streaming || capped}
             />
             {streaming ? (
               <button type="button" className="btn btn-secondary coach-composer__send" onClick={stop}>
                 Stop
               </button>
             ) : (
-              <button type="submit" className="btn coach-composer__send" disabled={!input.trim()}>
+              <button type="submit" className="btn coach-composer__send" disabled={capped || !input.trim()}>
                 Ask
               </button>
             )}

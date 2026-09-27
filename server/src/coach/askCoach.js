@@ -49,12 +49,13 @@ function weeksInRange(range) {
 async function loadCoachAccess(userId) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { aiConnectorEnabled: true, aiConsent: true },
+    select: { aiConnectorEnabled: true, aiConsent: true, email: true },
   });
   if (!user) return null;
   return {
     consentGranted: isConsentActive(user.aiConsent),
     entitled: Boolean(user.aiConnectorEnabled),
+    email: user.email,
   };
 }
 

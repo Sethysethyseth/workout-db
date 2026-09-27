@@ -1,3 +1,4 @@
+const prisma = require("../lib/prisma");
 const { parseCoachRequest } = require("../coach/coachRequest");
 const { getCoachConfig } = require("../coach/config");
 const {
@@ -7,6 +8,12 @@ const {
   buildCoachPrompt,
   openCoachStream,
 } = require("../coach/askCoach");
+const {
+  WEEKLY_LIMIT,
+  WINDOW_MS,
+  weeklyCapApplies,
+  evaluateWeeklyCap,
+} = require("../coach/weeklyCap");
 const { CoachProviderError, completeAnthropic } = require("../coach/provider");
 const { completeCursor, extractFirstJsonText } = require("../coach/cursorProvider");
 const {
@@ -49,6 +56,39 @@ function readByoKey(req) {
   return typeof raw === "string" && raw.trim() ? raw.trim() : null;
 }
 
+function capAppliesToAccess(source, email) {
+  return weeklyCapApplies(source, email, process.env.COACH_UNCAPPED_EMAILS);
+}
+
+async function loadWeeklyCap(userId, now = new Date()) {
+  const windowStart = new Date(now.getTime() - WINDOW_MS);
+  const rows = await prisma.coachUsage.findMany({
+    where: { userId, createdAt: { gt: windowStart } },
+    select: { createdAt: true },
+  });
+  const evaluated = evaluateWeeklyCap(
+    rows.map((row) => row.createdAt),
+    now
+  );
+  return {
+    limit: WEEKLY_LIMIT,
+    used: evaluated.used,
+    remaining: evaluated.remaining,
+    nextAvailableAt: evaluated.nextAvailableAt,
+    allowed: evaluated.allowed,
+  };
+}
+
+async function removeUsageRow(usageId) {
+  if (usageId == null) return;
+  try {
+    await prisma.coachUsage.delete({ where: { id: usageId } });
+  } catch (err) {
+    if (err && err.code === "P2025") return;
+    console.error("[coach] failed to uncount unused question", err && err.message);
+  }
+}
+
 /**
  * GET /coach/status - what the client needs to render the right state.
  * Never echoes a key. `source` is "mock" | "hosted" | "byo" | null.
@@ -67,14 +107,26 @@ async function getCoachStatus(req, res, next) {
 
     const provider = resolved.ok ? resolved.provider : config.provider;
     const model = resolved.ok ? resolved.config.model : config.model;
+    const source = resolved.ok ? resolved.keyInfo.source : null;
+    let weeklyCap = null;
+    if (source && capAppliesToAccess(source, access.email)) {
+      const cap = await loadWeeklyCap(req.authUserId);
+      weeklyCap = {
+        limit: cap.limit,
+        used: cap.used,
+        remaining: cap.remaining,
+        nextAvailableAt: cap.nextAvailableAt,
+      };
+    }
     return res.json({
       consentGranted: access.consentGranted,
       entitled: access.entitled,
       available: access.consentGranted && resolved.ok,
-      source: resolved.ok ? resolved.keyInfo.source : null,
+      source,
       reason: access.consentGranted ? (resolved.ok ? null : resolved.reason) : "no_consent",
       provider,
       model: provider === "mock" ? "mock" : model,
+      weeklyCap,
     });
   } catch (err) {
     return next(err);
@@ -95,6 +147,8 @@ function writeSse(res, event, data) {
  * always gets a terminal frame.
  */
 async function askCoach(req, res, next) {
+  let usageId = null;
+  let deliveredAnswer = false;
   try {
     const parsed = parseCoachRequest(req.body);
     if (!parsed.ok) return res.status(parsed.status).json({ error: parsed.error });
@@ -117,10 +171,30 @@ async function askCoach(req, res, next) {
       });
     }
 
+    const capApplies = capAppliesToAccess(resolved.keyInfo.source, access.email);
+    if (capApplies) {
+      const cap = await loadWeeklyCap(req.authUserId);
+      if (!cap.allowed) {
+        return res.status(429).json({
+          error: "weekly_limit",
+          limit: cap.limit,
+          used: cap.used,
+          nextAvailableAt: cap.nextAvailableAt,
+        });
+      }
+    }
+
     const data = await loadCoachData({ userId: req.authUserId, request });
     if (!data.ok) return res.status(data.status).json({ error: data.error });
 
     const { system, messages } = buildCoachPrompt({ request, data });
+
+    if (capApplies) {
+      const row = await prisma.coachUsage.create({
+        data: { userId: req.authUserId },
+      });
+      usageId = row.id;
+    }
 
     const controller = new AbortController();
     res.on("close", () => controller.abort());
@@ -156,6 +230,8 @@ async function askCoach(req, res, next) {
       for await (const item of stream) {
         if (controller.signal.aborted) break;
         if (item.type === "text") {
+          const piece = typeof item.text === "string" ? item.text : "";
+          if (piece) deliveredAnswer = true;
           writeSse(res, "delta", { text: item.text });
         } else if (item.type === "stop") {
           stopReason = item.stopReason ?? null;
@@ -188,6 +264,8 @@ async function askCoach(req, res, next) {
       return res.end();
     }
     return next(err);
+  } finally {
+    if (!deliveredAnswer) await removeUsageRow(usageId);
   }
 }
 

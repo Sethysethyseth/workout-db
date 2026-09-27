@@ -20,6 +20,7 @@ model User {
   updatedAt          DateTime          @updatedAt
   aiConnectorEnabled Boolean           @default(true)
   aiConsent          AiConsent?
+  coachUsage         CoachUsage[]
   workoutTemplates   WorkoutTemplate[]
   blockTemplates     BlockTemplate[]
   workoutSessions    WorkoutSession[]
@@ -38,6 +39,15 @@ model AiConsent {
   updatedAt DateTime  @updatedAt
 
   @@index([userId])
+}
+
+model CoachUsage {
+  id        Int      @id @default(autoincrement())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
 }
 
 model Feedback {
