@@ -12,7 +12,7 @@ connector will not connect on prod) is a WorkOS dashboard fix for Seth, no
 block unless it still fails after that. P-B (slow hosted coach) is CP2. The
 patch lands on `ai-connector-wave` (= `main` + docs only, still what staging
 Render tracks), so the merge stays a fast-forward and staging needs no
-repoint. Wave N = 1.
+repoint. Wave N = 3 (CP2, CQ1, WD1 - see below).
 
 DISPATCHED | cp2-coach-latency.md | hosted coach: remember the account's
 systemPrompt gate per process (one agent run per question after the first),
@@ -27,6 +27,34 @@ scratch dir per request, never pooled.
 Dispatched Sept 27 (Opus seat): Channel B, `--model auto`, lane
 `cursor-lane-2` on `cursor/cp2` @ `2359c82`, 45-minute hard kill. The lane
 also holds the stale untracked Sept 26 `GATE-R1.md` - not part of CP2.
+
+**Wave grew to N = 3 (Seth, Sept 27, same session):** a weekly coach cap and
+a way to stop a started workout. Both units are MIGRATION-CARRYING and both
+touch `schema.prisma` + `client/src/index.css` -> SERIALIZED (CQ1 then WD1).
+CQ1 is disjoint from CP2 and runs beside it. Pushing either landed commit
+to `ai-connector-wave` MIGRATES STAGING (staging's Render build runs
+`migrate deploy`), so each landing push waits for Seth's "migrate staging"
+phrase. Prod: Seth hand-applies both migrations BEFORE the merge (ordering
+invariant), and sets `COACH_UNCAPPED_EMAILS` on prod + staging Render.
+
+QUEUED | cq1-coach-weekly-cap.md | hosted coach capped at 7 questions per
+ROLLING 7 days per user; BYO and mock never count; palette studio and the
+Claude connector untouched; owner exempt via `COACH_UNCAPPED_EMAILS`; a
+question counts only if an answer was delivered; `/coach/status` reports
+`weeklyCap`; CoachPanel shows remaining + a calm capped state | MODEL auto.
+Seth's rulings Sept 27 (asked + answered in session): coach questions only,
+rolling 7 days, hosted key only. New `CoachUsage` table (who + when, NO
+content). Lane `cursor-lane`.
+
+QUEUED | wd1-discard-workout.md | a small X on a live workout to discard it:
+immediate when nothing is logged, inline confirm when sets exist, never
+offered on a reopened finished workout (new `WorkoutSession.reopenedAt`,
+server-side `POST /sessions/:id/discard` rule returns 409 for it), 14
+named scenarios (nav guards, in-flight saves, 404/409/network, Back,
+stale URL, theming) | MODEL auto. The reopen hazard found Sept 27:
+`reopenSession` only nulls `completedAt`, so without the marker an X could
+erase a finished workout's history. Waits for CQ1 to land (schema +
+index.css collision).
 
 **Lane-B audit wave, opened September 12, 2026 (Opus frontier seat).** The
 September 9 session landed FIVE commits on `ai-connector-wave` (`8455059`,

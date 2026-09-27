@@ -7,9 +7,13 @@
 > PATCH to `main`**: **P-A** the Claude connector will not connect on prod -
 > DIAGNOSED as a WorkOS CONFIG error, most likely no code at all; **P-B** the
 > hosted coach works but is SLOW - known causes, a small code unit (CP2).
-> **CP2 is AUTHORED and DISPATCHED (Sept 27)** - `docs/tasks/cp2-coach-latency.md`,
-> lane `cursor-lane-2`, landing on `ai-connector-wave` (staging needs no
-> repoint). Wave N = 1.
+> **Patch wave, N = 3, landing on `ai-connector-wave` (Sept 27):** CP2 coach
+> latency (delivered, lane 2, awaiting review); CQ1 weekly coach cap (7 per
+> rolling week, owner exempt via `COACH_UNCAPPED_EMAILS`); WD1 discard-a-workout
+> X (with a `reopenedAt` marker so a reopened finished workout can never be
+> discarded). CQ1 and WD1 each carry a MIGRATION - each landing push to
+> `ai-connector-wave` migrates staging, so it waits for "migrate staging";
+> prod needs both applied by Seth before the merge. Ledger: `docs/tasks/QUEUE.md`.
 
 **Next action (human):** fix the prod WorkOS External Sign-in URI (P-A step 1)
 and retry the connector from Claude with the PROD address; while CP2 runs,
