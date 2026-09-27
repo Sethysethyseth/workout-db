@@ -342,6 +342,13 @@ use it as the reference, not memory.
 #
 # NOTE: external_auth_id has a 300-second TTL (AuthKit sets Max-Age=300).
 #   A slow password screen can genuinely expire a handshake.
+#
+# PROD VALUES (Sept 26): Production environment of "Cool's Project",
+#   AuthKit domain palatable-frog-16.authkit.app (= MCP_AUTHORIZATION_SERVER),
+#   resource indicator https://workout-db-l3gc.onrender.com/mcp (Default),
+#   External Sign-in URI https://workout-db-psi.vercel.app/connector/login -
+#   the FULL path; the bare site root strands every handshake. DCR + CIMD on.
+#   Agents cannot write this config (auto-mode classifier) - Seth sets it.
 ```
 
 ### 10d. Verify AFTER the deploy (in this order)
@@ -358,7 +365,10 @@ curl.exe -s https://workout-db-l3gc.onrender.com/.well-known/oauth-protected-res
 curl.exe -si https://workout-db-l3gc.onrender.com/mcp | Select-String "HTTP/|WWW-Authenticate"
 #    EXPECT 401 + WWW-Authenticate carrying resource_metadata.
 
-# 4. What the coach is actually running on:
+# 4. The coach route exists (EXPECT 401 unauthenticated). To see what the coach
+#    runs on, check IN-APP (Profile -> AI access): the prod session cookie is
+#    partitioned, so opening this URL in a browser tab sends no cookie and
+#    also returns 401 even when signed in.
 curl.exe -s https://workout-db-l3gc.onrender.com/coach/status
 ```
 ```

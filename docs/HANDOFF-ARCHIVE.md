@@ -1,3 +1,487 @@
+## ARCHIVED September 27, 2026 (fifty-first session, Opus) - HANDOFF sections
+## moved verbatim at the AI-wave MERGE (`main` `59e27dc..bdad1c1`, Sept 26).
+## Superseded, not summarized: the Sept 26 header, Seth's PICK UP HERE
+## checklist to `main` (as ticked through the merge), the Sept 26 session line
+## and PRE-MAIN GATE verdict, the ROAD TO MAIN work order, the AI-wave section
+## (unit tables, CP2 follow-ups, carry-forward, CR2 note, the consolidated wave
+## smoke), and the pre-merge repo/deploy and lane state.
+
+### (from HANDOFF) Sept 26 header through the AI-wave section, as of the merge
+
+> **WHERE WE ARE (Sept 26, end of session):** the AI wave is **LANDED (4/4),
+> SMOKED, SIGNED OFF and GATED - PASS WITH FIXES** (fixes landed; branch head
+> `7206ff7`, 62 commits ahead of `main`, 0 behind, clean ff). No agent work is
+> left before the merge. Everything below is SETH's: two calls (plus two optional), two
+> dashboard settings, three prod prerequisites, then "push to main". Nothing is
+> in flight.
+
+**Next action (human):** calls are made (C1-C3 decided, C4 awaiting its lane
+check) - do S1 (Cursor Privacy Mode) and S2, then P1-P3.
+
+## ▶ PICK UP HERE - Seth's checklist to `main`
+
+> **Agent reading this for Seth: show him THIS checklist first, as-is, and ask
+> which item he is on.** Do not start the gate again (it PASSED), do not
+> dispatch anything, and never run a prod step - agents may DISPLAY prod
+> commands, Seth executes them (AGENTS.md gate items 1-3). If any CODE lands on
+> the branch after `7206ff7`, the gate verdict no longer covers it - a frontier
+> seat re-reviews that delta before the merge. Tick items here as Seth reports
+> them done.
+
+**Calls - Seth decides, tells the agent:**
+
+- [x] **C1. Privacy page - DECIDED Sept 26 (Seth): next wave.** Merge without
+  it; the privacy page + ToS (`ai-layer.md` section 6) is the next wave's work.
+- [x] **C2. What's New - DECIDED Sept 26 (Seth): ship `2026-08-ai-assistant`
+  AS IS, connector only, "nothing more".** It already says exactly that, so
+  NO code change - it fires for every prod user on the merge deploy.
+- [x] **C3. CR2 polish - SKIPPED (Seth, Sept 26).** Ship at 7.5.
+- [x] **C4. Declare `zod` - DONE Sept 26 (approved by Seth).** `"zod":
+  "^4.4.3"` in `server/package.json` (the Cursor SDK keeps its own nested zod
+  3); the lockfile adds only that line plus CP1's `engines` sync, no resolved
+  version moves. Unit lane 324/324 in 30 suites. Frontier check of this
+  post-gate delta (Opus): clean. Road #10 also cleared - the install
+  refreshed the main-tree `node_modules`.
+
+**Settings - Seth, in dashboards:**
+
+- [ ] **S1. Cursor Privacy Mode ON** for the Cursor account that owns the
+  coach key (Cursor dashboard -> Settings -> Privacy). Do this BEFORE P3 puts
+  the key on prod - user training summaries pass through it.
+- [ ] **S2. AuthKit session lifetime, STAGING** - shorten it in the WorkOS
+  dashboard (staging environment -> Sessions). ID1's residual: a stale session
+  for an account the user cannot sign in as is only covered by expiry.
+
+**Prod prerequisites - Seth runs them (agents display, never execute):**
+
+- [ ] **P1. Prod migration by hand (road #2).** Paste the SQL block under
+  "V2 RESULT" in `docs/RUNBOOK.md` section 10a into the PROD Neon SQL editor -
+  confirm `ep-solitary-sea-an56mioq` in the URL bar first - then run RUNBOOK
+  section 4 (migration history diff): prod must match staging on
+  `20260804180000_add_ai_consent`. Additive and safe on today's `main`; it MUST
+  land before the merge or prod login breaks.
+- [x] **P1 DONE Sept 26 (Seth).** SQL run on prod; section 4 diff shows
+  `20260804180000_add_ai_consent` on prod with the SAME checksum as staging.
+  **Older drift found, pre-wave, NOT a merge blocker** (prod build never runs
+  `migrate deploy`): checksums differ on `20260325143000_block_weeks` and
+  `20260707130000_add_exercise_fk_linkage`; staging alone carries a stray
+  `20260527120000_add_exercise_catalog` row and a DUPLICATE
+  `20260707120000_add_exercise_catalog` row. Reconcile before anyone ever
+  points `migrate deploy` at prod.
+- [x] **P3 DONE Sept 26 (Seth)** - all prod Render env vars set.
+- [ ] **P2 - IN PROGRESS Sept 26.** Billing added and prod API key
+  `logchamp_prod` created (Seth); DCR + CIMD ENABLED (agent). Prod AuthKit
+  issuer = `https://palatable-frog-16.authkit.app`. **Seth still (the auto-mode
+  classifier refuses agent writes to prod auth config, twice):** resource
+  indicator `https://workout-db-l3gc.onrender.com/mcp` (Default), External
+  Sign-in URI `<prod client origin>/connector/login`, prod session lifetime.
+  Not a merge blocker - the prod connector is dead until they are set.
+- [ ] **P2. PROD AuthKit environment (road #11).** RUNBOOK 10c: a SEPARATE prod
+  environment (one environment has ONE External Sign-in URI, so prod and
+  staging cannot share). Set its External Sign-in URI to
+  `<prod client origin>/connector/login`, and set a short session lifetime
+  there too (S2's prod twin).
+- [ ] **P3. Prod env vars on `workout-db-l3gc` (road #12).** RUNBOOK 10b:
+  `MCP_RESOURCE_URL` = `https://<prod API host>/mcp` (unset silently means
+  localhost and every real token fails); `MCP_AUTHORIZATION_SERVER` = the PROD
+  AuthKit issuer from P2 (read at module load - needs a restart);
+  `WORKOS_API_KEY` = the prod key; `COACH_PROVIDER` = `cursor`;
+  `COACH_API_KEY` = a Cursor key (after S1; staging's key or a separate prod
+  one). Leave `COACH_MODEL` unset, and set no `NODE_VERSION` (the `engines`
+  field pins Node 22.x). No duplicate keys - Render takes one value per name.
+
+**Merge - Seth's trigger:**
+
+- [ ] **M1. Say "push to main"** (verbatim). The agent then runs RUNBOOK
+  section 2 and the merge ONE command at a time, waiting for your approval
+  before each - in a temp git worktree, never stash + checkout (OneDrive).
+  It reports the merged commits, SHAs and confirmed `origin/main` HEAD.
+- [ ] **M2. Post-merge (road #16).** Repoint staging Render back to `main`
+  (RUNBOOK step 7 is NOT a no-op this wave), then RUNBOOK 10d in order - the
+  single most informative check is **logging in on prod**. Then the connector
+  from a real prod account, and the still-open F/E-wave prod smoke (section
+  "PROD smoke" below).
+
+**Already DONE - do not redo:** road #1 (prod Node >= 22.12, cleared Sept 25),
+#3 (CP1), #4 (AI10), #5 code half (ID1), #6 (Cursor key on staging, live),
+#7 (smoke + SF1 re-smoke signed off), #9 (gate PASS WITH FIXES). Road #10
+(main-tree `npm install`) is housekeeping only.
+
+**Smoke record, Sept 26 (Seth):** PASSED - the connector works inside Claude
+from his real account, AI access OFF redirects correctly, `/coach/status`
+`available: true` on the Cursor key. Two findings, both fixed by SF1 `ab35aca`
+and re-smoked ("looks good"): registering a NEW account through the connector
+link now returns to "Continue as <email>" and connects via an inline "Turn on
+AI access and connect" step; the consent facts fold behind a pale "More info"
+(open while AI access is off). **Deferred by Seth to a later wave:** the in-app
+coach is not discoverable - he found the BYO-key field but no way to chat (the
+panel sits under the Analytics stat tiles and on finished workouts).
+
+> **Standing rule:** the Next action line is filled on EVERY rewrite and is
+> never empty or deferred - one sentence, the single thing SETH does
+> next (not the agent). If nothing is blocked on him, it says so
+> explicitly. Dogfoods the shell repo's decision-10 no-dangling-next-
+> action requirement; `land-unit` section 5 keeps it maintained.
+
+**Updated:** September 26, 2026, fiftieth session (Opus, frontier - **the wave
+closed out, smoked, fixed and gated**). In order: salvage + land CP1, land
+ID1, Seth's staging smoke (passed bar two findings), SF1 authored, dispatched
+and landed, Seth's SF1 re-smoke (passed), then the pre-main gate (PASS WITH
+FIXES, verdict block below), then this file restructured around the PICK UP
+HERE checklist at Seth's request. The first half, in detail: found the Sept 25 session had stopped mid-relay: ID1 had
+delivered clean, but CP1's run had DIED - connection lost, then an
+`ActionRequiredError` auth error, after hanging ~13 hours with no timeout
+around it and leaving no `DELIVERY.md`. `cursor-agent status` showed the relay
+key still logged in. Backed CP1's lane up and re-dispatched it as a SALVAGE
+into the same lane under a 45-minute hard kill (the AI7 precedent), and
+audited ID1 in parallel. **ID1 LANDED `ebf7b80`** (frontier audit, no fix).
+CP1's salvage run found the live smoke FAILING - SDK 1.0.32 reports the
+account-gated `systemPrompt` error from `wait()`, not as a `send()` throw -
+fixed the retry, and stopped as its block orders. The reviewer re-ran the live
+smoke (PASS: stream via the inline fallback, palette validated), verified the
+salvage byte-for-byte against the backup, and applied one fix: BYO keys must
+never inherit a cursor `COACH_MODEL`. **CP1 LANDED `8ab7dcf`.** Combined tree:
+unit 324/324 in 30 suites. **Wave 3/3.** Seven stale sections moved VERBATIM
+to the archive; this file is still over its ~300-line cap - the ROAD TO MAIN
+section and most of the AI-wave section go wholesale in the post-merge
+rewrite. Prior: September 25 (Opus - Seth's
+road-to-main answers; AI10 landed `ce51242`; CP1 + ID1 authored and dispatched
+in parallel; the session ended before either returned, without a HANDOFF
+session line). Older sessions archived.
+
+**PRE-MAIN GATE, Sept 26 (Opus) - VERDICT: PASS WITH FIXES.** Scope: the
+whole unmerged branch (`59e27dc..HEAD`, ~110 code files - Lane A, the five
+unblocked Sept 9 commits, AI10, ID1, CP1, SF1). Fresh lanes on the gate head:
+unit 324/324 in 30 suites, client build clean, `check-hex origin/main...HEAD`
+clean, `require('./src/app')` loads without `@cursor/sdk`. Gate fuel: three
+Cursor report lanes on the auto rung (R1 AI1-AI9 criterion coverage + cross-unit
+seams; R2 AI10/ID1/CP1/SF1 coverage + the coach/palette code against
+`ai-layer.md` and `ai-theming.md` + client/server contract seams; R3 tokens,
+scope leakage, cross-doc drift, dangling references), each ~5 minutes, each
+kept its no-edits contract; reports were left untracked in the lanes.
+**Read directly (never delegated):** CORS split (wildcard WITHOUT credentials
+on connector paths only, allowlist unchanged elsewhere); `tokenVerifier`
+(issuer + audience pinned via `jose`, `sub` required, null on any failure);
+`connectorAuth` (identity only from the verified token, never the cookie
+session; consent + kill-switch every request; unknown `sub` fails closed);
+`analyticsAccess` (every read goes through `fetchAllTimeEnrichedSets(userId)`,
+so model-supplied exercise ids only filter the caller's own sets); coach +
+palette routes (`authRequired` on all three; consent on ask + palette - status
+reports it instead); BYO key (tab `sessionStorage`, per-request header, never
+stored, logged or echoed); `CoachMarkdown` (React nodes only, no `innerHTML`
+anywhere in `client/src`); palette apply (client re-checks hex, `scene` goes
+through the `SCENE_URLS` whitelist before `url()`); the additive migration.
+**No cross-unit contract drift:** every earlier contract a later unit changed
+was changed on purpose (AI7 dropped the scope 403, AI8 moved the Login URI, SF1
+replaced the consent redirect, Sept 9 rewrote copy).
+**Fixes applied in-seat (landed with the verdict):** (1) the connect confirm
+step now warns "Only continue if you just started connecting from your own AI
+assistant" - the residual of the login-CSRF class: the page cannot name the
+requesting client, so a phishing link opened inside the 300s window still
+needs only a click or two; (2) doc drift - `ai-layer.md` CORRECTION 7
+(as-built: engines pinned, `/coach/*` paths, BYO never stored, provider
+`anthropic|cursor|mock`, roadmap ids, the unmet privacy item), an AS-BUILT
+note atop `ai-theming.md`, RUNBOOK 10b/10e (Cursor key + Privacy Mode; ID1 and
+AI10 landed), AGENTS.md palette enum (`chill` + `custom`, 10 combos), the
+superseded Login URI in `workos-staging-handoff.md`, QUEUE's stale Active
+header.
+**Seth's calls before merge:** (a) `ai-layer.md` section 6 requires a privacy
+policy + ToS "in the SAME wave" and the app has NONE - recommendation: do not
+block the merge on it, but HOLD the What's New announcement (#13) until a short
+plain-language privacy page exists (first unit of the next wave), since users'
+training summaries now reach Cursor (hosted coach), Anthropic (BYO) and the
+assistant they connect; (b) turn on **Privacy Mode** for the Cursor account
+that owns `COACH_API_KEY` before the prod key goes on (#12).
+**Follow-ups, not blockers:** show the requesting client's name on the confirm
+step if WorkOS exposes it; CP2 (memoize the systemPrompt gate, quiet the
+ripgrep log noise); make the in-app coach discoverable (Seth, deferred);
+`4255782` put ~1.7 MB of PNGs under `claudefiledrop/` onto the branch - they
+will ride into `main`.
+
+---
+
+## ROAD TO MAIN - the ordered work order (TRANSIENT: delete this section once the merge lands)
+
+Compiled September 17, 2026 (Opus) from a ground-truth readiness pass over the
+branch, NOT from prose. **This section is scratch, not permanent state** - the
+agent that finishes the merge deletes it wholesale in the post-merge HANDOFF
+rewrite. Keep it ordered; items 1-2 can veto everything below them.
+
+**Already verified, do NOT re-derive:** the branch is 55 commits ahead of
+`main` (recounted Sept 26) with **zero** commits on `main` that it lacks
+(clean ff merge, no conflict risk); the wave's one migration
+`20260804180000_add_ai_consent` is **additive** (new table +
+`User.aiConnectorEnabled BOOLEAN NOT NULL DEFAULT true`), applied on staging,
+NOT on prod; all four new runtime deps are declared
+(`@modelcontextprotocol/sdk`, `express-rate-limit`, `jose`, and CP1's
+`@cursor/sdk`, which loads LAZILY - requiring `src/app.js` leaves it out of
+`require.cache`, so boot never depends on it); missing coach config **degrades
+honestly** rather than crashing (`keyResolver` -> `no_key`, `askCoach` ->
+`coach_unavailable`, `/coach/status` -> `available:false`); and the unit lane
+is **324/324 in 30 suites** on the combined AI10 + ID1 + CP1 tree (Sept 26).
+
+| # | Do | Owner | Blocks because |
+|---|---|---|---|
+| 1 | ~~VETO CHECK: prod Render Node >= 22.12~~ **CLEARED Sept 25 (Seth checked the dashboard)** | Seth | was: `app.js:10` requires ESM `zod`/`jose` at boot. #14 is still the permanent fix |
+| 2 | **VETO FIRED Sept 25, path chosen:** prod build is `npm install && npx prisma generate` - it does NOT migrate. Keep it (prod migrations stay Seth's). **Seth hand-applies the migration via the ready-to-paste SQL in RUNBOOK 10a (V2 RESULT), then runs RUNBOOK section 4, BEFORE the merge** | Seth | without it the new code selects `User.aiConnectorEnabled` against a missing column and login breaks. Safe to run any time - `main` never reads the new table and the column has a DEFAULT |
+| 3 | ~~DECISION: hosted key or dark~~ **DONE: CP1 LANDED `8ab7dcf` Sept 26** - the hosted coach runs on a CURSOR API key (Seth, Sept 25: "im not using an anthropic one") via `@cursor/sdk`; its live smoke PASSED in-seat (stream + palette). BYO keys stay Anthropic | done | #13 must describe the coach. CP2 follow-ups (gate memo, log noise) are listed in the AI-wave section - not blockers |
+| 4 | ~~AI10~~ **LANDED `ce51242` Sept 25** (8000/3000 caps, truncation handled, smoke scripts) | done | still applies to BYO Anthropic keys. Its smoke scripts are unrun live |
+| 5 | ~~DECISION: ship or fix the wrong-identity bind~~ **FIX LANDED: ID1 `ebf7b80` Sept 26, frontier audit** (confirm step on `/connector/login`, "Sign out of connected assistants" revoking WorkOS sessions + apps, `boundAccount` on tool output). Residual Seth step: shorten the AuthKit session lifetime in the WorkOS dashboard (Applications -> Sessions), staging now and the prod env at #11 | Seth | a stale AuthKit session belonging to an account the user cannot sign in as is only covered by session expiry. ID1's `external_id` lookup is unproven until the Part B live check |
+| 6 | **UNBLOCKED Sept 26 (CP1 landed; Seth has minted the separate key).** Put it on STAGING Render: `COACH_PROVIDER=cursor` + `COACH_API_KEY=<the new key>`, `COACH_MODEL` left UNSET (defaults to `auto`). Never reuse the relay's `CURSOR_API_KEY`, so revoking one never kills the other. CP1 added `engines` `>=22.13 <23`, so Render should pick Node 22.x itself - confirm the version in the deploy log (a `NODE_VERSION` env var on the service overrides `engines`) | Seth | only the in-seat smoke script has reached the real model; no deployed coach path has. Without it #7 cannot test the coach |
+| 7 | **THE SMOKE: Part A surfaces + Part B connector from Seth's REAL account** (checklist below in this file) | Seth | the hard stop. The gate does not start until he signs off; a gate run before smoke gets partly re-run after it. A smoke defect re-enters as a diagnosis block and RESETS the sign-off |
+| 8 | **DECISION (optional):** work CR2 to its 8+ bar, or ship at 7.5 | Seth | `docs/tasks/cr2-critic-round-2-FINDINGS.md` is the work order; a UI block must be authored FROM it, not from memory. Product polish only - does not block a merge |
+| 9 | ~~Pre-main gate review~~ **DONE Sept 26: PASS WITH FIXES** (verdict block near the top of this file; fixes landed). Two Seth calls came out of it: the privacy page (hold #13 until it exists?) and Cursor Privacy Mode before #12 | Seth | the gate itself is cleared |
+| 10 | `npm install` in main-tree `server/` (gate item 5 - ask first) | agent | housekeeping only now - the gate ran its fresh lanes in `cursor-lane-2` (full install). The main tree still lacks `express-rate-limit` and `@cursor/sdk`, so two suites fail to LOAD there |
+| 11 | Create a **PROD** AuthKit environment; set its External Sign-in URI to `<prod client origin>/connector/login` (RUNBOOK 10c) | Seth | an AuthKit environment has exactly ONE External Sign-in URI, so **prod and staging cannot share one** - pointing it at prod breaks the staging connector and vice versa. Today it points at this branch's Vercel PREVIEW host |
+| 12 | Set prod env vars on `workout-db-l3gc`: `MCP_RESOURCE_URL`, `MCP_AUTHORIZATION_SERVER`, `WORKOS_API_KEY` (+ `COACH_*` per #3) - RUNBOOK 10b | Seth | `MCP_RESOURCE_URL` unset **silently defaults to `http://localhost:3000/mcp`** (`routes/index.js:18`, `middleware/connectorAuth.js:21`) - discovery advertises localhost and every real token fails the audience check with no error anywhere. `MCP_AUTHORIZATION_SERVER` is read at MODULE LOAD (`ai/tokenVerifier.js:1-2`), so it needs a RESTART to take effect |
+| 13 | **DECISION:** write a What's New entry for the September 9 wave, or hold the announcement | Seth | entry `2026-08-ai-assistant` (dated Aug 5) is prod-gated via `lib/appEnv.js` and **fires for every prod user on this deploy**. It describes the CONNECTOR ONLY - it predates the coach, the palette studio and the entire Sept 9 redesign - and advertises a feature that does nothing until #11 and #12 are complete |
+| 14 | Gate-item-5 call: declare `zod` in `package.json` (the Node pin half is DONE - CP1's `engines` `>=22.13 <23`) | Seth | the permanent fix for #1. Touches `package.json`, so it asks first |
+| 15 | Seth says **"push to main"** verbatim -> merge, ONE command at a time with approval before each | Seth | gate item 1. Report commits, SHAs and confirmed `origin/main` HEAD after the push |
+| 16 | Post-merge: repoint staging Render to `main` (**RUNBOOK step 7 is NOT a no-op this wave**), run RUNBOOK 10d verification, then the prod smoke | Seth + agent | staging Render tracks THIS BRANCH today. 10d's most informative check is simply **logging in on prod** - the migration adds a NOT NULL column to `User`, so if login works the ordering held |
+
+**Full cutover detail is `docs/RUNBOOK.md` section 10** (vetoes, env matrix,
+AuthKit ruling, verification curls, known-at-cutover defects, rollback). Do not
+re-write that content here. **Rollback is cheap:** the migration is additive
+with a `DEFAULT`, so reverting `main` to `59e27dc` is safe and needs no
+down-migration - leave the table and column in place.
+
+---
+
+## The AI-wave - COMPLETE: Lane A 9/9, Lane B swept, follow-ups 3/3
+
+Branch `ai-connector-wave` off `main` `59e27dc`; code HEAD `8ab7dcf` (CP1),
+docs-only after it.
+**Staging Render tracks THIS BRANCH**, so every push here deploys to
+`workout-db-staging`. **RUNBOOK step 7 is NOT a no-op for this wave** - staging
+must be repointed back to `main` after the merge.
+
+**Lane A - the connector (`docs/specs/ai-layer.md` Lane A, blocks AI1-AI9):**
+
+| Unit | SHA | What landed |
+|---|---|---|
+| AI1 | `83d82c8` | consent record + entitlement flag + `/profile/ai` page |
+| AI2 | `5c051bc` | discovery doc, Bearer guard, scope+consent enforcement, rate limit |
+| AI3 | `eecd2e9` | MCP server on `/mcp`, four read-only tools, shared analytics path |
+| AI4 | `c89570e` | WorkOS JWKS verification + Login URI |
+| AI5 | `9a2f63a` | the connect surface: copyable address, four steps, tier note |
+| AI6 | `c1398a8` | rate-limit the connector by identity, not IP (fixes finding 1) |
+| AI7 | `d925bd2` | drop `training:read` - the scope AuthKit cannot issue |
+| AI8 | `bca098b` | move the Login URI to the client origin (the Aug 8 smoke fix) |
+| AI9 | `43a4ceb` | per-client setup instructions: Claude, ChatGPT, Grok, generic |
+
+ZERO bounces across all nine; four reviewer fixes. Per-unit audit reasoning is
+in `docs/tasks/QUEUE.md`.
+
+**Lane B + the critic loop - landed September 9, NO per-unit audit at the time:**
+
+| SHA | What landed |
+|---|---|
+| `8455059` | the in-app coach: `POST /coach/ask` SSE proxy over plain `fetch`, `GET /coach/status`, one code path for BYO / hosted / mock keys, identity-keyed 40-per-15min limiter, `CoachPanel` on Analytics + a one-tap session debrief, 28 unit tests |
+| `4f364ee` | full-bleed scenes, the barbell loading motif + shape-matched skeletons, Chakra Petch as `--font-display`, month-grouped History, nav/theme-color polish |
+| `d28989b` | palette studio (`docs/specs/ai-theming.md` v1): `POST /coach/palette` returns a VALIDATED token record (hex only, never CSS), applied as a sixth `data-palette` value `custom`, per device via localStorage |
+| `2080128` | critic loop round 1 (baseline scored 5/10): finished workouts as a record, History rows, the phone 16px gutter restored, light-mode scene, chart fixes |
+| `932fa25` | critic loop round 2 (round 1 scored 7/10): Exercises as real analytics, the AI-access rebuild, crisp pixel light mode, heatmap headers, Profile two-column |
+
+
+**The Sept 12 audit's follow-up units - all LANDED:**
+
+| Unit | SHA | What landed |
+|---|---|---|
+| AI10 | `ce51242` | coach/palette caps 8000/3000 (thinking STAYS ON - never lower them), `max_tokens` handled on both paths, the thinking pause given a face, `scripts/smoke-coach.mjs` + `smoke-connector.mjs` (still unrun live) |
+| ID1 | `ebf7b80` | the wrong-identity bind: "Continue as <email>" / "Use a different account" on `/connector/login`, `POST /ai/connector/signout` (revokes the user's WorkOS sessions + authorized apps), the same cleanup best-effort on consent revoke, `boundAccount` on every tool result |
+| CP1 | `8ab7dcf` | the HOSTED coach + palette studio on a Cursor key: `@cursor/sdk` local agent, `tools: []`, fresh tmp cwd, lazy-loaded; BYO keys stay Anthropic; `scripts/smoke-cursor-coach.mjs` passed live Sept 26 |
+| SF1 | `ab35aca` | Seth's smoke fixes: `next` survives Login <-> Register (`lib/safeNext.js`), an inline consent step on `/connector/login` so a new account still connects, the consent facts in one component (`AiConsentFacts`) folded behind "More info" when AI access is on |
+
+**Follow-ups surfaced at landing - candidates for a CP2, NOT merge blockers:**
+
+- **This Cursor account is gated for `systemPrompt`,** so EVERY hosted request
+  makes one failing attempt before the inline fallback runs - wasted latency on
+  every question. Memoize the gate per process.
+- **The SDK prints six "Ripgrep path not configured" stack traces per request**
+  (it tries to read `.gitignore` / `.cursorignore` in the empty tmp cwd). Harmless,
+  but it will flood Render logs. `configureRipgrepPath()` or a quieter option.
+- **The persona now rides INSIDE the user message** (the inline fallback), not a
+  true system prompt - weaker separation from user text. The agent has no
+  tools, so the blast radius is the answer text only.
+- ID1: `revokeConsent` now makes a LIVE WorkOS call wherever `WORKOS_API_KEY`
+  is set - including the integration lane if `server/.env` carries it.
+
+### Carry-forward that still governs (full evidence in the archive)
+
+- **The connector's server side PASSED end to end live (Aug 14)** with a real
+  WorkOS token; AI8 is confirmed live; the consent kill-switch passes on both
+  `tools/call` and `tools/list`, with no cache lag.
+- **`external_auth_id` TTL is 300 seconds** - a slow password screen can
+  genuinely expire a handshake. ID1's confirm step now says so on the page.
+- **The wrong-identity bind is closed as far as code can close it (ID1).**
+  Residual: a stale AuthKit session for an account the user cannot sign in as
+  is covered only by session expiry (WorkOS dashboard, Seth - road #5).
+  **Unproven until smoke:** that WorkOS files our `User.id` as the WorkOS
+  user's `external_id` - Part B's ID1 live check settles it.
+- **Trap before prod:** the staging Login URI host is a Vercel PREVIEW deploy
+  behind Deployment Protection - any cold context gets 302'd to
+  `vercel.com/sso-api`. Staging-only; prod's domain is public.
+- **OPEN: `zod` is an undeclared phantom dependency** - ESM-only, required at
+  boot by `mcpServer.js`. CP1's `engines` field now pins Node 22.x; declaring
+  `zod` is what remains of road #14.
+- **MCP revision `2026-07-28` is deliberately NOT targeted** - it changes the
+  transport incompatibly; `ai-layer.md` section 4.0 "CORRECTIONS" is
+  authoritative. A dual-era server is a future unit.
+- **Cross-user isolation surfaces** (AI2's Bearer guard, AI4's token
+  verification, ID1's signout) are standing frontier-seat escalations
+  regardless of who writes them.
+- **DO NOT READ A GREEN UNIT LANE AS COVERAGE OF AN ENDPOINT.** It matches only
+  `test/analytics/**` and `test/lib/**` and never loads a route, controller or
+  middleware; the integration lane needs `server/.env`, which no lane has.
+
+### CR2 - the critic loop's round-2 report, UNWORKED
+
+`docs/tasks/cr2-critic-round-2-FINDINGS.md` (7.5/10, preserved verbatim on
+Sept 12 from gitignored `.playwright-mcp/critic/round-2.md`). **Not a
+dispatchable block** - its ten ranked fixes and twelve bugs are the outstanding
+work order, and **a UI block should be authored FROM it rather than from
+memory.** The reusable loop recipe is `docs/design/critic-brief.md` (also
+rescued from gitignore). **Rounds 0 and 1 were rescued Sept 17** as
+`cr0-critic-round-0-FINDINGS.md` (the 5/10 baseline) and
+`cr1-critic-round-1-FINDINGS.md` (7/10) - both WORKED and superseded, kept for
+the baseline itself and for CR1's "Round-0 fixes status", the only item-by-item
+audit of what `2080128` delivered. **CR2 is the one live work order of the
+three;** do not author against CR0 or CR1, their lists were re-ranked twice. What holds the product under 8 is no longer any single
+broken screen but unfinished micro-detail: labels repeated per row instead of
+set once as a column header, a "Tracked" badge that distinguishes nothing,
+em-dash placeholders standing in for real empty states, four hero sparklines
+that all draw the same straight line, and the iron/crimson scenes being nowhere
+near champ's standard. One listed bug is already RULED OUT: the identical
+`1h 2m` durations are uniform seed data - `client/src/lib/sessionFacts.js`
+computes per session from `startedAt`/`completedAt`.
+
+### CONSOLIDATED WAVE SMOKE - Seth, on the staging Vercel deploy
+
+**REWRITTEN September 26** for ID1 + CP1 (the Sept 12 version is verbatim in
+the archive). Confirm `origin/ai-connector-wave` is at `8ab7dcf` or a
+docs-only commit after it, and that BOTH the Vercel and Render staging deploys
+have built it. **Do road-to-main #6 first** (the Cursor key on staging
+Render), then **probe `GET /coach/status` on staging while signed in** - it
+should read `available: true`, `source: "hosted"`, `provider: "cursor"`,
+`model: "auto"`. Anything else means the coach checks below are testing the
+wrong path.
+
+**Part A - the surfaces:**
+
+- **Profile -> AI access**: switch row + state line, three facts, the coach
+  status, and the mono address `https://workout-db-staging.onrender.com/mcp`
+  with copy (wrong address = `VITE_API_URL` on Vercel is wrong). AI9's
+  accordions: Claude open, ChatGPT / Grok / generic collapsed. Check on phone.
+- **NEW (ID1): a "Connected assistants" section with "Sign out of connected
+  assistants"** - present with AI access ON and with it OFF.
+- **The coach panel on Analytics** - ask something and watch the answer stream
+  AND END. It now runs on the Cursor key: expect a slower first word than
+  before (one gated attempt + local-agent start-up). Note roughly how long.
+- **The session debrief** - one tap on a finished workout.
+- **Palette studio** on Profile -> Appearance: describe a look, live preview,
+  keep / try another / discard. "The model did not return a palette" is now a
+  Cursor-path finding - write down the description you used.
+- **BYO key** (only if you have an Anthropic key): paste it on Profile -> AI
+  access and ask the coach - it must still answer (the Anthropic path).
+- **The Sept 9 UI pass**, read as a user: full-bleed scenes, crisp light mode,
+  the barbell motif and skeletons, month-grouped History, the Home hero,
+  Exercises as analytics. **Check iron and crimson** - the critic scored both
+  well below champ.
+- **Regression:** log out and back in, load Analytics, start and finish a
+  workout. What's New does NOT appear on staging - prod-gated by design.
+
+**Part B - the real connector. THIS IS THE PASS THAT MATTERS.**
+
+- **From your REAL account**, add the connector inside Claude (Customize ->
+  Connectors -> Add custom connector). The AuthKit browser session may still
+  be on the `smoke-b8@example.com` throwaway - clear AuthKit cookies or use a
+  fresh browser profile (that stuck session is exactly the residual ID1 cannot
+  close from code).
+- **NEW (ID1): `/connector/login` must STOP and ask "Continue as <your
+  email>" or "Use a different account"** - it never completes on its own any
+  more. Run it once signed out and once already signed in.
+- **"Use a different account"** must log you out and, after you sign in, bring
+  you back to the same connect page.
+- **If the handshake fails, capture the callback URL and its `error=` value
+  BEFORE anything else** - Aug 6's real error was only visible there.
+- Ask Claude "how has my bench press moved this month?" - the numbers match
+  Analytics, and **the tool result now names your email (`boundAccount`)**.
+- **THE ID1 LIVE CHECK:** after a successful connect, press "Sign out of
+  connected assistants". It must say **"Signed out of connected assistants."**
+  **"Nothing to sign out" means WorkOS does NOT file our user id as
+  `external_id` - Door A is still open; report it.** Then ask Claude again -
+  it should have to re-authorize.
+- **Consent-blocked path:** with AI access OFF, the connector flow lands on
+  `/profile/ai`, and a question in Claude must fail.
+- **A second LogChamp account** (register in a SEPARATE browser profile) closes
+  AI6's two-identity rate-limit check AND is the real wrong-account test:
+  connected as A, start a connect while signed in as B - the confirm step must
+  name B.
+
+### (from HANDOFF) Repo / deploy state + Lane worktree state, pre-merge
+
+## Repo / deploy state
+
+- **THE PROD CUTOVER IS WRITTEN DOWN NOW - `docs/RUNBOOK.md` section 10**,
+  added Sept 17. Merging this wave does NOT give prod a working AI layer: it
+  needs three env vars (`MCP_RESOURCE_URL` unset silently defaults to
+  `localhost`, which rejects every real connector token), a PROD AuthKit
+  environment whose External Sign-in URI is the prod client origin, and a
+  ruling on whether prod shares staging's AuthKit - **it cannot; one
+  environment has ONE sign-in URI, so sharing means prod and staging take
+  turns being broken.** Section 10 carries the vetoes, the env matrix, the
+  post-deploy verification curls, and the rollback note (the migration is
+  additive, so reverting to `59e27dc` needs no down-migration).
+- **VERIFY DEPLOY TOPOLOGY FROM THE SERVICES, NOT FROM THIS LIST.** The August 4
+  incident (archived) happened because these lines were trusted. One command
+  settles it: a GET of `/ai/consent` on a host returns **401** if that host
+  serves the wave branch and **404** if it serves `main`.
+- **A staging Render DEPLOY is also a staging MIGRATION.** The server's
+  `render-build` script is `prisma generate && prisma migrate deploy` - that is
+  how the `AiConsent` migration got applied on August 4 without anyone running
+  it. Check prod Render's build command before assuming prod differs.
+- **`ai-connector-wave` code HEAD is `8ab7dcf`** (CP1; docs-only commits after
+  it), local == origin. **Staging Render
+  `workout-db-staging` tracks it**, so pushes auto-deploy. **RUNBOOK step 7 is
+  NOT a no-op:** repoint staging back to `main` after the merge.
+- **`main` is at `59e27dc`** - the F-wave merge, August 4. **Prod Render
+  `workout-db-l3gc` and prod Vercel are on `main`.** Any push to `main` is a
+  prod-bound push (gate 2). **Prod smoke still open.**
+- **`effort-mandatory-wave` and `effort-wave` are MERGED and closed** - all their
+  CODE is on `main`, but each sits one or two DOCS-ONLY commits ahead (post-merge
+  HANDOFF upkeep). **Therefore NOT safe deletion candidates.** Prior waves
+  resolved this by landing the post-merge HANDOFF commit on `main` (`f2be093`,
+  `869c5f1`) - a docs-only prod-bound push needing Seth's say-so.
+- FP8 (PWA icons) is the only open FP unit - DRAFT, blocked on Seth dropping icon
+  PNGs into `claudefiledrop/`. Icons LAST by his rider.
+- **Main-tree `node_modules` is stale** - `express-rate-limit` (declared by AI2)
+  and `@cursor/sdk` (CP1) were never installed there, because every unit of
+  this wave was built in lane worktrees. Two suites fail to LOAD in the main tree as a result; zero assertion
+  failures. An `npm install` in `server/` clears it - deliberately not run
+  unasked (gate item 5).
+
+### Lane worktree state
+
+**All three lanes are CLEAN and FREE (Sept 26)** - lane 1 on `cursor/ai10` at
+`ce51242`, lane 2 on `cursor/cp1` at `8ab7dcf`, lane 3 on `cursor/id1` at
+`ebf7b80`, each holding a STALE gitignored `DELIVERY.md`. **Repoint any lane
+off the target wave branch before use or the delivery lands on the wrong
+base.** Installs differ: lane 3's `server` and `client` `node_modules` are
+JUNCTIONS into lane 1 (which lacks `@cursor/sdk`); lane 2's `server` has its
+own install WITH the SDK.
+
+**Check lane cleanliness by DELIVERY.md TIMESTAMP, not `git status`** - it is
+gitignored, so a stale report reads as "clean". The written warning was not
+enough on its own on August 8; what caught it was mtime. Prefer a DISTINCT
+report filename per lane run (`RECON-R1.md` / `RECON-R2.md`) so a stale file
+cannot impersonate a fresh one at all.
+
+**Lane `node_modules` drift is real.** When a lane's failures are
+`Cannot find module`, suspect the environment before the code, and verify in a
+lane known to be current.
+
+---
+
 ## ARCHIVED September 26, 2026 (fiftieth session, Opus) - HANDOFF sections
 ## moved verbatim when the AI wave closed out (AI10, ID1 and CP1 all LANDED;
 ## the wave is at its hard stop for Seth's smoke). Superseded, not
