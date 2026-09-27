@@ -121,6 +121,53 @@ function createStore(sdk, storeDir) {
   return { rootDir: storeDir };
 }
 
+let systemPromptGated = false;
+let ripgrepHookAttempted = false;
+
+function resetCursorProviderMemos() {
+  systemPromptGated = false;
+  ripgrepHookAttempted = false;
+}
+
+/**
+ * Point CURSOR_RIPGREP_PATH at the rg binary the SDK already ships, once
+ * per process. The SDK's own lookup walks argv[1] and execPath for a
+ * hoisted node_modules layout and never require.resolve's the optional
+ * platform package - see platform-package-locator.d.ts and the
+ * Agent.create path in dist/cjs/342.js. Never throws; never overwrites
+ * an operator-set value. opts.env / opts.packageRoot / opts.platform
+ * are the unit-test inject seam.
+ */
+function ensureCursorRipgrepPath(opts = {}) {
+  const env = opts.env || process.env;
+  if (typeof env.CURSOR_RIPGREP_PATH === "string" && env.CURSOR_RIPGREP_PATH) {
+    return;
+  }
+  if (ripgrepHookAttempted) return;
+  ripgrepHookAttempted = true;
+  try {
+    const platform = opts.platform || process.platform;
+    const arch = opts.arch || process.arch;
+    const existsSync = opts.existsSync || fs.existsSync;
+    let packageRoot = opts.packageRoot;
+    if (packageRoot == null) {
+      try {
+        packageRoot = path.dirname(
+          require.resolve(`@cursor/sdk-${platform}-${arch}/package.json`)
+        );
+      } catch {
+        return;
+      }
+    }
+    const binName = platform === "win32" ? "rg.exe" : "rg";
+    const abs = path.resolve(packageRoot, "bin", binName);
+    if (!existsSync(abs)) return;
+    env.CURSOR_RIPGREP_PATH = abs;
+  } catch {
+    // never throw, never block a request
+  }
+}
+
 async function disposeAgent(agent) {
   if (!agent) return;
   try {
@@ -244,6 +291,7 @@ async function* runOneAttempt({
   signal,
   scratch,
   systemPromptMode,
+  onCreate,
 }) {
   const store = createStore(sdk, scratch.storeDir);
   const createOpts = {
@@ -266,6 +314,7 @@ async function* runOneAttempt({
     throw Object.assign(new Error("aborted"), { name: "AbortError" });
   }
 
+  if (typeof onCreate === "function") onCreate();
   agent = await sdk.Agent.create(createOpts);
   try {
     if (signal) signal.addEventListener("abort", onAbort, { once: true });
@@ -341,48 +390,81 @@ async function* runOneAttempt({
  * Accepts `sdk` for tests; production loads the package inside the call.
  */
 async function* streamCursor({ apiKey, model, system, messages, signal, sdk: sdkImpl }) {
-  let sdk;
-  try {
-    sdk = loadCursorSdk(sdkImpl);
-  } catch (err) {
-    throw mapThrownCursorError(err);
-  }
-  if (!sdk || !sdk.Agent || typeof sdk.Agent.create !== "function") {
-    throw new CoachProviderError("provider_error", "Cursor SDK is not available.");
+  const startedAt = Date.now();
+  let mode = "none";
+  let agentRuns = 0;
+  let ttftMs = null;
+  let outcome = "error";
+  let scratch = null;
+
+  function note(item) {
+    if (item.type === "text" && ttftMs == null) ttftMs = Date.now() - startedAt;
+    if (item.systemPromptMode) mode = item.systemPromptMode;
+    if (item.type === "stop") outcome = item.stopReason || "end_turn";
+    if (item.type === "error") outcome = "error";
   }
 
-  const systemText = flattenSystemBlocks(system);
-  const userMessage = formatMessages(messages);
-  const scratch = makeScratch();
-  let usedInline = false;
+  const onCreate = () => {
+    agentRuns += 1;
+  };
 
   try {
+    let sdk;
     try {
-      yield* runOneAttempt({
-        sdk,
-        apiKey,
-        model,
-        systemPrompt: systemText || undefined,
-        message: userMessage,
-        signal,
-        scratch,
-        systemPromptMode: "accepted",
-      });
-      return;
+      sdk = loadCursorSdk(sdkImpl);
     } catch (err) {
-      if (systemText && isSystemPromptGateError(err)) {
-        usedInline = true;
-      } else if (err && err.name === "AbortError") {
+      throw mapThrownCursorError(err);
+    }
+    if (!sdk || !sdk.Agent || typeof sdk.Agent.create !== "function") {
+      throw new CoachProviderError("provider_error", "Cursor SDK is not available.");
+    }
+
+    ensureCursorRipgrepPath();
+
+    const systemText = flattenSystemBlocks(system);
+    const userMessage = formatMessages(messages);
+    scratch = makeScratch();
+    let usedInline = false;
+    const skipProbe = Boolean(systemPromptGated && systemText);
+
+    if (!skipProbe) {
+      try {
+        mode = "accepted";
+        for await (const item of runOneAttempt({
+          sdk,
+          apiKey,
+          model,
+          systemPrompt: systemText || undefined,
+          message: userMessage,
+          signal,
+          scratch,
+          systemPromptMode: "accepted",
+          onCreate,
+        })) {
+          note(item);
+          yield item;
+        }
         return;
-      } else {
-        throw mapThrownCursorError(err);
+      } catch (err) {
+        if (systemText && isSystemPromptGateError(err)) {
+          systemPromptGated = true;
+          usedInline = true;
+        } else if (err && err.name === "AbortError") {
+          outcome = "aborted";
+          return;
+        } else {
+          throw mapThrownCursorError(err);
+        }
       }
+    } else {
+      usedInline = true;
     }
 
     if (usedInline) {
       const inlined = `${systemText}\n\n${userMessage}`;
       try {
-        yield* runOneAttempt({
+        mode = "inline";
+        for await (const item of runOneAttempt({
           sdk,
           apiKey,
           model,
@@ -391,14 +473,26 @@ async function* streamCursor({ apiKey, model, system, messages, signal, sdk: sdk
           signal,
           scratch,
           systemPromptMode: "inline",
-        });
+          onCreate,
+        })) {
+          note(item);
+          yield item;
+        }
       } catch (err) {
-        if (err && err.name === "AbortError") return;
+        if (err && err.name === "AbortError") {
+          outcome = "aborted";
+          return;
+        }
         throw mapThrownCursorError(err);
       }
     }
   } finally {
-    cleanupScratch(scratch.root);
+    if (scratch) cleanupScratch(scratch.root);
+    console.info(
+      `[coach] cursor mode=${mode} agentRuns=${agentRuns} ttft_ms=${
+        ttftMs == null ? "none" : ttftMs
+      } total_ms=${Date.now() - startedAt} outcome=${outcome}`
+    );
   }
 }
 
@@ -424,4 +518,6 @@ module.exports = {
   extractFirstJsonText,
   extractFirstJsonObject,
   isSystemPromptGateError,
+  resetCursorProviderMemos,
+  ensureCursorRipgrepPath,
 };

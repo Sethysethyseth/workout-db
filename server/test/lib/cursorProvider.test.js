@@ -1,3 +1,4 @@
+const fs = require("fs");
 const os = require("os");
 const path = require("path");
 const { getCoachConfig } = require("../../src/coach/config");
@@ -6,6 +7,8 @@ const { resolveCoachProvider } = require("../../src/coach/askCoach");
 const {
   streamCursor,
   extractFirstJsonObject,
+  resetCursorProviderMemos,
+  ensureCursorRipgrepPath,
 } = require("../../src/coach/cursorProvider");
 
 const GOOD_BYO = "sk-ant-api03-abcdefghijklmnopqrstuvwxyz0123456789";
@@ -28,6 +31,7 @@ function makeFakeSdk({
   const created = [];
   const disposed = [];
   const sends = [];
+  const agents = [];
 
   class RateLimitError extends Error {
     constructor(message) {
@@ -85,13 +89,18 @@ function makeFakeSdk({
             disposed.push("dispose");
           },
         };
+        agents.push(agent);
         return agent;
       },
     },
   };
 
-  return { sdk, created, disposed, sends, RateLimitError, AuthenticationError };
+  return { sdk, created, disposed, sends, agents, RateLimitError, AuthenticationError };
 }
+
+beforeEach(() => {
+  resetCursorProviderMemos();
+});
 
 describe("getCoachConfig - cursor provider", () => {
   test("COACH_PROVIDER=cursor uses auto and keeps the hosted key", () => {
@@ -370,5 +379,238 @@ describe("extractFirstJsonObject", () => {
 
   test("no json here yields nothing", () => {
     expect(extractFirstJsonObject("no json here")).toBeNull();
+  });
+});
+
+describe("streamCursor - systemPrompt gate memo", () => {
+  const system = [
+    { type: "text", text: "You are the coach." },
+    { type: "text", text: "DATA", cache_control: { type: "ephemeral" } },
+  ];
+  const messages = [{ role: "user", content: "How is volume?" }];
+
+  async function twoCalls(fake) {
+    const first = await collect(
+      streamCursor({
+        apiKey: "key_abc",
+        model: "auto",
+        system,
+        messages,
+        sdk: fake.sdk,
+      })
+    );
+    const second = await collect(
+      streamCursor({
+        apiKey: "key_abc",
+        model: "auto",
+        system,
+        messages,
+        sdk: fake.sdk,
+      })
+    );
+    return { first, second };
+  }
+
+  test("gated send() throw: call 1 probes, call 2 skips to inline", async () => {
+    const gate = new Error("InvalidArgument: --system-prompt is not enabled for this account");
+    gate.code = "InvalidArgument";
+    const fake = makeFakeSdk({
+      deltas: ["ok"],
+      waitStatus: "finished",
+      sendErrorOnce: gate,
+    });
+    const { first, second } = await twoCalls(fake);
+    expect(fake.created).toHaveLength(3);
+    expect(fake.created[0].systemPrompt).toContain("You are the coach.");
+    expect(fake.created[1]).not.toHaveProperty("systemPrompt");
+    expect(fake.created[2]).not.toHaveProperty("systemPrompt");
+    expect(fake.sends[2].message).toContain("You are the coach.");
+    expect(fake.sends[2].message).toContain("How is volume?");
+    expect(second.some((i) => i.systemPromptMode === "inline")).toBe(true);
+    expect(second.filter((i) => i.type === "error")).toEqual([]);
+    expect(first.filter((i) => i.type === "error")).toEqual([]);
+  });
+
+  test("gated wait() error: call 1 probes, call 2 skips to inline", async () => {
+    const fake = makeFakeSdk({
+      deltas: ["ok"],
+      waitStatus: "finished",
+      waitErrorOnce: {
+        message: "[invalid_argument] unknown option '--system-prompt'",
+        code: "invalid_argument",
+      },
+    });
+    const { first, second } = await twoCalls(fake);
+    expect(fake.created).toHaveLength(3);
+    expect(fake.created[0]).toHaveProperty("systemPrompt");
+    expect(fake.created[1]).not.toHaveProperty("systemPrompt");
+    expect(fake.created[2]).not.toHaveProperty("systemPrompt");
+    expect(fake.sends[2].message).toContain("You are the coach.");
+    expect(fake.sends[2].message).toContain("How is volume?");
+    expect(second.some((i) => i.systemPromptMode === "inline")).toBe(true);
+    expect(second.filter((i) => i.type === "error")).toEqual([]);
+    expect(first.filter((i) => i.type === "error")).toEqual([]);
+  });
+
+  test("RateLimitError on call 1 does not set the memo", async () => {
+    const boom = new Error("slow down");
+    boom.name = "RateLimitError";
+    const fake = makeFakeSdk({
+      deltas: ["ok"],
+      waitStatus: "finished",
+      sendErrorOnce: boom,
+    });
+    await expect(
+      collect(
+        streamCursor({
+          apiKey: "key_abc",
+          model: "auto",
+          system,
+          messages,
+          sdk: fake.sdk,
+        })
+      )
+    ).rejects.toMatchObject({
+      name: "CoachProviderError",
+      code: "rate_limited",
+    });
+    const second = await collect(
+      streamCursor({
+        apiKey: "key_abc",
+        model: "auto",
+        system,
+        messages,
+        sdk: fake.sdk,
+      })
+    );
+    expect(fake.created[1]).toHaveProperty("systemPrompt");
+    expect(fake.created[1].systemPrompt).toContain("You are the coach.");
+    expect(second.some((i) => i.systemPromptMode === "accepted")).toBe(true);
+  });
+
+  test("aborted call 1 does not set the memo", async () => {
+    const fake = makeFakeSdk({ deltas: ["ok"], waitStatus: "finished" });
+    const ac = new AbortController();
+    ac.abort();
+    await collect(
+      streamCursor({
+        apiKey: "key_abc",
+        model: "auto",
+        system,
+        messages,
+        sdk: fake.sdk,
+        signal: ac.signal,
+      })
+    );
+    const second = await collect(
+      streamCursor({
+        apiKey: "key_abc",
+        model: "auto",
+        system,
+        messages,
+        sdk: fake.sdk,
+      })
+    );
+    expect(fake.created).toHaveLength(1);
+    expect(fake.created[0]).toHaveProperty("systemPrompt");
+    expect(second.some((i) => i.systemPromptMode === "accepted")).toBe(true);
+  });
+
+  test("ungated SDK: two calls make two Agent.create, both with systemPrompt, mode accepted", async () => {
+    const fake = makeFakeSdk({ deltas: ["ok"], waitStatus: "finished" });
+    const { first, second } = await twoCalls(fake);
+    expect(fake.created).toHaveLength(2);
+    expect(fake.created[0]).toHaveProperty("systemPrompt");
+    expect(fake.created[1]).toHaveProperty("systemPrompt");
+    expect(first.some((i) => i.systemPromptMode === "accepted")).toBe(true);
+    expect(second.some((i) => i.systemPromptMode === "accepted")).toBe(true);
+  });
+
+  test("isolation: two calls get distinct agents, both disposed, different cwd", async () => {
+    const fake = makeFakeSdk({ deltas: ["ok"], waitStatus: "finished" });
+    await twoCalls(fake);
+    expect(fake.agents).toHaveLength(2);
+    expect(fake.agents[0]).not.toBe(fake.agents[1]);
+    expect(fake.disposed.filter((d) => d === "dispose")).toHaveLength(2);
+    expect(fake.created[0].local.cwd).not.toBe(fake.created[1].local.cwd);
+  });
+});
+
+describe("streamCursor - timing log", () => {
+  const system = [{ type: "text", text: "You are the coach." }];
+  const messages = [{ role: "user", content: "How is volume?" }];
+
+  test("one [coach] cursor info line per call, with agentRuns and no secrets", async () => {
+    const fake = makeFakeSdk({ deltas: ["ok"], waitStatus: "finished" });
+    const spy = jest.spyOn(console, "info").mockImplementation(() => {});
+    try {
+      await collect(
+        streamCursor({
+          apiKey: "key_abc",
+          model: "auto",
+          system,
+          messages,
+          sdk: fake.sdk,
+        })
+      );
+      await collect(
+        streamCursor({
+          apiKey: "key_abc",
+          model: "auto",
+          system,
+          messages,
+          sdk: fake.sdk,
+        })
+      );
+      const lines = spy.mock.calls
+        .map((args) => args.map((a) => String(a)).join(" "))
+        .filter((line) => line.includes("[coach] cursor"));
+      expect(lines).toHaveLength(2);
+      expect(lines[0]).toMatch(/agentRuns=1/);
+      expect(lines[1]).toMatch(/agentRuns=1/);
+      for (const line of lines) {
+        expect(line).not.toContain("key_abc");
+        expect(line).not.toContain("You are the coach.");
+        expect(line).not.toContain("How is volume?");
+      }
+    } finally {
+      spy.mockRestore();
+    }
+  });
+});
+
+describe("ensureCursorRipgrepPath", () => {
+  function makeBinFixture(binName) {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "logchamp-rg-"));
+    fs.mkdirSync(path.join(root, "bin"));
+    const abs = path.join(root, "bin", binName);
+    fs.writeFileSync(abs, "");
+    return { root, abs };
+  }
+
+  test("binary present -> absolute path set", () => {
+    const { root, abs } = makeBinFixture("rg");
+    const env = {};
+    ensureCursorRipgrepPath({ env, platform: "linux", arch: "x64", packageRoot: root });
+    expect(env.CURSOR_RIPGREP_PATH).toBe(path.resolve(abs));
+    fs.rmSync(root, { recursive: true, force: true });
+  });
+
+  test("binary absent -> nothing set, no throw", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "logchamp-rg-empty-"));
+    const env = {};
+    expect(() =>
+      ensureCursorRipgrepPath({ env, platform: "linux", arch: "x64", packageRoot: root })
+    ).not.toThrow();
+    expect(env.CURSOR_RIPGREP_PATH).toBeUndefined();
+    fs.rmSync(root, { recursive: true, force: true });
+  });
+
+  test("CURSOR_RIPGREP_PATH already set -> untouched", () => {
+    const { root } = makeBinFixture("rg");
+    const env = { CURSOR_RIPGREP_PATH: "/already/set/rg" };
+    ensureCursorRipgrepPath({ env, platform: "linux", arch: "x64", packageRoot: root });
+    expect(env.CURSOR_RIPGREP_PATH).toBe("/already/set/rg");
+    fs.rmSync(root, { recursive: true, force: true });
   });
 });
