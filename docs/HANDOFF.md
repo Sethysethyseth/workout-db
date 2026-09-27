@@ -1,26 +1,84 @@
 # HANDOFF — current state
 
-> **WHERE WE ARE (Sept 27):** the AI wave is **MERGED and LIVE on prod** -
-> `main` fast-forwarded `59e27dc..bdad1c1` (66 commits) on Sept 26, deploy
-> confirmed live by Seth, RUNBOOK 10d checks 1-4 pass on prod. Seth found **two
-> prod issues** right after the merge, so the next unit of work is a **quick
-> PATCH to `main`**: **P-A** the Claude connector will not connect on prod -
-> DIAGNOSED as a WorkOS CONFIG error, most likely no code at all; **P-B** the
-> hosted coach works but is SLOW - known causes, a small code unit (CP2).
-> **Patch wave, N = 3, landing on `ai-connector-wave` (Sept 27):** CP2 coach
-> latency LANDED `b9dd0ae`; CQ1 weekly coach cap LANDED `b07fea2` (7 per
-> rolling week, owner exempt via `COACH_UNCAPPED_EMAILS`); WD1 discard-a-workout
-> X LANDED `712b696` (with a `reopenedAt` marker so a reopened finished workout
-> can never be discarded). **3/3 complete.** Both migrations APPLIED TO STAGING
-> Sept 27 (Seth's "migrate staging"); prod needs both applied by Seth BEFORE the
-> merge. Seth chose to SKIP smoke and go straight to the pre-main gate (Opus,
-> same session). Ledger: `docs/tasks/QUEUE.md`.
+> **WHERE WE ARE (Sept 27, late - Seth reset his computer mid-session):** the
+> post-merge PATCH WAVE is **MERGED to `main` and deployed to prod**. `main`
+> fast-forwarded `bdad1c1..7d3b91e` (10 commits: CP2 `b9dd0ae` faster coach,
+> CQ1 `b07fea2` 7-per-week coach cap, WD1 `712b696` discard-workout X, plus
+> docs), pushed after Seth's "push to main", one approved command at a time.
+> Prod DB got both migrations BY HAND first (Seth, Neon prod editor, project
+> `snowy-resonance`; all 9 statements ran, checks returned 1 / 1 / 2 rows), so
+> DB-before-code held. **Probed after the push:** `POST /sessions/1/discard`
+> answers **401 on prod AND staging** (old code would 404) - both serve WD1.
+> **Then Seth said "still not working"** and had to reset his computer before
+> saying WHAT. That is the open item - see DIAGNOSTICS below.
 
-**Next action (human):** set `COACH_UNCAPPED_EMAILS=sethjknisel@gmail.com` on
-prod (and staging) Render, run the prod SQL in "PRE-MERGE" below in the PROD Neon
-editor, then say "push to main".
+**Next action (human):** tell the agent which thing is "still not working" (the
+Claude connector on prod, or something from today's deploy) and paste the exact
+symptom or error you see.
 
-## PRE-MERGE - patch wave gate verdict + prod steps (Opus, Sept 27)
+## DIAGNOSTICS - PICK UP HERE (Sept 27, written for a fresh agent)
+
+> **Agent reading this:** ask Seth the question in "Next action" FIRST, in one
+> line. Do not guess. Then run the matching branch below. Diagnosis only -
+> no code until the root cause has file:line evidence (bugs enter as a Cursor
+> diagnosis block per AGENTS.md; the frontier seat may ship a trivial fix
+> directly). Prod writes are Seth's; agents read.
+
+**Most likely: A - the Claude connector on prod (P-A).** It was broken before
+today's merge and today's code did not touch it. Seth's P-A step 1 (the WorkOS
+Production External Sign-in URI -> `https://workout-db-psi.vercel.app/connector/login`)
+was never confirmed done in this session.
+
+- **A1.** Ask Seth to read the value back from WorkOS Production -> Connect ->
+  Configuration (agents cannot write prod WorkOS config - the classifier
+  refused it twice on Sept 26). Anything but the full `/connector/login` path
+  strands the handshake silently (durable gotcha).
+- **A2.** Confirm the connector in Claude points at the PROD address
+  `https://workout-db-l3gc.onrender.com/mcp`, not the staging one Seth added on
+  Sept 26. Remove + re-add if Claude cached a failed registration.
+- **A3.** If it still fails: capture the callback URL and its `error=` value
+  BEFORE anything else, then prod Render logs around the completion call in
+  `server/src/ai/workosClient.js` - a WorkOS 401 there means `WORKOS_API_KEY`
+  on `workout-db-l3gc` is not the PRODUCTION key (`logchamp_prod`).
+- Everything else on the path read GREEN on Sept 27 - see "P-A" below for the
+  checked list (discovery, `/mcp` 401 + `WWW-Authenticate`, AuthKit metadata,
+  CORS, the SPA route).
+
+**B - something from today's deploy.**
+
+- **B1. Coach errors / will not answer (CQ1, CP2):** prod Render logs. A
+  `relation "CoachUsage" does not exist` would mean the prod table is missing
+  (it should not be - Seth's checks passed). A 429 `weekly_limit` for Seth
+  means `COACH_UNCAPPED_EMAILS` is not set on prod Render (unconfirmed). Look
+  for the `[coach] cursor mode=... agentRuns=...` line per question; no line at
+  all means the Cursor provider never ran.
+- **B2. Workout pages broken (WD1):** every session fetch now reads
+  `reopenedAt`; a `column "reopenedAt" does not exist` error = prod column
+  missing (checks said present). The X lives in the live-workout header only
+  (hidden on reopened workouts BY DESIGN).
+- **B3. Still slow:** expected for the FIRST question after each deploy or idle
+  wake (CP2's memo is per process). If prod Render spins down when idle, that is
+  the CP3 follow-up in QUEUE's CP2 notes, not a regression.
+- Verify the deployed SHA from Render Events (`7d3b91e`) before trusting any of
+  the above (RUNBOOK 5).
+
+**Loose ends from this session:**
+
+- Temp merge worktree `C:\dev\worktrees\merge-main-0927` still exists (merge
+  command 4, `git worktree remove`, was not yet approved when Seth left).
+- Post-deploy prod checks (RUNBOOK 5 + the list in PRE-MERGE step 4) NOT done.
+- `COACH_UNCAPPED_EMAILS` on prod + staging Render: unconfirmed.
+- Staging Render still tracks `ai-connector-wave` (M2 repoint to `main` pending).
+- `ai-connector-wave` == `main` at `7d3b91e` right now; any HANDOFF commit on the
+  branch puts it one docs commit ahead again (the known pattern).
+- Lanes (all FREE, all on LANDED bases - repoint before dispatch): `cursor-lane`
+  on `cursor/wd1` @ `712b696` (stale WD1 `DELIVERY.md`), `cursor-lane-2` on
+  `cursor/cp2` @ `b9dd0ae` (stale CP2 `DELIVERY.md`), `cursor-lane-3` on
+  `recon/gate-r2`. Each still holds its untracked Sept 26 `GATE-R*.md`.
+- HANDOFF is over its ~300-line cap - the next full rewrite should archive the
+  "P-A"/"P-B" research and the AI-wave carry-forward VERBATIM.
+
+## PRE-MERGE - DONE Sept 27 (kept for the record: gate verdict + prod steps)
 
 **Gate verdict: PASS** (Seth waived smoke: "Skip smoke, review now"). Range
 `origin/main..ai-connector-wave` = CP2 `b9dd0ae`, CQ1 `b07fea2`, WD1 `712b696`
