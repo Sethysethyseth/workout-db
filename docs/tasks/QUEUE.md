@@ -6,6 +6,88 @@ Statuses: DRAFT / QUEUED / DISPATCHED / AWAITING-REVIEW / LANDED <sha> / BOUNCED
 
 ## Active
 
+**Blocks-v2 wave (BK), opened September 28, 2026 (Opus frontier seat).**
+Design of record: `docs/specs/blocks-v2.md` (read section 12 for order and
+collisions). Seth's rulings, asked + answered in session: build + run +
+Execution; connector DRAFT blocks AND an any-AI paste format; recovery-site
+look on block surfaces + primitives only; new fields timed sets / rest /
+effort cap / week labels. Lands on `ai-connector-wave` (staging Render still
+tracks it - M2's repoint to `main` is ON HOLD for this wave). ONE migration
+(BK1): the BK1 landing push MIGRATES STAGING (Render build runs `migrate
+deploy`), so that push waits for Seth's "migrate staging"; prod gets it by
+hand before the merge. Wave N = 13 (BK1-BK12 + BK5b; BK0 privacy/ToS is
+DRAFT on Seth's facts and joins N when queued). Then the coach-persona
+critic loop (spec section 11, FRONTIER SEAT, max 3 rounds, pass 8+; each
+failing round adds a `bkf<N>` fix block), THEN N/N -> Seth smokes -> gate.
+All units MODEL auto (plan is auto-rung only), MODE 1-relay, DB-free lanes;
+every server unit's routes need a LIVE staging proof at landing.
+
+Landing order + lanes (tranches may run in parallel per spec section 12):
+
+QUEUED | bk1-schema-block-persistence.md | the wave's one migration (spec 6),
+new block fields end to end, `createBlockTemplateForUser` as the one create
+path, draft accept, clone re-stamps identity for the cloner (cross-user fix) |
+n=1. Tranche 1 (beside BK2, BK4). MIGRATION-CARRYING: landing push waits for
+"migrate staging". Isolation fix = frontier review item at the gate.
+
+QUEUED | bk2-block-format-parsers.md | LogChamp Block Format v1 validator,
+CSV/TSV + Strong/Hevy history parsers, format<->payload mapping, the any-AI
+instructions - all pure, new files only | n=2. Tranche 1. Tests in
+`server/test/lib/blocks/` (NOT `test/blocks/` - unit-lane glob).
+
+QUEUED | bk4-block-ui-primitives.md | `.bk` token aliases + recovery-language
+primitives (week strip, day picker, chips, stepper, segmented, set-grid
+field, sticky header, rx formatter), Barlow Condensed | n=3. Tranche 1.
+Only `index.css` touch of the wave (one token line).
+
+QUEUED | bk3-import-export-api.md | format / import-preview / import /
+export endpoints, AI-answer JSON extraction, scoped 2 MB body limit | n=4.
+Needs BK1 + BK2. Beside BK5, BK7. Owns the `app.js` touch.
+
+QUEUED | bk5-block-builder-core.md | the reworked builder: sticky header +
+week strip + day tiles + exercise cards + set grid + catalog picker +
+settings + save-in-place + draft banner | n=5. Needs BK1 + BK4. Beside BK3,
+BK7. Judgment-heavy visual unit - the critic scores it.
+
+QUEUED | bk7-run-a-block-server.md | BlockRun endpoints, start-from-block
+with plan snapshot + resume, `blockContext`, `durationSec` on sets | n=6.
+Needs BK1. Beside BK3, BK5. Owns `routes/index.js`.
+
+QUEUED | bk5b-copy-forward-progression-view.md | copy a week forward with a
+load step; the per-day progression table | n=7. Needs BK5 (same builder
+files - serial after it).
+
+QUEUED | bk10-execution-block-branch.md | Execution judges block sessions
+against the snapshot (ranges, timed, caps); timed sets proven out of
+strength math | n=8. Needs BK7. Beside client units.
+
+QUEUED | bk6-import-export-ui.md | import page (paste / file / Strong+Hevy /
+any AI) with a trustworthy preview + exercise matching; export | n=9. Needs
+BK3 + BK5b. Touches `App.jsx` + `MyTemplatesPage.jsx` before BK8.
+
+QUEUED | bk8-run-a-block-client.md | `/blocks/current` (week strip + day
+picker + day card + Start/Resume), Start block in the library, Up next on
+Home, localStorage block "current" retired | n=10. Needs BK6 + BK7.
+
+QUEUED | bk9-logger-plan-timed-sets.md | logger shows plan targets, caps,
+rest; "as planned" fill (never effort); timed sets | n=11. Needs BK7.
+Beside BK8 (disjoint files). Non-block sessions must be byte-identical.
+
+QUEUED | bk11-connector-block-drafts.md | MCP `get_block_format` +
+`create_block_draft` (create-only, opt-in, capped, app-guarded), AI-access
+toggle, consent facts | n=12. Needs BK3. CROSS-USER ISOLATION SURFACE -
+frontier review at the gate. Live check needs Seth's Claude on staging.
+
+QUEUED | bk12-coach-block-assist.md | coach convert/generate a draft
+(palette pattern, counts 1 question) into the import preview; ask about a
+block | n=13. Needs BK6 + BK8 (builder/import files).
+
+DRAFT | bk0-privacy-terms-pages.md | plain-language /privacy + /terms,
+covering the AI layer and the draft-block write | Seth's Sept 26 "first
+unit of the next wave" - blocked on his OPEN FACTS (operator name, contact
+email, jurisdiction, effective date, deletion promise). Touches `App.jsx`:
+serialize against BK6/BK8.
+
 **Post-merge patch wave, opened September 27, 2026 (Opus frontier seat).**
 Two prod issues found right after the AI-wave merge (`bdad1c1`). P-A (the
 connector will not connect on prod) is a WorkOS dashboard fix for Seth, no

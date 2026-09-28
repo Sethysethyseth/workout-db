@@ -1,29 +1,37 @@
 # HANDOFF — current state
 
-> **WHERE WE ARE (Sept 28):** nothing is broken and nothing is in flight. **The
-> Claude connector WORKS on prod.** The patch wave (CP2 faster coach, CQ1
-> 7-per-week coach cap, WD1 discard-workout X) is merged to `main` at `7d3b91e`
-> and deployed. Sept 27's "still not working" was the connector: the WorkOS
-> **Production** External Sign-in URI was the site root, not
-> `/connector/login` (staging's was right, which is why staging worked - the
-> setting is per WorkOS environment and a code merge cannot carry it). Seth
-> fixed it Sept 28. Verified: the authorize probe (Durable gotchas) now returns
-> `302 .../connector/login?external_auth_id=`, Seth connected from Claude, and a
-> live `list_exercises` call returned his real roster with `boundAccount`
-> `sethjknisel@gmail.com`. No code changed.
+> **WHERE WE ARE (Sept 28, late):** the **BLOCKS-V2 WAVE (BK) is OPEN** -
+> authored, committed, pushed, and tranche 1 DISPATCHED. Design of record:
+> `docs/specs/blocks-v2.md`. Seth's rulings (asked + answered this session):
+> blocks become buildable, importable AND runnable (build + run + Execution);
+> Claude can create DRAFT blocks through the connector, and ANY AI can write
+> the import format for a paste; the recovery-site look on block surfaces +
+> shared primitives; timed sets, rest, effort caps, week labels. 13 units
+> queued (BK1-BK12 + BK5b) + BK0 privacy/ToS DRAFT, then a coach-persona
+> critic loop (frontier seat, max 3 rounds, pass 8+). Prod unchanged: `main` =
+> `7d3b91e`; the connector works on prod (fixed earlier Sept 28 - archived).
 
-**Next action (human):** nothing is blocked on Seth - when convenient, run the
-prod checks in "Open on prod" below, starting with "Sign out of connected
-assistants" (it has never passed live anywhere).
+**Next action (human):** open a Sonnet Claude Code session and say "run the
+BK wave" - it lands tranche 1 (BK1, BK2, BK4, already running in Cursor) and
+will ask you for "migrate staging" right after BK1 lands.
 
 ## ▶ PICK UP HERE (Sept 28, written for a fresh agent)
 
-> **Agent reading this:** no wave is open and no block is queued. Do NOT
-> re-diagnose the connector - it is fixed; if it ever breaks again, run the
-> authorize probe in Durable gotchas FIRST (no login needed). The Sept 27
-> diagnostics, the patch-wave pre-merge steps and the P-A/P-B research moved
-> VERBATIM to the archive. Pick from the lists below; anything that becomes
-> code needs a frontier seat to author the block.
+> **Agent reading this:** the BK wave is OPEN. Ledger: QUEUE.md "Blocks-v2
+> wave"; order + collisions: `blocks-v2.md` section 12. **Tranche 1 was
+> dispatched Sept 28** (Channel B, `--model auto`, 40-minute hard kills via
+> the scratchpad `run.ps1` shape): BK1 -> `cursor-lane-2` (branch
+> `cursor/bk1`), BK2 -> `cursor-lane` (`cursor/bk2`), BK4 -> `cursor-lane-3`
+> (`cursor/bk4`), all based on the wave-open commit. Land them one at a time
+> via `land-unit`; if a run died, check the lane for salvageable work before
+> re-dispatching. **BK1 is migration-carrying:** after its commit, the push
+> to `ai-connector-wave` waits for Seth's "migrate staging" (staging's Render
+> build runs `migrate deploy`). **Every server unit needs a LIVE staging
+> proof at landing** - the lanes have no DB; each block lists curl checks in
+> its DELIVERY. **The critic loop (spec section 11) is the FRONTIER SEAT's
+> job** - when BK5/5b/6/8/9/12 have landed, a Sonnet relay STOPS and hands
+> to Opus. Then N/N -> Seth smokes -> pre-main gate. Do NOT re-diagnose the
+> connector; if it breaks, run the authorize probe in Durable gotchas first.
 
 ### Open on prod - Seth's checks, none blocking
 
@@ -48,11 +56,12 @@ assistants" (it has never passed live anywhere).
 
 ### Housekeeping
 
-- **M2, Seth (Render dashboard):** repoint staging `workout-db-staging` from
-  `ai-connector-wave` to `main` - the patch is merged, so it is due now.
-  Caveat: the STAGING connector's sign-in URI is pinned to the
-  `ai-connector-wave` Vercel PREVIEW host; repointing Render does not break
-  it, but deleting that branch would.
+- **M2 is ON HOLD for the BK wave (Sept 28):** staging Render
+  `workout-db-staging` KEEPS tracking `ai-connector-wave` - the BK wave lands
+  there, so no repoint and the staging connector's sign-in URI (pinned to the
+  `ai-connector-wave` Vercel PREVIEW host) keeps working. Repoint to `main`
+  only after the BK merge. Never delete `ai-connector-wave` while that URI
+  points at its preview host.
 - **Temp worktree `C:\dev\worktrees\merge-main-0927`** (on `main` @ `7d3b91e`,
   clean) still exists - merge-ritual command 4 (`git worktree remove`) was
   never approved. Ask Seth before running it.
@@ -69,10 +78,13 @@ assistants" (it has never passed live anywhere).
   `20260707120000_add_exercise_catalog` row. Reconcile before anyone ever
   points `migrate deploy` at prod.
 
-### Next work (nothing queued - a frontier seat authors)
+### Next work
 
-- **Privacy page + ToS** (`ai-layer.md` section 6) = the FIRST unit of the
-  next wave (Seth, Sept 26).
+- **The BK wave** (above; QUEUE.md). Nothing else is queued.
+- **Privacy page + ToS** (`ai-layer.md` section 6, Seth's Sept 26 "first
+  unit of the next wave") is BK0 in the BK wave - DRAFT until Seth supplies
+  its OPEN FACTS (operator name, contact email, jurisdiction, effective date,
+  deletion promise).
 - **Connector hardening - offered to Seth Sept 28, NOT decided:** make the
   site root forward `?external_auth_id=` to `/connector/login`, so a wrong
   sign-in URI can no longer strand the handshake (it has bitten twice: Aug 8
@@ -94,16 +106,25 @@ user on the merge deploy); CR2 polish skipped (shipped at 7.5); `zod` declared
 > explicitly. Dogfoods the shell repo's decision-10 no-dangling-next-
 > action requirement; `land-unit` section 5 keeps it maintained.
 
-**Updated:** September 28, 2026, fifty-second session (Opus, frontier -
-**the prod connector**). Seth reported "still not working" = the Claude
-connector on prod. Root-caused without a login by an AuthKit authorize probe
-(prod redirected to the site ROOT, staging to `/connector/login`; server side
-identical); Seth corrected the WorkOS Production External Sign-in URI; the
-probe re-ran green, Seth connected, and a live tool call returned his roster
-with `boundAccount`. No code. The resolved Sept 27 sections moved VERBATIM to
-the archive. Prior: September 27, fifty-first session (Opus - the AI-wave
-merge, then the patch wave CP2/CQ1/WD1 landed, gated and merged `7d3b91e`).
-Older sessions archived.
+**Updated:** September 28, 2026, fifty-third session (Opus, frontier -
+**the BK wave authored**). Seth invoked `author-task-block` for "a better
+version of blocks". Recon fanned out to three Cursor REPORT lanes (auto rung,
+parallel, all exit 0 in 2.5-5 min): `recon/blocks-b1` in `cursor-lane-2`
+(block/session/styling NOW-state), `recon/blocks-b2` in `cursor-lane-3`
+(connector/coach/import plumbing, test globs), `recon/blocks-b3` in
+`cursor-lane` (web research: Gymvanna NOT FOUND under any spelling - Seth to
+supply a link if it matters; program import landscape; MCP write patterns -
+preserved as `docs/specs/blocks-v2-import-research-2026-09-28.md`). Reports
+B1/B2 are session-scoped (kept outside the repo at
+`C:\dev\worktrees\recon-inputs\`); their load-bearing content is in the
+spec. Four product calls asked + answered (spec section 1); frontier calls
+added: rep ranges, snapshot-not-FK (the block update replace-alls plan rows),
+a clone isolation fix, per-surface stylesheets, `sourceUnit` for connector
+drafts, no new dependencies. `ai-layer.md` 4.2 AMENDED (one create-only
+write); `block-execution-gap.md` SUPERSEDED. The recovery site's CSS is
+preserved at `docs/design/recovery-logbook-reference.css`. Prior: September
+28, fifty-second session (Opus - the prod connector fixed). Older sessions
+archived.
 
 ### Still governing from the AI wave (full record in the archive)
 
@@ -207,15 +228,15 @@ Covers the F-wave AND the still-open E-wave prod smoke. Staging passed Aug 4.
 
 ### Lane worktree state
 
-**All three FREE, all on LANDED bases (read Sept 28):** `cursor-lane` on
-`cursor/wd1` @ `712b696` (stale Sept 27 WD1 `DELIVERY.md` + `GATE-R3.md`),
-`cursor-lane-2` on `cursor/cp2` @ `b9dd0ae` (stale Sept 27 CP2 `DELIVERY.md` +
-`GATE-R1.md`), `cursor-lane-3` on `recon/gate-r2` @ `ecb672c` (`GATE-R2.md`).
-**Repoint a lane onto the next wave's branch before dispatch or the delivery
-lands on the wrong base.** Installs differ: lane 2's `server` has its own full install WITH
-`@cursor/sdk` (the gate ran its fresh lanes there - use it for CP2); lane 3's
-`server` and `client` `node_modules` are JUNCTIONS into lane 1 (which lacks
-the SDK).
+**All three BUSY with BK tranche 1 (dispatched Sept 28):** `cursor-lane-2`
+-> BK1 on `cursor/bk1` (its `server` has its own full install WITH
+`@cursor/sdk` - the right lane for the migration unit), `cursor-lane` -> BK2 on
+`cursor/bk2`, `cursor-lane-3` -> BK4 on `cursor/bk4`. Each lane still holds a
+stale untracked Sept 26 `GATE-R<n>.md` - not part of any BK unit. Lane 3's
+`server` and `client` `node_modules` are JUNCTIONS into lane 1, which lacks
+`@cursor/sdk` - harmless for app loading (`cursorProvider.js` requires the SDK
+lazily) but use lane 2 for any unit that needs a LIVE coach call. **Repoint
+a lane onto the current wave HEAD before each dispatch.**
 
 **Check lane cleanliness by DELIVERY.md TIMESTAMP, not `git status`** - it is
 gitignored, so a stale report reads as "clean". Prefer a DISTINCT report
@@ -278,13 +299,12 @@ Do them one at a time between waves, never mid-wave:
 Also agreed in principle, not decided: relaxing gate item 5 so `devDependencies`
 installs are hands-off while new RUNTIME deps still ask. Seth's call.
 
-**PARKED by Seth - the block builder.** "don't do anything with the block builder
-for now, that's for another wave." Evidence in
-`docs/specs/block-execution-gap.md` (`267271c`). **Do NOT author against it, and
-do NOT ask him about it again** - he already ruled. It also records that
-Execution reads planned values LIVE from `TemplateSet` rather than snapshotting,
-so editing a template retroactively changes what past sessions are judged
-against.
+**The block builder - UNPARKED Sept 28 (Seth).** The July "parked" ruling is
+superseded by the BK wave; `docs/specs/block-execution-gap.md` is now marked
+SUPERSEDED by `docs/specs/blocks-v2.md`. The live-read concern it recorded
+(templates judged against LIVE `TemplateSet` rows) is closed for BLOCK
+sessions by the plan snapshot and stays open for template sessions (deferred,
+`blocks-v2.md` section 13).
 
 **Spec'd, unauthored:** R9/per-side in `docs/specs/strength-score-per-side.md`
 (SS1-SS3); gym context in `docs/specs/gym-context.md` (G1 is migration-carrying =

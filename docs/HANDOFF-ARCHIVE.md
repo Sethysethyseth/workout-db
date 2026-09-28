@@ -1,3 +1,71 @@
+## ARCHIVED September 28, 2026 (fifty-third session, Opus) - HANDOFF sections
+## moved verbatim when the BK (blocks-v2) wave opened. Superseded, not
+## summarized: the Sept 28 connector-fixed header + PICK UP HERE intro, the
+## fifty-second session line, the first Lane worktree state paragraph, and the
+## PARKED block-builder paragraph (Seth unparked it Sept 28).
+
+### (from HANDOFF) header + PICK UP HERE intro, as of Sept 28 (before BK)
+
+> **WHERE WE ARE (Sept 28):** nothing is broken and nothing is in flight. **The
+> Claude connector WORKS on prod.** The patch wave (CP2 faster coach, CQ1
+> 7-per-week coach cap, WD1 discard-workout X) is merged to `main` at `7d3b91e`
+> and deployed. Sept 27's "still not working" was the connector: the WorkOS
+> **Production** External Sign-in URI was the site root, not
+> `/connector/login` (staging's was right, which is why staging worked - the
+> setting is per WorkOS environment and a code merge cannot carry it). Seth
+> fixed it Sept 28. Verified: the authorize probe (Durable gotchas) now returns
+> `302 .../connector/login?external_auth_id=`, Seth connected from Claude, and a
+> live `list_exercises` call returned his real roster with `boundAccount`
+> `sethjknisel@gmail.com`. No code changed.
+
+**Next action (human):** nothing is blocked on Seth - when convenient, run the
+prod checks in "Open on prod" below, starting with "Sign out of connected
+assistants" (it has never passed live anywhere).
+
+## ▶ PICK UP HERE (Sept 28, written for a fresh agent)
+
+> **Agent reading this:** no wave is open and no block is queued. Do NOT
+> re-diagnose the connector - it is fixed; if it ever breaks again, run the
+> authorize probe in Durable gotchas FIRST (no login needed). The Sept 27
+> diagnostics, the patch-wave pre-merge steps and the P-A/P-B research moved
+> VERBATIM to the archive. Pick from the lists below; anything that becomes
+> code needs a frontier seat to author the block.
+
+### (from HANDOFF) the fifty-second session line
+
+**Updated:** September 28, 2026, fifty-second session (Opus, frontier -
+**the prod connector**). Seth reported "still not working" = the Claude
+connector on prod. Root-caused without a login by an AuthKit authorize probe
+(prod redirected to the site ROOT, staging to `/connector/login`; server side
+identical); Seth corrected the WorkOS Production External Sign-in URI; the
+probe re-ran green, Seth connected, and a live tool call returned his roster
+with `boundAccount`. No code. The resolved Sept 27 sections moved VERBATIM to
+the archive. Prior: September 27, fifty-first session (Opus - the AI-wave
+merge, then the patch wave CP2/CQ1/WD1 landed, gated and merged `7d3b91e`).
+Older sessions archived.
+
+### (from HANDOFF) Lane worktree state, first paragraph
+
+**All three FREE, all on LANDED bases (read Sept 28):** `cursor-lane` on
+`cursor/wd1` @ `712b696` (stale Sept 27 WD1 `DELIVERY.md` + `GATE-R3.md`),
+`cursor-lane-2` on `cursor/cp2` @ `b9dd0ae` (stale Sept 27 CP2 `DELIVERY.md` +
+`GATE-R1.md`), `cursor-lane-3` on `recon/gate-r2` @ `ecb672c` (`GATE-R2.md`).
+**Repoint a lane onto the next wave's branch before dispatch or the delivery
+lands on the wrong base.** Installs differ: lane 2's `server` has its own full install WITH
+`@cursor/sdk` (the gate ran its fresh lanes there - use it for CP2); lane 3's
+`server` and `client` `node_modules` are JUNCTIONS into lane 1 (which lacks
+the SDK).
+
+### (from HANDOFF) the PARKED block-builder paragraph
+
+**PARKED by Seth - the block builder.** "don't do anything with the block builder
+for now, that's for another wave." Evidence in
+`docs/specs/block-execution-gap.md` (`267271c`). **Do NOT author against it, and
+do NOT ask him about it again** - he already ruled. It also records that
+Execution reads planned values LIVE from `TemplateSet` rather than snapshotting,
+so editing a template retroactively changes what past sessions are judged
+against.
+
 ## ARCHIVED September 28, 2026 (fifty-second session, Opus) - HANDOFF sections
 ## moved verbatim once the prod connector was fixed (WorkOS Production
 ## External Sign-in URI -> `/connector/login`, Seth, Sept 28). Superseded, not

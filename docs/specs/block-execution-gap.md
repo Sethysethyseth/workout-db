@@ -1,9 +1,18 @@
 # Block execution gap - the half-built programming layer
 
-**Status: PARKED (Seth's ruling, July 20, 2026) - "that's for another wave."**
-Do NOT author blocks against this document. It exists so the evidence
-survives the session that found it; the product decision is unmade and is
-Seth's alone.
+**Status: SUPERSEDED September 28, 2026 by `blocks-v2.md`.** Seth chose
+**Finish it** (build + run + Execution). This file stays as the July evidence
+base; Sept 28 recon re-verified every claim (line numbers drifted, behavior
+unchanged - the Execution harvest now lives in `analyticsAccess.js`, not
+`analyticsController.js`). The one design change from the "Finish it"
+sketch below: block sessions use a positional stamp + a plan SNAPSHOT, not
+`WorkoutSet.blockWorkoutSetId` (block updates replace every plan row, so that
+FK would be nulled by the first edit) - see `blocks-v2.md` section 1.
+
+~~**Status: PARKED (Seth's ruling, July 20, 2026) - "that's for another wave."**~~
+(historical) Do NOT author blocks against this document. It exists so the
+evidence survives the session that found it; the product decision is unmade
+and is Seth's alone.
 
 **Provenance:** Cursor recon lane `recon/exec-blocks`, dispatched July 20,
 2026 during the FP9-FP11 authoring session (Opus). Every claim below carries

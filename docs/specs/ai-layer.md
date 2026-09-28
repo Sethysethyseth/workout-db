@@ -353,6 +353,20 @@ workout data. Logging a set from Claude is a plausible later feature and a bad
 first one: write scope on a connector multiplies both the abuse surface and the
 blast radius of an auth bug.
 
+**AMENDED September 28, 2026 (Seth's ruling, blocks-v2 wave):** the connector
+gains exactly ONE write - `create_block_draft` - and nothing else. It is
+create-only (never edits or deletes, never touches sessions or sets), opt-in
+per user (`AiConsent.blockDraftsAllowedAt`, off by default, cleared on
+revoke), validated by the same `validateBlockDraft` every import uses, capped
+(10 per rolling 24 h, 20 open drafts), and it lands as a DRAFT the user
+reviews and saves in-app. Because WorkOS cannot issue a custom scope
+(CORRECTION 6 above), every guard is app-side, in one module
+(`server/src/ai/blockDraftAccess.js`) with the `analyticsAccess.js`
+isolation doctrine. Logging sets from an assistant is STILL out. Full design:
+`docs/specs/blocks-v2.md` section 8. Seth also ruled that the same block
+format is published for ANY AI to write and the user to paste into the
+importer - so the connector is a convenience, never the only way in.
+
 ### 4.3 Entitlement gate
 
 Lane A ships free, but behind a real check from day one (Seth's decision 2).
