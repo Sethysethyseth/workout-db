@@ -12,9 +12,19 @@
 > **Then Seth said "still not working"** and had to reset his computer before
 > saying WHAT. That is the open item - see DIAGNOSTICS below.
 
-**Next action (human):** tell the agent which thing is "still not working" (the
-Claude connector on prod, or something from today's deploy) and paste the exact
-symptom or error you see.
+**Sept 28 - ANSWERED + ROOT-CAUSED:** it is the connector on prod (branch A).
+Claude said the connector may not be using OAuth. **Proved without a login:** a
+bare `GET https://palatable-frog-16.authkit.app/oauth2/authorize` (Claude's CIMD
+client_id, its redirect_uri, an S256 challenge, `resource=<prod>/mcp`) returns
+`302 Location: https://workout-db-psi.vercel.app/?external_auth_id=...` - the
+site ROOT. The same probe on staging AuthKit goes to `.../connector/login?...`.
+Server side (401 + `WWW-Authenticate`, protected-resource metadata, AuthKit
+metadata, DCR + CIMD) is identical on both. So A1 is still undone.
+
+**Next action (human):** WorkOS -> **Production** -> Connect -> Configuration ->
+External sign-in URI = `https://workout-db-psi.vercel.app/connector/login`. Then
+an agent re-runs the probe (Location must end `/connector/login?external_auth_id=`)
+before Seth retries Claude with `https://workout-db-l3gc.onrender.com/mcp`.
 
 ## DIAGNOSTICS - PICK UP HERE (Sept 27, written for a fresh agent)
 
