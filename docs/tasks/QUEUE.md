@@ -24,21 +24,27 @@ every server unit's routes need a LIVE staging proof at landing.
 
 Landing order + lanes (tranches may run in parallel per spec section 12):
 
-QUEUED | bk1-schema-block-persistence.md | the wave's one migration (spec 6),
+DISPATCHED | bk1-schema-block-persistence.md | the wave's one migration (spec 6),
 new block fields end to end, `createBlockTemplateForUser` as the one create
 path, draft accept, clone re-stamps identity for the cloner (cross-user fix) |
 n=1. Tranche 1 (beside BK2, BK4). MIGRATION-CARRYING: landing push waits for
 "migrate staging". Isolation fix = frontier review item at the gate.
+Dispatched Sept 28 (Opus seat): Channel B, `--model auto`, lane
+`cursor-lane-2` on `cursor/bk1` @ the wave-open HEAD, 40-minute hard kill.
 
-QUEUED | bk2-block-format-parsers.md | LogChamp Block Format v1 validator,
+DISPATCHED | bk2-block-format-parsers.md | LogChamp Block Format v1 validator,
 CSV/TSV + Strong/Hevy history parsers, format<->payload mapping, the any-AI
 instructions - all pure, new files only | n=2. Tranche 1. Tests in
 `server/test/lib/blocks/` (NOT `test/blocks/` - unit-lane glob).
+Dispatched Sept 28 (Opus seat): Channel B, `--model auto`, lane
+`cursor-lane` on `cursor/bk2` @ the wave-open HEAD, 40-minute hard kill.
 
-QUEUED | bk4-block-ui-primitives.md | `.bk` token aliases + recovery-language
+DISPATCHED | bk4-block-ui-primitives.md | `.bk` token aliases + recovery-language
 primitives (week strip, day picker, chips, stepper, segmented, set-grid
 field, sticky header, rx formatter), Barlow Condensed | n=3. Tranche 1.
 Only `index.css` touch of the wave (one token line).
+Dispatched Sept 28 (Opus seat): Channel B, `--model auto`, lane
+`cursor-lane-3` on `cursor/bk4` @ the wave-open HEAD, 40-minute hard kill.
 
 QUEUED | bk3-import-export-api.md | format / import-preview / import /
 export endpoints, AI-answer JSON extraction, scoped 2 MB body limit | n=4.
