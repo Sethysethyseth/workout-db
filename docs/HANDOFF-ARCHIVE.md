@@ -1,3 +1,323 @@
+## ARCHIVED September 28, 2026 (fifty-second session, Opus) - HANDOFF sections
+## moved verbatim once the prod connector was fixed (WorkOS Production
+## External Sign-in URI -> `/connector/login`, Seth, Sept 28). Superseded, not
+## summarized: the Sept 27 header + the Sept 28 root-cause note, DIAGNOSTICS,
+## PRE-MERGE (patch-wave gate verdict + prod SQL), the post-merge PATCH section
+## (smoke items, P-A, P-B, how the patch reaches main), Post-merge leftovers,
+## and the Sept 27 fifty-first session line.
+
+### (from HANDOFF) header through Post-merge leftovers, as of Sept 28
+
+> **WHERE WE ARE (Sept 27, late - Seth reset his computer mid-session):** the
+> post-merge PATCH WAVE is **MERGED to `main` and deployed to prod**. `main`
+> fast-forwarded `bdad1c1..7d3b91e` (10 commits: CP2 `b9dd0ae` faster coach,
+> CQ1 `b07fea2` 7-per-week coach cap, WD1 `712b696` discard-workout X, plus
+> docs), pushed after Seth's "push to main", one approved command at a time.
+> Prod DB got both migrations BY HAND first (Seth, Neon prod editor, project
+> `snowy-resonance`; all 9 statements ran, checks returned 1 / 1 / 2 rows), so
+> DB-before-code held. **Probed after the push:** `POST /sessions/1/discard`
+> answers **401 on prod AND staging** (old code would 404) - both serve WD1.
+> **Then Seth said "still not working"** and had to reset his computer before
+> saying WHAT. That is the open item - see DIAGNOSTICS below.
+
+**Sept 28 - ANSWERED + ROOT-CAUSED:** it is the connector on prod (branch A).
+Claude said the connector may not be using OAuth. **Proved without a login:** a
+bare `GET https://palatable-frog-16.authkit.app/oauth2/authorize` (Claude's CIMD
+client_id, its redirect_uri, an S256 challenge, `resource=<prod>/mcp`) returns
+`302 Location: https://workout-db-psi.vercel.app/?external_auth_id=...` - the
+site ROOT. The same probe on staging AuthKit goes to `.../connector/login?...`.
+Server side (401 + `WWW-Authenticate`, protected-resource metadata, AuthKit
+metadata, DCR + CIMD) is identical on both. So A1 is still undone.
+
+**Next action (human):** WorkOS -> **Production** -> Connect -> Configuration ->
+External sign-in URI = `https://workout-db-psi.vercel.app/connector/login`. Then
+an agent re-runs the probe (Location must end `/connector/login?external_auth_id=`)
+before Seth retries Claude with `https://workout-db-l3gc.onrender.com/mcp`.
+
+## DIAGNOSTICS - PICK UP HERE (Sept 27, written for a fresh agent)
+
+> **Agent reading this:** ask Seth the question in "Next action" FIRST, in one
+> line. Do not guess. Then run the matching branch below. Diagnosis only -
+> no code until the root cause has file:line evidence (bugs enter as a Cursor
+> diagnosis block per AGENTS.md; the frontier seat may ship a trivial fix
+> directly). Prod writes are Seth's; agents read.
+
+**Most likely: A - the Claude connector on prod (P-A).** It was broken before
+today's merge and today's code did not touch it. Seth's P-A step 1 (the WorkOS
+Production External Sign-in URI -> `https://workout-db-psi.vercel.app/connector/login`)
+was never confirmed done in this session.
+
+- **A1.** Ask Seth to read the value back from WorkOS Production -> Connect ->
+  Configuration (agents cannot write prod WorkOS config - the classifier
+  refused it twice on Sept 26). Anything but the full `/connector/login` path
+  strands the handshake silently (durable gotcha).
+- **A2.** Confirm the connector in Claude points at the PROD address
+  `https://workout-db-l3gc.onrender.com/mcp`, not the staging one Seth added on
+  Sept 26. Remove + re-add if Claude cached a failed registration.
+- **A3.** If it still fails: capture the callback URL and its `error=` value
+  BEFORE anything else, then prod Render logs around the completion call in
+  `server/src/ai/workosClient.js` - a WorkOS 401 there means `WORKOS_API_KEY`
+  on `workout-db-l3gc` is not the PRODUCTION key (`logchamp_prod`).
+- Everything else on the path read GREEN on Sept 27 - see "P-A" below for the
+  checked list (discovery, `/mcp` 401 + `WWW-Authenticate`, AuthKit metadata,
+  CORS, the SPA route).
+
+**B - something from today's deploy.**
+
+- **B1. Coach errors / will not answer (CQ1, CP2):** prod Render logs. A
+  `relation "CoachUsage" does not exist` would mean the prod table is missing
+  (it should not be - Seth's checks passed). A 429 `weekly_limit` for Seth
+  means `COACH_UNCAPPED_EMAILS` is not set on prod Render (unconfirmed). Look
+  for the `[coach] cursor mode=... agentRuns=...` line per question; no line at
+  all means the Cursor provider never ran.
+- **B2. Workout pages broken (WD1):** every session fetch now reads
+  `reopenedAt`; a `column "reopenedAt" does not exist` error = prod column
+  missing (checks said present). The X lives in the live-workout header only
+  (hidden on reopened workouts BY DESIGN).
+- **B3. Still slow:** expected for the FIRST question after each deploy or idle
+  wake (CP2's memo is per process). If prod Render spins down when idle, that is
+  the CP3 follow-up in QUEUE's CP2 notes, not a regression.
+- Verify the deployed SHA from Render Events (`7d3b91e`) before trusting any of
+  the above (RUNBOOK 5).
+
+**Loose ends from this session:**
+
+- Temp merge worktree `C:\dev\worktrees\merge-main-0927` still exists (merge
+  command 4, `git worktree remove`, was not yet approved when Seth left).
+- Post-deploy prod checks (RUNBOOK 5 + the list in PRE-MERGE step 4) NOT done.
+- `COACH_UNCAPPED_EMAILS` on prod + staging Render: unconfirmed.
+- Staging Render still tracks `ai-connector-wave` (M2 repoint to `main` pending).
+- `ai-connector-wave` == `main` at `7d3b91e` right now; any HANDOFF commit on the
+  branch puts it one docs commit ahead again (the known pattern).
+- Lanes (all FREE, all on LANDED bases - repoint before dispatch): `cursor-lane`
+  on `cursor/wd1` @ `712b696` (stale WD1 `DELIVERY.md`), `cursor-lane-2` on
+  `cursor/cp2` @ `b9dd0ae` (stale CP2 `DELIVERY.md`), `cursor-lane-3` on
+  `recon/gate-r2`. Each still holds its untracked Sept 26 `GATE-R*.md`.
+- HANDOFF is over its ~300-line cap - the next full rewrite should archive the
+  "P-A"/"P-B" research and the AI-wave carry-forward VERBATIM.
+
+## PRE-MERGE - DONE Sept 27 (kept for the record: gate verdict + prod steps)
+
+**Gate verdict: PASS** (Seth waived smoke: "Skip smoke, review now"). Range
+`origin/main..ai-connector-wave` = CP2 `b9dd0ae`, CQ1 `b07fea2`, WD1 `712b696`
++ docs. Fresh on the branch tip: unit 348/348 in 32 suites, client build clean,
+`check-hex origin/main` clean. Scope: every code file maps to exactly one block;
+the only other paths are docs (RUNBOOK `3770a35` is last session's). No Cursor
+gate-fuel lanes: this seat read every unit diff in full at landing (~1100 code
+lines). Cross-unit seams read directly: CP2's stream items feed CQ1's refund
+(`deliveredAnswer` set only on a non-empty text delta; a client disconnect
+`break`s the loop, which runs CP2's `finally`); the probe attempt yields no text
+before the gate error, so it never counts a question. Security read directly:
+discard's `deleteMany` WHERE carries `userId` (cross-user safe) and the rule
+columns (race-safe); `/coach/status` never returns the email; an invalid BYO
+header is still `bad_key_format` (no cap bypass). Not blockers: the palette
+studio stays uncapped (Seth's ruling); pre-migration reopened-and-still-open
+workouts read `reopenedAt` null (discardable, no data can tell); the confirm's
+set count includes blank rows; CP3 if prod Render spins down.
+
+**ORDER IS LOAD-BEARING.** WD1's `reopenedAt` is read by every session fetch
+(`include` selects all scalars), so code ahead of the prod column breaks Home,
+History and every workout page. DB first, then code.
+
+1. **Seth, Render:** `COACH_UNCAPPED_EMAILS=sethjknisel@gmail.com` on
+   `workout-db-l3gc` (prod) and `workout-db-staging`.
+2. **Seth, PROD Neon SQL editor** - confirm host `ep-solitary-sea-an56mioq`
+   in the URL bar, then run (checksums copied from staging's rows):
+```sql
+CREATE TABLE "CoachUsage" (
+    "id" SERIAL NOT NULL,
+    "userId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "CoachUsage_pkey" PRIMARY KEY ("id")
+);
+CREATE INDEX "CoachUsage_userId_createdAt_idx" ON "CoachUsage"("userId", "createdAt");
+ALTER TABLE "CoachUsage" ADD CONSTRAINT "CoachUsage_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+INSERT INTO "_prisma_migrations" (id, checksum, finished_at, migration_name, logs, rolled_back_at, started_at, applied_steps_count)
+VALUES (gen_random_uuid(), '9f351f23ba0a01578f581a09dd573d11dc1e5f3640a34210f99f668f10180125', now(), '20260927120000_add_coach_usage', NULL, NULL, now(), 1);
+
+ALTER TABLE "WorkoutSession" ADD COLUMN "reopenedAt" TIMESTAMP(3);
+INSERT INTO "_prisma_migrations" (id, checksum, finished_at, migration_name, logs, rolled_back_at, started_at, applied_steps_count)
+VALUES (gen_random_uuid(), '5c915adace825938f9b6bb33563781f4b82c5332d015dc9fb1b3af2a6af5fefe', now(), '20260927130000_add_session_reopened_at', NULL, NULL, now(), 1);
+
+-- verify: expect 1 row, 0, and both migration rows
+SELECT column_name FROM information_schema.columns WHERE table_name = 'WorkoutSession' AND column_name = 'reopenedAt';
+SELECT count(*) FROM "CoachUsage";
+SELECT migration_name, checksum FROM "_prisma_migrations" WHERE migration_name LIKE '20260927%';
+```
+3. **"push to main"** -> RUNBOOK merge ritual in a temp worktree, fast-forward
+   `main` to the `ai-connector-wave` tip, one command at a time, each approved.
+4. **After the deploy:** RUNBOOK 5 (Render SHA = `main` HEAD); on prod: log in,
+   open Home + a past workout (the `reopenedAt` column path), start and discard
+   an empty workout, ask the coach twice (second answer fast; Render log shows
+   `[coach] cursor ... agentRuns=1` and no "Ripgrep path not configured").
+5. **Then M2:** repoint staging Render to `main`.
+
+## ▶ PICK UP HERE - the post-merge patch
+
+> **Agent reading this:** research is DONE (Opus, Sept 27, read-only) - do not
+> redo it. P-A is Seth's dashboard step first; only if it still fails after
+> that does it become a diagnosis block. P-B = CP2, AUTHORED Sept 27 (Opus);
+> the block supersedes the "CP2 block shape" notes below. Land it with
+> `land-unit` from `cursor-lane-2`.
+
+### Patch-wave smoke items (carried forward - handed over ONCE at wave end)
+
+- **CP2 (`b9dd0ae`):** on staging, ask the coach two questions in a row - the
+  second should answer in a few seconds (the first after a deploy still pays
+  one slow probe, by design). Staging Render logs: one `[coach] cursor mode=
+  inline agentRuns=... ttft_ms=... total_ms=...` line per question, and NO
+  "Ripgrep path not configured" stack traces. Palette studio still generates
+  a valid palette.
+- **CQ1 (`b07fea2`):** set `COACH_UNCAPPED_EMAILS=sethjknisel@gmail.com` on
+  staging Render first. As Seth: no cap line in the coach panel. As a
+  non-exempt test account on the hosted key: "N of 7 questions left this week"
+  drops by one per answered question; after 7 the ask box is disabled and says
+  when the next frees up (local time); a BYO-key user sees no cap; the palette
+  studio is never capped.
+- **WD1 (`712b696`):** start a workout, log nothing, tap X -> straight to Home,
+  "Workout discarded", no resume bar. Start one, log a set, tap X -> inline
+  confirm; "Keep logging" changes nothing; "Discard workout" -> Home; Back does
+  not return to it. Reopen a FINISHED workout -> NO X. Type into a set and tap
+  X at once -> no error toast afterward. Check the X at 360px wide and in a
+  couple of palettes, light and dark.
+
+### P-A. The connector will not connect on prod (AI access ON) - CONFIG
+
+**Evidence (read directly Sept 27, not delegated):**
+
+- **WorkOS Production -> Connect -> Configuration:** DCR Enabled, CIMD Enabled,
+  resource indicator `https://workout-db-l3gc.onrender.com/mcp` (Default) -
+  all correct. **External Sign-in URI = `https://workout-db-psi.vercel.app/` -
+  the site ROOT, missing `/connector/login`.** Staging's reads
+  `<preview host>/connector/login` and works.
+- **Mechanism:** AuthKit hands the user to the sign-in URI with
+  `?external_auth_id=`. Only `client/src/pages/ConnectorLoginPage.jsx:14`
+  reads that parameter; at `/` the Home page ignores it, the completion call
+  never fires, the 300 s handshake expires and Claude reports it cannot
+  connect. Same class as the Aug 8 AI8 failure (wrong sign-in URI).
+- **Everything else on the path checked GREEN:** prod `/ai/consent` 401 (wave
+  is deployed); discovery advertises `resource
+  https://workout-db-l3gc.onrender.com/mcp` and `authorization_servers
+  https://palatable-frog-16.authkit.app`; `/mcp` 401 + `WWW-Authenticate` with
+  `resource_metadata`; prod AuthKit metadata serves `registration_endpoint`
+  and `client_id_metadata_document_supported: true`; the prod client
+  `https://workout-db-psi.vercel.app/connector/login` returns 200 (SPA route);
+  prod API CORS allows that origin with credentials.
+
+**Fix, in order:**
+
+1. **Seth, WorkOS dashboard** (agents cannot - the auto-mode classifier
+   refused agent writes to prod WorkOS auth config twice on Sept 26):
+   Production -> Connect -> Configuration -> Edit external sign-in URI ->
+   `https://workout-db-psi.vercel.app/connector/login` (no trailing slash).
+2. **In Claude, use the PROD connector address**
+   `https://workout-db-l3gc.onrender.com/mcp`. The custom connector Seth added
+   for the Sept 26 STAGING smoke points at `workout-db-staging.onrender.com/mcp`
+   - confirm which one he is retrying; add a separate prod one (remove and
+   re-add if Claude cached a failed registration).
+3. **Retry once, AI access ON.** If it still fails: capture the callback URL
+   and its `error=` value BEFORE anything else (the Aug 6 lesson), then read
+   prod Render logs around the completion call in `server/src/ai/workosClient.js`
+   - a WorkOS 401 there means `WORKOS_API_KEY` on `workout-db-l3gc` is not the
+   PRODUCTION-environment key (`logchamp_prod`, created Sept 26). Only then
+   write a Cursor DIAGNOSIS block.
+4. **Once it connects, the ID1 live checks on prod:** "Continue as <email>"
+   stop on `/connector/login`; the tool result names the account
+   (`boundAccount`); Profile -> AI access -> "Sign out of connected assistants"
+   must say **"Signed out of connected assistants."** - "Nothing to sign out"
+   means WorkOS does not file our `User.id` as `external_id` (Door A open;
+   report it). This check has never passed live anywhere yet.
+5. **Unverified:** the prod AuthKit session lifetime (Applications -> the app
+   -> Sessions). Staging's was shortened Sept 26; prod's was on Seth's list.
+
+### P-B. The hosted coach is slow on prod - CP2 (code)
+
+Seth, Sept 27: "coach seems to work but its slow". Not yet MEASURED on prod.
+Causes, by likely weight:
+
+1. **Two agent runs per question.** `streamCursor`
+   (`server/src/coach/cursorProvider.js:343-403`) always tries a run WITH
+   `systemPrompt` first. This Cursor account is gated for it, so every request
+   pays a full `Agent.create` + `send` + failing `wait()` (`:314-323`) before
+   the inline retry (`:382-394`) does the real work. There is NO memo. Fix:
+   remember the gate per process - after the first gate error, go straight to
+   inline.
+2. **Local-agent start-up per attempt:** `sdk.Agent.create` (`:269`) with a
+   fresh `mkdtemp` store and cwd (`:99-106`) every time. Item 1 halves this.
+3. **Six "Ripgrep path not configured" stack traces per request** - Render log
+   flood, some time. The SDK exports `configureRipgrepPath()` (present in
+   `@cursor/sdk/dist`). It needs a ripgrep binary path; if that means adding
+   `@vscode/ripgrep`, that is **gate item 5 - ask Seth**. Prefer a quieter
+   option that adds no package.
+4. **Rule out the platform:** check the prod Render instance type (a
+   spin-down tier adds a cold start to the first request after idle).
+
+**CP2 block shape (for the author):** FILES TO TOUCH
+`server/src/coach/cursorProvider.js` + its unit test; criteria: second and
+later requests in a process make ONE agent run, persona still delivered
+inline, BYO Anthropic path untouched, and a **mandatory LIVE smoke**
+(`scripts/smoke-cursor-coach.mjs`) - the fake SDK encoded a wrong belief once
+already (CP1). **Measure before and after:** time to first token and total
+time of `POST /coach/ask` (browser Network tab or Render logs). MODEL: auto.
+Known and NOT in scope unless Seth says so: the persona riding inside the
+user message (weaker separation, no tools so blast radius is text only).
+
+### How the patch reaches `main`
+
+- **The patch lands ON `ai-connector-wave` itself (Opus, Sept 27)** - not a
+  new branch. It is `main` plus docs-only HANDOFF commits, `main` stays an
+  ancestor, so the merge is a clean fast-forward; and staging already tracks
+  it, which saves Seth a Render repoint.
+- **Staging Render `workout-db-staging` still tracks `ai-connector-wave`**
+  unless Seth has repointed it (post-merge M2, not confirmed done) - confirm
+  before the smoke. After the patch merges, point it at `main` (RUNBOOK
+  step 7).
+- The relay as usual: author -> dispatch -> `land-unit` -> Seth smokes on
+  staging -> `pre-main-review` on the small delta -> Seth says "push to main"
+  -> temp worktree, one command at a time with approval. No migration, no new
+  env vars. P-A needs NO code if step 1 fixes it.
+- **Staging connector caveat:** the STAGING External Sign-in URI is pinned to
+  the `ai-connector-wave` Vercel PREVIEW host. A patch branch gets a different
+  preview host - only matters if a patch touches the connector (CP2 does not).
+
+### Post-merge leftovers
+
+- **M2, Seth:** repoint staging Render back to `main` (after the patch).
+- **Prod login: VERIFIED** - Seth logged in and used the coach after the
+  merge, so the migration-before-code ordering held.
+- **Do NOT check `/coach/status` by opening the API URL in a tab** - the prod
+  session cookie is `partitioned` (`server/src/app.js:169-170`), so a
+  top-level visit sends no cookie and returns 401 even when signed in. Check
+  in-app (Profile -> AI access). RUNBOOK 10d item 4 is annotated.
+- **The F/E-wave prod smoke is still open** (section "PROD smoke" below).
+- A stale `.git/worktrees/merge-main` admin dir survived the merge cleanup
+  (OneDrive lock on delete) - `git worktree prune` clears it.
+- **Pre-wave migration drift** found in the Sept 26 prod-vs-staging diff, NOT
+  from this wave and not blocking (prod's build never runs `migrate deploy`):
+  checksums differ on `20260325143000_block_weeks` and
+  `20260707130000_add_exercise_fk_linkage`; staging alone carries a stray
+  `20260527120000_add_exercise_catalog` row and a DUPLICATE
+  `20260707120000_add_exercise_catalog` row. Reconcile before anyone ever
+  points `migrate deploy` at prod.
+
+### (from HANDOFF) the Sept 27 session line
+
+**Updated:** September 27, 2026, fifty-first session (Opus, frontier - **the
+merge**). Across Sept 26-27: Seth made the four merge calls (C1-C4); `zod`
+declared, unit lane 324/324, frontier check of that post-gate delta clean
+(`bdad1c1`); Seth ran the prod migration by hand (checksum matches staging),
+set the prod Render env, turned on Cursor Privacy Mode, shortened the staging
+AuthKit session, and unlocked WorkOS Production (billing); the agent enabled
+DCR + CIMD there and read the prod issuer; **"push to main" -> merged
+`59e27dc..bdad1c1`**, five commands each approved, `origin/main` confirmed;
+RUNBOOK 10d 1-4 passed on prod. Seth then reported P-A and P-B; both
+researched read-only (above). The pre-merge sections - PICK UP HERE
+checklist, gate verdict, ROAD TO MAIN, the AI-wave unit tables, carry-forward,
+CR2 note, consolidated smoke, repo and lane state - moved VERBATIM to the
+archive. Prior: September 26, fiftieth session (Opus - CP1 salvage + ID1
+landed, smoke + SF1, the pre-main gate PASS WITH FIXES). Older sessions
+archived.
+
 ## ARCHIVED September 27, 2026 (fifty-first session, Opus) - HANDOFF sections
 ## moved verbatim at the AI-wave MERGE (`main` `59e27dc..bdad1c1`, Sept 26).
 ## Superseded, not summarized: the Sept 26 header, Seth's PICK UP HERE
