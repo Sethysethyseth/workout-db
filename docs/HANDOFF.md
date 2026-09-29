@@ -1,7 +1,8 @@
 # HANDOFF — current state
 
 > **WHERE WE ARE (Sept 28, late):** the **BLOCKS-V2 WAVE (BK) is OPEN** -
-> authored, committed, pushed, and tranche 1 DISPATCHED. Design of record:
+> authored, committed, pushed; **tranche 1 (BK1, BK2, BK4) is DELIVERED and
+> AWAITING REVIEW in three lanes - nothing landed yet (0/13).** Design of record:
 > `docs/specs/blocks-v2.md`. Seth's rulings (asked + answered this session):
 > blocks become buildable, importable AND runnable (build + run + Execution);
 > Claude can create DRAFT blocks through the connector, and ANY AI can write
@@ -12,26 +13,64 @@
 > `7d3b91e`; the connector works on prod (fixed earlier Sept 28 - archived).
 
 **Next action (human):** open a Sonnet Claude Code session and say "run the
-BK wave" - it lands tranche 1 (BK1, BK2, BK4, already running in Cursor) and
-will ask you for "migrate staging" right after BK1 lands.
+BK wave" - it lands the three finished units and will ask you for "migrate
+staging" before the BK1 push.
 
 ## ▶ PICK UP HERE (Sept 28, written for a fresh agent)
 
 > **Agent reading this:** the BK wave is OPEN. Ledger: QUEUE.md "Blocks-v2
-> wave"; order + collisions: `blocks-v2.md` section 12. **Tranche 1 was
-> dispatched Sept 28** (Channel B, `--model auto`, 40-minute hard kills via
-> the scratchpad `run.ps1` shape): BK1 -> `cursor-lane-2` (branch
-> `cursor/bk1`), BK2 -> `cursor-lane` (`cursor/bk2`), BK4 -> `cursor-lane-3`
-> (`cursor/bk4`), all based on the wave-open commit. Land them one at a time
-> via `land-unit`; if a run died, check the lane for salvageable work before
-> re-dispatching. **BK1 is migration-carrying:** after its commit, the push
-> to `ai-connector-wave` waits for Seth's "migrate staging" (staging's Render
-> build runs `migrate deploy`). **Every server unit needs a LIVE staging
-> proof at landing** - the lanes have no DB; each block lists curl checks in
-> its DELIVERY. **The critic loop (spec section 11) is the FRONTIER SEAT's
-> job** - when BK5/5b/6/8/9/12 have landed, a Sonnet relay STOPS and hands
-> to Opus. Then N/N -> Seth smokes -> pre-main gate. Do NOT re-diagnose the
-> connector; if it breaks, run the authorize probe in Durable gotchas first.
+> wave"; order + collisions: `blocks-v2.md` section 12. The authoring seat
+> (Opus) did NOT land anything - landing is yours. Do these in order:
+>
+> 1. **Land BK2, then BK4, then BK1 - in that order, via `land-unit`.** All
+>    three are DELIVERED (every run exit 0; `DELIVERY.md` timestamps Sept 28
+>    19:46-19:49, fresh). Lanes, all branched from `b9a0fac`:
+>    - **BK2** (pure format/parsers, new files only) in `C:\dev\worktrees\cursor-lane`
+>      on `cursor/bk2` - Cursor claims unit 371/371 (23 new in
+>      `server/test/lib/blocks/`), instructions text 1,187 chars.
+>    - **BK4** (client primitives) in `C:\dev\worktrees\cursor-lane-3` on
+>      `cursor/bk4` - touches `client/index.html`, ONE line of `index.css`,
+>      new `client/src/components/blocks/ui/*` + `client/src/styles/blocks/bk-ui.css`.
+>    - **BK1** (schema + persistence) in `C:\dev\worktrees\cursor-lane-2` on
+>      `cursor/bk1` - Cursor claims unit 363/363, migration
+>      `20260929120000_blocks_v2` generated offline via `prisma migrate diff`,
+>      0 `DROP`s.
+>    **Why this order:** BK1 is the only migration-carrying unit, and ANY
+>    push to `ai-connector-wave` after BK1's commit deploys staging Render,
+>    whose build runs `migrate deploy`. Land + push BK2 and BK4 first
+>    (no migration); then commit BK1 and HOLD its push until Seth says
+>    "migrate staging" verbatim (gate item 3 - one command at a time after
+>    that). Claims above are Cursor's - re-run every lane fresh per
+>    `land-unit`; never trust the report for green tests.
+> 2. **BK1 audit focus:** the migration SQL (additive only; every column in
+>    spec section 6 incl. `sourceUnit`), no `source`/`isDraft` read from
+>    `req.body`, and the clone isolation fix (`buildClonePayload` strips
+>    donor ids; re-stamp for the cloner) - a cross-user surface, flag it for
+>    the gate. After the staging deploy, LIVE-check: create/PATCH a block
+>    with the new fields, `POST /block-templates/:id/accept`, clone a public
+>    block (a green unit lane is not route coverage).
+> 3. **Then dispatch tranche 2** (`dispatch-unit`): BK3 + BK5 + BK7 in
+>    parallel (disjoint per spec section 12). They need BK1 + BK2 + BK4 in
+>    their base - repoint each lane onto the current `ai-connector-wave`
+>    HEAD with `git checkout -B cursor/<unit> <HEAD>` (tranche 2 can go out
+>    once BK1 is COMMITTED, even while its push waits for the phrase). Before
+>    each dispatch, move any leftover `DELIVERY.md` out of the lane (stale
+>    ones from Sept 27 are already in `C:\dev\worktrees\recon-inputs\stale-deliveries\`).
+>    Dispatch wrapper (Start-Process + hard kill, `--model auto`):
+>    `C:\dev\worktrees\recon-inputs\run.ps1 -Lane <path> -Tag <unit> -Minutes 40 -Prompt "<dispatch line>"`
+>    (run it as a background task; the tranche-1 run logs sit beside it).
+> 4. Continue the order in QUEUE.md / spec section 12. **Every server unit
+>    needs a LIVE staging proof at landing** - lanes have no DB; each block's
+>    DELIVERY carries curl checks.
+> 5. **HARD STOP for a Sonnet relay:** when BK5, BK5b, BK6, BK8, BK9 and BK12
+>    have all landed, the coach-persona critic loop (spec section 11) is the
+>    FRONTIER SEAT's job (Opus, Playwright, max 3 rounds, pass 8+, Seth's
+>    real Phase-1 sheet is task T1). Hand over; do not critique. After the
+>    loop: N/N -> Seth smokes -> `pre-main-review`.
+>
+> Untracked `GATE-R1/2/3.md` in the lanes are stale Sept 26 gate files - not
+> part of any BK unit; never stage them. Do NOT re-diagnose the connector; if
+> it breaks, run the authorize probe in Durable gotchas first.
 
 ### Open on prod - Seth's checks, none blocking
 
@@ -107,8 +146,10 @@ user on the merge deploy); CR2 polish skipped (shipped at 7.5); `zod` declared
 > action requirement; `land-unit` section 5 keeps it maintained.
 
 **Updated:** September 28, 2026, fifty-third session (Opus, frontier -
-**the BK wave authored**). Seth invoked `author-task-block` for "a better
-version of blocks". Recon fanned out to three Cursor REPORT lanes (auto rung,
+**the BK wave authored**, tranche 1 dispatched and delivered - BK1 6.1 min,
+BK2 7.3 min, BK4 3.5 min, all exit 0 - and deliberately NOT landed: Seth asked
+for a handoff so another agent finishes). Seth invoked `author-task-block` for
+"a better version of blocks". Recon fanned out to three Cursor REPORT lanes (auto rung,
 parallel, all exit 0 in 2.5-5 min): `recon/blocks-b1` in `cursor-lane-2`
 (block/session/styling NOW-state), `recon/blocks-b2` in `cursor-lane-3`
 (connector/coach/import plumbing, test globs), `recon/blocks-b3` in
@@ -228,10 +269,11 @@ Covers the F-wave AND the still-open E-wave prod smoke. Staging passed Aug 4.
 
 ### Lane worktree state
 
-**All three BUSY with BK tranche 1 (dispatched Sept 28):** `cursor-lane-2`
--> BK1 on `cursor/bk1` (its `server` has its own full install WITH
-`@cursor/sdk` - the right lane for the migration unit), `cursor-lane` -> BK2 on
-`cursor/bk2`, `cursor-lane-3` -> BK4 on `cursor/bk4`. Each lane still holds a
+**All three HOLD UNLANDED BK deliveries (Sept 28) - NOT free until landed:**
+`cursor-lane-2` -> BK1 on `cursor/bk1` (its `server` has its own full install
+WITH `@cursor/sdk` - the right lane for the migration unit), `cursor-lane` ->
+BK2 on `cursor/bk2`, `cursor-lane-3` -> BK4 on `cursor/bk4`; all branched from
+`b9a0fac`. Each lane still holds a
 stale untracked Sept 26 `GATE-R<n>.md` - not part of any BK unit. Lane 3's
 `server` and `client` `node_modules` are JUNCTIONS into lane 1, which lacks
 `@cursor/sdk` - harmless for app loading (`cursorProvider.js` requires the SDK
