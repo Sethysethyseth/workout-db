@@ -33,3 +33,7 @@ export function deleteBlockTemplate(id) {
 export function cloneBlockTemplate(id) {
   return http(`/block-templates/${id}/clone`, { method: "POST" });
 }
+
+export function acceptBlockTemplate(id) {
+  return http(`/block-templates/${id}/accept`, { method: "POST" });
+}

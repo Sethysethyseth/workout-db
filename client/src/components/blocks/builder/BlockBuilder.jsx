@@ -1,0 +1,857 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import * as blockTemplateApi from "../../../api/blockTemplateApi.js";
+import { loadWeightUnit } from "../../../lib/weightUnitPref.js";
+import { ErrorMessage } from "../../ErrorMessage.jsx";
+import { LoadingState } from "../../LoadingState.jsx";
+import { Chip } from "../ui/Chip.jsx";
+import { DayPicker } from "../ui/DayPicker.jsx";
+import { SectionRule } from "../ui/SectionRule.jsx";
+import { StickyHeader } from "../ui/StickyHeader.jsx";
+import { WeekStrip } from "../ui/WeekStrip.jsx";
+import "../../../styles/blocks/bk-builder.css";
+import {
+  addDay,
+  addExercise,
+  addSet,
+  addWeekCopy,
+  clearWeek,
+  convertUnits,
+  createInitialState,
+  dayHasExercises,
+  deleteDay,
+  deleteExercise,
+  deleteSet,
+  deleteWeek,
+  deviceUnitToFormat,
+  duplicateDay,
+  duplicateExercise,
+  duplicateWeek,
+  fillAllFromSet1,
+  hydrateFromApi,
+  moveDay,
+  moveExercise,
+  moveWeek,
+  renameDay,
+  replaceExercise,
+  serializeToPayload,
+  setDescription,
+  setEffort,
+  setIsPublic,
+  setName,
+  setWeekLabel,
+  toggleRange,
+  toggleTimed,
+  updateExercise,
+  validateState,
+  weekHasExercises,
+  clearDraftFlag,
+} from "./blockBuilderState.js";
+import { BlockSettingsSheet } from "./BlockSettingsSheet.jsx";
+import { BuilderSheet } from "./BuilderSheet.jsx";
+import { BuilderToast } from "./BuilderToast.jsx";
+import { DraftBanner } from "./DraftBanner.jsx";
+import { ExerciseCard } from "./ExerciseCard.jsx";
+import { ExercisePicker } from "./ExercisePicker.jsx";
+
+function countDaySets(day) {
+  return (day?.exercises || []).reduce((n, ex) => n + (ex.sets?.length || 0), 0);
+}
+
+/**
+ * Phone-first block builder (BK5).
+ * @param {"create"|"edit"} mode
+ * @param {number} [templateId] required for edit
+ */
+export function BlockBuilder({ mode = "create", templateId, onBack }) {
+  const navigate = useNavigate();
+  const isCreate = mode === "create";
+  const nameInputRef = useRef(null);
+  const savedSnapshotRef = useRef(null);
+  const discardLeavingRef = useRef(false);
+
+  const [loading, setLoading] = useState(!isCreate);
+  const [error, setError] = useState(null);
+  const [state, setState] = useState(() => createInitialState());
+  const [blockId, setBlockId] = useState(isCreate ? null : templateId);
+  const [weekIdx, setWeekIdx] = useState(0);
+  const [dayIdx, setDayIdx] = useState(0);
+  const [expandedIds, setExpandedIds] = useState(() => new Set());
+  const [saveStatus, setSaveStatus] = useState("saved"); // unsaved | saving | saved
+  const [dirty, setDirty] = useState(false);
+  const [validationErrors, setValidationErrors] = useState([]);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerMode, setPickerMode] = useState("add"); // add | replace
+  const [replaceExIdx, setReplaceExIdx] = useState(null);
+  const [weekActionsOpen, setWeekActionsOpen] = useState(false);
+  const [dayActionsOpen, setDayActionsOpen] = useState(false);
+  const [weekLabelDraft, setWeekLabelDraft] = useState("");
+  const [dayNameDraft, setDayNameDraft] = useState("");
+  const [toast, setToast] = useState(null);
+  const [accepting, setAccepting] = useState(false);
+  const undoRef = useRef(null);
+
+  const deviceUnit = loadWeightUnit();
+  const displayUnit = deviceUnitToFormat(deviceUnit);
+
+  const applyState = useCallback((updater, { markDirty = true } = {}) => {
+    setState((prev) => {
+      const next = typeof updater === "function" ? updater(prev) : updater;
+      return next;
+    });
+    if (markDirty) {
+      setDirty(true);
+      setSaveStatus("unsaved");
+      setValidationErrors([]);
+    }
+  }, []);
+
+  // Load for edit
+  useEffect(() => {
+    if (isCreate) {
+      savedSnapshotRef.current = JSON.stringify(serializeToPayload(createInitialState()));
+      return undefined;
+    }
+    let cancelled = false;
+    async function run() {
+      const id = Number(templateId);
+      if (!Number.isInteger(id) || id <= 0) {
+        setError(new Error("Invalid block template id."));
+        setLoading(false);
+        return;
+      }
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await blockTemplateApi.getBlockTemplate(id);
+        if (cancelled) return;
+        const hydrated = hydrateFromApi(data.blockTemplate);
+        setState(hydrated);
+        setBlockId(id);
+        savedSnapshotRef.current = JSON.stringify(serializeToPayload(hydrated));
+        setDirty(false);
+        setSaveStatus("saved");
+      } catch (err) {
+        if (!cancelled) setError(err);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [isCreate, templateId]);
+
+  // Focus name on create
+  useEffect(() => {
+    if (!isCreate || loading) return;
+    const t = window.setTimeout(() => nameInputRef.current?.focus(), 50);
+    return () => window.clearTimeout(t);
+  }, [isCreate, loading]);
+
+  // beforeunload guard
+  useEffect(() => {
+    if (!dirty) return undefined;
+    const onBeforeUnload = (e) => {
+      if (discardLeavingRef.current) return;
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [dirty]);
+
+  const weeks = useMemo(() => state.weeks || [], [state.weeks]);
+  const safeWeekIdx = Math.min(weekIdx, Math.max(0, weeks.length - 1));
+  const currentWeek = weeks[safeWeekIdx] || null;
+  const days = useMemo(() => currentWeek?.days || [], [currentWeek]);
+  const safeDayIdx = Math.min(dayIdx, Math.max(0, days.length - 1));
+  const currentDay = days[safeDayIdx] || null;
+
+  useEffect(() => {
+    if (weekIdx !== safeWeekIdx) setWeekIdx(safeWeekIdx);
+  }, [weekIdx, safeWeekIdx]);
+
+  useEffect(() => {
+    if (dayIdx !== safeDayIdx) setDayIdx(safeDayIdx);
+  }, [dayIdx, safeDayIdx]);
+
+  const isNarrow = useCallback(() => {
+    if (typeof window === "undefined") return true;
+    return window.matchMedia("(max-width: 719px)").matches;
+  }, []);
+
+  function toggleExpanded(exId) {
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(exId)) {
+        next.delete(exId);
+        return next;
+      }
+      if (isNarrow()) return new Set([exId]);
+      next.add(exId);
+      return next;
+    });
+  }
+
+  const weekStripItems = useMemo(
+    () =>
+      weeks.map((w, i) => ({
+        key: w.id || String(i),
+        short: `W${i + 1}`,
+        progress: 0,
+        ariaLabel: w.label ? `Week ${i + 1}, ${w.label}` : `Week ${i + 1}`,
+      })),
+    [weeks]
+  );
+
+  const dayPickerItems = useMemo(
+    () =>
+      days.map((d, i) => ({
+        key: d.id || String(i),
+        top: `Day ${i + 1}`,
+        name: d.name || `Day ${i + 1}`,
+        progress: null,
+      })),
+    [days]
+  );
+
+  function confirmLeave() {
+    if (!dirty) return true;
+    return window.confirm("You have unsaved changes. Leave without saving?");
+  }
+
+  function handleExit() {
+    if (!confirmLeave()) return;
+    discardLeavingRef.current = true;
+    if (onBack) onBack();
+    else navigate("/templates");
+  }
+
+  function showToast(message, undoState) {
+    undoRef.current = undoState ?? null;
+    setToast({
+      message,
+      onUndo: undoState
+        ? () => {
+            applyState(undoState, { markDirty: true });
+            setToast(null);
+            undoRef.current = null;
+          }
+        : null,
+    });
+  }
+
+  function selectWeek(key) {
+    const idx = weeks.findIndex((w, i) => (w.id || String(i)) === key);
+    if (idx < 0) return;
+    if (idx === safeWeekIdx) {
+      setWeekLabelDraft(currentWeek?.label || "");
+      setWeekActionsOpen(true);
+      return;
+    }
+    setWeekIdx(idx);
+    setDayIdx(0);
+    setExpandedIds(new Set());
+  }
+
+  function selectDay(key) {
+    const idx = days.findIndex((d, i) => (d.id || String(i)) === key);
+    if (idx < 0) return;
+    if (idx === safeDayIdx) {
+      setDayNameDraft(currentDay?.name || "");
+      setDayActionsOpen(true);
+      return;
+    }
+    setDayIdx(idx);
+    setExpandedIds(new Set());
+  }
+
+  function handleAddWeek() {
+    const prev = state;
+    const next = addWeekCopy(state);
+    if (next === state) return;
+    applyState(next);
+    setWeekIdx(next.weeks.length - 1);
+    setDayIdx(0);
+    setExpandedIds(new Set());
+    const n = next.weeks.length;
+    showToast(`Week ${n} added as a copy of week ${n - 1}`, prev);
+  }
+
+  async function handleSave() {
+    const result = validateState(state);
+    if (!result.ok) {
+      setValidationErrors(result.errors);
+      const first = result.errors[0];
+      setError(new Error(first?.message || "Fix the highlighted problems before saving."));
+      // Scroll to first problem
+      window.requestAnimationFrame(() => {
+        const el =
+          document.querySelector(".bk-ex-card--invalid") ||
+          document.querySelector(".bk-builder-name-input") ||
+          document.querySelector("[data-invalid='true']");
+        el?.scrollIntoView({ behavior: "smooth", block: "center" });
+      });
+      return;
+    }
+
+    setSaveStatus("saving");
+    setError(null);
+    const payload = serializeToPayload(state);
+    try {
+      if (isCreate && blockId == null) {
+        const data = await blockTemplateApi.createBlockTemplate(payload);
+        const id = data?.blockTemplate?.id;
+        savedSnapshotRef.current = JSON.stringify(payload);
+        setDirty(false);
+        setSaveStatus("saved");
+        setValidationErrors([]);
+        if (id != null) {
+          setBlockId(id);
+          discardLeavingRef.current = true;
+          navigate(`/blocks/${id}/edit`, { replace: true });
+        }
+      } else {
+        const id = blockId ?? templateId;
+        await blockTemplateApi.updateBlockTemplate(id, payload);
+        savedSnapshotRef.current = JSON.stringify(payload);
+        setDirty(false);
+        setSaveStatus("saved");
+        setValidationErrors([]);
+      }
+    } catch (err) {
+      setSaveStatus("unsaved");
+      setError(err);
+    }
+  }
+
+  async function handleAcceptDraft() {
+    const id = blockId ?? templateId;
+    if (id == null) return;
+    setAccepting(true);
+    setError(null);
+    try {
+      // Save pending edits first
+      const result = validateState(state);
+      if (!result.ok) {
+        setValidationErrors(result.errors);
+        setError(new Error(result.errors[0]?.message || "Fix problems before saving."));
+        setAccepting(false);
+        return;
+      }
+      const payload = serializeToPayload(state);
+      await blockTemplateApi.updateBlockTemplate(id, payload);
+      await blockTemplateApi.acceptBlockTemplate(id);
+      applyState(clearDraftFlag(state), { markDirty: false });
+      setDirty(false);
+      setSaveStatus("saved");
+      savedSnapshotRef.current = JSON.stringify(payload);
+      showToast("Saved to your library");
+    } catch (err) {
+      setError(err);
+    } finally {
+      setAccepting(false);
+    }
+  }
+
+  async function handleDiscardDraft() {
+    const id = blockId ?? templateId;
+    if (id == null) return;
+    const ok = window.confirm("Discard this draft? It will be deleted.");
+    if (!ok) return;
+    try {
+      await blockTemplateApi.deleteBlockTemplate(id);
+      discardLeavingRef.current = true;
+      navigate("/templates");
+    } catch (err) {
+      setError(err);
+    }
+  }
+
+  async function handleDeleteBlock() {
+    const id = blockId ?? templateId;
+    if (id == null) return;
+    try {
+      await blockTemplateApi.deleteBlockTemplate(id);
+      discardLeavingRef.current = true;
+      navigate("/templates");
+    } catch (err) {
+      setError(err);
+    }
+  }
+
+  function invalidPaths() {
+    return new Set(validationErrors.map((e) => e.path));
+  }
+
+  function exerciseInvalid(exIdx) {
+    const paths = invalidPaths();
+    const prefix = `weeks[${safeWeekIdx}].days[${safeDayIdx}].exercises[${exIdx}]`;
+    for (const p of paths) {
+      if (p === prefix || p.startsWith(`${prefix}.`) || p === `${prefix}.name`) return true;
+    }
+    return false;
+  }
+
+  const nameInvalid = validationErrors.some((e) => e.path === "name");
+
+  const headerRight = (
+    <div className="bk-builder-save">
+      <span
+        className={`bk-builder-save__status bk-builder-save__status--${saveStatus}`}
+        aria-live="polite"
+      >
+        <span className="bk-builder-save__dot" aria-hidden="true" />
+        {saveStatus === "unsaved" ? "Unsaved" : saveStatus === "saving" ? "Saving" : "Saved"}
+      </span>
+      <button
+        type="button"
+        className="btn"
+        disabled={saveStatus === "saving"}
+        onClick={() => void handleSave()}
+      >
+        Save
+      </button>
+    </div>
+  );
+
+  const eyebrowNode = isCreate && !blockId ? (
+    <input
+      ref={nameInputRef}
+      className="bk-builder-name-input"
+      value={state.name}
+      placeholder="Name this block"
+      maxLength={120}
+      data-invalid={nameInvalid ? "true" : undefined}
+      aria-invalid={nameInvalid || undefined}
+      onChange={(e) => applyState(setName(state, e.target.value))}
+      onClick={(e) => e.stopPropagation()}
+    />
+  ) : (
+    <span
+      role="button"
+      tabIndex={0}
+      className="bk-builder-name-tap"
+      onClick={() => setSettingsOpen(true)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          setSettingsOpen(true);
+        }
+      }}
+    >
+      {state.name || "Untitled block"}
+    </span>
+  );
+
+  if (loading) {
+    return (
+      <LoadingState
+        tone="skeleton"
+        variant="session"
+        rows={3}
+        slowLabel="Taking longer than usual…"
+      />
+    );
+  }
+
+  if (!isCreate && !currentWeek && error) {
+    return (
+      <div className="bk bk-shell">
+        <ErrorMessage error={error} />
+        <button type="button" className="btn" onClick={handleExit}>
+          Back
+        </button>
+      </div>
+    );
+  }
+
+  const exCount = currentDay?.exercises?.length || 0;
+  const setCount = countDaySets(currentDay);
+
+  return (
+    <div className="bk bk-builder">
+      <div className="bk-shell">
+        <StickyHeader
+          eyebrow={eyebrowNode}
+          title={`WEEK ${safeWeekIdx + 1}`}
+          sub={currentWeek?.label || undefined}
+          right={headerRight}
+        >
+          <WeekStrip
+            weeks={weekStripItems}
+            selectedKey={currentWeek?.id || String(safeWeekIdx)}
+            onSelect={selectWeek}
+            trailing={
+              <button
+                type="button"
+                className="bk-week-add"
+                aria-label="Add week"
+                onClick={handleAddWeek}
+                disabled={weeks.length >= 52}
+              >
+                +
+              </button>
+            }
+          />
+        </StickyHeader>
+
+        {state.isDraft ? (
+          <DraftBanner
+            sourceUnit={state.sourceUnit}
+            deviceUnit={deviceUnit}
+            accepting={accepting}
+            onAccept={() => void handleAcceptDraft()}
+            onDiscard={() => void handleDiscardDraft()}
+            onConvert={() => applyState(convertUnits(state, displayUnit))}
+          />
+        ) : null}
+
+        <ErrorMessage error={error} />
+
+        <div className="bk-builder__days">
+          <DayPicker
+            days={dayPickerItems}
+            selectedKey={currentDay?.id || String(safeDayIdx)}
+            onSelect={selectDay}
+            trailing={
+              <button
+                type="button"
+                className="bk-day-add"
+                aria-label="Add day"
+                onClick={() => {
+                  const next = addDay(state, safeWeekIdx);
+                  applyState(next);
+                  const newDays = next.weeks[safeWeekIdx]?.days || [];
+                  setDayIdx(Math.max(0, newDays.length - 1));
+                  setExpandedIds(new Set());
+                }}
+              >
+                + Day
+              </button>
+            }
+          />
+        </div>
+
+        {currentDay ? (
+          <div className="bk-builder__panel">
+            <SectionRule
+              label={currentDay.name || `Day ${safeDayIdx + 1}`}
+              chip={
+                <span className="bk-builder__chips">
+                  <Chip>
+                    {exCount} exercise{exCount === 1 ? "" : "s"}
+                  </Chip>
+                  <Chip>
+                    {setCount} set{setCount === 1 ? "" : "s"}
+                  </Chip>
+                </span>
+              }
+            />
+
+            <div className="bk-builder__exercises">
+              {(currentDay.exercises || []).map((ex, ei) => (
+                <ExerciseCard
+                  key={ex.id || ei}
+                  exercise={ex}
+                  index={ei}
+                  effort={state.effort}
+                  unit={displayUnit === "kg" ? "kg" : "lb"}
+                  expanded={expandedIds.has(ex.id)}
+                  invalid={exerciseInvalid(ei)}
+                  onToggle={() => toggleExpanded(ex.id)}
+                  onChange={(patch) =>
+                    applyState(updateExercise(state, safeWeekIdx, safeDayIdx, ei, patch))
+                  }
+                  onAddSet={() => applyState(addSet(state, safeWeekIdx, safeDayIdx, ei))}
+                  onDeleteSet={(si) =>
+                    applyState(deleteSet(state, safeWeekIdx, safeDayIdx, ei, si))
+                  }
+                  onFillAll={() =>
+                    applyState(fillAllFromSet1(state, safeWeekIdx, safeDayIdx, ei))
+                  }
+                  onToggleTimed={(timed) =>
+                    applyState(toggleTimed(state, safeWeekIdx, safeDayIdx, ei, timed))
+                  }
+                  onToggleRange={(enabled) =>
+                    applyState(toggleRange(state, safeWeekIdx, safeDayIdx, ei, enabled))
+                  }
+                  onMoveUp={() =>
+                    applyState(moveExercise(state, safeWeekIdx, safeDayIdx, ei, -1))
+                  }
+                  onMoveDown={() =>
+                    applyState(moveExercise(state, safeWeekIdx, safeDayIdx, ei, 1))
+                  }
+                  onDuplicate={() =>
+                    applyState(duplicateExercise(state, safeWeekIdx, safeDayIdx, ei))
+                  }
+                  onReplace={() => {
+                    setPickerMode("replace");
+                    setReplaceExIdx(ei);
+                    setPickerOpen(true);
+                  }}
+                  onDelete={() => {
+                    const prev = state;
+                    applyState(deleteExercise(state, safeWeekIdx, safeDayIdx, ei));
+                    setExpandedIds((ids) => {
+                      const n = new Set(ids);
+                      n.delete(ex.id);
+                      return n;
+                    });
+                    showToast("Exercise deleted", prev);
+                  }}
+                />
+              ))}
+            </div>
+
+            <button
+              type="button"
+              className="bk-builder__add-ex"
+              onClick={() => {
+                setPickerMode("add");
+                setReplaceExIdx(null);
+                setPickerOpen(true);
+              }}
+            >
+              + Add exercise
+            </button>
+          </div>
+        ) : null}
+
+        <div className="bk-builder__exit">
+          <button type="button" className="btn btn-secondary" onClick={handleExit}>
+            {isCreate ? "Back" : "Close"}
+          </button>
+          <button
+            type="button"
+            className="btn btn-ghost"
+            onClick={() => setSettingsOpen(true)}
+          >
+            Settings
+          </button>
+        </div>
+      </div>
+
+      <BlockSettingsSheet
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        state={state}
+        mode={blockId != null || !isCreate ? "edit" : "create"}
+        onChange={(patch) => {
+          let next = state;
+          if (patch.name !== undefined) next = setName(next, patch.name);
+          if (patch.description !== undefined) next = setDescription(next, patch.description);
+          if (patch.effort !== undefined) next = setEffort(next, patch.effort);
+          if (patch.isPublic !== undefined) next = setIsPublic(next, patch.isPublic);
+          applyState(next);
+        }}
+        onDelete={
+          blockId != null || !isCreate
+            ? () => {
+                setSettingsOpen(false);
+                void handleDeleteBlock();
+              }
+            : undefined
+        }
+      />
+
+      <ExercisePicker
+        open={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        title={pickerMode === "replace" ? "Replace exercise" : "Add exercise"}
+        onPick={(ex) => {
+          if (pickerMode === "replace" && replaceExIdx != null) {
+            const next = replaceExercise(
+              state,
+              safeWeekIdx,
+              safeDayIdx,
+              replaceExIdx,
+              ex
+            );
+            applyState(next);
+            const replaced =
+              next.weeks[safeWeekIdx]?.days[safeDayIdx]?.exercises?.[replaceExIdx];
+            if (replaced) toggleExpanded(replaced.id);
+          } else {
+            const next = addExercise(state, safeWeekIdx, safeDayIdx, ex);
+            applyState(next);
+            const list =
+              next.weeks[safeWeekIdx]?.days[safeDayIdx]?.exercises || [];
+            const last = list[list.length - 1];
+            if (last) toggleExpanded(last.id);
+          }
+        }}
+      />
+
+      <BuilderSheet
+        open={weekActionsOpen}
+        title={`Week ${safeWeekIdx + 1}`}
+        onClose={() => setWeekActionsOpen(false)}
+      >
+        <label className="bk-settings__field">
+          <span className="bk-settings__label">Label</span>
+          <input
+            className="bk-settings__input"
+            value={weekLabelDraft}
+            maxLength={40}
+            placeholder="e.g. Deload"
+            onChange={(e) => setWeekLabelDraft(e.target.value)}
+            onBlur={() =>
+              applyState(setWeekLabel(state, safeWeekIdx, weekLabelDraft))
+            }
+          />
+        </label>
+        <div className="bk-actions-list">
+          <button
+            type="button"
+            className="bk-actions-list__btn"
+            onClick={() => {
+              let next = setWeekLabel(state, safeWeekIdx, weekLabelDraft);
+              next = duplicateWeek(next, safeWeekIdx);
+              applyState(next);
+              setWeekIdx(safeWeekIdx + 1);
+              setWeekActionsOpen(false);
+            }}
+          >
+            Duplicate
+          </button>
+          <button
+            type="button"
+            className="bk-actions-list__btn"
+            disabled={safeWeekIdx === 0}
+            onClick={() => {
+              applyState(moveWeek(state, safeWeekIdx, -1));
+              setWeekIdx(safeWeekIdx - 1);
+              setWeekActionsOpen(false);
+            }}
+          >
+            Move earlier
+          </button>
+          <button
+            type="button"
+            className="bk-actions-list__btn"
+            disabled={safeWeekIdx >= weeks.length - 1}
+            onClick={() => {
+              applyState(moveWeek(state, safeWeekIdx, 1));
+              setWeekIdx(safeWeekIdx + 1);
+              setWeekActionsOpen(false);
+            }}
+          >
+            Move later
+          </button>
+          <button
+            type="button"
+            className="bk-actions-list__btn"
+            onClick={() => {
+              applyState(clearWeek(state, safeWeekIdx));
+              setWeekActionsOpen(false);
+            }}
+          >
+            Clear
+          </button>
+          <button
+            type="button"
+            className="bk-actions-list__btn bk-actions-list__btn--danger"
+            disabled={weeks.length <= 1}
+            onClick={() => {
+              if (weekHasExercises(currentWeek)) {
+                const ok = window.confirm(
+                  "Delete this week and all its exercises?"
+                );
+                if (!ok) return;
+              }
+              applyState(deleteWeek(state, safeWeekIdx));
+              setWeekIdx(Math.max(0, safeWeekIdx - 1));
+              setWeekActionsOpen(false);
+            }}
+          >
+            Delete
+          </button>
+        </div>
+      </BuilderSheet>
+
+      <BuilderSheet
+        open={dayActionsOpen}
+        title={currentDay?.name || `Day ${safeDayIdx + 1}`}
+        onClose={() => setDayActionsOpen(false)}
+      >
+        <label className="bk-settings__field">
+          <span className="bk-settings__label">Rename</span>
+          <input
+            className="bk-settings__input"
+            value={dayNameDraft}
+            maxLength={60}
+            onChange={(e) => setDayNameDraft(e.target.value)}
+            onBlur={() =>
+              applyState(renameDay(state, safeWeekIdx, safeDayIdx, dayNameDraft))
+            }
+          />
+        </label>
+        <div className="bk-actions-list">
+          <button
+            type="button"
+            className="bk-actions-list__btn"
+            onClick={() => {
+              let next = renameDay(state, safeWeekIdx, safeDayIdx, dayNameDraft);
+              next = duplicateDay(next, safeWeekIdx, safeDayIdx);
+              applyState(next);
+              setDayIdx(safeDayIdx + 1);
+              setDayActionsOpen(false);
+            }}
+          >
+            Duplicate
+          </button>
+          <button
+            type="button"
+            className="bk-actions-list__btn"
+            disabled={safeDayIdx === 0}
+            onClick={() => {
+              applyState(moveDay(state, safeWeekIdx, safeDayIdx, -1));
+              setDayIdx(safeDayIdx - 1);
+              setDayActionsOpen(false);
+            }}
+          >
+            Move left
+          </button>
+          <button
+            type="button"
+            className="bk-actions-list__btn"
+            disabled={safeDayIdx >= days.length - 1}
+            onClick={() => {
+              applyState(moveDay(state, safeWeekIdx, safeDayIdx, 1));
+              setDayIdx(safeDayIdx + 1);
+              setDayActionsOpen(false);
+            }}
+          >
+            Move right
+          </button>
+          <button
+            type="button"
+            className="bk-actions-list__btn bk-actions-list__btn--danger"
+            disabled={days.length <= 1}
+            onClick={() => {
+              if (dayHasExercises(currentDay)) {
+                const ok = window.confirm("Delete this day and its exercises?");
+                if (!ok) return;
+              }
+              applyState(deleteDay(state, safeWeekIdx, safeDayIdx));
+              setDayIdx(Math.max(0, safeDayIdx - 1));
+              setDayActionsOpen(false);
+            }}
+          >
+            Delete
+          </button>
+        </div>
+      </BuilderSheet>
+
+      <BuilderToast
+        message={toast?.message}
+        onUndo={toast?.onUndo}
+        onDismiss={() => setToast(null)}
+      />
+    </div>
+  );
+}
