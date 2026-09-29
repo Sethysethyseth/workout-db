@@ -1,6 +1,7 @@
 const { computeMatchedEffortTrend } = require("./matchedEffort");
 const { computeWeeksInRange, filterInRange, toDate, MS_PER_WEEK } = require("./aggregate");
 const { computeStandingPRs } = require("./prs");
+const { isTimedSet } = require("./enrichSet");
 
 // Fixed rep ladder for the rep-target calculator (N5). SETTLED July 10:
 // 15 is in for hypertrophy-range lifters; 20 is rejected - that far above
@@ -118,6 +119,7 @@ function computeWeeklyVolume(sets, { from, to }) {
   }));
 
   for (const set of filterInRange(sets, { from: fromDate, to: toDate_ })) {
+    if (isTimedSet(set.input)) continue;
     if (!set.attribution.attributed) continue;
     const performedMs = set.performedAt.getTime();
     // Same anchored-at-`to` bucketing as aggregateMuscleVolume: bucket k
@@ -210,6 +212,7 @@ function buildExerciseDetail(enrichedSets, { exerciseId, userExerciseId, from, t
 
   for (const set of sets) {
     sessionKeys.add(set.performedAt.getTime());
+    if (isTimedSet(set.input)) continue;
     if (set.attribution.attributed) attributedCount += 1;
     if (set.metrics.stimulusMultiplier !== null) {
       stimulatingTotal += set.metrics.stimulusMultiplier;
@@ -236,7 +239,7 @@ function buildExerciseDetail(enrichedSets, { exerciseId, userExerciseId, from, t
   }
 
   const topSets = dedupeTopSets(
-    sets.filter((s) => s.input.weight != null),
+    sets.filter((s) => s.input.weight != null && !isTimedSet(s.input)),
     MAX_TOP_SETS
   ).map(serializeTopSet);
 

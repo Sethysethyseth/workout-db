@@ -63,6 +63,7 @@ async function fetchAllTimeEnrichedSets(userId) {
             reps: set.reps,
             rir: set.rir,
             rpe: set.rpe,
+            durationSec: set.durationSec,
             order: set.order,
           },
           userIndex
@@ -92,10 +93,12 @@ async function loadSummary(userId, { from, to }) {
           include: {
             sessionExercise: {
               select: {
+                id: true,
                 exerciseName: true,
                 exerciseId: true,
                 userExerciseId: true,
                 templateExerciseId: true,
+                plan: true,
                 templateExercise: {
                   select: {
                     id: true,
@@ -143,38 +146,51 @@ async function loadSummary(userId, { from, to }) {
   const userIndex = buildUserExerciseIndex(userExerciseRows);
 
   const enriched = [];
-  // templateExerciseId -> planned sets, harvested from whichever linkage
-  // path (direct set FK or via sessionExercise) surfaced the plan.
+  // planKey -> planned sets (TemplateSet[]) or block plan snapshot
+  // ({ v, effort, effortCap, sets }). Template path unchanged; block path
+  // keys as `block:<sessionExerciseId>` from SessionExercise.plan.
   const planLookup = {};
   for (const session of sessions) {
     for (const set of session.sets) {
+      const se = set.sessionExercise;
       const planSource =
-        set.templateExercise ?? set.sessionExercise?.templateExercise ?? null;
+        set.templateExercise ?? se?.templateExercise ?? null;
+      let planKey = null;
       if (planSource && planSource.templateSets.length > 0) {
         planLookup[planSource.id] = planSource.templateSets;
+        planKey = planSource.id;
+      } else if (
+        se &&
+        se.plan &&
+        Array.isArray(se.plan.sets) &&
+        se.plan.sets.length > 0
+      ) {
+        planKey = `block:${se.id}`;
+        planLookup[planKey] = se.plan;
       }
       enriched.push(
         enrichSet(
           {
             performedAt: session.performedAt,
             exerciseName:
-              set.sessionExercise?.exerciseName ??
+              se?.exerciseName ??
               set.templateExercise?.exerciseName ??
               null,
             exerciseId:
-              set.sessionExercise?.exerciseId ??
+              se?.exerciseId ??
               set.templateExercise?.exerciseId ??
               null,
             userExerciseId:
-              set.sessionExercise?.userExerciseId ??
+              se?.userExerciseId ??
               set.templateExercise?.userExerciseId ??
               null,
             weight: set.weight,
             reps: set.reps,
             rir: set.rir,
             rpe: set.rpe,
+            durationSec: set.durationSec,
             order: set.order,
-            templateExerciseId: planSource ? planSource.id : null,
+            templateExerciseId: planKey,
           },
           userIndex
         )

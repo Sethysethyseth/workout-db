@@ -447,6 +447,17 @@ hit when logged seconds >= planned; with `effortCap`, RPE at or UNDER the cap
 (RIR at or OVER) counts as hit. Timed sets contribute nothing to volume,
 e1RM, strength or PRs (reps are null) - pinned by tests, not assumed.
 
+**Sept 29 ruling (Opus frontier seat, BK10 landing).** The paragraph above
+assumed the template branch has per-set "hit" rules; it does not - Execution
+reports load adherence, volume adherence and effort drift, all continuous.
+So the extensions land as: **effortCap -> effort drift counts only
+overshoot** (a set easier than an RPE cap / above a RIR floor is on plan,
+drift 0; harder counts as usual). Ranges and timed targets have no metric
+to feed yet: `planned.reps` shows the range's low end, and timed sets count
+toward volume adherence only. `judgePlanHit` (`planVsActual.js`) is the
+canonical hit predicate for all three rules, exported and tested, unused
+until a hit-rate metric exists (section 13).
+
 ## 8. Connector draft tool (amends `ai-layer.md` 4.2 - see its Sept 28 note)
 
 - Two tools on the existing MCP server: `get_block_format` (read-only,
@@ -645,3 +656,6 @@ HISTORY into analytics; Liftoscript import; direct `.xlsx` upload (needs a
 dependency, gate 5); snapshotting TEMPLATE session plans; connector tools that
 edit or delete; a What's New entry for this wave (write it at merge time,
 plain language, prod-only per standing rule).
+Also deferred (Sept 29, BK10): an Execution TARGET HIT RATE per exercise
+(share of paired sets that hit their planned reps/range/duration/cap, built
+on `judgePlanHit`) plus its UI - Execution shows adherence ratios today.

@@ -1,4 +1,5 @@
 const { computeMatchedEffortTrend } = require("./matchedEffort");
+const { isTimedSet } = require("./enrichSet");
 
 const MS_PER_WEEK = 7 * 24 * 60 * 60 * 1000;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
@@ -155,9 +156,11 @@ function aggregateExerciseMetrics(enrichedSets, { from, to }) {
   const inRange = filterInRange(enrichedSets, { from, to });
 
   // catalog id -> { name, sets: [] }. Resolved sets only.
+  // Timed sets (durationSec + null reps) never feed strength aggregation.
   const groups = new Map();
   for (const set of inRange) {
     if (!set.resolution.resolved) continue;
+    if (isTimedSet(set.input)) continue;
     const entry = set.resolution.catalogEntry;
     let g = groups.get(entry.id);
     if (!g) {
@@ -220,10 +223,12 @@ function aggregateExerciseMetrics(enrichedSets, { from, to }) {
 
     // Heaviest weight actually lifted - independent of e1RM / validSets.
     // Null only when no set carries a weight. Tie-break: higher reps.
+    // Timed sets (durationSec + null reps) never compete for topSet.
     let topSet = null;
     let topSetEnriched = null;
     for (const s of sorted) {
       if (s.input.weight == null) continue;
+      if (isTimedSet(s.input)) continue;
       if (
         topSetEnriched === null ||
         s.input.weight > topSetEnriched.input.weight ||
@@ -246,6 +251,7 @@ function aggregateExerciseMetrics(enrichedSets, { from, to }) {
     const sessionTop = new Map();
     for (const s of sorted) {
       if (s.input.weight == null) continue;
+      if (isTimedSet(s.input)) continue;
       const performedMs = s.performedAt.getTime();
       const current = sessionTop.get(performedMs);
       if (
