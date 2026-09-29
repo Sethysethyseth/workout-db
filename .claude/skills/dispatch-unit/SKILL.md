@@ -78,15 +78,19 @@ per unit is the crash/hand-relay fallback, not the design.
   whatever the previous invocation used (July 14: a flagless dispatch
   inherited an exhausted named model and quota-refused while
   `--model auto` worked fine).
-- Pop the visual (added July 15, with CW1/CW2): immediately after
-  launching the run, ensure the cursor-watch dashboard is serving -
-  if `http://127.0.0.1:4646` isn't answering, start it detached from
-  the MAIN tree (`node scripts/cursor-watch.mjs --open`, watching the
-  lane by default) - and open it (`Start-Process
-  http://127.0.0.1:4646`) so Seth gets visual confirmation the moment
-  Cursor starts working. Zero tokens: it's a local fs/git watcher, no
-  LLM anywhere in it. Skip gracefully if the script doesn't exist on
-  the branch yet.
+- Pop the visual (added July 15, with CW1/CW2; ONE tab per boot since
+  Sept 29, Seth's ask): immediately after launching the run, check
+  `http://127.0.0.1:4646`. **Answering -> do nothing** - never
+  `Start-Process` the URL; Seth already has the tab (his login shortcut
+  opens it once at startup) and every extra open is a duplicate tab.
+  **Not answering -> start it detached from the MAIN tree**
+  (`node scripts/cursor-watch.mjs --open --notify`, all lanes by
+  default) - `--open` fires once after bind, so the first dispatch of
+  the session is the only one that opens a tab. Never pass
+  `--open-on-activity` (it re-arms on every lane branch change = a new
+  tab per dispatch - the behavior Seth asked to kill). Zero tokens:
+  it's a local fs/git watcher, no LLM anywhere in it. Skip gracefully
+  if the script doesn't exist on the branch yet.
 - On hang/timeout: kill, retry once, then descend or escalate.
 - On exit: delivery = uncommitted changes + DELIVERY.md in the
   worktree -> flip AWAITING-REVIEW, hand to `land-unit` (local-relay
@@ -119,6 +123,17 @@ Seth's standing ask: while a wave runs, he wants a live checklist in the
 terminal, not just prose messages. Use the TaskCreate/TaskUpdate tools -
 Claude Code renders them as a persistent checkbox list with a spinner on
 whatever is in_progress.
+
+**When TaskCreate/TaskUpdate are NOT in the session's toolset** (Sept 29:
+a session came up without them - ToolSearch found nothing - and the list
+silently never rendered): the status line is the stand-in, already wired.
+`~/.claude/statusline-command.sh` prints a second line from
+`node scripts/wave-status.mjs` - `BK 6/13  ✓BK1 ▶BK5b ◆BK10 ·BK6 ... ·
+smoke · gate` - read straight from QUEUE.md, so it costs nothing beyond
+the QUEUE flips this ritual already requires. Keep QUEUE current AT
+dispatch (DISPATCHED) and at delivery (AWAITING-REVIEW), not in a batch
+later - the line is only as live as the ledger. Say once in chat that
+the status line is carrying the checklist.
 
 NOT the Agent tool. A Claude subagent renders a richer panel (timer +
 token counter), and using one for wave work violates the standing

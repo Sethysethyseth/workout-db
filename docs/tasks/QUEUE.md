@@ -24,7 +24,7 @@ every server unit's routes need a LIVE staging proof at landing.
 
 Landing order + lanes (tranches may run in parallel per spec section 12):
 
-LANDED 21c0df6 (LOCAL - push held for "migrate staging") | bk1-schema-block-persistence.md | the wave's one migration (spec 6),
+LANDED 21c0df6 | bk1-schema-block-persistence.md | the wave's one migration (spec 6),
 new block fields end to end, `createBlockTemplateForUser` as the one create
 path, draft accept, clone re-stamps identity for the cloner (cross-user fix) |
 n=1. Tranche 1 (beside BK2, BK4). MIGRATION-CARRYING: landing push waits for
@@ -40,8 +40,9 @@ normalizer, no donor ids leak); BK2 `formatToCreatePayload` -> BK1
 normalizer seam verified (label/restSec/effortCap/repsMax/durationSec
 survive). App-load check needs a placeholder DATABASE_URL in lanes (no
 .env) - environmental. Not in the store yet: a `sourceUnit` option (BK11
-adds it). Committed 21c0df6 on the wave branch LOCALLY; the push waits for
-"migrate staging" (every later push carries it).
+adds it). Staging migrated Sept 29 under "migrate staging" (status -> migrate
+deploy -> status "up to date" on ep-bitter-breeze, then the push, each
+approved by Seth); pushed with BK3 at aadb365.
 
 LANDED 3220d3d | bk2-block-format-parsers.md | LogChamp Block Format v1 validator,
 CSV/TSV + Strong/Hevy history parsers, format<->payload mapping, the any-AI
@@ -68,32 +69,59 @@ every var() resolves, index.css/index.html diffs one line each. Gate note:
 WeekStrip's scrollIntoView uses behavior smooth regardless of
 prefers-reduced-motion. Pushed.
 
-DISPATCHED | bk3-import-export-api.md | format / import-preview / import /
+LANDED aadb365 | bk3-import-export-api.md | format / import-preview / import /
 export endpoints, AI-answer JSON extraction, scoped 2 MB body limit | n=4.
 Needs BK1 + BK2. Beside BK5, BK7. Owns the `app.js` touch.
 Dispatched Sept 29 (tranche 2, resident relay): Channel B, `--model auto`,
 lane `cursor-lane` on `cursor/bk3` @ `21c0df6`, 40-minute hard kill.
+Run 3.7 min, exit 0. Audited: unit 394 fresh, route order, scoped 2 MB
+parser path matches the "/" mount, export visibility = GET /:id. Reviewer
+fix: JSON extraction took the FIRST `{` in the text, so stray prose braces
+or a table notes cell like "Tempo {3-1-1}" derailed auto-detect into an
+invalid-JSON 422 - now the first brace slice that parses as an object
+(capped at 50 candidates; a 1 MB brace flood runs < 1 s), truncated fenced
+JSON still reports invalid JSON; 3 tests added (397).
 
-DISPATCHED | bk5-block-builder-core.md | the reworked builder: sticky header +
+LANDED f6d6f4e | bk5-block-builder-core.md | the reworked builder: sticky header +
 week strip + day tiles + exercise cards + set grid + catalog picker +
 settings + save-in-place + draft banner | n=5. Needs BK1 + BK4. Beside BK3,
 BK7. Judgment-heavy visual unit - the critic scores it.
 Dispatched Sept 29 (tranche 2, resident relay): Channel B, `--model auto`,
 lane `cursor-lane-3` on `cursor/bk5` @ `21c0df6`, 40-minute hard kill.
+Run 8.5 min, exit 0. Audited: build + eslint + check-hex + raw-color grep
+clean, every var() resolves, workout path of CreateTemplatePage untouched,
+old builder files deleted with no importers; payload passes the BK1
+normalizer. Reviewer fixes (blockBuilderState.js): set-level notes on
+existing blocks were dropped on save (the old builder had set notes) -
+now carried through; an exercise with only targetSets/targetReps and no
+set rows hydrated as 3 x 8 - now rebuilt from its targets (N, N-M, Ns;
+other text -> a "Reps:" note). Accepted: saving from the new builder sets
+useDuration false / durationWeeks null (the builder has no duration
+setting; the week count is the duration).
 
-DISPATCHED | bk7-run-a-block-server.md | BlockRun endpoints, start-from-block
+LANDED a004ced | bk7-run-a-block-server.md | BlockRun endpoints, start-from-block
 with plan snapshot + resume, `blockContext`, `durationSec` on sets | n=6.
 Needs BK1. Beside BK3, BK5. Owns `routes/index.js`.
 Dispatched Sept 29 (tranche 2, resident relay): Channel B, `--model auto`,
 lane `cursor-lane-2` on `cursor/bk7` @ `21c0df6`, 40-minute hard kill.
+Run exit 0. Audited: unit 405 after rebase onto BK3; every Prisma call in
+blockRunController filtered by the session user; plan snapshot shape =
+spec 7.3 (probed by hand); resume + 409 on ended runs. Reviewer fix: two
+route registrations joined on one line in sessionRoutes.js. Gate note:
+concurrent start-from-block calls for the same day can race into two
+sessions (no unique guard) - accepted for v1.
 
-QUEUED | bk5b-copy-forward-progression-view.md | copy a week forward with a
+DISPATCHED | bk5b-copy-forward-progression-view.md | copy a week forward with a
 load step; the per-day progression table | n=7. Needs BK5 (same builder
 files - serial after it).
+Dispatched Sept 29: Channel B, `--model auto`, lane `cursor-lane-3` on
+`cursor/bk5b` @ `f6d6f4e`, 40-minute hard kill.
 
-QUEUED | bk10-execution-block-branch.md | Execution judges block sessions
+AWAITING-REVIEW | bk10-execution-block-branch.md | Execution judges block sessions
 against the snapshot (ranges, timed, caps); timed sets proven out of
 strength math | n=8. Needs BK7. Beside client units.
+Dispatched Sept 29: Channel B, `--model auto`, lane `cursor-lane` on
+`cursor/bk10` @ `a004ced`, 40-minute hard kill. Delivered, exit 0.
 
 QUEUED | bk6-import-export-ui.md | import page (paste / file / Strong+Hevy /
 any AI) with a trustworthy preview + exercise matching; export | n=9. Needs
@@ -103,9 +131,11 @@ QUEUED | bk8-run-a-block-client.md | `/blocks/current` (week strip + day
 picker + day card + Start/Resume), Start block in the library, Up next on
 Home, localStorage block "current" retired | n=10. Needs BK6 + BK7.
 
-QUEUED | bk9-logger-plan-timed-sets.md | logger shows plan targets, caps,
+AWAITING-REVIEW | bk9-logger-plan-timed-sets.md | logger shows plan targets, caps,
 rest; "as planned" fill (never effort); timed sets | n=11. Needs BK7.
 Beside BK8 (disjoint files). Non-block sessions must be byte-identical.
+Dispatched Sept 29: Channel B, `--model auto`, lane `cursor-lane-2` on
+`cursor/bk9` @ `a004ced`, 40-minute hard kill. Delivered, exit 0.
 
 QUEUED | bk11-connector-block-drafts.md | MCP `get_block_format` +
 `create_block_draft` (create-only, opt-in, capped, app-guarded), AI-access
