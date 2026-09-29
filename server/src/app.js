@@ -132,6 +132,9 @@ app.use((req, res, next) => {
   return appCors(req, res, next);
 });
 
+// Import paths accept up to 2 MB (Strong history exports); registered before
+// the global parser so the large body is parsed once and the global skip runs.
+app.use("/block-templates/import", express.json({ limit: "2mb" }));
 app.use(express.json());
 
 if (!process.env.DATABASE_URL) {
