@@ -315,6 +315,9 @@ export function MyTemplatesPage() {
               <Link className="btn programs-create-primary" to="/create-template?type=block">
                 Create block
               </Link>
+              <Link className="btn btn-secondary" to="/blocks/import">
+                Import a block
+              </Link>
               <Link className="btn btn-secondary" to="/create-template?type=workout">
                 Create workout
               </Link>

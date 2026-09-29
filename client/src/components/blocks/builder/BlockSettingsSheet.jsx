@@ -13,6 +13,8 @@ export function BlockSettingsSheet({
   state,
   onChange,
   onDelete,
+  onExport,
+  exporting = false,
   mode,
 }) {
   const isDraft = Boolean(state?.isDraft);
@@ -72,6 +74,19 @@ export function BlockSettingsSheet({
           </p>
         )}
       </div>
+
+      {onExport ? (
+        <div className="bk-settings__field">
+          <button
+            type="button"
+            className="bk-actions-list__btn"
+            disabled={exporting}
+            onClick={() => onExport()}
+          >
+            {exporting ? "Exporting…" : "Export block"}
+          </button>
+        </div>
+      ) : null}
 
       {mode === "edit" && onDelete ? (
         <div className="bk-settings__danger">

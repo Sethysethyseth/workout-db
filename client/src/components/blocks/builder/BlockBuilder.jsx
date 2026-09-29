@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import * as blockTemplateApi from "../../../api/blockTemplateApi.js";
 import { loadWeightUnit } from "../../../lib/weightUnitPref.js";
 import { ErrorMessage } from "../../ErrorMessage.jsx";
@@ -62,6 +62,28 @@ function countDaySets(day) {
   return (day?.exercises || []).reduce((n, ex) => n + (ex.sets?.length || 0), 0);
 }
 
+function slugifyBlockName(name) {
+  const s = String(name || "block")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return s || "block";
+}
+
+function downloadJson(filename, obj) {
+  const json = JSON.stringify(obj, null, 2);
+  const blob = new Blob([json], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  return json;
+}
+
 /**
  * Phone-first block builder (BK5).
  * @param {"create"|"edit"} mode
@@ -69,10 +91,12 @@ function countDaySets(day) {
  */
 export function BlockBuilder({ mode = "create", templateId, onBack }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const isCreate = mode === "create";
   const nameInputRef = useRef(null);
   const savedSnapshotRef = useRef(null);
   const discardLeavingRef = useRef(false);
+  const lastExportedJsonRef = useRef(null);
 
   const [loading, setLoading] = useState(!isCreate);
   const [error, setError] = useState(null);
@@ -96,10 +120,21 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
   const [dayNameDraft, setDayNameDraft] = useState("");
   const [toast, setToast] = useState(null);
   const [accepting, setAccepting] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [exportCopyOpen, setExportCopyOpen] = useState(false);
   const undoRef = useRef(null);
 
   const deviceUnit = loadWeightUnit();
   const displayUnit = deviceUnitToFormat(deviceUnit);
+
+  // Toast from import navigation
+  useEffect(() => {
+    const msg = location.state?.importToast;
+    if (!msg) return undefined;
+    setToast({ message: String(msg) });
+    navigate(location.pathname, { replace: true, state: {} });
+    return undefined;
+  }, [location.state, location.pathname, navigate]);
 
   const applyState = useCallback((updater, { markDirty = true } = {}) => {
     setState((prev) => {
@@ -386,6 +421,27 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
       navigate("/templates");
     } catch (err) {
       setError(err);
+    }
+  }
+
+  async function handleExportBlock() {
+    const id = blockId ?? templateId;
+    if (id == null) return;
+    setExporting(true);
+    setError(null);
+    try {
+      const data = await blockTemplateApi.exportBlock(id, displayUnit);
+      const block = data?.block;
+      if (!block) throw new Error("Export returned nothing.");
+      const filename = `${slugifyBlockName(block.name || state.name)}.logchamp.json`;
+      const json = downloadJson(filename, block);
+      lastExportedJsonRef.current = json;
+      setSettingsOpen(false);
+      setExportCopyOpen(true);
+    } catch (err) {
+      setError(err);
+    } finally {
+      setExporting(false);
     }
   }
 
@@ -692,6 +748,12 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
           if (patch.isPublic !== undefined) next = setIsPublic(next, patch.isPublic);
           applyState(next);
         }}
+        onExport={
+          blockId != null || (!isCreate && templateId != null)
+            ? () => void handleExportBlock()
+            : undefined
+        }
+        exporting={exporting}
         onDelete={
           blockId != null || !isCreate
             ? () => {
@@ -701,6 +763,36 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
             : undefined
         }
       />
+
+      <BuilderSheet
+        open={exportCopyOpen}
+        title="Export ready"
+        onClose={() => setExportCopyOpen(false)}
+        wide
+      >
+        <p className="bk-settings__hint">
+          Downloaded as JSON. You can also copy it to paste elsewhere or re-import via File.
+        </p>
+        <div className="bk-actions-list">
+          <button
+            type="button"
+            className="bk-actions-list__btn"
+            onClick={async () => {
+              const json = lastExportedJsonRef.current;
+              if (!json) return;
+              try {
+                await navigator.clipboard.writeText(json);
+                setExportCopyOpen(false);
+                setToast({ message: "JSON copied" });
+              } catch {
+                setError(new Error("Couldn't copy. Try downloading again."));
+              }
+            }}
+          >
+            Copy JSON
+          </button>
+        </div>
+      </BuilderSheet>
 
       <ExercisePicker
         open={pickerOpen}
