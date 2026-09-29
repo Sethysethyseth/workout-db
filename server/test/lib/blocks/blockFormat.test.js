@@ -518,3 +518,45 @@ describe("round trip + AI prompt", () => {
     expect(BLOCK_FORMAT_JSON_SCHEMA.type).toBe("object");
   });
 });
+
+describe("blockTreeToFormat - older exercises with no set rows", () => {
+  const legacyTree = (targetSets, targetReps, notes = null) => ({
+    name: "Old block",
+    useRPE: false,
+    useRIR: false,
+    weeks: [
+      {
+        order: 1,
+        workouts: [
+          {
+            order: 1,
+            name: "A",
+            exercises: [
+              { order: 1, exerciseName: "Curl", targetSets, targetReps, notes, blockWorkoutSets: [] },
+            ],
+          },
+        ],
+      },
+    ],
+  });
+  const firstExercise = (tree) =>
+    blockTreeToFormat(tree, { unit: "lb" }).weeks[0].days[0].exercises[0];
+
+  test("sets are rebuilt from targets and the export validates", () => {
+    expect(firstExercise(legacyTree(3, "10")).sets).toEqual([{ reps: 10 }, { reps: 10 }, { reps: 10 }]);
+    expect(firstExercise(legacyTree(2, "8-12")).sets).toEqual([
+      { reps: 8, repsMax: 12 },
+      { reps: 8, repsMax: 12 },
+    ]);
+    expect(firstExercise(legacyTree(2, "45s")).sets).toEqual([{ durationSec: 45 }, { durationSec: 45 }]);
+    const out = blockTreeToFormat(legacyTree(3, "10"), { unit: "lb" });
+    expect(validateBlockDraft(out, { targetUnit: "lb" }).ok).toBe(true);
+  });
+
+  test("unreadable target text is kept as a note, never dropped", () => {
+    const ex = firstExercise(legacyTree(2, "AMRAP", "Slow eccentric"));
+    expect(ex.sets).toEqual([{}, {}]);
+    expect(ex.notes).toBe("Slow eccentric\nReps: AMRAP");
+    expect(validateBlockDraft(blockTreeToFormat(legacyTree(2, "AMRAP"), { unit: "lb" }), { targetUnit: "lb" }).ok).toBe(true);
+  });
+});

@@ -64,6 +64,35 @@ function formatToCreatePayload(block) {
 }
 
 /**
+ * Older block exercises can carry only targetSets / targetReps with no set
+ * rows. Rebuild set objects from those so an export re-imports cleanly
+ * (the builder hydrates the same way - blockBuilderState.js).
+ * @returns {{ sets: object[], note: string | null }}
+ */
+function setsFromTargets(ex) {
+  const count =
+    Number.isInteger(ex.targetSets) && ex.targetSets >= 1 && ex.targetSets <= 20
+      ? ex.targetSets
+      : 3;
+  const raw = ex.targetReps != null ? String(ex.targetReps).trim() : "";
+  let set = {};
+  let note = null;
+  let m;
+  if (raw === "") {
+    set = {};
+  } else if ((m = raw.match(/^(\d+(?:\.\d+)?)$/)) && Number(m[1]) > 0) {
+    set = { reps: Number(m[1]) };
+  } else if ((m = raw.match(/^(\d+)\s*-\s*(\d+)$/)) && Number(m[2]) > Number(m[1]) && Number(m[1]) > 0) {
+    set = { reps: Number(m[1]), repsMax: Number(m[2]) };
+  } else if ((m = raw.match(/^(\d+)s$/)) && Number(m[1]) >= 1 && Number(m[1]) <= 3600) {
+    set = { durationSec: Number(m[1]) };
+  } else {
+    note = `Reps: ${raw}`;
+  }
+  return { sets: Array.from({ length: count }, () => ({ ...set })), note };
+}
+
+/**
  * API BlockTemplate tree -> format v1 (always array set form).
  * @param {object} tree - GET /block-templates/:id shape
  * @param {{ unit?: "lb"|"kg" }} [options]
@@ -89,21 +118,30 @@ function blockTreeToFormat(tree, options = {}) {
             ? [...ex.sets]
             : [];
         rawSets.sort((a, b) => (a.order || 0) - (b.order || 0));
-        const sets = rawSets.map((s) => {
-          const row = {};
-          if (s.reps != null) row.reps = s.reps;
-          if (s.repsMax != null) row.repsMax = s.repsMax;
-          if (s.durationSec != null) row.durationSec = s.durationSec;
-          if (s.weight != null) row.weight = s.weight;
-          if (s.rpe != null) row.rpe = s.rpe;
-          if (s.rir != null) row.rir = s.rir;
-          return row;
-        });
+        let targetsNote = null;
+        let sets;
+        if (rawSets.length === 0) {
+          const fromTargets = setsFromTargets(ex);
+          sets = fromTargets.sets;
+          targetsNote = fromTargets.note;
+        } else {
+          sets = rawSets.map((s) => {
+            const row = {};
+            if (s.reps != null) row.reps = s.reps;
+            if (s.repsMax != null) row.repsMax = s.repsMax;
+            if (s.durationSec != null) row.durationSec = s.durationSec;
+            if (s.weight != null) row.weight = s.weight;
+            if (s.rpe != null) row.rpe = s.rpe;
+            if (s.rir != null) row.rir = s.rir;
+            return row;
+          });
+        }
         const out = {
           name: ex.exerciseName || ex.name,
           sets,
         };
-        if (ex.notes) out.notes = ex.notes;
+        const notes = [ex.notes, targetsNote].filter(Boolean).join("\n");
+        if (notes) out.notes = notes;
         if (ex.restSec != null) out.restSec = ex.restSec;
         if (ex.effortCap) out.effortCap = true;
         return out;
