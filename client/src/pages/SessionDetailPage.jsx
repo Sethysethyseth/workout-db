@@ -39,6 +39,24 @@ import {
   isBlankSessionExerciseName,
   sessionExerciseNameForInput,
 } from "../lib/sessionExerciseName.js";
+import { Eyebrow } from "../components/blocks/ui/Eyebrow.jsx";
+import {
+  AsPlannedControl,
+  EffortCapWarn,
+  PlanLine,
+  TimedSecInput,
+  durationPlaceholderFromPlan,
+  effortPlaceholderFromPlan,
+  isOverEffortCap,
+  isTimedPlanExercise,
+  isTimedPlanSet,
+  parseSeconds,
+  planSetAt,
+  repsPlaceholderFromPlan,
+  weightPlaceholderFromPlan,
+} from "../components/blocks/log/index.js";
+import "../styles/blocks/bk-ui.css";
+import "../styles/blocks/bk-log.css";
 
 const exerciseResolutionCache = new Map();
 
@@ -320,16 +338,21 @@ function sessionSetRowIsBlank(set) {
   return (
     t(set.weight) === "" &&
     t(set.reps) === "" &&
+    t(set.durationSec) === "" &&
     t(set.rir) === "" &&
     t(set.rpe) === "" &&
     t(set.notes) === ""
   );
 }
 
-/** Weight + reps present — minimum “this set is logged” signal for UX (optional fields ignored). */
+/**
+ * Weight + reps present — minimum “this set is logged” signal for UX (optional fields ignored).
+ * Timed sets (durationSec) count as logged the same way for Finish / effort (BK9).
+ */
 function sessionSetHasCoreLogged(set) {
   if (!set || typeof set !== "object") return false;
   const t = (v) => (v == null ? "" : String(v)).trim();
+  if (t(set.durationSec) !== "") return true;
   return t(set.weight) !== "" && t(set.reps) !== "";
 }
 
@@ -368,9 +391,14 @@ function sessionLoggedEffortSignal(sets) {
 
 function sessionSetDraftDirty(draft, set) {
   const norm = (v) => (v == null ? "" : String(v)).trim();
+  const draftDur =
+    draft.durationSec !== undefined && draft.durationSec !== ""
+      ? String(parseSeconds(draft.durationSec) ?? draft.durationSec)
+      : "";
   return (
     norm(draft.weight) !== norm(set.weight) ||
     norm(draft.reps) !== norm(set.reps) ||
+    draftDur !== norm(set.durationSec) ||
     norm(draft.rir) !== norm(set.rir) ||
     norm(draft.rpe) !== norm(set.rpe) ||
     norm(draft.notes) !== norm(set.notes)
@@ -381,9 +409,15 @@ function sessionSetDraftDirty(draft, set) {
 function promotionPayloadFromDraft(d) {
   const payload = {};
   const t = (v) => (v == null ? "" : String(v)).trim();
-  if (t(d.reps) !== "") payload.reps = Number(String(d.reps).trim());
+  const dur = parseSeconds(d.durationSec);
+  if (dur != null) {
+    payload.durationSec = dur;
+  } else if (t(d.reps) !== "") {
+    payload.reps = Number(String(d.reps).trim());
+  }
   if (t(d.weight) !== "") payload.weight = Number(String(d.weight).trim());
   if (t(d.rpe) !== "") payload.rpe = Number(String(d.rpe).trim());
+  // rir = 0 is a real value - blank check via trim, never truthiness on the number.
   if (t(d.rir) !== "") payload.rir = Number(String(d.rir).trim());
   const n = t(d.notes);
   if (n) payload.notes = n;
@@ -407,6 +441,12 @@ function sessionExerciseLastLoggedSummary(sets) {
     const s = sets[i];
     if (sessionSetHasCoreLogged(s)) {
       const w = String(s.weight ?? "").trim();
+      const dur = s.durationSec != null ? String(s.durationSec).trim() : "";
+      if (dur !== "") {
+        const label = w !== "" ? `${w} × ${dur}s` : `${dur}s`;
+        if (s.side === "L" || s.side === "R") return `${s.side} ${label}`;
+        return label;
+      }
       const r = String(s.reps ?? "").trim();
       if (s.side === "L" || s.side === "R") {
         return `${s.side} ${w} × ${r}`;
@@ -850,11 +890,18 @@ const SessionSetRow = memo(function SessionSetRow({
   highlightMissingEffort = false,
   /** After a successful discard, skip remaining debounce/blur writes. */
   writesFrozenRef,
+  /**
+   * BK9: matching plan set for placeholders / as-planned / caps.
+   * Prop ABSENCE on non-block paths must not change behavior.
+   */
+  plan = undefined,
+  planSet = undefined,
+  timedMode = false,
 }) {
   const rootRef = useRef(null);
   const [draft, setDraft] = useState(() =>
     isDraft
-      ? { reps: "", weight: "", rpe: "", rir: "", notes: "" }
+      ? { reps: "", weight: "", rpe: "", rir: "", notes: "", durationSec: "" }
       : {
           order: String(set.order ?? ""),
           reps: set.reps ?? "",
@@ -862,6 +909,7 @@ const SessionSetRow = memo(function SessionSetRow({
           rpe: set.rpe ?? "",
           rir: set.rir ?? "",
           notes: set.notes ?? "",
+          durationSec: set.durationSec != null ? String(set.durationSec) : "",
         }
   );
   const [rirGateHint, setRirGateHint] = useState(null);
@@ -875,6 +923,7 @@ const SessionSetRow = memo(function SessionSetRow({
         ? {
             weight: `log-draft-${sessionExerciseId}-weight`,
             reps: `log-draft-${sessionExerciseId}-reps`,
+            durationSec: `log-draft-${sessionExerciseId}-duration`,
             rir: `log-draft-${sessionExerciseId}-rir`,
             rpe: `log-draft-${sessionExerciseId}-rpe`,
             notes: `log-draft-${sessionExerciseId}-notes`,
@@ -882,6 +931,7 @@ const SessionSetRow = memo(function SessionSetRow({
         : {
             weight: `log-set-${set.id}-weight`,
             reps: `log-set-${set.id}-reps`,
+            durationSec: `log-set-${set.id}-duration`,
             rir: `log-set-${set.id}-rir`,
             rpe: `log-set-${set.id}-rpe`,
             notes: `log-set-${set.id}-notes`,
@@ -895,7 +945,7 @@ const SessionSetRow = memo(function SessionSetRow({
 
   useEffect(() => {
     if (!isDraft) return;
-    const empty = { reps: "", weight: "", rpe: "", rir: "", notes: "" };
+    const empty = { reps: "", weight: "", rpe: "", rir: "", notes: "", durationSec: "" };
     setDraft(empty);
     draftRef.current = empty;
     lastSentKeyRef.current = null;
@@ -905,10 +955,17 @@ const SessionSetRow = memo(function SessionSetRow({
   function payloadFromDraft(d) {
     const payload = {};
     payload.order = lockSetOrder ? Number(set.order) : Number(d.order);
-    payload.reps = d.reps === "" ? "" : Number(d.reps);
+    if (timedMode) {
+      const sec = parseSeconds(d.durationSec);
+      payload.durationSec = sec == null ? "" : sec;
+      payload.reps = "";
+    } else {
+      payload.reps = d.reps === "" ? "" : Number(d.reps);
+    }
     payload.weight = d.weight === "" ? "" : Number(d.weight);
     payload.rpe = d.rpe === "" ? "" : Number(d.rpe);
     // Decimal RIR is rejected server-side; never send a non-integer.
+    // rir = 0 is a real value - empty string is the only blank.
     if (d.rir === "" || isNonIntegerRirValue(d.rir)) {
       payload.rir = "";
     } else {
@@ -938,6 +995,7 @@ const SessionSetRow = memo(function SessionSetRow({
       rpe: set.rpe ?? "",
       rir: set.rir ?? "",
       notes: set.notes ?? "",
+      durationSec: set.durationSec != null ? String(set.durationSec) : "",
     };
     const echoedKey = payloadKey(payloadFromDraft(next));
     if (echoedKey === payloadKey(payloadFromDraft(draftRef.current))) {
@@ -955,7 +1013,19 @@ const SessionSetRow = memo(function SessionSetRow({
     lastSentKeyRef.current = echoedKey;
     // payloadFromDraft closes over `set` + lockSetOrder; deps list mirrors those inputs.
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only re-sync when server fields change
-  }, [isDraft, set?.id, set?.order, set?.reps, set?.weight, set?.rpe, set?.rir, set?.notes, lockSetOrder]);
+  }, [
+    isDraft,
+    set?.id,
+    set?.order,
+    set?.reps,
+    set?.weight,
+    set?.rpe,
+    set?.rir,
+    set?.notes,
+    set?.durationSec,
+    lockSetOrder,
+    timedMode,
+  ]);
 
   const tryPromote = useCallback(async () => {
     if (!isDraft) return;
@@ -987,14 +1057,21 @@ const SessionSetRow = memo(function SessionSetRow({
         const latestKey = payloadKey(promotionPayloadFromDraft(latest));
         if (latestKey !== k) {
           lastSentKeyRef.current = latestKey;
-          onUpdateSet(created.id, {
+          const patch = {
             order: created.order,
-            reps: latest.reps === "" ? "" : Number(latest.reps),
             weight: latest.weight === "" ? "" : Number(latest.weight),
             rpe: latest.rpe === "" ? "" : Number(latest.rpe),
             rir: latest.rir === "" ? "" : Number(latest.rir),
             notes: latest.notes === "" ? "" : latest.notes,
-          });
+          };
+          if (timedMode) {
+            const sec = parseSeconds(latest.durationSec);
+            patch.durationSec = sec == null ? "" : sec;
+            patch.reps = "";
+          } else {
+            patch.reps = latest.reps === "" ? "" : Number(latest.reps);
+          }
+          onUpdateSet(created.id, patch);
         }
       }
     } catch {
@@ -1002,7 +1079,7 @@ const SessionSetRow = memo(function SessionSetRow({
     } finally {
       promotingRef.current = false;
     }
-  }, [isDraft, onPromoteDraft, onUpdateSet]);
+  }, [isDraft, onPromoteDraft, onUpdateSet, timedMode, writesFrozenRef]);
 
   function flushNow() {
     if (isDraft || disabled || writesFrozenRef?.current) return;
@@ -1041,6 +1118,27 @@ const SessionSetRow = memo(function SessionSetRow({
     }
   }
 
+  function applyAsPlanned() {
+    // Guard: only when a plan set is present. Never fills effort.
+    if (planSet == null || disabled || writesFrozenRef?.current) return;
+    const cur = { ...draftRef.current };
+    if (timedMode && planSet.durationSec != null) {
+      cur.durationSec = String(planSet.durationSec);
+    } else if (planSet.reps != null) {
+      cur.reps = String(planSet.reps);
+    }
+    if (planSet.weight != null) {
+      cur.weight = String(planSet.weight);
+    }
+    setDraft(cur);
+    draftRef.current = cur;
+    if (isDraft) {
+      void tryPromote();
+    } else {
+      flushNow();
+    }
+  }
+
   useEffect(() => {
     if (writesFrozenRef?.current) return;
     if (isDraft) {
@@ -1073,7 +1171,7 @@ const SessionSetRow = memo(function SessionSetRow({
   }, [draft, disabled, isDraft, tryPromote]);
 
   function focusNextField(from) {
-    const chain = ["weight", "reps"];
+    const chain = ["weight", timedMode ? "durationSec" : "reps"];
     if (useRIR) chain.push("rir");
     if (useRPE) chain.push("rpe");
     if (useSetNotes) chain.push("notes");
@@ -1112,24 +1210,44 @@ const SessionSetRow = memo(function SessionSetRow({
     (isDraft ? "Set 1" : lockSetOrder ? `Set ${setOrdinal ?? "—"}` : `Set ${draft.order || "—"}`);
 
   const coreLogged = useMemo(() => {
+    if (timedMode) {
+      return parseSeconds(draft.durationSec) != null;
+    }
     const w = (draft.weight ?? "").toString().trim();
     const r = (draft.reps ?? "").toString().trim();
     return w !== "" && r !== "";
-  }, [draft.weight, draft.reps]);
+  }, [draft.weight, draft.reps, draft.durationSec, timedMode]);
 
   const corePartial = useMemo(() => {
+    if (timedMode) {
+      const w = (draft.weight ?? "").toString().trim();
+      const d = (draft.durationSec ?? "").toString().trim();
+      if (w === "" && d === "") return false;
+      return parseSeconds(draft.durationSec) == null && d !== "";
+    }
     const w = (draft.weight ?? "").toString().trim();
     const r = (draft.reps ?? "").toString().trim();
     if (w === "" && r === "") return false;
     return w === "" || r === "";
-  }, [draft.weight, draft.reps]);
+  }, [draft.weight, draft.reps, draft.durationSec, timedMode]);
 
   const wTrim = (draft.weight ?? "").toString().trim();
   const rTrim = (draft.reps ?? "").toString().trim();
-  const needsWeight = Boolean(!disabled && !coreLogged && !wTrim && (Boolean(rTrim) || isNext));
-  const needsReps = Boolean(!disabled && !coreLogged && !rTrim && (Boolean(wTrim) || isNext));
+  const dTrim = (draft.durationSec ?? "").toString().trim();
+  const needsWeight = timedMode
+    ? false
+    : Boolean(!disabled && !coreLogged && !wTrim && (Boolean(rTrim) || isNext));
+  const needsReps = timedMode
+    ? false
+    : Boolean(!disabled && !coreLogged && !rTrim && (Boolean(wTrim) || isNext));
+  const needsDuration = Boolean(
+    timedMode && !disabled && !coreLogged && (Boolean(wTrim) || isNext || dTrim !== "")
+  );
   const needsWeightHighlight = Boolean(needsWeight && (!isNext || rTrim !== ""));
   const needsRepsHighlight = Boolean(needsReps && (!isNext || wTrim !== ""));
+  const needsDurationHighlight = Boolean(
+    needsDuration && (!isNext || wTrim !== "" || dTrim !== "")
+  );
   const rirTrim = (draft.rir ?? "").toString().trim();
   const rpeTrim = (draft.rpe ?? "").toString().trim();
   const needsRirHighlight = Boolean(
@@ -1138,7 +1256,13 @@ const SessionSetRow = memo(function SessionSetRow({
   const needsRpeHighlight = Boolean(
     highlightMissingEffort && !disabled && !isDraft && coreLogged && useRPE && rpeTrim === ""
   );
-  const showNextHint = Boolean(!disabled && isNext && !coreLogged && !wTrim && !rTrim);
+  const showNextHint = Boolean(
+    !disabled &&
+      isNext &&
+      !coreLogged &&
+      !wTrim &&
+      !(timedMode ? dTrim : rTrim)
+  );
 
   const synced = !isDraft && coreLogged && !sessionSetDraftDirty(draft, set);
 
@@ -1193,6 +1317,22 @@ const SessionSetRow = memo(function SessionSetRow({
       </span>
     ) : null;
 
+  const weightPh =
+    planSet != null ? weightPlaceholderFromPlan(planSet) ?? "e.g. 185" : "e.g. 185";
+  const repsPh =
+    planSet != null ? repsPlaceholderFromPlan(planSet) ?? "e.g. 8" : "e.g. 8";
+  const durationPh =
+    planSet != null ? durationPlaceholderFromPlan(planSet) ?? "e.g. 45" : "e.g. 45";
+  const rirPh =
+    planSet != null ? effortPlaceholderFromPlan(plan, planSet, "rir") ?? "—" : "—";
+  const rpePh =
+    planSet != null ? effortPlaceholderFromPlan(plan, planSet, "rpe") ?? "—" : "—";
+
+  const overCap =
+    plan != null &&
+    planSet != null &&
+    isOverEffortCap(plan, planSet, draft.rpe, draft.rir);
+
   return (
     <div
       ref={isDraft ? undefined : rootRef}
@@ -1230,8 +1370,15 @@ const SessionSetRow = memo(function SessionSetRow({
       >
         {showNextHint ? (
           <p className="session-set-next-hint muted small" style={{ margin: "0 0 6px" }}>
-            {"Enter weight & reps for this set."}
+            {timedMode
+              ? "Enter seconds for this set."
+              : "Enter weight & reps for this set."}
           </p>
+        ) : null}
+        {planSet != null && !disabled ? (
+          <div className="bk-log-set-targets">
+            <AsPlannedControl onFill={applyAsPlanned} disabled={disabled} />
+          </div>
         ) : null}
         <div className="session-set-field-groups">
           <div className="session-set-core-row grid-set-row" style={{ "--set-cols": 2 }}>
@@ -1257,36 +1404,50 @@ const SessionSetRow = memo(function SessionSetRow({
                 min="0"
                 step="0.01"
                 disabled={isDraft ? false : disabled}
-                placeholder="e.g. 185"
+                placeholder={weightPh}
                 aria-invalid={needsWeightHighlight ? true : undefined}
               />
             </label>
-            <label
-              className={[
-                "session-set-field session-set-field--primary",
-                needsRepsHighlight ? "session-set-field--needs-value" : "",
-              ]
-                .filter(Boolean)
-                .join(" ")}
-            >
-              <span className="session-set-field-label">Reps</span>
-              <input
-                id={fieldIds.reps}
-                type="number"
-                value={draft.reps}
-                onChange={(e) => setDraft((d) => ({ ...d, reps: e.target.value }))}
+            {timedMode ? (
+              <TimedSecInput
+                id={fieldIds.durationSec}
+                value={draft.durationSec}
+                onChange={(e) => setDraft((d) => ({ ...d, durationSec: e.target.value }))}
                 onBlur={onFieldBlur}
-                onWheel={(e) => e.currentTarget.blur()}
-                onKeyDown={(e) => onEnterNext(e, "reps")}
+                onKeyDown={(e) => onEnterNext(e, "durationSec")}
                 enterKeyHint={useRIR || useRPE || useSetNotes ? "next" : "done"}
-                inputMode="decimal"
-                min="0"
-                step="1"
                 disabled={isDraft ? false : disabled}
-                placeholder="e.g. 8"
-                aria-invalid={needsRepsHighlight ? true : undefined}
+                placeholder={durationPh}
+                invalid={needsDurationHighlight}
               />
-            </label>
+            ) : (
+              <label
+                className={[
+                  "session-set-field session-set-field--primary",
+                  needsRepsHighlight ? "session-set-field--needs-value" : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+              >
+                <span className="session-set-field-label">Reps</span>
+                <input
+                  id={fieldIds.reps}
+                  type="number"
+                  value={draft.reps}
+                  onChange={(e) => setDraft((d) => ({ ...d, reps: e.target.value }))}
+                  onBlur={onFieldBlur}
+                  onWheel={(e) => e.currentTarget.blur()}
+                  onKeyDown={(e) => onEnterNext(e, "reps")}
+                  enterKeyHint={useRIR || useRPE || useSetNotes ? "next" : "done"}
+                  inputMode="decimal"
+                  min="0"
+                  step="1"
+                  disabled={isDraft ? false : disabled}
+                  placeholder={repsPh}
+                  aria-invalid={needsRepsHighlight ? true : undefined}
+                />
+              </label>
+            )}
           </div>
 
           {useRIR || useRPE ? (
@@ -1296,6 +1457,7 @@ const SessionSetRow = memo(function SessionSetRow({
                   className={[
                     "session-set-field session-set-field--secondary",
                     needsRirHighlight ? "session-set-field--needs-value" : "",
+                    overCap && plan?.effort === "rir" ? "session-set-field--over-cap" : "",
                   ]
                     .filter(Boolean)
                     .join(" ")}
@@ -1315,7 +1477,7 @@ const SessionSetRow = memo(function SessionSetRow({
                     enterKeyHint={useRPE || useSetNotes ? "next" : "done"}
                     inputMode="numeric"
                     disabled={isDraft ? false : disabled}
-                    placeholder="—"
+                    placeholder={rirPh}
                     title="Optional"
                     aria-invalid={needsRirHighlight ? true : undefined}
                   />
@@ -1324,6 +1486,7 @@ const SessionSetRow = memo(function SessionSetRow({
                       {rirGateHint}
                     </span>
                   ) : null}
+                  {overCap && plan?.effort === "rir" ? <EffortCapWarn show /> : null}
                 </label>
               ) : null}
               {useRPE ? (
@@ -1331,6 +1494,7 @@ const SessionSetRow = memo(function SessionSetRow({
                   className={[
                     "session-set-field session-set-field--secondary",
                     needsRpeHighlight ? "session-set-field--needs-value" : "",
+                    overCap && plan?.effort === "rpe" ? "session-set-field--over-cap" : "",
                   ]
                     .filter(Boolean)
                     .join(" ")}
@@ -1350,10 +1514,11 @@ const SessionSetRow = memo(function SessionSetRow({
                     enterKeyHint={useSetNotes ? "next" : "done"}
                     inputMode="decimal"
                     disabled={isDraft ? false : disabled}
-                    placeholder="—"
+                    placeholder={rpePh}
                     title="Optional"
                     aria-invalid={needsRpeHighlight ? true : undefined}
                   />
+                  {overCap && plan?.effort === "rpe" ? <EffortCapWarn show /> : null}
                 </label>
               ) : null}
             </div>
@@ -1428,6 +1593,8 @@ function SessionExerciseBlock({
   /** Discard in flight / succeeded: freeze field writes without flipping completed chrome. */
   writesFrozen = false,
   writesFrozenRef,
+  /** BK9: weight unit for plan rx line (lb/kg). Absent on non-block paths. */
+  weightUnit = undefined,
 }) {
   const [draftResumeVersion, setDraftResumeVersion] = useState(0);
   const [draftTrackedStatus, setDraftTrackedStatus] = useState(null);
@@ -1462,6 +1629,9 @@ function SessionExerciseBlock({
 
   const rawName = se.exerciseName ?? "";
   const perSideMode = derivePerSideMode(perSideOverride, rawName, sets);
+  // Guard: plan chrome only when SessionExercise.plan is present (block sessions).
+  const plan = se.plan != null && typeof se.plan === "object" ? se.plan : null;
+  const timedExercise = plan != null && isTimedPlanExercise(plan);
 
   /** Live path only: one L/R pair via createSetPairForExercise when mode is on and sets are empty. */
   const maybeAutoCreateFirstPair = useCallback(() => {
@@ -1686,7 +1856,13 @@ function SessionExerciseBlock({
             writesFrozenRef={writesFrozenRef}
           />
 
-          {showPlannedTargets ? (
+          {plan != null ? (
+            <div className="bk">
+              <PlanLine plan={plan} notes={se.notes} unit={weightUnit} />
+            </div>
+          ) : null}
+
+          {showPlannedTargets && plan == null ? (
             <div className="muted small session-planned-targets">
               Planned: {se.targetSets != null ? `${se.targetSets} sets` : "—"} ·{" "}
               {se.targetReps ? `${se.targetReps} reps` : "—"}
@@ -1773,10 +1949,24 @@ function SessionExerciseBlock({
                       onUpdateSet={onUpdateSet}
                       writesFrozenRef={writesFrozenRef}
                       disabled={writesFrozen}
+                      {...(plan != null
+                        ? {
+                            plan,
+                            planSet: planSetAt(plan, 0),
+                            timedMode: isTimedPlanSet(plan, 0) || timedExercise,
+                          }
+                        : {})}
                     />
                   )
                 ) : (
                   renderUnits.map((unit, idx) => {
+                    const planIndex =
+                      (unit.type === "pair" ? unit.pairOrdinal : unit.setOrdinal) != null
+                        ? (unit.type === "pair" ? unit.pairOrdinal : unit.setOrdinal) - 1
+                        : idx;
+                    const rowPlanSet = plan != null ? planSetAt(plan, planIndex) : undefined;
+                    const rowTimed =
+                      plan != null && (isTimedPlanSet(plan, planIndex) || timedExercise);
                     if (unit.type === "pair") {
                       const leftSet = unit.sets.find((s) => s.side === "L") ?? unit.sets[0];
                       const rightSet = unit.sets.find((s) => s.side === "R") ?? unit.sets[1];
@@ -1806,6 +1996,9 @@ function SessionExerciseBlock({
                               hasPR={isCompleted && setHasPR(se, s.weight, s.reps)}
                               highlightMissingEffort={highlightMissingEffort}
                               writesFrozenRef={writesFrozenRef}
+                              {...(plan != null
+                                ? { plan, planSet: rowPlanSet, timedMode: rowTimed }
+                                : {})}
                             />
                           ))}
                         </div>
@@ -1837,6 +2030,9 @@ function SessionExerciseBlock({
                         hasPR={isCompleted && setHasPR(se, s.weight, s.reps)}
                         highlightMissingEffort={highlightMissingEffort}
                         writesFrozenRef={writesFrozenRef}
+                        {...(plan != null
+                          ? { plan, planSet: rowPlanSet, timedMode: rowTimed }
+                          : {})}
                       />
                     );
                   })
@@ -2272,10 +2468,10 @@ export function SessionDetailPage() {
   }, [session, session?.id, session?.notes]);
 
   useEffect(() => {
-    if (!session || session.workoutTemplate) return;
+    if (!session || session.workoutTemplate || session.blockContext) return;
     const fromServer = session.name != null ? String(session.name).trim() : "";
     setQuickTitleDraft(fromServer || getAdHocSessionTitle(session.id) || "");
-  }, [session, session?.id, session?.name, session?.workoutTemplate]);
+  }, [session, session?.id, session?.name, session?.workoutTemplate, session?.blockContext]);
 
   useEffect(() => {
     if (!session || session.completedAt) {
@@ -2300,6 +2496,22 @@ export function SessionDetailPage() {
       // locked session onto a signal it has no values for.
       const tplSignal = tplRIR ? "rir" : tplRPE ? "rpe" : null;
       const seeded = sessionLoggedEffortSignal(setsList) ?? tplSignal;
+      setLiveUseRIR(seeded === "rir");
+      setLiveUseRPE(seeded === "rpe");
+      return;
+    }
+
+    // BK9: block sessions seed from blockContext with the SAME resolution rules.
+    if (session.blockContext) {
+      setLiveUseSessionNotes(Boolean(String(session.notes ?? "").trim()));
+      // PlanLine shows coach notes without a tap - do not also open the editable field.
+      setLiveUseExerciseNotes(false);
+      const setsList = session.sets || [];
+      setLiveUseSetNotes(setsList.some((s) => String(s.notes ?? "").trim() !== ""));
+      const ctxRIR = Boolean(session.blockContext.useRIR);
+      const ctxRPE = Boolean(session.blockContext.useRPE);
+      const ctxSignal = ctxRIR ? "rir" : ctxRPE ? "rpe" : null;
+      const seeded = sessionLoggedEffortSignal(setsList) ?? ctxSignal;
       setLiveUseRIR(seeded === "rir");
       setLiveUseRPE(seeded === "rpe");
       return;
@@ -2397,7 +2609,8 @@ export function SessionDetailPage() {
         await Promise.allSettled(Array.from(pendingSetSavesRef.current));
       }
       const payload = (() => {
-        if (!session || session.workoutTemplate) return {};
+        // Template and block sessions already have a server name - do not rename on complete.
+        if (!session || session.workoutTemplate || session.blockContext) return {};
         const trimmed = quickTitleDraft.trim();
         if (trimmed) return { name: trimmed };
         return {
@@ -2408,7 +2621,7 @@ export function SessionDetailPage() {
         };
       })();
       await sessionApi.completeSession(sessionId, payload);
-      if (session && !session.workoutTemplate) {
+      if (session && !session.workoutTemplate && !session.blockContext) {
         setAdHocSessionTitle(sessionId, "");
       }
       navigate("/", { replace: true, state: { workoutSaved: true } });
@@ -2697,6 +2910,8 @@ export function SessionDetailPage() {
             rir: "rir" in apiSet ? apiSet.rir : nextSets[idx].rir,
             notes: "notes" in apiSet ? apiSet.notes : nextSets[idx].notes,
             side: "side" in apiSet ? apiSet.side : nextSets[idx].side,
+            durationSec:
+              "durationSec" in apiSet ? apiSet.durationSec : nextSets[idx].durationSec,
           };
           return { ...prev, sets: nextSets };
         });
@@ -2853,14 +3068,18 @@ export function SessionDetailPage() {
   }
 
   const isFromTemplate = Boolean(session?.workoutTemplate);
-  const isQuickLog = !isFromTemplate;
+  const isFromBlock = Boolean(session?.blockContext);
+  const isQuickLog = !isFromTemplate && !isFromBlock;
   const useLiveBuilderUX = !isCompleted;
   const inLiveBuilder = useLiveBuilderUX && liveViewMode === "builder";
   const inLiveTable = useLiveBuilderUX && liveViewMode === "table";
+  const blockContext = session?.blockContext ?? null;
 
   const sourceSummary = isFromTemplate
     ? `Saved workout: ${session.workoutTemplate.name}`
-    : "Quick log (one-time)";
+    : isFromBlock
+      ? `Block: ${blockContext.blockName}`
+      : "Quick log (one-time)";
 
   const pageTitle = isCompleted ? "Workout summary" : "Log workout";
 
@@ -2883,13 +3102,15 @@ export function SessionDetailPage() {
   const highlightMissingEffort = !isCompleted && setsMissingEffort > 0;
   const readonlyWorkoutName = isFromTemplate
     ? session.workoutTemplate.name
-    : sessionDisplayTitle(session);
+    : isFromBlock
+      ? session.name || `${blockContext.blockName} · W${blockContext.weekOrder} · ${blockContext.dayName}`
+      : sessionDisplayTitle(session);
 
   function onLiveEffortSignalChange(next) {
     if (effortSignalLocked) return;
     setLiveUseRIR(next === "rir");
     setLiveUseRPE(next === "rpe");
-    if (!isFromTemplate) saveEffortSignal(next);
+    if (isQuickLog) saveEffortSignal(next);
   }
 
   const liveEffortToggle = (
@@ -2916,7 +3137,7 @@ export function SessionDetailPage() {
 
   async function commitQuickTitle() {
     if (writesFrozenRef.current) return;
-    if (!session || session.workoutTemplate || session.completedAt) return;
+    if (!session || session.workoutTemplate || session.blockContext || session.completedAt) return;
     const trimmed = quickTitleDraft.trim();
     const prev = (session.name ?? "").trim();
     if (trimmed === prev) return;
@@ -2954,6 +3175,15 @@ export function SessionDetailPage() {
     <div className={`stack session-detail-page${!isCompleted ? " session-detail-page--live" : ""}`}>
       <div className="row session-detail-head">
         <div className="session-detail-head__text">
+          {blockContext ? (
+            <div className="bk bk-log-eyebrow-wrap">
+              <Eyebrow>
+                {`${blockContext.blockName} · W${blockContext.weekOrder}${
+                  blockContext.weekLabel ? ` · ${blockContext.weekLabel}` : ""
+                } · ${blockContext.dayName}`}
+              </Eyebrow>
+            </div>
+          ) : null}
           <h1 style={{ marginBottom: 6 }}>{pageTitle}</h1>
           <p className="muted small" style={{ margin: 0 }}>
             {isCompleted ? (
@@ -2963,7 +3193,11 @@ export function SessionDetailPage() {
             ) : (
               <>
                 Live session — updates save as you go.{" "}
-                {isFromTemplate ? `Started from ${session.workoutTemplate.name}.` : "One-time session."}
+                {isFromTemplate
+                  ? `Started from ${session.workoutTemplate.name}.`
+                  : isFromBlock
+                    ? `From block ${blockContext.blockName}.`
+                    : "One-time session."}
               </>
             )}
           </p>
@@ -3037,7 +3271,7 @@ export function SessionDetailPage() {
         <div className="card stack session-log-workout-form">
           <label>
             Name
-            {isFromTemplate ? (
+            {isFromTemplate || isFromBlock ? (
               <input readOnly value={readonlyWorkoutName} className="session-readonly-input" />
             ) : (
               <input
@@ -3048,14 +3282,14 @@ export function SessionDetailPage() {
               />
             )}
           </label>
-          {!isFromTemplate ? (
+          {isQuickLog ? (
             <p className="muted small" style={{ margin: "-4px 0 0" }}>
               Shown in History. Leave blank for an automatic dated name. Template workouts use the
               template name.
             </p>
           ) : null}
 
-          {isFromTemplate && liveUseSessionNotes ? (
+          {(isFromTemplate || isFromBlock) && liveUseSessionNotes ? (
             <label>
               Description (optional)
               <textarea
@@ -3068,7 +3302,7 @@ export function SessionDetailPage() {
             </label>
           ) : null}
 
-          {isFromTemplate ? (
+          {isFromTemplate || isFromBlock ? (
             <div className="stack" style={{ gap: 10 }}>
               <div className="template-options-grid">
                 <label className="checkbox-inline">
@@ -3173,7 +3407,7 @@ export function SessionDetailPage() {
                 useRIR={liveUseRIR}
                 useRPE={liveUseRPE}
                 useExerciseNotes={liveUseExerciseNotes}
-                useSetNotes={isFromTemplate && liveUseSetNotes}
+                useSetNotes={(isFromTemplate || isFromBlock) && liveUseSetNotes}
               />
             )
           ) : null}
@@ -3205,8 +3439,9 @@ export function SessionDetailPage() {
                       useRIR={liveUseRIR}
                       useRPE={liveUseRPE}
                       useExerciseNotes={liveUseExerciseNotes}
-                      useSetNotes={isFromTemplate && liveUseSetNotes}
+                      useSetNotes={(isFromTemplate || isFromBlock) && liveUseSetNotes}
                       isQuickLog={isQuickLog}
+                      weightUnit={isFromBlock ? weightUnit : undefined}
                       trackedStatus={trackedStatusByExerciseId.get(se.id) ?? null}
                       onOpenAddToLibrary={() => openAddToLibrarySheet(se.exerciseName, se.id)}
                       onExerciseCommitted={mergeSessionExerciseRow}

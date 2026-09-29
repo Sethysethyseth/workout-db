@@ -1,0 +1,74 @@
+/* Block logger plan chrome (BK9). Tokens only - no raw hex. */
+
+.bk-log-plan {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0 0 4px;
+}
+
+.bk-log-plan__rx {
+  margin: 0;
+}
+
+.bk-log-plan__notes {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.35;
+  color: var(--color-text-secondary);
+  white-space: pre-wrap;
+}
+
+.bk-log-as-planned {
+  appearance: none;
+  border: 1px solid var(--color-border);
+  background: color-mix(in srgb, var(--color-interactive) 10%, var(--color-surface-1));
+  color: var(--color-interactive);
+  font: 600 12px/1.2 var(--font-sans);
+  letter-spacing: 0.02em;
+  padding: 10px 12px;
+  min-height: 44px;
+  border-radius: 10px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.bk-log-as-planned:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.bk-log-as-planned:focus-visible {
+  outline: 2px solid var(--color-interactive);
+  outline-offset: 2px;
+}
+
+.bk-log-cap-warn {
+  display: inline-block;
+  margin-top: 4px;
+  font: 600 11px/1.2 var(--font-sans);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-warn-text);
+}
+
+.session-set-field--over-cap input {
+  border-color: color-mix(in srgb, var(--color-warn-accent) 42%, var(--color-input-border));
+  color: var(--color-warn-text);
+}
+
+.bk-log-set-targets {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 6px;
+}
+
+.bk-log-eyebrow-wrap {
+  margin: 0 0 4px;
+}
+
+.session-detail-page .bk-log-eyebrow-wrap .bk-eyebrow {
+  color: var(--color-muted);
+}
