@@ -805,6 +805,152 @@ export function convertUnits(state, targetUnit) {
   return { ...state, weeks, sourceUnit: null };
 }
 
+/**
+ * Copy week `fromWeek` (1-indexed) forward through `throughWeek`, replacing
+ * weeks fromWeek+1..throughWeek with deep copies of the source week. Each
+ * target keeps its own label; missing weeks are created (up to MAX_WEEKS).
+ * Sets with a weight get `weight + loadStep * (targetWeek - fromWeek)`,
+ * rounded to the nearest 0.5. Callers may pass `unit` for UI labeling; it
+ * does not affect the numbers (already in the device unit).
+ *
+ * @returns {{ state: object, error?: string }}
+ */
+export function copyForward(state, { fromWeek, throughWeek, loadStep } = {}) {
+  const step = Number(loadStep);
+  if (!Number.isFinite(step) || step < 0) {
+    return { state, error: "loadStep must be zero or positive" };
+  }
+
+  const from = Number(fromWeek);
+  const through = Number(throughWeek);
+  const weeksIn = state.weeks || [];
+
+  if (!Number.isInteger(from) || from < 1 || from > weeksIn.length) {
+    return { state, error: "fromWeek is out of range" };
+  }
+  if (!Number.isInteger(through) || through <= from) {
+    return { state, error: "throughWeek must be greater than fromWeek" };
+  }
+  if (through > MAX_WEEKS) {
+    return { state, error: `throughWeek must be at most ${MAX_WEEKS}` };
+  }
+
+  const src = weeksIn[from - 1];
+  const weeks = weeksIn.map((w) => w);
+
+  while (weeks.length < through) {
+    weeks.push(createEmptyWeek());
+  }
+
+  for (let weekNum = from + 1; weekNum <= through; weekNum++) {
+    const targetIdx = weekNum - 1;
+    const keepLabel = weeks[targetIdx]?.label != null ? String(weeks[targetIdx].label) : "";
+    const bump = step * (weekNum - from);
+    const copy = applyWeightBump(deepCloneWeek(src), bump);
+    copy.label = keepLabel;
+    weeks[targetIdx] = copy;
+  }
+
+  return { state: { ...state, weeks } };
+}
+
+/** Apply a flat weight bump to every set that already has a positive weight. */
+function applyWeightBump(week, bump) {
+  if (!bump) return week;
+  return {
+    ...week,
+    days: (week.days || []).map((day) => ({
+      ...day,
+      exercises: (day.exercises || []).map((ex) => ({
+        ...ex,
+        sets: (ex.sets || []).map((s) => {
+          if (s.weight == null || s.weight === "") return s;
+          const w = Number(s.weight);
+          if (!Number.isFinite(w) || w <= 0) return s;
+          return { ...s, weight: roundToHalf(w + bump) };
+        }),
+      })),
+    })),
+  };
+}
+
+/**
+ * First representative weight on an exercise (set 1, else first positive).
+ * @returns {number | null}
+ */
+export function firstExerciseWeight(exercise) {
+  const sets = exercise?.sets || [];
+  for (const s of sets) {
+    if (s.weight == null || s.weight === "") continue;
+    const w = Number(s.weight);
+    if (Number.isFinite(w) && w > 0) return w;
+  }
+  return null;
+}
+
+/**
+ * Live preview lines for a copy-forward: up to `limit` changed exercises,
+ * e.g. "Week 2: Bench Press 185 → 190 lb".
+ * @returns {string[]}
+ */
+export function previewCopyForward(
+  state,
+  { fromWeek, throughWeek, loadStep, unit } = {},
+  limit = 3
+) {
+  const step = Number(loadStep);
+  const from = Number(fromWeek);
+  const through = Number(throughWeek);
+  const u = normalizeUnit(unit);
+  const lines = [];
+  if (!Number.isFinite(step) || step < 0) return lines;
+  if (!Number.isInteger(from) || !Number.isInteger(through) || through <= from) return lines;
+
+  const src = state.weeks?.[from - 1];
+  if (!src) return lines;
+
+  for (let weekNum = from + 1; weekNum <= Math.min(through, MAX_WEEKS); weekNum++) {
+    const bump = step * (weekNum - from);
+    for (const day of src.days || []) {
+      for (const ex of day.exercises || []) {
+        const fromW = firstExerciseWeight(ex);
+        if (fromW == null) continue;
+        const toW = roundToHalf(fromW + bump);
+        const name = String(ex.exerciseName || "").trim() || "Exercise";
+        lines.push(`Week ${weekNum}: ${name} ${fromW} → ${toW} ${u}`);
+        if (lines.length >= limit) return lines;
+      }
+    }
+  }
+  return lines;
+}
+
+/** Compact cell rx for progression view: `3×8 @185`, `3×45s`, or null if empty. */
+export function compactExerciseRx(exercise, unit) {
+  if (!exercise) return null;
+  const sets = exercise.sets || [];
+  if (!sets.length) return null;
+
+  const summary = exerciseRxSummary(exercise, { unit });
+  if (!summary.uniform || !summary.rx) {
+    return summary.summary || null;
+  }
+  const rx = summary.rx;
+  if (rx.durationSec != null) {
+    return `${rx.sets}×${rx.durationSec}s`;
+  }
+  if (rx.reps == null) {
+    if (rx.weight != null) return `${rx.sets}× @${rx.weight}`;
+    return `${rx.sets}×`;
+  }
+  const dose =
+    rx.repsMax != null && rx.repsMax !== rx.reps
+      ? `${rx.sets}×${rx.reps}-${rx.repsMax}`
+      : `${rx.sets}×${rx.reps}`;
+  if (rx.weight != null) return `${dose} @${rx.weight}`;
+  return dose;
+}
+
 /** Week has any named exercise (for delete confirm). */
 export function weekHasExercises(week) {
   return (week?.days || []).some((d) => (d.exercises || []).some((ex) => String(ex.exerciseName || "").trim()));

@@ -7,6 +7,7 @@ import { LoadingState } from "../../LoadingState.jsx";
 import { Chip } from "../ui/Chip.jsx";
 import { DayPicker } from "../ui/DayPicker.jsx";
 import { SectionRule } from "../ui/SectionRule.jsx";
+import { Segmented } from "../ui/Segmented.jsx";
 import { StickyHeader } from "../ui/StickyHeader.jsx";
 import { WeekStrip } from "../ui/WeekStrip.jsx";
 import "../../../styles/blocks/bk-builder.css";
@@ -17,6 +18,7 @@ import {
   addWeekCopy,
   clearWeek,
   convertUnits,
+  copyForward,
   createInitialState,
   dayHasExercises,
   deleteDay,
@@ -50,9 +52,11 @@ import {
 import { BlockSettingsSheet } from "./BlockSettingsSheet.jsx";
 import { BuilderSheet } from "./BuilderSheet.jsx";
 import { BuilderToast } from "./BuilderToast.jsx";
+import { CopyForwardSheet } from "./CopyForwardSheet.jsx";
 import { DraftBanner } from "./DraftBanner.jsx";
 import { ExerciseCard } from "./ExerciseCard.jsx";
 import { ExercisePicker } from "./ExercisePicker.jsx";
+import { ProgressionView } from "./ProgressionView.jsx";
 
 function countDaySets(day) {
   return (day?.exercises || []).reduce((n, ex) => n + (ex.sets?.length || 0), 0);
@@ -86,6 +90,8 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
   const [replaceExIdx, setReplaceExIdx] = useState(null);
   const [weekActionsOpen, setWeekActionsOpen] = useState(false);
   const [dayActionsOpen, setDayActionsOpen] = useState(false);
+  const [copyForwardOpen, setCopyForwardOpen] = useState(false);
+  const [panelMode, setPanelMode] = useState("edit"); // edit | progression
   const [weekLabelDraft, setWeekLabelDraft] = useState("");
   const [dayNameDraft, setDayNameDraft] = useState("");
   const [toast, setToast] = useState(null);
@@ -538,86 +544,124 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
 
         {currentDay ? (
           <div className="bk-builder__panel">
-            <SectionRule
-              label={currentDay.name || `Day ${safeDayIdx + 1}`}
-              chip={
-                <span className="bk-builder__chips">
-                  <Chip>
-                    {exCount} exercise{exCount === 1 ? "" : "s"}
-                  </Chip>
-                  <Chip>
-                    {setCount} set{setCount === 1 ? "" : "s"}
-                  </Chip>
-                </span>
-              }
-            />
-
-            <div className="bk-builder__exercises">
-              {(currentDay.exercises || []).map((ex, ei) => (
-                <ExerciseCard
-                  key={ex.id || ei}
-                  exercise={ex}
-                  index={ei}
-                  effort={state.effort}
-                  unit={displayUnit === "kg" ? "kg" : "lb"}
-                  expanded={expandedIds.has(ex.id)}
-                  invalid={exerciseInvalid(ei)}
-                  onToggle={() => toggleExpanded(ex.id)}
-                  onChange={(patch) =>
-                    applyState(updateExercise(state, safeWeekIdx, safeDayIdx, ei, patch))
-                  }
-                  onAddSet={() => applyState(addSet(state, safeWeekIdx, safeDayIdx, ei))}
-                  onDeleteSet={(si) =>
-                    applyState(deleteSet(state, safeWeekIdx, safeDayIdx, ei, si))
-                  }
-                  onFillAll={() =>
-                    applyState(fillAllFromSet1(state, safeWeekIdx, safeDayIdx, ei))
-                  }
-                  onToggleTimed={(timed) =>
-                    applyState(toggleTimed(state, safeWeekIdx, safeDayIdx, ei, timed))
-                  }
-                  onToggleRange={(enabled) =>
-                    applyState(toggleRange(state, safeWeekIdx, safeDayIdx, ei, enabled))
-                  }
-                  onMoveUp={() =>
-                    applyState(moveExercise(state, safeWeekIdx, safeDayIdx, ei, -1))
-                  }
-                  onMoveDown={() =>
-                    applyState(moveExercise(state, safeWeekIdx, safeDayIdx, ei, 1))
-                  }
-                  onDuplicate={() =>
-                    applyState(duplicateExercise(state, safeWeekIdx, safeDayIdx, ei))
-                  }
-                  onReplace={() => {
-                    setPickerMode("replace");
-                    setReplaceExIdx(ei);
-                    setPickerOpen(true);
-                  }}
-                  onDelete={() => {
-                    const prev = state;
-                    applyState(deleteExercise(state, safeWeekIdx, safeDayIdx, ei));
-                    setExpandedIds((ids) => {
-                      const n = new Set(ids);
-                      n.delete(ex.id);
-                      return n;
-                    });
-                    showToast("Exercise deleted", prev);
-                  }}
-                />
-              ))}
+            <div className="bk-builder__panel-head">
+              <SectionRule
+                label={currentDay.name || `Day ${safeDayIdx + 1}`}
+                chip={
+                  <span className="bk-builder__chips">
+                    <Chip>
+                      {exCount} exercise{exCount === 1 ? "" : "s"}
+                    </Chip>
+                    <Chip>
+                      {setCount} set{setCount === 1 ? "" : "s"}
+                    </Chip>
+                  </span>
+                }
+              />
+              <Segmented
+                className="bk-builder__mode"
+                label="Day panel mode"
+                value={panelMode}
+                onChange={setPanelMode}
+                options={[
+                  { value: "edit", label: "Edit" },
+                  { value: "progression", label: "Progression" },
+                ]}
+              />
             </div>
 
-            <button
-              type="button"
-              className="bk-builder__add-ex"
-              onClick={() => {
-                setPickerMode("add");
-                setReplaceExIdx(null);
-                setPickerOpen(true);
-              }}
-            >
-              + Add exercise
-            </button>
+            {panelMode === "progression" ? (
+              <ProgressionView
+                weeks={weeks}
+                dayPosition={safeDayIdx}
+                orderWeekIdx={safeWeekIdx}
+                unit={displayUnit === "kg" ? "kg" : "lb"}
+                onSelectCell={({ weekIdx, exerciseId, exerciseName }) => {
+                  setWeekIdx(weekIdx);
+                  setPanelMode("edit");
+                  const day = weeks[weekIdx]?.days?.[safeDayIdx];
+                  const match =
+                    (day?.exercises || []).find((ex) => ex.id === exerciseId) ||
+                    (day?.exercises || []).find(
+                      (ex) => String(ex.exerciseName || "").trim() === exerciseName
+                    );
+                  if (match?.id) {
+                    setExpandedIds(new Set([match.id]));
+                  } else {
+                    setExpandedIds(new Set());
+                  }
+                }}
+              />
+            ) : (
+              <>
+                <div className="bk-builder__exercises">
+                  {(currentDay.exercises || []).map((ex, ei) => (
+                    <ExerciseCard
+                      key={ex.id || ei}
+                      exercise={ex}
+                      index={ei}
+                      effort={state.effort}
+                      unit={displayUnit === "kg" ? "kg" : "lb"}
+                      expanded={expandedIds.has(ex.id)}
+                      invalid={exerciseInvalid(ei)}
+                      onToggle={() => toggleExpanded(ex.id)}
+                      onChange={(patch) =>
+                        applyState(updateExercise(state, safeWeekIdx, safeDayIdx, ei, patch))
+                      }
+                      onAddSet={() => applyState(addSet(state, safeWeekIdx, safeDayIdx, ei))}
+                      onDeleteSet={(si) =>
+                        applyState(deleteSet(state, safeWeekIdx, safeDayIdx, ei, si))
+                      }
+                      onFillAll={() =>
+                        applyState(fillAllFromSet1(state, safeWeekIdx, safeDayIdx, ei))
+                      }
+                      onToggleTimed={(timed) =>
+                        applyState(toggleTimed(state, safeWeekIdx, safeDayIdx, ei, timed))
+                      }
+                      onToggleRange={(enabled) =>
+                        applyState(toggleRange(state, safeWeekIdx, safeDayIdx, ei, enabled))
+                      }
+                      onMoveUp={() =>
+                        applyState(moveExercise(state, safeWeekIdx, safeDayIdx, ei, -1))
+                      }
+                      onMoveDown={() =>
+                        applyState(moveExercise(state, safeWeekIdx, safeDayIdx, ei, 1))
+                      }
+                      onDuplicate={() =>
+                        applyState(duplicateExercise(state, safeWeekIdx, safeDayIdx, ei))
+                      }
+                      onReplace={() => {
+                        setPickerMode("replace");
+                        setReplaceExIdx(ei);
+                        setPickerOpen(true);
+                      }}
+                      onDelete={() => {
+                        const prev = state;
+                        applyState(deleteExercise(state, safeWeekIdx, safeDayIdx, ei));
+                        setExpandedIds((ids) => {
+                          const n = new Set(ids);
+                          n.delete(ex.id);
+                          return n;
+                        });
+                        showToast("Exercise deleted", prev);
+                      }}
+                    />
+                  ))}
+                </div>
+
+                <button
+                  type="button"
+                  className="bk-builder__add-ex"
+                  onClick={() => {
+                    setPickerMode("add");
+                    setReplaceExIdx(null);
+                    setPickerOpen(true);
+                  }}
+                >
+                  + Add exercise
+                </button>
+              </>
+            )}
           </div>
         ) : null}
 
@@ -717,6 +761,18 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
             }}
           >
             Duplicate
+          </button>
+          <button
+            type="button"
+            className="bk-actions-list__btn"
+            disabled={safeWeekIdx >= 51}
+            onClick={() => {
+              applyState(setWeekLabel(state, safeWeekIdx, weekLabelDraft));
+              setWeekActionsOpen(false);
+              setCopyForwardOpen(true);
+            }}
+          >
+            Copy forward...
           </button>
           <button
             type="button"
@@ -846,6 +902,36 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
           </button>
         </div>
       </BuilderSheet>
+
+      <CopyForwardSheet
+        key={copyForwardOpen ? `cf-${safeWeekIdx}` : "cf-closed"}
+        open={copyForwardOpen}
+        onClose={() => setCopyForwardOpen(false)}
+        fromWeek={safeWeekIdx + 1}
+        state={state}
+        unit={displayUnit}
+        onApply={({ fromWeek, throughWeek, loadStep, unit }) => {
+          const prev = state;
+          const result = copyForward(state, {
+            fromWeek,
+            throughWeek,
+            loadStep,
+            unit,
+          });
+          if (result.error) {
+            setError(new Error(result.error));
+            return;
+          }
+          applyState(result.state);
+          setCopyForwardOpen(false);
+          showToast(
+            `Copied week ${fromWeek} forward through week ${throughWeek}${
+              loadStep ? ` (+${loadStep} ${unit}/wk)` : ""
+            }`,
+            prev
+          );
+        }}
+      />
 
       <BuilderToast
         message={toast?.message}
