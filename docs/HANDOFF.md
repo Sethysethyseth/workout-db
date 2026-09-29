@@ -74,24 +74,40 @@ staging" before the BK1 push.
 
 ### Open on prod - Seth's checks, none blocking
 
-1. **Connector ID1 live checks** (the rest of the old P-A step 4): the
-   "Continue as <email>" stop on `/connector/login` should have appeared when
-   Seth connected (confirm with him). Then Profile -> AI access -> "Sign out of
-   connected assistants" must say **"Signed out of connected assistants."** -
-   "Nothing to sign out" means WorkOS does not file our `User.id` as
-   `external_id` (Door A open; report it, frontier escalation). Signing out
-   drops the Claude connection; reconnect after.
-2. **Prod AuthKit session lifetime** (WorkOS Production -> Applications -> the
-   app -> Sessions) - staging's was shortened Sept 26; prod's is unverified.
-3. **Patch-wave post-deploy checks - never done** (RUNBOOK 5 + the archived
-   PRE-MERGE step 4): Render Events on `workout-db-l3gc` shows `7d3b91e`; open
-   Home and a past workout (the `reopenedAt` path); start and discard an empty
-   workout; ask the coach twice - the second answer fast, the Render log shows
-   `[coach] cursor ... agentRuns=1` and no "Ripgrep path not configured".
-   CP2's speed-up has NOT been measured on prod.
-4. **`COACH_UNCAPPED_EMAILS=sethjknisel@gmail.com`** on prod AND staging
-   Render - unconfirmed. Unset means Seth hits the 7-per-week cap like anyone.
+1. **Connector ID1 live checks - DONE Sept 29 (Seth).** Sign-in and the
+   sign-out button both work on prod.
+2. **Prod AuthKit session lifetime - DONE Sept 29.** Prod matches staging:
+   max session 7 days, access token 5 minutes, inactivity timeout 2 days.
+3. **Patch-wave post-deploy checks - DONE Sept 29 (Seth), with two product
+   findings** (below): Render shows `7d3b91e`; coach's second answer is
+   visibly faster (CP2 confirmed by feel; `ttft_ms` not recorded); Render
+   logs clean, no "Ripgrep path not configured".
+4. **`COACH_UNCAPPED_EMAILS=sethjknisel@gmail.com` - DONE on PROD only**
+   (Seth has no staging/preview coach use); the "N of 7 left" counter no
+   longer shows for that account on prod. Staging stays capped by design.
 5. **F/E-wave PROD smoke** - still open (section below).
+
+### Seth's asks, Sept 29 - NOT scheduled, no unit authored (needs a wave slot)
+
+- **Discard on the live-workout entry points.** The discard X (WD1) exists
+  only inside `SessionDetailPage`. Seth wants it reachable from the Home
+  "In progress / Resume workout" card and the floating "In progress" bar
+  (his screenshot: `claudefiledrop/image0.jpg`, untracked, both circled),
+  with a warning confirm before it deletes. Reuse WD1's confirm pattern
+  (`.session-discard-confirm`) and the existing race-safe
+  `POST /sessions/:id/discard`.
+- **Coach "thinking" state.** The first coach question is slow; add a
+  custom loading state while the coach is working so users know it is not
+  stuck (CoachPanel.jsx).
+- **No way to view past coach conversations.** Coach history is not stored
+  or browsable today; Seth flagged it. Product decision first (persist
+  content? that changes the privacy page's "records only who and when"
+  cap statement in BK0).
+- **BK0 (privacy/ToS) facts - Seth took the recommended defaults Sept 29,
+  to be critiqued later:** deletion = "email us, we delete within 30 days"
+  (manual prod delete, Seth only); effective date = go-live date; contact =
+  a dedicated address, not personal Gmail. STILL NEEDED before BK0 flips
+  to QUEUED: operator name, the actual contact email, US state.
 
 ### Housekeeping
 
