@@ -111,36 +111,69 @@ route registrations joined on one line in sessionRoutes.js. Gate note:
 concurrent start-from-block calls for the same day can race into two
 sessions (no unique guard) - accepted for v1.
 
-DISPATCHED | bk5b-copy-forward-progression-view.md | copy a week forward with a
+LANDED 506b916 | bk5b-copy-forward-progression-view.md | copy a week forward with a
 load step; the per-day progression table | n=7. Needs BK5 (same builder
 files - serial after it).
 Dispatched Sept 29: Channel B, `--model auto`, lane `cursor-lane-3` on
 `cursor/bk5b` @ `f6d6f4e`, 40-minute hard kill.
+Audited: build + eslint + check-hex + raw-color + token checks clean;
+copyForward probed by hand (fresh ids in every copy, labels kept, bad
+fromWeek rejected). Notes for the gate: hidden legacy set notes are not
+carried into copied weeks; throughWeek past 52 returns state unchanged
+(the sheet's stepper bounds it).
 
-AWAITING-REVIEW | bk10-execution-block-branch.md | Execution judges block sessions
+LANDED 4bfd5cd | bk10-execution-block-branch.md | Execution judges block sessions
 against the snapshot (ranges, timed, caps); timed sets proven out of
 strength math | n=8. Needs BK7. Beside client units.
 Dispatched Sept 29: Channel B, `--model auto`, lane `cursor-lane` on
 `cursor/bk10` @ `a004ced`, 40-minute hard kill. Delivered, exit 0.
+Audited: unit 423 fresh, template output pinned to a pre-change snapshot,
+no existing test edited, no Prisma in analytics. FRONTIER RULING at
+landing: `judgePlanHit` was never called - the engine has no per-set hit
+metric (adherence ratios + effort drift only), a spec 7.5 assumption. Now:
+capped plans count only overshoot in effort drift (+1 test, 424); ranges /
+timed targets have no metric yet; hit rate deferred (spec 7.5 + 13
+amended in the unit commit). Gate note: the harvest reuses the enriched
+`templateExerciseId` field for `block:<id>` keys (only planVsActual reads
+it).
 
-QUEUED | bk6-import-export-ui.md | import page (paste / file / Strong+Hevy /
+LANDED ab4a692 | bk6-import-export-ui.md | import page (paste / file / Strong+Hevy /
 any AI) with a trustworthy preview + exercise matching; export | n=9. Needs
 BK3 + BK5b. Touches `App.jsx` + `MyTemplatesPage.jsx` before BK8.
+Dispatched Sept 29: Channel B, `--model auto`, lane `cursor-lane-3` on
+`cursor/bk6` @ `506b916`, 40-minute hard kill.
+Audited: build + eslint + check-hex + raw-color + token checks clean;
+App.jsx one route, MyTemplatesPage one link; 422 bodies reach the error
+card via ApiError.body. Export -> re-import proven clean for a modern
+tree; an OLDER exercise with targets but no set rows exported `sets: []`
+and failed re-import - fixed in BK2's mapping as its own commit (sets
+rebuilt from targets, +2 tests, 426).
 
-QUEUED | bk8-run-a-block-client.md | `/blocks/current` (week strip + day
+DISPATCHED | bk8-run-a-block-client.md | `/blocks/current` (week strip + day
 picker + day card + Start/Resume), Start block in the library, Up next on
 Home, localStorage block "current" retired | n=10. Needs BK6 + BK7.
+Dispatched Sept 29: Channel B, `--model auto`, lane `cursor-lane-2` on
+`cursor/bk8` @ `ab4a692`, 40-minute hard kill.
 
-AWAITING-REVIEW | bk9-logger-plan-timed-sets.md | logger shows plan targets, caps,
+LANDED 06c0761 | bk9-logger-plan-timed-sets.md | logger shows plan targets, caps,
 rest; "as planned" fill (never effort); timed sets | n=11. Needs BK7.
 Beside BK8 (disjoint files). Non-block sessions must be byte-identical.
 Dispatched Sept 29: Channel B, `--model auto`, lane `cursor-lane-2` on
 `cursor/bk9` @ `a004ced`, 40-minute hard kill. Delivered, exit 0.
+Audited: build + check-hex + raw-color + token checks clean; eslint 2
+errors = the same 2 as HEAD (baseline linted from `git show HEAD`); every
+modified SessionDetailPage line read - each new branch guarded by plan /
+blockContext / timedMode and each touched expression reduces to the old
+one on non-block paths; parseSeconds probed by hand (edge inputs null).
+LIVE check (block day: as planned, timed, over-cap, finish, reopen)
+carried to the wave smoke list.
 
-QUEUED | bk11-connector-block-drafts.md | MCP `get_block_format` +
+DISPATCHED | bk11-connector-block-drafts.md | MCP `get_block_format` +
 `create_block_draft` (create-only, opt-in, capped, app-guarded), AI-access
 toggle, consent facts | n=12. Needs BK3. CROSS-USER ISOLATION SURFACE -
 frontier review at the gate. Live check needs Seth's Claude on staging.
+Dispatched Sept 29: Channel B, `--model auto`, lane `cursor-lane` on
+`cursor/bk11` @ `4bfd5cd`, 40-minute hard kill.
 
 QUEUED | bk12-coach-block-assist.md | coach convert/generate a draft
 (palette pattern, counts 1 question) into the import preview; ask about a
