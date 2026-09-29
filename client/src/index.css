@@ -80,6 +80,7 @@
      Falls back to the system stack until the face has loaded. */
   --font-display: "Chakra Petch", ui-sans-serif, system-ui, -apple-system, Segoe UI,
     Roboto, Arial, sans-serif;
+  --font-block: "Barlow Condensed", "Arial Narrow", var(--font-display), sans-serif;
 
   font-family: var(--font-sans);
   line-height: 1.4;
