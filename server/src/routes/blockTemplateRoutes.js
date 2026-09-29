@@ -7,6 +7,7 @@ const {
   updateBlockTemplate,
   deleteBlockTemplate,
   cloneBlockTemplate,
+  acceptBlockTemplate,
 } = require("../controllers/blockTemplateController");
 const authRequired = require("../middleware/authRequired");
 
@@ -19,5 +20,6 @@ router.get("/:id", getBlockTemplateById);
 router.patch("/:id", authRequired, updateBlockTemplate);
 router.delete("/:id", authRequired, deleteBlockTemplate);
 router.post("/:id/clone", authRequired, cloneBlockTemplate);
+router.post("/:id/accept", authRequired, acceptBlockTemplate);
 
 module.exports = router;

@@ -21,12 +21,40 @@ function parseNullableFloat(value) {
   return parsed;
 }
 
+function setTargetRepsText(row) {
+  if (row.durationSec != null) {
+    return `${row.durationSec}s`;
+  }
+  if (row.reps != null && row.repsMax != null) {
+    return `${row.reps}-${row.repsMax}`;
+  }
+  if (row.reps != null) {
+    return String(row.reps);
+  }
+  return "";
+}
+
+function deriveTargetRepsFromSets(templateSetsCreate) {
+  const parts = templateSetsCreate
+    .slice()
+    .sort((a, b) => a.order - b.order)
+    .map(setTargetRepsText)
+    .filter(Boolean);
+  if (parts.length === 0) return null;
+  if (parts.every((r) => r === parts[0])) {
+    return parts[0];
+  }
+  return parts.join(" / ");
+}
+
 /**
  * Normalizes one exercise from POST/PATCH body into Prisma nested create shape.
  * Supports optional per-exercise `sets` for TemplateSet rows; otherwise targetSets/targetReps/notes only.
+ * When `includeBlockFields` is true, also accepts restSec / effortCap and set repsMax / durationSec
+ * (block templates only - workout templates omit these columns).
  * @returns {{ ok: true, value: object } | { ok: false, status: number, error: string }}
  */
-function normalizeExerciseForCreate(raw, index) {
+function normalizeExerciseForCreate(raw, index, { includeBlockFields = false } = {}) {
   const exerciseName =
     typeof raw.exerciseName === "string" ? raw.exerciseName.trim() : "";
 
@@ -45,6 +73,33 @@ function normalizeExerciseForCreate(raw, index) {
 
   const notes =
     typeof raw.notes === "string" && raw.notes.trim() ? raw.notes.trim() : null;
+
+  let restSec = null;
+  let effortCap = false;
+  if (includeBlockFields) {
+    if (raw.restSec !== undefined && raw.restSec !== null && raw.restSec !== "") {
+      const parsedRest = Number(raw.restSec);
+      if (!Number.isInteger(parsedRest) || parsedRest < 0 || parsedRest > 3600) {
+        return {
+          ok: false,
+          status: 400,
+          error: "restSec must be an integer between 0 and 3600 when provided",
+        };
+      }
+      restSec = parsedRest;
+    }
+
+    if (raw.effortCap !== undefined && raw.effortCap !== null && raw.effortCap !== "") {
+      if (typeof raw.effortCap !== "boolean") {
+        return {
+          ok: false,
+          status: 400,
+          error: "effortCap must be a boolean when provided",
+        };
+      }
+      effortCap = raw.effortCap;
+    }
+  }
 
   const hasSetsArray = Array.isArray(raw.sets);
   const templateSetsCreate = [];
@@ -119,12 +174,73 @@ function normalizeExerciseForCreate(raw, index) {
       const setNotes =
         typeof s.notes === "string" && s.notes.trim() ? s.notes.trim() : null;
 
+      let repsMax = null;
+      let durationSec = null;
+      if (includeBlockFields) {
+        if (s.repsMax !== undefined && s.repsMax !== null && s.repsMax !== "") {
+          const repsMaxResult = validateOptionalNonNegDecimal(s.repsMax, {
+            maxDecimals: 2,
+            fieldName: "repsMax",
+          });
+          if (!repsMaxResult.ok) {
+            return { ok: false, status: 400, error: repsMaxResult.error };
+          }
+          repsMax = repsMaxResult.value;
+          if (reps == null) {
+            return {
+              ok: false,
+              status: 400,
+              error: "repsMax requires reps",
+            };
+          }
+          if (!(repsMax > reps)) {
+            return {
+              ok: false,
+              status: 400,
+              error: "repsMax must be greater than reps",
+            };
+          }
+        }
+
+        if (
+          s.durationSec !== undefined &&
+          s.durationSec !== null &&
+          s.durationSec !== ""
+        ) {
+          const parsedDuration = Number(s.durationSec);
+          if (
+            !Number.isInteger(parsedDuration) ||
+            parsedDuration < 1 ||
+            parsedDuration > 3600
+          ) {
+            return {
+              ok: false,
+              status: 400,
+              error: "durationSec must be an integer between 1 and 3600 when provided",
+            };
+          }
+          durationSec = parsedDuration;
+        }
+
+        if (reps != null && durationSec != null) {
+          return {
+            ok: false,
+            status: 400,
+            error: "reps and durationSec cannot both be set on a set",
+          };
+        }
+      }
+
       const row = { order: setOrder };
       if (reps != null) row.reps = reps;
       if (weight != null) row.weight = weight;
       if (rpe != null) row.rpe = rpe;
       if (rir != null) row.rir = rir;
       if (setNotes != null) row.notes = setNotes;
+      if (includeBlockFields) {
+        if (repsMax != null) row.repsMax = repsMax;
+        if (durationSec != null) row.durationSec = durationSec;
+      }
       templateSetsCreate.push(row);
     }
   }
@@ -145,16 +261,20 @@ function normalizeExerciseForCreate(raw, index) {
 
   if (templateSetsCreate.length > 0) {
     targetSets = templateSetsCreate.length;
-    const repsParts = templateSetsCreate
-      .slice()
-      .sort((a, b) => a.order - b.order)
-      .map((row) => (row.reps != null ? String(row.reps) : ""))
-      .filter(Boolean);
     let derivedTargetReps = null;
-    if (repsParts.length > 0) {
-      derivedTargetReps = repsParts.every((r) => r === repsParts[0])
-        ? repsParts[0]
-        : repsParts.join(" / ");
+    if (includeBlockFields) {
+      derivedTargetReps = deriveTargetRepsFromSets(templateSetsCreate);
+    } else {
+      const repsParts = templateSetsCreate
+        .slice()
+        .sort((a, b) => a.order - b.order)
+        .map((row) => (row.reps != null ? String(row.reps) : ""))
+        .filter(Boolean);
+      if (repsParts.length > 0) {
+        derivedTargetReps = repsParts.every((r) => r === repsParts[0])
+          ? repsParts[0]
+          : repsParts.join(" / ");
+      }
     }
     const exercise = {
       order,
@@ -166,6 +286,10 @@ function normalizeExerciseForCreate(raw, index) {
         create: templateSetsCreate,
       },
     };
+    if (includeBlockFields) {
+      if (restSec != null) exercise.restSec = restSec;
+      exercise.effortCap = effortCap;
+    }
     return { ok: true, value: exercise };
   }
 
@@ -183,6 +307,11 @@ function normalizeExerciseForCreate(raw, index) {
     exercise.targetReps = targetReps;
   }
 
+  if (includeBlockFields) {
+    if (restSec != null) exercise.restSec = restSec;
+    exercise.effortCap = effortCap;
+  }
+
   return { ok: true, value: exercise };
 }
 
@@ -190,7 +319,7 @@ function normalizeExerciseForCreate(raw, index) {
  * @param {unknown[]} exercises
  * @returns {{ ok: true, value: object[] } | { ok: false, status: number, error: string }}
  */
-function normalizeExercisesArray(exercises) {
+function normalizeExercisesArray(exercises, opts = {}) {
   if (!Array.isArray(exercises) || exercises.length === 0) {
     return {
       ok: false,
@@ -204,7 +333,7 @@ function normalizeExercisesArray(exercises) {
 
   for (let index = 0; index < exercises.length; index += 1) {
     const raw = exercises[index] || {};
-    const result = normalizeExerciseForCreate(raw, index);
+    const result = normalizeExerciseForCreate(raw, index, opts);
     if (!result.ok) {
       return result;
     }
@@ -277,7 +406,9 @@ function normalizeBlockWorkoutsArray(workouts) {
     const nameRaw = typeof titleOrName === "string" ? titleOrName.trim() : "";
     const name = nameRaw || `Workout ${order}`;
 
-    const normEx = normalizeExercisesArray(raw.exercises);
+    const normEx = normalizeExercisesArray(raw.exercises, {
+      includeBlockFields: true,
+    });
     if (!normEx.ok) {
       return normEx;
     }
@@ -294,6 +425,31 @@ function normalizeBlockWorkoutsArray(workouts) {
   }
 
   return { ok: true, value: normalized };
+}
+
+function normalizeWeekLabel(rawLabel) {
+  if (rawLabel === undefined || rawLabel === null) {
+    return { ok: true, value: undefined };
+  }
+  if (typeof rawLabel !== "string") {
+    return {
+      ok: false,
+      status: 400,
+      error: "Week label must be a string when provided",
+    };
+  }
+  const trimmed = rawLabel.trim();
+  if (trimmed === "") {
+    return { ok: true, value: null };
+  }
+  if (trimmed.length > 40) {
+    return {
+      ok: false,
+      status: 400,
+      error: "Week label must be at most 40 characters",
+    };
+  }
+  return { ok: true, value: trimmed };
 }
 
 /**
@@ -335,17 +491,27 @@ function normalizeBlockWeeksArray(weeks) {
     }
     seenOrders.add(order);
 
+    const labelResult = normalizeWeekLabel(raw.label);
+    if (!labelResult.ok) {
+      return labelResult;
+    }
+
     const normW = normalizeBlockWorkoutsArray(raw.workouts);
     if (!normW.ok) {
       return normW;
     }
 
-    normalized.push({
+    const week = {
       order,
       workouts: {
         create: normW.value,
       },
-    });
+    };
+    if (labelResult.value !== undefined) {
+      week.label = labelResult.value;
+    }
+
+    normalized.push(week);
   }
 
   return { ok: true, value: normalized };
@@ -393,4 +559,6 @@ module.exports = {
   parseOptionalDurationWeeks,
   parseOptionalBoolean,
   parsePositiveInt,
+  normalizeWeekLabel,
+  deriveTargetRepsFromSets,
 };

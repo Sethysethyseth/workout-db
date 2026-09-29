@@ -23,20 +23,22 @@ model User {
   coachUsage         CoachUsage[]
   workoutTemplates   WorkoutTemplate[]
   blockTemplates     BlockTemplate[]
+  blockRuns          BlockRun[]
   workoutSessions    WorkoutSession[]
   feedback           Feedback[]
   userExercises      UserExercise[]
 }
 
 model AiConsent {
-  id        Int       @id @default(autoincrement())
-  userId    String    @unique
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  scope     String
-  grantedAt DateTime
-  revokedAt DateTime?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id                   Int       @id @default(autoincrement())
+  userId               String    @unique
+  user                 User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scope                String
+  grantedAt            DateTime
+  revokedAt            DateTime?
+  blockDraftsAllowedAt DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
 
   @@index([userId])
 }
@@ -135,11 +137,16 @@ model WorkoutSession {
   user              User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   workoutTemplateId Int?
   workoutTemplate   WorkoutTemplate?  @relation(fields: [workoutTemplateId], references: [id], onDelete: SetNull)
+  blockRunId        Int?
+  blockRun          BlockRun?         @relation(fields: [blockRunId], references: [id], onDelete: SetNull)
+  blockWeekOrder    Int?
+  blockWorkoutOrder Int?
   sets              WorkoutSet[]
   sessionExercises  SessionExercise[]
 
   @@index([userId])
   @@index([workoutTemplateId])
+  @@index([blockRunId])
 }
 
 model WorkoutSet {
@@ -151,6 +158,7 @@ model WorkoutSet {
   rir                Int?
   notes              String?
   side               String?
+  durationSec        Int?
   workoutSessionId   Int
   workoutSession     WorkoutSession    @relation(fields: [workoutSessionId], references: [id], onDelete: Cascade)
   templateExerciseId Int?
@@ -178,6 +186,7 @@ model SessionExercise {
   targetSets         Int?
   targetReps         String?
   notes              String?
+  plan               Json?
   workoutSessionId   Int
   workoutSession     WorkoutSession    @relation(fields: [workoutSessionId], references: [id], onDelete: Cascade)
   templateExerciseId Int?
@@ -196,6 +205,9 @@ model BlockTemplate {
   name            String
   description     String?
   isPublic        Boolean     @default(false)
+  isDraft         Boolean     @default(false)
+  source          String?
+  sourceUnit      String?
   durationWeeks   Int?
   useRIR          Boolean     @default(false)
   useRPE          Boolean     @default(false)
@@ -205,6 +217,7 @@ model BlockTemplate {
   userId          String
   user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   weeks           BlockWeek[]
+  runs            BlockRun[]
 
   @@index([userId])
   @@index([isPublic])
@@ -213,6 +226,7 @@ model BlockTemplate {
 model BlockWeek {
   id              Int            @id @default(autoincrement())
   order           Int
+  label           String?
   blockTemplateId Int
   blockTemplate   BlockTemplate  @relation(fields: [blockTemplateId], references: [id], onDelete: Cascade)
   workouts        BlockWorkout[]
@@ -244,6 +258,8 @@ model BlockWorkoutExercise {
   targetSets       Int?
   targetReps       String?
   notes            String?
+  restSec          Int?
+  effortCap        Boolean           @default(false)
   blockWorkoutId   Int
   blockWorkout     BlockWorkout      @relation(fields: [blockWorkoutId], references: [id], onDelete: Cascade)
   blockWorkoutSets BlockWorkoutSet[]
@@ -299,14 +315,30 @@ model BlockWorkoutSet {
   id                     Int                  @id @default(autoincrement())
   order                  Int
   reps                   Float?
+  repsMax                Float?
   weight                 Float?
   rpe                    Float?
   rir                    Int?
   notes                  String?
+  durationSec            Int?
   blockWorkoutExerciseId Int
   blockWorkoutExercise   BlockWorkoutExercise @relation(fields: [blockWorkoutExerciseId], references: [id], onDelete: Cascade)
   workoutSets            WorkoutSet[]
 
   @@unique([blockWorkoutExerciseId, order])
   @@index([blockWorkoutExerciseId])
+}
+
+model BlockRun {
+  id              Int              @id @default(autoincrement())
+  userId          String
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  blockTemplateId Int
+  blockTemplate   BlockTemplate    @relation(fields: [blockTemplateId], references: [id], onDelete: Cascade)
+  startedAt       DateTime         @default(now())
+  endedAt         DateTime?
+  sessions        WorkoutSession[]
+
+  @@index([userId])
+  @@index([blockTemplateId])
 }

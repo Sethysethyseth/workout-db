@@ -6,45 +6,12 @@ const {
   parsePositiveInt,
 } = require("../lib/templateExerciseNormalize");
 const { stampBlockWeeksArray } = require("../lib/exerciseIdentity");
-
-function blockWeeksDurationConflictMessage(weekCount, durationEnabled, durationWeeksValue) {
-  if (!durationEnabled || durationWeeksValue == null) return null;
-  if (weekCount > durationWeeksValue) {
-    return `This block has ${weekCount} weeks but duration is set to ${durationWeeksValue}. Remove weeks or increase duration before saving.`;
-  }
-  return null;
-}
-
-const blockExerciseInclude = {
-  orderBy: {
-    order: "asc",
-  },
-  include: {
-    blockWorkoutSets: {
-      orderBy: {
-        order: "asc",
-      },
-    },
-  },
-};
-
-const blockWorkoutInclude = {
-  orderBy: {
-    order: "asc",
-  },
-  include: {
-    exercises: blockExerciseInclude,
-  },
-};
-
-const blockWeekInclude = {
-  orderBy: {
-    order: "asc",
-  },
-  include: {
-    workouts: blockWorkoutInclude,
-  },
-};
+const {
+  createBlockTemplateForUser,
+  buildClonePayload,
+  blockWeekInclude,
+  blockWeeksDurationConflictMessage,
+} = require("../blocks/blockTemplateStore");
 
 async function createBlockTemplate(req, res, next) {
   try {
@@ -56,106 +23,17 @@ async function createBlockTemplate(req, res, next) {
       });
     }
 
-    const {
-      name,
-      description,
-      isPublic,
-      durationWeeks,
-      weeks,
-      useRIR,
-      useRPE,
-      useDuration,
-    } = req.body || {};
-
-    const trimmedName = typeof name === "string" ? name.trim() : "";
-    const trimmedDescription =
-      typeof description === "string" && description.trim()
-        ? description.trim()
-        : null;
-
-    if (!trimmedName) {
-      return res.status(400).json({
-        error: "Block template name is required",
-      });
-    }
-
-    const useDurParsed = parseOptionalBoolean(useDuration);
-    if (!useDurParsed.ok) {
-      return res.status(useDurParsed.status).json({ error: useDurParsed.error });
-    }
-
-    const hasWeeksPayload =
-      durationWeeks !== undefined &&
-      durationWeeks !== null &&
-      !(typeof durationWeeks === "string" && durationWeeks.trim() === "");
-
-    const durationEnabled =
-      useDurParsed.value !== undefined ? useDurParsed.value : hasWeeksPayload;
-
-    let weeksValue = null;
-    if (durationEnabled) {
-      const dur = parseOptionalDurationWeeks(durationWeeks);
-      if (!dur.ok) {
-        return res.status(dur.status).json({ error: dur.error });
-      }
-      weeksValue = dur.value !== undefined ? dur.value : null;
-    }
-
-    const norm = normalizeBlockWeeksArray(weeks);
-    if (!norm.ok) {
-      return res.status(norm.status).json({ error: norm.error });
-    }
-
-    const durationConflict = blockWeeksDurationConflictMessage(
-      norm.value.length,
-      durationEnabled,
-      weeksValue
-    );
-    if (durationConflict) {
-      return res.status(400).json({ error: durationConflict });
-    }
-
-    const userExerciseRows = await prisma.userExercise.findMany({
-      where: { userId },
+    const result = await createBlockTemplateForUser(userId, req.body || {}, {
+      source: "builder",
+      isDraft: false,
     });
-    const stampedWeeks = stampBlockWeeksArray(norm.value, userExerciseRows);
 
-    const data = {
-      name: trimmedName,
-      description: trimmedDescription,
-      isPublic: Boolean(isPublic),
-      userId,
-      weeks: {
-        create: stampedWeeks,
-      },
-      useDuration: durationEnabled,
-      durationWeeks: durationEnabled ? weeksValue : null,
-    };
-
-    if (useRIR !== undefined) {
-      const b = parseOptionalBoolean(useRIR);
-      if (!b.ok) {
-        return res.status(b.status).json({ error: b.error });
-      }
-      data.useRIR = b.value;
+    if (!result.ok) {
+      return res.status(result.status).json({ error: result.error });
     }
-    if (useRPE !== undefined) {
-      const b = parseOptionalBoolean(useRPE);
-      if (!b.ok) {
-        return res.status(b.status).json({ error: b.error });
-      }
-      data.useRPE = b.value;
-    }
-
-    const blockTemplate = await prisma.blockTemplate.create({
-      data,
-      include: {
-        weeks: blockWeekInclude,
-      },
-    });
 
     return res.status(201).json({
-      blockTemplate,
+      blockTemplate: result.blockTemplate,
     });
   } catch (err) {
     return next(err);
@@ -339,7 +217,13 @@ async function updateBlockTemplate(req, res, next) {
     }
 
     if (isPublic !== undefined) {
-      data.isPublic = Boolean(isPublic);
+      const nextPublic = Boolean(isPublic);
+      if (nextPublic && existing.isDraft) {
+        return res.status(409).json({
+          error: "Save the draft to your library first.",
+        });
+      }
+      data.isPublic = nextPublic;
     }
 
     if (useRIR !== undefined) {
@@ -523,65 +407,69 @@ async function cloneBlockTemplate(req, res, next) {
       });
     }
 
-    const cloned = await prisma.blockTemplate.create({
-      data: {
-        name: `${existing.name} (Copy)`,
-        description: existing.description,
-        isPublic: false,
-        durationWeeks: existing.durationWeeks,
-        useRIR: Boolean(existing.useRIR),
-        useRPE: Boolean(existing.useRPE),
-        useDuration: Boolean(existing.useDuration),
+    const payload = buildClonePayload(existing);
+    const result = await createBlockTemplateForUser(userId, payload, {
+      source: "builder",
+      isDraft: false,
+    });
+
+    if (!result.ok) {
+      return res.status(result.status).json({ error: result.error });
+    }
+
+    return res.status(201).json({
+      blockTemplate: result.blockTemplate,
+    });
+  } catch (err) {
+    return next(err);
+  }
+}
+
+async function acceptBlockTemplate(req, res, next) {
+  try {
+    const userId = req.authUserId;
+
+    if (!userId) {
+      return res.status(401).json({
+        error: "Authentication required",
+      });
+    }
+
+    const templateId = parsePositiveInt(req.params && req.params.id);
+
+    if (!templateId) {
+      return res.status(400).json({
+        error: "Block template id must be a positive integer",
+      });
+    }
+
+    const existing = await prisma.blockTemplate.findFirst({
+      where: {
+        id: templateId,
         userId,
-        weeks: {
-          create: existing.weeks.map((week) => ({
-            order: week.order,
-            workouts: {
-              create: week.workouts.map((w) => ({
-                order: w.order,
-                name: w.name,
-                exercises: {
-                  create: w.exercises.map((exercise) => {
-                    const base = {
-                      order: exercise.order,
-                      exerciseName: exercise.exerciseName,
-                      exerciseId: exercise.exerciseId,
-                      userExerciseId: exercise.userExerciseId,
-                      targetSets: exercise.targetSets,
-                      targetReps: exercise.targetReps,
-                      notes: exercise.notes,
-                    };
-                    const sets = exercise.blockWorkoutSets || [];
-                    if (sets.length > 0) {
-                      return {
-                        ...base,
-                        blockWorkoutSets: {
-                          create: sets.map((s) => ({
-                            order: s.order,
-                            reps: s.reps,
-                            weight: s.weight,
-                            rpe: s.rpe,
-                            rir: s.rir,
-                            notes: s.notes,
-                          })),
-                        },
-                      };
-                    }
-                    return base;
-                  }),
-                },
-              })),
-            },
-          })),
-        },
+      },
+    });
+
+    if (!existing) {
+      return res.status(404).json({
+        error: "Block template not found",
+      });
+    }
+
+    const blockTemplate = await prisma.blockTemplate.update({
+      where: {
+        id: templateId,
+      },
+      data: {
+        isDraft: false,
       },
       include: {
         weeks: blockWeekInclude,
       },
     });
 
-    return res.status(201).json({
-      blockTemplate: cloned,
+    return res.status(200).json({
+      blockTemplate,
     });
   } catch (err) {
     return next(err);
@@ -596,4 +484,5 @@ module.exports = {
   updateBlockTemplate,
   deleteBlockTemplate,
   cloneBlockTemplate,
+  acceptBlockTemplate,
 };
