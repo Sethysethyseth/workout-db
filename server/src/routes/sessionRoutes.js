@@ -2,6 +2,7 @@ const express = require("express");
 const authRequired = require("../middleware/authRequired");
 const {
   startSession,
+  startSessionFromBlock,
   createAdHocSession,
   addSessionExercise,
   updateSessionExercise,
@@ -21,6 +22,7 @@ const {
 const router = express.Router();
 
 router.post("/start/:templateId", authRequired, startSession);
+router.post("/start-from-block", authRequired, startSessionFromBlock);
 router.post("/", authRequired, createAdHocSession);
 router.get("/mine", authRequired, getMySessions);
 router.patch("/:id/exercises/:exerciseId", authRequired, updateSessionExercise);

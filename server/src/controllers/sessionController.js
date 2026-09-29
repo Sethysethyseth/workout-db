@@ -5,6 +5,8 @@ const { buildUserExerciseIndex } = require("../analytics/userExercises");
 const { loadCatalog } = require("../analytics");
 const { stampExerciseIdentityWithIndex } = require("../lib/exerciseIdentity");
 const { canDiscardSession } = require("../lib/sessionDiscard");
+const { blockWeekInclude } = require("../blocks/blockTemplateStore");
+const { buildSessionFromBlockWorkout } = require("../blocks/blockRunLogic");
 
 const FULL_SESSION_RELATIONS = {
   workoutTemplate: {
@@ -52,6 +54,74 @@ function parseNullableFloat(value) {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) return NaN;
   return parsed;
+}
+
+/** Integer 1-86400, or null. undefined means "field omitted". */
+function parseOptionalDurationSec(value) {
+  if (value === undefined) {
+    return { ok: true, value: undefined };
+  }
+  if (value === null || value === "") {
+    return { ok: true, value: null };
+  }
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < 1 || parsed > 86400) {
+    return {
+      ok: false,
+      error: "durationSec must be an integer from 1 to 86400, or null",
+    };
+  }
+  return { ok: true, value: parsed };
+}
+
+async function resolveBlockContext(session) {
+  if (session == null || session.blockRunId == null) {
+    return null;
+  }
+
+  const run = await prisma.blockRun.findFirst({
+    where: {
+      id: session.blockRunId,
+      userId: session.userId,
+    },
+    include: {
+      blockTemplate: {
+        include: {
+          weeks: blockWeekInclude,
+        },
+      },
+    },
+  });
+
+  if (!run || !run.blockTemplate) {
+    return null;
+  }
+
+  const block = run.blockTemplate;
+  const week = (block.weeks || []).find(
+    (w) => w.order === session.blockWeekOrder
+  );
+  const workout =
+    week &&
+    (week.workouts || []).find((w) => w.order === session.blockWorkoutOrder);
+
+  return {
+    runId: run.id,
+    blockTemplateId: block.id,
+    blockName: block.name,
+    weekOrder: session.blockWeekOrder,
+    weekLabel: week && week.label != null ? week.label : null,
+    workoutOrder: session.blockWorkoutOrder,
+    dayName: workout ? workout.name : null,
+    useRIR: Boolean(block.useRIR),
+    useRPE: Boolean(block.useRPE),
+  };
+}
+
+async function attachBlockContext(session) {
+  if (!session) return session;
+  const blockContext = await resolveBlockContext(session);
+  return { ...session, blockContext };
 }
 
 function validateOptionalSide(value) {
@@ -255,8 +325,10 @@ async function startSession(req, res, next) {
       return fullSession;
     });
 
+    const sessionWithContext = await attachBlockContext(session);
+
     return res.status(201).json({
-      session,
+      session: sessionWithContext,
     });
   } catch (err) {
     if (err && err.statusCode === 404 && err.code === "TEMPLATE_NOT_FOUND") {
@@ -271,6 +343,141 @@ async function startSession(req, res, next) {
       });
     }
 
+    return next(err);
+  }
+}
+
+async function startSessionFromBlock(req, res, next) {
+  try {
+    const userId = req.authUserId;
+
+    if (!userId) {
+      return res.status(401).json({
+        error: "Authentication required",
+      });
+    }
+
+    const blockRunId = parsePositiveInt(req.body && req.body.blockRunId);
+    const weekOrder = parsePositiveInt(req.body && req.body.weekOrder);
+    const workoutOrder = parsePositiveInt(req.body && req.body.workoutOrder);
+
+    if (!blockRunId) {
+      return res.status(400).json({
+        error: "blockRunId must be a positive integer",
+      });
+    }
+    if (!weekOrder) {
+      return res.status(400).json({
+        error: "weekOrder must be a positive integer",
+      });
+    }
+    if (!workoutOrder) {
+      return res.status(400).json({
+        error: "workoutOrder must be a positive integer",
+      });
+    }
+
+    const run = await prisma.blockRun.findFirst({
+      where: {
+        id: blockRunId,
+        userId,
+      },
+      include: {
+        blockTemplate: {
+          include: {
+            weeks: blockWeekInclude,
+          },
+        },
+      },
+    });
+
+    if (!run) {
+      return res.status(404).json({
+        error: "Block run not found",
+      });
+    }
+
+    if (run.endedAt != null) {
+      return res.status(409).json({
+        error: "Block run has ended",
+      });
+    }
+
+    const existingOpen = await prisma.workoutSession.findFirst({
+      where: {
+        userId,
+        blockRunId: run.id,
+        blockWeekOrder: weekOrder,
+        blockWorkoutOrder: workoutOrder,
+        completedAt: null,
+      },
+      include: FULL_SESSION_RELATIONS,
+    });
+
+    if (existingOpen) {
+      const session = await attachBlockContext(existingOpen);
+      return res.status(200).json({
+        session,
+        resumed: true,
+      });
+    }
+
+    const built = buildSessionFromBlockWorkout(
+      run.blockTemplate,
+      weekOrder,
+      workoutOrder,
+      { blockName: run.blockTemplate.name }
+    );
+
+    if (!built) {
+      return res.status(404).json({
+        error: "Week or workout not found in block",
+      });
+    }
+
+    const session = await prisma.$transaction(async (tx) => {
+      const createdSession = await tx.workoutSession.create({
+        data: {
+          userId,
+          name: built.name,
+          workoutTemplateId: null,
+          blockRunId: run.id,
+          blockWeekOrder: weekOrder,
+          blockWorkoutOrder: workoutOrder,
+        },
+      });
+
+      if (built.exercises.length > 0) {
+        await tx.sessionExercise.createMany({
+          data: built.exercises.map((exercise, index) => ({
+            order: exercise.order != null ? exercise.order : index + 1,
+            exerciseName: exercise.exerciseName,
+            exerciseId: exercise.exerciseId,
+            userExerciseId: exercise.userExerciseId,
+            targetSets: exercise.targetSets,
+            targetReps: exercise.targetReps,
+            notes: exercise.notes,
+            plan: exercise.plan,
+            workoutSessionId: createdSession.id,
+          })),
+        });
+      }
+
+      return tx.workoutSession.findUnique({
+        where: {
+          id: createdSession.id,
+        },
+        include: FULL_SESSION_RELATIONS,
+      });
+    });
+
+    const sessionWithContext = await attachBlockContext(session);
+
+    return res.status(201).json({
+      session: sessionWithContext,
+      resumed: false,
+    });
+  } catch (err) {
     return next(err);
   }
 }
@@ -755,8 +962,10 @@ async function getSessionById(req, res, next) {
       });
     }
 
+    const sessionWithContext = await attachBlockContext(session);
+
     return res.status(200).json({
-      session,
+      session: sessionWithContext,
     });
   } catch (err) {
     return next(err);
@@ -790,6 +999,7 @@ async function createSetForSession(req, res, next) {
       rir: rawRir,
       notes: rawNotes,
       side: rawSide,
+      durationSec: rawDurationSec,
     } = req.body || {};
 
     const sessionExerciseId = parsePositiveInt(rawSessionExerciseId);
@@ -846,6 +1056,13 @@ async function createSetForSession(req, res, next) {
       return res.status(400).json({ error: sideResult.error });
     }
     const side = sideResult.value === undefined ? null : sideResult.value;
+
+    const durationResult = parseOptionalDurationSec(rawDurationSec);
+    if (!durationResult.ok) {
+      return res.status(400).json({ error: durationResult.error });
+    }
+    const durationSec =
+      durationResult.value === undefined ? null : durationResult.value;
 
     const set = await prisma.$transaction(async (tx) => {
       const session = await tx.workoutSession.findUnique({
@@ -911,6 +1128,7 @@ async function createSetForSession(req, res, next) {
           rir,
           notes,
           side,
+          durationSec,
         },
         include: {
           sessionExercise: true,
@@ -984,6 +1202,7 @@ async function updateSet(req, res, next) {
       rir: rawRir,
       notes: rawNotes,
       side: rawSide,
+      durationSec: rawDurationSec,
     } = req.body || {};
 
     const data = {};
@@ -1067,6 +1286,14 @@ async function updateSet(req, res, next) {
         return res.status(400).json({ error: sideResult.error });
       }
       data.side = sideResult.value;
+    }
+
+    if (rawDurationSec !== undefined) {
+      const durationResult = parseOptionalDurationSec(rawDurationSec);
+      if (!durationResult.ok) {
+        return res.status(400).json({ error: durationResult.error });
+      }
+      data.durationSec = durationResult.value;
     }
 
     if (Object.keys(data).length === 0) {
@@ -1749,6 +1976,7 @@ async function deleteSessionExercise(req, res, next) {
 
 module.exports = {
   startSession,
+  startSessionFromBlock,
   createAdHocSession,
   addSessionExercise,
   updateSessionExercise,
