@@ -24,7 +24,7 @@ every server unit's routes need a LIVE staging proof at landing.
 
 Landing order + lanes (tranches may run in parallel per spec section 12):
 
-AWAITING-REVIEW | bk1-schema-block-persistence.md | the wave's one migration (spec 6),
+LANDED 21c0df6 (LOCAL - push held for "migrate staging") | bk1-schema-block-persistence.md | the wave's one migration (spec 6),
 new block fields end to end, `createBlockTemplateForUser` as the one create
 path, draft accept, clone re-stamps identity for the cloner (cross-user fix) |
 n=1. Tranche 1 (beside BK2, BK4). MIGRATION-CARRYING: landing push waits for
@@ -32,40 +32,60 @@ n=1. Tranche 1 (beside BK2, BK4). MIGRATION-CARRYING: landing push waits for
 Dispatched Sept 28 (Opus seat): Channel B, `--model auto`, lane
 `cursor-lane-2` on `cursor/bk1` @ `b9a0fac`, 40-minute hard kill.
 Run: 6.1 minutes, exit 0; DELIVERY.md 19:48. Cursor claims unit 363/363,
-migration via offline `prisma migrate diff`, 0 DROPs. NOT audited yet. Land
-LAST of tranche 1 and hold its push for "migrate staging" (HANDOFF step 1).
+migration via offline `prisma migrate diff`, 0 DROPs. Audited Sept 29 (Opus
+seat, resident relay): unit 363/363 fresh; SQL matches spec 6 exactly, 0
+DROP, no existing-column type change; no `source`/`isDraft` from req.body;
+clone re-stamp verified by hand on a legacy donor tree (nulls pass the
+normalizer, no donor ids leak); BK2 `formatToCreatePayload` -> BK1
+normalizer seam verified (label/restSec/effortCap/repsMax/durationSec
+survive). App-load check needs a placeholder DATABASE_URL in lanes (no
+.env) - environmental. Not in the store yet: a `sourceUnit` option (BK11
+adds it). Committed 21c0df6 on the wave branch LOCALLY; the push waits for
+"migrate staging" (every later push carries it).
 
-AWAITING-REVIEW | bk2-block-format-parsers.md | LogChamp Block Format v1 validator,
+LANDED 3220d3d | bk2-block-format-parsers.md | LogChamp Block Format v1 validator,
 CSV/TSV + Strong/Hevy history parsers, format<->payload mapping, the any-AI
 instructions - all pure, new files only | n=2. Tranche 1. Tests in
 `server/test/lib/blocks/` (NOT `test/blocks/` - unit-lane glob).
 Dispatched Sept 28 (Opus seat): Channel B, `--model auto`, lane
 `cursor-lane` on `cursor/bk2` @ `b9a0fac`, 40-minute hard kill.
 Run: 7.3 minutes, exit 0; DELIVERY.md 19:49. Cursor claims unit 371/371
-(23 new, one test file + 8 fixtures), instructions 1,187 chars. NOT audited
-yet. Land FIRST.
+(23 new, one test file + 8 fixtures), instructions 1,187 chars. Audited Sept
+29: unit 371/371 fresh, purity grep clean, grammar edge cases probed by hand
+(ranges, AMRAP, timed/per-side, caps, rest forms, week-gap renumber, error
+cap 50, kg->lb). Pushed.
 
-AWAITING-REVIEW | bk4-block-ui-primitives.md | `.bk` token aliases + recovery-language
+LANDED ec4c5a3 | bk4-block-ui-primitives.md | `.bk` token aliases + recovery-language
 primitives (week strip, day picker, chips, stepper, segmented, set-grid
 field, sticky header, rx formatter), Barlow Condensed | n=3. Tranche 1.
 Only `index.css` touch of the wave (one token line).
 Dispatched Sept 28 (Opus seat): Channel B, `--model auto`, lane
 `cursor-lane-3` on `cursor/bk4` @ `b9a0fac`, 40-minute hard kill.
 Run: 3.5 minutes, exit 0; DELIVERY.md 19:46. 16 components + barrel +
-`rxFormat.js` + `bk-ui.css`. NOT audited yet. Land SECOND.
+`rxFormat.js` + `bk-ui.css`. Audited Sept 29: build + eslint + check-hex
+clean, raw-color grep over the new files (check-hex skips untracked) clean,
+every var() resolves, index.css/index.html diffs one line each. Gate note:
+WeekStrip's scrollIntoView uses behavior smooth regardless of
+prefers-reduced-motion. Pushed.
 
-QUEUED | bk3-import-export-api.md | format / import-preview / import /
+DISPATCHED | bk3-import-export-api.md | format / import-preview / import /
 export endpoints, AI-answer JSON extraction, scoped 2 MB body limit | n=4.
 Needs BK1 + BK2. Beside BK5, BK7. Owns the `app.js` touch.
+Dispatched Sept 29 (tranche 2, resident relay): Channel B, `--model auto`,
+lane `cursor-lane` on `cursor/bk3` @ `21c0df6`, 40-minute hard kill.
 
-QUEUED | bk5-block-builder-core.md | the reworked builder: sticky header +
+DISPATCHED | bk5-block-builder-core.md | the reworked builder: sticky header +
 week strip + day tiles + exercise cards + set grid + catalog picker +
 settings + save-in-place + draft banner | n=5. Needs BK1 + BK4. Beside BK3,
 BK7. Judgment-heavy visual unit - the critic scores it.
+Dispatched Sept 29 (tranche 2, resident relay): Channel B, `--model auto`,
+lane `cursor-lane-3` on `cursor/bk5` @ `21c0df6`, 40-minute hard kill.
 
-QUEUED | bk7-run-a-block-server.md | BlockRun endpoints, start-from-block
+DISPATCHED | bk7-run-a-block-server.md | BlockRun endpoints, start-from-block
 with plan snapshot + resume, `blockContext`, `durationSec` on sets | n=6.
 Needs BK1. Beside BK3, BK5. Owns `routes/index.js`.
+Dispatched Sept 29 (tranche 2, resident relay): Channel B, `--model auto`,
+lane `cursor-lane-2` on `cursor/bk7` @ `21c0df6`, 40-minute hard kill.
 
 QUEUED | bk5b-copy-forward-progression-view.md | copy a week forward with a
 load step; the per-day progression table | n=7. Needs BK5 (same builder
