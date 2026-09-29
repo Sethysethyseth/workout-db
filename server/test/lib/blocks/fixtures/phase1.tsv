@@ -1,0 +1,13 @@
+Week	Day	Day_Name	Slot_ID	Order	Block	Exercise	Job	Sets	Reps	Load_lb	Load_Type	Setup	Tempo	Rest_Sec	RPE_Cap	Lead_Side	Notes
+1	1	Lower A	L1	1	warmup	Bike	prep	1	5 min			Easy spin				Lead with left	
+1	1	Lower A	L1	2		Goblet Squat	primary	3	8-10	50		Feet shoulder width	3-1-1	90	6	Left	Brace hard
+1	1	Lower A	L1	3		Side Plank	accessory	2	30 sec/side		bodyweight	Elbow under shoulder		60		Right	
+1	1	Lower A	L1	4													
+1	2	Upper A	U1	1		Bench Press	primary	4	5	225			2-0-1	180	8		
+1	2	Upper A	U1	2		Cable Row	primary	3	8	100		Chest up		90	7		
+2	1	Lower A	L1	1		Goblet Squat	primary	3	8-10	55		Feet shoulder width	3-1-1	90	6	Left	Brace hard
+2	1	Lower A	L1	2		Side Plank	accessory	2	45 sec		bodyweight			60		Right	
+2	2	Upper A	U1	1		Bench Press	primary	3	8	185				120	8		
+2	2	Upper A	U1	2		Plank	accessory	1	5 min		bodyweight						
+2	2	Upper A	U1	3		Face Pull	accessory	3	12	30				60			
+2	2	Upper A	U1	4		Band Pull-Apart	accessory	2	15		bodyweight						

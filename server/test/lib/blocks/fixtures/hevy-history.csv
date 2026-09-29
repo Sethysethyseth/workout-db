@@ -1,0 +1,5 @@
+title,start_time,exercise_title,set_index,set_type,weight_kg,reps,duration_seconds,rpe
+Leg Day,2026-02-01 09:00:00,Back Squat,1,warmup,40,5,0,
+Leg Day,2026-02-01 09:00:00,Back Squat,2,normal,100,5,0,8
+Leg Day,2026-02-01 09:00:00,Back Squat,3,normal,100,5,0,8
+Leg Day,2026-02-01 09:00:00,Plank,1,normal,0,0,45,
