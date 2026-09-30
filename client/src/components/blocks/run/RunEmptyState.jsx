@@ -22,18 +22,17 @@ export function RunEmptyState({
         <ul className="bk-run-empty__list">
           {startable.map((b) => {
             const weeks = Array.isArray(b.weeks) ? b.weeks.length : 0;
-            const days = (b.weeks || []).reduce(
-              (acc, w) => acc + (Array.isArray(w.workouts) ? w.workouts.length : 0),
-              0
-            );
+            const firstWeekDays = Array.isArray(b.weeks?.[0]?.workouts)
+              ? b.weeks[0].workouts.length
+              : 0;
             return (
               <li key={b.id}>
                 <Card className="bk-run-empty__card">
                   <div className="bk-run-empty__card-body">
                     <h3 className="bk-run-empty__name">{b.name || `Block #${b.id}`}</h3>
                     <p className="bk-run-empty__meta muted small">
-                      {weeks} week{weeks === 1 ? "" : "s"} · {days} day
-                      {days === 1 ? "" : "s"}
+                      {weeks} week{weeks === 1 ? "" : "s"} · {firstWeekDays} day
+                      {firstWeekDays === 1 ? "" : "s"} a week
                     </p>
                   </div>
                   <button

@@ -4,6 +4,7 @@ import {
   MAX_WEEKS,
   normalizeUnit,
   previewCopyForward,
+  skippedDeloadWeeks,
 } from "./blockBuilderState.js";
 import { BuilderSheet } from "./BuilderSheet.jsx";
 
@@ -37,6 +38,12 @@ export function CopyForwardSheet({
     initialThrough(fromWeek, weekCount)
   );
   const [loadStep, setLoadStep] = useState(() => defaultLoadStep(unit));
+  const [overwriteDeload, setOverwriteDeload] = useState(false);
+
+  const deloads = useMemo(
+    () => skippedDeloadWeeks(state, { fromWeek, throughWeek }),
+    [state, fromWeek, throughWeek]
+  );
 
   const preview = useMemo(
     () =>
@@ -45,8 +52,9 @@ export function CopyForwardSheet({
         throughWeek,
         loadStep,
         unit: u,
+        overwriteDeload,
       }),
-    [state, fromWeek, throughWeek, loadStep, u]
+    [state, fromWeek, throughWeek, loadStep, u, overwriteDeload]
   );
 
   const replaceRange = useMemo(() => {
@@ -57,6 +65,13 @@ export function CopyForwardSheet({
     if (firstExisting === lastExisting) return `Replaces week ${firstExisting}`;
     return `Replaces weeks ${firstExisting}-${lastExisting}`;
   }, [fromWeek, throughWeek, weekCount]);
+
+  const skipPreview = useMemo(() => {
+    if (overwriteDeload || deloads.length === 0) return null;
+    return deloads
+      .map((d) => `Skips week ${d.weekNum} (${d.label})`)
+      .join(" · ");
+  }, [overwriteDeload, deloads]);
 
   const canApply = throughWeek > fromWeek && throughWeek <= MAX_WEEKS;
 
@@ -76,7 +91,7 @@ export function CopyForwardSheet({
             disabled={!canApply}
             onClick={() => {
               if (!canApply) return;
-              onApply?.({ fromWeek, throughWeek, loadStep, unit: u });
+              onApply?.({ fromWeek, throughWeek, loadStep, unit: u, overwriteDeload });
             }}
           >
             Apply
@@ -111,6 +126,17 @@ export function CopyForwardSheet({
         />
       </label>
 
+      {deloads.length > 0 ? (
+        <label className="bk-copy-forward__deload">
+          <input
+            type="checkbox"
+            checked={overwriteDeload}
+            onChange={(e) => setOverwriteDeload(e.target.checked)}
+          />
+          <span>Also overwrite deload weeks</span>
+        </label>
+      ) : null}
+
       {preview.length > 0 ? (
         <ul className="bk-copy-forward__preview">
           {preview.map((line) => (
@@ -122,6 +148,12 @@ export function CopyForwardSheet({
           No weighted sets to preview.
         </p>
       )}
+
+      {skipPreview ? (
+        <p className="bk-copy-forward__skip" role="status">
+          {skipPreview}
+        </p>
+      ) : null}
 
       {replaceRange ? (
         <p className="bk-copy-forward__warn" role="status">

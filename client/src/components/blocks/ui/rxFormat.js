@@ -1,12 +1,26 @@
 /** Pure rx / rest / duration formatters for block surfaces (BK4). */
 
 /**
+ * Device/API unit ("lbs"|"lb"|"kg") -> display unit ("lb"|"kg").
+ * @param {string | null | undefined} unit
+ * @returns {"lb"|"kg"|null}
+ */
+export function normalizeRxUnit(unit) {
+  if (unit == null || unit === "") return null;
+  const u = String(unit).toLowerCase();
+  if (u === "kg") return "kg";
+  if (u === "lb" || u === "lbs") return "lb";
+  return String(unit);
+}
+
+/**
  * @param {number | null | undefined} sec
  * @returns {string | null}
  */
 export function formatRest(sec) {
   if (sec == null || Number.isNaN(Number(sec))) return null;
   const n = Number(sec);
+  if (!(n > 0)) return null;
   if (n < 60) return `${n}s`;
   const m = Math.floor(n / 60);
   const s = n % 60;
@@ -59,8 +73,9 @@ export function formatRx({
   const dose = buildDose({ sets, reps, repsMax, durationSec });
   if (dose) parts.push({ key: "dose", label: null, value: dose });
 
-  if (weight != null && unit != null && unit !== "") {
-    parts.push({ key: "weight", label: "@", value: `${weight} ${unit}` });
+  const displayUnit = normalizeRxUnit(unit);
+  if (weight != null && displayUnit != null) {
+    parts.push({ key: "weight", label: "@", value: `${weight} ${displayUnit}` });
   }
 
   const effortPart = buildEffort({ effort, effortValue, effortCap });

@@ -41,6 +41,7 @@ import {
   moveExercise,
   moveWeek,
   renameDay,
+  removeEmptyDays,
   replaceExercise,
   serializeToPayload,
   setDescription,
@@ -97,6 +98,30 @@ function downloadJson(filename, obj) {
   return json;
 }
 
+/** Map server 400 wording to plain user-facing copy (no "Template"). */
+function plainSaveError(err) {
+  const raw =
+    (err instanceof ApiError && err.message) ||
+    (err instanceof Error && err.message) ||
+    "Couldn't save. Try again.";
+  return String(raw)
+    .replace(/\bTemplates\b/g, "Blocks")
+    .replace(/\btemplates\b/g, "blocks")
+    .replace(/\bTemplate\b/g, "Block")
+    .replace(/\btemplate\b/g, "block");
+}
+
+function parseEmptyDayPath(path) {
+  const m = String(path || "").match(/^weeks\[(\d+)\]\.days\[(\d+)\]$/);
+  if (!m) return null;
+  return { weekIdx: Number(m[1]), dayIdx: Number(m[2]) };
+}
+
+function weekLabelPlural(n) {
+  const count = Number(n) || 0;
+  return count === 1 ? "Drafted 1 week" : `Drafted ${count} weeks`;
+}
+
 /**
  * Phone-first block builder (BK5).
  * @param {"create"|"edit"} mode
@@ -107,6 +132,7 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
   const location = useLocation();
   const isCreate = mode === "create";
   const nameInputRef = useRef(null);
+  const dayPanelRef = useRef(null);
   const savedSnapshotRef = useRef(null);
   const discardLeavingRef = useRef(false);
   const lastExportedJsonRef = useRef(null);
@@ -118,9 +144,11 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
   const [weekIdx, setWeekIdx] = useState(0);
   const [dayIdx, setDayIdx] = useState(0);
   const [expandedIds, setExpandedIds] = useState(() => new Set());
-  const [saveStatus, setSaveStatus] = useState("saved"); // unsaved | saving | saved
+  // create + never saved: no status; "unsaved" once edited; "saved" after a successful save
+  const [saveStatus, setSaveStatus] = useState(isCreate ? "clean" : "saved");
   const [dirty, setDirty] = useState(false);
   const [validationErrors, setValidationErrors] = useState([]);
+  const [emptyDayBanner, setEmptyDayBanner] = useState(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerMode, setPickerMode] = useState("add"); // add | replace
@@ -190,6 +218,7 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
       setDirty(true);
       setSaveStatus("unsaved");
       setValidationErrors([]);
+      setEmptyDayBanner(null);
     }
   }, []);
 
@@ -372,7 +401,7 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
       if (id) {
         navigate(`/blocks/${id}/edit`, {
           state: {
-            importToast: `Drafted ${weeks} weeks - review and tweak anything`,
+            importToast: `${weekLabelPlural(weeks)} - review and tweak anything`,
           },
         });
       }
@@ -433,9 +462,24 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
     const result = validateState(state);
     if (!result.ok) {
       setValidationErrors(result.errors);
+      const empty = result.errors.find((e) => parseEmptyDayPath(e.path));
+      if (empty) {
+        const loc = parseEmptyDayPath(empty.path);
+        setEmptyDayBanner(empty.message);
+        setError(null);
+        if (loc) {
+          setWeekIdx(loc.weekIdx);
+          setDayIdx(loc.dayIdx);
+          setExpandedIds(new Set());
+        }
+        window.requestAnimationFrame(() => {
+          dayPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+        return;
+      }
+      setEmptyDayBanner(null);
       const first = result.errors[0];
       setError(new Error(first?.message || "Fix the highlighted problems before saving."));
-      // Scroll to first problem
       window.requestAnimationFrame(() => {
         const el =
           document.querySelector(".bk-ex-card--invalid") ||
@@ -446,6 +490,7 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
       return;
     }
 
+    setEmptyDayBanner(null);
     setSaveStatus("saving");
     setError(null);
     const payload = serializeToPayload(state);
@@ -472,8 +517,23 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
       }
     } catch (err) {
       setSaveStatus("unsaved");
-      setError(err);
+      if (err instanceof ApiError && err.status === 400) {
+        setError(new Error(plainSaveError(err)));
+      } else {
+        setError(err instanceof Error ? err : new Error(plainSaveError(err)));
+      }
     }
+  }
+
+  function handleRemoveEmptyDays() {
+    const prev = state;
+    const next = removeEmptyDays(state);
+    applyState(next);
+    setEmptyDayBanner(null);
+    const weeks = next.weeks || [];
+    setWeekIdx((wi) => Math.min(wi, Math.max(0, weeks.length - 1)));
+    setDayIdx(0);
+    showToast("Removed empty days", prev);
   }
 
   async function handleAcceptDraft() {
@@ -569,13 +629,15 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
 
   const headerRight = (
     <div className="bk-builder-save">
-      <span
-        className={`bk-builder-save__status bk-builder-save__status--${saveStatus}`}
-        aria-live="polite"
-      >
-        <span className="bk-builder-save__dot" aria-hidden="true" />
-        {saveStatus === "unsaved" ? "Unsaved" : saveStatus === "saving" ? "Saving" : "Saved"}
-      </span>
+      {saveStatus === "clean" ? null : (
+        <span
+          className={`bk-builder-save__status bk-builder-save__status--${saveStatus}`}
+          aria-live="polite"
+        >
+          <span className="bk-builder-save__dot" aria-hidden="true" />
+          {saveStatus === "unsaved" ? "Unsaved" : saveStatus === "saving" ? "Saving" : "Saved"}
+        </span>
+      )}
       <button
         type="button"
         className="btn"
@@ -715,6 +777,19 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
 
         <ErrorMessage error={error} />
 
+        {emptyDayBanner ? (
+          <div className="bk-builder-empty-days" role="alert">
+            <p className="bk-builder-empty-days__msg">{emptyDayBanner}</p>
+            <button
+              type="button"
+              className="btn btn-secondary bk-builder-empty-days__action"
+              onClick={handleRemoveEmptyDays}
+            >
+              Remove empty days
+            </button>
+          </div>
+        ) : null}
+
         {isNewEmpty ? (
           <CoachDraftCard
             unit={displayUnit}
@@ -752,7 +827,7 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
         </div>
 
         {currentDay ? (
-          <div className="bk-builder__panel">
+          <div className="bk-builder__panel" ref={dayPanelRef}>
             <div className="bk-builder__panel-head">
               <SectionRule
                 label={currentDay.name || `Day ${safeDayIdx + 1}`}
@@ -1177,13 +1252,14 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
         fromWeek={safeWeekIdx + 1}
         state={state}
         unit={displayUnit}
-        onApply={({ fromWeek, throughWeek, loadStep, unit }) => {
+        onApply={({ fromWeek, throughWeek, loadStep, unit, overwriteDeload }) => {
           const prev = state;
           const result = copyForward(state, {
             fromWeek,
             throughWeek,
             loadStep,
             unit,
+            overwriteDeload,
           });
           if (result.error) {
             setError(new Error(result.error));

@@ -45,6 +45,7 @@ export function MyTemplatesPage() {
   const [blocks, setBlocks] = useState([]);
   const [customExercises, setCustomExercises] = useState([]);
   const [tab, setTab] = useState("workouts");
+  const [tabInitialized, setTabInitialized] = useState(false);
   const [visibility, setVisibility] = useState("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -52,6 +53,7 @@ export function MyTemplatesPage() {
   const [actingKey, setActingKey] = useState(null);
   const [actingAction, setActingAction] = useState(null);
   const [activeRun, setActiveRun] = useState(null);
+  const [confirmStartBlock, setConfirmStartBlock] = useState(null);
 
   const rawItems =
     tab === "workouts" ? workouts : tab === "blocks" ? blocks : customExercises;
@@ -93,7 +95,8 @@ export function MyTemplatesPage() {
         blockRunApi.getActiveBlockRun().catch(() => ({ run: null })),
       ]);
       setWorkouts(Array.isArray(wData.templates) ? wData.templates : []);
-      setBlocks(Array.isArray(bData.blockTemplates) ? bData.blockTemplates : []);
+      const nextBlocks = Array.isArray(bData.blockTemplates) ? bData.blockTemplates : [];
+      setBlocks(nextBlocks);
       setCustomExercises(Array.isArray(eData.userExercises) ? eData.userExercises : []);
       if (runData?.run) {
         setActiveRun({
@@ -103,6 +106,13 @@ export function MyTemplatesPage() {
         });
       } else {
         setActiveRun(null);
+      }
+      if (!tabInitialized) {
+        const nextWorkouts = Array.isArray(wData.templates) ? wData.templates : [];
+        if (nextBlocks.length > 0 && nextWorkouts.length === 0) {
+          setTab("blocks");
+        }
+        setTabInitialized(true);
       }
     } catch (err) {
       setError(err);
@@ -271,13 +281,15 @@ export function MyTemplatesPage() {
     setSuccess(null);
 
     if (activeRun && activeRun.blockTemplateId !== t.id) {
-      const other = activeRun.name?.trim() || "the current block";
-      const ok = window.confirm(
-        `This ends ${other}. Start "${t.name || "this block"}" instead?`
-      );
-      if (!ok) return;
+      setConfirmStartBlock(t);
+      return;
     }
 
+    await doStartBlock(t);
+  }
+
+  async function doStartBlock(t) {
+    setConfirmStartBlock(null);
     setActingKey(keyFor("block", t.id));
     setActingAction("start-block");
     try {
@@ -420,6 +432,34 @@ export function MyTemplatesPage() {
       {area === "yours" ? (
         <>
           <ErrorMessage error={error} />
+          {confirmStartBlock && activeRun ? (
+            <div className="stack session-discard-confirm" role="alertdialog">
+              <p className="muted small session-discard-confirm__title">
+                Start &ldquo;{confirmStartBlock.name || "this block"}&rdquo;?
+              </p>
+              <p className="muted small session-discard-confirm__body">
+                {`This ends ${activeRun.name?.trim() || "the current block"}.`}
+              </p>
+              <div className="row session-discard-confirm__actions">
+                <button
+                  type="button"
+                  className="session-discard-confirm__discard"
+                  disabled={busy}
+                  onClick={() => void doStartBlock(confirmStartBlock)}
+                >
+                  Start block
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  disabled={busy}
+                  onClick={() => setConfirmStartBlock(null)}
+                >
+                  Keep current
+                </button>
+              </div>
+            </div>
+          ) : null}
           {success ? (
             <div className="card">
               <strong>Done</strong>

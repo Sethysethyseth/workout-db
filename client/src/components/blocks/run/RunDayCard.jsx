@@ -60,27 +60,6 @@ export function RunDayCard({
 
       <ProgressBar value={bar} label={`Day progress ${Math.round(bar * 100)}%`} />
 
-      <ul className="bk-run-day__ex-list">
-        {rows.map(({ mapped, summary, index }) => (
-          <li key={mapped.id || index} className="bk-run-ex">
-            <div className="bk-run-ex__top">
-              <span className="bk-run-ex__slot">{slotBadge(index)}</span>
-            </div>
-            <h3 className="bk-run-ex__name">{mapped.exerciseName || "Untitled"}</h3>
-            {summary.uniform ? (
-              <ExerciseRx rx={summary.rx} />
-            ) : (
-              <p className="bk-rx bk-rx--summary">{summary.summary}</p>
-            )}
-            {mapped.notes ? (
-              <Disclosure summary="Coach note">
-                <p className="bk-run-ex__notes">{mapped.notes}</p>
-              </Disclosure>
-            ) : null}
-          </li>
-        ))}
-      </ul>
-
       <div className="bk-run-day__actions">
         {status === "todo" ? (
           <button type="button" className="btn" disabled={starting} onClick={onStart}>
@@ -108,6 +87,27 @@ export function RunDayCard({
           </>
         ) : null}
       </div>
+
+      <ul className="bk-run-day__ex-list">
+        {rows.map(({ mapped, summary, index }) => (
+          <li key={mapped.id || index} className="bk-run-ex">
+            <div className="bk-run-ex__top">
+              <span className="bk-run-ex__slot">{slotBadge(index)}</span>
+            </div>
+            <h3 className="bk-run-ex__name">{mapped.exerciseName || "Untitled"}</h3>
+            {summary.uniform ? (
+              <ExerciseRx rx={summary.rx} />
+            ) : (
+              <p className="bk-rx bk-rx--summary">{summary.summary}</p>
+            )}
+            {mapped.notes ? (
+              <Disclosure summary="Coach note">
+                <p className="bk-run-ex__notes">{mapped.notes}</p>
+              </Disclosure>
+            ) : null}
+          </li>
+        ))}
+      </ul>
     </Card>
   );
 }

@@ -22,9 +22,17 @@
   --bk-shadow: var(--shadow-card);
   --bk-display: var(--font-block);
   --bk-r: 14px;
+  /* Matches .session-detail-page --session-sticky-top (app .nav height on wide screens) */
+  --bk-sticky-top: 0px;
 
   color: var(--bk-ink);
   font-family: var(--font-sans);
+}
+
+@media (min-width: 720px) {
+  .bk {
+    --bk-sticky-top: 64px;
+  }
 }
 
 .bk .bk-num,
@@ -246,18 +254,24 @@
 
 /* ---------- day picker ---------- */
 .bk-day-picker {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(0, 1fr);
+  display: flex;
+  flex-wrap: nowrap;
   gap: 6px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  padding-bottom: 2px;
 }
 
 .bk-day {
+  flex: 0 0 auto;
+  min-width: 72px;
+  max-width: 104px;
   min-height: 58px;
   border: 1px solid var(--bk-line);
   border-radius: 12px;
   background: var(--bk-surface);
-  padding: 7px 4px 6px;
+  padding: 7px 6px 6px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -273,24 +287,34 @@
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--bk-muted);
+  padding-inline: 2px;
+}
+
+.bk-day--has-ring .bk-day__top {
+  padding-right: 16px;
 }
 
 .bk-day__name {
-  font: 700 16px/1.05 var(--bk-display);
+  font: 700 14px/1.15 var(--bk-display);
   letter-spacing: 0.01em;
   max-width: 100%;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  text-align: center;
+  word-break: break-word;
   padding-inline: 2px;
 }
 
 .bk-day__ring {
   position: absolute;
-  top: 6px;
-  right: 6px;
+  top: 4px;
+  right: 4px;
   width: 14px;
   height: 14px;
+  pointer-events: none;
 }
 
 .bk-day--selected {
@@ -314,6 +338,7 @@
 }
 
 .bk-day-picker__trailing {
+  flex: 0 0 auto;
   display: flex;
   align-items: stretch;
 }
@@ -610,9 +635,11 @@
 }
 
 /* ---------- sticky header ---------- */
+/* Offset: --bk-sticky-top mirrors --session-sticky-top (64px under app .nav on >=720px).
+   On phones the top .nav is hidden when .bottom-nav is present, so top stays 0. */
 .bk-sticky-header {
   position: sticky;
-  top: 0;
+  top: var(--bk-sticky-top);
   z-index: 20;
   background: color-mix(in srgb, var(--bk-bg) 92%, transparent);
   backdrop-filter: blur(8px);

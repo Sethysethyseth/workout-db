@@ -122,9 +122,11 @@ export function ExerciseCard({
           {exercise?.notInLibrary ? (
             <Chip tone="warn">Not in library</Chip>
           ) : null}
-          <span className="bk-ex-card__chev" aria-hidden="true">
-            ▾
-          </span>
+          {readOnly ? null : (
+            <span className="bk-ex-card__chev" aria-hidden="true">
+              ▾
+            </span>
+          )}
         </div>
         <h3 className="bk-ex-card__name">{exercise?.exerciseName || "Untitled"}</h3>
         {summary.uniform ? (
@@ -160,12 +162,12 @@ export function ExerciseCard({
 
       <div className="bk-set-grid" ref={gridRef}>
         <div className="bk-set-grid__head" style={gridStyle} aria-hidden="true">
-          <span>Set</span>
-          <span>{timed ? "Sec" : "Reps"}</span>
-          {rangeOn && !timed ? <span>To</span> : null}
-          <span>Load</span>
-          {showEffort ? <span>{effortLabel}</span> : null}
-          {readOnly ? null : <span />}
+          <span className="bk-set-grid__h bk-set-grid__h--set">SET</span>
+          <span className="bk-set-grid__h">{timed ? "SEC" : "REPS"}</span>
+          {rangeOn && !timed ? <span className="bk-set-grid__h">TO</span> : null}
+          <span className="bk-set-grid__h">LOAD</span>
+          {showEffort ? <span className="bk-set-grid__h">{effortLabel}</span> : null}
+          {readOnly ? null : <span className="bk-set-grid__h bk-set-grid__h--spacer" />}
         </div>
         {sets.map((s, si) => (
           <div className="bk-set-grid__row" style={gridStyle} key={s.id || si}>

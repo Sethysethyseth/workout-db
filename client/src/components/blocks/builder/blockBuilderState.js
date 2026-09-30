@@ -4,6 +4,7 @@
  */
 
 import { makeId } from "../../../lib/makeId.js";
+import { formatDuration } from "../ui/rxFormat.js";
 
 const LB_PER_KG = 2.20462;
 const MAX_WEEKS = 52;
@@ -362,6 +363,13 @@ export function validateState(state) {
       }
 
       const exercises = day.exercises || [];
+      if (exercises.length === 0) {
+        const dayLabel = dayName || `Day ${di + 1}`;
+        push(
+          `weeks[${wi}].days[${di}]`,
+          `Week ${wi + 1} · ${dayLabel} has no exercises`
+        );
+      }
       if (exercises.length > MAX_EXERCISES) {
         push(
           `weeks[${wi}].days[${di}].exercises`,
@@ -622,6 +630,30 @@ export function deleteDay(state, weekIdx, dayIdx) {
   });
 }
 
+/**
+ * Remove every day with zero exercises. Weeks left with no days are removed
+ * too, except the last remaining week (kept as-is so the block never goes
+ * weekless).
+ */
+export function removeEmptyDays(state) {
+  const weeksIn = state.weeks || [];
+  const next = [];
+  for (const week of weeksIn) {
+    const days = (week.days || []).filter((d) => (d.exercises || []).length > 0);
+    if (days.length > 0) next.push({ ...week, days });
+  }
+  if (next.length === 0) {
+    const last = weeksIn[weeksIn.length - 1] || createEmptyWeek();
+    return { ...state, weeks: [last] };
+  }
+  return { ...state, weeks: next };
+}
+
+/** True when a week label names a deload (case-insensitive). */
+export function isDeloadLabel(label) {
+  return /deload/i.test(String(label || "").trim());
+}
+
 /* ---------- exercises ---------- */
 
 export function addExercise(state, weekIdx, dayIdx, exercise) {
@@ -744,9 +776,7 @@ export function toggleTimed(state, weekIdx, dayIdx, exIdx, timed) {
         const dur =
           s.durationSec != null && s.durationSec !== ""
             ? Number(s.durationSec)
-            : s.reps != null && s.reps !== ""
-              ? Math.max(1, Math.round(Number(s.reps) * 3))
-              : 45;
+            : 30;
         return { ...s, durationSec: dur, reps: null, repsMax: null };
       }
       const reps =
@@ -810,12 +840,17 @@ export function convertUnits(state, targetUnit) {
  * weeks fromWeek+1..throughWeek with deep copies of the source week. Each
  * target keeps its own label; missing weeks are created (up to MAX_WEEKS).
  * Sets with a weight get `weight + loadStep * (targetWeek - fromWeek)`,
- * rounded to the nearest 0.5. Callers may pass `unit` for UI labeling; it
- * does not affect the numbers (already in the device unit).
+ * rounded to the nearest 0.5. By default, target weeks whose label contains
+ * "deload" (case-insensitive) are left untouched; pass `overwriteDeload: true`
+ * to overwrite them too. Callers may pass `unit` for UI labeling; it does not
+ * affect the numbers (already in the device unit).
  *
  * @returns {{ state: object, error?: string }}
  */
-export function copyForward(state, { fromWeek, throughWeek, loadStep } = {}) {
+export function copyForward(
+  state,
+  { fromWeek, throughWeek, loadStep, overwriteDeload = false } = {}
+) {
   const step = Number(loadStep);
   if (!Number.isFinite(step) || step < 0) {
     return { state, error: "loadStep must be zero or positive" };
@@ -845,6 +880,9 @@ export function copyForward(state, { fromWeek, throughWeek, loadStep } = {}) {
   for (let weekNum = from + 1; weekNum <= through; weekNum++) {
     const targetIdx = weekNum - 1;
     const keepLabel = weeks[targetIdx]?.label != null ? String(weeks[targetIdx].label) : "";
+    if (!overwriteDeload && isDeloadLabel(keepLabel)) {
+      continue;
+    }
     const bump = step * (weekNum - from);
     const copy = applyWeightBump(deepCloneWeek(src), bump);
     copy.label = keepLabel;
@@ -895,7 +933,7 @@ export function firstExerciseWeight(exercise) {
  */
 export function previewCopyForward(
   state,
-  { fromWeek, throughWeek, loadStep, unit } = {},
+  { fromWeek, throughWeek, loadStep, unit, overwriteDeload = false } = {},
   limit = 3
 ) {
   const step = Number(loadStep);
@@ -910,6 +948,8 @@ export function previewCopyForward(
   if (!src) return lines;
 
   for (let weekNum = from + 1; weekNum <= Math.min(through, MAX_WEEKS); weekNum++) {
+    const targetLabel = state.weeks?.[weekNum - 1]?.label;
+    if (!overwriteDeload && isDeloadLabel(targetLabel)) continue;
     const bump = step * (weekNum - from);
     for (const day of src.days || []) {
       for (const ex of day.exercises || []) {
@@ -925,6 +965,24 @@ export function previewCopyForward(
   return lines;
 }
 
+/**
+ * Deload weeks in the copy-forward range that will be skipped by default.
+ * @returns {{ weekNum: number, label: string }[]}
+ */
+export function skippedDeloadWeeks(state, { fromWeek, throughWeek } = {}) {
+  const from = Number(fromWeek);
+  const through = Number(throughWeek);
+  const out = [];
+  if (!Number.isInteger(from) || !Number.isInteger(through) || through <= from) return out;
+  for (let weekNum = from + 1; weekNum <= Math.min(through, MAX_WEEKS); weekNum++) {
+    const label = state.weeks?.[weekNum - 1]?.label;
+    if (isDeloadLabel(label)) {
+      out.push({ weekNum, label: String(label).trim() });
+    }
+  }
+  return out;
+}
+
 /** Compact cell rx for progression view: `3×8 @185`, `3×45s`, or null if empty. */
 export function compactExerciseRx(exercise, unit) {
   if (!exercise) return null;
@@ -937,7 +995,8 @@ export function compactExerciseRx(exercise, unit) {
   }
   const rx = summary.rx;
   if (rx.durationSec != null) {
-    return `${rx.sets}×${rx.durationSec}s`;
+    const dur = formatDuration(rx.durationSec);
+    return dur ? `${rx.sets}×${dur}` : null;
   }
   if (rx.reps == null) {
     if (rx.weight != null) return `${rx.sets}× @${rx.weight}`;

@@ -190,6 +190,14 @@
   margin: 0 0 12px;
 }
 
+.bk-run-confirm {
+  margin: 0 0 12px;
+  padding: 12px 14px;
+  border-radius: var(--bk-r);
+  border: 1px solid var(--bk-line);
+  background: var(--bk-surface);
+}
+
 .bk-run-library-link {
   margin-top: 24px;
   font: 600 12px/1 var(--font-sans);
@@ -287,7 +295,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  margin-top: 8px;
+  margin: 4px 0 4px;
 }
 
 .bk-run-day__actions .btn {

@@ -38,6 +38,7 @@ export function BlockRunPage() {
   const [startingBlockId, setStartingBlockId] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [ending, setEnding] = useState(false);
+  const [confirmEnd, setConfirmEnd] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -133,10 +134,8 @@ export function BlockRunPage() {
 
   async function onEndBlock() {
     if (!payload?.run) return;
-    const name = payload.block?.name || "this block";
-    const ok = window.confirm(`End "${name}"? You can start it again from your library.`);
-    if (!ok) return;
     setEnding(true);
+    setConfirmEnd(false);
     setMenuOpen(false);
     setError(null);
     try {
@@ -147,6 +146,11 @@ export function BlockRunPage() {
     } finally {
       setEnding(false);
     }
+  }
+
+  function requestEndBlock() {
+    setMenuOpen(false);
+    setConfirmEnd(true);
   }
 
   if (loading) {
@@ -233,9 +237,9 @@ export function BlockRunPage() {
                       className="bk-run-menu__item"
                       role="menuitem"
                       disabled={ending}
-                      onClick={() => void onEndBlock()}
+                      onClick={requestEndBlock}
                     >
-                      {ending ? "Ending…" : "End block"}
+                      End block
                     </button>
                   </div>
                 ) : null}
@@ -266,6 +270,36 @@ export function BlockRunPage() {
             <button type="button" className="btn btn-secondary" onClick={() => void load()}>
               Retry
             </button>
+          </div>
+        ) : null}
+
+        {confirmEnd ? (
+          <div className="stack session-discard-confirm bk-run-confirm" role="alertdialog">
+            <p className="muted small session-discard-confirm__title">
+              End &ldquo;{payload.block?.name || "this block"}&rdquo;?
+            </p>
+            <p className="muted small session-discard-confirm__body">
+              You can start it again from your library.
+            </p>
+            <div className="row session-discard-confirm__actions">
+              <button
+                type="button"
+                className="session-discard-confirm__discard"
+                disabled={ending}
+                aria-busy={ending || undefined}
+                onClick={() => void onEndBlock()}
+              >
+                {ending ? "Ending…" : "End block"}
+              </button>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                disabled={ending}
+                onClick={() => setConfirmEnd(false)}
+              >
+                Keep running
+              </button>
+            </div>
           </div>
         ) : null}
 
