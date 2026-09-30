@@ -149,11 +149,16 @@ tree; an OLDER exercise with targets but no set rows exported `sets: []`
 and failed re-import - fixed in BK2's mapping as its own commit (sets
 rebuilt from targets, +2 tests, 426).
 
-DISPATCHED | bk8-run-a-block-client.md | `/blocks/current` (week strip + day
+LANDED 8a8e5f3 | bk8-run-a-block-client.md | `/blocks/current` (week strip + day
 picker + day card + Start/Resume), Start block in the library, Up next on
 Home, localStorage block "current" retired | n=10. Needs BK6 + BK7.
 Dispatched Sept 29: Channel B, `--model auto`, lane `cursor-lane-2` on
 `cursor/bk8` @ `ab4a692`, 40-minute hard kill.
+Audited: build + eslint + check-hex + raw-color + token checks clean;
+workout templates keep "Set as current"; Home swallows block-run errors
+(card hidden); SecondaryActions.jsx's leftover `kind === "block"` is a
+dead file (no importers). Gate/critic note: Start block over another run
+uses window.confirm, not the app's in-page confirm pattern.
 
 LANDED 06c0761 | bk9-logger-plan-timed-sets.md | logger shows plan targets, caps,
 rest; "as planned" fill (never effort); timed sets | n=11. Needs BK7.
@@ -168,16 +173,31 @@ one on non-block paths; parseSeconds probed by hand (edge inputs null).
 LIVE check (block day: as planned, timed, over-cap, finish, reopen)
 carried to the wave smoke list.
 
-DISPATCHED | bk11-connector-block-drafts.md | MCP `get_block_format` +
+LANDED 8d3f3eb | bk11-connector-block-drafts.md | MCP `get_block_format` +
 `create_block_draft` (create-only, opt-in, capped, app-guarded), AI-access
 toggle, consent facts | n=12. Needs BK3. CROSS-USER ISOLATION SURFACE -
 frontier review at the gate. Live check needs Seth's Claude on staging.
 Dispatched Sept 29: Channel B, `--model auto`, lane `cursor-lane` on
 `cursor/bk11` @ `4bfd5cd`, 40-minute hard kill.
+Audited: unit 437 fresh; blockDraftAccess has no Prisma update/delete;
+userId only from the MCP closure; opt-in + consent checked first; limits
+count only the closure user's rows. Accepted deviations: blockTemplateStore
+gains the `sourceUnit` option (the gap noted at BK1); the connector
+section renders while consent is off so the switch can show disabled with
+its reason; `reviewUrl` omitted (no canonical client origin - CLIENT_ORIGIN
+is a CORS allowlist). Reviewer fix: a new no-extra-boolean-cast lint error.
+LIVE (local API on the staging DB, demo.critic): consent payload carries
+blockDraftsAllowed; PUT 400/200/200; write path refuses while off, creates
+isDraft/connector/sourceUnit kg for the owner, reports unmatched names,
+unit required; the draft cannot go public (409) or be started (409);
+accept flips it. Opt-in restored, draft deleted. The Claude-side check is
+on Seth's smoke list. CROSS-USER SURFACE - frontier review at the gate.
 
-QUEUED | bk12-coach-block-assist.md | coach convert/generate a draft
+DISPATCHED | bk12-coach-block-assist.md | coach convert/generate a draft
 (palette pattern, counts 1 question) into the import preview; ask about a
 block | n=13. Needs BK6 + BK8 (builder/import files).
+Dispatched Sept 29: Channel B, `--model auto`, lane `cursor-lane` on
+`cursor/bk12` @ `8a8e5f3`, 40-minute hard kill.
 
 DRAFT | bk0-privacy-terms-pages.md | plain-language /privacy + /terms,
 covering the AI layer and the draft-block write | Seth's Sept 26 "first
