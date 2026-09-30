@@ -193,11 +193,21 @@ unit required; the draft cannot go public (409) or be started (409);
 accept flips it. Opt-in restored, draft deleted. The Claude-side check is
 on Seth's smoke list. CROSS-USER SURFACE - frontier review at the gate.
 
-DISPATCHED | bk12-coach-block-assist.md | coach convert/generate a draft
+LANDED f901f84 | bk12-coach-block-assist.md | coach convert/generate a draft
 (palette pattern, counts 1 question) into the import preview; ask about a
 block | n=13. Needs BK6 + BK8 (builder/import files).
 Dispatched Sept 29: Channel B, `--model auto`, lane `cursor-lane` on
 `cursor/bk12` @ `8a8e5f3`, 40-minute hard kill.
+Audited: unit 456 fresh; block focus loaded owner-only (findFirst id +
+userId) BEFORE any usage row; draft usage row removed unless a block is
+delivered; unparseable model output -> 502 mirrors the palette path
+(client maps by error code); CoachPanel's one lint error predates BK12.
+Accepted placement (frontier ruling): the owner-checked block load sits in
+askCoach.js, outside FILES TO TOUCH but disclosed in DELIVERY - it is where
+focus data is already loaded. LIVE (local API on staging DB, mock coach):
+status available, convert 200 and the draft passes the import preview, bad
+mode / missing unit 400, ask with own block streams, a block that is not
+yours 404 with no block text.
 
 DRAFT | bk0-privacy-terms-pages.md | plain-language /privacy + /terms,
 covering the AI layer and the draft-block write | Seth's Sept 26 "first
