@@ -209,23 +209,35 @@ status available, convert 200 and the draft passes the import preview, bad
 mode / missing unit 400, ask with own block streams, a block that is not
 yours 404 with no block text.
 
-DISPATCHED | bkf1a-builder-run-library-fixes.md | critic round 1 fixes: empty days
+LANDED f69f278 | bkf1a-builder-run-library-fixes.md | critic round 1 fixes: empty days
 named before Save + remove-empty, copy forward skips deload, set-grid header,
 readable day tiles, sticky header below the desktop nav, in-page confirms,
 Start near the top of the run card, rx polish | n=14. Round 1 scored 6/10
 (`bk-critic-round-1-FINDINGS.md`). Beside bkf1b, bkf1c (disjoint).
-Dispatched Sept 29: Channel B, `--model auto`, lane `cursor-lane`.
+Dispatched Sept 29: Channel B, `--model auto`, lane `cursor-lane`. Run 7.1
+min. Audited: build + eslint (0 errors) + check-hex + raw-color + token
+checks clean; state snippets verified (empty-day paths, remove-empties keeps
+the last week, deload skipped by default / overwritten on opt-in, timed 30 s).
+Remaining window.confirm calls are pre-existing delete/leave prompts
+outside finding 15 (accepted).
 
-DISPATCHED | bkf1b-import-page-fixes.md | critic round 1 fixes: preview opens at the
+LANDED 61dbae2 | bkf1b-import-page-fixes.md | critic round 1 fixes: preview opens at the
 top, program before a compact matching list, sticky Create with a busy
 state, pluralized counts | n=15. Beside bkf1a, bkf1c.
-Dispatched Sept 29: Channel B, `--model auto`, lane `cursor-lane-2`.
+Dispatched Sept 29: Channel B, `--model auto`, lane `cursor-lane-2`. Run 5.0
+min. Audited clean. Accepted deviation: the Create bar is position: fixed
+above the bottom nav (sticky could not stay in view from the top).
 
-DISPATCHED | bkf1c-summary-timed-analytics-dates.md | critic round 1 fixes: finished
+LANDED 0ddc413 | bkf1c-summary-timed-analytics-dates.md | critic round 1 fixes: finished
 summary counts and shows timed sets; analytics ranges use local-day
 datetimes (evening sessions no longer vanish); logger placeholders (no fake
 load, caps as <= / >=) | n=16. Beside bkf1a, bkf1b.
 Dispatched Sept 29: Channel B, `--model auto`, lane `cursor-lane-3`.
+Audited: date helper verified (NY evening -> to 03:59:59.999Z next day);
+the range prop's only other consumer (ExercisesView fetch) accepts
+datetimes; coach range stays date-only. Lane hygiene: the run left three
+untracked copies of docs/design/mocks/*.png in client/src/assets/scenes/
+(unreferenced) - never staged, left in the lane.
 
 DRAFT | bk0-privacy-terms-pages.md | plain-language /privacy + /terms,
 covering the AI layer and the draft-block write | Seth's Sept 26 "first
