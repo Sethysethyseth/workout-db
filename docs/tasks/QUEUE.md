@@ -239,12 +239,15 @@ datetimes; coach range stays date-only. Lane hygiene: the run left three
 untracked copies of docs/design/mocks/*.png in client/src/assets/scenes/
 (unreferenced) - never staged, left in the lane.
 
-DISPATCHED | bkf2-critic-round-2-fixes.md | critic round 2 fixes: block header
+LANDED 9082443 | bkf2-critic-round-2-fixes.md | critic round 2 fixes: block header
 below the real (two-row) desktop nav, full names in import match rows, say
 unmatched names drop out of Analytics, rest stepper on one line | n=17.
 Round 2 scored 7.5/10 (`bk-critic-round-2-FINDINGS.md`); set-grid header,
 day-picker scrollbars and Execution copy were fixed directly (`207c0f2`).
-Dispatched Sept 29: Channel B, `--model auto`, lane `cursor-lane`.
+Dispatched Sept 29: Channel B, `--model auto`, lane `cursor-lane`. Run 2.8
+min. Audited clean; accepted "None" (aria "No rest") for rest 0 via a
+Stepper format object. Critic round 3 (final) PASSED at 8/10
+(`bk-critic-round-3-FINDINGS.md`). WAVE N/N = 17/17 - next: Seth smokes.
 
 DRAFT | bk0-privacy-terms-pages.md | plain-language /privacy + /terms,
 covering the AI layer and the draft-block write | Seth's Sept 26 "first
