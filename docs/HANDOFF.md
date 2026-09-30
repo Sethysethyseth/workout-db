@@ -4,16 +4,16 @@
 > 17/17 LANDED** on `ai-connector-wave` (`196a10b`): BK1-BK12 + BK5b plus the
 > critic fix blocks bkf1a/b/c and bkf2. The coach-persona **critic PASSED in
 > round 3 at 8/10** (rounds: 6 -> 7.5 -> 8; `docs/tasks/bk-critic-round-*-FINDINGS.md`).
-> BK1's migration is applied to STAGING (not prod). **Staging Render has NOT
-> deployed since before BK1** - the critic ran on the local recipe against
-> the staging DB, so the deployed stack is unexercised. HARD STOP for Seth's
-> smoke (checklist below). Prod unchanged: `main` = `7d3b91e`.
+> BK1's migration is applied to STAGING (not prod). **Staging Render was
+> tracking `main`, not `ai-connector-wave`** (found Sept 29; Seth repointed it
+> and redeployed - verified live: new routes up, latest server fix live, DB
+> "up to date"). The critic ran on the local recipe before that, so Seth's
+> smoke is the first run on the deployed stack. HARD STOP for Seth's smoke
+> (checklist below). Prod unchanged: `main` = `7d3b91e`.
 
-**Next action (human):** get staging Render deploying `ai-connector-wave`
-again (Render -> `workout-db-staging` -> Events: failed build log, stuck
-queue, or wrong branch), confirm the deploy SHA is `196a10b` or later, then
-run the wave smoke checklist below on the staging Vercel deploy and reply
-"smoke signed off" (or send the findings).
+**Next action (human):** run the wave smoke checklist below on the staging
+Vercel deploy (staging Render now tracks `ai-connector-wave` and is live) and
+reply "smoke signed off" - or send the findings.
 
 ## ▶ PICK UP HERE (Sept 29, late - written for a fresh agent)
 
@@ -41,8 +41,9 @@ run the wave smoke checklist below on the staging Vercel deploy and reply
 
 ### Wave smoke checklist - BK (Seth, staging Vercel deploy, phone + desktop)
 
-Pre-check: Render Events on `workout-db-staging` shows `196a10b` or later;
-`/block-runs/active` on the staging API no longer 404s.
+Pre-check (done Sept 29 by the relay): staging Render repointed to
+`ai-connector-wave` and redeployed; `/block-runs/active` answers 401 (not
+404) and the Any AI json fix is live.
 
 1. **Import your Phase-1 sheet** (Library -> Import a block): paste week 1,
    then File-upload all 6 weeks. Preview opens at the top, program before
@@ -132,7 +133,10 @@ Pre-check: Render Events on `workout-db-staging` shows `196a10b` or later;
   there, so no repoint and the staging connector's sign-in URI (pinned to the
   `ai-connector-wave` Vercel PREVIEW host) keeps working. Repoint to `main`
   only after the BK merge. Never delete `ai-connector-wave` while that URI
-  points at its preview host.
+  points at its preview host. **Sept 29: it had in fact been tracking
+  `main`** (so no BK push deployed for ~1h - the "Render stuck" symptom);
+  Seth repointed it to `ai-connector-wave`. If staging ever looks stale
+  again, check Render -> Settings -> Branch FIRST.
 - **Temp worktree `C:\dev\worktrees\merge-main-0927`** (on `main` @ `7d3b91e`,
   clean) still exists - merge-ritual command 4 (`git worktree remove`) was
   never approved. Ask Seth before running it.
