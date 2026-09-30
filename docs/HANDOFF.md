@@ -1,49 +1,81 @@
 # HANDOFF — current state
 
-> **WHERE WE ARE (Sept 29, evening):** the **BK (blocks-v2) wave is BUILT -
-> all 13 units LANDED and pushed** (BK1 migration applied to staging under
-> "migrate staging"; every server unit proven live against the staging DB).
-> The coach-persona **critic round 1 scored 6/10 - not passing**
-> (`docs/tasks/bk-critic-round-1-FINDINGS.md`); its P0 (Any AI paste) was
-> fixed in-round (`8da0ae5`); **bkf1a/b/c** (the round-1 fix blocks) are
-> DISPATCHED in the three lanes. Wave N = 16. **Staging Render has NOT
-> deployed since before BK1** (Vercel + CI deploy fine) - round 1 ran on the
-> local recipe against the staging DB. Prod unchanged: `main` = `7d3b91e`.
+> **WHERE WE ARE (Sept 29, late):** the **BK (blocks-v2) wave is COMPLETE -
+> 17/17 LANDED** on `ai-connector-wave` (`196a10b`): BK1-BK12 + BK5b plus the
+> critic fix blocks bkf1a/b/c and bkf2. The coach-persona **critic PASSED in
+> round 3 at 8/10** (rounds: 6 -> 7.5 -> 8; `docs/tasks/bk-critic-round-*-FINDINGS.md`).
+> BK1's migration is applied to STAGING (not prod). **Staging Render has NOT
+> deployed since before BK1** - the critic ran on the local recipe against
+> the staging DB, so the deployed stack is unexercised. HARD STOP for Seth's
+> smoke (checklist below). Prod unchanged: `main` = `7d3b91e`.
 
-**Next action (human):** open Render -> `workout-db-staging` -> Events and
-tell the relay why it stopped deploying (failed build log, stuck queue, or a
-branch other than `ai-connector-wave`) - your end-of-wave smoke needs it.
+**Next action (human):** get staging Render deploying `ai-connector-wave`
+again (Render -> `workout-db-staging` -> Events: failed build log, stuck
+queue, or wrong branch), confirm the deploy SHA is `196a10b` or later, then
+run the wave smoke checklist below on the staging Vercel deploy and reply
+"smoke signed off" (or send the findings).
 
-## ▶ PICK UP HERE (Sept 29, written for a fresh agent)
+## ▶ PICK UP HERE (Sept 29, late - written for a fresh agent)
 
-> **Agent reading this:** the BK wave is in its critic loop (spec section 11,
-> FRONTIER SEAT - Opus runs it; a Sonnet relay hands over here). Ledger:
-> `docs/tasks/QUEUE.md` "Blocks-v2 wave". Live checklist: the status line's
-> second row (`scripts/wave-status.mjs`, reads QUEUE).
+> **Agent reading this:** the BK wave is at the smoke HARD STOP. Do not run
+> the gate, `/code-review`, or merge prep until Seth signs off. A smoke
+> finding re-enters as a diagnosis block and resets the sign-off. After
+> sign-off: `pre-main-review` (FRONTIER seat), with the gate notes below.
+> Prod needs BK1's migration applied BY SETH before the merge (ordering
+> invariant; RUNBOOK "Schema-change deploy"), and the prod-vs-staging
+> migration drift (Housekeeping) is still unreconciled.
 >
-> 1. **Land bkf1a, bkf1b, bkf1c via `land-unit`** (lanes `cursor-lane`,
->    `-2`, `-3`, branched from `00ac6b4`; disjoint files, land serially).
-> 2. **Critic round 2** (frontier seat): same persona, tasks T1-T7, rubric
->    and artifacts as round 1 - `docs/tasks/bk-critic-round-2-FINDINGS.md`.
->    Seth's Phase-1 `Program` sheet exports with python stdlib (xlsx is a
->    zip; the `Program` sheet); the local recipe is `server`:
->    `COACH_PROVIDER=mock PORT=3100 node src/server.js` + `client`:
->    `VITE_API_URL=http://localhost:3100 npx vite --port 5173` (run
->    `npx prisma generate` in the main tree first). Prefer the staging
->    Vercel deploy once Render deploys again. Pass = 8+, no criterion < 7,
->    no P0/P1 open; else author bkf2 and loop - max 3 rounds.
-> 3. Then N/N -> Seth smokes (consolidated list in the round's FINDINGS +
->    the per-unit LIVE checks in QUEUE) -> `pre-main-review`.
->
-> **Gate notes collected while landing (for `pre-main-review`):** clone
-> isolation (BK1, cross-user) - live clone of a FOREIGN public block was not
-> possible on staging (none exists); BK11 connector write path (cross-user);
-> BK12 block focus owner check (askCoach.js, accepted placement); BK10
-> reuses the enriched `templateExerciseId` field for `block:<id>` keys;
-> BK7 start-from-block has no unique guard (race -> two sessions);
-> WeekStrip smooth scroll ignores reduced motion. A second Claude session
-> (Sonnet) was editing HANDOFF + docs/legal in the same tree on Sept 29 -
-> check `git status` before every commit.
+> **Gate notes collected while landing:** clone isolation (BK1, cross-user)
+> - a live clone of a FOREIGN public block was not possible on staging;
+> BK11 connector write path (cross-user; live-checked in-process, the
+> Claude-side check is Seth's); BK12 block focus owner check lives in
+> `askCoach.js` (accepted placement); BK10 reuses the enriched
+> `templateExerciseId` field for `block:<id>` keys and `judgePlanHit` is
+> unused (spec 7.5 ruling, hit rate deferred); BK7 start-from-block has no
+> unique guard (race -> two sessions); WeekStrip smooth scroll ignores
+> reduced motion; direct fixes landed outside Cursor units: `aadb365`
+> (BK3 extraction), BK5 state fixes, `0a92af6` (export legacy sets),
+> `8da0ae5` (Any AI json kind), `207c0f2` (set-grid stretch, day-picker
+> scrollbar). Lane `cursor-lane-3` holds three untracked mock PNG copies in
+> `client/src/assets/scenes/` - never stage them.
+
+### Wave smoke checklist - BK (Seth, staging Vercel deploy, phone + desktop)
+
+Pre-check: Render Events on `workout-db-staging` shows `196a10b` or later;
+`/block-runs/active` on the staging API no longer 404s.
+
+1. **Import your Phase-1 sheet** (Library -> Import a block): paste week 1,
+   then File-upload all 6 weeks. Preview opens at the top, program before
+   matching, "Not in your library (N)" with the Analytics note, Create sticky.
+   Create -> the builder with a toast. Match one name -> it shows as matched.
+2. **Any AI**: Copy the instructions -> paste into ChatGPT/Claude with a
+   request -> paste the WHOLE answer back -> preview -> create.
+3. **Export**: builder Settings -> Export block -> re-import that file on
+   the File tab -> identical stats, "Nothing skipped".
+4. **Builder**: new block, 4 days, only day 1 filled -> Save names the empty
+   day -> "Remove empty days" -> Save. Reps -> Time (30 s), Range, Rest
+   stepper, Cap. Label week 4 "Deload", copy week 1 forward +5 -> week 4
+   skipped. Progression tab reads week to week.
+5. **Run a block**: Library -> Start block -> /blocks/current (week strip,
+   day tiles, NEXT, Start near the top); Home shows "Up next" (below any
+   live-workout card). End block uses the in-page confirm.
+6. **Log a block day**: plan line + coach notes (Setup, Lead side) visible;
+   "As planned" fills reps/seconds + load, never effort; a timed set logs
+   seconds; RPE over the cap shows "over cap". Finish -> the summary counts
+   the timed set ("45 s").
+7. **Execution**: Analytics -> Execution lists that session the same
+   evening; under-cap effort = no drift, over-cap = overshoot.
+8. **Connector drafts** (Claude connected to staging): switch off -> ask
+   Claude to make a block -> "turned off" message; switch on -> ask again ->
+   DRAFT pill -> Review -> banner -> Save to library. A draft cannot be made
+   public before it is saved.
+9. **Coach**: "Let the coach convert it" on a pasted paragraph -> preview;
+   new block -> "Describe the block you want"; builder Settings -> "Ask the
+   coach about this block". With AI consent off, none of these show.
+10. **Regressions**: a quick-log workout and a saved-workout session behave
+    as before; saved workouts keep "Set as current".
+11. **Desktop (1280)**: builder/run header sits under the app nav when
+    scrolled.
 
 ### Open on prod - Seth's checks, none blocking
 
