@@ -137,6 +137,11 @@ feedback, consent and usage rows).
 - **Q15.** [Sept 29] Account termination and abuse: what grounds and process
   should the ToS state, and what happens to data on termination? - OPEN
 
+- **Q20.** [Sept 29] If we store users' own AI API keys encrypted on our
+  side, what security standard/disclosure is reasonable, and does holding
+  third-party credentials add liability or breach-notification duties
+  beyond ordinary account data? - OPEN
+
 ### E. Future (park here so they aren't forgotten)
 - **Q16.** [Sept 29] If we ever add payments/subscriptions: sales tax,
   auto-renewal disclosure laws, refund terms, card-data handling (via a
@@ -167,6 +172,12 @@ feedback, consent and usage rows).
   and the policy text must describe what actually happens (see Part 1) or
   be changed to match a real design. A privacy policy that overstates
   security is itself a legal risk.
+- **RULING (Seth, Sept 29): the bring-your-own key must be encrypted.**
+  Today it is not (see the flag above), so a design + build unit is owed
+  before the policy can claim it. Options for the frontier seat: encrypt
+  server-side at rest (needs a schema change and a secret in Render env),
+  or keep it browser-only and describe it honestly. Lawyer question added
+  as Q20.
 - Suggested flow: Cursor drafts the two pages from Part 1 -> Seth reads ->
   lawyer reviews the drafts together with this file -> publish.
 
@@ -176,3 +187,5 @@ feedback, consent and usage rows).
 
 - Sept 29, 2026 - file created from a code check (schema, consent facts,
   BYO-key storage). Q1-Q19 opened.
+- Sept 29, 2026 - Seth ruled the BYO coach key must be encrypted; Q20 and
+  the Part 3 ruling added.

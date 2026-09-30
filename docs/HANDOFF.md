@@ -103,6 +103,17 @@ staging" before the BK1 push.
   or browsable today; Seth flagged it. Product decision first (persist
   content? that changes the privacy page's "records only who and when"
   cap statement in BK0).
+- **RULING (Seth, Sept 29): the bring-your-own coach key MUST be
+  encrypted.** Today it is not - it lives plaintext in the browser's
+  `sessionStorage` (`client/src/lib/coachKeyPref.js`) and rides each coach
+  request in the `x-coach-key` header; the server stores no user key. BK0's
+  block claims "encrypted at rest and never shown again", which is FALSE
+  for the current code. Two things follow: (1) BK0 must not publish that
+  claim until the design below ships - correct the block first; (2) a
+  design decision is owed (server-side encrypted storage with a secret in
+  Render env + a schema change, vs keeping it browser-only and saying so).
+  Schema + secrets = a frontier-seat / security escalation, not a Sonnet
+  unit. Nothing authored yet. Also logged in `docs/legal/LEGAL-QUESTIONS.md`.
 - **BK0 (privacy/ToS) facts - Seth took the recommended defaults Sept 29,
   to be critiqued later:** deletion = "email us, we delete within 30 days"
   (manual prod delete, Seth only); effective date = go-live date; contact =
