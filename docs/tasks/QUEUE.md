@@ -15,7 +15,7 @@ effort cap / week labels. Lands on `ai-connector-wave` (staging Render still
 tracks it - M2's repoint to `main` is ON HOLD for this wave). ONE migration
 (BK1): the BK1 landing push MIGRATES STAGING (Render build runs `migrate
 deploy`), so that push waits for Seth's "migrate staging"; prod gets it by
-hand before the merge. Wave N = 17 (BK1-BK12 + BK5b + critic fixes bkf1a/b/c + bkf2; BK0
+hand before the merge. Wave N = 20 (BK1-BK12 + BK5b + critic fixes bkf1a/b/c + bkf2 + smoke CRs bks1-3; BK0
 privacy/ToS is DRAFT on Seth's facts and joins N when queued). Then the coach-persona
 critic loop (spec section 11, FRONTIER SEAT, max 3 rounds, pass 8+; each
 failing round adds a `bkf<N>` fix block), THEN N/N -> Seth smokes -> gate.
@@ -248,6 +248,32 @@ Dispatched Sept 29: Channel B, `--model auto`, lane `cursor-lane`. Run 2.8
 min. Audited clean; accepted "None" (aria "No rest") for rest 0 via a
 Stepper format object. Critic round 3 (final) PASSED at 8/10
 (`bk-critic-round-3-FINDINGS.md`). WAVE N/N = 17/17 - next: Seth smokes.
+
+**Smoke reopened BK (Sept 30, Opus seat).** The wave reopens: Seth's first smoke item
+produced four change requests: CR1-CR4 in `bk-smoke-FINDINGS.md`. His ruling:
+"this is all in this wave, when this hits prod I want it to be usable". N grows
+17 -> 20, plus any critic fix blocks. CR3 (notes) is folded into bks2 using the
+recovery artifact's pattern (no switches). Then a NEW critic loop runs as a
+SEPARATE Claude agent, which is Seth's explicit ask this time. It is capped at
+8/10 or 3 rounds, and its focus is the block builder ("squished"), exercise
+search scrolling, the phone keypad covering things, the flow through the app,
+and the new logger and library. After that the smoke restarts from item 1.
+The three bks units have fully disjoint FILES TO TOUCH (import / session page
++ log / library), so they run in parallel, width 3.
+
+QUEUED | bks1-ai-layout-import.md | any-layout import: the AI returns a layout
+recipe from a 40-row sample, the parser applies it to every row, costs 3 of 7 |
+n=18 candidate. Server + import page + coach/blockTemplate api +
+bk-import.css. Needs a LIVE staging proof of `/coach/import-map` at landing.
+
+QUEUED | bks2-block-logger-planned-rows.md | block-day logger: a row per planned set,
+every field ghosted, add/remove sets, recovery look, notes without switches,
+keypad-safe | n=19 candidate. SessionDetailPage (block branch) +
+blocks/log/* + bk-log.css.
+
+QUEUED | bks3-library-redesign.md | Library redesign: blocks-first, a running-block
+strip, BK card language, "Create workout" greyed as parked | n=20 candidate.
+MyTemplatesPage + new components/library + new bk-library.css.
 
 DRAFT | bk0-privacy-terms-pages.md | plain-language /privacy + /terms,
 covering the AI layer and the draft-block write | Seth's Sept 26 "first

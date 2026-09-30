@@ -1,5 +1,15 @@
 # HANDOFF — current state
 
+> **UPDATE (Sept 30): the smoke REOPENED the wave.** Seth's item-1 notes became
+> four change requests (`docs/tasks/bk-smoke-FINDINGS.md`) that he ruled
+> in-wave: N = 20.
+> - bks1 AI layout import, bks2 block logger, bks3 Library are QUEUED and
+>   dispatched in parallel.
+> - After they land, a critic loop runs as a SEPARATE Claude agent, 8/10 or
+>   3 rounds.
+> - Then the smoke restarts from item 1.
+> - Test account `test123` / `password`: block 126, run 5, weeks 1-2 logged.
+
 > **WHERE WE ARE (Sept 29, late):** the **BK (blocks-v2) wave is COMPLETE -
 > 17/17 LANDED** on `ai-connector-wave` (`196a10b`): BK1-BK12 + BK5b plus the
 > critic fix blocks bkf1a/b/c and bkf2. The coach-persona **critic PASSED in
