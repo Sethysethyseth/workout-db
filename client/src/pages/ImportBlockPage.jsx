@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ApiError } from "../api/http.js";
 import * as blockTemplateApi from "../api/blockTemplateApi.js";
@@ -8,6 +8,7 @@ import {
   ImportErrorCard,
   ImportPreviewStep,
   ImportSourceStep,
+  formatImportToast,
 } from "../components/blocks/import/index.js";
 import { deviceUnitToFormat } from "../components/blocks/builder/blockBuilderState.js";
 import "../styles/blocks/bk-import.css";
@@ -43,6 +44,10 @@ export function ImportBlockPage() {
   const [errors, setErrors] = useState(null);
   const [submittedForErrors, setSubmittedForErrors] = useState(null);
   const [networkError, setNetworkError] = useState(null);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [step]);
 
   const buildOptions = useCallback(
     (warmupOverride) => {
@@ -115,7 +120,7 @@ export function ImportBlockPage() {
   }
 
   async function onCreate() {
-    if (!preview?.block) return;
+    if (!preview?.block || creating) return;
     setCreating(true);
     setNetworkError(null);
     try {
@@ -132,7 +137,7 @@ export function ImportBlockPage() {
       if (id) {
         navigate(`/blocks/${id}/edit`, {
           state: {
-            importToast: `Imported ${weeks} weeks - review and tweak anything`,
+            importToast: formatImportToast(weeks),
           },
         });
       }

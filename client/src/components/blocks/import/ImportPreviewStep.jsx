@@ -7,9 +7,11 @@ import { WeekStrip } from "../ui/WeekStrip.jsx";
 import { ExerciseCard } from "../builder/ExerciseCard.jsx";
 import { ExercisePicker } from "../builder/ExercisePicker.jsx";
 import { formatExerciseForCard } from "./formatExerciseForCard.js";
+import { formatImportStats } from "./formatImportStats.js";
+import { splitMatchedExercises } from "./splitMatchedExercises.js";
 
 /**
- * Step 2 — preview stats, warnings, matching, browse, create.
+ * Step 2 — preview stats, warnings, browse, matching, create.
  */
 export function ImportPreviewStep({
   preview,
@@ -27,7 +29,6 @@ export function ImportPreviewStep({
   const block = preview?.block || null;
   const stats = preview?.stats || {};
   const warnings = Array.isArray(preview?.warnings) ? preview.warnings : [];
-  const exercises = Array.isArray(preview?.exercises) ? preview.exercises : [];
   const notices = preview?.notices || {};
   const warmupRows = Number(notices.warmupRows) || 0;
   const effort = block?.effort === "rpe" || block?.effort === "rir" ? block.effort : "none";
@@ -79,20 +80,29 @@ export function ImportPreviewStep({
     });
   }, [currentDay, renames]);
 
-  const statsLine = [
-    `${stats.weeks ?? 0} WEEKS`,
-    `${stats.days ?? 0} DAYS`,
-    `${stats.exercises ?? 0} EXERCISES`,
-    `${stats.sets ?? 0} SETS`,
-  ].join(" · ");
-
+  const { line: statsLine, timedSets: timedSetsLabel } = formatImportStats(stats);
   const timedSets = Number(stats.timedSets) || 0;
+
+  const { matched, unmatched } = useMemo(
+    () =>
+      splitMatchedExercises(
+        Array.isArray(preview?.exercises) ? preview.exercises : []
+      ),
+    [preview]
+  );
+
+  const dayHeading =
+    currentDay?.name && String(currentDay.name).trim()
+      ? String(currentDay.name).trim()
+      : `Day ${safeDayIdx + 1}`;
+
+  const nameSummary = blockName.trim() || "Name this block";
 
   return (
     <div className="bk-import-preview">
       <p className="bk-import-stats">{statsLine}</p>
       <div className="bk-import-chips">
-        {timedSets > 0 ? <Chip tone="accent">{timedSets} TIMED SETS</Chip> : null}
+        {timedSets > 0 ? <Chip tone="accent">{timedSetsLabel}</Chip> : null}
         {warnings.length === 0 ? <Chip tone="good">Nothing skipped</Chip> : null}
       </div>
 
@@ -119,63 +129,6 @@ export function ImportPreviewStep({
         </label>
       ) : null}
 
-      <SectionRule label="EXERCISES" />
-      <p className="bk-import-hint">
-        Names are kept exactly as written - two spellings are two exercises.
-      </p>
-      <ul className="bk-import-match-list">
-        {exercises.map((ex) => {
-          const from = ex.name;
-          const renameTo = renames?.[from];
-          const kept = !renameTo;
-          if (ex.resolved && kept) {
-            return (
-              <li key={from} className="bk-import-match">
-                <span className="bk-import-match__check" aria-hidden="true">
-                  ✓
-                </span>
-                <span className="bk-import-match__name">{from}</span>
-                {ex.matchedName ? (
-                  <span className="bk-import-match__meta">Matches {ex.matchedName}</span>
-                ) : null}
-              </li>
-            );
-          }
-          if (renameTo) {
-            return (
-              <li key={from} className="bk-import-match">
-                <span className="bk-import-match__check" aria-hidden="true">
-                  ✓
-                </span>
-                <span className="bk-import-match__name">{from}</span>
-                <span className="bk-import-match__meta">Matches {renameTo}</span>
-                <button
-                  type="button"
-                  className="bk-import-match__link"
-                  onClick={() => onRename?.(from, null)}
-                >
-                  Keep as typed
-                </button>
-              </li>
-            );
-          }
-          return (
-            <li key={from} className="bk-import-match bk-import-match--unmatched">
-              <span className="bk-import-match__name">{from}</span>
-              <span className="bk-import-match__meta">Not in your library</span>
-              <button
-                type="button"
-                className="btn btn-secondary bk-import-match__btn"
-                onClick={() => setMatchFrom(from)}
-              >
-                Match…
-              </button>
-              <span className="bk-import-match__default">Keep as typed</span>
-            </li>
-          );
-        })}
-      </ul>
-
       <SectionRule label="BROWSE" />
       <WeekStrip
         weeks={weekStripItems}
@@ -190,6 +143,9 @@ export function ImportPreviewStep({
         selectedKey={String(safeDayIdx)}
         onSelect={(key) => setDayIdx(Number(key))}
       />
+      {currentDay ? (
+        <h2 className="bk-import-day-heading">{dayHeading}</h2>
+      ) : null}
       <div className="bk-import-browse-ex">
         {dayExercises.length === 0 ? (
           <p className="bk-import-hint">No exercises on this day.</p>
@@ -207,6 +163,66 @@ export function ImportPreviewStep({
         )}
       </div>
 
+      <SectionRule label="EXERCISES" />
+      <p className="bk-import-hint">
+        Names are kept exactly as written - two spellings are two exercises.
+      </p>
+      {matched.length > 0 ? (
+        <Disclosure summary={`${matched.length} match your library`}>
+          <ul className="bk-import-match-list bk-import-match-list--matched">
+            {matched.map((ex) => {
+              const from = ex.name;
+              return (
+                <li key={from} className="bk-import-match bk-import-match--matched">
+                  <span className="bk-import-match__check" aria-hidden="true">
+                    ✓
+                  </span>
+                  <span className="bk-import-match__name">{from}</span>
+                  {ex.matchedName && ex.matchedName !== from ? (
+                    <span className="bk-import-match__meta">Matches {ex.matchedName}</span>
+                  ) : null}
+                </li>
+              );
+            })}
+          </ul>
+        </Disclosure>
+      ) : null}
+      <ul className="bk-import-match-list bk-import-match-list--unmatched">
+        {unmatched.map((ex) => {
+          const from = ex.name;
+          const renameTo = renames?.[from];
+          if (renameTo) {
+            return (
+              <li key={from} className="bk-import-match bk-import-match--compact">
+                <span className="bk-import-match__name">{from}</span>
+                <span className="bk-import-match__meta">Matches {renameTo}</span>
+                <button
+                  type="button"
+                  className="bk-import-match__link"
+                  onClick={() => onRename?.(from, null)}
+                >
+                  Keep as typed
+                </button>
+              </li>
+            );
+          }
+          return (
+            <li key={from} className="bk-import-match bk-import-match--compact">
+              <span className="bk-import-match__name">{from}</span>
+              <span className="bk-import-match__meta">Not in your library</span>
+              <button
+                type="button"
+                className="bk-import-match__link bk-import-match__match-btn"
+                onClick={() => setMatchFrom(from)}
+              >
+                Match...
+              </button>
+              <span className="bk-import-match__default">Keep as typed</span>
+            </li>
+          );
+        })}
+      </ul>
+
       <label className="bk-import-label" htmlFor="bk-import-name">
         Block name
       </label>
@@ -223,9 +239,30 @@ export function ImportPreviewStep({
         <button type="button" className="btn btn-secondary" onClick={onBack} disabled={creating}>
           Back
         </button>
-        <button type="button" className="btn" onClick={onCreate} disabled={creating || !blockName.trim()}>
-          {creating ? "Creating…" : "Create block"}
+        <button
+          type="button"
+          className="btn"
+          onClick={onCreate}
+          disabled={creating || !blockName.trim()}
+        >
+          {creating ? "Creating..." : "Create block"}
         </button>
+      </div>
+
+      <div className="bk-import-sticky-create" aria-label="Create block">
+        <div className="bk-import-sticky-create__inner">
+          <span className="bk-import-sticky-create__name" title={nameSummary}>
+            {nameSummary}
+          </span>
+          <button
+            type="button"
+            className="btn"
+            onClick={onCreate}
+            disabled={creating || !blockName.trim()}
+          >
+            {creating ? "Creating..." : "Create block"}
+          </button>
+        </div>
       </div>
 
       <ExercisePicker

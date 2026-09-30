@@ -1,7 +1,13 @@
-/* Block import surface (BK6). Tokens via --bk-* only; imported by ImportBlockPage. */
+/* Block import surface (BK6 / bkf1b). Tokens via --bk-* only; imported by ImportBlockPage. */
 
 .bk-import {
   padding-bottom: 48px;
+}
+
+.bk-import:has(.bk-import-sticky-create) {
+  padding-bottom: calc(
+    var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px) + 88px
+  );
 }
 
 .bk-import .bk-sticky-header {
@@ -214,6 +220,15 @@
   accent-color: var(--bk-accent);
 }
 
+.bk-import-day-heading {
+  margin: 0;
+  font: 700 20px/1.15 var(--bk-display);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--bk-ink);
+  text-wrap: balance;
+}
+
 .bk-import-match-list {
   list-style: none;
   margin: 0;
@@ -221,6 +236,14 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+.bk-import-match-list--matched {
+  gap: 6px;
+}
+
+.bk-import-match-list--unmatched {
+  gap: 0;
 }
 
 .bk-import-match {
@@ -235,9 +258,39 @@
   background: var(--bk-surface);
 }
 
-.bk-import-match--unmatched {
-  background: var(--bk-warn-soft);
-  border-color: color-mix(in srgb, var(--bk-warn) 30%, var(--bk-line));
+.bk-import-match--matched {
+  border: 0;
+  background: transparent;
+  padding: 4px 0;
+  border-radius: 0;
+  min-height: 32px;
+}
+
+.bk-import-match--compact {
+  flex-wrap: nowrap;
+  gap: 8px;
+  min-height: 44px;
+  padding: 4px 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  border-bottom: 1px solid var(--bk-line-2);
+}
+
+.bk-import-match--compact .bk-import-match__name {
+  flex: 0 1 auto;
+  max-width: 11.5rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 700 14px/1.2 var(--bk-display);
+}
+
+.bk-import-match--compact .bk-import-match__meta {
+  flex: 0 1 auto;
+  white-space: nowrap;
+  font: 400 12px/1.2 var(--font-sans);
+  color: var(--bk-ink-2);
 }
 
 .bk-import-match__check {
@@ -258,11 +311,12 @@
 }
 
 .bk-import-match__default {
-  font: 600 12px/1.2 var(--font-sans);
+  font: 600 11px/1.2 var(--font-sans);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--bk-muted);
   margin-left: auto;
+  white-space: nowrap;
 }
 
 .bk-import-match__btn {
@@ -270,8 +324,9 @@
 }
 
 .bk-import-match__link {
+  flex: 0 0 auto;
   min-height: 44px;
-  padding: 0 8px;
+  padding: 0 6px;
   border: 0;
   background: transparent;
   color: var(--bk-accent);
@@ -279,6 +334,12 @@
   cursor: pointer;
   text-decoration: underline;
   text-underline-offset: 2px;
+  white-space: nowrap;
+}
+
+.bk-import-match__link:focus-visible {
+  outline: 2px solid var(--bk-accent);
+  outline-offset: 2px;
 }
 
 .bk-import-browse-ex {
@@ -301,6 +362,68 @@
 .bk-import-name::placeholder {
   color: var(--bk-muted);
   opacity: 0.7;
+}
+
+.bk-import-sticky-create {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px));
+  z-index: 4;
+  pointer-events: none;
+}
+
+.bk-import-sticky-create__inner {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 10px 16px;
+  background: color-mix(in srgb, var(--bk-bg) 92%, transparent);
+  backdrop-filter: blur(8px);
+  border-top: 1px solid var(--bk-line-2);
+}
+
+@media (min-width: 640px) {
+  .bk-import-sticky-create__inner {
+    padding-inline: 24px;
+  }
+}
+
+.bk-import-sticky-create__name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 700 14px/1.2 var(--bk-display);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--bk-ink);
+}
+
+.bk-import-sticky-create .btn {
+  flex: 0 0 auto;
+  min-height: 44px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .bk-import-match__link,
+  .bk-import-sticky-create .btn,
+  .bk-import-actions .btn {
+    transition: background-color 160ms ease-out, color 160ms ease-out,
+      border-color 160ms ease-out;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bk-import-match__link,
+  .bk-import-sticky-create .btn,
+  .bk-import-actions .btn {
+    transition: none;
+  }
 }
 
 .bk-import-exit {
