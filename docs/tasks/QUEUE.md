@@ -261,19 +261,22 @@ and the new logger and library. After that the smoke restarts from item 1.
 The three bks units have fully disjoint FILES TO TOUCH (import / session page
 + log / library), so they run in parallel, width 3.
 
-QUEUED | bks1-ai-layout-import.md | any-layout import: the AI returns a layout
+DISPATCHED | bks1-ai-layout-import.md | any-layout import: the AI returns a layout
 recipe from a 40-row sample, the parser applies it to every row, costs 3 of 7 |
 n=18 candidate. Server + import page + coach/blockTemplate api +
 bk-import.css. Needs a LIVE staging proof of `/coach/import-map` at landing.
 
-QUEUED | bks2-block-logger-planned-rows.md | block-day logger: a row per planned set,
+DISPATCHED | bks2-block-logger-planned-rows.md | block-day logger: a row per planned set,
 every field ghosted, add/remove sets, recovery look, notes without switches,
 keypad-safe | n=19 candidate. SessionDetailPage (block branch) +
 blocks/log/* + bk-log.css.
 
-QUEUED | bks3-library-redesign.md | Library redesign: blocks-first, a running-block
+DISPATCHED | bks3-library-redesign.md | Library redesign: blocks-first, a running-block
 strip, BK card language, "Create workout" greyed as parked | n=20 candidate.
 MyTemplatesPage + new components/library + new bk-library.css.
+Dispatched Sept 30 (Opus seat), all three in parallel at `6ff78e0` via Channel B with `--model auto` and a 40-min hard kill each: bks1 in
+`cursor-lane-3`, bks2 in `cursor-lane`, bks3 in `cursor-lane-2`. Lane leftovers (old
+GATE-R*.md, mock PNGs) moved to `C:/dev/worktrees/_lane-leftovers/`.
 
 DRAFT | bk0-privacy-terms-pages.md | plain-language /privacy + /terms,
 covering the AI layer and the draft-block write | Seth's Sept 26 "first
