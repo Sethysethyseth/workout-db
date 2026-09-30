@@ -1,76 +1,49 @@
 # HANDOFF — current state
 
-> **WHERE WE ARE (Sept 28, late):** the **BLOCKS-V2 WAVE (BK) is OPEN** -
-> authored, committed, pushed; **tranche 1 (BK1, BK2, BK4) is DELIVERED and
-> AWAITING REVIEW in three lanes - nothing landed yet (0/13).** Design of record:
-> `docs/specs/blocks-v2.md`. Seth's rulings (asked + answered this session):
-> blocks become buildable, importable AND runnable (build + run + Execution);
-> Claude can create DRAFT blocks through the connector, and ANY AI can write
-> the import format for a paste; the recovery-site look on block surfaces +
-> shared primitives; timed sets, rest, effort caps, week labels. 13 units
-> queued (BK1-BK12 + BK5b) + BK0 privacy/ToS DRAFT, then a coach-persona
-> critic loop (frontier seat, max 3 rounds, pass 8+). Prod unchanged: `main` =
-> `7d3b91e`; the connector works on prod (fixed earlier Sept 28 - archived).
+> **WHERE WE ARE (Sept 29, evening):** the **BK (blocks-v2) wave is BUILT -
+> all 13 units LANDED and pushed** (BK1 migration applied to staging under
+> "migrate staging"; every server unit proven live against the staging DB).
+> The coach-persona **critic round 1 scored 6/10 - not passing**
+> (`docs/tasks/bk-critic-round-1-FINDINGS.md`); its P0 (Any AI paste) was
+> fixed in-round (`8da0ae5`); **bkf1a/b/c** (the round-1 fix blocks) are
+> DISPATCHED in the three lanes. Wave N = 16. **Staging Render has NOT
+> deployed since before BK1** (Vercel + CI deploy fine) - round 1 ran on the
+> local recipe against the staging DB. Prod unchanged: `main` = `7d3b91e`.
 
-**Next action (human):** open a Sonnet Claude Code session and say "run the
-BK wave" - it lands the three finished units and will ask you for "migrate
-staging" before the BK1 push.
+**Next action (human):** open Render -> `workout-db-staging` -> Events and
+tell the relay why it stopped deploying (failed build log, stuck queue, or a
+branch other than `ai-connector-wave`) - your end-of-wave smoke needs it.
 
-## ▶ PICK UP HERE (Sept 28, written for a fresh agent)
+## ▶ PICK UP HERE (Sept 29, written for a fresh agent)
 
-> **Agent reading this:** the BK wave is OPEN. Ledger: QUEUE.md "Blocks-v2
-> wave"; order + collisions: `blocks-v2.md` section 12. The authoring seat
-> (Opus) did NOT land anything - landing is yours. Do these in order:
+> **Agent reading this:** the BK wave is in its critic loop (spec section 11,
+> FRONTIER SEAT - Opus runs it; a Sonnet relay hands over here). Ledger:
+> `docs/tasks/QUEUE.md` "Blocks-v2 wave". Live checklist: the status line's
+> second row (`scripts/wave-status.mjs`, reads QUEUE).
 >
-> 1. **Land BK2, then BK4, then BK1 - in that order, via `land-unit`.** All
->    three are DELIVERED (every run exit 0; `DELIVERY.md` timestamps Sept 28
->    19:46-19:49, fresh). Lanes, all branched from `b9a0fac`:
->    - **BK2** (pure format/parsers, new files only) in `C:\dev\worktrees\cursor-lane`
->      on `cursor/bk2` - Cursor claims unit 371/371 (23 new in
->      `server/test/lib/blocks/`), instructions text 1,187 chars.
->    - **BK4** (client primitives) in `C:\dev\worktrees\cursor-lane-3` on
->      `cursor/bk4` - touches `client/index.html`, ONE line of `index.css`,
->      new `client/src/components/blocks/ui/*` + `client/src/styles/blocks/bk-ui.css`.
->    - **BK1** (schema + persistence) in `C:\dev\worktrees\cursor-lane-2` on
->      `cursor/bk1` - Cursor claims unit 363/363, migration
->      `20260929120000_blocks_v2` generated offline via `prisma migrate diff`,
->      0 `DROP`s.
->    **Why this order:** BK1 is the only migration-carrying unit, and ANY
->    push to `ai-connector-wave` after BK1's commit deploys staging Render,
->    whose build runs `migrate deploy`. Land + push BK2 and BK4 first
->    (no migration); then commit BK1 and HOLD its push until Seth says
->    "migrate staging" verbatim (gate item 3 - one command at a time after
->    that). Claims above are Cursor's - re-run every lane fresh per
->    `land-unit`; never trust the report for green tests.
-> 2. **BK1 audit focus:** the migration SQL (additive only; every column in
->    spec section 6 incl. `sourceUnit`), no `source`/`isDraft` read from
->    `req.body`, and the clone isolation fix (`buildClonePayload` strips
->    donor ids; re-stamp for the cloner) - a cross-user surface, flag it for
->    the gate. After the staging deploy, LIVE-check: create/PATCH a block
->    with the new fields, `POST /block-templates/:id/accept`, clone a public
->    block (a green unit lane is not route coverage).
-> 3. **Then dispatch tranche 2** (`dispatch-unit`): BK3 + BK5 + BK7 in
->    parallel (disjoint per spec section 12). They need BK1 + BK2 + BK4 in
->    their base - repoint each lane onto the current `ai-connector-wave`
->    HEAD with `git checkout -B cursor/<unit> <HEAD>` (tranche 2 can go out
->    once BK1 is COMMITTED, even while its push waits for the phrase). Before
->    each dispatch, move any leftover `DELIVERY.md` out of the lane (stale
->    ones from Sept 27 are already in `C:\dev\worktrees\recon-inputs\stale-deliveries\`).
->    Dispatch wrapper (Start-Process + hard kill, `--model auto`):
->    `C:\dev\worktrees\recon-inputs\run.ps1 -Lane <path> -Tag <unit> -Minutes 40 -Prompt "<dispatch line>"`
->    (run it as a background task; the tranche-1 run logs sit beside it).
-> 4. Continue the order in QUEUE.md / spec section 12. **Every server unit
->    needs a LIVE staging proof at landing** - lanes have no DB; each block's
->    DELIVERY carries curl checks.
-> 5. **HARD STOP for a Sonnet relay:** when BK5, BK5b, BK6, BK8, BK9 and BK12
->    have all landed, the coach-persona critic loop (spec section 11) is the
->    FRONTIER SEAT's job (Opus, Playwright, max 3 rounds, pass 8+, Seth's
->    real Phase-1 sheet is task T1). Hand over; do not critique. After the
->    loop: N/N -> Seth smokes -> `pre-main-review`.
+> 1. **Land bkf1a, bkf1b, bkf1c via `land-unit`** (lanes `cursor-lane`,
+>    `-2`, `-3`, branched from `00ac6b4`; disjoint files, land serially).
+> 2. **Critic round 2** (frontier seat): same persona, tasks T1-T7, rubric
+>    and artifacts as round 1 - `docs/tasks/bk-critic-round-2-FINDINGS.md`.
+>    Seth's Phase-1 `Program` sheet exports with python stdlib (xlsx is a
+>    zip; the `Program` sheet); the local recipe is `server`:
+>    `COACH_PROVIDER=mock PORT=3100 node src/server.js` + `client`:
+>    `VITE_API_URL=http://localhost:3100 npx vite --port 5173` (run
+>    `npx prisma generate` in the main tree first). Prefer the staging
+>    Vercel deploy once Render deploys again. Pass = 8+, no criterion < 7,
+>    no P0/P1 open; else author bkf2 and loop - max 3 rounds.
+> 3. Then N/N -> Seth smokes (consolidated list in the round's FINDINGS +
+>    the per-unit LIVE checks in QUEUE) -> `pre-main-review`.
 >
-> Untracked `GATE-R1/2/3.md` in the lanes are stale Sept 26 gate files - not
-> part of any BK unit; never stage them. Do NOT re-diagnose the connector; if
-> it breaks, run the authorize probe in Durable gotchas first.
+> **Gate notes collected while landing (for `pre-main-review`):** clone
+> isolation (BK1, cross-user) - live clone of a FOREIGN public block was not
+> possible on staging (none exists); BK11 connector write path (cross-user);
+> BK12 block focus owner check (askCoach.js, accepted placement); BK10
+> reuses the enriched `templateExerciseId` field for `block:<id>` keys;
+> BK7 start-from-block has no unique guard (race -> two sessions);
+> WeekStrip smooth scroll ignores reduced motion. A second Claude session
+> (Sonnet) was editing HANDOFF + docs/legal in the same tree on Sept 29 -
+> check `git status` before every commit.
 
 ### Open on prod - Seth's checks, none blocking
 
