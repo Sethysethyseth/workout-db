@@ -87,4 +87,44 @@ async function* streamMock(args) {
   yield { type: "stop", stopReason: "end_turn", usage: null };
 }
 
-module.exports = { streamMock, buildMockNarrative };
+/**
+ * Deterministic mock block draft for local/staging without a key.
+ * Always valid format JSON; name mentions the mode.
+ */
+function mockBlockDraftFor(mode, unit) {
+  const label = mode === "generate" ? "Mock generate" : "Mock convert";
+  return {
+    format: "logchamp.block",
+    version: 1,
+    name: `${label} block`,
+    unit,
+    effort: "rpe",
+    weeks: [
+      {
+        label: "Week 1",
+        days: [
+          {
+            name: "Day A",
+            exercises: [
+              {
+                name: "Barbell Bench Press",
+                restSec: 120,
+                sets: [
+                  { reps: 5, weight: unit === "kg" ? 80 : 185, rpe: 8 },
+                  { reps: 5, weight: unit === "kg" ? 80 : 185, rpe: 8 },
+                ],
+              },
+              {
+                name: "Plank",
+                sets: 2,
+                durationSec: 30,
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  };
+}
+
+module.exports = { streamMock, buildMockNarrative, mockBlockDraftFor };

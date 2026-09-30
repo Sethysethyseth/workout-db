@@ -66,7 +66,14 @@ function parseFocus(raw) {
     }
     return { ok: true, focus: { type: "session", sessionId: id } };
   }
-  return { ok: false, error: "focus.type must be 'view' or 'session'" };
+  if (raw.type === "block") {
+    const id = Number(raw.blockId);
+    if (!Number.isInteger(id) || id <= 0) {
+      return { ok: false, error: "focus.blockId must be a positive integer" };
+    }
+    return { ok: true, focus: { type: "block", blockId: id } };
+  }
+  return { ok: false, error: "focus.type must be 'view', 'session', or 'block'" };
 }
 
 /**

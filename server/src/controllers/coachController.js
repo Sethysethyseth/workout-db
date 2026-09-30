@@ -7,6 +7,7 @@ const {
   loadCoachData,
   buildCoachPrompt,
   openCoachStream,
+  defaultRange,
 } = require("../coach/askCoach");
 const {
   WEEKLY_LIMIT,
@@ -23,6 +24,20 @@ const {
   validatePalette,
   mockPaletteFor,
 } = require("../coach/palette");
+const {
+  BLOCK_DRAFT_MAX_TOKENS,
+  BLOCK_FORMAT_JSON_SCHEMA,
+  blockErrorForStopReason,
+  parseBlockDraftRequest,
+  buildBlockDraftSystemPrompt,
+  buildBlockDraftMessages,
+  buildCursorBlockDraftSystem,
+  parseBlockCandidate,
+  validateDraftCandidate,
+} = require("../coach/blockDraft");
+const { mockBlockDraftFor } = require("../coach/mockProvider");
+const { compactSummaryForCoach } = require("../coach/prompt");
+const { loadSummary } = require("../ai/analyticsAccess");
 
 const BYO_KEY_HEADER = "x-coach-key";
 // Same shared thinking+response budget as MAX_TOKENS. A complete JSON
@@ -361,10 +376,153 @@ async function generatePalette(req, res, next) {
   }
 }
 
+/**
+ * POST /coach/block-draft { mode, text, unit } - blocks-v2.md section 9.
+ * Same palette pipeline (structured output / extractFirstJsonText -> parse ->
+ * validateBlockDraft -> reject, never repair). Counts one weekly question;
+ * persists nothing. Optional deps let the unit lane inject fetchImpl / fakes.
+ */
+async function draftBlock(req, res, next, deps = {}) {
+  let usageId = null;
+  let deliveredBlock = false;
+  const completeAnthropicFn = deps.completeAnthropic || completeAnthropic;
+  const completeCursorFn = deps.completeCursor || completeCursor;
+  const loadAccess = deps.loadCoachAccess || loadCoachAccess;
+  const resolveProvider = deps.resolveCoachProvider || resolveCoachProvider;
+  const prismaClient = deps.prisma || prisma;
+  const loadSummaryFn = deps.loadSummary || loadSummary;
+  const removeUsage = deps.removeUsageRow || removeUsageRow;
+  const loadCap = deps.loadWeeklyCap || loadWeeklyCap;
+
+  try {
+    const parsed = parseBlockDraftRequest(req.body);
+    if (!parsed.ok) return res.status(parsed.status).json({ error: parsed.error });
+    const { mode, text, unit } = parsed.value;
+
+    const access = await loadAccess(req.authUserId);
+    if (!access) return res.status(404).json({ error: "User not found" });
+    if (!access.consentGranted) {
+      return res.status(403).json({ error: "forbidden", reason: "no_consent" });
+    }
+
+    const resolved = resolveProvider({
+      byoKey: readByoKey(req),
+      entitled: access.entitled,
+    });
+    if (!resolved.ok) {
+      return res.status(resolved.status).json({
+        error: resolved.error,
+        reason: resolved.reason,
+      });
+    }
+
+    const capApplies = capAppliesToAccess(resolved.keyInfo.source, access.email);
+    if (capApplies) {
+      const cap = await loadCap(req.authUserId);
+      if (!cap.allowed) {
+        return res.status(429).json({
+          error: "weekly_limit",
+          limit: cap.limit,
+          used: cap.used,
+          nextAvailableAt: cap.nextAvailableAt,
+        });
+      }
+    }
+
+    let trainingSummary = null;
+    if (mode === "generate") {
+      const range = defaultRange(new Date());
+      const summaryRaw = await loadSummaryFn(req.authUserId, {
+        from: range.from,
+        to: range.to,
+      });
+      trainingSummary = compactSummaryForCoach(summaryRaw);
+    }
+
+    if (capApplies) {
+      const row = await prismaClient.coachUsage.create({
+        data: { userId: req.authUserId },
+      });
+      usageId = row.id;
+    }
+
+    let candidate;
+    if (resolved.keyInfo.source === "mock") {
+      candidate = mockBlockDraftFor(mode, unit);
+    } else if (resolved.provider === "cursor") {
+      const raw = await completeCursorFn({
+        apiKey: resolved.keyInfo.key,
+        model: resolved.config.model,
+        system: buildCursorBlockDraftSystem({ mode, unit, trainingSummary }),
+        messages: buildBlockDraftMessages({ mode, text }),
+        ...(deps.fetchImpl ? { fetchImpl: deps.fetchImpl } : {}),
+      });
+      const parsedCandidate = parseBlockCandidate(raw, { provider: "cursor" });
+      if (!parsedCandidate.ok) {
+        return res.status(502).json({
+          error: "block_invalid",
+          errors: [{ path: "", message: parsedCandidate.error }],
+        });
+      }
+      candidate = parsedCandidate.candidate;
+    } else {
+      const message = await completeAnthropicFn({
+        apiKey: resolved.keyInfo.key,
+        model: resolved.config.model,
+        system: [
+          {
+            type: "text",
+            text: buildBlockDraftSystemPrompt({ mode, unit, trainingSummary }),
+          },
+        ],
+        messages: buildBlockDraftMessages({ mode, text }),
+        effort: resolved.config.effort,
+        maxTokens: BLOCK_DRAFT_MAX_TOKENS,
+        outputFormat: { type: "json_schema", schema: BLOCK_FORMAT_JSON_SCHEMA },
+        ...(deps.fetchImpl ? { fetchImpl: deps.fetchImpl } : {}),
+      });
+      const stopErr = blockErrorForStopReason(message && message.stop_reason);
+      if (stopErr) {
+        return res.status(stopErr.status).json(stopErr.body);
+      }
+      const parsedCandidate = parseBlockCandidate(message && message.content, {
+        provider: "anthropic",
+      });
+      if (!parsedCandidate.ok) {
+        return res.status(502).json({
+          error: "block_invalid",
+          errors: [{ path: "", message: parsedCandidate.error }],
+        });
+      }
+      candidate = parsedCandidate.candidate;
+    }
+
+    const validated = validateDraftCandidate(candidate, unit);
+    if (!validated.ok) {
+      return res.status(validated.status).json(validated.body);
+    }
+    deliveredBlock = true;
+    return res.json({
+      block: validated.block,
+      stats: validated.stats,
+      source: resolved.keyInfo.source,
+    });
+  } catch (err) {
+    if (err instanceof CoachProviderError) {
+      return res.status(502).json({ error: err.code, message: err.message });
+    }
+    return next(err);
+  } finally {
+    if (!deliveredBlock) await removeUsage(usageId);
+  }
+}
+
 module.exports = {
   getCoachStatus,
   askCoach,
   generatePalette,
+  draftBlock,
   BYO_KEY_HEADER,
   paletteErrorForStopReason,
+  blockErrorForStopReason,
 };

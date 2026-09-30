@@ -127,11 +127,12 @@ export function CoachPanel({
 
   const scopeLabel = useMemo(() => {
     if (mode === "debrief") return "Reading this workout against your last four weeks";
+    if (focus && focus.type === "block") return "Reading this block against your recent training";
     const span = formatRangeLabel(range);
     if (weeks && span) return `Reading ${weeks} weeks, ${span}`;
     if (span) return `Reading ${span}`;
     return "Reading your recent training";
-  }, [mode, range, weeks]);
+  }, [mode, range, weeks, focus]);
 
   const ask = useCallback(
     async (questionRaw) => {

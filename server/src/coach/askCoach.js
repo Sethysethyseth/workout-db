@@ -19,6 +19,9 @@ const {
 const { streamAnthropic } = require("./provider");
 const { streamMock } = require("./mockProvider");
 const { streamCursor } = require("./cursorProvider");
+const { blockToCompactText } = require("./blockDraft");
+const { blockTreeToFormat } = require("../blocks/blockFormatMapping");
+const { blockWeekInclude } = require("../blocks/blockTemplateStore");
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const DEFAULT_WEEKS = 4;
@@ -161,6 +164,34 @@ async function loadCoachData({ userId, request, now = new Date() }) {
     };
   }
 
+  if (focus && focus.type === "block") {
+    // Owner-check first - never reveal another user's block (404, no text).
+    const blockRow = await prisma.blockTemplate.findFirst({
+      where: { id: focus.blockId, userId },
+      include: { weeks: blockWeekInclude },
+    });
+    if (!blockRow) {
+      return { ok: false, status: 404, error: "block_not_found" };
+    }
+    const formatUnit = request.unit === "kg" ? "kg" : "lb";
+    const formatBlock = blockTreeToFormat(blockRow, { unit: formatUnit });
+    const blockText = blockToCompactText(formatBlock, formatUnit);
+    // Attach text onto the focus object the prompt builder already receives.
+    focus.blockText = blockText;
+
+    const range = request.range ?? defaultRange(now);
+    const primaryRaw = await loadSummary(userId, { from: range.from, to: range.to });
+    return {
+      ok: true,
+      primary: compactSummaryForCoach(primaryRaw),
+      context: null,
+      range,
+      meta: primaryRaw.meta,
+      workoutCount: primaryRaw.workoutCount,
+      blockText,
+    };
+  }
+
   const range = request.range ?? defaultRange(now);
   const primaryRaw = await loadSummary(userId, { from: range.from, to: range.to });
   return {
@@ -175,11 +206,17 @@ async function loadCoachData({ userId, request, now = new Date() }) {
 
 function buildCoachPrompt({ request, data, now = new Date() }) {
   const weeks = weeksInRange(data.range);
+  const focus = request.focus
+    ? {
+        ...request.focus,
+        ...(data.blockText ? { blockText: data.blockText } : {}),
+      }
+    : null;
   const system = buildCoachSystemBlocks({
     primary: data.primary,
     context: data.context,
     unit: request.unit,
-    focus: request.focus,
+    focus,
     today: dateLabelUtc(now),
     weeks,
     fromLabel: data.range.fromLabel,

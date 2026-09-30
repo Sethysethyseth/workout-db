@@ -14,6 +14,7 @@ export function BlockSettingsSheet({
   onChange,
   onDelete,
   onExport,
+  onAskCoach,
   exporting = false,
   mode,
 }) {
@@ -84,6 +85,14 @@ export function BlockSettingsSheet({
             onClick={() => onExport()}
           >
             {exporting ? "Exporting…" : "Export block"}
+          </button>
+        </div>
+      ) : null}
+
+      {onAskCoach ? (
+        <div className="bk-settings__field">
+          <button type="button" className="bk-actions-list__btn" onClick={() => onAskCoach()}>
+            Ask the coach about this block
           </button>
         </div>
       ) : null}

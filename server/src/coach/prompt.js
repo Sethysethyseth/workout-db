@@ -179,6 +179,13 @@ function describeFocus(focus, { weeks, fromLabel, toLabel } = {}) {
       "Cover briefly: what stood out in this workout, any PRs (prs in the first block were set in this workout), execution vs plan if present, how complete the effort data was, and one thing to carry into the next session. Do not restate every exercise.",
     ].join(" ");
   }
+  if (focus.type === "block") {
+    return [
+      "Block mode. The first data block is the training program (block) the lifter has open, rendered as compact text.",
+      "A second JSON block is their recent training summary for context.",
+      "Answer about volume balance, deload placement, progression, and effort caps using the block text; quote the summary for live numbers. Do not invent exercises that are not in the block.",
+    ].join(" ");
+  }
   return null;
 }
 
@@ -207,6 +214,15 @@ function buildCoachSystemBlocks({
         `Trailing four weeks ending that day, for context (JSON):\n${JSON.stringify(context)}`
       );
     }
+  } else if (focus && focus.type === "block") {
+    const blockText =
+      typeof focus.blockText === "string" && focus.blockText
+        ? focus.blockText
+        : "(block text unavailable)";
+    dataParts.push(`Block the lifter is asking about (compact text):\n${blockText}`);
+    dataParts.push(
+      `Training data for context (JSON, computed by LogChamp's engine):\n${JSON.stringify(primary)}`
+    );
   } else {
     dataParts.push(
       `Training data for the lifter's selected window (JSON, computed by LogChamp's engine):\n${JSON.stringify(primary)}`

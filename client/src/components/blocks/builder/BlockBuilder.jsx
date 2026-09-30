@@ -1,16 +1,22 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { ApiError } from "../../../api/http.js";
 import * as blockTemplateApi from "../../../api/blockTemplateApi.js";
+import { getCoachStatus } from "../../../api/coachApi.js";
+import { loadCoachKey } from "../../../lib/coachKeyPref.js";
 import { loadWeightUnit } from "../../../lib/weightUnitPref.js";
 import { ErrorMessage } from "../../ErrorMessage.jsx";
 import { LoadingState } from "../../LoadingState.jsx";
+import { CoachPanel } from "../../coach/CoachPanel.jsx";
 import { Chip } from "../ui/Chip.jsx";
 import { DayPicker } from "../ui/DayPicker.jsx";
 import { SectionRule } from "../ui/SectionRule.jsx";
 import { Segmented } from "../ui/Segmented.jsx";
 import { StickyHeader } from "../ui/StickyHeader.jsx";
 import { WeekStrip } from "../ui/WeekStrip.jsx";
+import { ImportPreviewStep } from "../import/ImportPreviewStep.jsx";
 import "../../../styles/blocks/bk-builder.css";
+import "../../../styles/blocks/bk-import.css";
 import {
   addDay,
   addExercise,
@@ -52,11 +58,18 @@ import {
 import { BlockSettingsSheet } from "./BlockSettingsSheet.jsx";
 import { BuilderSheet } from "./BuilderSheet.jsx";
 import { BuilderToast } from "./BuilderToast.jsx";
+import { CoachDraftCard } from "./CoachDraftCard.jsx";
 import { CopyForwardSheet } from "./CopyForwardSheet.jsx";
 import { DraftBanner } from "./DraftBanner.jsx";
 import { ExerciseCard } from "./ExerciseCard.jsx";
 import { ExercisePicker } from "./ExercisePicker.jsx";
 import { ProgressionView } from "./ProgressionView.jsx";
+
+const BLOCK_COACH_SUGGESTIONS = [
+  "Is the volume balanced?",
+  "Where should the deload go?",
+  "Are the effort caps realistic?",
+];
 
 function countDaySets(day) {
   return (day?.exercises || []).reduce((n, ex) => n + (ex.sets?.length || 0), 0);
@@ -124,8 +137,40 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
   const [exportCopyOpen, setExportCopyOpen] = useState(false);
   const undoRef = useRef(null);
 
+  // BK12 coach assist (optional - hidden when coach unavailable)
+  const [coachStatus, setCoachStatus] = useState(null);
+  const [coachAskOpen, setCoachAskOpen] = useState(false);
+  const [coachPreview, setCoachPreview] = useState(null);
+  const [coachRenames, setCoachRenames] = useState({});
+  const [coachBlockName, setCoachBlockName] = useState("");
+  const [coachPreviewBusy, setCoachPreviewBusy] = useState(false);
+  const [coachCreating, setCoachCreating] = useState(false);
+  const [coachIncludeWarmups, setCoachIncludeWarmups] = useState(true);
+
   const deviceUnit = loadWeightUnit();
   const displayUnit = deviceUnitToFormat(deviceUnit);
+  const isNewEmpty =
+    isCreate &&
+    blockId == null &&
+    !(state.weeks || []).some((w) => weekHasExercises(w));
+
+  useEffect(() => {
+    if (!isCreate && blockId == null && templateId == null) return undefined;
+    const savedId = blockId ?? templateId;
+    if (savedId == null && !isNewEmpty) return undefined;
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await getCoachStatus({ byoKey: loadCoachKey() });
+        if (!cancelled) setCoachStatus(data);
+      } catch {
+        if (!cancelled) setCoachStatus(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isCreate, blockId, templateId, isNewEmpty]);
 
   // Toast from import navigation
   useEffect(() => {
@@ -283,6 +328,68 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
           }
         : null,
     });
+  }
+
+  async function handleCoachDrafted(data) {
+    setCoachPreviewBusy(true);
+    setError(null);
+    try {
+      const preview = await blockTemplateApi.previewBlockImport({
+        text: JSON.stringify(data.block),
+        kind: "json",
+        options: { unit: displayUnit },
+      });
+      setCoachPreview(preview);
+      setCoachRenames({});
+      setCoachBlockName(preview?.block?.name ? String(preview.block.name) : "");
+      setCoachIncludeWarmups(true);
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 422) {
+        setError(new Error("The coach's draft didn't pass import checks. Tweak the description and try again."));
+      } else {
+        setError(err instanceof Error ? err : new Error("Couldn't preview the coach draft."));
+      }
+    } finally {
+      setCoachPreviewBusy(false);
+    }
+  }
+
+  async function handleCoachCreate() {
+    if (!coachPreview?.block) return;
+    setCoachCreating(true);
+    setError(null);
+    try {
+      const block = {
+        ...coachPreview.block,
+        name: coachBlockName.trim() || coachPreview.block.name,
+      };
+      const data = await blockTemplateApi.importBlock({
+        block,
+        renames: Object.keys(coachRenames).length ? coachRenames : undefined,
+      });
+      const id = data?.blockTemplate?.id;
+      const weeks = coachPreview?.stats?.weeks ?? block?.weeks?.length ?? 0;
+      if (id) {
+        navigate(`/blocks/${id}/edit`, {
+          state: {
+            importToast: `Drafted ${weeks} weeks - review and tweak anything`,
+          },
+        });
+      }
+    } catch (err) {
+      setError(
+        err instanceof ApiError
+          ? new Error(err.message || "Couldn't create the block. Try again.")
+          : new Error("Couldn't reach the server. Check your connection and try again.")
+      );
+    } finally {
+      setCoachCreating(false);
+    }
+  }
+
+  function openAskCoach() {
+    setSettingsOpen(false);
+    setCoachAskOpen(true);
   }
 
   function selectWeek(key) {
@@ -520,6 +627,40 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
     );
   }
 
+  if (coachPreview) {
+    return (
+      <div className="bk bk-import">
+        <div className="bk-shell">
+          <StickyHeader title="COACH DRAFT" />
+          <ImportPreviewStep
+            preview={coachPreview}
+            renames={coachRenames}
+            onRename={(from, to) => {
+              setCoachRenames((prev) => {
+                const next = { ...prev };
+                if (!to) delete next[from];
+                else next[from] = to;
+                return next;
+              });
+            }}
+            includeWarmups={coachIncludeWarmups}
+            onIncludeWarmupsChange={setCoachIncludeWarmups}
+            blockName={coachBlockName}
+            onBlockNameChange={setCoachBlockName}
+            onBack={() => {
+              setCoachPreview(null);
+              setError(null);
+            }}
+            onCreate={() => void handleCoachCreate()}
+            creating={coachCreating}
+            unit={displayUnit}
+          />
+          <ErrorMessage error={error} />
+        </div>
+      </div>
+    );
+  }
+
   if (!isCreate && !currentWeek && error) {
     return (
       <div className="bk bk-shell">
@@ -573,6 +714,18 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
         ) : null}
 
         <ErrorMessage error={error} />
+
+        {isNewEmpty ? (
+          <CoachDraftCard
+            unit={displayUnit}
+            onDrafted={(data) => void handleCoachDrafted(data)}
+          />
+        ) : null}
+        {coachPreviewBusy ? (
+          <p className="bk-import-hint" role="status">
+            Previewing coach draft…
+          </p>
+        ) : null}
 
         <div className="bk-builder__days">
           <DayPicker
@@ -754,6 +907,11 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
             : undefined
         }
         exporting={exporting}
+        onAskCoach={
+          coachStatus?.available && (blockId != null || (!isCreate && templateId != null))
+            ? () => openAskCoach()
+            : undefined
+        }
         onDelete={
           blockId != null || !isCreate
             ? () => {
@@ -764,6 +922,23 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
         }
       />
 
+      <BuilderSheet
+        open={coachAskOpen}
+        title="Ask the coach"
+        onClose={() => setCoachAskOpen(false)}
+        wide
+      >
+        <CoachPanel
+          mode="ask"
+          focus={{
+            type: "block",
+            blockId: Number(blockId ?? templateId),
+          }}
+          suggestions={BLOCK_COACH_SUGGESTIONS}
+          collapsedLabel="Ask about this block"
+          defaultOpen
+        />
+      </BuilderSheet>
       <BuilderSheet
         open={exportCopyOpen}
         title="Export ready"

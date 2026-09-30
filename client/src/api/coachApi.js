@@ -41,6 +41,14 @@ export function coachErrorMessage(code, fallback) {
       return "That workout isn't available to debrief.";
     case "weekly_limit":
       return "You've used this week's questions.";
+    case "block_invalid":
+      return "The coach's draft wasn't a valid block. Try again or paste it yourself.";
+    case "block_truncated":
+      return "The coach ran out of room drafting that block. Try a shorter description.";
+    case "block_refused":
+      return "The coach can't draft that one.";
+    case "block_not_found":
+      return "That block isn't available to ask about.";
     case "network":
       return "Couldn't reach LogChamp. Check your connection and try again.";
     default:
@@ -60,6 +68,18 @@ export function generatePalette({ description, byoKey } = {}) {
   return http("/coach/palette", {
     method: "POST",
     body: { description },
+    headers: byoKey ? { [BYO_KEY_HEADER]: byoKey } : undefined,
+  });
+}
+
+/**
+ * Draft or convert a block via the coach. Resolves { block, stats, source }.
+ * mode: "convert" | "generate"; unit: "lb" | "kg".
+ */
+export function coachBlockDraft({ mode, text, unit, byoKey } = {}) {
+  return http("/coach/block-draft", {
+    method: "POST",
+    body: { mode, text, unit },
     headers: byoKey ? { [BYO_KEY_HEADER]: byoKey } : undefined,
   });
 }
