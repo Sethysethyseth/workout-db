@@ -87,6 +87,18 @@ describe("buildImportPreview", () => {
     );
   });
 
+  test("kind json (the Any AI tab) accepts a whole AI answer with prose", () => {
+    const example = JSON.stringify(BLOCK_FORMAT_EXAMPLE, null, 2);
+    const text = `Sure! Here is your block:\n\`\`\`json\n${example}\n\`\`\`\nEnjoy.`;
+    const result = buildImportPreview(text, "json", { unit: "lb" }, fakeResolve);
+    expect(result.ok).toBe(true);
+    expect(result.kind).toBe("json");
+    expect(result.stats).toEqual(EXAMPLE_STATS);
+    const broken = buildImportPreview("Sure! No block today.", "json", { unit: "lb" }, fakeResolve);
+    expect(broken.ok).toBe(false);
+    expect(broken.errors[0].message).toMatch(/isn't valid JSON/i);
+  });
+
   test("stray prose braces before the object are skipped", () => {
     const text = `Use {curly} notation. Block: ${JSON.stringify(BLOCK_FORMAT_EXAMPLE)} done`;
     const result = buildImportPreview(text, "auto", { unit: "lb" }, fakeResolve);

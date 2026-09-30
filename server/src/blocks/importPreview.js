@@ -135,7 +135,14 @@ function resolveCandidate(text, kind, options) {
   let notices = {};
 
   if (kind === "json") {
-    const parsed = parseJsonCandidate(text.trim());
+    // The Any AI tab sends kind "json" with the AI's whole answer - prose
+    // around a fenced block is the normal shape, so extract before parsing
+    // unless the text is already bare JSON.
+    const trimmed = text.trim();
+    const jsonText = trimmed.startsWith("{")
+      ? trimmed
+      : extractJsonObject(text) || trimmed;
+    const parsed = parseJsonCandidate(jsonText);
     if (!parsed.ok) {
       return {
         kind: "json",
