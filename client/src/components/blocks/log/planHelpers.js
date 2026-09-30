@@ -82,10 +82,13 @@ export function repsPlaceholderFromPlan(planSet) {
 
 /**
  * Placeholder text for the weight field from a plan set.
+ * No planned load -> empty string (not "e.g. 185"); free-log rows keep the
+ * SessionDetailPage fallback when planSet is absent.
  * @param {object | null | undefined} planSet
  */
 export function weightPlaceholderFromPlan(planSet) {
-  if (!planSet || planSet.weight == null) return null;
+  if (!planSet) return null;
+  if (planSet.weight == null) return "";
   return String(planSet.weight);
 }
 
@@ -100,14 +103,21 @@ export function durationPlaceholderFromPlan(planSet) {
 
 /**
  * Effort field placeholder from the matching plan set (display only - never auto-fill).
+ * Capped plans show "≤ 7" / "≥ 2"; uncapped targets stay the bare number.
  * @param {object | null | undefined} plan
  * @param {object | null | undefined} planSet
  * @param {"rir" | "rpe"} signal
  */
 export function effortPlaceholderFromPlan(plan, planSet, signal) {
   if (!planSet) return null;
-  if (signal === "rir" && planSet.rir != null) return String(planSet.rir);
-  if (signal === "rpe" && planSet.rpe != null) return String(planSet.rpe);
+  if (signal === "rir" && planSet.rir != null) {
+    const n = String(planSet.rir);
+    return plan?.effortCap ? `≥ ${n}` : n;
+  }
+  if (signal === "rpe" && planSet.rpe != null) {
+    const n = String(planSet.rpe);
+    return plan?.effortCap ? `≤ ${n}` : n;
+  }
   return null;
 }
 

@@ -21,8 +21,42 @@ function durationLabel(session) {
   return m ? `${h}h ${m}m` : `${h}h`;
 }
 
+/** Timed (durationSec) and strength sets both count as logged (BK critic P1-3). */
 function setIsLogged(s) {
-  return s && (s.weight != null || s.reps != null);
+  return s && (s.weight != null || s.reps != null || s.durationSec != null);
+}
+
+/** Count of logged sets in an array (pure; covered by DELIVERY snippet). */
+function countLoggedSets(sets) {
+  if (!Array.isArray(sets)) return 0;
+  return sets.filter(setIsLogged).length;
+}
+
+/**
+ * Format a timed set's duration for the finished summary.
+ * Under 60 s -> "45 s"; 90 -> "1:30".
+ * @param {number | null | undefined} sec
+ * @returns {string | null}
+ */
+function formatTimedSetDuration(sec) {
+  if (sec == null || Number.isNaN(Number(sec))) return null;
+  const n = Number(sec);
+  if (n < 60) return `${n} s`;
+  const m = Math.floor(n / 60);
+  const s = n % 60;
+  return `${m}:${String(s).padStart(2, "0")}`;
+}
+
+/**
+ * Compact timed-row label: "45 s" or "20 lb × 45 s" when load is present.
+ * @param {{ durationSec?: number | null, weight?: number | null }} s
+ * @param {string} weightUnit
+ */
+function formatTimedSetRow(s, weightUnit) {
+  const dur = formatTimedSetDuration(s?.durationSec);
+  if (!dur) return null;
+  if (s.weight != null) return `${formatWeight(s.weight, weightUnit)} × ${dur}`;
+  return dur;
 }
 
 function formatVolume(total, unit) {
@@ -52,6 +86,8 @@ function effortCell(s) {
   return null;
 }
 
+const notesPreserveStyle = { whiteSpace: "pre-wrap" };
+
 export function CompletedSessionSummary({
   session,
   exercises,
@@ -65,11 +101,12 @@ export function CompletedSessionSummary({
     let volume = 0;
     let reps = 0;
     for (const s of allSets) {
+      // Volume stays strength-only - timed sets (reps null) add nothing.
       if (s.weight != null && s.reps != null) volume += Number(s.weight) * Number(s.reps);
       if (s.reps != null) reps += Number(s.reps);
     }
     return {
-      sets: allSets.length,
+      sets: countLoggedSets(session?.sets),
       reps,
       volume,
       duration: durationLabel(session),
@@ -128,7 +165,9 @@ export function CompletedSessionSummary({
       </section>
 
       {session?.notes && String(session.notes).trim() ? (
-        <p className="session-summary__notes card">{session.notes}</p>
+        <p className="session-summary__notes card" style={notesPreserveStyle}>
+          {session.notes}
+        </p>
       ) : null}
 
       <div className="session-summary__exercises stack">
@@ -171,7 +210,9 @@ export function CompletedSessionSummary({
                 ) : null}
               </header>
               {se.notes && String(se.notes).trim() ? (
-                <p className="session-summary__exercise-notes">{se.notes}</p>
+                <p className="session-summary__exercise-notes" style={notesPreserveStyle}>
+                  {se.notes}
+                </p>
               ) : null}
               {sets.length > 0 ? (
                 <table className="session-summary__sets">
@@ -194,6 +235,8 @@ export function CompletedSessionSummary({
                         setHasPR && !seenPR.has(prKey) && setHasPR(se, s.weight, s.reps);
                       if (pr) seenPR.add(prKey);
                       const effort = effortCell(s);
+                      const timed = s.durationSec != null;
+                      const timedLabel = timed ? formatTimedSetRow(s, weightUnit) : null;
                       return (
                         <tr key={s.id} className={pr ? "session-summary__set--pr" : undefined}>
                           <td className="session-summary__col-set">
@@ -204,12 +247,22 @@ export function CompletedSessionSummary({
                               </span>
                             ) : null}
                           </td>
-                          <td className="session-summary__num">
-                            {s.weight != null ? formatWeight(s.weight, weightUnit) : "—"}
-                          </td>
-                          <td className="session-summary__num">
-                            {s.reps != null ? formatRepsValue(s.reps) : "—"}
-                          </td>
+                          {timed ? (
+                            <>
+                              <td className="session-summary__num" colSpan={2}>
+                                {timedLabel}
+                              </td>
+                            </>
+                          ) : (
+                            <>
+                              <td className="session-summary__num">
+                                {s.weight != null ? formatWeight(s.weight, weightUnit) : "—"}
+                              </td>
+                              <td className="session-summary__num">
+                                {s.reps != null ? formatRepsValue(s.reps) : "—"}
+                              </td>
+                            </>
+                          )}
                           {showEffort ? (
                             <td className="session-summary__num session-summary__effort">
                               {effort || <span className="muted">—</span>}
@@ -217,7 +270,9 @@ export function CompletedSessionSummary({
                           ) : null}
                           {showSide ? <td>{s.side || "—"}</td> : null}
                           {showNotes ? (
-                            <td className="session-summary__set-notes">{s.notes || ""}</td>
+                            <td className="session-summary__set-notes" style={notesPreserveStyle}>
+                              {s.notes || ""}
+                            </td>
                           ) : null}
                         </tr>
                       );

@@ -1,30 +1,20 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import * as analyticsApi from "../../api/analyticsApi.js";
-import { toDateOnlyString } from "../../lib/dateOnly.js";
+import { localDayRange } from "../../lib/dateRange.js";
 import { pickTopGain } from "../../lib/topGain.js";
 import { formatEffort } from "../../lib/effortDisplay.js";
 import { formatRepsValue } from "../../lib/repsDisplay.js";
 import { formatEstimate, formatWeight } from "../../lib/weightDisplay.js";
 import { buildExecutionVerdict } from "../../lib/executionVerdict.js";
 
-function addDays(date, days) {
-  const d = new Date(date);
-  d.setDate(d.getDate() + days);
-  return d;
-}
-
-export function weeklyReportWindows() {
-  const today = new Date();
+/** Current + prior 7 local-day windows as ISO datetimes (end-of-local-day). */
+function weeklyReportWindows(now = new Date()) {
+  const priorEnd = new Date(now);
+  priorEnd.setDate(priorEnd.getDate() - 7);
   return {
-    current: {
-      from: toDateOnlyString(addDays(today, -6)),
-      to: toDateOnlyString(today),
-    },
-    prior: {
-      from: toDateOnlyString(addDays(today, -13)),
-      to: toDateOnlyString(addDays(today, -7)),
-    },
+    current: localDayRange(7, now),
+    prior: localDayRange(7, priorEnd),
   };
 }
 

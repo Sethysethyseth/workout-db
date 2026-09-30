@@ -21,6 +21,7 @@ import {
   StrengthEmptyGhost,
 } from "../components/analytics/EmptyStateGhosts.jsx";
 import { toDateOnlyString } from "../lib/dateOnly.js";
+import { localDayRange } from "../lib/dateRange.js";
 import { formatEffort } from "../lib/effortDisplay.js";
 import { formatRepsValue } from "../lib/repsDisplay.js";
 import { loadWeightUnit } from "../lib/weightUnitPref.js";
@@ -64,11 +65,14 @@ const HOW_EFFORT_MATTERS =
 const EFFORT_RATIONALE_SHORT =
   "Two sets of 10 can be worlds apart - one at the limit, one with five reps left. Effort is how LogChamp tells them apart.";
 
-/** to = today (date-only; the endpoint treats it as inclusive end-of-day),
-    from = to minus (N*7 - 1) days so the range covers exactly N*7 calendar
-    days INCLUDING today - "2 weeks" is 14 day cells, "4 weeks" is 4 week
-    buckets, with no partial extra bucket at the range start. */
+/** Summary / Exercises API range: local-day ISO datetimes (end of today inclusive).
+    "4 weeks" = 28 local days including today. */
 function rangeForWeeks(weeks) {
+  return localDayRange(weeks * 7);
+}
+
+/** Coach /ask body stays date-only - its contract is date labels, not datetimes. */
+function coachRangeForWeeks(weeks) {
   const today = new Date();
   const fromDate = new Date(today);
   fromDate.setDate(fromDate.getDate() - (weeks * 7 - 1));
@@ -738,7 +742,7 @@ export function AnalyticsPage() {
   const indexExerciseCount = exerciseIndex?.exercises?.length ?? 0;
   const isNewUser = indexReady && exerciseIndex != null && indexExerciseCount === 0;
 
-  const coachRange = useMemo(() => rangeForWeeks(weeks), [weeks]);
+  const coachRange = useMemo(() => coachRangeForWeeks(weeks), [weeks]);
   const coachSuggestions = useMemo(
     () => (summary ? buildSuggestedQuestions(summary, { view }) : []),
     [summary, view]
