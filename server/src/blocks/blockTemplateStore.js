@@ -110,7 +110,7 @@ function buildClonePayload(sourceTree) {
 async function createBlockTemplateForUser(
   userId,
   body,
-  { source = "builder", isDraft = false } = {}
+  { source = "builder", isDraft = false, sourceUnit } = {}
 ) {
   const {
     name,
@@ -192,6 +192,11 @@ async function createBlockTemplateForUser(
     useDuration: durationEnabled,
     durationWeeks: durationEnabled ? weeksValue : null,
   };
+
+  // BK11: connector drafts record the unit the AI wrote (unconverted).
+  if (sourceUnit === "lb" || sourceUnit === "kg") {
+    data.sourceUnit = sourceUnit;
+  }
 
   if (useRIR !== undefined) {
     const b = parseOptionalBoolean(useRIR);

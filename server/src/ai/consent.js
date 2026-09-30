@@ -36,9 +36,16 @@ function connectorAccess({ consentRow, aiConnectorEnabled }) {
   return { allowed: true, reason: null };
 }
 
+/** Opt-in for connector draft creation (BK11). Off unless timestamp is set. */
+function blockDraftsAllowed(consent) {
+  if (!isConsentActive(consent)) return false;
+  return consent.blockDraftsAllowedAt != null;
+}
+
 module.exports = {
   CONNECTOR_SCOPE,
   isConsentActive,
   consentStateFor,
   connectorAccess,
+  blockDraftsAllowed,
 };

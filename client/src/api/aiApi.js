@@ -12,6 +12,13 @@ export function revokeAiConsent() {
   return http("/ai/consent", { method: "DELETE" });
 }
 
+export function setBlockDraftsAllowed(allowed) {
+  return http("/ai/consent/block-drafts", {
+    method: "PUT",
+    body: { allowed: Boolean(allowed) },
+  });
+}
+
 export function authorizeConnector(externalAuthId) {
   return http("/ai/connector/authorize", {
     method: "POST",

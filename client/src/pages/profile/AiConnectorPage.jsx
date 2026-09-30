@@ -156,6 +156,7 @@ export function AiConnectorPage() {
   const [keyNotice, setKeyNotice] = useState(null);
   const [signingOut, setSigningOut] = useState(false);
   const [signOutResult, setSignOutResult] = useState(null);
+  const [draftsSubmitting, setDraftsSubmitting] = useState(false);
 
   const connectorUrl = buildConnectorUrl();
 
@@ -222,6 +223,25 @@ export function AiConnectorPage() {
     }
   }
 
+  async function onDraftsToggle() {
+    if (!consent || draftsSubmitting) return;
+    if (!consent.granted) return;
+    setError(null);
+    const previous = consent;
+    const nextAllowed = !consent.blockDraftsAllowed;
+    setConsent({ ...consent, blockDraftsAllowed: nextAllowed });
+    setDraftsSubmitting(true);
+    try {
+      const data = await aiApi.setBlockDraftsAllowed(nextAllowed);
+      setConsent(data);
+    } catch (err) {
+      setConsent(previous);
+      setError(err);
+    } finally {
+      setDraftsSubmitting(false);
+    }
+  }
+
   async function onCopyAddress() {
     setCopyStatus(null);
     try {
@@ -284,6 +304,7 @@ export function AiConnectorPage() {
   }
 
   const granted = Boolean(consent?.granted);
+  const draftsAllowed = Boolean(consent?.blockDraftsAllowed);
   const grantDate = formatGrantDate(consent?.grantedAt);
   const maskedKey = savedKey ? `${savedKey.slice(0, 10)}…${savedKey.slice(-4)}` : null;
 
@@ -417,66 +438,94 @@ export function AiConnectorPage() {
         </section>
       ) : null}
 
-      {granted ? (
-        <section
-          className="settings-section"
-          aria-labelledby="settings-ai-connect-heading"
+      <section
+        className="settings-section"
+        aria-labelledby="settings-ai-connect-heading"
+      >
+        <h2
+          id="settings-ai-connect-heading"
+          className="settings-section-heading"
         >
-          <h2
-            id="settings-ai-connect-heading"
-            className="settings-section-heading"
-          >
-            Connect an outside AI assistant
-          </h2>
-          <div className="settings-group settings-security-form">
-            <p>
-              Add LogChamp to an AI assistant you already use, then ask it about
-              your training the way you'd ask a coach.
-            </p>
-
-            <div className="ai-address">
-              <p className="settings-row__label ai-address__label">Your LogChamp connector address</p>
-              <div className="ai-address__field">
-                <code className="ai-address__value" style={{ userSelect: "all" }}>
-                  {connectorUrl}
-                </code>
-                <button
-                  className={`ai-address__copy${copyStatus === "copied" ? " ai-address__copy--done" : ""}`}
-                  type="button"
-                  onClick={() => void onCopyAddress()}
-                  aria-label={copyStatus === "copied" ? "Copied" : "Copy address"}
-                  title={copyStatus === "copied" ? "Copied" : "Copy address"}
-                >
-                  {copyStatus === "copied" ? (
-                    <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <path d="M3 8.5l3 3 7-7" />
-                    </svg>
-                  ) : (
-                    <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <rect x="5.5" y="5.5" width="8" height="8" rx="1.5" />
-                      <path d="M10.5 5.5v-2a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2" />
-                    </svg>
-                  )}
-                </button>
-              </div>
-              {copyStatus === "failed" ? (
-                <p className="muted small" style={{ margin: 0 }}>
-                  Couldn't copy automatically - select the address and copy it.
-                </p>
-              ) : null}
+          Connect an outside AI assistant
+        </h2>
+        <div className="settings-group settings-security-form">
+          <div className="ai-switch-row">
+            <div className="ai-switch-row__text">
+              <p className="ai-switch-row__title">Let assistants draft blocks</p>
+              <p className="muted small ai-switch-row__sub">
+                {granted
+                  ? "A connected assistant like Claude can add DRAFT blocks to your library. It can't change or delete anything, and nothing is used until you review and save it."
+                  : "Turn on AI access above first."}
+              </p>
             </div>
-
-            <ConnectorSetupAccordion
-              sections={CONNECTOR_SETUP_SECTIONS}
-              defaultOpenIds={["claude"]}
-            />
-
-            <p>
-              Then just ask - "how has my bench press moved this month?"
-            </p>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={draftsAllowed}
+              aria-label={
+                draftsAllowed
+                  ? "Turn off assistant block drafts"
+                  : "Let assistants draft blocks"
+              }
+              className={`ai-switch${draftsAllowed ? " ai-switch--on" : ""}`}
+              disabled={!granted || draftsSubmitting}
+              onClick={() => void onDraftsToggle()}
+            >
+              <span className="ai-switch__knob" aria-hidden="true" />
+            </button>
           </div>
-        </section>
-      ) : null}
+
+          {granted ? (
+            <>
+              <p>
+                Add LogChamp to an AI assistant you already use, then ask it about
+                your training the way you'd ask a coach.
+              </p>
+
+              <div className="ai-address">
+                <p className="settings-row__label ai-address__label">Your LogChamp connector address</p>
+                <div className="ai-address__field">
+                  <code className="ai-address__value" style={{ userSelect: "all" }}>
+                    {connectorUrl}
+                  </code>
+                  <button
+                    className={`ai-address__copy${copyStatus === "copied" ? " ai-address__copy--done" : ""}`}
+                    type="button"
+                    onClick={() => void onCopyAddress()}
+                    aria-label={copyStatus === "copied" ? "Copied" : "Copy address"}
+                    title={copyStatus === "copied" ? "Copied" : "Copy address"}
+                  >
+                    {copyStatus === "copied" ? (
+                      <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M3 8.5l3 3 7-7" />
+                      </svg>
+                    ) : (
+                      <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <rect x="5.5" y="5.5" width="8" height="8" rx="1.5" />
+                        <path d="M10.5 5.5v-2a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
+                {copyStatus === "failed" ? (
+                  <p className="muted small" style={{ margin: 0 }}>
+                    Couldn't copy automatically - select the address and copy it.
+                  </p>
+                ) : null}
+              </div>
+
+              <ConnectorSetupAccordion
+                sections={CONNECTOR_SETUP_SECTIONS}
+                defaultOpenIds={["claude"]}
+              />
+
+              <p>
+                Then just ask - "how has my bench press moved this month?"
+              </p>
+            </>
+          ) : null}
+        </div>
+      </section>
 
       <section
         className="settings-section"

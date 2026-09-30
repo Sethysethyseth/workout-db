@@ -17,11 +17,23 @@ const {
   withHonestyNote,
   MAX_TOOL_PAYLOAD_CHARS,
 } = require("./toolPayloads");
+const {
+  BLOCK_FORMAT_AI_INSTRUCTIONS,
+  BLOCK_FORMAT_EXAMPLE,
+  BLOCK_FORMAT_JSON_SCHEMA,
+} = require("../blocks/aiFormatPrompt");
+const blockDraftAccess = require("./blockDraftAccess");
 
 const DATE_ONLY_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 const BOUND_ACCOUNT_NOTE =
   'If this is not the account the user expects, tell them to use "Sign out of connected assistants" under Profile -> AI access in LogChamp and reconnect.';
+
+const CREATE_BLOCK_DRAFT_DESCRIPTION =
+  "Creates a DRAFT block in the user's LogChamp library that they review before using. " +
+  "It never edits or deletes anything. Call get_block_format first for the required JSON shape. " +
+  "The block's unit field is required (lb or kg). The draft appears in LogChamp with a DRAFT pill; " +
+  "nothing is used until the user saves it to their library.";
 
 function withBoundAccount(payload, email) {
   const base = payload && typeof payload === "object" ? payload : {};
@@ -48,6 +60,32 @@ function toolError(message, boundEmail) {
       },
     ],
   };
+}
+
+function mapCreateDraftError(result) {
+  switch (result.error) {
+    case "block_drafts_off":
+      return "Block drafts are turned off. In LogChamp, open Profile -> AI access and turn on 'Let assistants draft blocks'.";
+    case "unit_required":
+      return "unit is required on connector drafts (use \"lb\" or \"kg\").";
+    case "invalid_block": {
+      const parts = (result.errors || []).map((e) => {
+        const path = e.path ? `${e.path}: ` : "";
+        return `${path}${e.message}`;
+      });
+      return parts.length
+        ? `Invalid block. Fix and retry: ${parts.join("; ")}`
+        : "Invalid block. Call get_block_format and fix the JSON.";
+    }
+    case "daily_limit":
+      return "Daily limit reached: at most 10 connector drafts per 24 hours. Try again later.";
+    case "too_many_drafts":
+      return "Too many open drafts: at most 20 connector drafts waiting for review. Ask the user to review or discard some in LogChamp first.";
+    case "create_failed":
+      return result.message || "Could not save the draft.";
+    default:
+      return result.message || "Could not create the draft.";
+  }
 }
 
 async function loadBoundAccountEmail(connectorUserId) {
@@ -117,13 +155,19 @@ function guardPayloadSize(payload) {
 /**
  * Fresh McpServer per call, closed over connectorUserId so tool handlers
  * never read identity from model-supplied arguments.
+ * @param {string} connectorUserId
+ * @param {string} boundEmail
+ * @param {{ createDraftForUser?: Function }} [deps] - injectable for unit tests
  */
-function createMcpServerForUser(connectorUserId, boundEmail) {
+function createMcpServerForUser(connectorUserId, boundEmail, deps = {}) {
   const server = new McpServer({
     name: "logchamp",
     version: "1.0.0",
   });
   const stamp = (payload) => withBoundAccount(payload, boundEmail);
+  const createDraftForUser =
+    deps.createDraftForUser ||
+    ((userId, block) => blockDraftAccess.createDraftForUser(userId, block));
 
   server.registerTool(
     "get_training_summary",
@@ -345,6 +389,67 @@ function createMcpServerForUser(connectorUserId, boundEmail) {
     }
   );
 
+  server.registerTool(
+    "get_block_format",
+    {
+      title: "Block format",
+      description:
+        "Returns LogChamp Block Format v1 instructions, a worked example, and the JSON Schema. " +
+        "Call this before create_block_draft. Read-only - nothing is written.",
+      inputSchema: {},
+      annotations: { readOnlyHint: true, destructiveHint: false },
+    },
+    async () => {
+      return toolText(
+        stamp({
+          instructions: BLOCK_FORMAT_AI_INSTRUCTIONS,
+          example: BLOCK_FORMAT_EXAMPLE,
+          jsonSchema: BLOCK_FORMAT_JSON_SCHEMA,
+        })
+      );
+    }
+  );
+
+  server.registerTool(
+    "create_block_draft",
+    {
+      title: "Create block draft",
+      description: CREATE_BLOCK_DRAFT_DESCRIPTION,
+      inputSchema: {
+        // Real validation is validateBlockDraft - do not mirror its rules in zod.
+        block: z
+          .record(z.string(), z.any())
+          .describe("LogChamp Block Format v1 object (see get_block_format)"),
+      },
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: false,
+      },
+    },
+    async (args) => {
+      // Identity ONLY from the closure. Extra fields (e.g. userId) are ignored
+      // by the schema / never consulted here.
+      const result = await createDraftForUser(connectorUserId, args.block);
+      if (result.error) {
+        return toolError(mapCreateDraftError(result), boundEmail);
+      }
+      // No single client-origin URL for app links (CLIENT_ORIGIN is a CORS
+      // allowlist). Omit reviewUrl; message tells the user where to look.
+      return toolText(
+        stamp({
+          blockId: result.blockId,
+          name: result.name,
+          stats: result.stats,
+          unmatchedExercises: result.unmatchedExercises,
+          message:
+            "Draft saved. Open it in LogChamp to review and save it to your library.",
+        })
+      );
+    }
+  );
+
   return server;
 }
 
@@ -395,4 +500,5 @@ module.exports = {
   createMcpServerForUser,
   withBoundAccount,
   BOUND_ACCOUNT_NOTE,
+  CREATE_BLOCK_DRAFT_DESCRIPTION,
 };

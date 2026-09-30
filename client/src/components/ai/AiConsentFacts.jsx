@@ -12,6 +12,10 @@ export function AiConsentFacts() {
       <li>
         <strong>What never leaves.</strong> Individual sets, notes, and account details.
       </li>
+      <li>
+        <strong>What it can add.</strong> Only if you turn it on: draft blocks you review
+        before they're used. It never edits or deletes anything.
+      </li>
     </ul>
   );
 }

@@ -2,6 +2,8 @@ const prisma = require("../lib/prisma");
 const {
   CONNECTOR_SCOPE,
   consentStateFor,
+  isConsentActive,
+  blockDraftsAllowed,
 } = require("../ai/consent");
 const {
   revokeWorkosConnectorBinding,
@@ -19,6 +21,7 @@ async function loadConsentPayload(userId) {
   return {
     ...consentStateFor(user.aiConsent),
     connectorEnabled: user.aiConnectorEnabled,
+    blockDraftsAllowed: blockDraftsAllowed(user.aiConsent),
   };
 }
 
@@ -80,13 +83,17 @@ async function revokeConsent(req, res, next) {
     }
 
     // AI4: revoking consent must also revoke issued connector tokens.
+    // BK11: also clear the block-drafts opt-in.
     const existing = await prisma.aiConsent.findUnique({
       where: { userId },
     });
     if (existing && existing.revokedAt == null) {
       await prisma.aiConsent.update({
         where: { userId },
-        data: { revokedAt: new Date() },
+        data: {
+          revokedAt: new Date(),
+          blockDraftsAllowedAt: null,
+        },
       });
     }
 
@@ -111,6 +118,44 @@ async function revokeConsent(req, res, next) {
       });
     }
 
+    return res.json(payload);
+  } catch (err) {
+    return next(err);
+  }
+}
+
+async function setBlockDraftsAllowed(req, res, next) {
+  try {
+    const userId = req.authUserId;
+    if (!userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    const allowed = req.body && req.body.allowed;
+    if (typeof allowed !== "boolean") {
+      return res.status(400).json({ error: "allowed must be a boolean" });
+    }
+
+    const existing = await prisma.aiConsent.findUnique({
+      where: { userId },
+    });
+    if (!isConsentActive(existing)) {
+      return res.status(409).json({
+        error: "Turn on AI access before letting assistants draft blocks.",
+      });
+    }
+
+    await prisma.aiConsent.update({
+      where: { userId },
+      data: {
+        blockDraftsAllowedAt: allowed ? new Date() : null,
+      },
+    });
+
+    const payload = await loadConsentPayload(userId);
+    if (!payload) {
+      return res.status(404).json({ error: "User not found" });
+    }
     return res.json(payload);
   } catch (err) {
     return next(err);
@@ -146,5 +191,6 @@ module.exports = {
   getConsent,
   grantConsent,
   revokeConsent,
+  setBlockDraftsAllowed,
   signOutConnector,
 };
