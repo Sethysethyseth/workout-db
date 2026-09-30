@@ -15,8 +15,8 @@ effort cap / week labels. Lands on `ai-connector-wave` (staging Render still
 tracks it - M2's repoint to `main` is ON HOLD for this wave). ONE migration
 (BK1): the BK1 landing push MIGRATES STAGING (Render build runs `migrate
 deploy`), so that push waits for Seth's "migrate staging"; prod gets it by
-hand before the merge. Wave N = 13 (BK1-BK12 + BK5b; BK0 privacy/ToS is
-DRAFT on Seth's facts and joins N when queued). Then the coach-persona
+hand before the merge. Wave N = 16 (BK1-BK12 + BK5b + critic round 1's bkf1a/b/c; BK0
+privacy/ToS is DRAFT on Seth's facts and joins N when queued). Then the coach-persona
 critic loop (spec section 11, FRONTIER SEAT, max 3 rounds, pass 8+; each
 failing round adds a `bkf<N>` fix block), THEN N/N -> Seth smokes -> gate.
 All units MODEL auto (plan is auto-rung only), MODE 1-relay, DB-free lanes;
@@ -208,6 +208,24 @@ focus data is already loaded. LIVE (local API on staging DB, mock coach):
 status available, convert 200 and the draft passes the import preview, bad
 mode / missing unit 400, ask with own block streams, a block that is not
 yours 404 with no block text.
+
+DISPATCHED | bkf1a-builder-run-library-fixes.md | critic round 1 fixes: empty days
+named before Save + remove-empty, copy forward skips deload, set-grid header,
+readable day tiles, sticky header below the desktop nav, in-page confirms,
+Start near the top of the run card, rx polish | n=14. Round 1 scored 6/10
+(`bk-critic-round-1-FINDINGS.md`). Beside bkf1b, bkf1c (disjoint).
+Dispatched Sept 29: Channel B, `--model auto`, lane `cursor-lane`.
+
+DISPATCHED | bkf1b-import-page-fixes.md | critic round 1 fixes: preview opens at the
+top, program before a compact matching list, sticky Create with a busy
+state, pluralized counts | n=15. Beside bkf1a, bkf1c.
+Dispatched Sept 29: Channel B, `--model auto`, lane `cursor-lane-2`.
+
+DISPATCHED | bkf1c-summary-timed-analytics-dates.md | critic round 1 fixes: finished
+summary counts and shows timed sets; analytics ranges use local-day
+datetimes (evening sessions no longer vanish); logger placeholders (no fake
+load, caps as <= / >=) | n=16. Beside bkf1a, bkf1b.
+Dispatched Sept 29: Channel B, `--model auto`, lane `cursor-lane-3`.
 
 DRAFT | bk0-privacy-terms-pages.md | plain-language /privacy + /terms,
 covering the AI layer and the draft-block write | Seth's Sept 26 "first
