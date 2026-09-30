@@ -11,33 +11,99 @@
 > smoke is the first run on the deployed stack. HARD STOP for Seth's smoke
 > (checklist below). Prod unchanged: `main` = `7d3b91e`.
 
-**Next action (human):** run the wave smoke checklist below on the staging
-Vercel deploy (staging Render now tracks `ai-connector-wave` and is live) and
-reply "smoke signed off" - or send the findings.
+**Next action (human):** open a Claude Code session, say "smoke the BK wave
+with me", and work through the checklist on your phone on the staging
+Vercel deploy - the agent guides you item by item and records the results.
 
-## ▶ PICK UP HERE (Sept 29, late - written for a fresh agent)
+## ▶ PICK UP HERE (Sept 29, late - for the agent running the smoke WITH Seth)
 
-> **Agent reading this:** the BK wave is at the smoke HARD STOP. Do not run
-> the gate, `/code-review`, or merge prep until Seth signs off. A smoke
-> finding re-enters as a diagnosis block and resets the sign-off. After
-> sign-off: `pre-main-review` (FRONTIER seat), with the gate notes below.
-> Prod needs BK1's migration applied BY SETH before the merge (ordering
-> invariant; RUNBOOK "Schema-change deploy"), and the prod-vs-staging
-> migration drift (Housekeeping) is still unreconciled.
+> **Your job this session: sit with Seth while he smokes the BK wave, one
+> checklist item at a time, and record results. You are NOT fixing code and
+> NOT running the gate.** Any model can do this; Sonnet is fine.
 >
-> **Gate notes collected while landing:** clone isolation (BK1, cross-user)
-> - a live clone of a FOREIGN public block was not possible on staging;
-> BK11 connector write path (cross-user; live-checked in-process, the
-> Claude-side check is Seth's); BK12 block focus owner check lives in
-> `askCoach.js` (accepted placement); BK10 reuses the enriched
-> `templateExerciseId` field for `block:<id>` keys and `judgePlanHit` is
-> unused (spec 7.5 ruling, hit rate deferred); BK7 start-from-block has no
-> unique guard (race -> two sessions); WeekStrip smooth scroll ignores
-> reduced motion; direct fixes landed outside Cursor units: `aadb365`
-> (BK3 extraction), BK5 state fixes, `0a92af6` (export legacy sets),
-> `8da0ae5` (Any AI json kind), `207c0f2` (set-grid stretch, day-picker
-> scrollbar). Lane `cursor-lane-3` holds three untracked mock PNG copies in
-> `client/src/assets/scenes/` - never stage them.
+> **Where things stand:** BK wave 17/17 LANDED on `ai-connector-wave`
+> (`e339865`); critic passed 8/10 in round 3; staging Render tracks
+> `ai-connector-wave` again (Seth repointed it Sept 29) and is verified live
+> (new routes answer, latest server fix live, staging DB "up to date").
+>
+> **Smoke protocol**
+> 1. **Where Seth tests:** the staging Vercel preview of `ai-connector-wave`
+>    - branch URL `https://workout-db-git-ai-connector-wave-sethysethyseths-projects.vercel.app`
+>    (behind Vercel login; per-commit URLs also work) - on his PHONE first,
+>    then desktop for item 11. Never local dev (the client `.env` points at
+>    prod). It talks to staging Render `https://workout-db-staging.onrender.com`.
+> 2. **Account:** Seth's own staging account, or `demo.critic@example.com`
+>    (password in the memory note `local-run-and-critic-loop`). demo.critic
+>    already holds the critic's data: blocks "Phase 1" (6 weeks, an ACTIVE
+>    run, W1 Day 1 + Day 2 done), "Phase 1 - week 1", "Upper/Lower 4wk",
+>    "R2 skeleton". Starting a different block on demo ends the Phase 1 run
+>    (fine).
+> 3. **Pace:** give ONE item at a time from the checklist below, in plain
+>    words, wait for his result. If something looks off, ask for a
+>    screenshot - he drops them in `claudefiledrop/` (untracked; read with
+>    the Read tool; never commit that folder).
+> 4. **Record:** create `docs/tasks/bk-smoke-FINDINGS.md` at the first result
+>    - one line per item: PASS, or FAIL with Seth's words + screenshot name +
+>    severity (P0 broken/data loss, P1 blocks him, P2 friction, P3 polish).
+>    Commit + push it at the end (docs-only push to staging is allowed).
+> 5. **Verify, don't guess:** you can check the server side yourself -
+>    staging API calls with a cookie login (pattern: log in via
+>    `POST /auth/login`, reuse the `workoutdb.sid` cookie), and READ-ONLY DB
+>    reads with a small `node -e` Prisma script from `server/` (`server/.env`
+>    points at staging; run `npx prisma generate` first; SELECT-style reads
+>    only - no writes, no migrations).
+> 6. **Defects:** do NOT fix during the smoke. After the last item, each
+>    FAIL becomes a DIAGNOSIS block (`author-task-block`, diagnosis variant)
+>    -> Cursor -> `land-unit`, and the sign-off resets. The only exception is
+>    AGENTS.md's direct-fix rule (diagnosis ~95% of the work, trivial fix) -
+>    still record it.
+> 7. **Sign-off:** when Seth says "smoke signed off" (or waives items),
+>    record it in the FINDINGS doc and here, set the Next action line to
+>    the pre-main gate, and stop. The gate is `pre-main-review` in an OPUS
+>    (frontier) session, using the gate notes below.
+>
+> **Item-specific notes**
+> - **Item 1 (Phase-1 sheet):** Seth can select the `Program` sheet cells
+>   (header row included) in Excel and paste straight into the Paste tab.
+>   For the all-6-weeks File test he can Save As CSV/TSV, or use the local
+>   export at `.playwright-mcp/bk-critic/Phase-1-Program.tsv` (gitignored;
+>   made from `RecoveryProgram/workout-program/Phase-1-Program.xlsx`,
+>   `Program` sheet). Expected: 216 rows -> 6 weeks, 30 days, 216 exercises,
+>   602 sets, 84 timed; only warnings = the ignored `Tier` and
+>   `Progression_Rule` columns; ~23 names "Not in your library".
+> - **Item 8 (connector drafts):** needs Claude connected to the STAGING
+>   connector (staging AuthKit `scientific-mist-64-staging.authkit.app`,
+>   sign-in URI on the `ai-connector-wave` preview host). If Seth's Claude
+>   only has the prod connector, mark item 8 "deferred - needs the staging
+>   connector" rather than failing it.
+> - **Item 9 (coach):** real coach on staging, capped at 7 questions a week
+>   (`COACH_UNCAPPED_EMAILS` is set on prod only, by design). Each convert /
+>   draft / ask costs one.
+>
+> **By design - do not log as defects:** unmatched imported names do not
+> count toward Analytics (the preview says so); timed sets add nothing to
+> volume or strength; copy forward skips Deload-labeled weeks unless the box
+> is ticked; rest 0 reads "None"; the coach range stays date-only; saving
+> is blocked while any day is empty (the message names it). Known P3s
+> already on file (round 3): the stats line wraps at 390px, "Match..." sits
+> on its own line under short names, picker ranking for "bench press".
+>
+> **Gate notes for `pre-main-review` (after sign-off):** clone isolation
+> (BK1, cross-user) - a live clone of a FOREIGN public block was not
+> possible on staging; BK11 connector write path (cross-user; live-checked
+> in-process, Claude-side check is smoke item 8); BK12 block-focus owner
+> check lives in `askCoach.js` (accepted placement); BK10 reuses the
+> enriched `templateExerciseId` field for `block:<id>` keys and
+> `judgePlanHit` is unused (spec 7.5 ruling, hit rate deferred); BK7
+> start-from-block has no unique guard (race -> two sessions); WeekStrip
+> smooth scroll ignores reduced motion; direct fixes outside Cursor units:
+> `aadb365` (BK3 extraction), BK5 state fixes, `0a92af6` (export legacy
+> sets), `8da0ae5` (Any AI json kind), `207c0f2` (set-grid stretch,
+> day-picker scrollbar). Before any merge: Seth hand-applies BK1's
+> migration `20260929120000_blocks_v2` to PROD (RUNBOOK "Schema-change
+> deploy") and the prod-vs-staging migration drift (Housekeeping) gets
+> reconciled. Lane `cursor-lane-3` holds three untracked mock PNG copies
+> in `client/src/assets/scenes/` - never stage them.
 
 ### Wave smoke checklist - BK (Seth, staging Vercel deploy, phone + desktop)
 
@@ -266,8 +332,9 @@ Covers the F-wave AND the still-open E-wave prod smoke. Staging passed Aug 4.
   `bdad1c1`; the AI-wave merge before it was `59e27dc..bdad1c1`). **Prod Render `workout-db-l3gc`** and **prod Vercel
   `https://workout-db-psi.vercel.app`** are on `main`, deploy live. Any push to
   `main` is a prod-bound push (gate 2).
-- **`ai-connector-wave` = `main` + docs-only HANDOFF commits.** Staging Render
-  `workout-db-staging` still tracks it (repoint pending, see M2).
+- **`ai-connector-wave` = `main` + the whole BK wave** (17 units + critic
+  fixes + docs, head `e339865`+). Staging Render `workout-db-staging` tracks
+  it (re-confirmed Sept 29 after it was found on `main`).
 - **Prod DB:** `20260804180000_add_ai_consent` hand-applied by Seth Sept 26
   (RUNBOOK 10a V2 SQL), checksum identical to staging; `CoachUsage` +
   `WorkoutSession.reopenedAt` hand-applied by Seth Sept 27 (checks passed). Prod's build command is
