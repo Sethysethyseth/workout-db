@@ -246,6 +246,30 @@
   gap: 0;
 }
 
+.bk-import-match-section {
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bk-import-match-section__heading {
+  margin: 0;
+  font: 700 16px/1.2 var(--bk-display);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--bk-ink);
+}
+
+.bk-import-match-section__keep,
+.bk-import-match-section__note {
+  margin: 0;
+  font: 400 13px/1.4 var(--font-sans);
+  color: var(--bk-ink-2);
+  max-width: 65ch;
+}
+
 .bk-import-match {
   display: flex;
   flex-wrap: wrap;
@@ -267,10 +291,11 @@
 }
 
 .bk-import-match--compact {
-  flex-wrap: nowrap;
-  gap: 8px;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 4px 8px;
   min-height: 44px;
-  padding: 4px 0;
+  padding: 8px 0;
   border: 0;
   border-radius: 0;
   background: transparent;
@@ -278,19 +303,27 @@
 }
 
 .bk-import-match--compact .bk-import-match__name {
-  flex: 0 1 auto;
-  max-width: 11.5rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font: 700 14px/1.2 var(--bk-display);
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: none;
+  overflow: visible;
+  text-overflow: unset;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  font: 700 14px/1.25 var(--bk-display);
 }
 
 .bk-import-match--compact .bk-import-match__meta {
-  flex: 0 1 auto;
-  white-space: nowrap;
+  flex: 1 1 100%;
+  white-space: normal;
   font: 400 12px/1.2 var(--font-sans);
   color: var(--bk-ink-2);
+}
+
+.bk-import-match--compact .bk-import-match__link {
+  flex: 0 0 auto;
+  margin-left: auto;
+  align-self: center;
 }
 
 .bk-import-match__check {

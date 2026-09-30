@@ -29,8 +29,9 @@ function firstNotesLine(notes) {
 }
 
 function restFormat(sec) {
-  if (sec == null || sec === 0) return "No rest";
-  return formatRest(sec) || "No rest";
+  if (sec == null || sec === 0) return { text: "None", ariaLabel: "No rest" };
+  const t = formatRest(sec);
+  return t || { text: "None", ariaLabel: "No rest" };
 }
 
 /**

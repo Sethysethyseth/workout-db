@@ -8,6 +8,11 @@ import { ExerciseCard } from "../builder/ExerciseCard.jsx";
 import { ExercisePicker } from "../builder/ExercisePicker.jsx";
 import { formatExerciseForCard } from "./formatExerciseForCard.js";
 import { formatImportStats } from "./formatImportStats.js";
+import {
+  formatUnmatchedHeading,
+  UNMATCHED_ANALYTICS_NOTE,
+  UNMATCHED_KEEP_LINE,
+} from "./formatUnmatchedSection.js";
 import { splitMatchedExercises } from "./splitMatchedExercises.js";
 
 /**
@@ -187,6 +192,15 @@ export function ImportPreviewStep({
           </ul>
         </Disclosure>
       ) : null}
+      {unmatched.length > 0 ? (
+        <div className="bk-import-match-section">
+          <h3 className="bk-import-match-section__heading">
+            {formatUnmatchedHeading(unmatched.length)}
+          </h3>
+          <p className="bk-import-match-section__keep">{UNMATCHED_KEEP_LINE}</p>
+          <p className="bk-import-match-section__note">{UNMATCHED_ANALYTICS_NOTE}</p>
+        </div>
+      ) : null}
       <ul className="bk-import-match-list bk-import-match-list--unmatched">
         {unmatched.map((ex) => {
           const from = ex.name;
@@ -209,7 +223,6 @@ export function ImportPreviewStep({
           return (
             <li key={from} className="bk-import-match bk-import-match--compact">
               <span className="bk-import-match__name">{from}</span>
-              <span className="bk-import-match__meta">Not in your library</span>
               <button
                 type="button"
                 className="bk-import-match__link bk-import-match__match-btn"
@@ -217,7 +230,6 @@ export function ImportPreviewStep({
               >
                 Match...
               </button>
-              <span className="bk-import-match__default">Keep as typed</span>
             </li>
           );
         })}

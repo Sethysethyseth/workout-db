@@ -14,7 +14,15 @@ export function Stepper({
   const n = Number(value);
   const atMin = n <= min;
   const atMax = n >= max;
-  const display = typeof format === "function" ? format(n) : String(n);
+  const formatted = typeof format === "function" ? format(n) : String(n);
+  const display =
+    formatted != null && typeof formatted === "object" && "text" in formatted
+      ? formatted.text
+      : formatted;
+  const valueAria =
+    formatted != null && typeof formatted === "object" && formatted.ariaLabel
+      ? formatted.ariaLabel
+      : label;
   const cls = className ? `bk-stepper ${className}` : "bk-stepper";
 
   function bump(delta) {
@@ -34,7 +42,7 @@ export function Stepper({
       >
         −
       </button>
-      <output className="bk-stepper__value" aria-live="polite" aria-label={label}>
+      <output className="bk-stepper__value" aria-live="polite" aria-label={valueAria}>
         {display}
       </output>
       <button

@@ -22,17 +22,11 @@
   --bk-shadow: var(--shadow-card);
   --bk-display: var(--font-block);
   --bk-r: 14px;
-  /* Matches .session-detail-page --session-sticky-top (app .nav height on wide screens) */
+  /* Measured at runtime by StickyHeader from header.nav bottom edge; 0 when nav hidden. */
   --bk-sticky-top: 0px;
 
   color: var(--bk-ink);
   font-family: var(--font-sans);
-}
-
-@media (min-width: 720px) {
-  .bk {
-    --bk-sticky-top: 64px;
-  }
 }
 
 .bk .bk-num,
@@ -559,6 +553,7 @@
   display: grid;
   place-items: center;
   color: var(--bk-ink);
+  white-space: nowrap;
 }
 
 /* ---------- segmented ---------- */
@@ -641,8 +636,8 @@
 }
 
 /* ---------- sticky header ---------- */
-/* Offset: --bk-sticky-top mirrors --session-sticky-top (64px under app .nav on >=720px).
-   On phones the top .nav is hidden when .bottom-nav is present, so top stays 0. */
+/* Offset: --bk-sticky-top is set on this element by StickyHeader (ResizeObserver on
+   header.nav). Fallback 0 from .bk when JS has not run / nav is absent. */
 .bk-sticky-header {
   position: sticky;
   top: var(--bk-sticky-top);
