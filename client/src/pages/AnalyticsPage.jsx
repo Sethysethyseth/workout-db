@@ -522,7 +522,7 @@ function ExecutionSection({ execution }) {
           </>
         }
         cardName="Execution"
-        sub="Planned vs. logged for template sets. The headline line shows the concrete comparison; percentages and drift are the supporting detail."
+        sub="Planned vs. logged for sets from a saved workout or a block. The headline line shows the concrete comparison; percentages and drift are the supporting detail."
         view={view}
         onViewChange={setView}
       />

@@ -258,9 +258,15 @@
   flex-wrap: nowrap;
   gap: 6px;
   overflow-x: auto;
+  overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
-  scrollbar-width: thin;
+  scrollbar-width: none;
   padding-bottom: 2px;
+}
+
+/* Same hidden scrollbar as the week strip - swipe to scroll. */
+.bk-day-picker::-webkit-scrollbar {
+  display: none;
 }
 
 .bk-day {

@@ -261,6 +261,9 @@
 .bk-set-grid {
   display: flex;
   flex-direction: column;
+  /* bk-ui.css also styles .bk-set-grid (align-items: center); stretch the
+     header and rows to the full width so their shared grid lines up. */
+  align-items: stretch;
   gap: 6px;
 }
 
