@@ -15,7 +15,7 @@ effort cap / week labels. Lands on `ai-connector-wave` (staging Render still
 tracks it - M2's repoint to `main` is ON HOLD for this wave). ONE migration
 (BK1): the BK1 landing push MIGRATES STAGING (Render build runs `migrate
 deploy`), so that push waits for Seth's "migrate staging"; prod gets it by
-hand before the merge. Wave N = 16 (BK1-BK12 + BK5b + critic round 1's bkf1a/b/c; BK0
+hand before the merge. Wave N = 17 (BK1-BK12 + BK5b + critic fixes bkf1a/b/c + bkf2; BK0
 privacy/ToS is DRAFT on Seth's facts and joins N when queued). Then the coach-persona
 critic loop (spec section 11, FRONTIER SEAT, max 3 rounds, pass 8+; each
 failing round adds a `bkf<N>` fix block), THEN N/N -> Seth smokes -> gate.
@@ -238,6 +238,13 @@ the range prop's only other consumer (ExercisesView fetch) accepts
 datetimes; coach range stays date-only. Lane hygiene: the run left three
 untracked copies of docs/design/mocks/*.png in client/src/assets/scenes/
 (unreferenced) - never staged, left in the lane.
+
+DISPATCHED | bkf2-critic-round-2-fixes.md | critic round 2 fixes: block header
+below the real (two-row) desktop nav, full names in import match rows, say
+unmatched names drop out of Analytics, rest stepper on one line | n=17.
+Round 2 scored 7.5/10 (`bk-critic-round-2-FINDINGS.md`); set-grid header,
+day-picker scrollbars and Execution copy were fixed directly (`207c0f2`).
+Dispatched Sept 29: Channel B, `--model auto`, lane `cursor-lane`.
 
 DRAFT | bk0-privacy-terms-pages.md | plain-language /privacy + /terms,
 covering the AI layer and the draft-block write | Seth's Sept 26 "first
