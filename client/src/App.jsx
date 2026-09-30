@@ -12,6 +12,7 @@ import { CreateTemplatePage } from "./pages/CreateTemplatePage.jsx";
 import { EditTemplatePage } from "./pages/EditTemplatePage.jsx";
 import { EditBlockTemplatePage } from "./pages/EditBlockTemplatePage.jsx";
 import { ImportBlockPage } from "./pages/ImportBlockPage.jsx";
+import { BlockRunPage } from "./pages/BlockRunPage.jsx";
 import { SessionsPage } from "./pages/SessionsPage.jsx";
 import { AnalyticsPage } from "./pages/AnalyticsPage.jsx";
 import { SessionDetailPage } from "./pages/SessionDetailPage.jsx";
@@ -88,6 +89,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <ImportBlockPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/blocks/current"
+          element={
+            <ProtectedRoute>
+              <BlockRunPage />
             </ProtectedRoute>
           }
         />

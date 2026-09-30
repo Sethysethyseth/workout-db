@@ -2,12 +2,15 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import * as sessionApi from "../api/sessionApi.js";
 import * as templateApi from "../api/templateApi.js";
+import * as blockRunApi from "../api/blockRunApi.js";
 import { ErrorMessage } from "../components/ErrorMessage.jsx";
 import { WeeklyReport } from "../components/analytics/WeeklyReport.jsx";
 import { ActiveWorkoutHero } from "../components/workout/ActiveWorkoutHero.jsx";
 import { StartWorkoutHero } from "../components/workout/StartWorkoutHero.jsx";
 import { StartWorkoutPicker } from "../components/workout/StartWorkoutPicker.jsx";
 import { WeekStrip } from "../components/workout/WeekStrip.jsx";
+import { UpNextCard } from "../components/blocks/run/UpNextCard.jsx";
+import { isRunFinished } from "../components/blocks/run/dayStatusTiles.js";
 import { useActiveSession } from "../context/ActiveSessionContext.jsx";
 import { readCurrentProgram } from "../lib/currentProgramStorage.js";
 import { ACTIVE_WORKOUT_ERROR, startAdHocWorkoutAndNavigate } from "../lib/startAdHocWorkoutFlow.js";
@@ -53,6 +56,8 @@ export function DashboardPage() {
   const [heroNow, setHeroNow] = useState(() => Date.now());
   const [workoutSavedFlash, setWorkoutSavedFlash] = useState(false);
   const [workoutDiscardedFlash, setWorkoutDiscardedFlash] = useState(false);
+  const [activeBlock, setActiveBlock] = useState(null);
+  const [upNextStarting, setUpNextStarting] = useState(false);
 
   const quickPickTemplates = useMemo(() => {
     const list = Array.isArray(templates) ? [...templates] : [];
@@ -93,6 +98,30 @@ export function DashboardPage() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await blockRunApi.getActiveBlockRun();
+        if (cancelled) return;
+        if (data?.run && data.block && data.progress && !isRunFinished(data.progress)) {
+          setActiveBlock({
+            run: data.run,
+            block: data.block,
+            progress: data.progress,
+          });
+        } else {
+          setActiveBlock(null);
+        }
+      } catch {
+        if (!cancelled) setActiveBlock(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeSession?.id, location.pathname]);
 
   useEffect(() => {
     if (!activeSession) return;
@@ -154,6 +183,27 @@ export function DashboardPage() {
       setQuickStartError(err);
     } finally {
       setQuickStarting(false);
+    }
+  }
+
+  async function onUpNextStart(next) {
+    if (!activeBlock?.run || !next) return;
+    setUpNextStarting(true);
+    setStartError(null);
+    try {
+      const data = await blockRunApi.startFromBlock({
+        blockRunId: activeBlock.run.id,
+        weekOrder: next.weekOrder,
+        workoutOrder: next.workoutOrder,
+      });
+      if (data?.session?.id != null) {
+        await refresh();
+        navigate(`/sessions/${data.session.id}`);
+      }
+    } catch (err) {
+      setStartError(err);
+    } finally {
+      setUpNextStarting(false);
     }
   }
 
@@ -226,6 +276,17 @@ export function DashboardPage() {
           }
         />
       )}
+
+      {activeBlock ? (
+        <UpNextCard
+          block={activeBlock.block}
+          progress={activeBlock.progress}
+          runId={activeBlock.run.id}
+          starting={upNextStarting}
+          onStart={(next) => void onUpNextStart(next)}
+          onResume={(next) => void onUpNextStart(next)}
+        />
+      ) : null}
 
       <WeeklyReport weekStrip={<WeekStrip sessions={sessions} />} />
 

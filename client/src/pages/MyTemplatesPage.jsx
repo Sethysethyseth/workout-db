@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import * as templateApi from "../api/templateApi.js";
 import * as blockTemplateApi from "../api/blockTemplateApi.js";
+import * as blockRunApi from "../api/blockRunApi.js";
 import * as sessionApi from "../api/sessionApi.js";
 import * as exerciseApi from "../api/exerciseApi.js";
 import { CommunityProgramsSection } from "../components/programs/CommunityProgramsSection.jsx";
@@ -50,6 +51,7 @@ export function MyTemplatesPage() {
   const [success, setSuccess] = useState(null);
   const [actingKey, setActingKey] = useState(null);
   const [actingAction, setActingAction] = useState(null);
+  const [activeRun, setActiveRun] = useState(null);
 
   const rawItems =
     tab === "workouts" ? workouts : tab === "blocks" ? blocks : customExercises;
@@ -84,14 +86,24 @@ export function MyTemplatesPage() {
     setLoading(true);
     setError(null);
     try {
-      const [wData, bData, eData] = await Promise.all([
+      const [wData, bData, eData, runData] = await Promise.all([
         templateApi.getMyTemplates(),
         blockTemplateApi.getMyBlockTemplates(),
         exerciseApi.listCustomExercises(),
+        blockRunApi.getActiveBlockRun().catch(() => ({ run: null })),
       ]);
       setWorkouts(Array.isArray(wData.templates) ? wData.templates : []);
       setBlocks(Array.isArray(bData.blockTemplates) ? bData.blockTemplates : []);
       setCustomExercises(Array.isArray(eData.userExercises) ? eData.userExercises : []);
+      if (runData?.run) {
+        setActiveRun({
+          id: runData.run.id,
+          blockTemplateId: runData.run.blockTemplateId,
+          name: runData.block?.name || "",
+        });
+      } else {
+        setActiveRun(null);
+      }
     } catch (err) {
       setError(err);
     } finally {
@@ -209,8 +221,6 @@ export function MyTemplatesPage() {
     setActingAction("delete");
     try {
       await blockTemplateApi.deleteBlockTemplate(t.id);
-      const cur = readCurrentProgram();
-      if (cur?.kind === "block" && cur.id === t.id) writeCurrentProgram(null);
       setSuccess("Block template deleted.");
       clearFeedbackSoon();
       await load();
@@ -255,11 +265,30 @@ export function MyTemplatesPage() {
     clearFeedbackSoon();
   }
 
-  function onSetCurrentBlock(t) {
-    writeCurrentProgram({ kind: "block", id: t.id, name: t.name || "" });
+  async function onStartBlock(t) {
+    if (t.isDraft) return;
     setError(null);
-    setSuccess("This block is now your current program on Workout.");
-    clearFeedbackSoon();
+    setSuccess(null);
+
+    if (activeRun && activeRun.blockTemplateId !== t.id) {
+      const other = activeRun.name?.trim() || "the current block";
+      const ok = window.confirm(
+        `This ends ${other}. Start "${t.name || "this block"}" instead?`
+      );
+      if (!ok) return;
+    }
+
+    setActingKey(keyFor("block", t.id));
+    setActingAction("start-block");
+    try {
+      await blockRunApi.startBlockRun(t.id);
+      navigate("/blocks/current");
+    } catch (err) {
+      setError(err);
+    } finally {
+      setActingKey(null);
+      setActingAction(null);
+    }
   }
 
   return (
@@ -591,6 +620,9 @@ export function MyTemplatesPage() {
               : items.map((t) => {
               const k = keyFor("block", t.id);
               const isActing = actingKey === k;
+              const isDraft = Boolean(t.isDraft);
+              const isActive =
+                activeRun != null && activeRun.blockTemplateId === t.id;
               return (
                 <div key={k} className="card stack">
                   <div className="row">
@@ -601,8 +633,11 @@ export function MyTemplatesPage() {
                         <span className="pill">Block</span>
                         <span className="pill">{t.isPublic ? "Public" : "Private"}</span>
                         <span className="pill muted">{formatBlockTemplateSummary(t)}</span>
-                        {currentProgram?.kind === "block" && currentProgram.id === t.id ? (
-                          <span className="pill programs-current-pill">Current</span>
+                        {isDraft ? (
+                          <span className="pill">DRAFT</span>
+                        ) : null}
+                        {isActive ? (
+                          <span className="pill programs-current-pill">ACTIVE</span>
                         ) : null}
                       </div>
                     </div>
@@ -643,28 +678,54 @@ export function MyTemplatesPage() {
                   ) : null}
 
                   <div className="row" style={{ flexWrap: "wrap", gap: "0.5rem" }}>
-                    <button
-                      type="button"
-                      className="btn btn-secondary"
-                      disabled={busy}
-                      onClick={() => onSetCurrentBlock(t)}
-                    >
-                      Set as current
-                    </button>
-                    <Link
-                      className="btn btn-secondary"
-                      to={`/blocks/${t.id}/edit`}
-                      tabIndex={busy ? -1 : undefined}
-                      aria-disabled={busy}
-                      style={busy ? { pointerEvents: "none", opacity: 0.65 } : undefined}
-                    >
-                      Edit
-                    </Link>
+                    {isDraft ? (
+                      <Link
+                        className="btn"
+                        to={`/blocks/${t.id}/edit`}
+                        tabIndex={busy ? -1 : undefined}
+                        aria-disabled={busy}
+                        style={busy ? { pointerEvents: "none", opacity: 0.65 } : undefined}
+                      >
+                        Review
+                      </Link>
+                    ) : isActive ? (
+                      <Link
+                        className="btn"
+                        to="/blocks/current"
+                        tabIndex={busy ? -1 : undefined}
+                        aria-disabled={busy}
+                        style={busy ? { pointerEvents: "none", opacity: 0.65 } : undefined}
+                      >
+                        Open
+                      </Link>
+                    ) : (
+                      <button
+                        type="button"
+                        className="btn"
+                        disabled={busy}
+                        onClick={() => void onStartBlock(t)}
+                      >
+                        {isActing && actingAction === "start-block"
+                          ? "Starting…"
+                          : "Start block"}
+                      </button>
+                    )}
+                    {!isDraft ? (
+                      <Link
+                        className="btn btn-secondary"
+                        to={`/blocks/${t.id}/edit`}
+                        tabIndex={busy ? -1 : undefined}
+                        aria-disabled={busy}
+                        style={busy ? { pointerEvents: "none", opacity: 0.65 } : undefined}
+                      >
+                        Edit
+                      </Link>
+                    ) : null}
                     <button
                       type="button"
                       className="btn btn-secondary"
                       onClick={() => onTogglePublicBlock(t)}
-                      disabled={busy}
+                      disabled={busy || isDraft}
                     >
                       {isActing && actingAction === "toggle"
                         ? "Updating…"
