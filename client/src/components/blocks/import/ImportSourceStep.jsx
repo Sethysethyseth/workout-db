@@ -10,6 +10,8 @@ import { Disclosure } from "../ui/Disclosure.jsx";
 import { Segmented } from "../ui/Segmented.jsx";
 import { Stepper } from "../ui/Stepper.jsx";
 import * as blockTemplateApi from "../../../api/blockTemplateApi.js";
+import { SheetPicker } from "./SheetPicker.jsx";
+import { pickDefaultSheetName, xlsxRowsToTsv } from "./xlsxToTsv.js";
 
 const SOURCE_OPTIONS = [
   { value: "paste", label: "Paste" },
@@ -47,6 +49,25 @@ const EXAMPLE_ROWS = [
 ];
 
 const MAX_FILE_BYTES = 2 * 1024 * 1024;
+const MAX_XLSX_BYTES = 5 * 1024 * 1024;
+const XLSX_MIME =
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+
+const ERR_XLS = "Save it as .xlsx or CSV first";
+const ERR_SPREADSHEET =
+  "Couldn't open that spreadsheet. Save it again as .xlsx or CSV.";
+const ERR_EMPTY_SHEET = "That sheet is empty - pick another.";
+
+function isLegacyXlsName(name) {
+  const lower = String(name || "").toLowerCase();
+  return lower.endsWith(".xls") && !lower.endsWith(".xlsx");
+}
+
+function isXlsxFile(file) {
+  if (!file) return false;
+  const lower = String(file.name || "").toLowerCase();
+  return lower.endsWith(".xlsx") || file.type === XLSX_MIME;
+}
 
 function formatNextQuestionTime(iso) {
   if (!iso) return null;
@@ -89,7 +110,11 @@ export function ImportSourceStep({
   const [coachStatus, setCoachStatus] = useState(null);
   const [coachConverting, setCoachConverting] = useState(false);
   const [coachError, setCoachError] = useState(null);
+  const [fileLoading, setFileLoading] = useState(false);
+  const [sheetNames, setSheetNames] = useState([]);
+  const [selectedSheet, setSelectedSheet] = useState(null);
   const pendingCoachJsonRef = useRef(null);
+  const excelSheetsRef = useRef(null);
   const empty = !String(text || "").trim();
   const coachSources = source === "paste" || source === "ai";
   const byoKey = loadCoachKey();
@@ -129,22 +154,108 @@ export function ImportSourceStep({
     onPreview?.();
   }, [text, onPreview]);
 
-  function readFile(file) {
-    onFileError?.(null);
-    if (!file) return;
-    if (file.size > MAX_FILE_BYTES) {
-      onFileError?.("That file is larger than 2 MB. Split it or paste the cells instead.");
+  function clearExcelState() {
+    excelSheetsRef.current = null;
+    setSheetNames([]);
+    setSelectedSheet(null);
+  }
+
+  function applySheetTsv(sheetName) {
+    const sheets = excelSheetsRef.current;
+    if (!sheets) return;
+    const entry = sheets.find((s) => s.name === sheetName);
+    if (!entry) {
+      onFileError?.(ERR_EMPTY_SHEET);
       return;
     }
+    const tsv = xlsxRowsToTsv(entry.rows);
+    if (!tsv.trim()) {
+      onFileError?.(ERR_EMPTY_SHEET);
+      onTextChange?.("");
+      return;
+    }
+    onFileError?.(null);
+    onTextChange?.(tsv);
+  }
+
+  function onSheetChange(name) {
+    setSelectedSheet(name);
+    applySheetTsv(name);
+  }
+
+  function readTextFile(file) {
     const reader = new FileReader();
     reader.onload = () => {
       const result = typeof reader.result === "string" ? reader.result : "";
       onTextChange?.(result);
+      setFileLoading(false);
     };
     reader.onerror = () => {
       onFileError?.("Couldn't read that file. Try again or paste the contents.");
+      setFileLoading(false);
     };
     reader.readAsText(file);
+  }
+
+  async function readExcelFile(file) {
+    setFileLoading(true);
+    try {
+      const mod = await import("read-excel-file/browser");
+      const readXlsxFile = mod.default;
+      const rawSheets = await readXlsxFile(file);
+      const sheets = (rawSheets || []).map((s) => ({
+        name: String(s.sheet ?? ""),
+        rows: Array.isArray(s.data) ? s.data : [],
+      }));
+      if (sheets.length === 0) {
+        onFileError?.(ERR_SPREADSHEET);
+        clearExcelState();
+        onTextChange?.("");
+        return;
+      }
+      excelSheetsRef.current = sheets;
+      const names = sheets.map((s) => s.name);
+      setSheetNames(names);
+      const defaultName = pickDefaultSheetName(sheets);
+      setSelectedSheet(defaultName);
+      applySheetTsv(defaultName);
+    } catch (err) {
+      clearExcelState();
+      onTextChange?.("");
+      if (err && err.name === "InvalidInputError" && err.code === "XLS_FILE_NOT_SUPPORTED") {
+        onFileError?.(ERR_XLS);
+      } else {
+        onFileError?.(ERR_SPREADSHEET);
+      }
+    } finally {
+      setFileLoading(false);
+    }
+  }
+
+  function readFile(file) {
+    onFileError?.(null);
+    clearExcelState();
+    if (!file) return;
+    if (isLegacyXlsName(file.name)) {
+      onFileError?.(ERR_XLS);
+      return;
+    }
+    if (isXlsxFile(file)) {
+      if (file.size > MAX_XLSX_BYTES) {
+        onFileError?.(
+          "That spreadsheet is larger than 5 MB. Split it or save a sheet as CSV."
+        );
+        return;
+      }
+      void readExcelFile(file);
+      return;
+    }
+    if (file.size > MAX_FILE_BYTES) {
+      onFileError?.("That file is larger than 2 MB. Split it or paste the cells instead.");
+      return;
+    }
+    setFileLoading(true);
+    readTextFile(file);
   }
 
   async function copyInstructions() {
@@ -255,23 +366,32 @@ export function ImportSourceStep({
       {source === "file" ? (
         <div className="bk-import-panel">
           <label className="bk-import-label" htmlFor="bk-import-file">
-            Choose a .csv, .tsv, .txt or .json file (max 2 MB).
+            Choose a .xlsx, .csv, .tsv, .txt or .json file
           </label>
           <input
             id="bk-import-file"
             className="bk-import-file"
             type="file"
-            accept=".csv,.tsv,.txt,.json,text/csv,text/tab-separated-values,text/plain,application/json"
+            accept={`.xlsx,.csv,.tsv,.txt,.json,${XLSX_MIME},text/csv,text/tab-separated-values,text/plain,application/json`}
             onChange={(e) => {
               const file = e.target.files?.[0];
               readFile(file);
             }}
           />
-          {text ? (
-            <p className="bk-import-hint">
-              Loaded {text.length.toLocaleString()} characters. Ready to preview.
-            </p>
+          {sheetNames.length > 1 ? (
+            <SheetPicker
+              sheets={sheetNames}
+              value={selectedSheet}
+              onChange={onSheetChange}
+            />
           ) : null}
+          <p className="bk-import-hint bk-import-file-status" aria-live="polite">
+            {fileLoading
+              ? "Reading spreadsheet…"
+              : text
+                ? `Loaded ${text.length.toLocaleString()} characters. Ready to preview.`
+                : "\u00a0"}
+          </p>
         </div>
       ) : null}
 

@@ -11,3 +11,5 @@ export {
   UNMATCHED_KEEP_LINE,
 } from "./formatUnmatchedSection.js";
 export { splitMatchedExercises } from "./splitMatchedExercises.js";
+export { SheetPicker } from "./SheetPicker.jsx";
+export { pickDefaultSheetName, xlsxRowsToTsv } from "./xlsxToTsv.js";

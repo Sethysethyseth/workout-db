@@ -66,6 +66,48 @@
   color: var(--bk-ink);
 }
 
+.bk-import-file-status {
+  min-height: 1.45em;
+}
+
+.bk-import-sheet-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bk-import-sheet-picker__options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-width: 100%;
+}
+
+.bk-import-sheet-picker__option {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--bk-line);
+  border-radius: var(--bk-r);
+  background: var(--bk-field);
+  color: var(--bk-ink-2);
+  font: 700 14px/1 var(--bk-display);
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: background-color 180ms ease-out, color 180ms ease-out,
+    border-color 180ms ease-out;
+}
+
+.bk-import-sheet-picker__option--selected {
+  background: var(--bk-ink);
+  border-color: var(--bk-ink);
+  color: var(--bk-bg);
+}
+
 .bk-import-howto {
   margin: 0;
   font: 400 14px/1.45 var(--font-sans);
