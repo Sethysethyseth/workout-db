@@ -232,7 +232,8 @@ export function ImportBlockPage() {
         /* keep prior status */
       }
       const nextPreview = await runPreview(undefined, nextRecipe);
-      if (nextPreview?.ok && fromError) {
+      // runPreview returns the 200 body (no `ok` field) or null on failure.
+      if (nextPreview != null && fromError) {
         setPriorPreview(null);
         setPriorErrors(savedErrors);
         setPriorSubmittedForErrors(savedSubmitted);
@@ -240,7 +241,7 @@ export function ImportBlockPage() {
           origin: "error",
           current: nextPreview.stats || {},
         });
-      } else if (savedPreview?.ok && nextPreview?.ok) {
+      } else if (savedPreview != null && nextPreview != null) {
         setPriorErrors(null);
         setPriorSubmittedForErrors(null);
         setPriorPreview(savedPreview);

@@ -2437,10 +2437,15 @@ export function SessionDetailPage() {
     });
   }, [nextIncompleteSetId]);
 
+  // Keyed on a stable boolean, NOT the session object: every set autosave
+  // replaces `session`, and re-running these effects dropped keypad mode
+  // mid-typing (critic R3 P1-1).
+  const liveBlockDay = Boolean(session && !session.completedAt && session.blockContext);
+
   // Live block-day focus mode: hide bottom nav + persistent Resume bar so
   // Finish never sits on a nav target (and the bar is not on its own session).
   useEffect(() => {
-    if (!session || session.completedAt || !session.blockContext) {
+    if (!liveBlockDay) {
       document.documentElement.classList.remove("bk-log-focus");
       return;
     }
@@ -2448,11 +2453,17 @@ export function SessionDetailPage() {
     return () => {
       document.documentElement.classList.remove("bk-log-focus");
     };
-  }, [session, session?.completedAt, session?.blockContext]);
+  }, [liveBlockDay]);
 
   useEffect(() => {
-    if (!session || session.completedAt) return;
-    if (!session.blockContext) return;
+    if (!liveBlockDay) return;
+    function isLoggerField(el) {
+      return (
+        el instanceof HTMLElement &&
+        (el.tagName === "INPUT" || el.tagName === "TEXTAREA") &&
+        Boolean(document.querySelector(".session-detail-page--block")?.contains(el))
+      );
+    }
     function onFocusIn(e) {
       const t = e.target;
       if (!(t instanceof HTMLElement)) return;
@@ -2462,25 +2473,22 @@ export function SessionDetailPage() {
     function onFocusOut() {
       // Defer so focus moving between fields does not flicker the chrome.
       requestAnimationFrame(() => {
-        const active = document.activeElement;
-        if (
-          active instanceof HTMLElement &&
-          (active.tagName === "INPUT" || active.tagName === "TEXTAREA") &&
-          document.querySelector(".session-detail-page--block")?.contains(active)
-        ) {
-          return;
-        }
+        if (isLoggerField(document.activeElement)) return;
         document.documentElement.classList.remove("bk-log-kbd");
       });
     }
     document.addEventListener("focusin", onFocusIn);
     document.addEventListener("focusout", onFocusOut);
+    // A field may already be focused when this (re)runs.
+    if (isLoggerField(document.activeElement)) {
+      document.documentElement.classList.add("bk-log-kbd");
+    }
     return () => {
       document.removeEventListener("focusin", onFocusIn);
       document.removeEventListener("focusout", onFocusOut);
       document.documentElement.classList.remove("bk-log-kbd");
     };
-  }, [session, session?.completedAt, session?.blockContext]);
+  }, [liveBlockDay]);
 
   useEffect(() => {
     if (!confirmFinish || completeBusy) return;
