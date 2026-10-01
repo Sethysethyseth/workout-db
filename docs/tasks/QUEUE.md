@@ -284,7 +284,7 @@ DISPATCHED | bksf1a-logger-critic-fixes.md | logger: keypad hides the dock, fini
 
 DISPATCHED | bksf1b-builder-search-critic-fixes.md | builder + search: relevance ranking, limit 50 + hasMore, pinned picker search, keypad mode, one-row header, ... menu, unsaved-edits guard | n=23 candidate. Touches the server search (searchCatalog + exercise route).
 
-DISPATCHED | bksf1c-import-critic-fixes.md | import: the weight unit comes from the source header in the recipe path, AI-read diff + "Use the original read", pluralised counts, wait copy | n=24 candidate.
+DISPATCHED | bksf1c-import-critic-fixes.md | import: the weight unit comes from the source header in the recipe path, AI-read diff + "Use the original read", pluralised counts, wait copy | n=24 candidate. BOUNCED 1 (Sept 30): the block's premise was wrong, because the deterministic path never converted a kg COLUMN for an lb import (it stored 100 under an lb block). The rule now: cell suffix > header unit > options.unit, converted to options.unit, with one sheet-level message. Re-dispatched in place.
 
 QUEUED | bksf1d-library-home-critic-fixes.md | Library first card at y<=330, "Open" not "Running", no truncation; block-day titles "W3 · Upper A"; Home names the next day | n=25 candidate. Dispatches when a lane frees.
 

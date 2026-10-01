@@ -77,6 +77,46 @@ ACCEPTANCE CRITERIA (machine-checkable):
     `/coach/import-map` call
   - the pluralisation helper and every string it now covers
 
+BOUNCE 1 (Sept 30, Opus seat audit) - apply ON TOP of your first delivery, which
+is already in this working tree. Keep everything that passed, then rewrite
+DELIVERY.md in full.
+
+Your delivery followed the block. The block's premise was wrong: the
+deterministic path does NOT convert a kg column for an lb import. In
+`tableToBlock.js` a plain number in a "Load (kg)" column with `options.unit`
+"lb" is stored as 100 under an lb block. The new "Load (kg) read as kilograms"
+notice therefore contradicts a preview showing "100 lb".
+
+LogChamp stores weights as plain numbers in the import's chosen unit; there is
+no per-value unit. So the fix is conversion. It applies to BOTH paths, which is
+why `tableToBlock.js` is in FILES TO TOUCH:
+- Each weight cell's unit is: its own suffix ("kg", "lb", "lbs") if present,
+  else the column header's unit (`roles.weightUnit`), else `options.unit`.
+- When that unit differs from `options.unit`, convert the value to
+  `options.unit`, rounding to the nearest 0.5 as `parseWeightCell` already does
+  for suffixed cells. Otherwise keep it.
+  - A suffixed cell in a unit-less column behaves exactly as today.
+  - `block.unit` stays `options.unit`.
+- For conversions caused by the COLUMN header, emit ONE sheet-level message,
+  e.g. "Load (kg): converted kilograms to pounds (100 kg -> 220.5 lb)", using
+  the first converted value as the example. Not one warning per row. Per-cell
+  suffix conversions keep their existing per-row messages.
+- Same unit (kg column, kg import): no conversion, and only the existing
+  "read as kilograms" style notice, or none.
+- Update any existing test that asserted the old non-converting behaviour, and
+  say which one and why in DELIVERY.md.
+
+New acceptance:
+- Deterministic path, text `Movement,Sets x Reps,Load (kg),Session` / `Squat,3x5,100,Lower`
+  with `options.unit` "lb" and NO recipe: the squat weight is 220.5 (100 x
+  2.20462, rounded to 0.5), `block.unit` "lb", plus one conversion message
+  naming "Load (kg)".
+- The same through the recipe path (no recipe unit) gives an identical block.
+- With `options.unit` "kg": weight 100, no conversion message.
+- A "Weight lbs" column with `options.unit` "kg" converts 225 to 102 (225 /
+  2.20462 = 102.06, rounded to the nearest 0.5 = 102.0).
+- All earlier bksf1c criteria still hold. Lanes are green.
+
 STOP CONDITION (standing footer - keep verbatim in every block):
 Stop when the acceptance criteria are met. If a criterion cannot be met,
 stop and explain why instead of guessing.
