@@ -270,11 +270,12 @@ LIVE proof on staging (test123, hosted coach, cursor/auto): the sample sheet had
 The recipe came back correct (headerRow 1, kg, prescriptionColumn) and the preview read 2 wk / 4 days / 8 ex / 27 sets / 3 timed with 0 warnings.
 Usage went 0 -> 3 of 7. AI consent is now ON for test123. Latency 53 s - the critic must judge the wait state.
 
-DISPATCHED | bks2-block-logger-planned-rows.md | block-day logger: a row per planned set,
+LANDED 5853dd4 | bks2-block-logger-planned-rows.md | block-day logger: a row per planned set,
 every field ghosted, add/remove sets, recovery look, notes without switches,
 keypad-safe | n=19 candidate. SessionDetailPage (block branch) +
 blocks/log/* + bk-log.css.
-BOUNCED 1 (Sept 30): build, lanes and the hex check were green, but two deviations failed the audit. (A) It dropped the L/R per-side logging that unilateral work needs. (B) The lifter's "+ Note" could overwrite the author's cue, because the notes live only in sessionExercise.notes. The fix adds plan.notes to the start-of-session snapshot in blockRunLogic.js (JSON, no migration). Bounce notes are in the block. Re-dispatched in place in cursor-lane on top of the first delivery.
+BOUNCED 1 (Sept 30): build, lanes and the hex check were green, but two deviations failed the audit. (A) It dropped the L/R per-side logging that unilateral work needs. (B) The lifter's "+ Note" could overwrite the author's cue, because the notes live only in sessionExercise.notes. The fix adds plan.notes to the start-of-session snapshot in blockRunLogic.js (JSON, no migration). Bounce notes are in the block. Re-dispatched in place in cursor-lane on top of the first delivery. LANDED Sept 30 as n=21 after bounce 1. Audit: lanes fresh green (458); per-side grids reuse derivePerSideMode, now moved to log/perSideMode.js and imported back (no duplicates, no dangling refs); plan.notes is snapshotted (JSON, no migration); lead side orders the grids.
+Known limit: sessions started before this commit fall back to sessionExercise.notes for the cue. Runtime look and feel go to the critic loop.
 
 LANDED fb2bda1 | bks3-library-redesign.md | Library redesign: blocks-first, a running-block
 strip, BK card language, "Create workout" greyed as parked | n=20 candidate.
