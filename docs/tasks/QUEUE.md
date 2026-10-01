@@ -292,11 +292,11 @@ LANDED d540d77 | bksf1d-library-home-critic-fixes.md | Library first card at y<=
 Two NEW P1s: the builder RPE fell onto an unlabeled second row (N1), and the Home hero names the block day but its button starts an empty workout (N2). Builder, Import and Flow are still at 6.
 The final round gets three fix blocks with disjoint files; the seat handles the over-cap light contrast and the discard spacing directly. N 25 -> 28.
 
-DISPATCHED | bksf2a-builder-search-round2.md | builder: RPE inline (N1), your exercises rank first (usageByKey wired in the route), honest name/save header, summary line on collapsed cards | n=26 candidate. cursor-lane-2.
+DISPATCHED | bksf2a-builder-search-round2.md | builder: RPE inline (N1), your exercises rank first (usageByKey wired in the route), honest name/save header, summary line on collapsed cards | n=26 candidate. cursor-lane-2. Run 1 DIED mid-flight Sept 30 (Cursor connection lost, no DELIVERY.md); partial work salvaged in place (server usageByKey + usage tier + test, header save state looked right). RE-DISPATCHED Oct 1 as a resume run in cursor-lane-2 (Channel B, auto), log _logs/bksf2a-r2.log.
 
-DISPATCHED | bksf2b-import-round2.md | import: the recipe is scoped to its exact text (never sticks), the comparison shows on the error-origin path too, sets x reps parsed without AI, one AI action name, match grammar | n=27 candidate. cursor-lane-3.
+LANDED 10cfb3a | bksf2b-import-round2.md | import: the recipe is scoped to its exact text (never sticks), the comparison shows on the error-origin path too, sets x reps parsed without AI, one AI action name, match grammar | n=27 candidate. cursor-lane-3. LANDED as n=26: lanes fresh (495), check-hex clean; no server-side layout memory exists, so the stickiness was client recipe state and the text-scoped recipe closes it. Reviewer fix: the delivery wrote "1 match your library"; now "1 matches / 6 match".
 
-DISPATCHED | bksf2c-home-run-round2.md | Home: the hero starts the block day (N2), no duplicate Next card or Resume, no relayout; run page header <=80px, IN PROGRESS once | n=28 candidate. cursor-lane.
+LANDED 848ff3b | bksf2c-home-run-round2.md | Home: the hero starts the block day (N2), no duplicate Next card or Resume, no relayout; run page header <=80px, IN PROGRESS once | n=28 candidate. cursor-lane. LANDED as n=27: lanes fresh (492), check-hex clean, every new var() resolves; the hero CTA goes through blockRunApi.startFromBlock (same endpoint as the run page). Copy note: smoke item 9 "Let the coach convert it" is now "Let AI read this layout" (bksf2b).
 
 LANDED fb2bda1 | bks3-library-redesign.md | Library redesign: blocks-first, a running-block
 strip, BK card language, "Create workout" greyed as parked | n=20 candidate.
