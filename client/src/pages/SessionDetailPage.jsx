@@ -42,6 +42,8 @@ import {
 import { Eyebrow } from "../components/blocks/ui/Eyebrow.jsx";
 import {
   AsPlannedControl,
+  BlockExerciseCard,
+  BlockSessionHeader,
   EffortCapWarn,
   PlanLine,
   TimedSecInput,
@@ -55,6 +57,7 @@ import {
   repsPlaceholderFromPlan,
   weightPlaceholderFromPlan,
 } from "../components/blocks/log/index.js";
+import { derivePerSideMode } from "../components/blocks/log/perSideMode.js";
 import "../styles/blocks/bk-ui.css";
 import "../styles/blocks/bk-log.css";
 
@@ -233,30 +236,6 @@ function nextSetOrder(session) {
   const sets = Array.isArray(session?.sets) ? session.sets : [];
   const max = sets.reduce((acc, s) => (s.order > acc ? s.order : acc), 0);
   return max + 1;
-}
-
-function exerciseNameImpliesPerSide(name) {
-  const n = String(name ?? "").trim();
-  if (!n || isBlankSessionExerciseName(n)) return false;
-  // Catalog false positive: "Chest Push (single response)" is bilateral.
-  if (/\bsingle\s+response\b/i.test(n)) return false;
-  if (/\bunilateral\b/i.test(n)) return true;
-  // One-Arm / One Arm / One-Leg / One Leg / One-Legged
-  if (/\bone[\s-]*arm\b/i.test(n)) return true;
-  if (/\bone[\s-]*leg/i.test(n)) return true;
-  // Single-Arm / Single Leg / Single Dumbbell (not bare "single …")
-  if (/\bsingle[\s-]+(arm|leg|dumbbell)\b/i.test(n)) return true;
-  return false;
-}
-
-function anySetHasSide(sets) {
-  return Array.isArray(sets) && sets.some((s) => s.side === "L" || s.side === "R");
-}
-
-function derivePerSideMode(manualOverride, exerciseName, sets) {
-  if (manualOverride === true) return true;
-  if (manualOverride === false) return false;
-  return anySetHasSide(sets) || exerciseNameImpliesPerSide(exerciseName);
 }
 
 function buildCreateSetBodyFromLast(last, sessionExerciseId, order, side) {
@@ -2148,6 +2127,8 @@ export function SessionDetailPage() {
   const discardLeavingRef = useRef(false);
   const discardBtnRef = useRef(null);
   const keepLoggingBtnRef = useRef(null);
+  /** bks2: per-exercise slot stats for the block session progress bar. */
+  const [blockSlotStats, setBlockSlotStats] = useState(() => new Map());
 
   function isElementInViewport(el, { padTop = 0, padBottom = 0 } = {}) {
     if (!el) return false;
@@ -2369,6 +2350,7 @@ export function SessionDetailPage() {
     setActiveExerciseId(null);
     setCollapsedExerciseIds(new Set());
     prevFocusedNextSetRef.current = null;
+    setBlockSlotStats(new Map());
   }, [sessionId]);
 
   useEffect(() => {
@@ -2449,6 +2431,46 @@ export function SessionDetailPage() {
       el.scrollIntoView({ block: "nearest", behavior: "auto" });
     });
   }, [nextIncompleteSetId]);
+
+  useEffect(() => {
+    if (!session || session.completedAt) return;
+    if (!session.blockContext) return;
+    function onFocusIn(e) {
+      const t = e.target;
+      if (!(t instanceof HTMLElement)) return;
+      if (t.tagName !== "INPUT" && t.tagName !== "TEXTAREA") return;
+      document.documentElement.classList.add("bk-log-kbd");
+    }
+    function onFocusOut() {
+      // Defer so focus moving between fields does not flicker the chrome.
+      requestAnimationFrame(() => {
+        const active = document.activeElement;
+        if (
+          active instanceof HTMLElement &&
+          (active.tagName === "INPUT" || active.tagName === "TEXTAREA") &&
+          document.querySelector(".session-detail-page--block")?.contains(active)
+        ) {
+          return;
+        }
+        document.documentElement.classList.remove("bk-log-kbd");
+      });
+    }
+    document.addEventListener("focusin", onFocusIn);
+    document.addEventListener("focusout", onFocusOut);
+    return () => {
+      document.removeEventListener("focusin", onFocusIn);
+      document.removeEventListener("focusout", onFocusOut);
+      document.documentElement.classList.remove("bk-log-kbd");
+    };
+  }, [session, session?.completedAt, session?.blockContext]);
+
+  const onBlockSlotStatsChange = useCallback((exerciseId, stats) => {
+    setBlockSlotStats((prev) => {
+      const next = new Map(prev);
+      next.set(exerciseId, stats);
+      return next;
+    });
+  }, []);
 
   useEffect(() => {
     if (!session || session.completedAt) return;
@@ -2756,6 +2778,11 @@ export function SessionDetailPage() {
         }
         const order = nextSetOrder(sess);
         const body = { sessionExerciseId, order, ...promotionPayloadFromDraft(draft) };
+        // Block-day per-side grids pass side on the draft; keep the existing
+        // create path (sessionController validateOptionalSide) intact.
+        if (draft?.side === "L" || draft?.side === "R") {
+          body.side = draft.side;
+        }
 
         const data = await sessionApi.createSet(sessionId, body);
         if (writesFrozenRef.current) return null;
@@ -3075,6 +3102,25 @@ export function SessionDetailPage() {
   const inLiveTable = useLiveBuilderUX && liveViewMode === "table";
   const blockContext = session?.blockContext ?? null;
 
+  const blockProgress = useMemo(() => {
+    if (!isFromBlock) return { logged: 0, total: 0 };
+    let logged = 0;
+    let total = 0;
+    for (const se of orderedSessionExercises) {
+      const stats = blockSlotStats.get(se.id);
+      if (stats) {
+        logged += stats.logged || 0;
+        total += stats.total || 0;
+      } else {
+        const planSets = Array.isArray(se.plan?.sets) ? se.plan.sets.length : 0;
+        const list = setsByExercise.get(se.id) || [];
+        logged += list.filter((s) => sessionSetHasCoreLogged(s)).length;
+        total += Math.max(planSets, list.length);
+      }
+    }
+    return { logged, total };
+  }, [isFromBlock, orderedSessionExercises, blockSlotStats, setsByExercise]);
+
   const sourceSummary = isFromTemplate
     ? `Saved workout: ${session.workoutTemplate.name}`
     : isFromBlock
@@ -3172,7 +3218,11 @@ export function SessionDetailPage() {
   }
 
   return (
-    <div className={`stack session-detail-page${!isCompleted ? " session-detail-page--live" : ""}`}>
+    <div
+      className={`stack session-detail-page${!isCompleted ? " session-detail-page--live" : ""}${
+        isFromBlock ? " session-detail-page--block" : ""
+      }`}
+    >
       <div className="row session-detail-head">
         <div className="session-detail-head__text">
           {blockContext ? (
@@ -3268,10 +3318,73 @@ export function SessionDetailPage() {
       <ErrorMessage error={error} />
 
       {!isCompleted ? (
+        isFromBlock ? (
+          <div className="stack bk-log-block-stack session-log-workout-form">
+            <BlockSessionHeader
+              weekOrder={blockContext.weekOrder}
+              dayName={blockContext.dayName}
+              weekLabel={blockContext.weekLabel}
+              blockName={blockContext.blockName}
+              loggedSets={blockProgress.logged}
+              totalSets={blockProgress.total}
+            />
+
+            <div className="bk-log-effort-slot bk">{liveEffortToggle}</div>
+
+            {sessionExercises.length === 0 ? (
+              <div className="muted small session-empty-card" style={{ margin: 0 }}>
+                No exercises in this block day.
+              </div>
+            ) : (
+              <div className="stack bk-log-block-stack">
+                {sessionExercises.map((se) => {
+                  const sets = setsByExercise.get(se.id) || [];
+                  return (
+                    <div
+                      key={se.id}
+                      ref={(el) => setExerciseAnchorRef(se.id, el)}
+                      className="bk"
+                    >
+                      <BlockExerciseCard
+                        se={se}
+                        sets={sets}
+                        sessionId={sessionId}
+                        isCompleted={false}
+                        effortSignal={liveEffortSignal}
+                        weightUnit={weightUnit}
+                        onPromoteDraftSet={promoteDraftSetTracked}
+                        onUpdateSet={onUpdateSet}
+                        onDeleteSet={onDeleteSet}
+                        onActivateExercise={() => activateExercise(se.id)}
+                        onExerciseNotesSaved={mergeSessionExerciseRow}
+                        writesFrozen={discardBusy}
+                        writesFrozenRef={writesFrozenRef}
+                        onStatsChange={onBlockSlotStatsChange}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            <section className="bk-card bk-log-session-note bk">
+              <label>
+                <span className="bk-log-session-note__label">How the session went</span>
+                <textarea
+                  value={sessionNotesDraft}
+                  onChange={(e) => setSessionNotesDraft(e.target.value)}
+                  onBlur={() => void commitSessionNotes()}
+                  placeholder="Energy, soreness, anything worth remembering"
+                  disabled={discardBusy}
+                />
+              </label>
+            </section>
+          </div>
+        ) : (
         <div className="card stack session-log-workout-form">
           <label>
             Name
-            {isFromTemplate || isFromBlock ? (
+            {isFromTemplate ? (
               <input readOnly value={readonlyWorkoutName} className="session-readonly-input" />
             ) : (
               <input
@@ -3289,7 +3402,7 @@ export function SessionDetailPage() {
             </p>
           ) : null}
 
-          {(isFromTemplate || isFromBlock) && liveUseSessionNotes ? (
+          {isFromTemplate && liveUseSessionNotes ? (
             <label>
               Description (optional)
               <textarea
@@ -3302,7 +3415,7 @@ export function SessionDetailPage() {
             </label>
           ) : null}
 
-          {isFromTemplate || isFromBlock ? (
+          {isFromTemplate ? (
             <div className="stack" style={{ gap: 10 }}>
               <div className="template-options-grid">
                 <label className="checkbox-inline">
@@ -3407,7 +3520,7 @@ export function SessionDetailPage() {
                 useRIR={liveUseRIR}
                 useRPE={liveUseRPE}
                 useExerciseNotes={liveUseExerciseNotes}
-                useSetNotes={(isFromTemplate || isFromBlock) && liveUseSetNotes}
+                useSetNotes={isFromTemplate && liveUseSetNotes}
               />
             )
           ) : null}
@@ -3439,9 +3552,9 @@ export function SessionDetailPage() {
                       useRIR={liveUseRIR}
                       useRPE={liveUseRPE}
                       useExerciseNotes={liveUseExerciseNotes}
-                      useSetNotes={(isFromTemplate || isFromBlock) && liveUseSetNotes}
+                      useSetNotes={isFromTemplate && liveUseSetNotes}
                       isQuickLog={isQuickLog}
-                      weightUnit={isFromBlock ? weightUnit : undefined}
+                      weightUnit={undefined}
                       trackedStatus={trackedStatusByExerciseId.get(se.id) ?? null}
                       onOpenAddToLibrary={() => openAddToLibrarySheet(se.exerciseName, se.id)}
                       onExerciseCommitted={mergeSessionExerciseRow}
@@ -3481,6 +3594,7 @@ export function SessionDetailPage() {
             </div>
           ) : null}
         </div>
+        )
       ) : (
         <div className="stack session-completed">
           <CompletedSessionSummary

@@ -14,3 +14,22 @@ export { PlanLine } from "./PlanLine.jsx";
 export { AsPlannedControl } from "./AsPlannedControl.jsx";
 export { TimedSecInput } from "./TimedSecInput.jsx";
 export { EffortCapWarn } from "./EffortCapWarn.jsx";
+export { BlockSessionHeader } from "./BlockSessionHeader.jsx";
+export { BlockExerciseCard } from "./BlockExerciseCard.jsx";
+export { BlockSetRow } from "./BlockSetRow.jsx";
+export { splitPlanNotes, parseLeadSide } from "./splitPlanNotes.js";
+export {
+  loadHiddenPlannedIndices,
+  saveHiddenPlannedIndices,
+} from "./hiddenPlannedRows.js";
+export {
+  derivePerSideMode,
+  exerciseNameImpliesPerSide,
+  anySetHasSide,
+} from "./perSideMode.js";
+export {
+  effortGhostFromPlan,
+  weightGhostFromPlan,
+  doseGhostFromPlan,
+  fillDraftFromPlanExceptEffort,
+} from "./ghostPlaceholders.js";

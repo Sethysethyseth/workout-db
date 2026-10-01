@@ -60,6 +60,9 @@ function buildSessionFromBlockWorkout(tree, weekOrder, workoutOrder, { blockName
       effort,
       effortCap: Boolean(ex.effortCap),
       restSec: ex.restSec != null ? ex.restSec : null,
+      // Author notes snapshot - cue/coach read from here so the lifter's
+      // sessionExercise.notes field stays lifter-owned after start.
+      notes: ex.notes != null ? ex.notes : null,
       sets: planSetsFromExercise(ex),
     },
   }));

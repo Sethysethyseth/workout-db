@@ -159,6 +159,24 @@ describe("buildSessionFromBlockWorkout", () => {
     expect(ohp.plan.effortCap).toBe(false);
     expect(ohp.plan.restSec).toBe(120);
     expect(ohp.plan.effort).toBe("rpe");
+    // Author notes live on the plan snapshot (and still on sessionExercise.notes).
+    expect(Object.prototype.hasOwnProperty.call(ohp.plan, "notes")).toBe(true);
+    expect(ohp.plan.notes).toBeNull();
+  });
+
+  test("plan.notes copies block exercise notes (or null)", () => {
+    const tree = fixtureTree();
+    const built = buildSessionFromBlockWorkout(tree, 1, 1, {
+      blockName: "Phase 1",
+    });
+    expect(built.exercises[0].notes).toBe("pause");
+    expect(built.exercises[0].plan.notes).toBe("pause");
+
+    const lower = buildSessionFromBlockWorkout(tree, 1, 2, {
+      blockName: "Phase 1",
+    });
+    expect(lower.exercises[0].notes).toBeNull();
+    expect(lower.exercises[0].plan.notes).toBeNull();
   });
 
   test("effort is null when neither useRPE nor useRIR", () => {

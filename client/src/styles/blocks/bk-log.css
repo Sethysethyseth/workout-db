@@ -1,4 +1,4 @@
-/* Block logger plan chrome (BK9). Tokens only - no raw hex. */
+/* Block logger (BK9 + bks2). Tokens only - no raw hex. */
 
 .bk-log-plan {
   display: flex;
@@ -71,4 +71,375 @@
 
 .session-detail-page .bk-log-eyebrow-wrap .bk-eyebrow {
   color: var(--color-muted);
+}
+
+/* ---------- bks2: block-day session header ---------- */
+
+.bk-log-session {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bk-log-session__title {
+  font: 700 26px/1.02 var(--bk-display);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  margin: 0;
+  text-wrap: balance;
+  color: var(--bk-ink);
+}
+
+.bk-log-session__meta {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.bk-log-session__progress {
+  height: 6px;
+}
+
+.bk-log-session__foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+  font-size: 13px;
+  color: var(--bk-muted);
+}
+
+.bk-log-session__count {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- bks2: exercise card extras ---------- */
+
+.bk-log-ex {
+  gap: 10px;
+}
+
+.bk-log-ex .bk-ex__top {
+  justify-content: flex-end;
+}
+
+.bk-log-ex__cue {
+  margin: 0;
+}
+
+.bk-log-ex__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+/* Per-side grids (recovery-logbook .side / .side-h / .lr) */
+.bk-log-side {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bk-log-side-h {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font: 600 12px/1 var(--font-sans);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bk-ink-2);
+  margin-top: 2px;
+}
+
+.bk-log-side-h__lr {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: var(--bk-ink);
+  color: var(--bk-bg);
+  font: 700 14px/1 var(--bk-display);
+}
+
+.bk-log-side-chip {
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 10px;
+  border: 1px solid var(--bk-line);
+  background: var(--bk-surface);
+  color: var(--bk-ink);
+  font: 600 13px/1 var(--font-sans);
+  cursor: pointer;
+  transition: background-color 180ms ease-out, border-color 180ms ease-out,
+    color 180ms ease-out;
+}
+
+.bk-log-side-chip--on {
+  background: var(--bk-ink);
+  border-color: var(--bk-ink);
+  color: var(--bk-bg);
+}
+
+.bk-log-ex__lifter-shown {
+  margin: 0;
+  font-size: 13px;
+  font-style: italic;
+  color: var(--bk-ink-2);
+  white-space: pre-wrap;
+}
+
+.bk-log-ex__add,
+.bk-log-ex__edit {
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 10px;
+  border: 1px solid var(--bk-line);
+  background: var(--bk-surface);
+  color: var(--bk-ink);
+  font: 600 13px/1 var(--font-sans);
+  cursor: pointer;
+  transition: background-color 180ms ease-out, border-color 180ms ease-out,
+    color 180ms ease-out;
+  align-self: flex-start;
+}
+
+.bk-log-ex__edit--on {
+  background: var(--bk-ink);
+  border-color: var(--bk-ink);
+  color: var(--bk-bg);
+}
+
+.bk-log-ex__note-link {
+  min-height: 44px;
+  padding: 0 8px;
+  border: 0;
+  background: none;
+  color: var(--bk-accent);
+  font: 600 13px/1 var(--font-sans);
+  cursor: pointer;
+}
+
+.bk-log-ex__lifter-note {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--bk-ink-2);
+}
+
+.bk-log-ex__lifter-note-label {
+  font: 600 11px/1 var(--font-sans);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bk-muted);
+}
+
+.bk-log-ex__lifter-note textarea {
+  width: 100%;
+  min-height: 64px;
+  border: 1px solid var(--bk-line);
+  border-radius: 10px;
+  background: var(--bk-field);
+  padding: 10px 12px;
+  resize: vertical;
+  color: var(--bk-ink);
+  font: 14px/1.4 var(--font-sans);
+}
+
+.bk-log-ex__note-err {
+  font-size: 12px;
+  color: var(--bk-bad);
+}
+
+.bk-log-ex__coach {
+  margin-top: 2px;
+}
+
+/* ---------- bks2: set grid ---------- */
+
+.bk-log-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  max-width: 100%;
+}
+
+.bk-log-grid__head {
+  display: grid;
+  gap: 6px;
+  align-items: center;
+  font: 600 10px/1 var(--font-sans);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--bk-muted);
+}
+
+.bk-log-grid__head > span {
+  text-align: center;
+  padding: 0 0 2px;
+}
+
+.bk-log-grid__head > span:first-child {
+  text-align: left;
+  padding-left: 2px;
+}
+
+.bk-log-set {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.bk-log-set__main {
+  display: grid;
+  gap: 6px;
+  align-items: center;
+}
+
+.bk-log-field {
+  width: 100%;
+  min-width: 0;
+}
+
+.bk-log-field--over-cap {
+  border-color: var(--bk-warn);
+  color: var(--bk-warn);
+}
+
+.bk-log-effort-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.bk-log-rir-hint {
+  font-size: 10px;
+  color: var(--bk-warn);
+  line-height: 1.2;
+}
+
+.bk-log-nb {
+  width: 34px;
+  height: 44px;
+  border: 0;
+  background: none;
+  color: var(--bk-muted);
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: color 180ms ease-out;
+}
+
+.bk-log-nb svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.bk-log-nb--has {
+  color: var(--bk-accent);
+}
+
+.bk-log-felt {
+  padding-left: 46px;
+}
+
+.bk-log-felt__input {
+  width: 100%;
+  min-height: 38px;
+  border: 1px solid var(--bk-line);
+  border-radius: 8px;
+  background: var(--bk-field);
+  padding: 0 10px;
+  font-size: 14px;
+  color: var(--bk-ink);
+}
+
+.bk-log-felt-text {
+  font-size: 13px;
+  color: var(--bk-ink-2);
+  font-style: italic;
+  padding: 0 2px 2px 46px;
+  margin: 0;
+}
+
+.bk-log-remove {
+  align-self: flex-start;
+  margin-left: 46px;
+  min-height: 36px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid var(--bk-line);
+  background: var(--bk-surface-2);
+  color: var(--bk-bad);
+  font: 600 12px/1 var(--font-sans);
+  cursor: pointer;
+}
+
+/* ---------- bks2: session note (bottom) ---------- */
+
+.bk-log-session-note {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bk-log-session-note__label {
+  font: 600 12px/1 var(--font-sans);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bk-muted);
+}
+
+.bk-log-session-note textarea {
+  width: 100%;
+  min-height: 84px;
+  border: 1px solid var(--bk-line);
+  border-radius: 10px;
+  background: var(--bk-field);
+  padding: 10px 12px;
+  resize: vertical;
+  color: var(--bk-ink);
+  font: 14px/1.45 var(--font-sans);
+}
+
+.bk-log-block-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.bk-log-effort-slot {
+  margin: 0;
+}
+
+/* Phone keyboard: hide fixed bottom overlays while typing on a block-day session. */
+html.bk-log-kbd .bottom-nav,
+html.bk-log-kbd .persistent-workout-bar-wrap {
+  display: none !important;
+}
+
+html.bk-log-kbd .session-finish-dock {
+  /* Keep finish reachable but clear of the keypad when possible */
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bk-log-ex__add,
+  .bk-log-ex__edit,
+  .bk-log-side-chip,
+  .bk-log-nb,
+  .bk-set-num {
+    transition: none;
+  }
 }
