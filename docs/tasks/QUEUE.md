@@ -280,11 +280,11 @@ Post-landing P0 hotfix 924bc66: hook order on the block-day page (a useMemo afte
 
 **Critic round 1 (separate agent, Sept 30): FAIL 5/10** (`bks-critic-round-1-FINDINGS.md`). Its six P1s were: search capped at 12 A-Z, fixed bars covering typed fields, Finish in one tap where the nav sits, half-filled sets showing a check mark, builder edits lost on navigation, and kg read as lb. The P2s include the builder chrome taking 33% of the screen. That gives four fix blocks with disjoint FILES, so a, b and c run in parallel and d follows. N 21 -> 25.
 
-QUEUED | bksf1a-logger-critic-fixes.md | logger: keypad hides the dock, finish confirm + nav hidden, draft-until-reps, remove confirm, progress fix, Per side label, compact header, 16px inputs, iron warn/contrast | n=22 candidate.
+DISPATCHED | bksf1a-logger-critic-fixes.md | logger: keypad hides the dock, finish confirm + nav hidden, draft-until-reps, remove confirm, progress fix, Per side label, compact header, 16px inputs, iron warn/contrast | n=22 candidate.
 
-QUEUED | bksf1b-builder-search-critic-fixes.md | builder + search: relevance ranking, limit 50 + hasMore, pinned picker search, keypad mode, one-row header, ... menu, unsaved-edits guard | n=23 candidate. Touches the server search (searchCatalog + exercise route).
+DISPATCHED | bksf1b-builder-search-critic-fixes.md | builder + search: relevance ranking, limit 50 + hasMore, pinned picker search, keypad mode, one-row header, ... menu, unsaved-edits guard | n=23 candidate. Touches the server search (searchCatalog + exercise route).
 
-QUEUED | bksf1c-import-critic-fixes.md | import: the weight unit comes from the source header in the recipe path, AI-read diff + "Use the original read", pluralised counts, wait copy | n=24 candidate.
+DISPATCHED | bksf1c-import-critic-fixes.md | import: the weight unit comes from the source header in the recipe path, AI-read diff + "Use the original read", pluralised counts, wait copy | n=24 candidate.
 
 QUEUED | bksf1d-library-home-critic-fixes.md | Library first card at y<=330, "Open" not "Running", no truncation; block-day titles "W3 · Upper A"; Home names the next day | n=25 candidate. Dispatches when a lane frees.
 
