@@ -271,9 +271,13 @@ every field ghosted, add/remove sets, recovery look, notes without switches,
 keypad-safe | n=19 candidate. SessionDetailPage (block branch) +
 blocks/log/* + bk-log.css.
 
-DISPATCHED | bks3-library-redesign.md | Library redesign: blocks-first, a running-block
+LANDED fb2bda1 | bks3-library-redesign.md | Library redesign: blocks-first, a running-block
 strip, BK card language, "Create workout" greyed as parked | n=20 candidate.
-MyTemplatesPage + new components/library + new bk-library.css.
+MyTemplatesPage + new components/library + new bk-library.css. LANDED Sept 30 as n=18: audit clean, lanes
+fresh green (457 unit tests), every var() resolves, and the active-run seam was checked live on staging
+(test123 reads "Week 3 of 4"). Accepted deviation: Community was restyled through a NEW
+LibraryCommunitySection, which leaves `components/programs/CommunityProgramsSection.jsx` unreferenced (dead
+code for the gate or a later cleanup).
 Dispatched Sept 30 (Opus seat), all three in parallel at `6ff78e0` via Channel B with `--model auto` and a 40-min hard kill each: bks1 in
 `cursor-lane-3`, bks2 in `cursor-lane`, bks3 in `cursor-lane-2`. Lane leftovers (old
 GATE-R*.md, mock PNGs) moved to `C:/dev/worktrees/_lane-leftovers/`.
