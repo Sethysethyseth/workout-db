@@ -15,7 +15,7 @@ effort cap / week labels. Lands on `ai-connector-wave` (staging Render still
 tracks it - M2's repoint to `main` is ON HOLD for this wave). ONE migration
 (BK1): the BK1 landing push MIGRATES STAGING (Render build runs `migrate
 deploy`), so that push waits for Seth's "migrate staging"; prod gets it by
-hand before the merge. Wave N = 25 (BK1-BK12 + BK5b + critic fixes bkf1a/b/c + bkf2 + smoke CRs bks1-4 + bksf1a-d; BK0
+hand before the merge. Wave N = 28 (BK1-BK12 + BK5b + critic fixes bkf1a/b/c + bkf2 + smoke CRs bks1-4 + bksf1a-d + bksf2a-c; BK0
 privacy/ToS is DRAFT on Seth's facts and joins N when queued). Then the coach-persona
 critic loop (spec section 11, FRONTIER SEAT, max 3 rounds, pass 8+; each
 failing round adds a `bkf<N>` fix block), THEN N/N -> Seth smokes -> gate.
@@ -287,6 +287,16 @@ LANDED 095e517 | bksf1b-builder-search-critic-fixes.md | builder + search: relev
 LANDED fcba6f1 | bksf1c-import-critic-fixes.md | import: the weight unit comes from the source header in the recipe path, AI-read diff + "Use the original read", pluralised counts, wait copy | n=24 candidate. BOUNCED 1 (Sept 30): the block's premise was wrong, because the deterministic path never converted a kg COLUMN for an lb import (it stored 100 under an lb block). The rule now: cell suffix > header unit > options.unit, converted to options.unit, with one sheet-level message. Re-dispatched in place. LANDED as n=24 after bounce 1: lanes fresh (488). Conversions checked by hand: det/recipe kg column -> lb gives 220.5 with one message; kg->kg gives 100; lbs->kg gives 102. Seth's Phase-1 TSV still reads 6/30/216/602/84.
 
 LANDED d540d77 | bksf1d-library-home-critic-fixes.md | Library first card at y<=330, "Open" not "Running", no truncation; block-day titles "W3 · Upper A"; Home names the next day | n=25 candidate. Dispatches when a lane frees. Item 4 added at dispatch: the honest in-progress ring on /blocks/current (the P2-4 bksf1a deferral). Dispatched Sept 30 in cursor-lane (Channel B, auto). LANDED as n=25: lanes fresh (492); sessionDisplayTitle callers re-checked; Home, Library and /blocks/current loaded with 0 console errors. Accepted deviation: the Yours "Refresh" control was removed as duplicate chrome (the data reloads on mount). Next: critic round 2.
+
+**Critic round 2 (same separate agent): FAIL 7/10** (`bks-critic-round-2-FINDINGS.md`). All six round-1 P1s are CLOSED. The measured gains: builder chrome 278->112px, search 12->40+N more, keypad cover ->0px, Library first card 523->347px.
+Two NEW P1s: the builder RPE fell onto an unlabeled second row (N1), and the Home hero names the block day but its button starts an empty workout (N2). Builder, Import and Flow are still at 6.
+The final round gets three fix blocks with disjoint files; the seat handles the over-cap light contrast and the discard spacing directly. N 25 -> 28.
+
+DISPATCHED | bksf2a-builder-search-round2.md | builder: RPE inline (N1), your exercises rank first (usageByKey wired in the route), honest name/save header, summary line on collapsed cards | n=26 candidate. cursor-lane-2.
+
+DISPATCHED | bksf2b-import-round2.md | import: the recipe is scoped to its exact text (never sticks), the comparison shows on the error-origin path too, sets x reps parsed without AI, one AI action name, match grammar | n=27 candidate. cursor-lane-3.
+
+DISPATCHED | bksf2c-home-run-round2.md | Home: the hero starts the block day (N2), no duplicate Next card or Resume, no relayout; run page header <=80px, IN PROGRESS once | n=28 candidate. cursor-lane.
 
 LANDED fb2bda1 | bks3-library-redesign.md | Library redesign: blocks-first, a running-block
 strip, BK card language, "Create workout" greyed as parked | n=20 candidate.
