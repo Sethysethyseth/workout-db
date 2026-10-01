@@ -14,7 +14,7 @@ import { isRunFinished } from "../components/blocks/run/dayStatusTiles.js";
 import { useActiveSession } from "../context/ActiveSessionContext.jsx";
 import { readCurrentProgram } from "../lib/currentProgramStorage.js";
 import { ACTIVE_WORKOUT_ERROR, startAdHocWorkoutAndNavigate } from "../lib/startAdHocWorkoutFlow.js";
-import { sessionDisplayTitle } from "../lib/sessionDisplay.js";
+import { sessionDisplayBlockName, sessionDisplayTitle } from "../lib/sessionDisplay.js";
 import { formatTonnage, sessionDurationLabel, sessionTonnage } from "../lib/sessionFacts.js";
 import { loadWeightUnit } from "../lib/weightUnitPref.js";
 
@@ -215,6 +215,15 @@ export function DashboardPage() {
     day: "numeric",
   });
 
+  const nextDayLabel = useMemo(() => {
+    const next = activeBlock?.progress?.nextDay;
+    if (!next || !activeBlock?.progress) return null;
+    const week = (activeBlock.progress.weeks || []).find((w) => w.order === next.weekOrder);
+    const day = (week?.days || []).find((d) => d.order === next.workoutOrder);
+    if (!day) return null;
+    return `W${next.weekOrder} · ${day.name || `Day ${day.order}`}`;
+  }, [activeBlock]);
+
   return (
     <div className="stack workout-tab">
       <header className="home-masthead">
@@ -269,6 +278,7 @@ export function DashboardPage() {
       ) : (
         <StartWorkoutHero
           onOpenPicker={() => setPickerOpen(true)}
+          nextDayLabel={!hasActive && activeBlock ? nextDayLabel : null}
           lastSessionLabel={
             completedRecent[0]
               ? `${sessionDisplayTitle(completedRecent[0])}, ${formatRelativeDay(completedRecent[0].completedAt)}`
@@ -312,6 +322,7 @@ export function DashboardPage() {
             {completedRecent.map((s) => {
               const when = formatLoggedWhen(s.completedAt);
               const title = sessionDisplayTitle(s);
+              const blockName = sessionDisplayBlockName(s);
               const exercises = s._count?.sessionExercises ?? null;
               const sets = s._count?.sets ?? null;
               const duration = sessionDurationLabel(s);
@@ -320,6 +331,9 @@ export function DashboardPage() {
                 <Link key={s.id} to={`/sessions/${s.id}`} className="recent-row">
                   <span className="recent-row__main">
                     <span className="recent-row__title">{title}</span>
+                    {blockName ? (
+                      <span className="recent-row__block muted small">{blockName}</span>
+                    ) : null}
                     <span className="recent-row__when muted small">
                       {when}
                       {exercises != null ? (

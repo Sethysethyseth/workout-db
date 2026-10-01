@@ -9,6 +9,8 @@ import {
   mapApiExerciseForRun,
   slotBadge,
 } from "./runExerciseHelpers.js";
+import { dayLoggedFraction } from "./dayStatusTiles.js";
+import "../../../styles/blocks/bk-run.css";
 
 /**
  * Selected-day card on /blocks/current: chips, rx list, Start/Resume/View.
@@ -37,9 +39,6 @@ export function RunDayCard({
   const exCount = rows.length;
   const setCount = rows.reduce((acc, row) => acc + (row.mapped.sets?.length || 0), 0);
 
-  const bar =
-    status === "done" ? 1 : status === "in_progress" ? 0.5 : 0;
-
   return (
     <Card className="bk-run-day">
       <p className="bk-run-day__eyebrow">
@@ -58,7 +57,7 @@ export function RunDayCard({
         {status === "in_progress" ? <Chip tone="accent">IN PROGRESS</Chip> : null}
       </div>
 
-      <ProgressBar value={bar} label={`Day progress ${Math.round(bar * 100)}%`} />
+      <DayProgressMeter status={status} day={day} />
 
       <div className="bk-run-day__actions">
         {status === "todo" ? (
@@ -109,6 +108,43 @@ export function RunDayCard({
         ))}
       </ul>
     </Card>
+  );
+}
+
+/**
+ * Honest day progress: real fraction when counts exist; otherwise a distinct
+ * in-progress meter labeled "In progress" with no percentage.
+ */
+function DayProgressMeter({ status, day }) {
+  if (status === "done") {
+    return <ProgressBar value={1} label="Day progress 100%" />;
+  }
+  if (status === "todo") {
+    return <ProgressBar value={0} label="Day progress 0%" />;
+  }
+
+  const realFrac = dayLoggedFraction(day);
+  if (realFrac != null) {
+    return (
+      <ProgressBar
+        value={realFrac}
+        label={`Day progress ${Math.round(realFrac * 100)}%`}
+      />
+    );
+  }
+
+  return (
+    <div
+      className="bk-run-day__live-meter"
+      role="status"
+      aria-label="In progress"
+    >
+      <span className="bk-run-day__live-track" aria-hidden="true">
+        <span className="bk-run-day__live-arc" />
+        <span className="bk-run-day__live-dot" />
+      </span>
+      <span className="bk-run-day__live-label">In progress</span>
+    </div>
   );
 }
 

@@ -1,26 +1,44 @@
 /**
- * Pure day-status -> WeekStrip / DayPicker tile mapping (BK8).
+ * Pure day-status -> WeekStrip / DayPicker tile mapping (BK8 / bksf1d).
  * Consumes `computeRunProgress` shape from GET /block-runs/active.
  *
- * Day progress: done = 1, in_progress = 0.5, todo = 0.
+ * Day progress: done = 1, todo = 0.
+ * in_progress: the run payload has no per-day logged/planned set counts, so
+ * we do NOT invent 50%. DayPicker rings use a short decorative arc
+ * (IN_PROGRESS_RING_VALUE); RunDayCard renders a distinct "In progress"
+ * state with no percentage.
+ *
  * Tag "NEXT" on progress.nextDay. Opens on current week; day = nextDay
  * else first day of that week.
  */
 
-const STATUS_PROGRESS = {
-  done: 1,
-  in_progress: 0.5,
-  todo: 0,
-};
+/** Short arc (~1/7) for DayPicker - decorative, not a completion fraction. */
+export const IN_PROGRESS_RING_VALUE = 0.14;
 
 /**
  * @param {"todo"|"in_progress"|"done"|string} status
  * @returns {number}
  */
 export function dayStatusProgress(status) {
-  if (status === "done") return STATUS_PROGRESS.done;
-  if (status === "in_progress") return STATUS_PROGRESS.in_progress;
-  return STATUS_PROGRESS.todo;
+  if (status === "done") return 1;
+  if (status === "in_progress") return IN_PROGRESS_RING_VALUE;
+  return 0;
+}
+
+/**
+ * Real set-completion fraction when the day object carries counts; else null.
+ * @param {object | null | undefined} day
+ * @returns {number | null}
+ */
+export function dayLoggedFraction(day) {
+  if (!day) return null;
+  const logged = day.loggedSets ?? day.setsLogged ?? day.loggedSetCount;
+  const planned = day.plannedSets ?? day.setsPlanned ?? day.plannedSetCount;
+  if (logged == null || planned == null) return null;
+  const p = Number(planned);
+  const l = Number(logged);
+  if (!Number.isFinite(p) || p <= 0 || !Number.isFinite(l)) return null;
+  return Math.max(0, Math.min(1, l / p));
 }
 
 /**
@@ -57,15 +75,26 @@ export function mapProgressToTiles(progress) {
         nextDay != null &&
         Number(nextDay.weekOrder) === Number(order) &&
         Number(nextDay.workoutOrder) === Number(day.order);
+      const status = day.status || "todo";
+      const realFrac = dayLoggedFraction(day);
+      let progressValue;
+      if (status === "done") progressValue = 1;
+      else if (status === "in_progress") {
+        progressValue = realFrac != null ? realFrac : IN_PROGRESS_RING_VALUE;
+      } else {
+        progressValue = 0;
+      }
       return {
         key: String(day.order),
         top: `DAY ${day.order}`,
         name: day.name || `Day ${day.order}`,
-        progress: dayStatusProgress(day.status),
+        progress: progressValue,
         tag: isNext ? "NEXT" : null,
-        status: day.status || "todo",
+        status,
         sessionId: day.sessionId != null ? day.sessionId : null,
         order: day.order,
+        loggedSets: day.loggedSets ?? day.setsLogged ?? null,
+        plannedSets: day.plannedSets ?? day.setsPlanned ?? null,
       };
     });
     daysByWeekOrder[order] = days;

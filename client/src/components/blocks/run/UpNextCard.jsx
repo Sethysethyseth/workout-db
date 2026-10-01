@@ -48,11 +48,12 @@ export function UpNextCard({
       tabIndex={0}
     >
       <Eyebrow>
-        UP NEXT · {(block.name || "BLOCK").toUpperCase()}
+        NEXT: W{next.weekOrder} · {(day.name || `Day ${day.order}`).toUpperCase()}
       </Eyebrow>
       <h2 id="bk-up-next-title" className="bk-up-next__title">
         W{next.weekOrder} · {day.name || `Day ${day.order}`}
       </h2>
+      <p className="bk-up-next__block muted small">{block.name || "Block"}</p>
       <p className="bk-up-next__summary muted small">
         {volume.exercises} exercise{volume.exercises === 1 ? "" : "s"} · {volume.sets}{" "}
         set{volume.sets === 1 ? "" : "s"}

@@ -243,6 +243,59 @@
   gap: 6px;
 }
 
+/* Honest in-progress meter (no fake percentage) */
+.bk-run-day__live-meter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 22px;
+}
+
+.bk-run-day__live-track {
+  position: relative;
+  flex: 1 1 auto;
+  height: 6px;
+  border-radius: 3px;
+  background: transparent;
+  border: 1px dashed var(--bk-line);
+  overflow: visible;
+}
+
+.bk-run-day__live-arc {
+  position: absolute;
+  left: 0;
+  top: -1px;
+  width: 18%;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--bk-accent);
+}
+
+.bk-run-day__live-dot {
+  position: absolute;
+  left: calc(18% - 3px);
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  margin-top: -4px;
+  border-radius: 50%;
+  background: var(--bk-accent);
+  box-shadow: 0 0 0 2px var(--bk-surface);
+}
+
+.bk-run-day__live-label {
+  flex: 0 0 auto;
+  font: 600 11px/1 var(--font-sans);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bk-accent);
+}
+
+.bk-up-next__block {
+  margin: 0;
+  font: 400 13px/1.35 var(--font-sans);
+}
+
 .bk-run-day__ex-list {
   list-style: none;
   margin: 4px 0 0;

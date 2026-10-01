@@ -1,4 +1,8 @@
-import { sessionDisplayTitle, sessionQuickExerciseLabel } from "../../lib/sessionDisplay.js";
+import {
+  sessionDisplayBlockName,
+  sessionDisplayTitle,
+  sessionQuickExerciseLabel,
+} from "../../lib/sessionDisplay.js";
 
 function formatStartedShort(value) {
   if (!value) return null;
@@ -29,6 +33,7 @@ function startedAtMs(session) {
 
 export function ActiveWorkoutHero({ session, nowMs, onResume }) {
   const title = sessionDisplayTitle(session);
+  const blockName = sessionDisplayBlockName(session);
   const startMs = startedAtMs(session);
   const elapsed = startMs && nowMs ? formatElapsed(nowMs - startMs) : null;
   const started = formatStartedShort(session?.startedAt || session?.performedAt);
@@ -44,6 +49,9 @@ export function ActiveWorkoutHero({ session, nowMs, onResume }) {
         Resume workout
       </h1>
       <p className="workout-hero__session-title">{title}</p>
+      {blockName ? (
+        <p className="workout-hero__session-block muted small">{blockName}</p>
+      ) : null}
       <p className="workout-hero__meta muted small">
         {elapsed ? <span>{elapsed} elapsed</span> : null}
         {elapsed && started ? <span aria-hidden="true"> · </span> : null}

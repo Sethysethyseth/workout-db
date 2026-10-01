@@ -31,6 +31,7 @@ export function MyTemplatesPage() {
   // Default tab is Blocks (bks3) - no query-string initializer needed.
   const [tab, setTab] = useState("blocks");
   const [visibility, setVisibility] = useState("all");
+  const [filterOpen, setFilterOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
@@ -284,23 +285,13 @@ export function MyTemplatesPage() {
     }
   }
 
+  const filterLabel =
+    visibility === "private" ? "Private" : visibility === "public" ? "Public" : "All";
+
   return (
     <div className="bk bk-lib">
       <div className="bk-lib__header">
-        <div className="bk-lib__header-row">
-          <div>
-            <DisplayTitle>Library</DisplayTitle>
-            <p className="bk-lib__subtitle">Blocks first. Saved workouts and custom exercises stay here.</p>
-          </div>
-          <button
-            className="bk-lib__refresh"
-            type="button"
-            onClick={load}
-            disabled={loading || busy}
-          >
-            Refresh
-          </button>
-        </div>
+        <DisplayTitle>Library</DisplayTitle>
       </div>
 
       <div className="bk-lib__actions">
@@ -330,16 +321,62 @@ export function MyTemplatesPage() {
         />
       ) : null}
 
-      <Segmented
-        className="bk-lib-scope"
-        label="Library scope"
-        value={area}
-        onChange={setArea}
-        options={[
-          { value: "yours", label: "Yours" },
-          { value: "community", label: "Community" },
-        ]}
-      />
+      <div className="bk-lib-nav-row">
+        <Segmented
+          className="bk-lib-scope"
+          label="Library scope"
+          value={area}
+          onChange={setArea}
+          options={[
+            { value: "yours", label: "Yours" },
+            { value: "community", label: "Community" },
+          ]}
+        />
+        {area === "yours" && tab !== "exercises" ? (
+          <div className="bk-lib-filter-wrap">
+            <button
+              type="button"
+              className={`bk-lib-filter-toggle${visibility !== "all" || filterOpen ? " bk-lib-filter-toggle--active" : ""}`}
+              aria-expanded={filterOpen}
+              aria-controls="bk-lib-filter-panel"
+              onClick={() => setFilterOpen((open) => !open)}
+            >
+              Filter{visibility !== "all" ? `: ${filterLabel}` : ""}
+            </button>
+          </div>
+        ) : null}
+      </div>
+
+      {area === "yours" && tab !== "exercises" && filterOpen ? (
+        <div
+          id="bk-lib-filter-panel"
+          className="bk-lib-filters"
+          role="group"
+          aria-label="Filter by visibility"
+        >
+          <button
+            type="button"
+            className={`bk-lib-filter-chip${visibility === "all" ? " bk-lib-filter-chip--active" : ""}`}
+            onClick={() => setVisibility("all")}
+          >
+            All
+          </button>
+          <button
+            type="button"
+            className={`bk-lib-filter-chip${visibility === "private" ? " bk-lib-filter-chip--active" : ""}`}
+            onClick={() => setVisibility("private")}
+          >
+            Private
+          </button>
+          <button
+            type="button"
+            className={`bk-lib-filter-chip${visibility === "public" ? " bk-lib-filter-chip--active" : ""}`}
+            onClick={() => setVisibility("public")}
+          >
+            Public
+          </button>
+        </div>
+      ) : null}
 
       {area === "community" ? (
         <LibraryCommunitySection />
@@ -363,7 +400,7 @@ export function MyTemplatesPage() {
               className={`bk-lib-type-tab${tab === "workouts" ? " bk-lib-type-tab--active" : ""}`}
               onClick={() => setTab("workouts")}
             >
-              <span className="bk-lib-type-tab__title">Saved workouts</span>
+              <span className="bk-lib-type-tab__title">Workouts</span>
               <span className="bk-lib-type-tab__count">{workouts.length}</span>
             </button>
             <button
@@ -373,37 +410,10 @@ export function MyTemplatesPage() {
               className={`bk-lib-type-tab${tab === "exercises" ? " bk-lib-type-tab--active" : ""}`}
               onClick={() => setTab("exercises")}
             >
-              <span className="bk-lib-type-tab__title">Custom exercises</span>
+              <span className="bk-lib-type-tab__title">Exercises</span>
               <span className="bk-lib-type-tab__count">{customExercises.length}</span>
             </button>
           </div>
-
-          {tab !== "exercises" ? (
-            <div className="bk-lib-filters" role="group" aria-label="Filter by visibility">
-              <span className="bk-lib-filters__label">Show</span>
-              <button
-                type="button"
-                className={`bk-lib-filter-chip${visibility === "all" ? " bk-lib-filter-chip--active" : ""}`}
-                onClick={() => setVisibility("all")}
-              >
-                All
-              </button>
-              <button
-                type="button"
-                className={`bk-lib-filter-chip${visibility === "private" ? " bk-lib-filter-chip--active" : ""}`}
-                onClick={() => setVisibility("private")}
-              >
-                Private
-              </button>
-              <button
-                type="button"
-                className={`bk-lib-filter-chip${visibility === "public" ? " bk-lib-filter-chip--active" : ""}`}
-                onClick={() => setVisibility("public")}
-              >
-                Public
-              </button>
-            </div>
-          ) : null}
 
           <ErrorMessage error={error} />
           {confirmStartBlock && activeRun ? (

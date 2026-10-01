@@ -48,7 +48,7 @@ export function LibraryBlockCard({
             aria-disabled={busy}
             style={busy ? { pointerEvents: "none", opacity: 0.65 } : undefined}
           >
-            Running
+            Open
           </Link>
         ) : (
           <button
