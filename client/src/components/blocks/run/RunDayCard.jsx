@@ -113,7 +113,7 @@ export function RunDayCard({
 
 /**
  * Honest day progress: real fraction when counts exist; otherwise a distinct
- * in-progress meter labeled "In progress" with no percentage.
+ * visual in-progress meter (no duplicate "IN PROGRESS" label - chip owns that).
  */
 function DayProgressMeter({ status, day }) {
   if (status === "done") {
@@ -133,6 +133,7 @@ function DayProgressMeter({ status, day }) {
     );
   }
 
+  // Chip already shows "IN PROGRESS" once; meter is visual-only here.
   return (
     <div
       className="bk-run-day__live-meter"
@@ -143,7 +144,6 @@ function DayProgressMeter({ status, day }) {
         <span className="bk-run-day__live-arc" />
         <span className="bk-run-day__live-dot" />
       </span>
-      <span className="bk-run-day__live-label">In progress</span>
     </div>
   );
 }

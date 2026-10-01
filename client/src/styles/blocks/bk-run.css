@@ -9,6 +9,65 @@
   padding-inline: 16px;
 }
 
+/* Compact identity row: block name + Week n of N (<= 80px at 390). */
+.bk-run .bk-sticky-header.bk-run-sticky {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  box-sizing: border-box;
+  max-height: 80px;
+}
+
+.bk-run .bk-run-sticky .bk-sticky-header__row {
+  align-items: center;
+  min-height: 44px;
+  max-height: 64px;
+  gap: 8px;
+}
+
+.bk-run .bk-run-sticky .bk-sticky-header__left {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.bk-run .bk-run-sticky .bk-display-title {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  margin: 0;
+  font: 700 16px/1.2 var(--bk-display);
+  letter-spacing: 0.02em;
+  text-transform: none;
+  text-wrap: unset;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.bk-run .bk-run-sticky__name {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.bk-run .bk-run-sticky .bk-display-title__sub {
+  margin-left: 0;
+  vertical-align: unset;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  text-transform: none;
+  color: var(--bk-muted);
+}
+
+.bk-run__weeks {
+  margin: 10px 0 0;
+}
+
 @media (min-width: 640px) {
   .bk-run .bk-sticky-header {
     margin-inline: -24px;
@@ -443,6 +502,73 @@
 
 .bk-up-next__actions .btn {
   min-height: 44px;
+}
+
+.bk-up-next-muted {
+  margin: 0;
+  padding: 0 2px;
+}
+
+/* Home StartWorkoutHero: same-size skeleton + secondary "Other workout" */
+.workout-hero--skel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 196px;
+  box-sizing: border-box;
+}
+
+.workout-hero-skel__line {
+  border-radius: 8px;
+  background: var(--color-surface-2, var(--bk-surface-2));
+}
+
+.workout-hero-skel__line--eyebrow {
+  width: 42%;
+  height: 12px;
+}
+
+.workout-hero-skel__line--title {
+  width: 72%;
+  height: 28px;
+}
+
+.workout-hero-skel__line--lead {
+  width: 58%;
+  height: 14px;
+}
+
+.workout-hero-skel__cta {
+  margin-top: 8px;
+  width: 100%;
+  min-height: 52px;
+  border-radius: var(--radius-control, 10px);
+  background: var(--color-surface-2, var(--bk-surface-2));
+}
+
+.workout-hero--block-day {
+  min-height: 196px;
+  box-sizing: border-box;
+}
+
+.workout-hero__other {
+  width: 100%;
+  margin-top: 2px;
+  min-height: 40px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.workout-hero__other:hover:not(:disabled) {
+  color: var(--color-text);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .workout-hero-skel__line,
+  .workout-hero-skel__cta {
+    animation: bk-run-pulse 1.2s ease-out infinite;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

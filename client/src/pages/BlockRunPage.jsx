@@ -207,16 +207,28 @@ export function BlockRunPage() {
   }
 
   const blockName = payload.block?.name || "Block";
-  const weekTitle = selectedWeekOrder != null ? `WEEK ${selectedWeekOrder}` : "WEEK";
-  const weekSub = selectedWeekMeta?.label || undefined;
+  const weekCount =
+    (Array.isArray(payload.block?.weeks) && payload.block.weeks.length) ||
+    (Array.isArray(payload.progress?.weeks) && payload.progress.weeks.length) ||
+    0;
+  const weekOfLabel =
+    selectedWeekOrder != null && weekCount > 0
+      ? `Week ${selectedWeekOrder} of ${weekCount}`
+      : selectedWeekOrder != null
+        ? `Week ${selectedWeekOrder}`
+        : selectedWeekMeta?.label || "Week";
 
   return (
     <div className="bk bk-run">
       <div className="bk-shell">
         <StickyHeader
-          eyebrow={blockName}
-          title={weekTitle}
-          sub={weekSub}
+          className="bk-run-sticky"
+          title={
+            <span className="bk-run-sticky__name" title={blockName}>
+              {blockName}
+            </span>
+          }
+          sub={weekOfLabel}
           right={
             <div className="bk-run-header-right">
               <EditBlockLink blockId={payload.block?.id} />
@@ -246,7 +258,9 @@ export function BlockRunPage() {
               </div>
             </div>
           }
-        >
+        />
+
+        <div className="bk-run__weeks">
           <WeekStrip
             weeks={tiles?.weeks || []}
             selectedKey={selectedWeekOrder != null ? String(selectedWeekOrder) : undefined}
@@ -262,7 +276,7 @@ export function BlockRunPage() {
               }
             }}
           />
-        </StickyHeader>
+        </div>
 
         {error ? (
           <div className="bk-run-error bk-run-error--inline" role="alert">

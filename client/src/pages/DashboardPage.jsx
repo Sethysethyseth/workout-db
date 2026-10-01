@@ -57,6 +57,7 @@ export function DashboardPage() {
   const [workoutSavedFlash, setWorkoutSavedFlash] = useState(false);
   const [workoutDiscardedFlash, setWorkoutDiscardedFlash] = useState(false);
   const [activeBlock, setActiveBlock] = useState(null);
+  const [activeBlockReady, setActiveBlockReady] = useState(false);
   const [upNextStarting, setUpNextStarting] = useState(false);
 
   const quickPickTemplates = useMemo(() => {
@@ -101,6 +102,7 @@ export function DashboardPage() {
 
   useEffect(() => {
     let cancelled = false;
+    setActiveBlockReady(false);
     (async () => {
       try {
         const data = await blockRunApi.getActiveBlockRun();
@@ -116,6 +118,8 @@ export function DashboardPage() {
         }
       } catch {
         if (!cancelled) setActiveBlock(null);
+      } finally {
+        if (!cancelled) setActiveBlockReady(true);
       }
     })();
     return () => {
@@ -275,10 +279,19 @@ export function DashboardPage() {
           nowMs={heroNow}
           onResume={() => navigate(`/sessions/${activeSession.id}`)}
         />
+      ) : !activeBlockReady ? (
+        <StartWorkoutHero loading onOpenPicker={() => setPickerOpen(true)} />
       ) : (
         <StartWorkoutHero
           onOpenPicker={() => setPickerOpen(true)}
-          nextDayLabel={!hasActive && activeBlock ? nextDayLabel : null}
+          nextDayLabel={activeBlock ? nextDayLabel : null}
+          blockName={activeBlock?.block?.name ?? null}
+          onStartNextDay={
+            activeBlock?.progress?.nextDay && nextDayLabel
+              ? () => void onUpNextStart(activeBlock.progress.nextDay)
+              : null
+          }
+          startingNextDay={upNextStarting}
           lastSessionLabel={
             completedRecent[0]
               ? `${sessionDisplayTitle(completedRecent[0])}, ${formatRelativeDay(completedRecent[0].completedAt)}`
@@ -287,14 +300,14 @@ export function DashboardPage() {
         />
       )}
 
-      {activeBlock ? (
+      {/* Live workout + active block: muted up-next only (no Start/Resume).
+          Active run + no live: hero is the up-next, so no separate card. */}
+      {hasActive && activeBlockReady && activeBlock ? (
         <UpNextCard
           block={activeBlock.block}
           progress={activeBlock.progress}
           runId={activeBlock.run.id}
-          starting={upNextStarting}
-          onStart={(next) => void onUpNextStart(next)}
-          onResume={(next) => void onUpNextStart(next)}
+          mutedOnly
         />
       ) : null}
 
