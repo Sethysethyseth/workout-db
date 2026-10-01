@@ -57,3 +57,12 @@ defect against the BK contract).
   Sept 30. Block "Upper/Lower Strength - 4wk" (id 126): 4 weeks x 4 days, RPE caps
   on the main lifts, a timed plank, week 4 labeled Deload. Active run 5; weeks 1-2
   logged (sessions 455-462, Sep 14-25). Week 3 is next.
+
+## Later rulings (Sept 30)
+
+- **.xlsx upload approved** ("yes add xlsx"). The seat installed `read-excel-file`
+  ^9.3.10 in client/ (MIT; `npm audit` adds nothing new) and authored bks4, which
+  runs after bks1.
+- **Two "Resume workout" indicators** on Home at once (`claudefiledrop/image0.jpg`:
+  the in-progress card plus the bottom bar). Deferred to the NEXT wave; listed under
+  QUEUE Candidates.

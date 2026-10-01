@@ -15,7 +15,7 @@ effort cap / week labels. Lands on `ai-connector-wave` (staging Render still
 tracks it - M2's repoint to `main` is ON HOLD for this wave). ONE migration
 (BK1): the BK1 landing push MIGRATES STAGING (Render build runs `migrate
 deploy`), so that push waits for Seth's "migrate staging"; prod gets it by
-hand before the merge. Wave N = 20 (BK1-BK12 + BK5b + critic fixes bkf1a/b/c + bkf2 + smoke CRs bks1-3; BK0
+hand before the merge. Wave N = 21 (BK1-BK12 + BK5b + critic fixes bkf1a/b/c + bkf2 + smoke CRs bks1-4; BK0
 privacy/ToS is DRAFT on Seth's facts and joins N when queued). Then the coach-persona
 critic loop (spec section 11, FRONTIER SEAT, max 3 rounds, pass 8+; each
 failing round adds a `bkf<N>` fix block), THEN N/N -> Seth smokes -> gate.
@@ -252,7 +252,7 @@ Stepper format object. Critic round 3 (final) PASSED at 8/10
 **Smoke reopened BK (Sept 30, Opus seat).** The wave reopens: Seth's first smoke item
 produced four change requests: CR1-CR4 in `bk-smoke-FINDINGS.md`. His ruling:
 "this is all in this wave, when this hits prod I want it to be usable". N grows
-17 -> 20, plus any critic fix blocks. CR3 (notes) is folded into bks2 using the
+17 -> 21 (bks4 = .xlsx upload, Seth approved the dependency), plus any critic fix blocks. CR3 (notes) is folded into bks2 using the
 recovery artifact's pattern (no switches). Then a NEW critic loop runs as a
 SEPARATE Claude agent, which is Seth's explicit ask this time. It is capped at
 8/10 or 3 rounds, and its focus is the block builder ("squished"), exercise
@@ -277,6 +277,11 @@ MyTemplatesPage + new components/library + new bk-library.css.
 Dispatched Sept 30 (Opus seat), all three in parallel at `6ff78e0` via Channel B with `--model auto` and a 40-min hard kill each: bks1 in
 `cursor-lane-3`, bks2 in `cursor-lane`, bks3 in `cursor-lane-2`. Lane leftovers (old
 GATE-R*.md, mock PNGs) moved to `C:/dev/worktrees/_lane-leftovers/`.
+
+QUEUED | bks4-xlsx-upload.md | Excel (.xlsx) upload on the import File tab: sheet picker, browser-side
+xlsx -> TSV -> the existing preview path (read-excel-file, Seth-approved dep, installed
+by the seat) | n=21 candidate. SERIALIZE AFTER bks1 (same import folder + bk-import.css).
+The lane needs `npm ci` in client/ before dispatch (new dependency).
 
 DRAFT | bk0-privacy-terms-pages.md | plain-language /privacy + /terms,
 covering the AI layer and the draft-block write | Seth's Sept 26 "first
@@ -2869,6 +2874,9 @@ that far out); coverage threshold = 0.6 named constant; plate increments
 stays a post-N flag.
 
 ## Candidates (next units, not yet authored as blocks)
+
+- **Duplicate in-progress UI on Home (next wave, Seth Sept 30):** the "Resume workout" card and the
+  bottom "In progress · Resume" bar show at the same time (screenshot: Seth's smoke drop `image0.jpg`, Sept 30). Pick one.
 
 - **Per-side L/R comparison analytics (ruling 3, Seth-confirmed July 16:
   own unit, NEXT wave, needs a frontier-seat design pass first).** Scope sketch
