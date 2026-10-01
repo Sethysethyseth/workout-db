@@ -287,10 +287,11 @@ Dispatched Sept 30 (Opus seat), all three in parallel at `6ff78e0` via Channel B
 `cursor-lane-3`, bks2 in `cursor-lane`, bks3 in `cursor-lane-2`. Lane leftovers (old
 GATE-R*.md, mock PNGs) moved to `C:/dev/worktrees/_lane-leftovers/`.
 
-DISPATCHED | bks4-xlsx-upload.md | Excel (.xlsx) upload on the import File tab: sheet picker, browser-side
+LANDED a4eeff0 | bks4-xlsx-upload.md | Excel (.xlsx) upload on the import File tab: sheet picker, browser-side
 xlsx -> TSV -> the existing preview path (read-excel-file, Seth-approved dep, installed
 by the seat) | n=21 candidate. SERIALIZE AFTER bks1 (same import folder + bk-import.css).
-The lane needs `npm ci` in client/ before dispatch (new dependency).
+The lane needs `npm ci` in client/ before dispatch (new dependency). LANDED Sept 30 as n=20. Audit: lanes were re-run fresh and green; the pure TSV check matches byte for byte; the code uses the v9 read-excel-file API (all sheets, {sheet,data}).
+The lazy chunk is browser-*.js at 67 kB, and the main chunk grew 2.92 kB. The real workbook reads 6/30/216/602/84. Accepted: changing the sheet refreshes the text, but Preview stays a tap, the same as for text files.
 
 DRAFT | bk0-privacy-terms-pages.md | plain-language /privacy + /terms,
 covering the AI layer and the draft-block write | Seth's Sept 26 "first
