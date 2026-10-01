@@ -30,6 +30,13 @@
 >     `924bc66` (pushed).
 >   - Lesson for the gate: build and lanes cannot see hook order. Always load
 >     the page.
+> - Critic round 1: FAIL 5/10 (`docs/tasks/bks-critic-round-1-FINDINGS.md`).
+>   - Fix blocks landed: bksf1a `28af540` (+ ghost retune `8badd2f`), bksf1b
+>     `095e517`, bksf1c `fcba6f1` (after bounce 1: kg columns now convert),
+>     bksf1d `d540d77`.
+>   - Wave 25/25. Critic round 2 is running (same agent, palette forest).
+>   - The local API was restarted on the new server code.
+>   - Round 1 details, for reference:
 >   - Critic round 1 (a separate agent, brief
 >     `.playwright-mcp/bks-critic/BRIEF.md`) is running against the local
 >     recipe with test123. Session 463 (W3 Upper A) is in progress for it.
