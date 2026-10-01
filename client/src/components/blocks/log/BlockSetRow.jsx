@@ -39,6 +39,21 @@ function isBlankDraft(d) {
   );
 }
 
+/** Block-day: a row is LOGGED only when it has reps or seconds (not weight/effort alone). */
+export function blockDraftHasDose(d, timedMode) {
+  if (!d) return false;
+  if (timedMode) return parseSeconds(d.durationSec) != null;
+  return String(d.reps ?? "").trim() !== "";
+}
+
+/** Persisted set counts as logged iff it has reps or seconds. */
+export function blockSetIsLogged(set) {
+  if (!set || typeof set !== "object") return false;
+  const t = (v) => (v == null ? "" : String(v)).trim();
+  if (t(set.durationSec) !== "") return true;
+  return t(set.reps) !== "";
+}
+
 function isNonIntegerRir(v) {
   const t = String(v ?? "").trim();
   if (t === "") return false;
@@ -100,6 +115,7 @@ export const BlockSetRow = memo(function BlockSetRow({
   writesFrozenRef,
 }) {
   const rootRef = useRef(null);
+  const noteInputRef = useRef(null);
   const [draft, setDraft] = useState(() => (isDraft ? blankDraft() : draftFromSet(set)));
   const draftRef = useRef(draft);
   const promotingRef = useRef(false);
@@ -108,6 +124,7 @@ export const BlockSetRow = memo(function BlockSetRow({
     Boolean(set?.notes && String(set.notes).trim())
   );
   const [rirHint, setRirHint] = useState(null);
+  const [confirmRemove, setConfirmRemove] = useState(false);
 
   const useRIR = effortSignal === "rir";
   const useRPE = effortSignal === "rpe";
@@ -123,6 +140,7 @@ export const BlockSetRow = memo(function BlockSetRow({
       draftRef.current = empty;
       lastSentKeyRef.current = null;
       setRirHint(null);
+      setConfirmRemove(false);
       return;
     }
     const next = draftFromSet(set);
@@ -150,12 +168,20 @@ export const BlockSetRow = memo(function BlockSetRow({
     set?.durationSec,
   ]);
 
+  useEffect(() => {
+    if (!confirmRemove) return;
+    const t = setTimeout(() => setConfirmRemove(false), 5000);
+    return () => clearTimeout(t);
+  }, [confirmRemove]);
+
   const tryPromote = useCallback(async () => {
     if (!isDraft) return;
     if (writesFrozenRef?.current) return;
     if (promotingRef.current) return;
     const cur = draftRef.current;
     if (isBlankDraft(cur)) return;
+    // Gate: weight/effort alone stays a local draft - never create server-side.
+    if (!blockDraftHasDose(cur, timedMode)) return;
     if (isNonIntegerRir(cur.rir)) {
       setRirHint("Whole numbers only");
       return;
@@ -239,6 +265,7 @@ export const BlockSetRow = memo(function BlockSetRow({
     if (isDraft) {
       const cur = draftRef.current;
       if (isBlankDraft(cur)) return;
+      if (!blockDraftHasDose(cur, timedMode)) return;
       if (isNonIntegerRir(cur.rir)) return;
       const k = payloadKey(promotionPayloadFromDraft(cur));
       if (k === lastSentKeyRef.current) return;
@@ -253,17 +280,36 @@ export const BlockSetRow = memo(function BlockSetRow({
     const t = setTimeout(() => flushNow(), 900);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [draft, disabled, isDraft, tryPromote]);
+  }, [draft, disabled, isDraft, tryPromote, timedMode]);
 
   async function onChkTap() {
     if (disabled || writesFrozenRef?.current) return;
     onInteractStart?.();
-    if (!isDraft) return;
     const filled = fillDraftFromPlanExceptEffort(draftRef.current, planSet, timedMode);
     setDraft(filled);
     draftRef.current = filled;
     if (isBlankDraft(filled)) return;
-    await tryPromote();
+    if (isDraft) {
+      await tryPromote();
+      return;
+    }
+    // Incomplete persisted row (should be rare after the dose gate): patch blanks from plan.
+    if (!blockSetIsLogged(set) && onUpdateSet && set?.id != null) {
+      const patch = { order: Number(set.order) };
+      if (timedMode) {
+        const sec = parseSeconds(filled.durationSec);
+        patch.durationSec = sec == null ? "" : sec;
+        patch.reps = "";
+      } else {
+        patch.reps = filled.reps === "" ? "" : Number(filled.reps);
+      }
+      patch.weight = filled.weight === "" ? "" : Number(filled.weight);
+      // Never invent effort from the plan on chk tap.
+      patch.rpe = filled.rpe === "" ? "" : Number(filled.rpe);
+      patch.rir = filled.rir === "" ? "" : Number(filled.rir);
+      patch.notes = filled.notes === "" ? "" : filled.notes;
+      onUpdateSet(set.id, patch);
+    }
   }
 
   function onFocusField(e) {
@@ -274,6 +320,31 @@ export const BlockSetRow = memo(function BlockSetRow({
     });
   }
 
+  function openNote() {
+    onInteractStart?.();
+    setNoteOpen(true);
+    requestAnimationFrame(() => {
+      noteInputRef.current?.focus?.();
+      noteInputRef.current?.scrollIntoView?.({ block: "nearest", behavior: "smooth" });
+    });
+  }
+
+  function requestRemove() {
+    if (disabled || !onRemove) return;
+    onInteractStart?.();
+    const counted = isDraft ? false : blockSetIsLogged(set);
+    if (counted) {
+      setConfirmRemove(true);
+      return;
+    }
+    onRemove();
+  }
+
+  function confirmRemoveYes() {
+    setConfirmRemove(false);
+    onRemove?.();
+  }
+
   const dosePh = doseGhostFromPlan(planSet, timedMode);
   const weightPh = weightGhostFromPlan(planSet, weightUnit);
   const effortPh = effortSignal
@@ -282,7 +353,10 @@ export const BlockSetRow = memo(function BlockSetRow({
 
   const overCap = isOverEffortCap(plan, planSet, draft.rpe, draft.rir);
   const hasNote = Boolean(String(draft.notes ?? "").trim());
-  const done = !isDraft;
+  // Check mark iff the row is counted (reps/seconds present) - matches counters.
+  const done = isDraft
+    ? false
+    : blockSetIsLogged(set) || blockDraftHasDose(draft, timedMode);
 
   const fieldIds = useMemo(() => {
     const base = isDraft
@@ -385,37 +459,70 @@ export const BlockSetRow = memo(function BlockSetRow({
           </div>
         ) : null}
 
-        <button
-          type="button"
-          className={`bk-log-nb${hasNote ? " bk-log-nb--has" : ""}`}
-          onClick={() => {
-            onInteractStart?.();
-            setNoteOpen((o) => !o);
-          }}
-          disabled={disabled}
-          aria-label={hasNote ? "Edit set note" : "Add set note"}
-          aria-pressed={noteOpen}
-          title="Set note"
-        >
-          <PencilIcon />
-        </button>
+        {editingSets && onRemove ? (
+          <button
+            type="button"
+            className="bk-log-remove"
+            onClick={requestRemove}
+            disabled={disabled}
+            aria-label={`Remove set ${setNumber}`}
+            title="Remove"
+          >
+            ×
+          </button>
+        ) : (
+          <button
+            type="button"
+            className={`bk-log-nb${hasNote ? " bk-log-nb--has" : ""}`}
+            onClick={() => {
+              if (noteOpen) {
+                setNoteOpen(false);
+                return;
+              }
+              openNote();
+            }}
+            disabled={disabled}
+            aria-label={
+              noteOpen
+                ? "Close set note"
+                : hasNote
+                  ? "Edit set note"
+                  : "Add set note"
+            }
+            aria-pressed={noteOpen}
+            title="Set note"
+          >
+            <PencilIcon />
+          </button>
+        )}
       </div>
 
-      {editingSets && onRemove ? (
-        <button
-          type="button"
-          className="bk-log-remove"
-          onClick={() => onRemove()}
-          disabled={disabled}
-          aria-label={`Remove set ${setNumber}`}
-        >
-          Remove
-        </button>
+      {confirmRemove ? (
+        <div className="bk-log-remove-confirm" role="group" aria-label={`Confirm remove set ${setNumber}`}>
+          <p className="bk-log-remove-confirm__q">Remove this logged set?</p>
+          <button
+            type="button"
+            className="bk-log-remove-confirm__btn bk-log-remove-confirm__btn--go"
+            onClick={confirmRemoveYes}
+            disabled={disabled}
+          >
+            Remove
+          </button>
+          <button
+            type="button"
+            className="bk-log-remove-confirm__btn"
+            onClick={() => setConfirmRemove(false)}
+            disabled={disabled}
+          >
+            Keep
+          </button>
+        </div>
       ) : null}
 
       {noteOpen ? (
         <div className="bk-log-felt">
           <input
+            ref={noteInputRef}
             id={fieldIds.notes}
             type="text"
             className="bk-log-felt__input"

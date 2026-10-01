@@ -47,6 +47,7 @@ import {
   EffortCapWarn,
   PlanLine,
   TimedSecInput,
+  blockSetIsLogged,
   durationPlaceholderFromPlan,
   effortPlaceholderFromPlan,
   isOverEffortCap,
@@ -2067,6 +2068,8 @@ export function SessionDetailPage() {
   const [confirmReopen, setConfirmReopen] = useState(false);
   const [discardBusy, setDiscardBusy] = useState(false);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const [confirmFinish, setConfirmFinish] = useState(false);
+  const [confirmLeave, setConfirmLeave] = useState(false);
   const [discardMessage, setDiscardMessage] = useState(null);
   const [resolutionTick, setResolutionTick] = useState(0);
   const [addToLibrarySheet, setAddToLibrarySheet] = useState(null);
@@ -2127,6 +2130,8 @@ export function SessionDetailPage() {
   const discardLeavingRef = useRef(false);
   const discardBtnRef = useRef(null);
   const keepLoggingBtnRef = useRef(null);
+  const finishAnywayBtnRef = useRef(null);
+  const sessionNoteRef = useRef(null);
   /** bks2: per-exercise slot stats for the block session progress bar. */
   const [blockSlotStats, setBlockSlotStats] = useState(() => new Map());
 
@@ -2432,6 +2437,19 @@ export function SessionDetailPage() {
     });
   }, [nextIncompleteSetId]);
 
+  // Live block-day focus mode: hide bottom nav + persistent Resume bar so
+  // Finish never sits on a nav target (and the bar is not on its own session).
+  useEffect(() => {
+    if (!session || session.completedAt || !session.blockContext) {
+      document.documentElement.classList.remove("bk-log-focus");
+      return;
+    }
+    document.documentElement.classList.add("bk-log-focus");
+    return () => {
+      document.documentElement.classList.remove("bk-log-focus");
+    };
+  }, [session, session?.completedAt, session?.blockContext]);
+
   useEffect(() => {
     if (!session || session.completedAt) return;
     if (!session.blockContext) return;
@@ -2463,6 +2481,23 @@ export function SessionDetailPage() {
       document.documentElement.classList.remove("bk-log-kbd");
     };
   }, [session, session?.completedAt, session?.blockContext]);
+
+  useEffect(() => {
+    if (!confirmFinish || completeBusy) return;
+    const t = setTimeout(() => setConfirmFinish(false), 10000);
+    return () => clearTimeout(t);
+  }, [confirmFinish, completeBusy]);
+
+  useEffect(() => {
+    if (!confirmFinish || completeBusy) return;
+    finishAnywayBtnRef.current?.focus();
+  }, [confirmFinish, completeBusy]);
+
+  useEffect(() => {
+    if (!confirmLeave) return;
+    const t = setTimeout(() => setConfirmLeave(false), 10000);
+    return () => clearTimeout(t);
+  }, [confirmLeave]);
 
   const onBlockSlotStatsChange = useCallback((exerciseId, stats) => {
     setBlockSlotStats((prev) => {
@@ -2619,6 +2654,7 @@ export function SessionDetailPage() {
     if (completeBusy) return;
     setError(null);
     setCompleteBusy(true);
+    setConfirmFinish(false);
     try {
       // Commit the field being typed in (blur fires its save synchronously),
       // then drain every in-flight set write - completing must not race or
@@ -3104,6 +3140,7 @@ export function SessionDetailPage() {
 
   // Plain computation, not useMemo: this runs after the loading early return,
   // so a hook here changes the hook order between renders (crash).
+  // Width = logged / total of CURRENT counts (0% at 0/N) - never a stub ratio.
   const blockProgress = (() => {
     if (!isFromBlock) return { logged: 0, total: 0 };
     let logged = 0;
@@ -3116,12 +3153,13 @@ export function SessionDetailPage() {
       } else {
         const planSets = Array.isArray(se.plan?.sets) ? se.plan.sets.length : 0;
         const list = setsByExercise.get(se.id) || [];
-        logged += list.filter((s) => sessionSetHasCoreLogged(s)).length;
+        logged += list.filter((s) => blockSetIsLogged(s)).length;
         total += Math.max(planSets, list.length);
       }
     }
     return { logged, total };
   })();
+  const blockUnloggedPlanned = Math.max(0, blockProgress.total - blockProgress.logged);
 
   const sourceSummary = isFromTemplate
     ? `Saved workout: ${session.workoutTemplate.name}`
@@ -3161,7 +3199,21 @@ export function SessionDetailPage() {
     if (isQuickLog) saveEffortSignal(next);
   }
 
-  const liveEffortToggle = (
+  const blockLocksEffortScale =
+    isFromBlock &&
+    (Boolean(blockContext?.useRIR) || Boolean(blockContext?.useRPE));
+  // RIR wins when both true - same resolution as session seeding.
+  const blockLockedEffortLabel = blockContext?.useRIR ? "RIR" : "RPE";
+
+  const liveEffortToggle = blockLocksEffortScale ? (
+    <span
+      className="bk-log-effort-chip"
+      title={`Effort scale locked to ${blockLockedEffortLabel} for this block day. Explainer: the block chose this scale; it stays fixed for the workout.`}
+      aria-label={`Effort: ${blockLockedEffortLabel}. Locked by this block day; the scale stays fixed for the workout.`}
+    >
+      {`Effort: ${blockLockedEffortLabel}`}
+    </span>
+  ) : (
     <div
       className="session-effort-signal"
       style={
@@ -3182,6 +3234,21 @@ export function SessionDetailPage() {
       ) : null}
     </div>
   );
+
+  function leaveSessionNow() {
+    setConfirmLeave(false);
+    if (typeof window !== "undefined" && window.history.length > 1) navigate(-1);
+    else navigate("/");
+  }
+
+  function requestFinishWorkout() {
+    if (!canFinishWorkout || completeBusy || discardBusy) return;
+    if (isFromBlock && blockUnloggedPlanned > 0) {
+      setConfirmFinish(true);
+      return;
+    }
+    void onComplete();
+  }
 
   async function commitQuickTitle() {
     if (writesFrozenRef.current) return;
@@ -3207,6 +3274,16 @@ export function SessionDetailPage() {
 
   function goBackFromSession() {
     if (session && !session.completedAt) {
+      if (isFromBlock) {
+        // Autosave path: leave without a native confirm. Only prompt inline
+        // when a write is still in flight.
+        if (pendingSetSavesRef.current.size > 0 || completeBusy || discardBusy) {
+          setConfirmLeave(true);
+          return;
+        }
+        leaveSessionNow();
+        return;
+      }
       if (
         !window.confirm(
           "Leave this workout? You can open it again from the home screen."
@@ -3215,8 +3292,7 @@ export function SessionDetailPage() {
         return;
       }
     }
-    if (typeof window !== "undefined" && window.history.length > 1) navigate(-1);
-    else navigate("/");
+    leaveSessionNow();
   }
 
   return (
@@ -3225,37 +3301,9 @@ export function SessionDetailPage() {
         isFromBlock ? " session-detail-page--block" : ""
       }`}
     >
-      <div className="row session-detail-head">
-        <div className="session-detail-head__text">
-          {blockContext ? (
-            <div className="bk bk-log-eyebrow-wrap">
-              <Eyebrow>
-                {`${blockContext.blockName} · W${blockContext.weekOrder}${
-                  blockContext.weekLabel ? ` · ${blockContext.weekLabel}` : ""
-                } · ${blockContext.dayName}`}
-              </Eyebrow>
-            </div>
-          ) : null}
-          <h1 style={{ marginBottom: 6 }}>{pageTitle}</h1>
-          <p className="muted small" style={{ margin: 0 }}>
-            {isCompleted ? (
-              <>
-                Finished {formatDate(session?.completedAt)} · {sourceSummary}
-              </>
-            ) : (
-              <>
-                Live session — updates save as you go.{" "}
-                {isFromTemplate
-                  ? `Started from ${session.workoutTemplate.name}.`
-                  : isFromBlock
-                    ? `From block ${blockContext.blockName}.`
-                    : "One-time session."}
-              </>
-            )}
-          </p>
-        </div>
-        <div className="session-detail-head__actions">
-          {session && !isCompleted && session.reopenedAt == null ? (
+      {isFromBlock && !isCompleted ? (
+        <div className="bk-log-block-head-actions bk">
+          {session && session.reopenedAt == null ? (
             <button
               ref={discardBtnRef}
               type="button"
@@ -3268,11 +3316,90 @@ export function SessionDetailPage() {
               <span aria-hidden="true">×</span>
             </button>
           ) : null}
-          <button type="button" className="btn btn-secondary" onClick={goBackFromSession}>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={goBackFromSession}
+          >
             Back
           </button>
         </div>
-      </div>
+      ) : (
+        <div className="row session-detail-head">
+          <div className="session-detail-head__text">
+            {blockContext ? (
+              <div className="bk bk-log-eyebrow-wrap">
+                <Eyebrow>
+                  {`${blockContext.blockName} · W${blockContext.weekOrder}${
+                    blockContext.weekLabel ? ` · ${blockContext.weekLabel}` : ""
+                  } · ${blockContext.dayName}`}
+                </Eyebrow>
+              </div>
+            ) : null}
+            <h1 style={{ marginBottom: 6 }}>{pageTitle}</h1>
+            <p className="muted small" style={{ margin: 0 }}>
+              {isCompleted ? (
+                <>
+                  Finished {formatDate(session?.completedAt)} · {sourceSummary}
+                </>
+              ) : (
+                <>
+                  Live session — updates save as you go.{" "}
+                  {isFromTemplate
+                    ? `Started from ${session.workoutTemplate.name}.`
+                    : "One-time session."}
+                </>
+              )}
+            </p>
+          </div>
+          <div className="session-detail-head__actions">
+            {session && !isCompleted && session.reopenedAt == null ? (
+              <button
+                ref={discardBtnRef}
+                type="button"
+                className="session-discard-x"
+                aria-label="Discard workout"
+                disabled={discardBusy}
+                aria-busy={discardBusy || undefined}
+                onClick={() => requestDiscard()}
+              >
+                <span aria-hidden="true">×</span>
+              </button>
+            ) : null}
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={goBackFromSession}
+            >
+              Back
+            </button>
+          </div>
+        </div>
+      )}
+
+      {confirmLeave ? (
+        <div className="stack session-leave-confirm">
+          <p className="muted small session-leave-confirm__title">
+            Saves still finishing - leave anyway?
+          </p>
+          <div className="row" style={{ gap: 8 }}>
+            <button
+              type="button"
+              className="btn"
+              onClick={leaveSessionNow}
+            >
+              Leave anyway
+            </button>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => setConfirmLeave(false)}
+            >
+              Keep logging
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       {confirmDiscard ? (
         <div className="stack session-discard-confirm">
@@ -3280,7 +3407,10 @@ export function SessionDetailPage() {
             Discard this workout?
           </p>
           <p className="muted small session-discard-confirm__body">
-            {`Your ${totalSetsLogged} logged ${totalSetsLogged === 1 ? "set" : "sets"} will be deleted. This can't be undone.`}
+            {(() => {
+              const n = isFromBlock ? blockProgress.logged : totalSetsLogged;
+              return `Your ${n} logged ${n === 1 ? "set" : "sets"} will be deleted. This can't be undone.`;
+            })()}
           </p>
           <div className="row session-discard-confirm__actions">
             <button
@@ -3373,8 +3503,15 @@ export function SessionDetailPage() {
               <label>
                 <span className="bk-log-session-note__label">How the session went</span>
                 <textarea
+                  ref={sessionNoteRef}
                   value={sessionNotesDraft}
                   onChange={(e) => setSessionNotesDraft(e.target.value)}
+                  onFocus={(e) => {
+                    const el = e.currentTarget;
+                    requestAnimationFrame(() => {
+                      el.scrollIntoView?.({ block: "center", behavior: "smooth" });
+                    });
+                  }}
                   onBlur={() => void commitSessionNotes()}
                   placeholder="Energy, soreness, anything worth remembering"
                   disabled={discardBusy}
@@ -3674,37 +3811,67 @@ export function SessionDetailPage() {
       {!isCompleted ? (
         <div className="session-finish-dock" role="region" aria-label="Finish workout">
           <div className="session-finish-dock__inner stack">
-            <p className="muted small session-finish-dock__hint" style={{ margin: 0 }}>
-              Autosaves as you go. Finishing saves it to your history.
-            </p>
-            {!canFinishWorkout ? (
-              <p className="muted small session-finish-dock__hint" style={{ margin: 0 }}>
-                {totalSetsLogged < 1 ? (
-                  <>
-                    Log at least one set anywhere to enable <strong>Finish workout</strong>.
-                  </>
-                ) : setsMissingEffort > 0 ? (
-                  <>
-                    Add {liveEffortSignal === "rpe" ? "RPE" : "RIR"} on {setsMissingEffort} more{" "}
-                    {setsMissingEffort === 1 ? "set" : "sets"} to enable{" "}
-                    <strong>Finish workout</strong>.
-                  </>
-                ) : (
-                  <>
-                    Log at least one set anywhere to enable <strong>Finish workout</strong>.
-                  </>
-                )}
-              </p>
-            ) : null}
-            <button
-              type="button"
-              className="btn session-finish-btn session-finish-dock__btn"
-              onClick={() => void onComplete()}
-              disabled={!canFinishWorkout || completeBusy || discardBusy}
-              aria-busy={completeBusy}
-            >
-              {completeBusy ? "Saving…" : "Finish workout"}
-            </button>
+            {confirmFinish && isFromBlock ? (
+              <div className="stack session-finish-confirm">
+                <p className="muted small session-finish-confirm__title">
+                  {`${blockUnloggedPlanned} of ${blockProgress.total} planned sets not logged - finish anyway?`}
+                </p>
+                <div className="session-finish-confirm__actions">
+                  <button
+                    ref={finishAnywayBtnRef}
+                    type="button"
+                    className="btn session-finish-btn session-finish-confirm__go"
+                    onClick={() => void onComplete()}
+                    disabled={completeBusy || discardBusy}
+                    aria-busy={completeBusy}
+                  >
+                    {completeBusy ? "Saving…" : "Finish anyway"}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => setConfirmFinish(false)}
+                    disabled={completeBusy}
+                  >
+                    Keep logging
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <p className="muted small session-finish-dock__hint" style={{ margin: 0 }}>
+                  Autosaves as you go. Finishing saves it to your history.
+                </p>
+                {!canFinishWorkout ? (
+                  <p className="muted small session-finish-dock__hint" style={{ margin: 0 }}>
+                    {totalSetsLogged < 1 ? (
+                      <>
+                        Log at least one set anywhere to enable <strong>Finish workout</strong>.
+                      </>
+                    ) : setsMissingEffort > 0 ? (
+                      <>
+                        Add {liveEffortSignal === "rpe" ? "RPE" : "RIR"} on {setsMissingEffort} more{" "}
+                        {setsMissingEffort === 1 ? "set" : "sets"} to enable{" "}
+                        <strong>Finish workout</strong>.
+                      </>
+                    ) : (
+                      <>
+                        Log at least one set anywhere to enable <strong>Finish workout</strong>.
+                      </>
+                    )}
+                  </p>
+                ) : null}
+                <button
+                  type="button"
+                  className="btn session-finish-btn session-finish-dock__btn"
+                  onClick={() => requestFinishWorkout()}
+                  disabled={!canFinishWorkout || completeBusy || discardBusy}
+                  aria-busy={completeBusy}
+                >
+                  {completeBusy ? "Saving…" : "Finish workout"}
+                </button>
+              </>
+            )}
           </div>
         </div>
       ) : null}

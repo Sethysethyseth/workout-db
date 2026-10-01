@@ -16,7 +16,7 @@ export { TimedSecInput } from "./TimedSecInput.jsx";
 export { EffortCapWarn } from "./EffortCapWarn.jsx";
 export { BlockSessionHeader } from "./BlockSessionHeader.jsx";
 export { BlockExerciseCard } from "./BlockExerciseCard.jsx";
-export { BlockSetRow } from "./BlockSetRow.jsx";
+export { BlockSetRow, blockSetIsLogged, blockDraftHasDose } from "./BlockSetRow.jsx";
 export { splitPlanNotes, parseLeadSide } from "./splitPlanNotes.js";
 export {
   loadHiddenPlannedIndices,

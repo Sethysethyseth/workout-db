@@ -9,7 +9,7 @@ import {
   planSetAt,
   planToRx,
 } from "./planHelpers.js";
-import { BlockSetRow } from "./BlockSetRow.jsx";
+import { BlockSetRow, blockSetIsLogged } from "./BlockSetRow.jsx";
 import {
   loadHiddenPlannedIndices,
   saveHiddenPlannedIndices,
@@ -18,13 +18,6 @@ import { parseLeadSide, splitPlanNotes } from "./splitPlanNotes.js";
 import { derivePerSideMode } from "./perSideMode.js";
 import "../../../styles/blocks/bk-ui.css";
 import "../../../styles/blocks/bk-log.css";
-
-function sessionSetHasCoreLogged(set) {
-  if (!set || typeof set !== "object") return false;
-  const t = (v) => (v == null ? "" : String(v)).trim();
-  if (t(set.durationSec) !== "") return true;
-  return t(set.weight) !== "" && t(set.reps) !== "";
-}
 
 /**
  * Build visible slot list for a planned exercise (one side, or bilateral).
@@ -264,6 +257,7 @@ export function BlockExerciseCard({
     lifterNotesDraftFrom(se, plan)
   );
   const [noteError, setNoteError] = useState(null);
+  const [perSideConfirm, setPerSideConfirm] = useState(null);
 
   const perSideMode = derivePerSideMode(
     perSideOverride,
@@ -317,7 +311,7 @@ export function BlockExerciseCard({
   }, [sideOrder, sets, plan, hiddenBySide, extraBySide]);
 
   const loggedCount = useMemo(
-    () => (sets || []).filter((s) => sessionSetHasCoreLogged(s)).length,
+    () => (sets || []).filter((s) => blockSetIsLogged(s)).length,
     [sets]
   );
   const totalCount = useMemo(
@@ -363,8 +357,22 @@ export function BlockExerciseCard({
         }));
         return;
       }
+      // Logged (or any persisted) set: delete the server row AND drop the
+      // planned slot so the card does not leave a blanked row behind.
       if (slot.set && !slot.isDraft) {
         await onDeleteSet?.(slot.set.id, { skipConfirm: true });
+        if (slot.kind === "planned" && Number.isInteger(slot.planIndex)) {
+          const cur = hiddenBySide[key] || [];
+          const next = [...new Set([...cur, slot.planIndex])].sort(
+            (a, b) => a - b
+          );
+          persistHidden(side, next);
+        } else if (slot.kind === "extra") {
+          setExtraBySide((prev) => ({
+            ...prev,
+            [key]: Math.max(0, (prev[key] || 0) - 1),
+          }));
+        }
         return;
       }
       if (slot.kind === "extra") {
@@ -384,6 +392,22 @@ export function BlockExerciseCard({
     },
     [writesFrozen, onDeleteSet, hiddenBySide, persistHidden]
   );
+
+  function requestPerSideToggle() {
+    if (disabled) return;
+    const nextOn = !perSideMode;
+    if (loggedCount > 0) {
+      setPerSideConfirm(nextOn ? "on" : "off");
+      return;
+    }
+    setPerSideOverride(nextOn);
+  }
+
+  function confirmPerSideToggle() {
+    if (perSideConfirm === "on") setPerSideOverride(true);
+    else if (perSideConfirm === "off") setPerSideOverride(false);
+    setPerSideConfirm(null);
+  }
 
   const handleAddSet = useCallback(
     (side) => {
@@ -470,27 +494,55 @@ export function BlockExerciseCard({
             type="button"
             className={`bk-log-ex__edit${editingSets ? " bk-log-ex__edit--on" : ""}`}
             aria-pressed={editingSets}
-            onClick={() => setEditingSets((v) => !v)}
+            onClick={() => {
+              setEditingSets((v) => !v);
+              setPerSideConfirm(null);
+            }}
             disabled={disabled}
           >
             {editingSets ? "Done" : "Edit sets"}
           </button>
-          <button
-            type="button"
-            className={`bk-log-side-chip${perSideMode ? " bk-log-side-chip--on" : ""}`}
-            title="Log left/right sides separately"
-            aria-pressed={perSideMode}
-            onClick={() => {
-              if (perSideMode) {
-                setPerSideOverride(false);
-                return;
-              }
-              setPerSideOverride(true);
-            }}
-            disabled={disabled}
-          >
-            L/R
-          </button>
+          {perSideConfirm ? (
+            <div
+              className="bk-log-side-confirm"
+              role="group"
+              aria-label="Confirm per-side logging change"
+            >
+              <p className="bk-log-side-confirm__q">
+                {perSideConfirm === "on"
+                  ? "Log each side separately? Existing logged sets stay; the grid splits into Left and Right."
+                  : "Turn off per-side logging? Existing logged sets stay on the combined grid."}
+              </p>
+              <button
+                type="button"
+                className="bk-log-side-confirm__btn bk-log-side-confirm__btn--go"
+                onClick={confirmPerSideToggle}
+                disabled={disabled}
+              >
+                Switch
+              </button>
+              <button
+                type="button"
+                className="bk-log-side-confirm__btn"
+                onClick={() => setPerSideConfirm(null)}
+                disabled={disabled}
+              >
+                Cancel
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              className={`bk-log-side-chip${perSideMode ? " bk-log-side-chip--on" : ""}`}
+              title="Log left and right sides separately"
+              aria-label="Per side"
+              aria-pressed={perSideMode}
+              onClick={requestPerSideToggle}
+              disabled={disabled}
+            >
+              Per side
+            </button>
+          )}
           <button
             type="button"
             className="bk-log-ex__note-link"

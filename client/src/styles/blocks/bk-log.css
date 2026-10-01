@@ -213,12 +213,46 @@
 
 .bk-log-ex__note-link {
   min-height: 44px;
+  min-width: 44px;
   padding: 0 8px;
   border: 0;
   background: none;
   color: var(--bk-accent);
   font: 600 13px/1 var(--font-sans);
   cursor: pointer;
+}
+
+.bk-log-side-confirm {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+  font-size: 13px;
+  color: var(--bk-ink-2);
+}
+
+.bk-log-side-confirm__q {
+  flex: 1 1 100%;
+  margin: 0;
+}
+
+.bk-log-side-confirm__btn {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 14px;
+  border-radius: 10px;
+  border: 1px solid var(--bk-line);
+  background: var(--bk-surface);
+  color: var(--bk-ink);
+  font: 600 13px/1 var(--font-sans);
+  cursor: pointer;
+}
+
+.bk-log-side-confirm__btn--go {
+  background: var(--bk-ink);
+  border-color: var(--bk-ink);
+  color: var(--bk-bg);
 }
 
 .bk-log-ex__lifter-note {
@@ -245,7 +279,7 @@
   padding: 10px 12px;
   resize: vertical;
   color: var(--bk-ink);
-  font: 14px/1.4 var(--font-sans);
+  font: 16px/1.4 var(--font-sans);
 }
 
 .bk-log-ex__note-err {
@@ -356,13 +390,18 @@
 
 .bk-log-felt__input {
   width: 100%;
-  min-height: 38px;
+  min-height: 44px;
   border: 1px solid var(--bk-line);
   border-radius: 8px;
   background: var(--bk-field);
   padding: 0 10px;
-  font-size: 14px;
+  font-size: 16px;
   color: var(--bk-ink);
+}
+
+.bk-log-felt__input::placeholder {
+  color: var(--bk-ghost, var(--bk-muted));
+  opacity: 1;
 }
 
 .bk-log-felt-text {
@@ -373,17 +412,57 @@
   margin: 0;
 }
 
+/* Compact remove sits in the note column - does not add a row under the set. */
 .bk-log-remove {
-  align-self: flex-start;
-  margin-left: 46px;
-  min-height: 36px;
-  padding: 0 12px;
+  box-sizing: border-box;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  min-height: 44px;
+  margin: 0;
+  margin-left: -5px;
+  padding: 0;
   border-radius: 8px;
   border: 1px solid var(--bk-line);
   background: var(--bk-surface-2);
   color: var(--bk-bad);
+  font: 700 16px/1 var(--font-sans);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.bk-log-remove-confirm {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  padding-left: 46px;
+  font-size: 12px;
+  color: var(--bk-ink-2);
+}
+
+.bk-log-remove-confirm__q {
+  flex: 1 1 100%;
+  margin: 0;
+}
+
+.bk-log-remove-confirm__btn {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid var(--bk-line);
+  background: var(--bk-surface);
+  color: var(--bk-ink);
   font: 600 12px/1 var(--font-sans);
   cursor: pointer;
+}
+
+.bk-log-remove-confirm__btn--go {
+  background: var(--bk-bad-soft);
+  border-color: var(--bk-bad);
+  color: var(--bk-bad);
 }
 
 /* ---------- bks2: session note (bottom) ---------- */
@@ -410,7 +489,71 @@
   padding: 10px 12px;
   resize: vertical;
   color: var(--bk-ink);
-  font: 14px/1.45 var(--font-sans);
+  font: 16px/1.45 var(--font-sans);
+}
+
+.bk-log-session-note textarea::placeholder {
+  color: var(--bk-ghost, var(--bk-muted));
+  opacity: 1;
+}
+
+.bk-log-effort-chip {
+  display: inline-flex;
+  align-items: center;
+  max-height: 32px;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid var(--bk-line);
+  background: var(--bk-surface-2);
+  color: var(--bk-ink-2);
+  font: 600 12px/1 var(--font-sans);
+  letter-spacing: 0.02em;
+  width: fit-content;
+}
+
+.bk-log-block-head-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  align-items: center;
+  min-height: 44px;
+}
+
+.bk-log-block-head-actions .btn {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+.session-finish-confirm {
+  gap: 8px;
+}
+
+.session-finish-confirm__title {
+  margin: 0;
+  font-weight: 600;
+}
+
+.session-finish-confirm__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.session-finish-confirm__actions .btn,
+.session-finish-confirm__go {
+  min-height: 44px;
+  flex: 1 1 auto;
+}
+
+.session-leave-confirm {
+  gap: 8px;
+  margin: 0 0 8px;
+}
+
+.session-leave-confirm__title {
+  margin: 0;
+  font-weight: 600;
 }
 
 .bk-log-block-stack {
@@ -423,15 +566,29 @@
   margin: 0;
 }
 
-/* Phone keyboard: hide fixed bottom overlays while typing on a block-day session. */
-html.bk-log-kbd .bottom-nav,
-html.bk-log-kbd .persistent-workout-bar-wrap {
+/* Live block-day focus mode: hide global bars so Finish is not over the nav. */
+html.bk-log-focus .bottom-nav,
+html.bk-log-focus .persistent-workout-bar-wrap {
   display: none !important;
 }
 
+/* Phone keyboard: hide every fixed bottom overlay while typing. */
+html.bk-log-kbd .bottom-nav,
+html.bk-log-kbd .persistent-workout-bar-wrap,
 html.bk-log-kbd .session-finish-dock {
-  /* Keep finish reachable but clear of the keypad when possible */
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+  display: none !important;
+}
+
+/* Clearance for any remaining fixed chrome (safe-area) while a field is focused. */
+html.bk-log-kbd,
+html.bk-log-kbd body {
+  scroll-padding-bottom: 120px;
+}
+
+html.bk-log-focus .session-detail-page--block {
+  /* Finish dock ~108px; keep last fields / session note clear of it. */
+  scroll-padding-bottom: calc(120px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: calc(7.75rem + env(safe-area-inset-bottom, 0px));
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -439,7 +596,8 @@ html.bk-log-kbd .session-finish-dock {
   .bk-log-ex__edit,
   .bk-log-side-chip,
   .bk-log-nb,
-  .bk-set-num {
+  .bk-set-num,
+  .bk-log-remove {
     transition: none;
   }
 }

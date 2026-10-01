@@ -7,7 +7,8 @@ import "../../../styles/blocks/bk-log.css";
 
 /**
  * Block-day session header (recovery-logbook look).
- * Eyebrow + day name + chips + progress.
+ * Day name once as the title; block name once in the chip row.
+ * Progress width = logged / total of the current counts (0% at 0/N).
  */
 export function BlockSessionHeader({
   weekOrder,
@@ -27,12 +28,11 @@ export function BlockSessionHeader({
 
   return (
     <Card className={cls}>
-      <Eyebrow>{`Week ${weekOrder} · ${dayName}`}</Eyebrow>
+      <Eyebrow>{weekOrder != null ? `Week ${weekOrder}` : "Block day"}</Eyebrow>
       <h2 className="bk-log-session__title">{dayName}</h2>
       <div className="bk-log-session__meta">
         {blockName ? <Chip>{blockName}</Chip> : null}
         {weekLabel ? <Chip tone="warn">{weekLabel}</Chip> : null}
-        {weekOrder != null ? <Chip tone="accent">{`W${weekOrder}`}</Chip> : null}
       </div>
       <ProgressBar
         value={ratio}

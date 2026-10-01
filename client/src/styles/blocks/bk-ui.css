@@ -19,6 +19,8 @@
   --bk-warn-soft: color-mix(in srgb, var(--color-warn-accent) 14%, var(--color-surface-1));
   --bk-bad: var(--color-error-text);
   --bk-bad-soft: var(--color-error-bg);
+  /* Placeholders / secondary text: mix muted toward ink so ghosts clear 3:1 on fields. */
+  --bk-ghost: color-mix(in srgb, var(--color-muted) 72%, var(--color-text));
   --bk-shadow: var(--shadow-card);
   --bk-display: var(--font-block);
   --bk-r: 14px;
@@ -513,9 +515,26 @@
 }
 
 .bk-num-field::placeholder {
-  color: var(--bk-muted);
-  opacity: 0.55;
+  color: var(--bk-ghost);
+  opacity: 1;
   font-weight: 500;
+}
+
+/* Iron accent IS amber = warn hue. Remap over-cap to the bad/red family so
+   a warning never reads as "selected". Light iron also darkens accent text
+   (used by "+ Note") for 3:1 on the field/card surface. */
+html[data-palette="iron"] .bk {
+  --bk-warn: var(--bk-bad);
+  --bk-warn-soft: var(--bk-bad-soft);
+}
+
+html[data-palette="iron"]:not([data-theme="dark"]) .bk {
+  --bk-accent: color-mix(in srgb, var(--color-interactive) 42%, var(--color-text));
+  --bk-ghost: color-mix(in srgb, var(--color-muted) 55%, var(--color-text));
+}
+
+html[data-theme="dark"][data-palette="champ"] .bk {
+  --bk-ghost: color-mix(in srgb, var(--color-muted) 65%, var(--color-text));
 }
 
 /* ---------- stepper ---------- */
