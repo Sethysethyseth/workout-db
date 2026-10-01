@@ -110,6 +110,9 @@ function tableToBlock(parsed, options = {}) {
   const skipWarmups = Boolean(options.skipWarmups);
   let warmupRows = 0;
 
+  // First column-header weight conversion (one sheet-level message).
+  let columnConversionExample = null;
+
   // Parse each data row into a structured record
   const records = [];
   for (let i = 0; i < rows.length; i += 1) {
@@ -171,14 +174,28 @@ function tableToBlock(parsed, options = {}) {
     }
 
     const weightRaw = roles.weight != null ? cell(row, roles.weight) : "";
-    const colUnit = roles.weightUnit;
-    const declaredUnit = options.unit || colUnit;
+    const colUnit = roles.weightUnit || null;
+    const targetUnit =
+      options.unit === "kg" || options.unit === "lb" ? options.unit : null;
     const weightParsed = parseWeightCell(
       weightRaw,
-      colUnit || declaredUnit,
+      colUnit,
+      targetUnit,
       rowNum,
       warnings
     );
+    if (weightParsed.columnConverted && !columnConversionExample) {
+      columnConversionExample = {
+        header:
+          roles.weightHeader ||
+          (colUnit === "kg"
+            ? "Load (kg)"
+            : colUnit === "lb"
+              ? "Load (lb)"
+              : "Weight"),
+        ...weightParsed.columnConverted,
+      };
+    }
 
     const loadType =
       roles.loadType != null ? cell(row, roles.loadType).trim() : "";
@@ -300,6 +317,15 @@ function tableToBlock(parsed, options = {}) {
 
   if (warmupRows > 0) notices.warmupRows = warmupRows;
 
+  if (columnConversionExample) {
+    const { header, from, to, raw, converted } = columnConversionExample;
+    const fromWord = from === "kg" ? "kilograms" : "pounds";
+    const toWord = to === "kg" ? "kilograms" : "pounds";
+    warnings.push({
+      message: `${header}: converted ${fromWord} to ${toWord} (${raw} ${from} -> ${converted} ${to})`,
+    });
+  }
+
   // Group into weeks / days / exercises
   const block = groupRecords(records, options, warnings);
   return { block, warnings, notices };
@@ -330,6 +356,7 @@ function mapHeaderRoles(header, warnings) {
     else if (REPS_HEADERS.has(key)) roles.reps = idx;
     else if (WEIGHT_HEADERS.has(key)) {
       roles.weight = idx;
+      roles.weightHeader = h;
       if (key.includes("kg")) roles.weightUnit = "kg";
       else if (
         key.includes("lb") ||
@@ -476,8 +503,20 @@ function parseRepsCell(raw, rowNum, warnings) {
   return result;
 }
 
-function parseWeightCell(raw, columnUnit, rowNum, warnings) {
-  const result = { weight: undefined, notes: [] };
+/**
+ * Parse a weight cell into the import's chosen unit.
+ * Cell unit: per-cell suffix, else column header unit, else targetUnit.
+ * Suffix mismatches keep a per-row warning; column-header mismatches return
+ * columnConverted so the caller can emit one sheet-level message.
+ *
+ * @param {string} raw
+ * @param {"lb"|"kg"|null|undefined} columnUnit
+ * @param {"lb"|"kg"|null|undefined} targetUnit
+ * @param {number} rowNum
+ * @param {object[]} warnings
+ */
+function parseWeightCell(raw, columnUnit, targetUnit, rowNum, warnings) {
+  const result = { weight: undefined, notes: [], columnConverted: null };
   const s = String(raw || "").trim();
   if (!s) return result;
 
@@ -496,9 +535,6 @@ function parseWeightCell(raw, columnUnit, rowNum, warnings) {
 
   const pct = s.match(/^(\d+(?:\.\d+)?)\s*%(?:\s*(TM|1RM))?$/i);
   if (pct) {
-    const label = pct[2]
-      ? `Load: ${pct[1]}% ${pct[2].toUpperCase() === "1RM" ? "1RM" : "TM"}`
-      : `Load: ${pct[1]}%`;
     // Normalize 75% TM style
     let note;
     if (/75%\s*TM/i.test(s)) note = "Load: 75% TM";
@@ -520,26 +556,39 @@ function parseWeightCell(raw, columnUnit, rowNum, warnings) {
   if (numSuffix) {
     let weight = Number(numSuffix[1]);
     const suffix = (numSuffix[2] || "").toLowerCase();
-    let unit = columnUnit;
-    if (suffix === "kg") {
-      if (columnUnit === "lb") {
+    const hasSuffix =
+      suffix === "kg" || suffix === "lb" || suffix === "lbs";
+
+    let cellUnit = null;
+    if (suffix === "kg") cellUnit = "kg";
+    else if (suffix === "lb" || suffix === "lbs") cellUnit = "lb";
+    else if (columnUnit === "kg" || columnUnit === "lb") cellUnit = columnUnit;
+    else if (targetUnit === "kg" || targetUnit === "lb") cellUnit = targetUnit;
+
+    const toUnit =
+      targetUnit === "kg" || targetUnit === "lb" ? targetUnit : cellUnit;
+
+    if (cellUnit && toUnit && cellUnit !== toUnit) {
+      const rawNum = weight;
+      if (cellUnit === "kg" && toUnit === "lb") {
         weight = Math.round(weight * 2.20462 * 2) / 2;
-        warnings.push({
-          row: rowNum,
-          message: `Converted ${numSuffix[1]} kg to ${weight} lb`,
-        });
-      } else {
-        unit = "kg";
-      }
-    } else if (suffix === "lb" || suffix === "lbs") {
-      if (columnUnit === "kg") {
+      } else if (cellUnit === "lb" && toUnit === "kg") {
         weight = Math.round((weight / 2.20462) * 2) / 2;
+      }
+      if (hasSuffix) {
         warnings.push({
           row: rowNum,
-          message: `Converted ${numSuffix[1]} lb to ${weight} kg`,
+          message: `Converted ${numSuffix[1]} ${
+            cellUnit === "kg" ? "kg" : "lb"
+          } to ${weight} ${toUnit}`,
         });
       } else {
-        unit = "lb";
+        result.columnConverted = {
+          from: cellUnit,
+          to: toUnit,
+          raw: rawNum,
+          converted: weight,
+        };
       }
     }
     result.weight = weight;

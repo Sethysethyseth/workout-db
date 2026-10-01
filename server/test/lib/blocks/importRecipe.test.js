@@ -276,3 +276,149 @@ describe("preview without options.recipe unchanged", () => {
     expect(result.errors.some((e) => e.path === "columns.Exercise")).toBe(true);
   });
 });
+
+describe("bksf1c - weight unit from source headers (P1-6) + BOUNCE 1 conversion", () => {
+  const textKg = [
+    "Movement,Sets x Reps,Load (kg),Session",
+    "Squat,3x5,100,Lower",
+  ].join("\n");
+
+  const recipeNoUnit = {
+    version: 1,
+    columns: {
+      Movement: "exercise",
+      "Load (kg)": "weight",
+      Session: "day name",
+      "Sets x Reps": "ignore",
+    },
+    prescriptionColumn: "Sets x Reps",
+  };
+
+  test("deterministic Load (kg) + options.unit lb converts to 220.5 with one sheet-level message", () => {
+    const preview = buildImportPreview(textKg, "table", { unit: "lb" });
+    expect(preview.ok).toBe(true);
+    expect(preview.block.unit).toBe("lb");
+    expect(preview.block.weeks[0].days[0].exercises[0].sets[0].weight).toBe(
+      220.5
+    );
+    const messages = (preview.warnings || []).map((w) => w.message);
+    const conversion = messages.filter(
+      (m) => /Load \(kg\)/i.test(m) && /converted/i.test(m)
+    );
+    expect(conversion).toHaveLength(1);
+    expect(conversion[0]).toMatch(/100 kg -> 220\.5 lb/);
+  });
+
+  test("recipe path (no recipe.unit) matches deterministic Load (kg) conversion", () => {
+    const deterministic = buildImportPreview(textKg, "table", { unit: "lb" });
+    const recipePreview = buildImportPreview(textKg, "table", {
+      unit: "lb",
+      recipe: { ...recipeNoUnit },
+    });
+    expect(recipePreview.ok).toBe(true);
+    expect(recipePreview.block.unit).toBe("lb");
+    expect(
+      recipePreview.block.weeks[0].days[0].exercises[0].sets[0].weight
+    ).toBe(220.5);
+    expect(recipePreview.block.weeks[0].days[0].exercises[0].sets[0].weight).toBe(
+      deterministic.block.weeks[0].days[0].exercises[0].sets[0].weight
+    );
+    const messages = (recipePreview.warnings || []).map((w) => w.message);
+    expect(
+      messages.some(
+        (m) => /Load \(kg\)/i.test(m) && /converted/i.test(m) && /kilogram/i.test(m)
+      )
+    ).toBe(true);
+  });
+
+  test("Load (kg) + options.unit kg keeps 100 with no conversion message", () => {
+    const preview = buildImportPreview(textKg, "table", { unit: "kg" });
+    expect(preview.ok).toBe(true);
+    expect(preview.block.weeks[0].days[0].exercises[0].sets[0].weight).toBe(
+      100
+    );
+    const messages = (preview.warnings || []).map((w) => w.message);
+    expect(messages.some((m) => /converted/i.test(m))).toBe(false);
+  });
+
+  test("Weight lbs + options.unit kg converts 225 to 102", () => {
+    const text = [
+      "Movement,Sets x Reps,Weight lbs,Session",
+      "Squat,3x5,225,Lower",
+    ].join("\n");
+    const preview = buildImportPreview(text, "table", { unit: "kg" });
+    expect(preview.ok).toBe(true);
+    expect(preview.block.unit).toBe("kg");
+    expect(preview.block.weeks[0].days[0].exercises[0].sets[0].weight).toBe(
+      102
+    );
+    const messages = (preview.warnings || []).map((w) => w.message);
+    expect(
+      messages.some(
+        (m) => /Weight lbs/i.test(m) && /converted/i.test(m) && /225 lb -> 102 kg/
+      )
+    ).toBe(true);
+  });
+
+  test("Weight lbs header stays pounds with a notice when import unit is lb", () => {
+    const text = [
+      "Movement,Sets x Reps,Weight lbs,Session",
+      "Squat,3x5,225,Lower",
+    ].join("\n");
+    const recipe = {
+      version: 1,
+      columns: {
+        Movement: "exercise",
+        "Weight lbs": "weight",
+        Session: "day name",
+        "Sets x Reps": "ignore",
+      },
+      prescriptionColumn: "Sets x Reps",
+    };
+    const preview = buildImportPreview(text, "table", {
+      unit: "lb",
+      recipe,
+    });
+    expect(preview.ok).toBe(true);
+    expect(preview.block.weeks[0].days[0].exercises[0].sets[0].weight).toBe(
+      225
+    );
+    const messages = (preview.warnings || []).map((w) => w.message);
+    expect(
+      messages.some((m) => /Weight lbs/i.test(m) && /pound/i.test(m))
+    ).toBe(true);
+    expect(messages.some((m) => /converted/i.test(m))).toBe(false);
+  });
+
+  test('recipe unit: "kg" with unitless header still uses kg (existing convert behaviour)', () => {
+    const text = [
+      "Movement,Sets x Reps,Load,Session",
+      "Squat,3x5,100,Lower",
+    ].join("\n");
+    const recipe = {
+      version: 1,
+      unit: "kg",
+      columns: {
+        Movement: "exercise",
+        Load: "weight",
+        Session: "day name",
+        "Sets x Reps": "ignore",
+      },
+      prescriptionColumn: "Sets x Reps",
+    };
+    const preview = buildImportPreview(text, "table", {
+      unit: "lb",
+      recipe,
+    });
+    expect(preview.ok).toBe(true);
+    // 100 kg -> 220.5 lb via validateBlockDraft (recipe.unit path)
+    expect(preview.block.weeks[0].days[0].exercises[0].sets[0].weight).toBe(
+      220.5
+    );
+    expect(preview.block.unit).toBe("lb");
+    const messages = (preview.warnings || []).map((w) => w.message);
+    expect(messages.some((m) => /kilogram/i.test(m) && /converted to lb/i.test(m))).toBe(
+      true
+    );
+  });
+});

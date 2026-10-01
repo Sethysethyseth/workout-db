@@ -7,7 +7,11 @@ import { WeekStrip } from "../ui/WeekStrip.jsx";
 import { ExerciseCard } from "../builder/ExerciseCard.jsx";
 import { ExercisePicker } from "../builder/ExercisePicker.jsx";
 import { formatExerciseForCard } from "./formatExerciseForCard.js";
-import { formatImportStats } from "./formatImportStats.js";
+import {
+  formatAiReadCompareStats,
+  formatImportStats,
+  pluralize,
+} from "./formatImportStats.js";
 import {
   formatUnmatchedHeading,
   UNMATCHED_ANALYTICS_NOTE,
@@ -31,6 +35,8 @@ export function ImportPreviewStep({
   creating,
   unit = "lb",
   aiLayoutOffer = null,
+  aiReadCompare = null,
+  onUseOriginalRead = null,
 }) {
   const block = preview?.block || null;
   const stats = preview?.stats || {};
@@ -104,6 +110,14 @@ export function ImportPreviewStep({
 
   const nameSummary = blockName.trim() || "Name this block";
 
+  const aiCompareWarn = Boolean(
+    aiReadCompare &&
+      ((Number(aiReadCompare.current?.days) || 0) <
+        (Number(aiReadCompare.prior?.days) || 0) ||
+        (Number(aiReadCompare.current?.sets) || 0) <
+          (Number(aiReadCompare.prior?.sets) || 0))
+  );
+
   return (
     <div className="bk-import-preview">
       <p className="bk-import-stats">{statsLine}</p>
@@ -112,8 +126,35 @@ export function ImportPreviewStep({
         {warnings.length === 0 ? <Chip tone="good">Nothing skipped</Chip> : null}
       </div>
 
+      {aiReadCompare ? (
+        <div
+          className={
+            aiCompareWarn
+              ? "bk-import-ai-compare bk-import-ai-compare--warn"
+              : "bk-import-ai-compare"
+          }
+          role="status"
+        >
+          <p className="bk-import-ai-compare__line">
+            {`AI read: ${formatAiReadCompareStats(aiReadCompare.current)} (was ${formatAiReadCompareStats(aiReadCompare.prior)})`}
+          </p>
+          {typeof onUseOriginalRead === "function" ? (
+            <button
+              type="button"
+              className="btn btn-ghost bk-import-ai-compare__undo"
+              onClick={onUseOriginalRead}
+              disabled={creating}
+            >
+              Use the original read
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+
       {warnings.length > 0 ? (
-        <Disclosure summary={`${warnings.length} things we changed or skipped`}>
+        <Disclosure
+          summary={`${pluralize(warnings.length, "thing", "things")} we changed or skipped`}
+        >
           <ul className="bk-import-warnings">
             {warnings.map((w, i) => {
               const row = w?.row != null ? `Row ${w.row}: ` : "";
@@ -133,7 +174,9 @@ export function ImportPreviewStep({
             checked={includeWarmups}
             onChange={(e) => onIncludeWarmupsChange?.(e.target.checked)}
           />
-          <span>Include warm-up rows ({warmupRows})</span>
+          <span>
+            Include {pluralize(warmupRows, "warm-up row", "warm-up rows")}
+          </span>
         </label>
       ) : null}
 
@@ -176,7 +219,9 @@ export function ImportPreviewStep({
         Names are kept exactly as written - two spellings are two exercises.
       </p>
       {matched.length > 0 ? (
-        <Disclosure summary={`${matched.length} match your library`}>
+        <Disclosure
+          summary={`${pluralize(matched.length, "match", "matches")} your library`}
+        >
           <ul className="bk-import-match-list bk-import-match-list--matched">
             {matched.map((ex) => {
               const from = ex.name;

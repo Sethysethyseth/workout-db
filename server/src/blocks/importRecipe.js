@@ -491,11 +491,111 @@ function weightHeaderForUnit(unit) {
 }
 
 /**
- * Apply a validated recipe to a parsed table / sheet grid.
- * @returns {{ header: string[], rows: string[][], rowNumbers: number[], warnings: object[] }}
+ * Detect lb/kg from a source header's own text (kg, kgs, kilo, lb, lbs, pounds).
+ * Case-insensitive; parentheses allowed.
+ * @param {string} header
+ * @returns {"kg"|"lb"|null}
  */
-function applyImportRecipe(parsedTable, recipe) {
+function unitFromHeaderText(header) {
+  const tokens = String(header || "")
+    .toLowerCase()
+    .match(/[a-z]+/g);
+  if (!tokens) return null;
+  for (const t of tokens) {
+    if (t === "kg" || t === "kgs" || t === "kilo") return "kg";
+    if (t === "lb" || t === "lbs" || t === "pound" || t === "pounds") return "lb";
+  }
+  return null;
+}
+
+/**
+ * Weight column unit: recipe.unit, then source header text, then import unit.
+ * (Per-cell suffixes are applied later when a prescription supplies them.)
+ * @param {object} recipe
+ * @param {string|null} weightSourceHeader
+ * @param {"lb"|"kg"|null|undefined} importUnit
+ * @returns {{
+ *   unit: "lb"|"kg"|null,
+ *   from: "recipe"|"header"|"import"|null,
+ *   sourceHeader: string|null,
+ * }}
+ */
+function resolveWeightColumnUnit(recipe, weightSourceHeader, importUnit) {
+  const sourceHeader =
+    typeof weightSourceHeader === "string" && weightSourceHeader.trim()
+      ? weightSourceHeader
+      : null;
+  if (recipe && (recipe.unit === "kg" || recipe.unit === "lb")) {
+    return { unit: recipe.unit, from: "recipe", sourceHeader };
+  }
+  if (sourceHeader) {
+    const fromHeader = unitFromHeaderText(sourceHeader);
+    if (fromHeader) {
+      return { unit: fromHeader, from: "header", sourceHeader };
+    }
+  }
+  if (importUnit === "kg" || importUnit === "lb") {
+    return { unit: importUnit, from: "import", sourceHeader };
+  }
+  return { unit: null, from: null, sourceHeader };
+}
+
+/**
+ * Human-readable unit notice for the preview changes list.
+ * Column-header unit mismatches convert inside tableToBlock (one sheet-level
+ * message there) - skip the soft "read as" notice in that case so the preview
+ * does not contradict the stored numbers.
+ * @param {{ unit: "lb"|"kg"|null, from: string|null, sourceHeader: string|null }} meta
+ * @param {"lb"|"kg"|null|undefined} importUnit
+ * @param {boolean} [willConvert] recipe.unit vs import unit (validateBlockDraft)
+ */
+function weightUnitNoticeMessage(meta, importUnit, willConvert) {
+  if (!meta || (meta.from !== "recipe" && meta.from !== "header") || !meta.unit) {
+    return null;
+  }
+  // Header unit differs from import unit: tableToBlock emits the conversion.
+  if (
+    meta.from === "header" &&
+    importUnit &&
+    meta.unit !== importUnit
+  ) {
+    return null;
+  }
+  const label =
+    meta.sourceHeader && String(meta.sourceHeader).trim()
+      ? String(meta.sourceHeader).trim()
+      : weightHeaderForUnit(meta.unit);
+  const asWord = meta.unit === "kg" ? "kilograms" : "pounds";
+  let message = `${label} read as ${asWord}`;
+  if (
+    willConvert &&
+    importUnit &&
+    meta.unit !== importUnit
+  ) {
+    message += `; converted to ${importUnit}`;
+  }
+  return message;
+}
+
+/**
+ * Apply a validated recipe to a parsed table / sheet grid.
+ * @param {object} parsedTable
+ * @param {object} recipe
+ * @param {{ unit?: "lb"|"kg" }} [options] import's chosen unit (fallback for weight header)
+ * @returns {{
+ *   header: string[],
+ *   rows: string[][],
+ *   rowNumbers: number[],
+ *   warnings: object[],
+ *   weightColumn: { unit: "lb"|"kg"|null, from: string|null, sourceHeader: string|null },
+ * }}
+ */
+function applyImportRecipe(parsedTable, recipe, options = {}) {
   const warnings = [];
+  const importUnit =
+    options && (options.unit === "kg" || options.unit === "lb")
+      ? options.unit
+      : null;
   const { sheetRows, rowNumbers } = asSheet(parsedTable);
   const headerRowIdx =
     typeof recipe.headerRow === "number" && recipe.headerRow >= 0
@@ -634,7 +734,21 @@ function applyImportRecipe(parsedTable, recipe) {
       ? indexOfHeader(headers, recipe.prescriptionColumn)
       : -1;
 
-  const unit = recipe.unit === "kg" || recipe.unit === "lb" ? recipe.unit : null;
+  let weightSourceHeader = null;
+  for (const [sourceHeader, role] of Object.entries(columns)) {
+    if (role === "weight") {
+      weightSourceHeader = sourceHeader;
+      break;
+    }
+  }
+  const weightColumn = resolveWeightColumnUnit(
+    recipe,
+    weightSourceHeader,
+    importUnit
+  );
+  // Column unit for the emitted header (recipe / source header / import).
+  // recipe.unit alone still drives block.unit in importPreview (conversion).
+  const unit = weightColumn.unit;
   const needsDayName =
     Boolean(recipe.dayHeaderRows) || roleToSourceIdx.has("day name");
   const needsWeek =
@@ -679,6 +793,10 @@ function applyImportRecipe(parsedTable, recipe) {
     if (role === "weight") return weightHeaderForUnit(unit);
     return ROLE_TO_HEADER[role] || role;
   });
+
+  // recipe.unit still wins for "was this an explicit recipe unit?" (per-cell below)
+  const recipeUnit =
+    recipe.unit === "kg" || recipe.unit === "lb" ? recipe.unit : null;
 
   const outRows = [];
   const outRowNums = [];
@@ -741,10 +859,16 @@ function applyImportRecipe(parsedTable, recipe) {
       }
       if (parsed.weight != null) setCell("weight", String(parsed.weight));
       if (parsed.rpe != null) setCell("rpe", String(parsed.rpe));
-      // Prefer per-cell unit for weight header if we emitted generic Weight
-      if (parsed.weightUnit && unit == null) {
+      // Prefer per-cell unit for weight header when nothing stronger was set
+      if (parsed.weightUnit && recipeUnit == null && weightColumn.from !== "header") {
         const wi = outRoles.indexOf("weight");
-        if (wi >= 0) outHeader[wi] = weightHeaderForUnit(parsed.weightUnit);
+        if (wi >= 0) {
+          outHeader[wi] = weightHeaderForUnit(parsed.weightUnit);
+          if (weightColumn.unit == null) {
+            weightColumn.unit = parsed.weightUnit;
+            weightColumn.from = "cell";
+          }
+        }
       }
     }
 
@@ -770,6 +894,7 @@ function applyImportRecipe(parsedTable, recipe) {
     rows: outRows,
     rowNumbers: outRowNums,
     warnings,
+    weightColumn,
   };
 }
 
@@ -840,4 +965,8 @@ module.exports = {
   sheetFromText,
   headersForRecipe,
   headerNamesAt,
+  unitFromHeaderText,
+  resolveWeightColumnUnit,
+  weightUnitNoticeMessage,
+  weightHeaderForUnit,
 };

@@ -182,6 +182,38 @@
   font: 400 13px/1.4 var(--font-sans);
   color: var(--bk-muted);
   max-width: 65ch;
+  min-height: 1.4em;
+}
+
+.bk-import-ai-compare {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: var(--bk-r);
+  border: 1px solid var(--bk-line);
+  background: var(--bk-field);
+}
+
+.bk-import-ai-compare--warn {
+  border-color: color-mix(in srgb, var(--bk-bad) 40%, var(--bk-line));
+  background: color-mix(in srgb, var(--bk-bad-soft) 70%, var(--bk-field));
+}
+
+.bk-import-ai-compare__line {
+  margin: 0;
+  font: 400 14px/1.4 var(--font-sans);
+  color: var(--bk-ink);
+}
+
+.bk-import-ai-compare--warn .bk-import-ai-compare__line {
+  color: var(--bk-bad);
+}
+
+.bk-import-ai-compare__undo {
+  align-self: flex-start;
+  min-height: 44px;
+  padding-inline: 0;
 }
 
 .bk-import-actions .btn {

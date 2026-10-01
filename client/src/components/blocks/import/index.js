@@ -4,7 +4,12 @@ export { AiLayoutOffer } from "./AiLayoutOffer.jsx";
 export { ImportSourceStep } from "./ImportSourceStep.jsx";
 export { ImportPreviewStep } from "./ImportPreviewStep.jsx";
 export { formatExerciseForCard } from "./formatExerciseForCard.js";
-export { formatImportStats, formatImportToast } from "./formatImportStats.js";
+export {
+  formatImportStats,
+  formatImportToast,
+  formatAiReadCompareStats,
+  pluralize,
+} from "./formatImportStats.js";
 export {
   formatUnmatchedHeading,
   UNMATCHED_ANALYTICS_NOTE,

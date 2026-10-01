@@ -62,6 +62,9 @@ export function ImportBlockPage() {
   const [recipe, setRecipe] = useState(null);
   const [mappingLayout, setMappingLayout] = useState(false);
   const [coachStatus, setCoachStatus] = useState(null);
+  // Deterministic preview kept after a successful AI read (undo target).
+  const [priorPreview, setPriorPreview] = useState(null);
+  const [aiReadCompare, setAiReadCompare] = useState(null);
 
   const delimitedSource = source === "paste" || source === "file";
   const byoKey = loadCoachKey();
@@ -89,6 +92,11 @@ export function ImportBlockPage() {
       cancelled = true;
     };
   }, [delimitedSource, byoKey]);
+
+  const clearAiReadSnapshot = useCallback(() => {
+    setPriorPreview(null);
+    setAiReadCompare(null);
+  }, []);
 
   const buildOptions = useCallback(
     (warmupOverride, recipeOverride) => {
@@ -128,6 +136,7 @@ export function ImportBlockPage() {
         setRenames({});
         setBlockName(data?.block?.name ? String(data.block.name) : "");
         setStep(2);
+        return data;
       } catch (err) {
         if (err instanceof ApiError && err.status === 422) {
           const body = err.body || {};
@@ -146,6 +155,7 @@ export function ImportBlockPage() {
         } else {
           setNetworkError("Couldn't reach the server. Check your connection and try again.");
         }
+        return null;
       } finally {
         setPreviewing(false);
       }
@@ -159,6 +169,8 @@ export function ImportBlockPage() {
     setNetworkError(null);
     setErrors(null);
     setMappingLayout(true);
+    // Capture the deterministic preview before the AI recipe replaces it.
+    const savedPreview = preview;
     try {
       const unit = sourceUnit || deviceUnit || "lb";
       const data = await coachImportMap({
@@ -180,7 +192,16 @@ export function ImportBlockPage() {
       } catch {
         /* keep prior status */
       }
-      await runPreview(undefined, nextRecipe);
+      const nextPreview = await runPreview(undefined, nextRecipe);
+      if (savedPreview?.ok && nextPreview?.ok) {
+        setPriorPreview(savedPreview);
+        setAiReadCompare({
+          prior: savedPreview.stats || {},
+          current: nextPreview.stats || {},
+        });
+      } else {
+        clearAiReadSnapshot();
+      }
     } catch (err) {
       if (err instanceof ApiError) {
         const body = err.body || {};
@@ -219,6 +240,23 @@ export function ImportBlockPage() {
     } finally {
       setMappingLayout(false);
     }
+  }
+
+  /**
+   * Restore the pre-AI deterministic preview and clear the recipe.
+   * Does not call /coach/import-map (no coach questions).
+   */
+  function onUseOriginalRead() {
+    if (!priorPreview) return;
+    setPreview(priorPreview);
+    setRecipe(null);
+    setRenames({});
+    setBlockName(
+      priorPreview?.block?.name ? String(priorPreview.block.name) : ""
+    );
+    setErrors(null);
+    setNetworkError(null);
+    clearAiReadSnapshot();
   }
 
   function onRename(from, to) {
@@ -292,12 +330,14 @@ export function ImportBlockPage() {
                 setErrors(null);
                 setNetworkError(null);
                 setRecipe(null);
+                clearAiReadSnapshot();
               }}
               text={text}
               onTextChange={(v) => {
                 setText(v);
                 setFileError(null);
                 setRecipe(null);
+                clearAiReadSnapshot();
               }}
               oldApp={oldApp}
               onOldAppChange={setOldApp}
@@ -309,7 +349,10 @@ export function ImportBlockPage() {
               fileError={fileError}
               onFileError={setFileError}
               previewing={previewing || mappingLayout}
-              onPreview={() => void runPreview()}
+              onPreview={() => {
+                clearAiReadSnapshot();
+                void runPreview();
+              }}
             />
             {errors ? (
               <ImportErrorCard
@@ -355,6 +398,8 @@ export function ImportBlockPage() {
               onCreate={() => void onCreate()}
               creating={creating}
               unit={deviceUnit}
+              aiReadCompare={aiReadCompare}
+              onUseOriginalRead={onUseOriginalRead}
               aiLayoutOffer={
                 showAiOnPreview ? (
                   <AiLayoutOffer

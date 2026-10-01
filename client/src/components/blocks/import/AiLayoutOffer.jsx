@@ -73,7 +73,9 @@ export function AiLayoutOffer({
         {mapping ? "Reading layout…" : "Let AI read this layout"}
       </button>
       <p className="bk-import-ai-layout__cost" role="status">
-        {costLine}
+        {mapping
+          ? "This can take up to a minute. Hang tight."
+          : costLine}
       </p>
     </div>
   );

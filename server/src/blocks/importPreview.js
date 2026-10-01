@@ -12,6 +12,7 @@ const {
   applyImportRecipe,
   sheetFromText,
   headersForRecipe,
+  weightUnitNoticeMessage,
 } = require("./importRecipe");
 
 const MAX_TEXT_CHARS = 1_000_000;
@@ -230,12 +231,26 @@ function applyRecipeThenTable(text, options, tableOpts) {
       sheetRows: sheet.sheetRows,
       rowNumbers: sheet.rowNumbers,
     },
-    validated.recipe
+    validated.recipe,
+    { unit: tableOpts.unit }
   );
+  // Explicit recipe.unit still sets block.unit (validateBlockDraft converts).
+  // Header-inferred units keep the import unit on the block; tableToBlock
+  // converts plain numbers when the column unit differs from options.unit.
   const unit =
     validated.recipe.unit === "lb" || validated.recipe.unit === "kg"
       ? validated.recipe.unit
       : tableOpts.unit;
+  const willConvert =
+    (validated.recipe.unit === "lb" || validated.recipe.unit === "kg") &&
+    tableOpts.unit &&
+    validated.recipe.unit !== tableOpts.unit;
+  const unitNotice = weightUnitNoticeMessage(
+    applied.weightColumn,
+    tableOpts.unit,
+    willConvert
+  );
+  const unitWarnings = unitNotice ? [{ message: unitNotice }] : [];
   const result = runTableToBlock(
     {
       header: applied.header,
@@ -247,12 +262,20 @@ function applyRecipeThenTable(text, options, tableOpts) {
   if (result.errors) {
     return {
       ...result,
-      warnings: [...(applied.warnings || []), ...(result.warnings || [])],
+      warnings: [
+        ...unitWarnings,
+        ...(applied.warnings || []),
+        ...(result.warnings || []),
+      ],
     };
   }
   return {
     ...result,
-    warnings: [...(applied.warnings || []), ...(result.warnings || [])],
+    warnings: [
+      ...unitWarnings,
+      ...(applied.warnings || []),
+      ...(result.warnings || []),
+    ],
     notices: {
       ...(result.notices || {}),
       aiLayoutRecipe: "This sheet was read with an AI layout recipe.",

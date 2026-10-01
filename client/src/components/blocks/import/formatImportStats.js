@@ -4,8 +4,9 @@
  * @param {string} singular
  * @param {string} plural
  */
-function unit(n, singular, plural) {
-  return `${n} ${n === 1 ? singular : plural}`;
+export function pluralize(n, singular, plural) {
+  const count = Number(n) || 0;
+  return `${count} ${count === 1 ? singular : plural}`;
 }
 
 /**
@@ -21,13 +22,29 @@ export function formatImportStats(stats) {
   const timed = Number(stats?.timedSets) || 0;
   return {
     line: [
-      unit(weeks, "WEEK", "WEEKS"),
-      unit(days, "DAY", "DAYS"),
-      unit(exercises, "EXERCISE", "EXERCISES"),
-      unit(sets, "SET", "SETS"),
+      pluralize(weeks, "WEEK", "WEEKS"),
+      pluralize(days, "DAY", "DAYS"),
+      pluralize(exercises, "EXERCISE", "EXERCISES"),
+      pluralize(sets, "SET", "SETS"),
     ].join(" · "),
-    timedSets: unit(timed, "TIMED SET", "TIMED SETS"),
+    timedSets: pluralize(timed, "TIMED SET", "TIMED SETS"),
   };
+}
+
+/**
+ * Compact stats for the AI-read comparison line (lowercase units).
+ * @param {{ weeks?: number, days?: number, sets?: number }} stats
+ * @returns {string}
+ */
+export function formatAiReadCompareStats(stats) {
+  const weeks = Number(stats?.weeks) || 0;
+  const days = Number(stats?.days) || 0;
+  const sets = Number(stats?.sets) || 0;
+  return [
+    pluralize(weeks, "week", "weeks"),
+    pluralize(days, "day", "days"),
+    pluralize(sets, "set", "sets"),
+  ].join(" · ");
 }
 
 /**
