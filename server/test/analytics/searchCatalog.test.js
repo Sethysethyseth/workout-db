@@ -18,8 +18,12 @@ function makeCatalog(entries, aliases = []) {
   return { byId, byNormalizedName, byAlias, muscleWeights: {} };
 }
 
+function namesOf(payload) {
+  return payload.results.map((row) => row.name);
+}
+
 describe("searchCatalog", () => {
-  test("exact beats prefix beats substring", () => {
+  test("exact beats whole-word / prefix / substring on name", () => {
     const catalog = makeCatalog([
       {
         id: "exact",
@@ -44,7 +48,7 @@ describe("searchCatalog", () => {
       },
     ]);
 
-    const results = searchCatalog(catalog, new Map(), "bench press", { limit: 10 });
+    const { results } = searchCatalog(catalog, new Map(), "bench press", { limit: 10 });
 
     expect(results.map((row) => row.exerciseId)).toEqual([
       "exact",
@@ -72,7 +76,7 @@ describe("searchCatalog", () => {
       },
     ]);
 
-    const results = searchCatalog(catalog, userIndex, "cable", { limit: 10 });
+    const { results } = searchCatalog(catalog, userIndex, "cable", { limit: 10 });
 
     expect(results[0]).toMatchObject({
       source: "userExercise",
@@ -88,7 +92,7 @@ describe("searchCatalog", () => {
 
   test("alias query returns the canonical catalog entry with matchedAlias set", () => {
     const catalog = loadCatalog();
-    const results = searchCatalog(catalog, new Map(), "skullcrushers", { limit: 5 });
+    const { results } = searchCatalog(catalog, new Map(), "skullcrushers", { limit: 5 });
 
     expect(results.length).toBeGreaterThan(0);
     expect(results[0]).toMatchObject({
@@ -107,7 +111,7 @@ describe("searchCatalog", () => {
     expect(stretchingEntry).toBeDefined();
 
     const fragment = stretchingEntry.name.slice(0, 6).toLowerCase();
-    const results = searchCatalog(catalog, new Map(), fragment, { limit: 25 });
+    const { results } = searchCatalog(catalog, new Map(), fragment, { limit: 25 });
 
     expect(results.every((row) => row.source !== "catalog" || row.exerciseId !== stretchingEntry.id)).toBe(
       true
@@ -126,7 +130,7 @@ describe("searchCatalog", () => {
       },
     ]);
 
-    const results = searchCatalog(catalog, new Map(), "bench press", { limit: 5 });
+    const { results } = searchCatalog(catalog, new Map(), "bench press", { limit: 5 });
 
     expect(results[0]).toMatchObject({
       source: "catalog",
@@ -147,7 +151,7 @@ describe("searchCatalog", () => {
       },
     ]);
 
-    const results = searchCatalog(catalog, new Map(), "cable fly", { limit: 5 });
+    const { results } = searchCatalog(catalog, new Map(), "cable fly", { limit: 5 });
 
     expect(results[0].secondaryMuscles).toEqual([]);
   });
@@ -162,7 +166,7 @@ describe("searchCatalog", () => {
       },
     ]);
 
-    const results = searchCatalog(makeCatalog([]), userIndex, "custom press", { limit: 5 });
+    const { results } = searchCatalog(makeCatalog([]), userIndex, "custom press", { limit: 5 });
 
     expect(results[0]).toMatchObject({
       source: "userExercise",
@@ -183,7 +187,68 @@ describe("searchCatalog", () => {
       }))
     );
 
-    const results = searchCatalog(catalog, new Map(), "strength", { limit: 4 });
+    const { results, total, hasMore } = searchCatalog(catalog, new Map(), "strength", {
+      limit: 4,
+    });
     expect(results).toHaveLength(4);
+    expect(total).toBe(12);
+    expect(hasMore).toBe(true);
+  });
+
+  test('press ranks whole-word matches ahead of substring-only, with Leg/Seated DB/DB Bench Press in first 40', () => {
+    const catalog = loadCatalog();
+    const { results } = searchCatalog(catalog, new Map(), "press", { limit: 40 });
+    const names = namesOf({ results });
+
+    const wordPress = (name) =>
+      normalizeExerciseName(name)
+        .split(/\s+/)
+        .some((w) => w === "press" || w === "presses");
+
+    let sawSubstringOnly = false;
+    for (const name of names) {
+      if (!wordPress(name)) {
+        sawSubstringOnly = true;
+      } else if (sawSubstringOnly) {
+        throw new Error(`whole-word "${name}" appeared after a substring-only hit`);
+      }
+    }
+
+    expect(names).toEqual(expect.arrayContaining([
+      "Leg Press",
+      "Seated Dumbbell Press",
+      "Dumbbell Bench Press",
+    ]));
+  });
+
+  test('curl returns key curls; "dumbbell curl" ranks Dumbbell Bicep Curl first via alias', () => {
+    const catalog = loadCatalog();
+    const curl = searchCatalog(catalog, new Map(), "curl", { limit: 40 });
+    const curlNames = namesOf(curl);
+    expect(curlNames).toEqual(
+      expect.arrayContaining(["Dumbbell Bicep Curl", "Alternate Hammer Curl"])
+    );
+
+    const dbCurl = searchCatalog(catalog, new Map(), "dumbbell curl", { limit: 40 });
+    expect(dbCurl.results[0].name).toBe("Dumbbell Bicep Curl");
+  });
+
+  test('"seated row" returns Seated Cable Rows in the top 5 (all-words, any order)', () => {
+    const catalog = loadCatalog();
+    const { results } = searchCatalog(catalog, new Map(), "seated row", { limit: 40 });
+    const top5 = results.slice(0, 5).map((r) => r.name);
+    expect(top5).toContain("Seated Cable Rows");
+  });
+
+  test("limit 50 is honoured and hasMore is true when more matches exist", () => {
+    const catalog = loadCatalog();
+    const payload = searchCatalog(catalog, new Map(), "press", { limit: 50 });
+    expect(payload.results.length).toBeLessThanOrEqual(50);
+    expect(payload.total).toBeGreaterThan(50);
+    expect(payload.hasMore).toBe(true);
+
+    const exact = searchCatalog(catalog, new Map(), "leg press", { limit: 50 });
+    expect(exact.hasMore).toBe(false);
+    expect(exact.total).toBe(exact.results.length);
   });
 });

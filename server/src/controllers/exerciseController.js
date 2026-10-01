@@ -313,16 +313,18 @@ async function searchExercises(req, res, next) {
           error: "limit must be an integer",
         });
       }
-      limit = Math.min(25, Math.max(1, parsed));
+      limit = Math.min(50, Math.max(1, parsed));
     }
 
     const userRows = await prisma.userExercise.findMany({
       where: { userId },
     });
     const userIndex = buildUserExerciseIndex(userRows);
-    const results = searchCatalog(loadCatalog(), userIndex, q, { limit });
+    const { results, total, hasMore } = searchCatalog(loadCatalog(), userIndex, q, {
+      limit,
+    });
 
-    return res.json({ results });
+    return res.json({ results, total, hasMore });
   } catch (err) {
     return next(err);
   }

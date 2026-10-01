@@ -2,33 +2,91 @@
 
 .bk-builder {
   padding-bottom: 48px;
+  scroll-padding-bottom: 24px;
 }
 
-.bk-builder .bk-sticky-header {
+/* Hide the In-progress bar on builder routes (roominess; critic P2-1). */
+html.bk-builder-route .persistent-workout-bar-wrap {
+  display: none !important;
+}
+
+/* Phone keyboard: hide global bottom chrome while a builder field is focused. */
+html.bk-builder-kbd .bottom-nav,
+html.bk-builder-kbd .persistent-workout-bar-wrap {
+  display: none !important;
+}
+
+html.bk-builder-kbd {
+  scroll-padding-bottom: 16px;
+}
+
+html.bk-builder-kbd .bk-builder__weeks {
+  display: none;
+}
+
+.bk-builder .bk-sticky-header,
+.bk-builder .bk-builder-sticky {
   margin-inline: -16px;
   padding-inline: 16px;
+  /* Single compact row: name + save state + overflow (<= 56px). */
+  padding-top: 6px;
+  padding-bottom: 6px;
+  max-height: 56px;
+  box-sizing: border-box;
+  overflow: visible;
+  z-index: 30;
+}
+
+.bk-builder .bk-sticky-header__row {
+  align-items: center;
+  min-height: 44px;
+  max-height: 44px;
+}
+
+.bk-builder .bk-sticky-header__left {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.bk-builder .bk-sticky-header__left .bk-eyebrow {
+  display: block;
+  width: 100%;
+  margin: 0;
+  font: inherit;
+  letter-spacing: normal;
+  text-transform: none;
+  color: inherit;
 }
 
 @media (min-width: 640px) {
-  .bk-builder .bk-sticky-header {
+  .bk-builder .bk-sticky-header,
+  .bk-builder .bk-builder-sticky {
     margin-inline: -24px;
     padding-inline: 24px;
   }
 }
 
-/* Name in eyebrow slot */
+/* Desktop: sticky builder header clears the top nav, never underlaps it. */
+@media (min-width: 720px) {
+  .bk-builder .bk-sticky-header,
+  .bk-builder .bk-builder-sticky {
+    z-index: 30;
+  }
+}
+
+/* Name in eyebrow slot — full width, >= 16px (no iOS zoom). */
 .bk-builder-name-input {
   display: block;
   width: 100%;
-  max-width: 280px;
+  max-width: none;
   min-height: 44px;
   border: 0;
   border-bottom: 1px solid var(--bk-line);
   background: transparent;
   color: var(--bk-ink);
-  font: 600 11px/1.2 var(--font-sans);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  font: 600 16px/1.2 var(--font-sans);
+  letter-spacing: 0.02em;
+  text-transform: none;
   padding: 8px 0;
 }
 
@@ -43,20 +101,147 @@
 
 .bk-builder-name-tap {
   cursor: pointer;
-  min-height: 28px;
+  min-height: 44px;
   display: inline-flex;
   align-items: center;
+  width: 100%;
+  font: 600 16px/1.2 var(--font-sans);
+  color: var(--bk-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .bk-builder-name-tap:hover {
   color: var(--bk-accent);
 }
 
+.bk-builder__weeks {
+  margin-top: 10px;
+}
+
+.bk-builder__week-label {
+  margin-bottom: 6px;
+}
+
+.bk-builder__week-title {
+  font: 700 14px/1.1 var(--bk-display);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bk-ink);
+}
+
+.bk-builder__week-sub {
+  margin-left: 8px;
+  font: 600 12px/1 var(--font-sans);
+  letter-spacing: 0.06em;
+  color: var(--bk-accent);
+  text-transform: uppercase;
+}
+
+.bk-builder-draft-offer {
+  margin: 12px 0;
+  padding: 12px 14px;
+  border-radius: var(--bk-r);
+  border: 1px solid var(--bk-line);
+  background: var(--bk-warn-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bk-builder-draft-offer__msg {
+  margin: 0;
+  font: 600 14px/1.35 var(--font-sans);
+  color: var(--bk-ink);
+}
+
+.bk-builder-draft-offer__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.bk-builder-header-menu {
+  position: relative;
+}
+
+.bk-builder-header-menu__btn,
+.bk-ex-card__menu-btn {
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--bk-line);
+  border-radius: 10px;
+  background: var(--bk-field);
+  color: var(--bk-ink);
+  font: 700 18px/1 var(--font-sans);
+  cursor: pointer;
+}
+
+.bk-builder-header-menu__panel,
+.bk-ex-card__menu-panel {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 40;
+  min-width: 200px;
+  padding: 6px;
+  border-radius: 12px;
+  border: 1px solid var(--bk-line);
+  background: var(--bk-surface);
+  box-shadow: var(--bk-shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.bk-builder-header-menu__item,
+.bk-ex-card__menu-item {
+  min-height: 44px;
+  text-align: left;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--bk-ink);
+  font: 600 14px/1 var(--font-sans);
+  cursor: pointer;
+}
+
+.bk-builder-header-menu__item:hover,
+.bk-ex-card__menu-item:hover {
+  background: var(--bk-accent-soft);
+}
+
+.bk-ex-card__menu-item--danger {
+  color: var(--bk-bad);
+}
+
+.bk-ex-card__menu-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.bk-ex-card__menu-section,
+.bk-ex-card__menu-rest,
+.bk-ex-card__menu-notes {
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
 /* Save status */
 .bk-builder-save {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+}
+
+.bk-builder-save__btn {
+  min-height: 44px;
+  padding-inline: 12px;
 }
 
 .bk-builder-save__status {
@@ -195,11 +380,24 @@
 
 .bk-ex-card--expanded {
   cursor: default;
+  gap: 8px;
+  padding: 10px 12px;
 }
 
 .bk-ex-card--invalid {
   border-color: var(--bk-bad);
   box-shadow: 0 0 0 1px var(--bk-bad);
+}
+
+.bk-ex-card__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.bk-ex-card__menu {
+  position: relative;
+  flex: 0 0 auto;
 }
 
 .bk-ex-card__top,
@@ -215,6 +413,11 @@
   text-align: left;
   cursor: pointer;
   min-height: 44px;
+}
+
+.bk-ex-card__head .bk-ex-card__collapse {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .bk-ex-card__slot {
@@ -264,7 +467,7 @@
   /* bk-ui.css also styles .bk-set-grid (align-items: center); stretch the
      header and rows to the full width so their shared grid lines up. */
   align-items: stretch;
-  gap: 6px;
+  gap: 4px;
 }
 
 .bk-set-grid__head,
@@ -335,6 +538,21 @@
   cursor: default;
 }
 
+.bk-set-grid__set {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.bk-set-grid__row--secondary {
+  padding-left: 0;
+}
+
+.bk-set-grid__spacer {
+  display: block;
+  min-height: 1px;
+}
+
 .bk-ex-card__controls {
   display: flex;
   flex-wrap: wrap;
@@ -393,6 +611,60 @@
   gap: 8px;
   padding-top: 4px;
   border-top: 1px solid var(--bk-line-2);
+}
+
+/* Picker: pinned search + contained scroll list (>= 60% of sheet). */
+.bk-sheet--picker .bk-sheet__panel {
+  /* Give the list room on a 390x844 phone sheet. */
+  max-height: min(88vh, 720px);
+}
+
+.bk-sheet--picker .bk-sheet__body {
+  overflow: hidden;
+  min-height: 0;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.bk-picker {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  gap: 8px;
+}
+
+.bk-picker__search-label {
+  flex: 0 0 auto;
+  display: block;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--bk-surface);
+  padding-bottom: 4px;
+}
+
+.bk-picker__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1 1 auto;
+  min-height: 60%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.bk-picker__more {
+  padding: 12px;
+  color: var(--bk-muted);
+  font: 600 13px/1.3 var(--font-sans);
+  text-align: center;
 }
 
 /* Sheets */
@@ -509,8 +781,15 @@
   border: 1px solid var(--bk-line);
   background: var(--bk-field);
   color: var(--bk-ink);
-  font: 400 15px/1.3 var(--font-sans);
+  font: 400 16px/1.3 var(--font-sans);
   padding: 10px 12px;
+}
+
+/* Coach-draft textarea lives on the builder; keep it >= 16px. */
+.bk-builder .bk-import-textarea,
+.bk-builder .bk-builder-coach-draft,
+.bk-builder #bk-coach-draft {
+  font-size: 16px;
 }
 
 .bk-settings__textarea {
@@ -578,20 +857,7 @@
   border-color: color-mix(in srgb, var(--bk-bad) 40%, var(--bk-line));
 }
 
-/* Picker */
-.bk-picker__search-label {
-  display: block;
-}
-
-.bk-picker__list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
+/* Picker rows */
 .bk-picker__row {
   display: flex;
   align-items: center;
@@ -604,7 +870,7 @@
   border: 1px solid transparent;
   background: transparent;
   color: var(--bk-ink);
-  font: 600 15px/1.2 var(--font-sans);
+  font: 600 16px/1.2 var(--font-sans);
   text-align: left;
   cursor: pointer;
 }

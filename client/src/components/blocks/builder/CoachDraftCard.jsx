@@ -106,7 +106,7 @@ export function CoachDraftCard({ unit = "lb", onDrafted }) {
       </label>
       <textarea
         id="bk-coach-draft"
-        className="bk-import-textarea"
+        className="bk-import-textarea bk-builder-coach-draft"
         value={text}
         onChange={(e) => setText(e.target.value)}
         rows={4}

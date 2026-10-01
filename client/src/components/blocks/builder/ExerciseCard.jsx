@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Card } from "../ui/Card.jsx";
 import { Chip } from "../ui/Chip.jsx";
 import { ExerciseRx } from "../ui/ExerciseRx.jsx";
@@ -60,6 +60,8 @@ export function ExerciseCard({
   onDelete,
 }) {
   const gridRef = useRef(null);
+  const menuRef = useRef(null);
+  const [menuOpen, setMenuOpen] = useState(false);
   const summary = exerciseRxSummary(exercise, { effort, unit });
   const notesLine = firstNotesLine(exercise?.notes);
   const sets = exercise?.sets || [];
@@ -69,16 +71,42 @@ export function ExerciseCard({
   const showEffort = effort === "rpe" || effort === "rir";
   const effortLabel = effort === "rir" ? "RIR" : "RPE";
 
-  const midCols =
-    1 + // reps or sec
-    (rangeOn && !timed ? 1 : 0) +
-    1 + // load
-    (showEffort ? 1 : 0);
-  const gridStyle = {
-    gridTemplateColumns: readOnly
-      ? `40px repeat(${midCols}, minmax(0,1fr))`
-      : `40px repeat(${midCols}, minmax(0,1fr)) 34px`,
+  // At most 4 visible controls on the primary line. Remove sits on the primary
+  // line when there is room; effort (and remove when range is on) wrap.
+  const rangeCols = rangeOn && !timed ? 1 : 0;
+  const removeOnPrimary = !rangeOn;
+  const primaryStyle = {
+    gridTemplateColumns: removeOnPrimary
+      ? `40px repeat(${1 + rangeCols + 1}, minmax(0,1fr)) 34px`
+      : `40px repeat(${1 + rangeCols + 1}, minmax(0,1fr))`,
   };
+  const needsSecondary = showEffort || !removeOnPrimary;
+  const secondaryStyle = {
+    gridTemplateColumns:
+      showEffort && !removeOnPrimary
+        ? "minmax(0,1fr) 34px"
+        : showEffort
+          ? "minmax(0,1fr)"
+          : "34px",
+  };
+
+  useEffect(() => {
+    if (!menuOpen) return undefined;
+    function onDoc(e) {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setMenuOpen(false);
+      }
+    }
+    function onKey(e) {
+      if (e.key === "Escape") setMenuOpen(false);
+    }
+    document.addEventListener("mousedown", onDoc);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDoc);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [menuOpen]);
 
   function onFieldKeyDown(e) {
     if (e.key !== "Enter") return;
@@ -97,6 +125,10 @@ export function ExerciseCard({
     onChange?.({
       sets: sets.map((s, i) => (i === setIdx ? { ...s, ...patch } : s)),
     });
+  }
+
+  function closeMenu() {
+    setMenuOpen(false);
   }
 
   if (!expanded || readOnly) {
@@ -145,94 +177,258 @@ export function ExerciseCard({
       className={`bk-ex-card bk-ex-card--expanded${invalid ? " bk-ex-card--invalid" : ""}`}
       data-ex-id={exercise?.id}
     >
-      <button
-        type="button"
-        className="bk-ex-card__collapse"
-        onClick={onToggle}
-        aria-expanded="true"
-      >
-        <span className="bk-ex-card__slot">{slotBadge(index)}</span>
-        <h3 className="bk-ex-card__name">{exercise?.exerciseName || "Untitled"}</h3>
-        {exercise?.notInLibrary ? (
-          <Chip tone="warn">Not in library</Chip>
-        ) : null}
-        <span className="bk-ex-card__chev bk-ex-card__chev--up" aria-hidden="true">
-          ▴
-        </span>
-      </button>
+      <div className="bk-ex-card__head">
+        <button
+          type="button"
+          className="bk-ex-card__collapse"
+          onClick={onToggle}
+          aria-expanded="true"
+        >
+          <span className="bk-ex-card__slot">{slotBadge(index)}</span>
+          <h3 className="bk-ex-card__name">{exercise?.exerciseName || "Untitled"}</h3>
+          {exercise?.notInLibrary ? (
+            <Chip tone="warn">Not in library</Chip>
+          ) : null}
+          <span className="bk-ex-card__chev bk-ex-card__chev--up" aria-hidden="true">
+            ▴
+          </span>
+        </button>
+        <div className="bk-ex-card__menu" ref={menuRef}>
+          <button
+            type="button"
+            className="bk-ex-card__menu-btn"
+            aria-label="Exercise actions"
+            aria-haspopup="menu"
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen((v) => !v)}
+          >
+            …
+          </button>
+          {menuOpen ? (
+            <div className="bk-ex-card__menu-panel" role="menu">
+              <button
+                type="button"
+                role="menuitem"
+                className="bk-ex-card__menu-item"
+                onClick={() => {
+                  onMoveUp?.();
+                  closeMenu();
+                }}
+              >
+                Move up
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                className="bk-ex-card__menu-item"
+                onClick={() => {
+                  onMoveDown?.();
+                  closeMenu();
+                }}
+              >
+                Move down
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                className="bk-ex-card__menu-item"
+                onClick={() => {
+                  onDuplicate?.();
+                  closeMenu();
+                }}
+              >
+                Duplicate
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                className="bk-ex-card__menu-item"
+                onClick={() => {
+                  onReplace?.();
+                  closeMenu();
+                }}
+              >
+                Replace
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                className="bk-ex-card__menu-item"
+                onClick={() => {
+                  onFillAll?.();
+                  closeMenu();
+                }}
+              >
+                Fill all from set 1
+              </button>
+              <div className="bk-ex-card__menu-section">
+                <Segmented
+                  label="Reps or time"
+                  options={[
+                    { value: "reps", label: "Reps" },
+                    { value: "time", label: "Time" },
+                  ]}
+                  value={timed ? "time" : "reps"}
+                  onChange={(v) => onToggleTimed?.(v === "time")}
+                />
+              </div>
+              {!timed ? (
+                <label className="bk-ex-card__menu-item bk-ex-card__menu-check">
+                  <input
+                    type="checkbox"
+                    checked={rangeOn}
+                    onChange={(e) => onToggleRange?.(e.target.checked)}
+                  />
+                  <span>Rep range</span>
+                </label>
+              ) : null}
+              <div className="bk-ex-card__menu-rest">
+                <span className="bk-settings__label">Rest</span>
+                <Stepper
+                  value={restSec}
+                  min={0}
+                  max={600}
+                  step={15}
+                  label="Rest"
+                  format={restFormat}
+                  onChange={(v) => onChange?.({ restSec: v === 0 ? null : v })}
+                />
+              </div>
+              {showEffort ? (
+                <div className="bk-ex-card__menu-section">
+                  <Segmented
+                    label="Effort mode"
+                    options={[
+                      { value: "target", label: "Target" },
+                      { value: "cap", label: "Cap" },
+                    ]}
+                    value={exercise?.effortCap ? "cap" : "target"}
+                    onChange={(v) => onChange?.({ effortCap: v === "cap" })}
+                  />
+                </div>
+              ) : null}
+              <label className="bk-ex-card__menu-notes">
+                <span className="bk-settings__label">Notes</span>
+                <textarea
+                  className="bk-settings__textarea"
+                  value={exercise?.notes ?? ""}
+                  onChange={(e) => onChange?.({ notes: e.target.value })}
+                  rows={2}
+                  maxLength={1000}
+                  placeholder="Setup, cues, tempo, lead side..."
+                />
+              </label>
+              <button
+                type="button"
+                role="menuitem"
+                className="bk-ex-card__menu-item bk-ex-card__menu-item--danger"
+                onClick={() => {
+                  onDelete?.();
+                  closeMenu();
+                }}
+              >
+                Delete
+              </button>
+            </div>
+          ) : null}
+        </div>
+      </div>
 
       <div className="bk-set-grid" ref={gridRef}>
-        <div className="bk-set-grid__head" style={gridStyle} aria-hidden="true">
+        <div className="bk-set-grid__head" style={primaryStyle} aria-hidden="true">
           <span className="bk-set-grid__h bk-set-grid__h--set">SET</span>
           <span className="bk-set-grid__h">{timed ? "SEC" : "REPS"}</span>
           {rangeOn && !timed ? <span className="bk-set-grid__h">TO</span> : null}
           <span className="bk-set-grid__h">LOAD</span>
-          {showEffort ? <span className="bk-set-grid__h">{effortLabel}</span> : null}
-          {readOnly ? null : <span className="bk-set-grid__h bk-set-grid__h--spacer" />}
+          {removeOnPrimary ? <span className="bk-set-grid__h bk-set-grid__h--spacer" /> : null}
         </div>
         {sets.map((s, si) => (
-          <div className="bk-set-grid__row" style={gridStyle} key={s.id || si}>
-            <span className="bk-set-grid__num" aria-label={`Set ${si + 1}`}>
-              {si + 1}
-            </span>
-            {timed ? (
+          <div className="bk-set-grid__set" key={s.id || si}>
+            <div className="bk-set-grid__row" style={primaryStyle}>
+              <span className="bk-set-grid__num" aria-label={`Set ${si + 1}`}>
+                {si + 1}
+              </span>
+              {timed ? (
+                <NumField
+                  placeholder="sec"
+                  inputMode="numeric"
+                  value={fieldValue(s.durationSec)}
+                  onChange={(e) => patchSet(si, { durationSec: parseNum(e.target.value) })}
+                  onKeyDown={onFieldKeyDown}
+                  aria-label={`Set ${si + 1} seconds`}
+                />
+              ) : (
+                <NumField
+                  placeholder="reps"
+                  inputMode="numeric"
+                  value={fieldValue(s.reps)}
+                  onChange={(e) => patchSet(si, { reps: parseNum(e.target.value) })}
+                  onKeyDown={onFieldKeyDown}
+                  aria-label={`Set ${si + 1} reps`}
+                />
+              )}
+              {rangeOn && !timed ? (
+                <NumField
+                  placeholder="max"
+                  inputMode="numeric"
+                  value={fieldValue(s.repsMax)}
+                  onChange={(e) => patchSet(si, { repsMax: parseNum(e.target.value) })}
+                  onKeyDown={onFieldKeyDown}
+                  aria-label={`Set ${si + 1} reps max`}
+                />
+              ) : null}
               <NumField
-                placeholder="sec"
-                value={fieldValue(s.durationSec)}
-                onChange={(e) => patchSet(si, { durationSec: parseNum(e.target.value) })}
+                placeholder={unit}
+                inputMode="decimal"
+                value={fieldValue(s.weight)}
+                onChange={(e) => patchSet(si, { weight: parseNum(e.target.value) })}
                 onKeyDown={onFieldKeyDown}
-                aria-label={`Set ${si + 1} seconds`}
+                aria-label={`Set ${si + 1} load`}
               />
-            ) : (
-              <NumField
-                placeholder="reps"
-                value={fieldValue(s.reps)}
-                onChange={(e) => patchSet(si, { reps: parseNum(e.target.value) })}
-                onKeyDown={onFieldKeyDown}
-                aria-label={`Set ${si + 1} reps`}
-              />
-            )}
-            {rangeOn && !timed ? (
-              <NumField
-                placeholder="max"
-                value={fieldValue(s.repsMax)}
-                onChange={(e) => patchSet(si, { repsMax: parseNum(e.target.value) })}
-                onKeyDown={onFieldKeyDown}
-                aria-label={`Set ${si + 1} reps max`}
-              />
+              {removeOnPrimary ? (
+                <button
+                  type="button"
+                  className="bk-set-grid__remove"
+                  aria-label={`Remove set ${si + 1}`}
+                  disabled={sets.length <= 1}
+                  onClick={() => onDeleteSet?.(si)}
+                >
+                  ×
+                </button>
+              ) : null}
+            </div>
+            {needsSecondary ? (
+              <div className="bk-set-grid__row bk-set-grid__row--secondary" style={secondaryStyle}>
+                {showEffort ? (
+                  <NumField
+                    placeholder={effortLabel}
+                    inputMode="decimal"
+                    value={fieldValue(effort === "rir" ? s.rir : s.rpe)}
+                    onChange={(e) =>
+                      patchSet(
+                        si,
+                        effort === "rir"
+                          ? { rir: parseNum(e.target.value) }
+                          : { rpe: parseNum(e.target.value) }
+                      )
+                    }
+                    onKeyDown={onFieldKeyDown}
+                    aria-label={`Set ${si + 1} ${effortLabel}`}
+                  />
+                ) : null}
+                {!removeOnPrimary ? (
+                  <button
+                    type="button"
+                    className="bk-set-grid__remove"
+                    aria-label={`Remove set ${si + 1}`}
+                    disabled={sets.length <= 1}
+                    onClick={() => onDeleteSet?.(si)}
+                  >
+                    ×
+                  </button>
+                ) : null}
+              </div>
             ) : null}
-            <NumField
-              placeholder={unit}
-              value={fieldValue(s.weight)}
-              onChange={(e) => patchSet(si, { weight: parseNum(e.target.value) })}
-              onKeyDown={onFieldKeyDown}
-              aria-label={`Set ${si + 1} load`}
-            />
-            {showEffort ? (
-              <NumField
-                placeholder={effortLabel}
-                value={fieldValue(effort === "rir" ? s.rir : s.rpe)}
-                onChange={(e) =>
-                  patchSet(
-                    si,
-                    effort === "rir"
-                      ? { rir: parseNum(e.target.value) }
-                      : { rpe: parseNum(e.target.value) }
-                  )
-                }
-                onKeyDown={onFieldKeyDown}
-                aria-label={`Set ${si + 1} ${effortLabel}`}
-              />
-            ) : null}
-            <button
-              type="button"
-              className="bk-set-grid__remove"
-              aria-label={`Remove set ${si + 1}`}
-              disabled={sets.length <= 1}
-              onClick={() => onDeleteSet?.(si)}
-            >
-              ×
-            </button>
           </div>
         ))}
       </div>
@@ -240,85 +436,6 @@ export function ExerciseCard({
       <div className="bk-ex-card__controls">
         <button type="button" className="bk-ex-card__ctrl" onClick={onAddSet}>
           + Set
-        </button>
-        <button type="button" className="bk-ex-card__ctrl" onClick={onFillAll}>
-          Fill all from set 1
-        </button>
-        <Segmented
-          label="Reps or time"
-          options={[
-            { value: "reps", label: "Reps" },
-            { value: "time", label: "Time" },
-          ]}
-          value={timed ? "time" : "reps"}
-          onChange={(v) => onToggleTimed?.(v === "time")}
-        />
-        {!timed ? (
-          <label className="bk-ex-card__range">
-            <input
-              type="checkbox"
-              checked={rangeOn}
-              onChange={(e) => onToggleRange?.(e.target.checked)}
-            />
-            <span>Range</span>
-          </label>
-        ) : null}
-        <div className="bk-ex-card__rest">
-          <span className="bk-settings__label">Rest</span>
-          <Stepper
-            value={restSec}
-            min={0}
-            max={600}
-            step={15}
-            label="Rest"
-            format={restFormat}
-            onChange={(v) => onChange?.({ restSec: v === 0 ? null : v })}
-          />
-        </div>
-        {showEffort ? (
-          <Segmented
-            label="Effort mode"
-            options={[
-              { value: "target", label: "Target" },
-              { value: "cap", label: "Cap" },
-            ]}
-            value={exercise?.effortCap ? "cap" : "target"}
-            onChange={(v) => onChange?.({ effortCap: v === "cap" })}
-          />
-        ) : null}
-      </div>
-
-      <label className="bk-ex-card__notes-field">
-        <span className="bk-visually-hidden">Notes</span>
-        <textarea
-          className="bk-settings__textarea"
-          value={exercise?.notes ?? ""}
-          onChange={(e) => onChange?.({ notes: e.target.value })}
-          rows={2}
-          maxLength={1000}
-          placeholder="Setup, cues, tempo, lead side..."
-        />
-      </label>
-
-      <div className="bk-ex-card__footer">
-        <button type="button" className="bk-ex-card__ctrl" onClick={onMoveUp}>
-          Move up
-        </button>
-        <button type="button" className="bk-ex-card__ctrl" onClick={onMoveDown}>
-          Move down
-        </button>
-        <button type="button" className="bk-ex-card__ctrl" onClick={onDuplicate}>
-          Duplicate
-        </button>
-        <button type="button" className="bk-ex-card__ctrl" onClick={onReplace}>
-          Replace
-        </button>
-        <button
-          type="button"
-          className="bk-ex-card__ctrl bk-ex-card__ctrl--danger"
-          onClick={onDelete}
-        >
-          Delete
         </button>
       </div>
     </Card>

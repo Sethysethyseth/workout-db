@@ -65,6 +65,11 @@ import { DraftBanner } from "./DraftBanner.jsx";
 import { ExerciseCard } from "./ExerciseCard.jsx";
 import { ExercisePicker } from "./ExercisePicker.jsx";
 import { ProgressionView } from "./ProgressionView.jsx";
+import {
+  clearBuilderDraft,
+  readBuilderDraft,
+  writeBuilderDraft,
+} from "./builderDraftStorage.js";
 
 const BLOCK_COACH_SUGGESTIONS = [
   "Is the volume balanced?",
@@ -174,6 +179,10 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
   const [coachPreviewBusy, setCoachPreviewBusy] = useState(false);
   const [coachCreating, setCoachCreating] = useState(false);
   const [coachIncludeWarmups, setCoachIncludeWarmups] = useState(true);
+  const [draftOffer, setDraftOffer] = useState(null); // { state } | null
+  const [headerMenuOpen, setHeaderMenuOpen] = useState(false);
+  const draftCheckedRef = useRef(false);
+  const headerMenuRef = useRef(null);
 
   const deviceUnit = loadWeightUnit();
   const displayUnit = deviceUnitToFormat(deviceUnit);
@@ -181,6 +190,66 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
     isCreate &&
     blockId == null &&
     !(state.weeks || []).some((w) => weekHasExercises(w));
+  const draftKey = blockId ?? templateId ?? (isCreate ? "new" : null);
+
+  // Hide the In-progress bar on builder routes (roominess).
+  useEffect(() => {
+    document.documentElement.classList.add("bk-builder-route");
+    return () => {
+      document.documentElement.classList.remove("bk-builder-route");
+      document.documentElement.classList.remove("bk-builder-kbd");
+    };
+  }, []);
+
+  // While any builder input has focus: hide bottom nav + in-progress bar,
+  // collapse sticky chrome (CSS), and keep the focused field clear.
+  useEffect(() => {
+    function onFocusIn(e) {
+      const t = e.target;
+      if (!(t instanceof HTMLElement)) return;
+      if (t.tagName !== "INPUT" && t.tagName !== "TEXTAREA") return;
+      if (!t.closest(".bk-builder")) return;
+      document.documentElement.classList.add("bk-builder-kbd");
+    }
+    function onFocusOut() {
+      requestAnimationFrame(() => {
+        const active = document.activeElement;
+        if (
+          active instanceof HTMLElement &&
+          (active.tagName === "INPUT" || active.tagName === "TEXTAREA") &&
+          active.closest(".bk-builder")
+        ) {
+          return;
+        }
+        document.documentElement.classList.remove("bk-builder-kbd");
+      });
+    }
+    document.addEventListener("focusin", onFocusIn);
+    document.addEventListener("focusout", onFocusOut);
+    return () => {
+      document.removeEventListener("focusin", onFocusIn);
+      document.removeEventListener("focusout", onFocusOut);
+      document.documentElement.classList.remove("bk-builder-kbd");
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!headerMenuOpen) return undefined;
+    function onDoc(e) {
+      if (headerMenuRef.current && !headerMenuRef.current.contains(e.target)) {
+        setHeaderMenuOpen(false);
+      }
+    }
+    function onKey(e) {
+      if (e.key === "Escape") setHeaderMenuOpen(false);
+    }
+    document.addEventListener("mousedown", onDoc);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDoc);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [headerMenuOpen]);
 
   useEffect(() => {
     if (!isCreate && blockId == null && templateId == null) return undefined;
@@ -226,6 +295,16 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
   useEffect(() => {
     if (isCreate) {
       savedSnapshotRef.current = JSON.stringify(serializeToPayload(createInitialState()));
+      if (!draftCheckedRef.current) {
+        draftCheckedRef.current = true;
+        const draft = readBuilderDraft("new");
+        if (draft?.state) {
+          const snap = JSON.stringify(serializeToPayload(draft.state));
+          if (snap !== savedSnapshotRef.current) {
+            setDraftOffer({ state: draft.state, key: "new" });
+          }
+        }
+      }
       return undefined;
     }
     let cancelled = false;
@@ -244,9 +323,20 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
         const hydrated = hydrateFromApi(data.blockTemplate);
         setState(hydrated);
         setBlockId(id);
-        savedSnapshotRef.current = JSON.stringify(serializeToPayload(hydrated));
+        const snap = JSON.stringify(serializeToPayload(hydrated));
+        savedSnapshotRef.current = snap;
         setDirty(false);
         setSaveStatus("saved");
+        if (!draftCheckedRef.current) {
+          draftCheckedRef.current = true;
+          const draft = readBuilderDraft(id);
+          if (draft?.state) {
+            const draftSnap = JSON.stringify(serializeToPayload(draft.state));
+            if (draftSnap !== snap) {
+              setDraftOffer({ state: draft.state, key: id });
+            }
+          }
+        }
       } catch (err) {
         if (!cancelled) setError(err);
       } finally {
@@ -265,6 +355,15 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
     const t = window.setTimeout(() => nameInputRef.current?.focus(), 50);
     return () => window.clearTimeout(t);
   }, [isCreate, loading]);
+
+  // Persist dirty drafts so in-app nav (BrowserRouter) cannot erase them.
+  useEffect(() => {
+    if (!dirty || draftKey == null) return undefined;
+    const t = window.setTimeout(() => {
+      writeBuilderDraft(draftKey, state);
+    }, 250);
+    return () => window.clearTimeout(t);
+  }, [dirty, draftKey, state]);
 
   // beforeunload guard
   useEffect(() => {
@@ -502,7 +601,9 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
         setDirty(false);
         setSaveStatus("saved");
         setValidationErrors([]);
+        clearBuilderDraft("new");
         if (id != null) {
+          clearBuilderDraft(id);
           setBlockId(id);
           discardLeavingRef.current = true;
           navigate(`/blocks/${id}/edit`, { replace: true });
@@ -514,6 +615,7 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
         setDirty(false);
         setSaveStatus("saved");
         setValidationErrors([]);
+        clearBuilderDraft(id);
       }
     } catch (err) {
       setSaveStatus("unsaved");
@@ -640,16 +742,54 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
       )}
       <button
         type="button"
-        className="btn"
+        className="btn bk-builder-save__btn"
         disabled={saveStatus === "saving"}
         onClick={() => void handleSave()}
       >
         Save
       </button>
+      <div className="bk-builder-header-menu" ref={headerMenuRef}>
+        <button
+          type="button"
+          className="bk-builder-header-menu__btn"
+          aria-label="Builder menu"
+          aria-haspopup="menu"
+          aria-expanded={headerMenuOpen}
+          onClick={() => setHeaderMenuOpen((v) => !v)}
+        >
+          …
+        </button>
+        {headerMenuOpen ? (
+          <div className="bk-builder-header-menu__panel" role="menu">
+            <button
+              type="button"
+              role="menuitem"
+              className="bk-builder-header-menu__item"
+              onClick={() => {
+                setHeaderMenuOpen(false);
+                setSettingsOpen(true);
+              }}
+            >
+              Settings
+            </button>
+            <button
+              type="button"
+              role="menuitem"
+              className="bk-builder-header-menu__item"
+              onClick={() => {
+                setHeaderMenuOpen(false);
+                handleExit();
+              }}
+            >
+              {isCreate ? "Back" : "Close"}
+            </button>
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 
-  const eyebrowNode = isCreate && !blockId ? (
+  const nameNode = isCreate && !blockId ? (
     <input
       ref={nameInputRef}
       className="bk-builder-name-input"
@@ -741,11 +881,48 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
     <div className="bk bk-builder">
       <div className="bk-shell">
         <StickyHeader
-          eyebrow={eyebrowNode}
-          title={`WEEK ${safeWeekIdx + 1}`}
-          sub={currentWeek?.label || undefined}
+          className="bk-builder-sticky"
+          eyebrow={nameNode}
           right={headerRight}
-        >
+        />
+
+        {draftOffer ? (
+          <div className="bk-builder-draft-offer" role="status">
+            <p className="bk-builder-draft-offer__msg">You have unsaved changes from last time.</p>
+            <div className="bk-builder-draft-offer__actions">
+              <button
+                type="button"
+                className="btn"
+                onClick={() => {
+                  applyState(draftOffer.state, { markDirty: true });
+                  setDraftOffer(null);
+                }}
+              >
+                Restore unsaved changes
+              </button>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => {
+                  clearBuilderDraft(draftOffer.key);
+                  setDraftOffer(null);
+                }}
+              >
+                Discard
+              </button>
+            </div>
+          </div>
+        ) : null}
+
+        <div className="bk-builder__weeks">
+          <div className="bk-builder__week-label">
+            <span className="bk-builder__week-title">
+              WEEK {safeWeekIdx + 1}
+              {currentWeek?.label ? (
+                <span className="bk-builder__week-sub">{currentWeek.label}</span>
+              ) : null}
+            </span>
+          </div>
           <WeekStrip
             weeks={weekStripItems}
             selectedKey={currentWeek?.id || String(safeWeekIdx)}
@@ -762,7 +939,7 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
               </button>
             }
           />
-        </StickyHeader>
+        </div>
 
         {state.isDraft ? (
           <DraftBanner
