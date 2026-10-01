@@ -9,6 +9,21 @@
 >   3 rounds.
 > - Then the smoke restarts from item 1.
 > - Test account `test123` / `password`: block 126, run 5, weeks 1-2 logged.
+>   AI consent is ON; 3 of its 7 weekly coach uses went on the bks1 live proof.
+> - Landed: bks3 `fb2bda1` (Library) and bks1 `1fc5bf8` (AI layout import,
+>   live-proven on staging; the AI call takes ~53 s).
+> - bks2 BOUNCED once:
+>   - it must keep L/R per-side logging
+>   - author notes move into the plan snapshot, so "+ Note" can't overwrite them
+> - bks4 (.xlsx upload, `read-excel-file` dependency added in `fa1ea8b`, approved
+>   by Seth) is running.
+> - Smoke items carried forward for the restart:
+>   - Library: blocks tab first, running strip, Create workout greyed
+>   - Import: a foreign-header sheet -> "Let AI read this layout" -> preview
+>     shows the AI-recipe notice and 4 of 7 left
+>   - Logger: planned rows, ghosts, tap-to-log, add/remove, pencil notes, keypad
+>   - Excel upload with a sheet picker
+> - Next wave candidate: the duplicate Resume bars on Home.
 
 > **WHERE WE ARE (Sept 29, late):** the **BK (blocks-v2) wave is COMPLETE -
 > 17/17 LANDED** on `ai-connector-wave` (`196a10b`): BK1-BK12 + BK5b plus the

@@ -261,12 +261,16 @@ and the new logger and library. After that the smoke restarts from item 1.
 The three bks units have fully disjoint FILES TO TOUCH (import / session page
 + log / library), so they run in parallel, width 3.
 
-DISPATCHED | bks1-ai-layout-import.md | any-layout import: the AI returns a layout
+LANDED 1fc5bf8 | bks1-ai-layout-import.md | any-layout import: the AI returns a layout
 recipe from a 40-row sample, the parser applies it to every row, costs 3 of 7 |
 n=18 candidate. Server + import page + coach/blockTemplate api +
-bk-import.css. Needs a LIVE staging proof of `/coach/import-map` at landing.
+bk-import.css. Needs a LIVE staging proof of `/coach/import-map` at landing. LANDED Sept 30 as n=19.
+Audit: lanes fresh green (481 unit tests); the cap refuses before the model and charges 3 only on success; the 429 code matches the client.
+LIVE proof on staging (test123, hosted coach, cursor/auto): the sample sheet had a title row, foreign headers and combined cells.
+The recipe came back correct (headerRow 1, kg, prescriptionColumn) and the preview read 2 wk / 4 days / 8 ex / 27 sets / 3 timed with 0 warnings.
+Usage went 0 -> 3 of 7. AI consent is now ON for test123. Latency 53 s - the critic must judge the wait state.
 
-QUEUED | bks2-block-logger-planned-rows.md | block-day logger: a row per planned set,
+DISPATCHED | bks2-block-logger-planned-rows.md | block-day logger: a row per planned set,
 every field ghosted, add/remove sets, recovery look, notes without switches,
 keypad-safe | n=19 candidate. SessionDetailPage (block branch) +
 blocks/log/* + bk-log.css.
@@ -283,7 +287,7 @@ Dispatched Sept 30 (Opus seat), all three in parallel at `6ff78e0` via Channel B
 `cursor-lane-3`, bks2 in `cursor-lane`, bks3 in `cursor-lane-2`. Lane leftovers (old
 GATE-R*.md, mock PNGs) moved to `C:/dev/worktrees/_lane-leftovers/`.
 
-QUEUED | bks4-xlsx-upload.md | Excel (.xlsx) upload on the import File tab: sheet picker, browser-side
+DISPATCHED | bks4-xlsx-upload.md | Excel (.xlsx) upload on the import File tab: sheet picker, browser-side
 xlsx -> TSV -> the existing preview path (read-excel-file, Seth-approved dep, installed
 by the seat) | n=21 candidate. SERIALIZE AFTER bks1 (same import folder + bk-import.css).
 The lane needs `npm ci` in client/ before dispatch (new dependency).
