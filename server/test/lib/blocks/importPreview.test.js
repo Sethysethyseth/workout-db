@@ -146,6 +146,76 @@ describe("buildImportPreview", () => {
     expect(result.block.weeks.length).toBeGreaterThanOrEqual(1);
   });
 
+  test("Sets x Reps column parses without AI (5x5 @ weight)", () => {
+    const text = "Exercise,Sets x Reps,Weight\nSquat,5x5,225\n";
+    const result = buildImportPreview(
+      text,
+      "auto",
+      { unit: "lb", name: "Scheme" },
+      fakeResolve
+    );
+    expect(result.ok).toBe(true);
+    const squat = result.block.weeks[0].days[0].exercises[0];
+    expect(squat.name).toBe("Squat");
+    expect(squat.sets).toHaveLength(5);
+    expect(squat.sets[0]).toMatchObject({ reps: 5, weight: 225 });
+    expect(
+      result.warnings.some((w) => /Sets x Reps/i.test(w.message || ""))
+    ).toBe(false);
+  });
+
+  test("separate Sets/Reps win over Sets x Reps with ignored reason", () => {
+    const text = "Exercise,Sets,Reps,Sets x Reps\nBench,3,8,5x5\n";
+    const result = buildImportPreview(
+      text,
+      "auto",
+      { unit: "lb", name: "Both" },
+      fakeResolve
+    );
+    expect(result.ok).toBe(true);
+    const bench = result.block.weeks[0].days[0].exercises[0];
+    expect(bench.name).toBe("Bench");
+    expect(bench.sets).toHaveLength(3);
+    expect(bench.sets[0]).toMatchObject({ reps: 8 });
+    expect(
+      result.warnings.some(
+        (w) =>
+          /Sets x Reps/i.test(w.message || "") &&
+          /separate Sets\/Reps/i.test(w.message || "")
+      )
+    ).toBe(true);
+  });
+
+  test("phase1.tsv still parses the same after Sets x Reps support", () => {
+    const text = readFixture("phase1.tsv");
+    const result = buildImportPreview(
+      text,
+      "auto",
+      { unit: "lb", name: "Phase 1", skipWarmups: true },
+      fakeResolve
+    );
+    expect(result.ok).toBe(true);
+    expect(result.stats).toEqual({
+      weeks: 2,
+      days: 4,
+      exercises: 10,
+      sets: 26,
+      timedSets: 5,
+    });
+    const w1Lower = result.block.weeks[0].days[0].exercises;
+    expect(w1Lower.map((e) => e.name)).toEqual(["Goblet Squat", "Side Plank"]);
+    expect(w1Lower[0].sets).toHaveLength(3);
+    expect(w1Lower[0].sets[0]).toMatchObject({
+      reps: 8,
+      repsMax: 10,
+      weight: 50,
+      rpe: 6,
+    });
+    expect(
+      result.warnings.some((w) => /Sets x Reps|prescription|scheme/i.test(w.message || ""))
+    ).toBe(false);
+  });
+
   test("Strong CSV fixture -> kind history", () => {
     const text = readFixture("strong-history.csv");
     const result = buildImportPreview(

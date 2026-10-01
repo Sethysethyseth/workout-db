@@ -93,6 +93,7 @@ export function ImportSourceStep({
   onSourceChange,
   text,
   onTextChange,
+  onTextInvalidate,
   oldApp,
   onOldAppChange,
   historyWeeks,
@@ -235,6 +236,8 @@ export function ImportSourceStep({
   function readFile(file) {
     onFileError?.(null);
     clearExcelState();
+    // Loading a file always drops any AI layout recipe (even if text matches).
+    onTextInvalidate?.();
     if (!file) return;
     if (isLegacyXlsName(file.name)) {
       onFileError?.(ERR_XLS);
@@ -350,6 +353,7 @@ export function ImportSourceStep({
             className="bk-import-textarea"
             value={text}
             onChange={(e) => onTextChange?.(e.target.value)}
+            onPaste={() => onTextInvalidate?.()}
             rows={12}
             spellCheck={false}
             placeholder={"Week\tDay\tExercise\tSets\tReps\tLoad\n1\tUpper A\tBench Press\t3\t8\t185"}
@@ -479,6 +483,7 @@ export function ImportSourceStep({
                 className="bk-import-textarea"
                 value={text}
                 onChange={(e) => onTextChange?.(e.target.value)}
+                onPaste={() => onTextInvalidate?.()}
                 rows={12}
                 spellCheck={false}
                 placeholder='{ "format": "logchamp.block", … }'
@@ -516,7 +521,7 @@ export function ImportSourceStep({
               disabled={empty || previewing || coachConverting}
               onClick={() => void onCoachConvert()}
             >
-              {coachConverting ? "Converting…" : "Let the coach convert it"}
+              {coachConverting ? "Converting…" : "Let AI read this layout"}
             </button>
           )
         ) : null}

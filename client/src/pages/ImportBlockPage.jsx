@@ -59,11 +59,16 @@ export function ImportBlockPage() {
   const [errors, setErrors] = useState(null);
   const [submittedForErrors, setSubmittedForErrors] = useState(null);
   const [networkError, setNetworkError] = useState(null);
+  // Recipe is only valid for the exact text it was computed from, and only
+  // while the user stays on the preview that recipe produced.
   const [recipe, setRecipe] = useState(null);
+  const [recipeSourceText, setRecipeSourceText] = useState(null);
   const [mappingLayout, setMappingLayout] = useState(false);
   const [coachStatus, setCoachStatus] = useState(null);
-  // Deterministic preview kept after a successful AI read (undo target).
+  // Deterministic preview / error card kept after a successful AI read (undo).
   const [priorPreview, setPriorPreview] = useState(null);
+  const [priorErrors, setPriorErrors] = useState(null);
+  const [priorSubmittedForErrors, setPriorSubmittedForErrors] = useState(null);
   const [aiReadCompare, setAiReadCompare] = useState(null);
 
   const delimitedSource = source === "paste" || source === "file";
@@ -95,8 +100,21 @@ export function ImportBlockPage() {
 
   const clearAiReadSnapshot = useCallback(() => {
     setPriorPreview(null);
+    setPriorErrors(null);
+    setPriorSubmittedForErrors(null);
     setAiReadCompare(null);
   }, []);
+
+  const clearRecipe = useCallback(() => {
+    setRecipe(null);
+    setRecipeSourceText(null);
+  }, []);
+
+  /** Drop AI layout memory - any return to source / text change / re-paste / file. */
+  const invalidateAiLayout = useCallback(() => {
+    clearRecipe();
+    clearAiReadSnapshot();
+  }, [clearRecipe, clearAiReadSnapshot]);
 
   const buildOptions = useCallback(
     (warmupOverride, recipeOverride) => {
@@ -110,12 +128,28 @@ export function ImportBlockPage() {
           options.sourceUnit = sourceUnit || deviceUnit;
         }
       }
-      const activeRecipe =
-        recipeOverride === undefined ? recipe : recipeOverride;
+      let activeRecipe;
+      if (recipeOverride !== undefined) {
+        activeRecipe = recipeOverride;
+      } else if (recipe && recipeSourceText === text) {
+        activeRecipe = recipe;
+      } else {
+        activeRecipe = null;
+      }
       if (activeRecipe) options.recipe = activeRecipe;
       return options;
     },
-    [deviceUnit, includeWarmups, source, historyWeeks, oldApp, sourceUnit, recipe]
+    [
+      deviceUnit,
+      includeWarmups,
+      source,
+      historyWeeks,
+      oldApp,
+      sourceUnit,
+      recipe,
+      recipeSourceText,
+      text,
+    ]
   );
 
   const runPreview = useCallback(
@@ -167,10 +201,14 @@ export function ImportBlockPage() {
     const trimmed = String(text || "").trim();
     if (!trimmed || mappingLayout || previewing) return;
     setNetworkError(null);
-    setErrors(null);
     setMappingLayout(true);
-    // Capture the deterministic preview before the AI recipe replaces it.
+    // Capture the deterministic preview OR the error card before AI replaces it.
     const savedPreview = preview;
+    const savedErrors = errors;
+    const savedSubmitted = submittedForErrors;
+    // Error-card offer is only on step 1; preview offer is only on step 2.
+    const fromError = step === 1 && Boolean(savedErrors?.length);
+    setErrors(null);
     try {
       const unit = sourceUnit || deviceUnit || "lb";
       const data = await coachImportMap({
@@ -185,6 +223,7 @@ export function ImportBlockPage() {
         return;
       }
       setRecipe(nextRecipe);
+      setRecipeSourceText(trimmed);
       // Refresh remaining count after a successful 3-question charge.
       try {
         const status = await getCoachStatus({ byoKey });
@@ -193,9 +232,20 @@ export function ImportBlockPage() {
         /* keep prior status */
       }
       const nextPreview = await runPreview(undefined, nextRecipe);
-      if (savedPreview?.ok && nextPreview?.ok) {
+      if (nextPreview?.ok && fromError) {
+        setPriorPreview(null);
+        setPriorErrors(savedErrors);
+        setPriorSubmittedForErrors(savedSubmitted);
+        setAiReadCompare({
+          origin: "error",
+          current: nextPreview.stats || {},
+        });
+      } else if (savedPreview?.ok && nextPreview?.ok) {
+        setPriorErrors(null);
+        setPriorSubmittedForErrors(null);
         setPriorPreview(savedPreview);
         setAiReadCompare({
+          origin: "preview",
           prior: savedPreview.stats || {},
           current: nextPreview.stats || {},
         });
@@ -243,19 +293,31 @@ export function ImportBlockPage() {
   }
 
   /**
-   * Restore the pre-AI deterministic preview and clear the recipe.
+   * Restore the pre-AI deterministic preview or error card and clear the recipe.
    * Does not call /coach/import-map (no coach questions).
    */
   function onUseOriginalRead() {
+    if (!aiReadCompare) return;
+    clearRecipe();
+    setRenames({});
+    setNetworkError(null);
+    if (aiReadCompare.origin === "error" && priorErrors) {
+      setPreview(null);
+      setBlockName("");
+      setErrors(priorErrors);
+      setSubmittedForErrors(priorSubmittedForErrors);
+      setStep(1);
+      clearAiReadSnapshot();
+      return;
+    }
     if (!priorPreview) return;
     setPreview(priorPreview);
-    setRecipe(null);
-    setRenames({});
     setBlockName(
       priorPreview?.block?.name ? String(priorPreview.block.name) : ""
     );
     setErrors(null);
-    setNetworkError(null);
+    setSubmittedForErrors(null);
+    setStep(2);
     clearAiReadSnapshot();
   }
 
@@ -329,16 +391,15 @@ export function ImportBlockPage() {
                 setFileError(null);
                 setErrors(null);
                 setNetworkError(null);
-                setRecipe(null);
-                clearAiReadSnapshot();
+                invalidateAiLayout();
               }}
               text={text}
               onTextChange={(v) => {
                 setText(v);
                 setFileError(null);
-                setRecipe(null);
-                clearAiReadSnapshot();
+                invalidateAiLayout();
               }}
+              onTextInvalidate={invalidateAiLayout}
               oldApp={oldApp}
               onOldAppChange={setOldApp}
               historyWeeks={historyWeeks}
@@ -350,8 +411,9 @@ export function ImportBlockPage() {
               onFileError={setFileError}
               previewing={previewing || mappingLayout}
               onPreview={() => {
-                clearAiReadSnapshot();
-                void runPreview();
+                // Source-step Preview is always deterministic.
+                invalidateAiLayout();
+                void runPreview(undefined, null);
               }}
             />
             {errors ? (
@@ -371,7 +433,7 @@ export function ImportBlockPage() {
             {networkError ? (
               <div className="bk-import-network" role="alert">
                 <p>{networkError}</p>
-                <button type="button" className="btn btn-secondary" onClick={() => void runPreview()}>
+                <button type="button" className="btn btn-secondary" onClick={() => void runPreview(undefined, null)}>
                   Retry
                 </button>
               </div>
@@ -391,6 +453,9 @@ export function ImportBlockPage() {
               blockName={blockName}
               onBlockNameChange={setBlockName}
               onBack={() => {
+                // Return to source clears the recipe so the next Preview is deterministic.
+                invalidateAiLayout();
+                setPreview(null);
                 setStep(1);
                 setErrors(null);
                 setNetworkError(null);

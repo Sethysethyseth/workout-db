@@ -4,6 +4,7 @@
  */
 
 const { normalizeHeaderKey } = require("./parseDelimited");
+const { parsePrescriptionCell } = require("./importRecipe");
 
 const WEEK_HEADERS = new Set(["week", "wk", "weeknumber", "weekno"]);
 const WEEK_LABEL_HEADERS = new Set(["weeklabel", "phase"]);
@@ -31,6 +32,15 @@ const REPS_HEADERS = new Set([
   "repstime",
   "repsduration",
   "target",
+]);
+/** Combined sets×reps / scheme headers — same cells as recipe prescriptionColumn. */
+const PRESCRIPTION_HEADERS = new Set([
+  "setsxreps",
+  "setsreps",
+  "scheme",
+  "prescription",
+  "setxrep",
+  "sxr",
 ]);
 const WEIGHT_HEADERS = new Set([
   "load",
@@ -151,29 +161,64 @@ function tableToBlock(parsed, options = {}) {
     const order = orderRaw.trim() === "" ? null : Number(orderRaw);
 
     let setCount = 1;
-    if (roles.sets != null) {
-      const setsParsed = parseSetsCell(cell(row, roles.sets), rowNum, warnings);
-      setCount = setsParsed;
-    }
+    let repsParsed = {
+      reps: undefined,
+      repsMax: undefined,
+      durationSec: undefined,
+      setsFromReps: undefined,
+      notes: [],
+    };
+    let prescriptionWeightRaw = "";
+    let prescriptionRpe;
 
-    const repsRaw = roles.reps != null ? cell(row, roles.reps) : "";
-    const repsParsed = parseRepsCell(repsRaw, rowNum, warnings);
+    if (roles.prescription != null) {
+      const prescriptionRaw = cell(row, roles.prescription);
+      const parsed = parsePrescriptionCell(prescriptionRaw);
+      if (parsed.warning) {
+        warnings.push({ row: rowNum, message: parsed.warning });
+      }
+      if (parsed.sets != null) setCount = parsed.sets;
+      if (parsed.durationSec != null) {
+        repsParsed.durationSec = parsed.durationSec;
+      } else if (parsed.reps != null) {
+        repsParsed.reps = parsed.reps;
+        if (parsed.repsMax != null) repsParsed.repsMax = parsed.repsMax;
+      }
+      if (parsed.weight != null) {
+        prescriptionWeightRaw =
+          parsed.weightUnit != null
+            ? `${parsed.weight}${parsed.weightUnit}`
+            : String(parsed.weight);
+      }
+      if (parsed.rpe != null) prescriptionRpe = parsed.rpe;
+    } else {
+      if (roles.sets != null) {
+        const setsParsed = parseSetsCell(cell(row, roles.sets), rowNum, warnings);
+        setCount = setsParsed;
+      }
 
-    // Sets from reps shorthand (3x8) — filled Sets cell wins
-    if (repsParsed.setsFromReps != null) {
-      if (roles.sets != null && cell(row, roles.sets).trim() !== "") {
-        if (repsParsed.setsFromReps !== setCount) {
-          warnings.push({
-            row: rowNum,
-            message: `Sets cell (${setCount}) won over reps shorthand (${repsParsed.setsFromReps})`,
-          });
+      const repsRaw = roles.reps != null ? cell(row, roles.reps) : "";
+      repsParsed = parseRepsCell(repsRaw, rowNum, warnings);
+
+      // Sets from reps shorthand (3x8) — filled Sets cell wins
+      if (repsParsed.setsFromReps != null) {
+        if (roles.sets != null && cell(row, roles.sets).trim() !== "") {
+          if (repsParsed.setsFromReps !== setCount) {
+            warnings.push({
+              row: rowNum,
+              message: `Sets cell (${setCount}) won over reps shorthand (${repsParsed.setsFromReps})`,
+            });
+          }
+        } else {
+          setCount = repsParsed.setsFromReps;
         }
-      } else {
-        setCount = repsParsed.setsFromReps;
       }
     }
 
-    const weightRaw = roles.weight != null ? cell(row, roles.weight) : "";
+    let weightRaw = roles.weight != null ? cell(row, roles.weight) : "";
+    if (!String(weightRaw || "").trim() && prescriptionWeightRaw) {
+      weightRaw = prescriptionWeightRaw;
+    }
     const colUnit = roles.weightUnit || null;
     const targetUnit =
       options.unit === "kg" || options.unit === "lb" ? options.unit : null;
@@ -228,6 +273,8 @@ function tableToBlock(parsed, options = {}) {
         if (p.effortCap) effortCap = true;
         if (p.note) repsParsed.notes.push(p.note);
       }
+    } else if (prescriptionRpe != null) {
+      rpe = prescriptionRpe;
     }
     if (rirRaw.trim()) {
       const p = parseRirCell(rirRaw, rowNum, warnings);
@@ -339,6 +386,8 @@ function cell(row, index) {
 function mapHeaderRoles(header, warnings) {
   const roles = {};
   const seenIgnored = new Set();
+  /** @type {{ header: string, idx: number }[]} */
+  const prescriptionCandidates = [];
 
   header.forEach((h, idx) => {
     const key = normalizeHeaderKey(h);
@@ -354,7 +403,9 @@ function mapHeaderRoles(header, warnings) {
     } else if (EXERCISE_HEADERS.has(key)) roles.exercise = idx;
     else if (SETS_HEADERS.has(key)) roles.sets = idx;
     else if (REPS_HEADERS.has(key)) roles.reps = idx;
-    else if (WEIGHT_HEADERS.has(key)) {
+    else if (PRESCRIPTION_HEADERS.has(key)) {
+      prescriptionCandidates.push({ header: h, idx });
+    } else if (WEIGHT_HEADERS.has(key)) {
       roles.weight = idx;
       roles.weightHeader = h;
       if (key.includes("kg")) roles.weightUnit = "kg";
@@ -388,6 +439,29 @@ function mapHeaderRoles(header, warnings) {
       warnings.push({ message: `Column '${h}' was ignored` });
     }
   });
+
+  // Separate Sets + Reps columns win over a combined sets×reps column.
+  if (prescriptionCandidates.length > 0) {
+    if (roles.sets != null && roles.reps != null) {
+      for (const c of prescriptionCandidates) {
+        if (!seenIgnored.has(c.header)) {
+          seenIgnored.add(c.header);
+          warnings.push({
+            message: `Column '${c.header}' was ignored - separate Sets/Reps columns take priority`,
+          });
+        }
+      }
+    } else {
+      roles.prescription = prescriptionCandidates[0].idx;
+      for (let i = 1; i < prescriptionCandidates.length; i += 1) {
+        const c = prescriptionCandidates[i];
+        if (!seenIgnored.has(c.header)) {
+          seenIgnored.add(c.header);
+          warnings.push({ message: `Column '${c.header}' was ignored` });
+        }
+      }
+    }
+  }
 
   return roles;
 }

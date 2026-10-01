@@ -112,11 +112,22 @@ export function ImportPreviewStep({
 
   const aiCompareWarn = Boolean(
     aiReadCompare &&
+      aiReadCompare.origin !== "error" &&
       ((Number(aiReadCompare.current?.days) || 0) <
         (Number(aiReadCompare.prior?.days) || 0) ||
         (Number(aiReadCompare.current?.sets) || 0) <
           (Number(aiReadCompare.prior?.sets) || 0))
   );
+
+  let aiCompareLine = null;
+  if (aiReadCompare) {
+    const currentLine = formatAiReadCompareStats(aiReadCompare.current);
+    if (aiReadCompare.origin === "error") {
+      aiCompareLine = `AI read: ${currentLine} (the standard reader couldn't read this sheet)`;
+    } else {
+      aiCompareLine = `AI read: ${currentLine} (was ${formatAiReadCompareStats(aiReadCompare.prior)})`;
+    }
+  }
 
   return (
     <div className="bk-import-preview">
@@ -126,7 +137,7 @@ export function ImportPreviewStep({
         {warnings.length === 0 ? <Chip tone="good">Nothing skipped</Chip> : null}
       </div>
 
-      {aiReadCompare ? (
+      {aiCompareLine ? (
         <div
           className={
             aiCompareWarn
@@ -135,9 +146,7 @@ export function ImportPreviewStep({
           }
           role="status"
         >
-          <p className="bk-import-ai-compare__line">
-            {`AI read: ${formatAiReadCompareStats(aiReadCompare.current)} (was ${formatAiReadCompareStats(aiReadCompare.prior)})`}
-          </p>
+          <p className="bk-import-ai-compare__line">{aiCompareLine}</p>
           {typeof onUseOriginalRead === "function" ? (
             <button
               type="button"
@@ -220,7 +229,7 @@ export function ImportPreviewStep({
       </p>
       {matched.length > 0 ? (
         <Disclosure
-          summary={`${pluralize(matched.length, "match", "matches")} your library`}
+          summary={`${pluralize(matched.length, "matches", "match")} your library`}
         >
           <ul className="bk-import-match-list bk-import-match-list--matched">
             {matched.map((ex) => {
