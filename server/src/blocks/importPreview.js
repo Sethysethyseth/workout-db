@@ -7,6 +7,12 @@ const { validateBlockDraft } = require("./blockFormat");
 const { parseDelimited, ParseDelimitedError } = require("./parseDelimited");
 const { tableToBlock } = require("./tableToBlock");
 const { historyToBlock } = require("./historyToBlock");
+const {
+  validateImportRecipe,
+  applyImportRecipe,
+  sheetFromText,
+  headersForRecipe,
+} = require("./importRecipe");
 
 const MAX_TEXT_CHARS = 1_000_000;
 const VALID_KINDS = new Set(["auto", "table", "json", "history"]);
@@ -191,11 +197,91 @@ function resolveCandidate(text, kind, options) {
 }
 
 /**
+ * When options.recipe is present: validate, apply to the sheet grid, then
+ * tableToBlock. Invalid recipe -> 422-shaped errors. Without a recipe this
+ * path is never called.
+ * @param {string} text
+ * @param {object} options
+ * @param {object} tableOpts
+ */
+function applyRecipeThenTable(text, options, tableOpts) {
+  const recipeIn = options.recipe;
+  const sheet = sheetFromText(text);
+  if (sheet.sheetRows.length === 0) {
+    return {
+      kind: "table",
+      warnings: [],
+      notices: {},
+      errors: [{ path: "", message: "Couldn't find a header row in the file." }],
+    };
+  }
+  const tableHeaders = headersForRecipe(text, recipeIn);
+  const validated = validateImportRecipe(recipeIn, tableHeaders);
+  if (!validated.ok) {
+    return {
+      kind: "table",
+      warnings: [],
+      notices: {},
+      errors: validated.errors,
+    };
+  }
+  const applied = applyImportRecipe(
+    {
+      sheetRows: sheet.sheetRows,
+      rowNumbers: sheet.rowNumbers,
+    },
+    validated.recipe
+  );
+  const unit =
+    validated.recipe.unit === "lb" || validated.recipe.unit === "kg"
+      ? validated.recipe.unit
+      : tableOpts.unit;
+  const result = runTableToBlock(
+    {
+      header: applied.header,
+      rows: applied.rows,
+      rowNumbers: applied.rowNumbers,
+    },
+    { ...tableOpts, unit }
+  );
+  if (result.errors) {
+    return {
+      ...result,
+      warnings: [...(applied.warnings || []), ...(result.warnings || [])],
+    };
+  }
+  return {
+    ...result,
+    warnings: [...(applied.warnings || []), ...(result.warnings || [])],
+    notices: {
+      ...(result.notices || {}),
+      aiLayoutRecipe: "This sheet was read with an AI layout recipe.",
+    },
+  };
+}
+
+/**
  * @param {string} text
  * @param {"auto"|"table"|"history"} kind
  * @param {object} options
  */
 function parseDelimitedPath(text, kind, options) {
+  const tableOpts = {
+    unit: options.unit,
+    skipWarmups: options.skipWarmups,
+  };
+  if (typeof options.name === "string") tableOpts.name = options.name;
+
+  const historyOpts = {
+    historyWeeks: options.historyWeeks,
+    sourceUnit: options.sourceUnit || options.unit,
+  };
+
+  // Recipe path: delimited only (not history). Validate/apply before tableToBlock.
+  if (options.recipe != null && kind !== "history") {
+    return applyRecipeThenTable(text, options, tableOpts);
+  }
+
   let parsed;
   try {
     parsed = parseDelimited(text);
@@ -213,17 +299,6 @@ function parseDelimitedPath(text, kind, options) {
       errors: [{ path: "", message }],
     };
   }
-
-  const tableOpts = {
-    unit: options.unit,
-    skipWarmups: options.skipWarmups,
-  };
-  if (typeof options.name === "string") tableOpts.name = options.name;
-
-  const historyOpts = {
-    historyWeeks: options.historyWeeks,
-    sourceUnit: options.sourceUnit || options.unit,
-  };
 
   if (kind === "history") {
     const hist = historyToBlock(parsed, historyOpts);

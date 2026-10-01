@@ -122,6 +122,26 @@
   margin-top: 4px;
 }
 
+.bk-import-ai-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+  min-height: 76px;
+}
+
+.bk-import-ai-layout .btn {
+  min-height: 44px;
+  align-self: flex-start;
+}
+
+.bk-import-ai-layout__cost {
+  margin: 0;
+  font: 400 13px/1.4 var(--font-sans);
+  color: var(--bk-muted);
+  max-width: 65ch;
+}
+
 .bk-import-actions .btn {
   min-height: 44px;
 }

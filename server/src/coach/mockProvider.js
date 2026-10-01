@@ -127,4 +127,95 @@ function mockBlockDraftFor(mode, unit) {
   };
 }
 
-module.exports = { streamMock, buildMockNarrative, mockBlockDraftFor };
+/**
+ * Deterministic mock layout recipe for local/staging without a key.
+ * Recognises the bks1 Fixture A foreign-header set; otherwise a minimal
+ * identity-style recipe from the first non-empty line's headers.
+ */
+function mockImportRecipeFor(text) {
+  const sample = typeof text === "string" ? text : "";
+  const firstLine =
+    sample
+      .split(/\r?\n/)
+      .map((l) => l.trim())
+      .find((l) => l) || "";
+  const delim = firstLine.includes("\t")
+    ? "\t"
+    : (firstLine.match(/;/g) || []).length > (firstLine.match(/,/g) || []).length
+      ? ";"
+      : ",";
+  const headers = firstLine.split(delim).map((h) => h.trim());
+
+  const has = (name) => headers.includes(name);
+
+  if (
+    has("Movement") &&
+    has("Sets x Reps") &&
+    has("Session") &&
+    has("Wk")
+  ) {
+    const columns = {
+      Movement: "exercise",
+      Session: "day name",
+      Wk: "week",
+      "Sets x Reps": "ignore",
+    };
+    if (has("Load (kg)")) columns["Load (kg)"] = "weight";
+    else if (has("Load")) columns.Load = "weight";
+    return {
+      version: 1,
+      unit: has("Load (kg)") ? "kg" : "lb",
+      columns,
+      prescriptionColumn: "Sets x Reps",
+    };
+  }
+
+  if (has("Exercise") && (has("Week 1") || has("Week 2"))) {
+    const weekColumns = [];
+    for (const h of headers) {
+      const m = h.match(/^Week\s+(\d+)$/i);
+      if (m) weekColumns.push({ header: h, week: Number(m[1]) });
+    }
+    return {
+      version: 1,
+      unit: "lb",
+      columns: { Exercise: "exercise" },
+      weekColumns,
+    };
+  }
+
+  // Day-header style: first column may be blank on exercise rows
+  if (has("Exercise") || has("Movement")) {
+    const exerciseHeader = has("Exercise") ? "Exercise" : "Movement";
+    const columns = { [exerciseHeader]: "exercise" };
+    if (has("Sets")) columns.Sets = "sets";
+    if (has("Reps")) columns.Reps = "reps";
+    if (has("Load")) columns.Load = "weight";
+    if (has("Day")) columns.Day = "day name";
+    return {
+      version: 1,
+      columns,
+      dayHeaderRows: { column: headers[0] || exerciseHeader },
+    };
+  }
+
+  const columns = {};
+  for (const h of headers) {
+    const key = h.toLowerCase().replace(/[^a-z0-9]+/g, "");
+    if (/^(exercise|movement|lift|name)$/.test(key)) columns[h] = "exercise";
+    else if (/^(week|wk)$/.test(key)) columns[h] = "week";
+    else if (/^(day|session)/.test(key)) columns[h] = "day name";
+    else if (/^sets$/.test(key)) columns[h] = "sets";
+    else if (/^reps/.test(key)) columns[h] = "reps";
+    else if (/^(load|weight)/.test(key)) columns[h] = "weight";
+    else columns[h] = "ignore";
+  }
+  return { version: 1, columns };
+}
+
+module.exports = {
+  streamMock,
+  buildMockNarrative,
+  mockBlockDraftFor,
+  mockImportRecipeFor,
+};

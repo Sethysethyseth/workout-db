@@ -30,6 +30,7 @@ export function ImportPreviewStep({
   onCreate,
   creating,
   unit = "lb",
+  aiLayoutOffer = null,
 }) {
   const block = preview?.block || null;
   const stats = preview?.stats || {};
@@ -122,6 +123,8 @@ export function ImportPreviewStep({
           </ul>
         </Disclosure>
       ) : null}
+
+      {aiLayoutOffer}
 
       {warmupRows > 0 ? (
         <label className="bk-import-toggle">

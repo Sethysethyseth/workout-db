@@ -49,6 +49,12 @@ export function coachErrorMessage(code, fallback) {
       return "The coach can't draft that one.";
     case "block_not_found":
       return "That block isn't available to ask about.";
+    case "import_map_invalid":
+      return "The coach couldn't map that layout. Try again or rename a few headers.";
+    case "import_map_truncated":
+      return "The coach ran out of room reading that layout. Try a shorter sample.";
+    case "import_map_refused":
+      return "The coach can't read that layout.";
     case "network":
       return "Couldn't reach LogChamp. Check your connection and try again.";
     default:
@@ -80,6 +86,18 @@ export function coachBlockDraft({ mode, text, unit, byoKey } = {}) {
   return http("/coach/block-draft", {
     method: "POST",
     body: { mode, text, unit },
+    headers: byoKey ? { [BYO_KEY_HEADER]: byoKey } : undefined,
+  });
+}
+
+/**
+ * Ask the coach to map a spreadsheet layout to an import recipe.
+ * Resolves { recipe }. Costs 3 weekly coach questions when hosted-capped.
+ */
+export function coachImportMap({ text, unit, byoKey } = {}) {
+  return http("/coach/import-map", {
+    method: "POST",
+    body: unit ? { text, unit } : { text },
     headers: byoKey ? { [BYO_KEY_HEADER]: byoKey } : undefined,
   });
 }

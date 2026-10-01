@@ -2,9 +2,16 @@ import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ApiError } from "../api/http.js";
 import * as blockTemplateApi from "../api/blockTemplateApi.js";
+import {
+  coachErrorMessage,
+  coachImportMap,
+  getCoachStatus,
+} from "../api/coachApi.js";
+import { loadCoachKey } from "../lib/coachKeyPref.js";
 import { loadWeightUnit } from "../lib/weightUnitPref.js";
 import { StickyHeader } from "../components/blocks/ui/StickyHeader.jsx";
 import {
+  AiLayoutOffer,
   ImportErrorCard,
   ImportPreviewStep,
   ImportSourceStep,
@@ -19,8 +26,16 @@ function kindForSource(source) {
   return "auto";
 }
 
+function hasIgnoredColumnWarnings(warnings) {
+  if (!Array.isArray(warnings) || warnings.length === 0) return false;
+  return warnings.some((w) => {
+    const msg = w && w.message != null ? String(w.message) : "";
+    return /column '.*' was ignored/i.test(msg) || /unrecognised|unrecognized/i.test(msg);
+  });
+}
+
 /**
- * Import a block - paste, file, old app, or any AI (BK6).
+ * Import a block - paste, file, old app, or any AI (BK6 / bks1).
  * Route: /blocks/import
  */
 export function ImportBlockPage() {
@@ -44,13 +59,39 @@ export function ImportBlockPage() {
   const [errors, setErrors] = useState(null);
   const [submittedForErrors, setSubmittedForErrors] = useState(null);
   const [networkError, setNetworkError] = useState(null);
+  const [recipe, setRecipe] = useState(null);
+  const [mappingLayout, setMappingLayout] = useState(false);
+  const [coachStatus, setCoachStatus] = useState(null);
+
+  const delimitedSource = source === "paste" || source === "file";
+  const byoKey = loadCoachKey();
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [step]);
 
+  // Coach status for the AI-layout consent gate (same as convert).
+  useEffect(() => {
+    if (!delimitedSource) {
+      setCoachStatus(null);
+      return undefined;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await getCoachStatus({ byoKey });
+        if (!cancelled) setCoachStatus(data);
+      } catch {
+        if (!cancelled) setCoachStatus(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [delimitedSource, byoKey]);
+
   const buildOptions = useCallback(
-    (warmupOverride) => {
+    (warmupOverride, recipeOverride) => {
       const options = {
         unit: deviceUnit,
         skipWarmups: !(warmupOverride ?? includeWarmups),
@@ -61,13 +102,16 @@ export function ImportBlockPage() {
           options.sourceUnit = sourceUnit || deviceUnit;
         }
       }
+      const activeRecipe =
+        recipeOverride === undefined ? recipe : recipeOverride;
+      if (activeRecipe) options.recipe = activeRecipe;
       return options;
     },
-    [deviceUnit, includeWarmups, source, historyWeeks, oldApp, sourceUnit]
+    [deviceUnit, includeWarmups, source, historyWeeks, oldApp, sourceUnit, recipe]
   );
 
   const runPreview = useCallback(
-    async (warmupOverride) => {
+    async (warmupOverride, recipeOverride) => {
       setFileError(null);
       setNetworkError(null);
       setErrors(null);
@@ -77,7 +121,7 @@ export function ImportBlockPage() {
         const body = {
           text,
           kind: kindForSource(source),
-          options: buildOptions(warmupOverride),
+          options: buildOptions(warmupOverride, recipeOverride),
         };
         const data = await blockTemplateApi.previewBlockImport(body);
         setPreview(data);
@@ -88,7 +132,6 @@ export function ImportBlockPage() {
         if (err instanceof ApiError && err.status === 422) {
           const body = err.body || {};
           setErrors(Array.isArray(body.errors) ? body.errors : [{ path: "", message: err.message }]);
-          // Prefer a JSON object from the paste for path name lookup
           let submitted = null;
           try {
             const trimmed = String(text || "").trim();
@@ -109,6 +152,74 @@ export function ImportBlockPage() {
     },
     [text, source, buildOptions]
   );
+
+  async function onAiReadLayout() {
+    const trimmed = String(text || "").trim();
+    if (!trimmed || mappingLayout || previewing) return;
+    setNetworkError(null);
+    setErrors(null);
+    setMappingLayout(true);
+    try {
+      const unit = sourceUnit || deviceUnit || "lb";
+      const data = await coachImportMap({
+        text: trimmed,
+        unit,
+        byoKey,
+      });
+      const nextRecipe = data?.recipe;
+      if (!nextRecipe) {
+        setErrors([{ path: "", message: "The coach didn't return a layout recipe." }]);
+        setStep(1);
+        return;
+      }
+      setRecipe(nextRecipe);
+      // Refresh remaining count after a successful 3-question charge.
+      try {
+        const status = await getCoachStatus({ byoKey });
+        setCoachStatus(status);
+      } catch {
+        /* keep prior status */
+      }
+      await runPreview(undefined, nextRecipe);
+    } catch (err) {
+      if (err instanceof ApiError) {
+        const body = err.body || {};
+        const code = body.reason || body.error || "provider_error";
+        if (code === "weekly_limit") {
+          setCoachStatus((prev) => ({
+            ...(prev || {}),
+            weeklyCap: {
+              limit: body.limit ?? prev?.weeklyCap?.limit ?? null,
+              used: body.used ?? prev?.weeklyCap?.used ?? null,
+              remaining: body.remaining ?? 0,
+              nextAvailableAt: body.nextAvailableAt ?? prev?.weeklyCap?.nextAvailableAt ?? null,
+            },
+          }));
+          setErrors([
+            {
+              path: "",
+              message: coachErrorMessage("weekly_limit", err.message),
+            },
+          ]);
+        } else if (Array.isArray(body.errors) && body.errors.length > 0) {
+          setErrors(body.errors);
+        } else {
+          setErrors([
+            {
+              path: "",
+              message: coachErrorMessage(code, err.message),
+            },
+          ]);
+        }
+        setStep(1);
+      } else {
+        setErrors([{ path: "", message: coachErrorMessage("network") }]);
+        setStep(1);
+      }
+    } finally {
+      setMappingLayout(false);
+    }
+  }
 
   function onRename(from, to) {
     setRenames((prev) => {
@@ -159,6 +270,13 @@ export function ImportBlockPage() {
     }
   }
 
+  const showAiOnErrors = delimitedSource && Boolean(errors?.length);
+  const showAiOnPreview =
+    delimitedSource &&
+    step === 2 &&
+    !recipe &&
+    hasIgnoredColumnWarnings(preview?.warnings);
+
   return (
     <div className="bk bk-import">
       <div className="bk-shell">
@@ -173,11 +291,13 @@ export function ImportBlockPage() {
                 setFileError(null);
                 setErrors(null);
                 setNetworkError(null);
+                setRecipe(null);
               }}
               text={text}
               onTextChange={(v) => {
                 setText(v);
                 setFileError(null);
+                setRecipe(null);
               }}
               oldApp={oldApp}
               onOldAppChange={setOldApp}
@@ -188,13 +308,21 @@ export function ImportBlockPage() {
               deviceUnit={deviceUnit}
               fileError={fileError}
               onFileError={setFileError}
-              previewing={previewing}
+              previewing={previewing || mappingLayout}
               onPreview={() => void runPreview()}
             />
             {errors ? (
               <ImportErrorCard
                 errors={errors}
                 submitted={submittedForErrors}
+              />
+            ) : null}
+            {showAiOnErrors ? (
+              <AiLayoutOffer
+                coachStatus={coachStatus}
+                mapping={mappingLayout}
+                disabled={previewing || !String(text || "").trim()}
+                onMap={() => void onAiReadLayout()}
               />
             ) : null}
             {networkError ? (
@@ -227,6 +355,16 @@ export function ImportBlockPage() {
               onCreate={() => void onCreate()}
               creating={creating}
               unit={deviceUnit}
+              aiLayoutOffer={
+                showAiOnPreview ? (
+                  <AiLayoutOffer
+                    coachStatus={coachStatus}
+                    mapping={mappingLayout}
+                    disabled={previewing || creating}
+                    onMap={() => void onAiReadLayout()}
+                  />
+                ) : null
+              }
             />
             {networkError ? (
               <div className="bk-import-network" role="alert">

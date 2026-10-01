@@ -6,6 +6,13 @@
 const WEEKLY_LIMIT = 7;
 const WINDOW_DAYS = 7;
 const WINDOW_MS = WINDOW_DAYS * 24 * 60 * 60 * 1000;
+/** Coach questions charged for one AI layout-import map call (bks1). */
+const IMPORT_MAP_COST = 3;
+
+/** True when remaining weekly questions cover `cost` (default import-map). */
+function remainingCoversCost(remaining, cost = IMPORT_MAP_COST) {
+  return typeof remaining === "number" && remaining >= cost;
+}
 
 /** Trim, lowercase, drop empties. Unset / empty / non-string -> nobody exempt. */
 function parseUncappedEmails(raw) {
@@ -62,6 +69,8 @@ module.exports = {
   WEEKLY_LIMIT,
   WINDOW_DAYS,
   WINDOW_MS,
+  IMPORT_MAP_COST,
+  remainingCoversCost,
   parseUncappedEmails,
   isUncappedEmail,
   weeklyCapApplies,

@@ -12,6 +12,8 @@ const {
 const {
   WEEKLY_LIMIT,
   WINDOW_MS,
+  IMPORT_MAP_COST,
+  remainingCoversCost,
   weeklyCapApplies,
   evaluateWeeklyCap,
 } = require("../coach/weeklyCap");
@@ -35,7 +37,18 @@ const {
   parseBlockCandidate,
   validateDraftCandidate,
 } = require("../coach/blockDraft");
-const { mockBlockDraftFor } = require("../coach/mockProvider");
+const { mockBlockDraftFor, mockImportRecipeFor } = require("../coach/mockProvider");
+const {
+  IMPORT_MAP_MAX_TOKENS,
+  importMapErrorForStopReason,
+  parseImportMapRequest,
+  buildImportMapSystemPrompt,
+  buildImportMapMessages,
+  buildCursorImportMapSystem,
+  parseImportMapCandidate,
+  validateImportMapCandidate,
+  sampleForRecipe,
+} = require("../coach/importMap");
 const { compactSummaryForCoach } = require("../coach/prompt");
 const { loadSummary } = require("../ai/analyticsAccess");
 
@@ -517,12 +530,138 @@ async function draftBlock(req, res, next, deps = {}) {
   }
 }
 
+/**
+ * POST /coach/import-map { text, unit? } - bks1 AI layout recipe.
+ * Same access / consent / provider resolution as draftBlock. Charges
+ * IMPORT_MAP_COST (3) CoachUsage rows on success only.
+ */
+async function importMap(req, res, next, deps = {}) {
+  const completeAnthropicFn = deps.completeAnthropic || completeAnthropic;
+  const completeCursorFn = deps.completeCursor || completeCursor;
+  const loadAccess = deps.loadCoachAccess || loadCoachAccess;
+  const resolveProvider = deps.resolveCoachProvider || resolveCoachProvider;
+  const prismaClient = deps.prisma || prisma;
+  const loadCap = deps.loadWeeklyCap || loadWeeklyCap;
+
+  try {
+    const parsed = parseImportMapRequest(req.body);
+    if (!parsed.ok) return res.status(parsed.status).json({ error: parsed.error });
+    const { text, unit } = parsed.value;
+
+    const access = await loadAccess(req.authUserId);
+    if (!access) return res.status(404).json({ error: "User not found" });
+    if (!access.consentGranted) {
+      return res.status(403).json({ error: "forbidden", reason: "no_consent" });
+    }
+
+    const resolved = resolveProvider({
+      byoKey: readByoKey(req),
+      entitled: access.entitled,
+    });
+    if (!resolved.ok) {
+      return res.status(resolved.status).json({
+        error: resolved.error,
+        reason: resolved.reason,
+      });
+    }
+
+    const capApplies = capAppliesToAccess(resolved.keyInfo.source, access.email);
+    let cap = null;
+    if (capApplies) {
+      cap = await loadCap(req.authUserId);
+      if (!remainingCoversCost(cap.remaining, IMPORT_MAP_COST)) {
+        return res.status(429).json({
+          error: "weekly_limit",
+          limit: cap.limit,
+          used: cap.used,
+          remaining: cap.remaining,
+          needed: IMPORT_MAP_COST,
+          nextAvailableAt: cap.nextAvailableAt,
+        });
+      }
+    }
+
+    const sample = sampleForRecipe(text);
+
+    let candidate;
+    if (resolved.keyInfo.source === "mock") {
+      candidate = (deps.mockImportRecipeFor || mockImportRecipeFor)(text);
+    } else if (resolved.provider === "cursor") {
+      const raw = await completeCursorFn({
+        apiKey: resolved.keyInfo.key,
+        model: resolved.config.model,
+        system: buildCursorImportMapSystem({ unit }),
+        messages: buildImportMapMessages({ sample }),
+        ...(deps.fetchImpl ? { fetchImpl: deps.fetchImpl } : {}),
+      });
+      const parsedCandidate = parseImportMapCandidate(raw, { provider: "cursor" });
+      if (!parsedCandidate.ok) {
+        return res.status(422).json({
+          error: "import_map_invalid",
+          errors: [{ path: "", message: parsedCandidate.error }],
+        });
+      }
+      candidate = parsedCandidate.candidate;
+    } else {
+      const message = await completeAnthropicFn({
+        apiKey: resolved.keyInfo.key,
+        model: resolved.config.model,
+        system: [
+          {
+            type: "text",
+            text: buildImportMapSystemPrompt({ unit }),
+          },
+        ],
+        messages: buildImportMapMessages({ sample }),
+        effort: resolved.config.effort,
+        maxTokens: IMPORT_MAP_MAX_TOKENS,
+        ...(deps.fetchImpl ? { fetchImpl: deps.fetchImpl } : {}),
+      });
+      const stopErr = importMapErrorForStopReason(message && message.stop_reason);
+      if (stopErr) {
+        return res.status(stopErr.status).json(stopErr.body);
+      }
+      const parsedCandidate = parseImportMapCandidate(message && message.content, {
+        provider: "anthropic",
+      });
+      if (!parsedCandidate.ok) {
+        return res.status(422).json({
+          error: "import_map_invalid",
+          errors: [{ path: "", message: parsedCandidate.error }],
+        });
+      }
+      candidate = parsedCandidate.candidate;
+    }
+
+    const validated = validateImportMapCandidate(candidate, text);
+    if (!validated.ok) {
+      return res.status(validated.status).json(validated.body);
+    }
+
+    if (capApplies) {
+      const rows = Array.from({ length: IMPORT_MAP_COST }, () => ({
+        userId: req.authUserId,
+      }));
+      await prismaClient.coachUsage.createMany({ data: rows });
+    }
+
+    return res.json({ recipe: validated.recipe });
+  } catch (err) {
+    if (err instanceof CoachProviderError) {
+      return res.status(502).json({ error: err.code, message: err.message });
+    }
+    return next(err);
+  }
+}
+
 module.exports = {
   getCoachStatus,
   askCoach,
   generatePalette,
   draftBlock,
+  importMap,
   BYO_KEY_HEADER,
   paletteErrorForStopReason,
   blockErrorForStopReason,
+  importMapErrorForStopReason,
 };

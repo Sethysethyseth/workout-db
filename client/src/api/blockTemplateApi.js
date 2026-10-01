@@ -45,7 +45,18 @@ export function getBlockFormat() {
 
 /**
  * POST /block-templates/import/preview
- * @param {{ text: string, kind?: string, options?: object }} body
+ * @param {{
+ *   text: string,
+ *   kind?: string,
+ *   options?: {
+ *     unit?: "lb"|"kg",
+ *     skipWarmups?: boolean,
+ *     recipe?: object,
+ *     historyWeeks?: number,
+ *     sourceUnit?: "lb"|"kg",
+ *     name?: string,
+ *   },
+ * }} body
  */
 export function previewBlockImport(body) {
   return http("/block-templates/import/preview", {
