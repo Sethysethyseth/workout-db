@@ -20,7 +20,8 @@
   --bk-bad: var(--color-error-text);
   --bk-bad-soft: var(--color-error-bg);
   /* Placeholders / secondary text: mix muted toward ink so ghosts clear 3:1 on fields. */
-  --bk-ghost: color-mix(in srgb, var(--color-muted) 72%, var(--color-text));
+  /* Ghost = planned value, deliberately dimmer than logged ink (~3.5-4.5:1, ink ~15:1). */
+  --bk-ghost: color-mix(in srgb, var(--color-muted) 75%, var(--bk-field));
   --bk-shadow: var(--shadow-card);
   --bk-display: var(--font-block);
   --bk-r: 14px;
@@ -528,14 +529,15 @@ html[data-palette="iron"] .bk {
   --bk-warn-soft: var(--bk-bad-soft);
 }
 
-html[data-palette="iron"]:not([data-theme="dark"]) .bk {
-  --bk-accent: color-mix(in srgb, var(--color-interactive) 42%, var(--color-text));
-  --bk-ghost: color-mix(in srgb, var(--color-muted) 55%, var(--color-text));
+/* Light surfaces need a stronger ghost mix to clear 3:1 (still far below ink). */
+html:not([data-theme="dark"]) .bk {
+  --bk-ghost: color-mix(in srgb, var(--color-muted) 90%, var(--bk-field));
 }
 
-html[data-theme="dark"][data-palette="champ"] .bk {
-  --bk-ghost: color-mix(in srgb, var(--color-muted) 65%, var(--color-text));
+html[data-palette="iron"]:not([data-theme="dark"]) .bk {
+  --bk-accent: color-mix(in srgb, var(--color-interactive) 42%, var(--color-text));
 }
+
 
 /* ---------- stepper ---------- */
 .bk-stepper {
