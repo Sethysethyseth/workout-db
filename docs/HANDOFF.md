@@ -1,5 +1,45 @@
 # HANDOFF — current state
 
+> **PICK UP HERE (Sept 30, late - session ended at a usage limit). Next agent:
+> finish the BK critic loop, then hand Seth the smoke.**
+> 1. Critic round 2 FAILED at 7/10. All round-1 P1s are closed; see
+>    `docs/tasks/bks-critic-round-2-FINDINGS.md`.
+> 2. The final-round fix blocks were DISPATCHED and may already have delivered
+>    (uncommitted changes + DELIVERY.md in each lane):
+>    - bksf2a in `C:\dev\worktrees\cursor-lane-2`
+>    - bksf2b in `C:\dev\worktrees\cursor-lane-3`
+>    - bksf2c in `C:\dev\worktrees\cursor-lane`
+>    Logs are in `C:\dev\worktrees\_logs\`. Land each with `land-unit`: commit in
+>    the lane, rebase onto `ai-connector-wave`, ff-merge, push.
+> 3. ALWAYS load each page in the browser after landing. The build cannot see
+>    hook-order crashes (see `924bc66`).
+> 4. Seat fixes committed with this handoff, NOT yet measured live:
+>    - light-mode over-cap amber darkened (`bk-ui.css`)
+>    - Discard x spacing raised to 20px (`bk-log.css`)
+>    Check the over-cap contrast is 3:1 or better in champ/forest/crimson light.
+> 5. Critic ROUND 3 (the last one):
+>    - Use the same separate-agent pattern: Agent tool, general-purpose, opus.
+>    - Brief: `.playwright-mcp/bks-critic/BRIEF.md`. Add round-3 notes, palette
+>      crimson.
+>    - Use the local recipe from the memory note `local-run-and-critic-loop`.
+>      Restart the local API after the server changes.
+>    - After round 3, stop whatever the score and record it.
+> 6. Then (Seth's explicit ask) REWRITE this section for a smoke agent:
+>    - protocol, URLs, test123 / `password`
+>    - an updated consolidated checklist: the original 11 items + the bks/bksf
+>      changes (Excel upload, AI layout import, planned-row logger, Library,
+>      search, Home block day)
+>    - the by-design list, and the deferred duplicate Resume bars
+>    - the gate notes
+> - The .xlsx upload is untested by the critic: Playwright `browser_file_upload`
+>   is blocked by permissions. Seth must test it himself in the smoke.
+> - Unaddressed P3s for later:
+>   - rest timer after logging a set
+>   - fractional Execution numbers
+>   - desktop In-progress bar width
+>   - the "Per side" chip on bilateral lifts
+>   - removed planned rows are stored per device only
+
 > **UPDATE (Sept 30): the smoke REOPENED the wave.** Seth's item-1 notes became
 > four change requests (`docs/tasks/bk-smoke-FINDINGS.md`) that he ruled
 > in-wave: N = 20.

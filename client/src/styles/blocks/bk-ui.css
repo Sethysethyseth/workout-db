@@ -532,6 +532,9 @@ html[data-palette="iron"] .bk {
 /* Light surfaces need a stronger ghost mix to clear 3:1 (still far below ink). */
 html:not([data-theme="dark"]) .bk {
   --bk-ghost: color-mix(in srgb, var(--color-muted) 90%, var(--bk-field));
+  /* Amber warn text is ~2.1:1 on light fields; darken it toward ink (iron
+     overrides warn to red below). */
+  --bk-warn: color-mix(in srgb, var(--color-warn-accent) 55%, var(--color-text));
 }
 
 html[data-palette="iron"]:not([data-theme="dark"]) .bk {

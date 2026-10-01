@@ -515,7 +515,8 @@
 .bk-log-block-head-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
+  /* Keep Discard (x) well apart from Back - critic R2 measured 8px. */
+  gap: 20px;
   align-items: center;
   min-height: 44px;
 }
