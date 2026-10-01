@@ -15,7 +15,7 @@ effort cap / week labels. Lands on `ai-connector-wave` (staging Render still
 tracks it - M2's repoint to `main` is ON HOLD for this wave). ONE migration
 (BK1): the BK1 landing push MIGRATES STAGING (Render build runs `migrate
 deploy`), so that push waits for Seth's "migrate staging"; prod gets it by
-hand before the merge. Wave N = 21 (BK1-BK12 + BK5b + critic fixes bkf1a/b/c + bkf2 + smoke CRs bks1-4; BK0
+hand before the merge. Wave N = 25 (BK1-BK12 + BK5b + critic fixes bkf1a/b/c + bkf2 + smoke CRs bks1-4 + bksf1a-d; BK0
 privacy/ToS is DRAFT on Seth's facts and joins N when queued). Then the coach-persona
 critic loop (spec section 11, FRONTIER SEAT, max 3 rounds, pass 8+; each
 failing round adds a `bkf<N>` fix block), THEN N/N -> Seth smokes -> gate.
@@ -276,6 +276,17 @@ keypad-safe | n=19 candidate. SessionDetailPage (block branch) +
 blocks/log/* + bk-log.css.
 BOUNCED 1 (Sept 30): build, lanes and the hex check were green, but two deviations failed the audit. (A) It dropped the L/R per-side logging that unilateral work needs. (B) The lifter's "+ Note" could overwrite the author's cue, because the notes live only in sessionExercise.notes. The fix adds plan.notes to the start-of-session snapshot in blockRunLogic.js (JSON, no migration). Bounce notes are in the block. Re-dispatched in place in cursor-lane on top of the first delivery. LANDED Sept 30 as n=21 after bounce 1. Audit: lanes fresh green (458); per-side grids reuse derivePerSideMode, now moved to log/perSideMode.js and imported back (no duplicates, no dangling refs); plan.notes is snapshotted (JSON, no migration); lead side orders the grids.
 Known limit: sessions started before this commit fall back to sessionExercise.notes for the cue. Runtime look and feel go to the critic loop.
+Post-landing P0 hotfix 924bc66: hook order on the block-day page (a useMemo after the loading return), caught by the seat's runtime check.
+
+**Critic round 1 (separate agent, Sept 30): FAIL 5/10** (`bks-critic-round-1-FINDINGS.md`). Its six P1s were: search capped at 12 A-Z, fixed bars covering typed fields, Finish in one tap where the nav sits, half-filled sets showing a check mark, builder edits lost on navigation, and kg read as lb. The P2s include the builder chrome taking 33% of the screen. That gives four fix blocks with disjoint FILES, so a, b and c run in parallel and d follows. N 21 -> 25.
+
+QUEUED | bksf1a-logger-critic-fixes.md | logger: keypad hides the dock, finish confirm + nav hidden, draft-until-reps, remove confirm, progress fix, Per side label, compact header, 16px inputs, iron warn/contrast | n=22 candidate.
+
+QUEUED | bksf1b-builder-search-critic-fixes.md | builder + search: relevance ranking, limit 50 + hasMore, pinned picker search, keypad mode, one-row header, ... menu, unsaved-edits guard | n=23 candidate. Touches the server search (searchCatalog + exercise route).
+
+QUEUED | bksf1c-import-critic-fixes.md | import: the weight unit comes from the source header in the recipe path, AI-read diff + "Use the original read", pluralised counts, wait copy | n=24 candidate.
+
+QUEUED | bksf1d-library-home-critic-fixes.md | Library first card at y<=330, "Open" not "Running", no truncation; block-day titles "W3 · Upper A"; Home names the next day | n=25 candidate. Dispatches when a lane frees.
 
 LANDED fb2bda1 | bks3-library-redesign.md | Library redesign: blocks-first, a running-block
 strip, BK card language, "Create workout" greyed as parked | n=20 candidate.
