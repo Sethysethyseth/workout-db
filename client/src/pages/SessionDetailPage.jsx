@@ -3102,7 +3102,9 @@ export function SessionDetailPage() {
   const inLiveTable = useLiveBuilderUX && liveViewMode === "table";
   const blockContext = session?.blockContext ?? null;
 
-  const blockProgress = useMemo(() => {
+  // Plain computation, not useMemo: this runs after the loading early return,
+  // so a hook here changes the hook order between renders (crash).
+  const blockProgress = (() => {
     if (!isFromBlock) return { logged: 0, total: 0 };
     let logged = 0;
     let total = 0;
@@ -3119,7 +3121,7 @@ export function SessionDetailPage() {
       }
     }
     return { logged, total };
-  }, [isFromBlock, orderedSessionExercises, blockSlotStats, setsByExercise]);
+  })();
 
   const sourceSummary = isFromTemplate
     ? `Saved workout: ${session.workoutTemplate.name}`
