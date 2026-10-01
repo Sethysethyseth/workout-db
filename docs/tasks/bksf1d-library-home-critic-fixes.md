@@ -57,6 +57,22 @@ CHANGE:
    - Use the existing active-run data (`progress.nextDay` from
      `/block-runs/active`); no new endpoints.
 
+4. **Run-page day progress (P2-4, added at dispatch):**
+   - The block run page (`/blocks/current`) draws an in-progress day as a
+     constant 50% ring and announces "Day progress 50%", even at 0 of 16 sets.
+     The source is `client/src/components/blocks/run/RunDayCard.jsx` and
+     `dayStatusTiles.js` (`in_progress: 0.5`).
+   - Replace the fake fraction with an honest state. If the run progress
+     payload already carries per-day logged/planned set counts, use the real
+     fraction.
+   - Otherwise draw a distinct "in progress" ring state (e.g. a short arc
+     plus a dot, or a dashed track) whose accessible label says "In progress"
+     with no percentage.
+   - Done stays full and to-do stays empty. No server change.
+   - This item ADDS `client/src/components/blocks/run/RunDayCard.jsx`,
+     `client/src/components/blocks/run/dayStatusTiles.js` and
+     `client/src/styles/blocks/bk-run.css` to FILES TO TOUCH.
+
 ACCEPTANCE CRITERIA (machine-checkable):
 - Client `npm run build` green. `node scripts/check-hex.mjs` clean.
   `npm run test:unit` from `server/` green.
