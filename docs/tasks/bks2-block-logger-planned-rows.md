@@ -145,6 +145,68 @@ ACCEPTANCE CRITERIA (machine-checkable):
 - DELIVERY.md includes a short table: each numbered CHANGE item mapped to the
   file:line that implements it.
 
+BOUNCE 1 (Sept 30, Opus seat audit) - apply ON TOP of your first delivery, which
+is already in this working tree. Keep everything that passed, then rewrite
+DELIVERY.md in full for the new tree.
+A. **Per-side logging must survive. It is a regression otherwise.**
+   - Your deviation 2 dropped the L/R pair UI on block days. Seth's own Phase-1
+     program is full of unilateral work, and the recovery reference logs per side.
+     See `.side` / `.side-h` / `.lr` in the reference CSS and the "one grid per
+     side" note in the reference doc.
+   - When `derivePerSideMode` (reuse it by name) is true for an exercise, the card
+     renders one planned-set grid PER SIDE. That covers the name heuristic, the
+     lifter's override, and existing L/R sets.
+   - Each grid has a small side header: an L or R badge plus "Left" / "Right".
+     Each has the planned number of rows, and sets are created with the existing
+     `side` values through the existing per-side create path. Use no new ordering
+     math.
+   - When the plan's notes contain a lead-side cue ("Lead side: left" /
+     "right", any case), that side's grid comes first.
+   - The existing per-side override control stays reachable on the card, so the
+     lifter can switch modes.
+   - Add/remove and the hidden-row memory work per side; the localStorage key
+     includes the side.
+   - Ghosts and set-number taps behave exactly as in the bilateral grid.
+B. **Author notes are read from the PLAN, never from the lifter's field.**
+   - `startSessionFromBlock` copies the block exercise's notes into
+     `sessionExercise.notes`. Your deviation 3 lets the lifter's "+ Note"
+     overwrite the author's cue/coach text. Fix it this way:
+   - Today the plan snapshot does NOT carry the notes:
+     `server/src/blocks/blockRunLogic.js` builds `plan: { v, effort,
+     effortCap, restSec, sets }` and puts the notes only on the session
+     exercise.
+   - This bounce therefore ADDS `server/src/blocks/blockRunLogic.js` and its
+     unit test (under `server/test/lib/` or `server/test/analytics/`, wherever
+     blockRunLogic is already tested; create one under `server/test/lib/blocks/`
+     if none) to FILES TO TOUCH.
+   - Add `notes` (the block exercise's notes, or null) to that plan snapshot.
+     `plan` is a JSON column, so there is NO migration.
+   - Grep every reader of `plan` (`planVsActual`, `planHelpers.js`, the
+     Execution view) and confirm none rejects an extra key.
+   - The cue and the "Coach note" then come from `se.plan.notes`. For a legacy
+     session whose plan has no `notes` key, fall back to `sessionExercise.notes`
+     as today.
+   - "+ Note" treats `sessionExercise.notes` as LIFTER-owned. When it equals the
+     plan's notes text (trimmed compare, i.e. the start-of-session copy), it
+     counts as EMPTY: the link reads "+ Note" and opens an EMPTY field. Saving
+     replaces the copied text with the lifter's note.
+   - When it differs, it is the lifter's note: show it, and the field edits it.
+   - The author's text keeps rendering from the plan either way.
+C. **Criterion correction** (the block's wording was wrong; your read was right):
+   removing planned row 4 of 4 before logging it leaves **3** rows after a
+   reload. The add-then-remove sequence gives 4.
+New acceptance for this bounce, evidence by code read with file:line in DELIVERY.md:
+- With `derivePerSideMode` true for a 3-set planned exercise whose plan notes say
+  "Lead side: left", the card shows a Left grid with 3 rows, then a Right grid
+  with 3 rows.
+- A tap on Left set 1 creates a set with `side` L via the existing per-side path.
+  Show the call chain.
+- A plan with notes "Setup: pins at 4" and a session exercise whose notes equal
+  that text: the cue shows "Setup: pins at 4" and "+ Note" opens empty.
+- After the lifter saves "felt tight", the cue STILL shows "Setup: pins at 4"
+  (from the plan) and the lifter note shows "felt tight".
+- Build, unit lane and check-hex are still green.
+
 STOP CONDITION (standing footer - keep verbatim in every block):
 Stop when the acceptance criteria are met. If a criterion cannot be met,
 stop and explain why instead of guessing.

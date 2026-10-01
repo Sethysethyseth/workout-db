@@ -266,10 +266,11 @@ recipe from a 40-row sample, the parser applies it to every row, costs 3 of 7 |
 n=18 candidate. Server + import page + coach/blockTemplate api +
 bk-import.css. Needs a LIVE staging proof of `/coach/import-map` at landing.
 
-DISPATCHED | bks2-block-logger-planned-rows.md | block-day logger: a row per planned set,
+QUEUED | bks2-block-logger-planned-rows.md | block-day logger: a row per planned set,
 every field ghosted, add/remove sets, recovery look, notes without switches,
 keypad-safe | n=19 candidate. SessionDetailPage (block branch) +
 blocks/log/* + bk-log.css.
+BOUNCED 1 (Sept 30): build, lanes and the hex check were green, but two deviations failed the audit. (A) It dropped the L/R per-side logging that unilateral work needs. (B) The lifter's "+ Note" could overwrite the author's cue, because the notes live only in sessionExercise.notes. The fix adds plan.notes to the start-of-session snapshot in blockRunLogic.js (JSON, no migration). Bounce notes are in the block. Re-dispatched in place in cursor-lane on top of the first delivery.
 
 LANDED fb2bda1 | bks3-library-redesign.md | Library redesign: blocks-first, a running-block
 strip, BK card language, "Create workout" greyed as parked | n=20 candidate.
