@@ -181,6 +181,7 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
   const [coachIncludeWarmups, setCoachIncludeWarmups] = useState(true);
   const [draftOffer, setDraftOffer] = useState(null); // { state } | null
   const [headerMenuOpen, setHeaderMenuOpen] = useState(false);
+  const [nameEditing, setNameEditing] = useState(isCreate);
   const draftCheckedRef = useRef(false);
   const headerMenuRef = useRef(null);
 
@@ -349,12 +350,12 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
     };
   }, [isCreate, templateId]);
 
-  // Focus name on create
+  // Focus name when the inline editor opens (create, or tap-to-edit).
   useEffect(() => {
-    if (!isCreate || loading) return;
+    if (!nameEditing || loading) return;
     const t = window.setTimeout(() => nameInputRef.current?.focus(), 50);
     return () => window.clearTimeout(t);
-  }, [isCreate, loading]);
+  }, [nameEditing, loading]);
 
   // Persist dirty drafts so in-app nav (BrowserRouter) cannot erase them.
   useEffect(() => {
@@ -729,21 +730,35 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
 
   const nameInvalid = validationErrors.some((e) => e.path === "name");
 
+  // Honest save state: never "Saved" while a local draft differs from the server.
+  const displaySaveStatus =
+    saveStatus === "saving"
+      ? "saving"
+      : saveStatus === "clean" && !dirty && !draftOffer
+        ? "clean"
+        : dirty || draftOffer || saveStatus === "unsaved"
+          ? "unsaved"
+          : saveStatus;
+
   const headerRight = (
     <div className="bk-builder-save">
-      {saveStatus === "clean" ? null : (
+      {displaySaveStatus === "clean" ? null : (
         <span
-          className={`bk-builder-save__status bk-builder-save__status--${saveStatus}`}
+          className={`bk-builder-save__status bk-builder-save__status--${displaySaveStatus}`}
           aria-live="polite"
         >
           <span className="bk-builder-save__dot" aria-hidden="true" />
-          {saveStatus === "unsaved" ? "Unsaved" : saveStatus === "saving" ? "Saving" : "Saved"}
+          {displaySaveStatus === "unsaved"
+            ? "Unsaved"
+            : displaySaveStatus === "saving"
+              ? "Saving…"
+              : "Saved"}
         </span>
       )}
       <button
         type="button"
         className="btn bk-builder-save__btn"
-        disabled={saveStatus === "saving"}
+        disabled={displaySaveStatus === "saving"}
         onClick={() => void handleSave()}
       >
         Save
@@ -789,7 +804,7 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
     </div>
   );
 
-  const nameNode = isCreate && !blockId ? (
+  const nameNode = nameEditing ? (
     <input
       ref={nameInputRef}
       className="bk-builder-name-input"
@@ -800,17 +815,21 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
       aria-invalid={nameInvalid || undefined}
       onChange={(e) => applyState(setName(state, e.target.value))}
       onClick={(e) => e.stopPropagation()}
+      onBlur={() => {
+        if (!(isCreate && blockId == null)) setNameEditing(false);
+      }}
     />
   ) : (
     <span
       role="button"
       tabIndex={0}
       className="bk-builder-name-tap"
-      onClick={() => setSettingsOpen(true)}
+      title={state.name || "Untitled block"}
+      onClick={() => setNameEditing(true)}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
-          setSettingsOpen(true);
+          setNameEditing(true);
         }
       }}
     >

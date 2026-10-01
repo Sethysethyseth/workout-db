@@ -31,7 +31,53 @@ function firstNotesLine(notes) {
 function restFormat(sec) {
   if (sec == null || sec === 0) return { text: "None", ariaLabel: "No rest" };
   const t = formatRest(sec);
-  return t || { text: "None", ariaLabel: "No rest" };
+  if (!t) return { text: "None", ariaLabel: "No rest" };
+  return typeof t === "string" ? { text: t, ariaLabel: `Rest ${t}` } : t;
+}
+
+/** Collapsed meta line: rest / target-or-cap / note count when set. */
+function buildMetaSummary(exercise, effort) {
+  const parts = [];
+  const restSec = exercise?.restSec == null ? null : Number(exercise.restSec);
+  if (restSec != null && restSec > 0) {
+    const rest = formatRest(restSec);
+    if (rest) parts.push(`Rest ${rest}`);
+  }
+
+  const showEffort = effort === "rpe" || effort === "rir";
+  if (showEffort) {
+    const sets = exercise?.sets || [];
+    let effortVal = null;
+    for (const s of sets) {
+      const raw = effort === "rir" ? s.rir : s.rpe;
+      if (raw != null && raw !== "") {
+        effortVal = Number(raw);
+        break;
+      }
+    }
+    if (effortVal != null && Number.isFinite(effortVal)) {
+      if (effort === "rir") {
+        parts.push(exercise?.effortCap ? `RIR ≥ ${effortVal}` : `RIR ${effortVal}`);
+      } else {
+        parts.push(exercise?.effortCap ? `RPE ≤ ${effortVal}` : `RPE ${effortVal}`);
+      }
+    }
+  }
+
+  const notes = String(exercise?.notes || "").trim();
+  if (notes) {
+    const n = notes.split(/\r?\n/).filter((line) => line.trim()).length;
+    parts.push(n === 1 ? "1 note" : `${n} notes`);
+  }
+
+  return parts.length ? parts.join(" · ") : null;
+}
+
+function setGridLineClassName(kind, { rangeOn, showEffort }) {
+  const parts = [`bk-set-grid__${kind}`];
+  if (rangeOn) parts.push(`bk-set-grid__${kind}--range`);
+  if (showEffort) parts.push(`bk-set-grid__${kind}--effort`);
+  return parts.join(" ");
 }
 
 /**
@@ -64,31 +110,16 @@ export function ExerciseCard({
   const [menuOpen, setMenuOpen] = useState(false);
   const summary = exerciseRxSummary(exercise, { effort, unit });
   const notesLine = firstNotesLine(exercise?.notes);
+  const metaSummary = buildMetaSummary(exercise, effort);
   const sets = exercise?.sets || [];
   const timed = sets.length > 0 && sets.every((s) => s.durationSec != null && s.durationSec !== "");
   const rangeOn = sets.some((s) => s.repsMax != null && s.repsMax !== "");
   const restSec = exercise?.restSec == null ? 0 : Number(exercise.restSec);
   const showEffort = effort === "rpe" || effort === "rir";
   const effortLabel = effort === "rir" ? "RIR" : "RPE";
-
-  // At most 4 visible controls on the primary line. Remove sits on the primary
-  // line when there is room; effort (and remove when range is on) wrap.
-  const rangeCols = rangeOn && !timed ? 1 : 0;
-  const removeOnPrimary = !rangeOn;
-  const primaryStyle = {
-    gridTemplateColumns: removeOnPrimary
-      ? `40px repeat(${1 + rangeCols + 1}, minmax(0,1fr)) 34px`
-      : `40px repeat(${1 + rangeCols + 1}, minmax(0,1fr))`,
-  };
-  const needsSecondary = showEffort || !removeOnPrimary;
-  const secondaryStyle = {
-    gridTemplateColumns:
-      showEffort && !removeOnPrimary
-        ? "minmax(0,1fr) 34px"
-        : showEffort
-          ? "minmax(0,1fr)"
-          : "34px",
-  };
+  const lineMods = { rangeOn: rangeOn && !timed, showEffort };
+  const headClass = setGridLineClassName("head", lineMods);
+  const rowClass = setGridLineClassName("row", lineMods);
 
   useEffect(() => {
     if (!menuOpen) return undefined;
@@ -131,6 +162,141 @@ export function ExerciseCard({
     setMenuOpen(false);
   }
 
+  function openMetaEditor(e) {
+    e.stopPropagation();
+    e.preventDefault();
+    if (!expanded) onToggle?.();
+    setMenuOpen(true);
+  }
+
+  const menuPanel = menuOpen ? (
+    <div className="bk-ex-card__menu-panel" role="menu">
+      <button
+        type="button"
+        role="menuitem"
+        className="bk-ex-card__menu-item"
+        onClick={() => {
+          onMoveUp?.();
+          closeMenu();
+        }}
+      >
+        Move up
+      </button>
+      <button
+        type="button"
+        role="menuitem"
+        className="bk-ex-card__menu-item"
+        onClick={() => {
+          onMoveDown?.();
+          closeMenu();
+        }}
+      >
+        Move down
+      </button>
+      <button
+        type="button"
+        role="menuitem"
+        className="bk-ex-card__menu-item"
+        onClick={() => {
+          onDuplicate?.();
+          closeMenu();
+        }}
+      >
+        Duplicate
+      </button>
+      <button
+        type="button"
+        role="menuitem"
+        className="bk-ex-card__menu-item"
+        onClick={() => {
+          onReplace?.();
+          closeMenu();
+        }}
+      >
+        Replace
+      </button>
+      <button
+        type="button"
+        role="menuitem"
+        className="bk-ex-card__menu-item"
+        onClick={() => {
+          onFillAll?.();
+          closeMenu();
+        }}
+      >
+        Fill all from set 1
+      </button>
+      <div className="bk-ex-card__menu-section">
+        <Segmented
+          label="Reps or time"
+          options={[
+            { value: "reps", label: "Reps" },
+            { value: "time", label: "Time" },
+          ]}
+          value={timed ? "time" : "reps"}
+          onChange={(v) => onToggleTimed?.(v === "time")}
+        />
+      </div>
+      {!timed ? (
+        <label className="bk-ex-card__menu-item bk-ex-card__menu-check">
+          <input
+            type="checkbox"
+            checked={rangeOn}
+            onChange={(e) => onToggleRange?.(e.target.checked)}
+          />
+          <span>Rep range</span>
+        </label>
+      ) : null}
+      <div className="bk-ex-card__menu-rest">
+        <span className="bk-settings__label">Rest</span>
+        <Stepper
+          value={restSec}
+          min={0}
+          max={600}
+          step={15}
+          label="Rest"
+          format={restFormat}
+          onChange={(v) => onChange?.({ restSec: v === 0 ? null : v })}
+        />
+      </div>
+      {showEffort ? (
+        <div className="bk-ex-card__menu-section">
+          <Segmented
+            label="Effort mode"
+            options={[
+              { value: "target", label: "Target" },
+              { value: "cap", label: "Cap" },
+            ]}
+            value={exercise?.effortCap ? "cap" : "target"}
+            onChange={(v) => onChange?.({ effortCap: v === "cap" })}
+          />
+        </div>
+      ) : null}
+      <label className="bk-ex-card__menu-notes">
+        <span className="bk-settings__label">Notes</span>
+        <textarea
+          className="bk-settings__textarea"
+          value={exercise?.notes ?? ""}
+          onChange={(e) => onChange?.({ notes: e.target.value })}
+          rows={2}
+          maxLength={1000}
+          placeholder="Setup, cues, tempo, lead side..."
+        />
+      </label>
+      <button
+        type="button"
+        role="menuitem"
+        className="bk-ex-card__menu-item bk-ex-card__menu-item--danger"
+        onClick={() => {
+          onDelete?.();
+          closeMenu();
+        }}
+      >
+        Delete
+      </button>
+    </div>
+  ) : null;
+
   if (!expanded || readOnly) {
     return (
       <Card
@@ -167,6 +333,17 @@ export function ExerciseCard({
         ) : (
           <p className="bk-rx bk-rx--summary">{summary.summary}</p>
         )}
+        {metaSummary && !readOnly ? (
+          <button
+            type="button"
+            className="bk-ex-card__meta"
+            onClick={openMetaEditor}
+          >
+            {metaSummary}
+          </button>
+        ) : metaSummary ? (
+          <p className="bk-ex-card__meta bk-ex-card__meta--static">{metaSummary}</p>
+        ) : null}
         {notesLine ? <p className="bk-ex-card__notes">{notesLine}</p> : null}
       </Card>
     );
@@ -204,147 +381,22 @@ export function ExerciseCard({
           >
             …
           </button>
-          {menuOpen ? (
-            <div className="bk-ex-card__menu-panel" role="menu">
-              <button
-                type="button"
-                role="menuitem"
-                className="bk-ex-card__menu-item"
-                onClick={() => {
-                  onMoveUp?.();
-                  closeMenu();
-                }}
-              >
-                Move up
-              </button>
-              <button
-                type="button"
-                role="menuitem"
-                className="bk-ex-card__menu-item"
-                onClick={() => {
-                  onMoveDown?.();
-                  closeMenu();
-                }}
-              >
-                Move down
-              </button>
-              <button
-                type="button"
-                role="menuitem"
-                className="bk-ex-card__menu-item"
-                onClick={() => {
-                  onDuplicate?.();
-                  closeMenu();
-                }}
-              >
-                Duplicate
-              </button>
-              <button
-                type="button"
-                role="menuitem"
-                className="bk-ex-card__menu-item"
-                onClick={() => {
-                  onReplace?.();
-                  closeMenu();
-                }}
-              >
-                Replace
-              </button>
-              <button
-                type="button"
-                role="menuitem"
-                className="bk-ex-card__menu-item"
-                onClick={() => {
-                  onFillAll?.();
-                  closeMenu();
-                }}
-              >
-                Fill all from set 1
-              </button>
-              <div className="bk-ex-card__menu-section">
-                <Segmented
-                  label="Reps or time"
-                  options={[
-                    { value: "reps", label: "Reps" },
-                    { value: "time", label: "Time" },
-                  ]}
-                  value={timed ? "time" : "reps"}
-                  onChange={(v) => onToggleTimed?.(v === "time")}
-                />
-              </div>
-              {!timed ? (
-                <label className="bk-ex-card__menu-item bk-ex-card__menu-check">
-                  <input
-                    type="checkbox"
-                    checked={rangeOn}
-                    onChange={(e) => onToggleRange?.(e.target.checked)}
-                  />
-                  <span>Rep range</span>
-                </label>
-              ) : null}
-              <div className="bk-ex-card__menu-rest">
-                <span className="bk-settings__label">Rest</span>
-                <Stepper
-                  value={restSec}
-                  min={0}
-                  max={600}
-                  step={15}
-                  label="Rest"
-                  format={restFormat}
-                  onChange={(v) => onChange?.({ restSec: v === 0 ? null : v })}
-                />
-              </div>
-              {showEffort ? (
-                <div className="bk-ex-card__menu-section">
-                  <Segmented
-                    label="Effort mode"
-                    options={[
-                      { value: "target", label: "Target" },
-                      { value: "cap", label: "Cap" },
-                    ]}
-                    value={exercise?.effortCap ? "cap" : "target"}
-                    onChange={(v) => onChange?.({ effortCap: v === "cap" })}
-                  />
-                </div>
-              ) : null}
-              <label className="bk-ex-card__menu-notes">
-                <span className="bk-settings__label">Notes</span>
-                <textarea
-                  className="bk-settings__textarea"
-                  value={exercise?.notes ?? ""}
-                  onChange={(e) => onChange?.({ notes: e.target.value })}
-                  rows={2}
-                  maxLength={1000}
-                  placeholder="Setup, cues, tempo, lead side..."
-                />
-              </label>
-              <button
-                type="button"
-                role="menuitem"
-                className="bk-ex-card__menu-item bk-ex-card__menu-item--danger"
-                onClick={() => {
-                  onDelete?.();
-                  closeMenu();
-                }}
-              >
-                Delete
-              </button>
-            </div>
-          ) : null}
+          {menuPanel}
         </div>
       </div>
 
       <div className="bk-set-grid" ref={gridRef}>
-        <div className="bk-set-grid__head" style={primaryStyle} aria-hidden="true">
+        <div className={headClass} aria-hidden="true">
           <span className="bk-set-grid__h bk-set-grid__h--set">SET</span>
           <span className="bk-set-grid__h">{timed ? "SEC" : "REPS"}</span>
           {rangeOn && !timed ? <span className="bk-set-grid__h">TO</span> : null}
           <span className="bk-set-grid__h">LOAD</span>
-          {removeOnPrimary ? <span className="bk-set-grid__h bk-set-grid__h--spacer" /> : null}
+          {showEffort ? <span className="bk-set-grid__h">{effortLabel}</span> : null}
+          <span className="bk-set-grid__h bk-set-grid__h--spacer" />
         </div>
         {sets.map((s, si) => (
           <div className="bk-set-grid__set" key={s.id || si}>
-            <div className="bk-set-grid__row" style={primaryStyle}>
+            <div className={rowClass}>
               <span className="bk-set-grid__num" aria-label={`Set ${si + 1}`}>
                 {si + 1}
               </span>
@@ -385,21 +437,9 @@ export function ExerciseCard({
                 onKeyDown={onFieldKeyDown}
                 aria-label={`Set ${si + 1} load`}
               />
-              {removeOnPrimary ? (
-                <button
-                  type="button"
-                  className="bk-set-grid__remove"
-                  aria-label={`Remove set ${si + 1}`}
-                  disabled={sets.length <= 1}
-                  onClick={() => onDeleteSet?.(si)}
-                >
-                  ×
-                </button>
-              ) : null}
-            </div>
-            {needsSecondary ? (
-              <div className="bk-set-grid__row bk-set-grid__row--secondary" style={secondaryStyle}>
-                {showEffort ? (
+              {showEffort ? (
+                <label className="bk-set-grid__effort">
+                  <span className="bk-set-grid__effort-label">{effortLabel}</span>
                   <NumField
                     placeholder={effortLabel}
                     inputMode="decimal"
@@ -415,20 +455,18 @@ export function ExerciseCard({
                     onKeyDown={onFieldKeyDown}
                     aria-label={`Set ${si + 1} ${effortLabel}`}
                   />
-                ) : null}
-                {!removeOnPrimary ? (
-                  <button
-                    type="button"
-                    className="bk-set-grid__remove"
-                    aria-label={`Remove set ${si + 1}`}
-                    disabled={sets.length <= 1}
-                    onClick={() => onDeleteSet?.(si)}
-                  >
-                    ×
-                  </button>
-                ) : null}
-              </div>
-            ) : null}
+                </label>
+              ) : null}
+              <button
+                type="button"
+                className="bk-set-grid__remove"
+                aria-label={`Remove set ${si + 1}`}
+                disabled={sets.length <= 1}
+                onClick={() => onDeleteSet?.(si)}
+              >
+                ×
+              </button>
+            </div>
           </div>
         ))}
       </div>

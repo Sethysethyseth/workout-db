@@ -28,10 +28,10 @@ html.bk-builder-kbd .bk-builder__weeks {
 .bk-builder .bk-builder-sticky {
   margin-inline: -16px;
   padding-inline: 16px;
-  /* Single compact row: name + save state + overflow (<= 56px). */
+  /* Compact row; may grow to 64px when the name wraps to two lines. */
   padding-top: 6px;
   padding-bottom: 6px;
-  max-height: 56px;
+  max-height: 64px;
   box-sizing: border-box;
   overflow: visible;
   z-index: 30;
@@ -40,7 +40,7 @@ html.bk-builder-kbd .bk-builder__weeks {
 .bk-builder .bk-sticky-header__row {
   align-items: center;
   min-height: 44px;
-  max-height: 44px;
+  max-height: 52px;
 }
 
 .bk-builder .bk-sticky-header__left {
@@ -101,15 +101,18 @@ html.bk-builder-kbd .bk-builder__weeks {
 
 .bk-builder-name-tap {
   cursor: pointer;
-  min-height: 44px;
-  display: inline-flex;
+  min-height: 32px;
+  max-height: 40px;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
   align-items: center;
   width: 100%;
   font: 600 16px/1.2 var(--font-sans);
   color: var(--bk-ink);
-  white-space: nowrap;
+  white-space: normal;
   overflow: hidden;
-  text-overflow: ellipsis;
+  word-break: break-word;
 }
 
 .bk-builder-name-tap:hover {
@@ -460,12 +463,12 @@ html.bk-builder-kbd .bk-builder__weeks {
   color: var(--bk-ink-2);
 }
 
-/* Set grid */
-.bk-set-grid {
+/* Set grid — one row: Set | Reps [| To] | Load | [Effort] | remove.
+   Beat bk-ui.css `.bk-set-grid { display:grid }` (same single-class weight
+   but often emitted later via Card/NumField imports). */
+.bk-ex-card .bk-set-grid {
   display: flex;
   flex-direction: column;
-  /* bk-ui.css also styles .bk-set-grid (align-items: center); stretch the
-     header and rows to the full width so their shared grid lines up. */
   align-items: stretch;
   gap: 4px;
 }
@@ -475,6 +478,26 @@ html.bk-builder-kbd .bk-builder__weeks {
   display: grid;
   gap: 6px;
   align-items: center;
+  /* Fixed reps, no effort: Set | Reps | Load | remove */
+  grid-template-columns: 40px repeat(2, minmax(0, 1fr)) 34px;
+}
+
+.bk-set-grid__head--effort,
+.bk-set-grid__row--effort {
+  /* Fixed reps + effort: Set | Reps | Load | Effort | remove */
+  grid-template-columns: 40px repeat(3, minmax(0, 1fr)) 34px;
+}
+
+.bk-set-grid__head--range,
+.bk-set-grid__row--range {
+  /* Range, no effort: Set | Reps | To | Load | remove */
+  grid-template-columns: 40px repeat(3, minmax(0, 1fr)) 34px;
+}
+
+.bk-set-grid__head--range.bk-set-grid__head--effort,
+.bk-set-grid__row--range.bk-set-grid__row--effort {
+  /* Range + effort: Set | Reps | To | Load | Effort | remove */
+  grid-template-columns: 40px repeat(4, minmax(0, 1fr)) 34px;
 }
 
 .bk-set-grid__head {
@@ -516,6 +539,53 @@ html.bk-builder-kbd .bk-builder__weeks {
   background: var(--bk-surface);
 }
 
+.bk-set-grid__effort {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
+  min-width: 0;
+}
+
+.bk-set-grid__effort-label {
+  display: none;
+  font: 600 10px/1 var(--font-sans);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bk-muted);
+}
+
+/* Rep-range rows may wrap the effort field only below 400px. */
+@media (max-width: 399px) {
+  .bk-set-grid__row--range.bk-set-grid__row--effort {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .bk-set-grid__row--range.bk-set-grid__row--effort > .bk-set-grid__num {
+    flex: 0 0 40px;
+  }
+
+  .bk-set-grid__row--range.bk-set-grid__row--effort > .bk-num-field {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .bk-set-grid__row--range.bk-set-grid__row--effort > .bk-set-grid__remove {
+    flex: 0 0 34px;
+  }
+
+  .bk-set-grid__row--range.bk-set-grid__row--effort > .bk-set-grid__effort {
+    flex: 1 1 100%;
+    order: 10;
+  }
+
+  .bk-set-grid__row--range.bk-set-grid__row--effort .bk-set-grid__effort-label {
+    display: block;
+  }
+}
+
 .bk-set-grid__remove {
   width: 34px;
   height: 44px;
@@ -544,13 +614,30 @@ html.bk-builder-kbd .bk-builder__weeks {
   gap: 4px;
 }
 
-.bk-set-grid__row--secondary {
-  padding-left: 0;
-}
-
 .bk-set-grid__spacer {
   display: block;
   min-height: 1px;
+}
+
+.bk-ex-card__meta {
+  display: block;
+  width: 100%;
+  margin: 4px 0 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  font: 600 12px/1.35 var(--font-sans);
+  color: var(--bk-muted);
+  cursor: pointer;
+}
+
+.bk-ex-card__meta:hover {
+  color: var(--bk-accent);
+}
+
+.bk-ex-card__meta--static {
+  cursor: default;
 }
 
 .bk-ex-card__controls {

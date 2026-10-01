@@ -350,7 +350,15 @@ function searchCatalog(catalog, userIndex, query, { limit = 10, usageByKey } = {
     }
   }
 
+  // Usage tier: a used exact/whole-word hit outranks any unused name match
+  // (including unused exact/short names like "Bent Press" for "press").
+  const usageTierOf = (hit) =>
+    hit.usage > 0 && hit.rank <= RANK.WHOLE_WORD ? 0 : 1;
+
   const sorted = Array.from(hits.values()).sort((a, b) => {
+    const ua = usageTierOf(a);
+    const ub = usageTierOf(b);
+    if (ua !== ub) return ua - ub;
     if (a.rank !== b.rank) return a.rank - b.rank;
     if (a.sourceOrder !== b.sourceOrder) return a.sourceOrder - b.sourceOrder;
     if (a.usage !== b.usage) return b.usage - a.usage;

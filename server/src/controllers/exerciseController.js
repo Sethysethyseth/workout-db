@@ -316,12 +316,55 @@ async function searchExercises(req, res, next) {
       limit = Math.min(50, Math.max(1, parsed));
     }
 
-    const userRows = await prisma.userExercise.findMany({
-      where: { userId },
-    });
+    // At most two indexed, user-scoped queries: custom-exercise index + usage.
+    // Usage unions logged session appearances with saved-block appearances.
+    const [userRows, usageRows] = await Promise.all([
+      prisma.userExercise.findMany({
+        where: { userId },
+      }),
+      prisma.$queryRaw`
+        SELECT key, SUM(n)::int AS n
+        FROM (
+          SELECT
+            CASE
+              WHEN se."exerciseId" IS NOT NULL THEN 'catalog:' || se."exerciseId"
+              WHEN se."userExerciseId" IS NOT NULL THEN 'user:' || se."userExerciseId"::text
+              ELSE NULL
+            END AS key,
+            1 AS n
+          FROM "SessionExercise" se
+          INNER JOIN "WorkoutSession" ws ON ws.id = se."workoutSessionId"
+          WHERE ws."userId" = ${userId}
+          UNION ALL
+          SELECT
+            CASE
+              WHEN bwe."exerciseId" IS NOT NULL THEN 'catalog:' || bwe."exerciseId"
+              WHEN bwe."userExerciseId" IS NOT NULL THEN 'user:' || bwe."userExerciseId"::text
+              ELSE NULL
+            END AS key,
+            1 AS n
+          FROM "BlockWorkoutExercise" bwe
+          INNER JOIN "BlockWorkout" bw ON bw.id = bwe."blockWorkoutId"
+          INNER JOIN "BlockWeek" bwk ON bwk.id = bw."blockWeekId"
+          INNER JOIN "BlockTemplate" bt ON bt.id = bwk."blockTemplateId"
+          WHERE bt."userId" = ${userId}
+        ) t
+        WHERE key IS NOT NULL
+        GROUP BY key
+      `,
+    ]);
+
+    const usageByKey = new Map();
+    for (const row of usageRows) {
+      const key = row && row.key != null ? String(row.key) : "";
+      const n = Number(row && row.n);
+      if (key && Number.isFinite(n) && n > 0) usageByKey.set(key, n);
+    }
+
     const userIndex = buildUserExerciseIndex(userRows);
     const { results, total, hasMore } = searchCatalog(loadCatalog(), userIndex, q, {
       limit,
+      usageByKey,
     });
 
     return res.json({ results, total, hasMore });

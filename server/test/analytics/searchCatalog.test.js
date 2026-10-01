@@ -251,4 +251,20 @@ describe("searchCatalog", () => {
     expect(exact.hasMore).toBe(false);
     expect(exact.total).toBe(exact.results.length);
   });
+
+  test("usage tier: used whole-word presses beat unused short names for press", () => {
+    const catalog = loadCatalog();
+    const usageByKey = new Map([
+      ["catalog:Barbell_Bench_Press_-_Medium_Grip", 5],
+      ["catalog:Seated_Dumbbell_Press", 2],
+    ]);
+    const { results } = searchCatalog(catalog, new Map(), "press", {
+      limit: 40,
+      usageByKey,
+    });
+    const names = namesOf({ results });
+
+    expect(names[0]).toBe("Barbell Bench Press - Medium Grip");
+    expect(names.slice(0, 3)).toContain("Seated Dumbbell Press");
+  });
 });
