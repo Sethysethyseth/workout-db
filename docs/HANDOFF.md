@@ -24,6 +24,15 @@
 >   - Logger: planned rows, ghosts, tap-to-log, add/remove, pencil notes, keypad
 >   - Excel upload with a sheet picker
 > - Next wave candidate: the duplicate Resume bars on Home.
+> - LATER Sept 30: all four landed (21/21). bks4 `a4eeff0`, bks2 `5853dd4`.
+>   - The seat's runtime check found a P0: the block-day page crashed because
+>     of hook order (a useMemo sat after the loading return). Direct fix
+>     `924bc66` (pushed).
+>   - Lesson for the gate: build and lanes cannot see hook order. Always load
+>     the page.
+>   - Critic round 1 (a separate agent, brief
+>     `.playwright-mcp/bks-critic/BRIEF.md`) is running against the local
+>     recipe with test123. Session 463 (W3 Upper A) is in progress for it.
 
 > **WHERE WE ARE (Sept 29, late):** the **BK (blocks-v2) wave is COMPLETE -
 > 17/17 LANDED** on `ai-connector-wave` (`196a10b`): BK1-BK12 + BK5b plus the
