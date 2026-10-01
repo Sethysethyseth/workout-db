@@ -636,8 +636,9 @@ html.bk-builder-kbd .bk-builder__weeks {
   color: var(--bk-accent);
 }
 
-.bk-ex-card__meta--static {
-  cursor: default;
+.bk-ex-card--expanded .bk-ex-card__meta {
+  min-height: 36px;
+  margin: 0 0 4px;
 }
 
 .bk-ex-card__controls {

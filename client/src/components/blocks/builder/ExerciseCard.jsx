@@ -333,17 +333,6 @@ export function ExerciseCard({
         ) : (
           <p className="bk-rx bk-rx--summary">{summary.summary}</p>
         )}
-        {metaSummary && !readOnly ? (
-          <button
-            type="button"
-            className="bk-ex-card__meta"
-            onClick={openMetaEditor}
-          >
-            {metaSummary}
-          </button>
-        ) : metaSummary ? (
-          <p className="bk-ex-card__meta bk-ex-card__meta--static">{metaSummary}</p>
-        ) : null}
         {notesLine ? <p className="bk-ex-card__notes">{notesLine}</p> : null}
       </Card>
     );
@@ -384,6 +373,14 @@ export function ExerciseCard({
           {menuPanel}
         </div>
       </div>
+
+      {/* The collapsed card's rx line already says this; the expanded card
+          is where rest / cap / notes otherwise vanish into the ... menu. */}
+      {metaSummary ? (
+        <button type="button" className="bk-ex-card__meta" onClick={openMetaEditor}>
+          {metaSummary}
+        </button>
+      ) : null}
 
       <div className="bk-set-grid" ref={gridRef}>
         <div className={headClass} aria-hidden="true">
