@@ -5,36 +5,20 @@ import * as blockTemplateApi from "../api/blockTemplateApi.js";
 import * as blockRunApi from "../api/blockRunApi.js";
 import * as sessionApi from "../api/sessionApi.js";
 import * as exerciseApi from "../api/exerciseApi.js";
-import { CommunityProgramsSection } from "../components/programs/CommunityProgramsSection.jsx";
 import { ErrorMessage } from "../components/ErrorMessage.jsx";
 import { LoadingState } from "../components/LoadingState.jsx";
+import { Card, DisplayTitle, Segmented } from "../components/blocks/ui/index.js";
 import {
-  formatBlockTemplateSummary,
-  summarizeExerciseTargets,
-} from "../components/templates/workoutBuilderState.js";
+  LibraryBlockCard,
+  LibraryCommunitySection,
+  LibraryExerciseCard,
+  LibraryRunningStrip,
+  LibraryWorkoutCard,
+} from "../components/library/index.js";
 import { pickLatestActiveSession } from "../lib/activeSession.js";
 import { readCurrentProgram, writeCurrentProgram } from "../lib/currentProgramStorage.js";
 import { sessionDisplayTitle } from "../lib/sessionDisplay.js";
-
-/**
- * Muscle summary for a custom exercise row, mirroring the Main/Assists
- * vocabulary of the AddExerciseToLibrarySheet curate step. `muscles` is the
- * stored designations object: { [muscle]: "primary" | "secondary" }.
- */
-function summarizeCustomExerciseMuscles(muscles) {
-  const main = [];
-  const assists = [];
-  if (muscles && typeof muscles === "object" && !Array.isArray(muscles)) {
-    for (const [muscle, designation] of Object.entries(muscles)) {
-      if (designation === "primary") main.push(muscle);
-      else if (designation === "secondary") assists.push(muscle);
-    }
-  }
-  const parts = [];
-  if (main.length > 0) parts.push(`Main: ${main.join(", ")}`);
-  if (assists.length > 0) parts.push(`Assists: ${assists.join(", ")}`);
-  return parts.join(" · ");
-}
+import "../styles/blocks/bk-library.css";
 
 export function MyTemplatesPage() {
   const navigate = useNavigate();
@@ -44,8 +28,8 @@ export function MyTemplatesPage() {
   const [workouts, setWorkouts] = useState([]);
   const [blocks, setBlocks] = useState([]);
   const [customExercises, setCustomExercises] = useState([]);
-  const [tab, setTab] = useState("workouts");
-  const [tabInitialized, setTabInitialized] = useState(false);
+  // Default tab is Blocks (bks3) - no query-string initializer needed.
+  const [tab, setTab] = useState("blocks");
   const [visibility, setVisibility] = useState("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -58,17 +42,11 @@ export function MyTemplatesPage() {
   const rawItems =
     tab === "workouts" ? workouts : tab === "blocks" ? blocks : customExercises;
   const items = useMemo(() => {
-    // Custom exercises have no public/private axis - the visibility filter
-    // only applies to the two template tabs.
     if (tab === "exercises") return rawItems;
     if (visibility === "all") return rawItems;
     if (visibility === "private") return rawItems.filter((t) => !t.isPublic);
     return rawItems.filter((t) => t.isPublic);
   }, [rawItems, visibility, tab]);
-  const emptyAll = useMemo(
-    () => !loading && workouts.length === 0 && blocks.length === 0,
-    [loading, workouts.length, blocks.length]
-  );
   const emptyTab = useMemo(() => !loading && items.length === 0, [loading, items.length]);
   const emptyRawTab = useMemo(() => !loading && rawItems.length === 0, [loading, rawItems.length]);
 
@@ -95,24 +73,29 @@ export function MyTemplatesPage() {
         blockRunApi.getActiveBlockRun().catch(() => ({ run: null })),
       ]);
       setWorkouts(Array.isArray(wData.templates) ? wData.templates : []);
-      const nextBlocks = Array.isArray(bData.blockTemplates) ? bData.blockTemplates : [];
-      setBlocks(nextBlocks);
+      setBlocks(Array.isArray(bData.blockTemplates) ? bData.blockTemplates : []);
       setCustomExercises(Array.isArray(eData.userExercises) ? eData.userExercises : []);
       if (runData?.run) {
+        const progressWeeks = Array.isArray(runData.progress?.weeks)
+          ? runData.progress.weeks.length
+          : null;
+        const blockWeeks = Array.isArray(runData.block?.weeks)
+          ? runData.block.weeks.length
+          : null;
+        const duration =
+          runData.block?.durationWeeks != null ? Number(runData.block.durationWeeks) : null;
         setActiveRun({
           id: runData.run.id,
           blockTemplateId: runData.run.blockTemplateId,
           name: runData.block?.name || "",
+          currentWeek:
+            runData.progress?.currentWeekOrder != null
+              ? Number(runData.progress.currentWeekOrder)
+              : null,
+          totalWeeks: progressWeeks || duration || blockWeeks || null,
         });
       } else {
         setActiveRun(null);
-      }
-      if (!tabInitialized) {
-        const nextWorkouts = Array.isArray(wData.templates) ? wData.templates : [];
-        if (nextBlocks.length > 0 && nextWorkouts.length === 0) {
-          setTab("blocks");
-        }
-        setTabInitialized(true);
       }
     } catch (err) {
       setError(err);
@@ -220,9 +203,7 @@ export function MyTemplatesPage() {
   }
 
   async function onDeleteBlock(t) {
-    const ok = window.confirm(
-      `Delete block template "${t.name}"? This cannot be undone.`
-    );
+    const ok = window.confirm(`Delete block template "${t.name}"? This cannot be undone.`);
     if (!ok) return;
 
     setError(null);
@@ -304,146 +285,139 @@ export function MyTemplatesPage() {
   }
 
   return (
-    <div className="stack programs-page">
-      <div className="row">
-        <div>
-          <h1 className="page-title">Library</h1>
-          <p className="muted programs-intro">Your workouts, blocks, and community programs.</p>
+    <div className="bk bk-lib">
+      <div className="bk-lib__header">
+        <div className="bk-lib__header-row">
+          <div>
+            <DisplayTitle>Library</DisplayTitle>
+            <p className="bk-lib__subtitle">Blocks first. Saved workouts and custom exercises stay here.</p>
+          </div>
+          <button
+            className="bk-lib__refresh"
+            type="button"
+            onClick={load}
+            disabled={loading || busy}
+          >
+            Refresh
+          </button>
         </div>
-        <button
-          className="btn btn-secondary btn--toolbar"
-          type="button"
-          onClick={load}
-          disabled={loading || busy}
-        >
-          Refresh
-        </button>
       </div>
 
-      <div className="programs-scope-switch" role="tablist" aria-label="Programs scope">
-        <button
-          type="button"
-          role="tab"
-          aria-selected={area === "yours"}
-          className={`programs-scope-tab${area === "yours" ? " programs-scope-tab--active" : ""}`}
-          onClick={() => setArea("yours")}
+      <div className="bk-lib__actions">
+        <Link className="bk-lib-btn bk-lib-btn--primary" to="/create-template?type=block">
+          New block
+        </Link>
+        <Link className="bk-lib-btn bk-lib-btn--secondary" to="/blocks/import">
+          Import
+        </Link>
+        <span
+          className="bk-lib-btn bk-lib-btn--parked"
+          role="button"
+          aria-disabled="true"
+          title="Create workout is parked"
+          aria-label="Create workout (parked)"
         >
-          Your library
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={area === "community"}
-          className={`programs-scope-tab${area === "community" ? " programs-scope-tab--active" : ""}`}
-          onClick={() => setArea("community")}
-        >
-          Community <span className="muted small" aria-hidden="true">(beta)</span>
-        </button>
+          Create workout
+          <span className="bk-lib-parked-tag">Parked</span>
+        </span>
       </div>
+
+      {activeRun ? (
+        <LibraryRunningStrip
+          name={activeRun.name}
+          currentWeek={activeRun.currentWeek}
+          totalWeeks={activeRun.totalWeeks}
+        />
+      ) : null}
+
+      <Segmented
+        className="bk-lib-scope"
+        label="Library scope"
+        value={area}
+        onChange={setArea}
+        options={[
+          { value: "yours", label: "Yours" },
+          { value: "community", label: "Community" },
+        ]}
+      />
 
       {area === "community" ? (
-        <CommunityProgramsSection />
+        <LibraryCommunitySection />
       ) : (
         <>
-          <div className="card stack programs-create-card">
-            <h2 className="programs-create-card__title" style={{ margin: 0 }}>
-              Create programs
-            </h2>
-            <p className="muted small" style={{ margin: 0 }}>
-              Blocks for multi-week plans; workouts for reusable sessions. Log live from Workout.
-            </p>
-            <div className="row programs-create-card__actions" style={{ flexWrap: "wrap", gap: "10px" }}>
-              <Link className="btn programs-create-primary" to="/create-template?type=block">
-                Create block
-              </Link>
-              <Link className="btn btn-secondary" to="/blocks/import">
-                Import a block
-              </Link>
-              <Link className="btn btn-secondary" to="/create-template?type=workout">
-                Create workout
-              </Link>
-            </div>
-          </div>
-
-          <div className="programs-type-tablist" role="tablist" aria-label="Your program type">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={tab === "workouts"}
-              className={`programs-type-tab${tab === "workouts" ? " programs-type-tab--active" : ""}`}
-              onClick={() => setTab("workouts")}
-            >
-              <span className="programs-type-tab__title">Saved workouts</span>
-              <span className="programs-type-tab__meta muted small">{workouts.length}</span>
-            </button>
+          <div className="bk-lib-type-tabs" role="tablist" aria-label="Your library type">
             <button
               type="button"
               role="tab"
               aria-selected={tab === "blocks"}
-              className={`programs-type-tab${tab === "blocks" ? " programs-type-tab--active" : ""}`}
+              className={`bk-lib-type-tab${tab === "blocks" ? " bk-lib-type-tab--active" : ""}`}
               onClick={() => setTab("blocks")}
             >
-              <span className="programs-type-tab__title">Saved blocks</span>
-              <span className="programs-type-tab__meta muted small">{blocks.length}</span>
+              <span className="bk-lib-type-tab__title">Blocks</span>
+              <span className="bk-lib-type-tab__count">{blocks.length}</span>
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={tab === "workouts"}
+              className={`bk-lib-type-tab${tab === "workouts" ? " bk-lib-type-tab--active" : ""}`}
+              onClick={() => setTab("workouts")}
+            >
+              <span className="bk-lib-type-tab__title">Saved workouts</span>
+              <span className="bk-lib-type-tab__count">{workouts.length}</span>
             </button>
             <button
               type="button"
               role="tab"
               aria-selected={tab === "exercises"}
-              className={`programs-type-tab${tab === "exercises" ? " programs-type-tab--active" : ""}`}
+              className={`bk-lib-type-tab${tab === "exercises" ? " bk-lib-type-tab--active" : ""}`}
               onClick={() => setTab("exercises")}
             >
-              <span className="programs-type-tab__title">Custom exercises</span>
-              <span className="programs-type-tab__meta muted small">{customExercises.length}</span>
+              <span className="bk-lib-type-tab__title">Custom exercises</span>
+              <span className="bk-lib-type-tab__count">{customExercises.length}</span>
             </button>
           </div>
 
           {tab !== "exercises" ? (
-          <div className="programs-filter-row" role="group" aria-label="Filter by visibility">
-            <span className="programs-filter-row__label muted small">Show</span>
-            <div className="programs-filter-chips">
+            <div className="bk-lib-filters" role="group" aria-label="Filter by visibility">
+              <span className="bk-lib-filters__label">Show</span>
               <button
                 type="button"
-                className={`programs-filter-chip${visibility === "all" ? " programs-filter-chip--active" : ""}`}
+                className={`bk-lib-filter-chip${visibility === "all" ? " bk-lib-filter-chip--active" : ""}`}
                 onClick={() => setVisibility("all")}
               >
                 All
               </button>
               <button
                 type="button"
-                className={`programs-filter-chip${visibility === "private" ? " programs-filter-chip--active" : ""}`}
+                className={`bk-lib-filter-chip${visibility === "private" ? " bk-lib-filter-chip--active" : ""}`}
                 onClick={() => setVisibility("private")}
               >
                 Private
               </button>
               <button
                 type="button"
-                className={`programs-filter-chip${visibility === "public" ? " programs-filter-chip--active" : ""}`}
+                className={`bk-lib-filter-chip${visibility === "public" ? " bk-lib-filter-chip--active" : ""}`}
                 onClick={() => setVisibility("public")}
               >
                 Public
               </button>
             </div>
-          </div>
           ) : null}
-        </>
-      )}
 
-      {area === "yours" ? (
-        <>
           <ErrorMessage error={error} />
           {confirmStartBlock && activeRun ? (
-            <div className="stack session-discard-confirm" role="alertdialog">
-              <p className="muted small session-discard-confirm__title">
+            <div className="bk-lib-confirm" role="alertdialog">
+              <p className="bk-lib-confirm__title">
                 Start &ldquo;{confirmStartBlock.name || "this block"}&rdquo;?
               </p>
-              <p className="muted small session-discard-confirm__body">
+              <p className="bk-lib-confirm__body">
                 {`This ends ${activeRun.name?.trim() || "the current block"}.`}
               </p>
-              <div className="row session-discard-confirm__actions">
+              <div className="bk-lib-confirm__actions">
                 <button
                   type="button"
-                  className="session-discard-confirm__discard"
+                  className="bk-lib-btn bk-lib-btn--primary"
                   disabled={busy}
                   onClick={() => void doStartBlock(confirmStartBlock)}
                 >
@@ -451,7 +425,7 @@ export function MyTemplatesPage() {
                 </button>
                 <button
                   type="button"
-                  className="btn btn-secondary"
+                  className="bk-lib-btn bk-lib-btn--secondary"
                   disabled={busy}
                   onClick={() => setConfirmStartBlock(null)}
                 >
@@ -461,78 +435,81 @@ export function MyTemplatesPage() {
             </div>
           ) : null}
           {success ? (
-            <div className="card">
-              <strong>Done</strong>
-              <p className="muted" style={{ marginBottom: 0 }}>
-                {success}
-              </p>
-            </div>
+            <Card className="bk-lib-feedback">
+              <p className="bk-lib-feedback__title">Done</p>
+              <p className="bk-lib-feedback__body">{success}</p>
+            </Card>
           ) : null}
 
           {loading ? (
             <LoadingState tone="skeleton" variant="list" rows={3} slowLabel="Taking longer than usual…" />
           ) : null}
 
-          {tab !== "exercises" && emptyAll ? (
-            <div className="card stack library-empty">
-              <p className="library-empty__title">Your library is empty</p>
-              <p className="muted small" style={{ margin: 0 }}>
-                Saved workouts and blocks live here. Start one with the buttons above, or log
-                a workout live and save it afterwards.
+          {tab === "blocks" && emptyRawTab ? (
+            <Card className="bk-lib-empty">
+              <p className="bk-lib-empty__title">No blocks yet</p>
+              <p className="bk-lib-empty__body">
+                Blocks are multi-week plans. Create one or import from a sheet.
               </p>
-            </div>
+              <div className="bk-lib-empty__actions">
+                <Link className="bk-lib-btn bk-lib-btn--primary" to="/create-template?type=block">
+                  New block
+                </Link>
+                <Link className="bk-lib-btn bk-lib-btn--secondary" to="/blocks/import">
+                  Import
+                </Link>
+              </div>
+            </Card>
           ) : null}
 
-          {tab !== "exercises" && !loading && !emptyAll && !emptyRawTab && emptyTab ? (
-            <div className="card stack">
-              <p className="muted" style={{ margin: 0 }}>
-                No {tab === "workouts" ? "workouts" : "blocks"} match this filter. Try{" "}
-                <button type="button" className="btn btn-ghost" onClick={() => setVisibility("all")}>
-                  Show all
-                </button>
-                .
+          {tab === "workouts" && emptyRawTab ? (
+            <Card className="bk-lib-empty">
+              <p className="bk-lib-empty__title">No saved workouts</p>
+              <p className="bk-lib-empty__body">
+                Saved workouts still work here. Create workout is parked - start from a block, or
+                save a live session afterwards.
               </p>
-            </div>
-          ) : null}
-
-          {tab !== "exercises" && !loading && !emptyAll && emptyRawTab ? (
-            <div className="card stack">
-              <p className="muted" style={{ margin: 0 }}>
-                {tab === "workouts"
-                  ? "No saved workouts yet. Create one or switch to blocks."
-                  : "No saved blocks yet. Create one or switch to workouts."}
-              </p>
-              <div className="row" style={{ flexWrap: "wrap" }}>
-                <Link className="btn programs-create-primary" to="/create-template?type=block">
-                  Create block
-                </Link>
-                <Link className="btn btn-secondary" to="/create-template?type=workout">
-                  Create workout
-                </Link>
+              <div className="bk-lib-empty__actions">
                 <button
                   type="button"
-                  className="btn btn-ghost"
-                  onClick={() => setTab(tab === "workouts" ? "blocks" : "workouts")}
+                  className="bk-lib-btn bk-lib-btn--secondary"
+                  onClick={() => setTab("blocks")}
                 >
-                  View {tab === "workouts" ? "blocks" : "workouts"}
+                  View blocks
                 </button>
               </div>
-            </div>
+            </Card>
           ) : null}
 
           {tab === "exercises" && !loading && customExercises.length === 0 ? (
-            <div className="card stack">
-              <p className="muted" style={{ margin: 0 }}>
-                No custom exercises yet. You create them from a live workout: when you
-                log an exercise the library doesn&apos;t know, tap its &quot;Not tracked
-                - add?&quot; pill and it&apos;s added to your library - then it shows up
-                here.
+            <Card className="bk-lib-empty">
+              <p className="bk-lib-empty__title">No custom exercises</p>
+              <p className="bk-lib-empty__body">
+                Create them from a live workout: when you log an exercise the library doesn&apos;t
+                know, tap its &quot;Not tracked - add?&quot; pill and it shows up here.
               </p>
-            </div>
+            </Card>
+          ) : null}
+
+          {tab !== "exercises" && !loading && !emptyRawTab && emptyTab ? (
+            <Card className="bk-lib-empty">
+              <p className="bk-lib-empty__body">
+                No {tab === "workouts" ? "workouts" : "blocks"} match this filter.
+              </p>
+              <div className="bk-lib-empty__actions">
+                <button
+                  type="button"
+                  className="bk-lib-btn bk-lib-btn--ghost"
+                  onClick={() => setVisibility("all")}
+                >
+                  Show all
+                </button>
+              </div>
+            </Card>
           ) : null}
 
           <div
-            className="stack"
+            className="bk-lib-list"
             role="tabpanel"
             aria-label={
               tab === "workouts" ? "Workouts" : tab === "blocks" ? "Blocks" : "Custom exercises"
@@ -541,253 +518,56 @@ export function MyTemplatesPage() {
             {tab === "exercises"
               ? items.map((x) => {
                   const k = keyFor("exercise", x.id);
-                  const isActing = actingKey === k;
-                  const muscleSummary = summarizeCustomExerciseMuscles(x.muscles);
                   return (
-                    <div key={k} className="card">
-                      <div className="row">
-                        <div>
-                          <h2 style={{ marginBottom: "0.35rem" }}>{x.name}</h2>
-                          {muscleSummary ? (
-                            <p className="muted small" style={{ margin: 0 }}>
-                              {muscleSummary}
-                            </p>
-                          ) : null}
-                        </div>
-                        <button
-                          type="button"
-                          className="btn btn-ghost"
-                          onClick={() => onDeleteExercise(x)}
-                          disabled={busy}
-                        >
-                          {isActing && actingAction === "delete" ? "Deleting…" : "Delete"}
-                        </button>
-                      </div>
-                    </div>
+                    <LibraryExerciseCard
+                      key={k}
+                      exercise={x}
+                      busy={busy}
+                      isActing={actingKey === k}
+                      actingAction={actingAction}
+                      onDelete={onDeleteExercise}
+                    />
                   );
                 })
               : tab === "workouts"
-              ? items.map((t) => {
-              const k = keyFor("workout", t.id);
-              const isActing = actingKey === k;
-              return (
-                <div key={k} className="card stack">
-                  <div className="row">
-                    <div>
-                      <h2 style={{ marginBottom: "0.35rem" }}>{t.name}</h2>
-                      {t.description ? <p className="muted">{t.description}</p> : null}
-                      <div className="row">
-                        <span className="pill">Workout</span>
-                        <span className="pill">{t.isPublic ? "Public" : "Private"}</span>
-                        <span className="pill">
-                          Exercises: {Array.isArray(t.exercises) ? t.exercises.length : 0}
-                        </span>
-                        {currentProgram?.kind === "workout" && currentProgram.id === t.id ? (
-                          <span className="pill programs-current-pill">Current</span>
-                        ) : null}
-                      </div>
-                    </div>
-                  </div>
-
-                  {Array.isArray(t.exercises) && t.exercises.length > 0 ? (
-                    <div className="stack">
-                      <strong>Exercises</strong>
-                      <div className="mt-2 sub-card-list">
-                        {t.exercises.map((e) => (
-                          <div key={e.id} className="row sub-card">
-                            <div>
-                              <div>
-                                {e.order}. {e.exerciseName}
-                              </div>
-                              <div className="muted small">{summarizeExerciseTargets(e)}</div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ) : null}
-
-                  <div className="row" style={{ flexWrap: "wrap", gap: "0.5rem" }}>
-                    <button
-                      className="btn"
-                      type="button"
-                      onClick={() => onStartWorkout(t.id)}
-                      disabled={busy}
-                    >
-                      {isActing && actingAction === "start" ? "Starting…" : "Start session"}
-                    </button>
-                    <button
-                      type="button"
-                      className="btn btn-secondary"
-                      disabled={busy}
-                      onClick={() => onSetCurrentWorkout(t)}
-                    >
-                      Set as current
-                    </button>
-                    <Link
-                      className="btn btn-secondary"
-                      to={`/templates/${t.id}/edit`}
-                      tabIndex={busy ? -1 : undefined}
-                      aria-disabled={busy}
-                      style={busy ? { pointerEvents: "none", opacity: 0.65 } : undefined}
-                    >
-                      Edit
-                    </Link>
-                    <button
-                      type="button"
-                      className="btn btn-secondary"
-                      onClick={() => onTogglePublicWorkout(t)}
-                      disabled={busy}
-                    >
-                      {isActing && actingAction === "toggle"
-                        ? "Updating…"
-                        : t.isPublic
-                          ? "Make private"
-                          : "Make public"}
-                    </button>
-                    <button
-                      type="button"
-                      className="btn btn-ghost"
-                      onClick={() => onDeleteWorkout(t)}
-                      disabled={busy}
-                    >
-                      {isActing && actingAction === "delete" ? "Deleting…" : "Delete"}
-                    </button>
-                  </div>
-                </div>
-              );
-            })
-              : items.map((t) => {
-              const k = keyFor("block", t.id);
-              const isActing = actingKey === k;
-              const isDraft = Boolean(t.isDraft);
-              const isActive =
-                activeRun != null && activeRun.blockTemplateId === t.id;
-              return (
-                <div key={k} className="card stack">
-                  <div className="row">
-                    <div>
-                      <h2 style={{ marginBottom: "0.35rem" }}>{t.name}</h2>
-                      {t.description ? <p className="muted">{t.description}</p> : null}
-                      <div className="row">
-                        <span className="pill">Block</span>
-                        <span className="pill">{t.isPublic ? "Public" : "Private"}</span>
-                        <span className="pill muted">{formatBlockTemplateSummary(t)}</span>
-                        {isDraft ? (
-                          <span className="pill">DRAFT</span>
-                        ) : null}
-                        {isActive ? (
-                          <span className="pill programs-current-pill">ACTIVE</span>
-                        ) : null}
-                      </div>
-                    </div>
-                  </div>
-
-                  {Array.isArray(t.weeks) && t.weeks.length > 0 ? (
-                    <div className="stack">
-                      <strong>Structure</strong>
-                      <div className="mt-2 stack">
-                        {[...t.weeks]
-                          .sort((a, b) => a.order - b.order)
-                          .map((week) => (
-                            <div key={week.id} className="stack">
-                              <div className="muted small" style={{ fontWeight: 600 }}>
-                                Week {week.order}
-                              </div>
-                              <div className="sub-card-list">
-                                {[...(week.workouts || [])]
-                                  .sort((a, b) => a.order - b.order)
-                                  .map((w) => (
-                                    <div key={w.id} className="row sub-card">
-                                      <div>
-                                        <div>
-                                          {w.order}. {w.name}
-                                        </div>
-                                        <div className="muted small">
-                                          {Array.isArray(w.exercises) ? w.exercises.length : 0}{" "}
-                                          exercises
-                                        </div>
-                                      </div>
-                                    </div>
-                                  ))}
-                              </div>
-                            </div>
-                          ))}
-                      </div>
-                    </div>
-                  ) : null}
-
-                  <div className="row" style={{ flexWrap: "wrap", gap: "0.5rem" }}>
-                    {isDraft ? (
-                      <Link
-                        className="btn"
-                        to={`/blocks/${t.id}/edit`}
-                        tabIndex={busy ? -1 : undefined}
-                        aria-disabled={busy}
-                        style={busy ? { pointerEvents: "none", opacity: 0.65 } : undefined}
-                      >
-                        Review
-                      </Link>
-                    ) : isActive ? (
-                      <Link
-                        className="btn"
-                        to="/blocks/current"
-                        tabIndex={busy ? -1 : undefined}
-                        aria-disabled={busy}
-                        style={busy ? { pointerEvents: "none", opacity: 0.65 } : undefined}
-                      >
-                        Open
-                      </Link>
-                    ) : (
-                      <button
-                        type="button"
-                        className="btn"
-                        disabled={busy}
-                        onClick={() => void onStartBlock(t)}
-                      >
-                        {isActing && actingAction === "start-block"
-                          ? "Starting…"
-                          : "Start block"}
-                      </button>
-                    )}
-                    {!isDraft ? (
-                      <Link
-                        className="btn btn-secondary"
-                        to={`/blocks/${t.id}/edit`}
-                        tabIndex={busy ? -1 : undefined}
-                        aria-disabled={busy}
-                        style={busy ? { pointerEvents: "none", opacity: 0.65 } : undefined}
-                      >
-                        Edit
-                      </Link>
-                    ) : null}
-                    <button
-                      type="button"
-                      className="btn btn-secondary"
-                      onClick={() => onTogglePublicBlock(t)}
-                      disabled={busy || isDraft}
-                    >
-                      {isActing && actingAction === "toggle"
-                        ? "Updating…"
-                        : t.isPublic
-                          ? "Make private"
-                          : "Make public"}
-                    </button>
-                    <button
-                      type="button"
-                      className="btn btn-ghost"
-                      onClick={() => onDeleteBlock(t)}
-                      disabled={busy}
-                    >
-                      {isActing && actingAction === "delete" ? "Deleting…" : "Delete"}
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
+                ? items.map((t) => {
+                    const k = keyFor("workout", t.id);
+                    return (
+                      <LibraryWorkoutCard
+                        key={k}
+                        workout={t}
+                        isCurrent={
+                          currentProgram?.kind === "workout" && currentProgram.id === t.id
+                        }
+                        busy={busy}
+                        isActing={actingKey === k}
+                        actingAction={actingAction}
+                        onStart={onStartWorkout}
+                        onSetCurrent={onSetCurrentWorkout}
+                        onTogglePublic={onTogglePublicWorkout}
+                        onDelete={onDeleteWorkout}
+                      />
+                    );
+                  })
+                : items.map((t) => {
+                    const k = keyFor("block", t.id);
+                    return (
+                      <LibraryBlockCard
+                        key={k}
+                        block={t}
+                        isActive={activeRun != null && activeRun.blockTemplateId === t.id}
+                        busy={busy}
+                        isActing={actingKey === k}
+                        actingAction={actingAction}
+                        onStart={onStartBlock}
+                        onTogglePublic={onTogglePublicBlock}
+                        onDelete={onDeleteBlock}
+                      />
+                    );
+                  })}
           </div>
         </>
-      ) : null}
+      )}
     </div>
   );
 }
