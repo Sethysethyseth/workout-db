@@ -130,6 +130,11 @@ export const BlockSetRow = memo(function BlockSetRow({
   const canLogRef = useRef(canLogAsPlanned);
   const promotingRef = useRef(false);
   const lastSentKeyRef = useRef(null);
+  // A row that just stopped being a parent-owned draft (its set was created)
+  // has a stale blank localDraft; it must adopt the saved set even while
+  // focus sits inside the row (the tapped set number), or the autosave
+  // PATCHes blanks over the new set (bksf3b landing fix).
+  const wasManagedRef = useRef(managedDraft);
   const [noteOpen, setNoteOpen] = useState(() =>
     Boolean(set?.notes && String(set.notes).trim())
   );
@@ -159,6 +164,8 @@ export const BlockSetRow = memo(function BlockSetRow({
   }, [draft]);
 
   useEffect(() => {
+    const justLeftManaged = wasManagedRef.current && !managedDraft;
+    wasManagedRef.current = managedDraft;
     // Parent-owned drafts must never be wiped or reassigned here.
     if (managedDraft) return;
     if (isDraft) {
@@ -176,11 +183,12 @@ export const BlockSetRow = memo(function BlockSetRow({
       lastSentKeyRef.current = echoedKey;
       return;
     }
-    if (rootRef.current?.contains(document.activeElement)) {
+    if (!justLeftManaged && rootRef.current?.contains(document.activeElement)) {
       lastSentKeyRef.current = echoedKey;
       return;
     }
     setLocalDraft(next);
+    draftRef.current = next;
     lastSentKeyRef.current = echoedKey;
     if (next.notes && String(next.notes).trim()) setNoteOpen(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
