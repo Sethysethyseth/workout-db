@@ -15,7 +15,7 @@ effort cap / week labels. Lands on `ai-connector-wave` (staging Render still
 tracks it - M2's repoint to `main` is ON HOLD for this wave). ONE migration
 (BK1): the BK1 landing push MIGRATES STAGING (Render build runs `migrate
 deploy`), so that push waits for Seth's "migrate staging"; prod gets it by
-hand before the merge. Wave N = 28 (BK1-BK12 + BK5b + critic fixes bkf1a/b/c + bkf2 + smoke CRs bks1-4 + bksf1a-d + bksf2a-c; BK0
+hand before the merge. Wave N = 30 (BK1-BK12 + BK5b + critic fixes bkf1a/b/c + bkf2 + smoke CRs bks1-4 + bksf1a-d + bksf2a-c + bksf3a-b; BK0
 privacy/ToS is DRAFT on Seth's facts and joins N when queued). Then the coach-persona
 critic loop (spec section 11, FRONTIER SEAT, max 3 rounds, pass 8+; each
 failing round adds a `bkf<N>` fix block), THEN N/N -> Seth smokes -> gate.
@@ -297,6 +297,12 @@ LANDED d1c1940 | bksf2a-builder-search-round2.md | builder: RPE inline (N1), you
 LANDED 10cfb3a | bksf2b-import-round2.md | import: the recipe is scoped to its exact text (never sticks), the comparison shows on the error-origin path too, sets x reps parsed without AI, one AI action name, match grammar | n=27 candidate. cursor-lane-3. LANDED as n=26: lanes fresh (495), check-hex clean; no server-side layout memory exists, so the stickiness was client recipe state and the text-scoped recipe closes it. Reviewer fix: the delivery wrote "1 match your library"; now "1 matches / 6 match".
 
 LANDED 848ff3b | bksf2c-home-run-round2.md | Home: the hero starts the block day (N2), no duplicate Next card or Resume, no relayout; run page header <=80px, IN PROGRESS once | n=28 candidate. cursor-lane. LANDED as n=27: lanes fresh (492), check-hex clean, every new var() resolves; the hero CTA goes through blockRunApi.startFromBlock (same endpoint as the run page). Copy note: smoke item 9 "Let the coach convert it" is now "Let AI read this layout" (bksf2b).
+
+**Critic round 3 (final, same separate agent): FAIL 7/10** (`bks-critic-round-3-FINDINGS.md`). Both round-2 P1s CLOSED; three new P1s. The seat fixed P1-1 (keypad mode dropped after autosave) and P2-2 (the AI-read comparison never rendered: it was gated on a missing `ok` field) directly in `9f6b2a0`, live-checked. Seth ruled Oct 1: fix the two remaining P1s BEFORE his smoke, seat-verified live, no critic round 4. N 28 -> 30.
+
+QUEUED | bksf3a-builder-range-header.md | builder: rep-range set-grid headers line up with their fields at 360-399px (R3 P1-2) | n=29 candidate. Files disjoint from bksf3b.
+
+QUEUED | bksf3b-logger-row-binding.md | logger: only the next planned row logs, drafts belong to their row, typed values never lost (R3 P1-3); Home "Up next after this" skips the live day (R3 P2-1) | n=30 candidate. Positional model kept (blockWorkoutSetId stays unused - frontier ruling in the block).
 
 LANDED fb2bda1 | bks3-library-redesign.md | Library redesign: blocks-first, a running-block
 strip, BK card language, "Create workout" greyed as parked | n=20 candidate.
