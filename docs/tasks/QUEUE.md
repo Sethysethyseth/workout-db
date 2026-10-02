@@ -300,9 +300,9 @@ LANDED 848ff3b | bksf2c-home-run-round2.md | Home: the hero starts the block day
 
 **Critic round 3 (final, same separate agent): FAIL 7/10** (`bks-critic-round-3-FINDINGS.md`). Both round-2 P1s CLOSED; three new P1s. The seat fixed P1-1 (keypad mode dropped after autosave) and P2-2 (the AI-read comparison never rendered: it was gated on a missing `ok` field) directly in `9f6b2a0`, live-checked. Seth ruled Oct 1: fix the two remaining P1s BEFORE his smoke, seat-verified live, no critic round 4. N 28 -> 30.
 
-QUEUED | bksf3a-builder-range-header.md | builder: rep-range set-grid headers line up with their fields at 360-399px (R3 P1-2) | n=29 candidate. Files disjoint from bksf3b.
+DISPATCHED | bksf3a-builder-range-header.md | builder: rep-range set-grid headers line up with their fields at 360-399px (R3 P1-2) | n=29 candidate. Files disjoint from bksf3b. Dispatched Oct 1 in cursor-lane-2 (Channel B, auto).
 
-QUEUED | bksf3b-logger-row-binding.md | logger: only the next planned row logs, drafts belong to their row, typed values never lost (R3 P1-3); Home "Up next after this" skips the live day (R3 P2-1) | n=30 candidate. Positional model kept (blockWorkoutSetId stays unused - frontier ruling in the block).
+DISPATCHED | bksf3b-logger-row-binding.md | logger: only the next planned row logs, drafts belong to their row, typed values never lost (R3 P1-3); Home "Up next after this" skips the live day (R3 P2-1) | n=30 candidate. Positional model kept (blockWorkoutSetId stays unused - frontier ruling in the block). Dispatched Oct 1 in cursor-lane (Channel B, auto).
 
 LANDED fb2bda1 | bks3-library-redesign.md | Library redesign: blocks-first, a running-block
 strip, BK card language, "Create workout" greyed as parked | n=20 candidate.
