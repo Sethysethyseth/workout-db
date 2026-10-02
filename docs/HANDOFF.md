@@ -1,229 +1,211 @@
 # HANDOFF — current state
 
-> **PICK UP HERE (Sept 30, late - session ended at a usage limit). Next agent:
-> finish the BK critic loop, then hand Seth the smoke.**
-> 1. Critic round 2 FAILED at 7/10. All round-1 P1s are closed; see
->    `docs/tasks/bks-critic-round-2-FINDINGS.md`.
-> 2. The final-round fix blocks were DISPATCHED and may already have delivered
->    (uncommitted changes + DELIVERY.md in each lane):
->    - bksf2a in `C:\dev\worktrees\cursor-lane-2`
->    - bksf2b in `C:\dev\worktrees\cursor-lane-3`
->    - bksf2c in `C:\dev\worktrees\cursor-lane`
->    Logs are in `C:\dev\worktrees\_logs\`. Land each with `land-unit`: commit in
->    the lane, rebase onto `ai-connector-wave`, ff-merge, push.
-> 3. ALWAYS load each page in the browser after landing. The build cannot see
->    hook-order crashes (see `924bc66`).
-> 4. Seat fixes committed with this handoff, NOT yet measured live:
->    - light-mode over-cap amber darkened (`bk-ui.css`)
->    - Discard x spacing raised to 20px (`bk-log.css`)
->    Check the over-cap contrast is 3:1 or better in champ/forest/crimson light.
-> 5. Critic ROUND 3 (the last one):
->    - Use the same separate-agent pattern: Agent tool, general-purpose, opus.
->    - Brief: `.playwright-mcp/bks-critic/BRIEF.md`. Add round-3 notes, palette
->      crimson.
->    - Use the local recipe from the memory note `local-run-and-critic-loop`.
->      Restart the local API after the server changes.
->    - After round 3, stop whatever the score and record it.
-> 6. Then (Seth's explicit ask) REWRITE this section for a smoke agent:
->    - protocol, URLs, test123 / `password`
->    - an updated consolidated checklist: the original 11 items + the bks/bksf
->      changes (Excel upload, AI layout import, planned-row logger, Library,
->      search, Home block day)
->    - the by-design list, and the deferred duplicate Resume bars
->    - the gate notes
-> - The .xlsx upload is untested by the critic: Playwright `browser_file_upload`
->   is blocked by permissions. Seth must test it himself in the smoke.
-> - Unaddressed P3s for later:
->   - rest timer after logging a set
->   - fractional Execution numbers
->   - desktop In-progress bar width
->   - the "Per side" chip on bilateral lifts
->   - removed planned rows are stored per device only
+> **IN FLIGHT (Oct 1, written before the last two units landed):** bksf3a
+> (`cursor-lane-2`) and bksf3b (`cursor-lane`) were dispatched on the auto
+> rung. If you are reading this and they are not LANDED in QUEUE.md, land
+> them with `land-unit` (commit in the lane, rebase onto `ai-connector-wave`,
+> ff-merge, push), LOAD the builder at 375px and a block day in the browser
+> (hook-order crashes are invisible to the build), then delete this banner,
+> fix the header line below to 30/30, and hand Seth the smoke.
 
-> **UPDATE (Sept 30): the smoke REOPENED the wave.** Seth's item-1 notes became
-> four change requests (`docs/tasks/bk-smoke-FINDINGS.md`) that he ruled
-> in-wave: N = 20.
-> - bks1 AI layout import, bks2 block logger, bks3 Library are QUEUED and
->   dispatched in parallel.
-> - After they land, a critic loop runs as a SEPARATE Claude agent, 8/10 or
->   3 rounds.
-> - Then the smoke restarts from item 1.
-> - Test account `test123` / `password`: block 126, run 5, weeks 1-2 logged.
->   AI consent is ON; 3 of its 7 weekly coach uses went on the bks1 live proof.
-> - Landed: bks3 `fb2bda1` (Library) and bks1 `1fc5bf8` (AI layout import,
->   live-proven on staging; the AI call takes ~53 s).
-> - bks2 BOUNCED once:
->   - it must keep L/R per-side logging
->   - author notes move into the plan snapshot, so "+ Note" can't overwrite them
-> - bks4 (.xlsx upload, `read-excel-file` dependency added in `fa1ea8b`, approved
->   by Seth) is running.
-> - Smoke items carried forward for the restart:
->   - Library: blocks tab first, running strip, Create workout greyed
->   - Import: a foreign-header sheet -> "Let AI read this layout" -> preview
->     shows the AI-recipe notice and 4 of 7 left
->   - Logger: planned rows, ghosts, tap-to-log, add/remove, pencil notes, keypad
->   - Excel upload with a sheet picker
-> - Next wave candidate: the duplicate Resume bars on Home.
-> - LATER Sept 30: all four landed (21/21). bks4 `a4eeff0`, bks2 `5853dd4`.
->   - The seat's runtime check found a P0: the block-day page crashed because
->     of hook order (a useMemo sat after the loading return). Direct fix
->     `924bc66` (pushed).
->   - Lesson for the gate: build and lanes cannot see hook order. Always load
->     the page.
-> - Critic round 1: FAIL 5/10 (`docs/tasks/bks-critic-round-1-FINDINGS.md`).
->   - Fix blocks landed: bksf1a `28af540` (+ ghost retune `8badd2f`), bksf1b
->     `095e517`, bksf1c `fcba6f1` (after bounce 1: kg columns now convert),
->     bksf1d `d540d77`.
->   - Wave 25/25. Critic round 2 is running (same agent, palette forest).
->   - The local API was restarted on the new server code.
->   - Round 1 details, for reference:
->   - Critic round 1 (a separate agent, brief
->     `.playwright-mcp/bks-critic/BRIEF.md`) is running against the local
->     recipe with test123. Session 463 (W3 Upper A) is in progress for it.
+> **WHERE WE ARE (Oct 1):** the **BK wave is COMPLETE again - 28/28 LANDED + 2 final fix blocks IN FLIGHT (N = 30)**
+> on `ai-connector-wave` (head `9af8464`, pushed; staging Render verified
+> serving it). Seth's Sept 30 smoke reopened the wave with four change
+> requests (bks1-4: AI layout import, block-day logger, Library, .xlsx
+> upload); then two critic fix rounds landed (bksf1a-d, bksf2a-c). The
+> separate-agent feel critic scored 5 -> 7 -> **7/10 FAIL** (round 3 was the
+> last by rule; `docs/tasks/bks-critic-round-3-FINDINGS.md`). Seth ruled
+> Oct 1: fix its open P1s before his smoke, seat-verified, no round 4 -
+> the seat fixed two directly (`9f6b2a0`) and bksf3a-b took the other two. HARD STOP for
+> Seth's smoke, restarting from item 1 against the checklist below. Prod
+> unchanged: `main` = `7d3b91e`.
 
-> **WHERE WE ARE (Sept 29, late):** the **BK (blocks-v2) wave is COMPLETE -
-> 17/17 LANDED** on `ai-connector-wave` (`196a10b`): BK1-BK12 + BK5b plus the
-> critic fix blocks bkf1a/b/c and bkf2. The coach-persona **critic PASSED in
-> round 3 at 8/10** (rounds: 6 -> 7.5 -> 8; `docs/tasks/bk-critic-round-*-FINDINGS.md`).
-> BK1's migration is applied to STAGING (not prod). **Staging Render was
-> tracking `main`, not `ai-connector-wave`** (found Sept 29; Seth repointed it
-> and redeployed - verified live: new routes up, latest server fix live, DB
-> "up to date"). The critic ran on the local recipe before that, so Seth's
-> smoke is the first run on the deployed stack. HARD STOP for Seth's smoke
-> (checklist below). Prod unchanged: `main` = `7d3b91e`.
+**Next action (human):** nothing yet - wait for the agent's "30/30 complete"
+message (the last two fix blocks are landing); then open a Claude Code
+session, say "smoke the BK wave with me", and work through the checklist
+below on your phone on the staging Vercel deploy.
 
-**Next action (human):** open a Claude Code session, say "smoke the BK wave
-with me", and work through the checklist on your phone on the staging
-Vercel deploy - the agent guides you item by item and records the results.
+## ▶ PICK UP HERE (Oct 1 - for the agent running the smoke WITH Seth)
 
-## ▶ PICK UP HERE (Sept 29, late - for the agent running the smoke WITH Seth)
+> **Your job: sit with Seth while he smokes the BK wave, one item at a time,
+> and record results. You do NOT fix code and do NOT run the gate.** Any
+> model can do this; Sonnet is fine.
 
-> **Your job this session: sit with Seth while he smokes the BK wave, one
-> checklist item at a time, and record results. You are NOT fixing code and
-> NOT running the gate.** Any model can do this; Sonnet is fine.
->
-> **Where things stand:** BK wave 17/17 LANDED on `ai-connector-wave`
-> (`e339865`); critic passed 8/10 in round 3; staging Render tracks
-> `ai-connector-wave` again (Seth repointed it Sept 29) and is verified live
-> (new routes answer, latest server fix live, staging DB "up to date").
->
-> **Smoke protocol**
-> 1. **Where Seth tests:** the staging Vercel preview of `ai-connector-wave`
->    - branch URL `https://workout-db-git-ai-connector-wave-sethysethyseths-projects.vercel.app`
->    (behind Vercel login; per-commit URLs also work) - on his PHONE first,
->    then desktop for item 11. Never local dev (the client `.env` points at
->    prod). It talks to staging Render `https://workout-db-staging.onrender.com`.
-> 2. **Account:** Seth's own staging account, or `demo.critic@example.com`
->    (password in the memory note `local-run-and-critic-loop`). demo.critic
->    already holds the critic's data: blocks "Phase 1" (6 weeks, an ACTIVE
->    run, W1 Day 1 + Day 2 done), "Phase 1 - week 1", "Upper/Lower 4wk",
->    "R2 skeleton". Starting a different block on demo ends the Phase 1 run
->    (fine).
-> 3. **Pace:** give ONE item at a time from the checklist below, in plain
->    words, wait for his result. If something looks off, ask for a
->    screenshot - he drops them in `claudefiledrop/` (untracked; read with
->    the Read tool; never commit that folder).
-> 4. **Record:** create `docs/tasks/bk-smoke-FINDINGS.md` at the first result
->    - one line per item: PASS, or FAIL with Seth's words + screenshot name +
->    severity (P0 broken/data loss, P1 blocks him, P2 friction, P3 polish).
->    Commit + push it at the end (docs-only push to staging is allowed).
-> 5. **Verify, don't guess:** you can check the server side yourself -
->    staging API calls with a cookie login (pattern: log in via
->    `POST /auth/login`, reuse the `workoutdb.sid` cookie), and READ-ONLY DB
->    reads with a small `node -e` Prisma script from `server/` (`server/.env`
->    points at staging; run `npx prisma generate` first; SELECT-style reads
->    only - no writes, no migrations).
-> 6. **Defects:** do NOT fix during the smoke. After the last item, each
->    FAIL becomes a DIAGNOSIS block (`author-task-block`, diagnosis variant)
->    -> Cursor -> `land-unit`, and the sign-off resets. The only exception is
->    AGENTS.md's direct-fix rule (diagnosis ~95% of the work, trivial fix) -
->    still record it.
-> 7. **Sign-off:** when Seth says "smoke signed off" (or waives items),
->    record it in the FINDINGS doc and here, set the Next action line to
->    the pre-main gate, and stop. The gate is `pre-main-review` in an OPUS
->    (frontier) session, using the gate notes below.
->
-> **Item-specific notes**
-> - **Item 1 (Phase-1 sheet):** Seth can select the `Program` sheet cells
->   (header row included) in Excel and paste straight into the Paste tab.
->   For the all-6-weeks File test he can Save As CSV/TSV, or use the local
->   export at `.playwright-mcp/bk-critic/Phase-1-Program.tsv` (gitignored;
->   made from `RecoveryProgram/workout-program/Phase-1-Program.xlsx`,
->   `Program` sheet). Expected: 216 rows -> 6 weeks, 30 days, 216 exercises,
->   602 sets, 84 timed; only warnings = the ignored `Tier` and
->   `Progression_Rule` columns; ~23 names "Not in your library".
-> - **Item 8 (connector drafts):** needs Claude connected to the STAGING
->   connector (staging AuthKit `scientific-mist-64-staging.authkit.app`,
->   sign-in URI on the `ai-connector-wave` preview host). If Seth's Claude
->   only has the prod connector, mark item 8 "deferred - needs the staging
->   connector" rather than failing it.
-> - **Item 9 (coach):** real coach on staging, capped at 7 questions a week
->   (`COACH_UNCAPPED_EMAILS` is set on prod only, by design). Each convert /
->   draft / ask costs one.
->
-> **By design - do not log as defects:** unmatched imported names do not
-> count toward Analytics (the preview says so); timed sets add nothing to
-> volume or strength; copy forward skips Deload-labeled weeks unless the box
-> is ticked; rest 0 reads "None"; the coach range stays date-only; saving
-> is blocked while any day is empty (the message names it). Known P3s
-> already on file (round 3): the stats line wraps at 390px, "Match..." sits
-> on its own line under short names, picker ranking for "bench press".
->
-> **Gate notes for `pre-main-review` (after sign-off):** clone isolation
-> (BK1, cross-user) - a live clone of a FOREIGN public block was not
-> possible on staging; BK11 connector write path (cross-user; live-checked
-> in-process, Claude-side check is smoke item 8); BK12 block-focus owner
-> check lives in `askCoach.js` (accepted placement); BK10 reuses the
-> enriched `templateExerciseId` field for `block:<id>` keys and
-> `judgePlanHit` is unused (spec 7.5 ruling, hit rate deferred); BK7
-> start-from-block has no unique guard (race -> two sessions); WeekStrip
-> smooth scroll ignores reduced motion; direct fixes outside Cursor units:
-> `aadb365` (BK3 extraction), BK5 state fixes, `0a92af6` (export legacy
-> sets), `8da0ae5` (Any AI json kind), `207c0f2` (set-grid stretch,
-> day-picker scrollbar). Before any merge: Seth hand-applies BK1's
-> migration `20260929120000_blocks_v2` to PROD (RUNBOOK "Schema-change
-> deploy") and the prod-vs-staging migration drift (Housekeeping) gets
-> reconciled. Lane `cursor-lane-3` holds three untracked mock PNG copies
-> in `client/src/assets/scenes/` - never stage them.
+**Protocol**
 
-### Wave smoke checklist - BK (Seth, staging Vercel deploy, phone + desktop)
+1. **Where Seth tests:** the staging Vercel preview of `ai-connector-wave`,
+   branch URL
+   `https://workout-db-git-ai-connector-wave-sethysethyseths-projects.vercel.app`
+   (behind Vercel login; per-commit URLs also work). Phone first; desktop
+   only for item 13. NEVER local dev (`client/.env` points at prod). The
+   preview talks to staging Render `https://workout-db-staging.onrender.com`.
+2. **Accounts:**
+   - `test123` / `password` - holds the running block "Upper/Lower
+     Strength - 4wk" (block 126). Weeks 1-2 and W3 Upper A, Lower A, Upper B are logged (the critic finished Upper B as session 465); **W3 · Lower B is next, nothing in progress.** Staging coach: 4 of 7 left this week. AI consent is ON;
+     staging coach use is capped at 7 a week (the counter shows what is
+     left - the AI layout read costs 3, convert/draft/ask cost 1 each).
+   - Or Seth's own staging account, or `demo.critic@example.com` (password
+     in the memory note `local-run-and-critic-loop`).
+3. **Pace:** ONE item at a time, in plain words; wait for his result. If
+   something looks off, ask for a screenshot - he drops them in
+   `claudefiledrop/` (untracked; read with the Read tool; never commit it).
+4. **Record:** APPEND a `## Smoke round 2 (Oct 1+)` section to
+   `docs/tasks/bk-smoke-FINDINGS.md` at the first result - one line per item:
+   PASS, or FAIL with Seth's words + screenshot name + severity (P0 broken /
+   data loss, P1 blocks him, P2 friction, P3 polish). New scope = CR, not
+   FAIL. Commit + push it at the end (docs-only push to staging is allowed).
+5. **Verify, don't guess:** staging API calls with a cookie login
+   (`POST /auth/login` with body `{"login":"test123","password":"password"}`,
+   reuse the `workoutdb.sid` cookie); READ-ONLY Prisma reads from `server/`
+   (`server/.env` = staging). No writes, no migrations.
+6. **Defects:** do NOT fix during the smoke. After the last item, each FAIL
+   becomes a DIAGNOSIS block (`author-task-block`, diagnosis variant) ->
+   Cursor -> `land-unit`, and the sign-off resets. Only AGENTS.md's
+   direct-fix exception applies - still record it.
+7. **Sign-off:** when Seth says "smoke signed off" (or waives items), record
+   it in the FINDINGS doc and here, set the Next action line to the
+   pre-main gate, and stop. The gate is `pre-main-review` in an OPUS session
+   with the gate notes below.
 
-Pre-check (done Sept 29 by the relay): staging Render repointed to
-`ai-connector-wave` and redeployed; `/block-runs/active` answers 401 (not
-404) and the Any AI json fix is live.
+### Wave smoke checklist - BK, round 2 (staging Vercel, phone + desktop)
 
-1. **Import your Phase-1 sheet** (Library -> Import a block): paste week 1,
-   then File-upload all 6 weeks. Preview opens at the top, program before
-   matching, "Not in your library (N)" with the Analytics note, Create sticky.
-   Create -> the builder with a toast. Match one name -> it shows as matched.
-2. **Any AI**: Copy the instructions -> paste into ChatGPT/Claude with a
+Pre-check done Oct 1 by the seat: staging Render answers with bksf2a's
+search ranking (test123 "press" -> Leg Press, Seated Dumbbell Press,
+Barbell Bench Press - Medium Grip, Incline), so the deploy has the code.
+
+1. **Library** (bks3, bksf1d): Blocks tab first; the running block shows in
+   a strip with "Open"; "Create workout" is greyed (parked on purpose); no
+   names cut off.
+2. **Import your Phase-1 sheet** (Library -> Import a block):
+   - Paste week 1, then the File tab with all 6 weeks. Expected for the full
+     sheet: 6 weeks, 30 days, 216 exercises, 602 sets, 84 timed; the only
+     warnings are the ignored `Tier` and `Progression_Rule` columns; about 23
+     names "Not in your library" with the Analytics note.
+   - **.xlsx upload** (bks4 - the critic could NOT test this, Seth must):
+     upload `Phase-1-Program.xlsx` directly -> a sheet picker -> pick
+     `Program` -> same stats as above.
+   - Preview opens at the top, program before matching, Create sticky.
+     Create -> builder with a toast. Match one name -> it shows as matched.
+   - Counts read "6 match your library" / "1 matches your library".
+3. **Sets x Reps without AI** (bksf2b): paste a sheet whose header has a
+   combined column, e.g. `Exercise, Sets x Reps, Weight` with `5x5` and
+   `4 x 6-8` -> Preview reads 5 x 5 and 4 x 6-8, nothing ignored.
+4. **AI layout read** (bks1, bksf1c, bksf2b): paste a foreign-header sheet
+   (e.g. `Movement, Sets x Reps, Load (kg), Session`) -> "Let AI read this
+   layout" (costs 3 of 7; ~50 s) -> the preview shows the AI notice, an
+   "AI read: ... (was ...)" line - or "(the standard reader couldn't read
+   this sheet)" - and "Use the original read". Then Back -> Preview: the
+   STANDARD read comes back (the AI read must not stick). kg columns convert
+   to lb with one message.
+5. **Any AI**: Copy the instructions -> paste into ChatGPT/Claude with a
    request -> paste the WHOLE answer back -> preview -> create.
-3. **Export**: builder Settings -> Export block -> re-import that file on
-   the File tab -> identical stats, "Nothing skipped".
-4. **Builder**: new block, 4 days, only day 1 filled -> Save names the empty
-   day -> "Remove empty days" -> Save. Reps -> Time (30 s), Range, Rest
-   stepper, Cap. Label week 4 "Deload", copy week 1 forward +5 -> week 4
-   skipped. Progression tab reads week to week.
-5. **Run a block**: Library -> Start block -> /blocks/current (week strip,
-   day tiles, NEXT, Start near the top); Home shows "Up next" (below any
-   live-workout card). End block uses the in-page confirm.
-6. **Log a block day**: plan line + coach notes (Setup, Lead side) visible;
-   "As planned" fills reps/seconds + load, never effort; a timed set logs
-   seconds; RPE over the cap shows "over cap". Finish -> the summary counts
-   the timed set ("45 s").
-7. **Execution**: Analytics -> Execution lists that session the same
-   evening; under-cap effort = no drift, over-cap = overshoot.
-8. **Connector drafts** (Claude connected to staging): switch off -> ask
-   Claude to make a block -> "turned off" message; switch on -> ask again ->
-   DRAFT pill -> Review -> banner -> Save to library. A draft cannot be made
-   public before it is saved.
-9. **Coach**: "Let the coach convert it" on a pasted paragraph -> preview;
-   new block -> "Describe the block you want"; builder Settings -> "Ask the
-   coach about this block". With AI consent off, none of these show.
-10. **Regressions**: a quick-log workout and a saved-workout session behave
-    as before; saved workouts keep "Set as current".
-11. **Desktop (1280)**: builder/run header sits under the app nav when
-    scrolled.
+6. **Export**: builder Settings -> Export block -> re-import on the File tab
+   -> identical stats, "Nothing skipped".
+7. **Builder** (BK, bksf1b, bksf2a):
+   - Each set is ONE row: Set | Reps | Load | RPE | x (range rows may wrap
+     only on very narrow phones, with a visible "RPE" label).
+   - The expanded card shows "Rest 3:00 · RPE ≤ 8 · 1 note" under the title;
+     tapping it opens the "..." menu. Nothing feels squished.
+   - Tap the block name -> edit it in place. The header says Unsaved while
+     edits are pending, Saving..., then Saved.
+   - Leave with unsaved edits, come back -> "Restore unsaved changes".
+   - Add exercise -> search "press": YOUR lifts first; the list scrolls on
+     its own with the keypad open and nothing covers the search box.
+   - Classic BK checks: 4 days with only day 1 filled -> Save names the empty
+     day -> "Remove empty days"; Reps -> Time (30 s), Range, Rest stepper,
+     Cap; label week 4 "Deload", copy week 1 forward +5 -> week 4 skipped;
+     Progression tab reads week to week.
+8. **Home + run a block** (BK, bksf2c):
+   - With a running block and no live workout, the Home hero IS the next
+     day: "W3 · Upper B", block name under it, "Start W3 · Upper B" starts
+     that day straight into the logger; "Other workout" opens Empty / Browse
+     templates. No separate "Next" card; nothing jumps ~2 s after load.
+   - `/blocks/current`: compact header (block name + "Week n of N"), week
+     strip, day tiles, NEXT, "IN PROGRESS" shown once. End block uses the
+     in-page confirm.
+9. **Log a block day** (bks2, bksf1a):
+   - One row per PLANNED set, every field greyed with the plan (weight too).
+   - Tapping the set number logs it as planned - reps/seconds + load, NEVER
+     effort. Typing only a weight keeps the row a draft.
+   - "+ Add set", remove (asks first for a logged set), pencil per set,
+     "+ Note" per exercise, "How the session went" at the bottom; author
+     notes (Setup, Lead side) visible and not overwritable.
+   - L/R "Per side" logging still works where the plan has it.
+   - Keypad never covers the field being typed (phone).
+   - RPE over the cap shows "over cap", readable in light mode too.
+   - A timed set logs seconds. Finish with unlogged planned sets -> "N of M
+     planned sets not logged - finish anyway?" -> the summary counts the
+     timed set ("45 s"). Discard x sits clear of Back.
+   - During that live workout, Home shows the live card and only a muted
+     "Up next after this: ..." line (no second Resume button on it).
+10. **Execution**: Analytics -> Execution lists that session the same
+    evening; under-cap effort = no drift, over-cap = overshoot.
+11. **Connector drafts** (Claude connected to the STAGING connector): switch
+    off -> ask Claude to make a block -> "turned off"; switch on -> ask
+    again -> DRAFT pill -> Review -> banner -> Save to library. A draft
+    cannot be made public before it is saved. If Seth's Claude only has the
+    prod connector, mark it "deferred - needs the staging connector".
+12. **Coach**: new block -> "Describe the block you want"; builder Settings
+    -> "Ask the coach about this block"; on the Paste tab with plain prose,
+    the AI button (now also labelled "Let AI read this layout", costs 1)
+    -> preview. With AI consent off, none of these show.
+13. **Regressions + desktop**: a quick-log workout and a saved-workout
+    session behave as before; saved workouts keep "Set as current". At
+    1280, the builder/run header sits under the app nav when scrolled.
+
+**By design - do not log as defects:** unmatched imported names do not
+count toward Analytics (the preview says so); timed sets add nothing to
+volume or strength; copy forward skips Deload-labeled weeks unless the box
+is ticked; rest 0 reads "None"; the coach range stays date-only; saving is
+blocked while any day is empty (the message names it); "Create workout" is
+greyed in Library (parked); the AI layout read costs 3 coach uses.
+
+**Known and deferred (not this wave - do not fail the smoke on them):**
+- Home shows the in-progress card AND the bottom "In progress" bar together
+  (duplicate Resume - next wave candidate, with Seth's Sept 29 discard ask).
+- No rest timer after logging a set; fractional Execution numbers
+  ("3×11.7"); the desktop In-progress bar is wider than the content column;
+  "Per side" is offered on bilateral lifts; removed planned rows are stored
+  per device only; the stats line wraps at 390px; "Match..." on its own line
+  under short names.
+- Critic round 3 leftovers NOT fixed before smoke (fair game for Seth to
+  confirm, not to fail on): import transforms not fully explained (inline
+  kg loads, columns folded into notes - R3 P2-3), the Home "This week"
+  card arrives late and pushes Recent workouts down (R3 P2-4), crimson's
+  "good" colour is amber (reads like over-cap), and the R3 P3 list.
+
+**Gate notes for `pre-main-review` (after sign-off):**
+- Carried from Sept 29: clone isolation (BK1, cross-user) - a live clone of
+  a FOREIGN public block was not possible on staging; BK11 connector write
+  path (cross-user; Claude-side check is smoke item 11); BK12 block-focus
+  owner check lives in `askCoach.js` (accepted placement); BK10 reuses
+  `templateExerciseId` for `block:<id>` keys and `judgePlanHit` is unused
+  (spec 7.5 ruling); BK7 start-from-block has no unique guard (race -> two
+  sessions); WeekStrip smooth scroll ignores reduced motion.
+- **New since Sept 30:** bksf2a adds a raw `$queryRaw` (user-scoped,
+  parameterised tagged template) to `GET /exercises/search` for usage
+  ranking - review the scoping and the cost on a heavy account (it scans
+  every SessionExercise + BlockWorkoutExercise row the user owns, per
+  search keystroke). bks4 added the `read-excel-file` dependency (`fa1ea8b`,
+  approved by Seth). bks2 moved author notes into the plan snapshot.
+  The import page has two AI actions with ONE label ("Let AI read this
+  layout"): the layout read (`/coach/import-map`, 3 uses) and the prose
+  convert (`/coach/block-draft`, 1 use) - bksf2b's naming contract; judge
+  whether the cost is still clear.
+- Direct/seat fixes outside Cursor units: `aadb365`, BK5 state fixes,
+  `0a92af6`, `8da0ae5`, `207c0f2` (Sept 29); `924bc66` (hook-order P0),
+  `8badd2f` (ghost retune), `2deedf5` (light over-cap amber, measured Oct 1
+  at 5.2-5.4:1 light / 7.4-8.9:1 dark on all palettes; Discard spacing),
+  `bd0e4b3` (builder summary line moved to the expanded card), `9f6b2a0`
+  (R3 P1-1 keypad mode keyed on a stable boolean; R3 P2-2 AI-read compare
+  gated on non-null - it had never rendered since bksf1c).
+- **bksf3b ruling (frontier seat):** block sessions stay POSITIONAL
+  (`blockWorkoutSetId` unused, spec 7.3) - the logger enforces in-order
+  logging and keeps drafts per planned row instead of binding sets to rows.
+  If Seth ever wants out-of-order logging, that is a schema change.
+- Before any merge: Seth hand-applies BK1's migration
+  `20260929120000_blocks_v2` to PROD (RUNBOOK "Schema-change deploy") and
+  the prod-vs-staging migration drift (Housekeeping) gets reconciled.
 
 ### Open on prod - Seth's checks, none blocking
 
@@ -302,7 +284,11 @@ Pre-check (done Sept 29 by the relay): staging Render repointed to
 
 ### Next work
 
-- **The BK wave** (above; QUEUE.md). Nothing else is queued.
+- **The BK wave** - 28/28 landed; Seth's smoke round 2, then the gate.
+  Nothing else is queued.
+- **Next-wave candidates:** the duplicate Resume bars on Home + Seth's
+  discard-from-entry-points ask (Sept 29, below); the round-3 critic
+  leftovers and the deferred P3s in the smoke section.
 - **Privacy page + ToS** (`ai-layer.md` section 6, Seth's Sept 26 "first
   unit of the next wave") is BK0 in the BK wave - DRAFT until Seth supplies
   its OPEN FACTS (operator name, contact email, jurisdiction, effective date,
@@ -328,27 +314,16 @@ user on the merge deploy); CR2 polish skipped (shipped at 7.5); `zod` declared
 > explicitly. Dogfoods the shell repo's decision-10 no-dangling-next-
 > action requirement; `land-unit` section 5 keeps it maintained.
 
-**Updated:** September 28, 2026, fifty-third session (Opus, frontier -
-**the BK wave authored**, tranche 1 dispatched and delivered - BK1 6.1 min,
-BK2 7.3 min, BK4 3.5 min, all exit 0 - and deliberately NOT landed: Seth asked
-for a handoff so another agent finishes). Seth invoked `author-task-block` for
-"a better version of blocks". Recon fanned out to three Cursor REPORT lanes (auto rung,
-parallel, all exit 0 in 2.5-5 min): `recon/blocks-b1` in `cursor-lane-2`
-(block/session/styling NOW-state), `recon/blocks-b2` in `cursor-lane-3`
-(connector/coach/import plumbing, test globs), `recon/blocks-b3` in
-`cursor-lane` (web research: Gymvanna NOT FOUND under any spelling - Seth to
-supply a link if it matters; program import landscape; MCP write patterns -
-preserved as `docs/specs/blocks-v2-import-research-2026-09-28.md`). Reports
-B1/B2 are session-scoped (kept outside the repo at
-`C:\dev\worktrees\recon-inputs\`); their load-bearing content is in the
-spec. Four product calls asked + answered (spec section 1); frontier calls
-added: rep ranges, snapshot-not-FK (the block update replace-alls plan rows),
-a clone isolation fix, per-surface stylesheets, `sourceUnit` for connector
-drafts, no new dependencies. `ai-layer.md` 4.2 AMENDED (one create-only
-write); `block-execution-gap.md` SUPERSEDED. The recovery site's CSS is
-preserved at `docs/design/recovery-logbook-reference.css`. Prior: September
-28, fifty-second session (Opus - the prod connector fixed). Older sessions
-archived.
+
+**Updated:** October 1, 2026 (Opus, frontier seat running the relay). Landed
+bksf2b `10cfb3a`, bksf2c `848ff3b`, bksf2a `d1c1940` (run 1 died on a Cursor
+connection loss; resumed in place) + seat fix `bd0e4b3`; ran critic round 3
+(7/10 FAIL, final); direct fixes `9f6b2a0`; authored + dispatched bksf3a-b
+after Seth chose fix-before-smoke; rewrote this file for the smoke agent.
+Seth asked (Oct 1) for a way to preview big UI changes without changing the
+app - an Artifact mock before a wave, a before/after gallery at wave end;
+recorded as agent memory, suggested at the seat's discretion. Prior:
+Sept 30 sessions (BK smoke reopen, critic rounds 1-2). Older sessions archived.
 
 ### Still governing from the AI wave (full record in the archive)
 
@@ -413,8 +388,8 @@ Covers the F-wave AND the still-open E-wave prod smoke. Staging passed Aug 4.
   `bdad1c1`; the AI-wave merge before it was `59e27dc..bdad1c1`). **Prod Render `workout-db-l3gc`** and **prod Vercel
   `https://workout-db-psi.vercel.app`** are on `main`, deploy live. Any push to
   `main` is a prod-bound push (gate 2).
-- **`ai-connector-wave` = `main` + the whole BK wave** (17 units + critic
-  fixes + docs, head `e339865`+). Staging Render `workout-db-staging` tracks
+- **`ai-connector-wave` = `main` + the whole BK wave** (28 units + critic
+  and seat fixes + docs, head `9af8464`+). Staging Render `workout-db-staging` tracks
   it (re-confirmed Sept 29 after it was found on `main`).
 - **Prod DB:** `20260804180000_add_ai_consent` hand-applied by Seth Sept 26
   (RUNBOOK 10a V2 SQL), checksum identical to staging; `CoachUsage` +
@@ -453,16 +428,16 @@ Covers the F-wave AND the still-open E-wave prod smoke. Staging passed Aug 4.
 
 ### Lane worktree state
 
-**All three HOLD UNLANDED BK deliveries (Sept 28) - NOT free until landed:**
-`cursor-lane-2` -> BK1 on `cursor/bk1` (its `server` has its own full install
-WITH `@cursor/sdk` - the right lane for the migration unit), `cursor-lane` ->
-BK2 on `cursor/bk2`, `cursor-lane-3` -> BK4 on `cursor/bk4`; all branched from
-`b9a0fac`. Each lane still holds a
-stale untracked Sept 26 `GATE-R<n>.md` - not part of any BK unit. Lane 3's
-`server` and `client` `node_modules` are JUNCTIONS into lane 1, which lacks
-`@cursor/sdk` - harmless for app loading (`cursorProvider.js` requires the SDK
-lazily) but use lane 2 for any unit that needs a LIVE coach call. **Repoint
-a lane onto the current wave HEAD before each dispatch.**
+**All three lanes are LANDED and clean (Oct 1):** `cursor-lane` on
+`cursor/bksf2c`, `cursor-lane-2` on `cursor/bksf2a`, `cursor-lane-3` on
+`cursor/bksf2b`, each fully merged into `ai-connector-wave`. Lane 2's
+`server` has its own full install WITH `@cursor/sdk` (use it for any
+unit that needs a LIVE coach call); lane 3's `node_modules` are
+junctions into lane 1. Lane 3 still holds three untracked mock PNG
+copies in `client/src/assets/scenes/` - never stage them. **Repoint a
+lane onto the current wave HEAD before each dispatch.** A dead Cursor
+run (connection loss, no DELIVERY.md) can be RESUMED in place: keep the
+partial tree and re-dispatch with a resume note (bksf2a, Oct 1).
 
 **Check lane cleanliness by DELIVERY.md TIMESTAMP, not `git status`** - it is
 gitignored, so a stale report reads as "clean". Prefer a DISTINCT report
