@@ -1,29 +1,23 @@
 # HANDOFF — current state
 
-> **IN FLIGHT (Oct 1, written before the last two units landed):** bksf3a
-> (`cursor-lane-2`) and bksf3b (`cursor-lane`) were dispatched on the auto
-> rung. If you are reading this and they are not LANDED in QUEUE.md, land
-> them with `land-unit` (commit in the lane, rebase onto `ai-connector-wave`,
-> ff-merge, push), LOAD the builder at 375px and a block day in the browser
-> (hook-order crashes are invisible to the build), then delete this banner,
-> fix the header line below to 30/30, and hand Seth the smoke.
-
-> **WHERE WE ARE (Oct 1):** the **BK wave is COMPLETE again - 28/28 LANDED + 2 final fix blocks IN FLIGHT (N = 30)**
-> on `ai-connector-wave` (head `9af8464`, pushed; staging Render verified
-> serving it). Seth's Sept 30 smoke reopened the wave with four change
+> **WHERE WE ARE (Oct 1):** the **BK wave is COMPLETE again - 30/30 LANDED**
+> on `ai-connector-wave` (head `93301c6`+, pushed; staging Render verified
+> serving the wave's server code). Seth's Sept 30 smoke reopened the wave with four change
 > requests (bks1-4: AI layout import, block-day logger, Library, .xlsx
 > upload); then two critic fix rounds landed (bksf1a-d, bksf2a-c). The
 > separate-agent feel critic scored 5 -> 7 -> **7/10 FAIL** (round 3 was the
 > last by rule; `docs/tasks/bks-critic-round-3-FINDINGS.md`). Seth ruled
 > Oct 1: fix its open P1s before his smoke, seat-verified, no round 4 -
-> the seat fixed two directly (`9f6b2a0`) and bksf3a-b took the other two. HARD STOP for
+> the seat fixed two directly (`9f6b2a0`), bksf3a-b fixed the other two
+> (`2fd8773`, `b5e42f2` + landing fix `9633c20`), all checked live. HARD STOP for
 > Seth's smoke, restarting from item 1 against the checklist below. Prod
 > unchanged: `main` = `7d3b91e`.
 
-**Next action (human):** nothing yet - wait for the agent's "30/30 complete"
-message (the last two fix blocks are landing); then open a Claude Code
-session, say "smoke the BK wave with me", and work through the checklist
-below on your phone on the staging Vercel deploy.
+**Next action (human):** open the before/after gallery
+(https://claude.ai/artifact/BYfQuLW677z67Ap7WaDfwH) for a 2-minute look at
+what changed, then open a Claude Code session, say "smoke the BK wave with
+me", and work through the checklist below on your phone on the staging
+Vercel deploy.
 
 ## ▶ PICK UP HERE (Oct 1 - for the agent running the smoke WITH Seth)
 
@@ -33,6 +27,11 @@ below on your phone on the staging Vercel deploy.
 
 **Protocol**
 
+0. **Gallery first:** the private Artifact
+   https://claude.ai/artifact/BYfQuLW677z67Ap7WaDfwH shows phone-size
+   before/after shots of every changed screen, in checklist order (built
+   Oct 1 at Seth's ask). Use it to orient Seth, not as a substitute for any
+   item.
 1. **Where Seth tests:** the staging Vercel preview of `ai-connector-wave`,
    branch URL
    `https://workout-db-git-ai-connector-wave-sethysethyseths-projects.vercel.app`
@@ -102,8 +101,8 @@ Barbell Bench Press - Medium Grip, Incline), so the deploy has the code.
 6. **Export**: builder Settings -> Export block -> re-import on the File tab
    -> identical stats, "Nothing skipped".
 7. **Builder** (BK, bksf1b, bksf2a):
-   - Each set is ONE row: Set | Reps | Load | RPE | x (range rows may wrap
-     only on very narrow phones, with a visible "RPE" label).
+   - Each set is ONE row: Set | Reps | Load | RPE | x, rep-range rows too
+     (Reps | To | Load | RPE), every header over its own field.
    - The expanded card shows "Rest 3:00 · RPE ≤ 8 · 1 note" under the title;
      tapping it opens the "..." menu. Nothing feels squished.
    - Tap the block name -> edit it in place. The header says Unsaved while
@@ -126,7 +125,10 @@ Barbell Bench Press - Medium Grip, Incline), so the deploy has the code.
 9. **Log a block day** (bks2, bksf1a):
    - One row per PLANNED set, every field greyed with the plan (weight too).
    - Tapping the set number logs it as planned - reps/seconds + load, NEVER
-     effort. Typing only a weight keeps the row a draft.
+     effort; an RPE typed first is kept. Only the NEXT set's number is a
+     button (later numbers are muted - by design, bksf3b), and values typed
+     on a later row stay there until it is next. Typing only a weight keeps
+     the row a draft.
    - "+ Add set", remove (asks first for a logged set), pencil per set,
      "+ Note" per exercise, "How the session went" at the bottom; author
      notes (Setup, Lead side) visible and not overwritable.
@@ -137,7 +139,8 @@ Barbell Bench Press - Medium Grip, Incline), so the deploy has the code.
      planned sets not logged - finish anyway?" -> the summary counts the
      timed set ("45 s"). Discard x sits clear of Back.
    - During that live workout, Home shows the live card and only a muted
-     "Up next after this: ..." line (no second Resume button on it).
+     "Up next after this: ..." line naming the day AFTER the live one (no
+     second Resume button on it).
 10. **Execution**: Analytics -> Execution lists that session the same
     evening; under-cap effort = no drift, over-cap = overshoot.
 11. **Connector drafts** (Claude connected to the STAGING connector): switch
@@ -196,7 +199,10 @@ greyed in Library (parked); the AI layout read costs 3 coach uses.
   `0a92af6`, `8da0ae5`, `207c0f2` (Sept 29); `924bc66` (hook-order P0),
   `8badd2f` (ghost retune), `2deedf5` (light over-cap amber, measured Oct 1
   at 5.2-5.4:1 light / 7.4-8.9:1 dark on all palettes; Discard spacing),
-  `bd0e4b3` (builder summary line moved to the expanded card), `9f6b2a0`
+  `bd0e4b3` (builder summary line moved to the expanded card), `9633c20`
+  (bksf3b landing fix: a just-logged row PATCHed blanks over its new set -
+  caught only by a live replay; review BlockSetRow's managed-draft handoff
+  closely), `9f6b2a0`
   (R3 P1-1 keypad mode keyed on a stable boolean; R3 P2-2 AI-read compare
   gated on non-null - it had never rendered since bksf1c).
 - **bksf3b ruling (frontier seat):** block sessions stay POSITIONAL
@@ -319,7 +325,12 @@ user on the merge deploy); CR2 polish skipped (shipped at 7.5); `zod` declared
 bksf2b `10cfb3a`, bksf2c `848ff3b`, bksf2a `d1c1940` (run 1 died on a Cursor
 connection loss; resumed in place) + seat fix `bd0e4b3`; ran critic round 3
 (7/10 FAIL, final); direct fixes `9f6b2a0`; authored + dispatched bksf3a-b
-after Seth chose fix-before-smoke; rewrote this file for the smoke agent.
+after Seth chose fix-before-smoke; landed bksf3a `2fd8773` and bksf3b
+`b5e42f2` with landing fix `9633c20` (live replay caught bksf3b PATCHing
+blanks over a just-logged set); rewrote this file for the smoke agent;
+built the before/after gallery Artifact at Seth's ask
+(https://claude.ai/artifact/BYfQuLW677z67Ap7WaDfwH; screenshots local-only
+under `.playwright-mcp/land-oct1/` and the critic round folders).
 Seth asked (Oct 1) for a way to preview big UI changes without changing the
 app - an Artifact mock before a wave, a before/after gallery at wave end;
 recorded as agent memory, suggested at the seat's discretion. Prior:
@@ -429,7 +440,7 @@ Covers the F-wave AND the still-open E-wave prod smoke. Staging passed Aug 4.
 ### Lane worktree state
 
 **All three lanes are LANDED and clean (Oct 1):** `cursor-lane` on
-`cursor/bksf2c`, `cursor-lane-2` on `cursor/bksf2a`, `cursor-lane-3` on
+`cursor/bksf3b`, `cursor-lane-2` on `cursor/bksf3a`, `cursor-lane-3` on
 `cursor/bksf2b`, each fully merged into `ai-connector-wave`. Lane 2's
 `server` has its own full install WITH `@cursor/sdk` (use it for any
 unit that needs a LIVE coach call); lane 3's `node_modules` are
