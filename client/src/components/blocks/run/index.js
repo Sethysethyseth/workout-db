@@ -1,4 +1,5 @@
 export { mapProgressToTiles, dayStatusProgress, isRunFinished } from "./dayStatusTiles.js";
+export { dayAfterLive } from "./dayAfterLive.js";
 export { RunDayCard, EditBlockLink } from "./RunDayCard.jsx";
 export { RunEmptyState } from "./RunEmptyState.jsx";
 export { UpNextCard } from "./UpNextCard.jsx";

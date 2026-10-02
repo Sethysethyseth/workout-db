@@ -333,6 +333,16 @@
   align-items: center;
 }
 
+/* Later unlogged rows: same 40px column, not a button (bksf3b). */
+.bk-set-num--idle {
+  cursor: default;
+  pointer-events: none;
+  color: var(--bk-muted);
+  border-color: color-mix(in srgb, var(--bk-line) 55%, transparent);
+  background: transparent;
+  font: 700 17px/1 var(--bk-display);
+}
+
 .bk-log-field {
   width: 100%;
   min-width: 0;

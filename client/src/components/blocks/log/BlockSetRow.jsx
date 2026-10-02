@@ -12,7 +12,7 @@ import {
 import "../../../styles/blocks/bk-ui.css";
 import "../../../styles/blocks/bk-log.css";
 
-function blankDraft() {
+export function blankRowDraft() {
   return { reps: "", weight: "", rpe: "", rir: "", notes: "", durationSec: "" };
 }
 
@@ -96,6 +96,7 @@ function PencilIcon() {
 /**
  * One planned / logged set row for the block-day logger.
  * Ghosts are placeholders only; chk tap fills from plan except effort.
+ * Draft values may be owned by the parent (keyed by planned row identity).
  */
 export const BlockSetRow = memo(function BlockSetRow({
   setNumber,
@@ -108,6 +109,10 @@ export const BlockSetRow = memo(function BlockSetRow({
   weightUnit = "lb",
   disabled = false,
   editingSets = false,
+  /** When false, set number is not a control and promote/chk never create a set. */
+  canLogAsPlanned = true,
+  ownedDraft = null,
+  onOwnedDraftChange = null,
   onPromoteDraft,
   onUpdateSet,
   onRemove,
@@ -116,8 +121,13 @@ export const BlockSetRow = memo(function BlockSetRow({
 }) {
   const rootRef = useRef(null);
   const noteInputRef = useRef(null);
-  const [draft, setDraft] = useState(() => (isDraft ? blankDraft() : draftFromSet(set)));
+  const managedDraft = isDraft && typeof onOwnedDraftChange === "function";
+  const [localDraft, setLocalDraft] = useState(() =>
+    isDraft ? blankRowDraft() : draftFromSet(set)
+  );
+  const draft = managedDraft ? ownedDraft ?? blankRowDraft() : localDraft;
   const draftRef = useRef(draft);
+  const canLogRef = useRef(canLogAsPlanned);
   const promotingRef = useRef(false);
   const lastSentKeyRef = useRef(null);
   const [noteOpen, setNoteOpen] = useState(() =>
@@ -129,14 +139,31 @@ export const BlockSetRow = memo(function BlockSetRow({
   const useRIR = effortSignal === "rir";
   const useRPE = effortSignal === "rpe";
 
+  canLogRef.current = canLogAsPlanned;
+
+  const setDraft = useCallback(
+    (updater) => {
+      if (managedDraft) {
+        const cur = ownedDraft ?? blankRowDraft();
+        const next = typeof updater === "function" ? updater(cur) : updater;
+        onOwnedDraftChange(next);
+        return;
+      }
+      setLocalDraft(updater);
+    },
+    [managedDraft, ownedDraft, onOwnedDraftChange]
+  );
+
   useLayoutEffect(() => {
     draftRef.current = draft;
   }, [draft]);
 
   useEffect(() => {
+    // Parent-owned drafts must never be wiped or reassigned here.
+    if (managedDraft) return;
     if (isDraft) {
-      const empty = blankDraft();
-      setDraft(empty);
+      const empty = blankRowDraft();
+      setLocalDraft(empty);
       draftRef.current = empty;
       lastSentKeyRef.current = null;
       setRirHint(null);
@@ -153,11 +180,12 @@ export const BlockSetRow = memo(function BlockSetRow({
       lastSentKeyRef.current = echoedKey;
       return;
     }
-    setDraft(next);
+    setLocalDraft(next);
     lastSentKeyRef.current = echoedKey;
     if (next.notes && String(next.notes).trim()) setNoteOpen(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
+    managedDraft,
     isDraft,
     set?.id,
     set?.reps,
@@ -176,6 +204,7 @@ export const BlockSetRow = memo(function BlockSetRow({
 
   const tryPromote = useCallback(async () => {
     if (!isDraft) return;
+    if (!canLogRef.current) return;
     if (writesFrozenRef?.current) return;
     if (promotingRef.current) return;
     const cur = draftRef.current;
@@ -263,6 +292,7 @@ export const BlockSetRow = memo(function BlockSetRow({
   useEffect(() => {
     if (writesFrozenRef?.current) return;
     if (isDraft) {
+      if (!canLogRef.current) return;
       const cur = draftRef.current;
       if (isBlankDraft(cur)) return;
       if (!blockDraftHasDose(cur, timedMode)) return;
@@ -271,6 +301,7 @@ export const BlockSetRow = memo(function BlockSetRow({
       if (k === lastSentKeyRef.current) return;
       const t = setTimeout(() => {
         if (writesFrozenRef?.current) return;
+        if (!canLogRef.current) return;
         void tryPromote();
       }, 900);
       return () => clearTimeout(t);
@@ -283,6 +314,7 @@ export const BlockSetRow = memo(function BlockSetRow({
   }, [draft, disabled, isDraft, tryPromote, timedMode]);
 
   async function onChkTap() {
+    if (!canLogRef.current) return;
     if (disabled || writesFrozenRef?.current) return;
     onInteractStart?.();
     const filled = fillDraftFromPlanExceptEffort(draftRef.current, planSet, timedMode);
@@ -370,6 +402,8 @@ export const BlockSetRow = memo(function BlockSetRow({
     };
   }, [isDraft, set?.id, setNumber]);
 
+  const showLogControl = done || canLogAsPlanned;
+
   return (
     <div
       ref={rootRef}
@@ -385,16 +419,22 @@ export const BlockSetRow = memo(function BlockSetRow({
             : "40px repeat(2, minmax(0, 1fr)) 34px",
         }}
       >
-        <button
-          type="button"
-          className={`bk-set-num${done ? " bk-set-num--done" : ""}`}
-          onClick={() => void onChkTap()}
-          disabled={disabled}
-          aria-label={done ? `Set ${setNumber} logged` : `Log set ${setNumber} as planned`}
-          title={done ? "Logged" : "Log as planned"}
-        >
-          {done ? "✓" : setNumber}
-        </button>
+        {showLogControl ? (
+          <button
+            type="button"
+            className={`bk-set-num${done ? " bk-set-num--done" : ""}`}
+            onClick={() => void onChkTap()}
+            disabled={disabled}
+            aria-label={done ? `Set ${setNumber} logged` : `Log set ${setNumber} as planned`}
+            title={done ? "Logged" : "Log as planned"}
+          >
+            {done ? "✓" : setNumber}
+          </button>
+        ) : (
+          <span className="bk-set-num bk-set-num--idle" aria-hidden="true">
+            {setNumber}
+          </span>
+        )}
 
         <NumField
           id={fieldIds.dose}

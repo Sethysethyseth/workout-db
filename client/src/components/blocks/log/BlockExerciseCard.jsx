@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as sessionApi from "../../../api/sessionApi.js";
 import { Card } from "../ui/Card.jsx";
 import { Disclosure } from "../ui/Disclosure.jsx";
@@ -9,11 +9,16 @@ import {
   planSetAt,
   planToRx,
 } from "./planHelpers.js";
-import { BlockSetRow, blockSetIsLogged } from "./BlockSetRow.jsx";
+import {
+  BlockSetRow,
+  blankRowDraft,
+  blockSetIsLogged,
+} from "./BlockSetRow.jsx";
 import {
   loadHiddenPlannedIndices,
   saveHiddenPlannedIndices,
 } from "./hiddenPlannedRows.js";
+import { nextLoggableSlotIndex } from "./nextLoggableSlot.js";
 import { parseLeadSide, splitPlanNotes } from "./splitPlanNotes.js";
 import { derivePerSideMode } from "./perSideMode.js";
 import "../../../styles/blocks/bk-ui.css";
@@ -23,12 +28,14 @@ import "../../../styles/blocks/bk-log.css";
  * Build visible slot list for a planned exercise (one side, or bilateral).
  * Planned slots (minus hidden) first; logged sets bind in order; extras
  * cover overflow logged sets and in-session "+ Add set" drafts.
+ * @param {number[]} extraIds stable ids for in-session extra draft slots
  */
-function buildSlots(plan, sets, hiddenIndices, extraDraftCount) {
+function buildSlots(plan, sets, hiddenIndices, extraIds) {
   const planSets = Array.isArray(plan?.sets) ? plan.sets : [];
   const planCount = planSets.length;
   const hidden = new Set(hiddenIndices);
   const sorted = [...(sets || [])].sort((a, b) => a.order - b.order);
+  const extras = Array.isArray(extraIds) ? extraIds : [];
 
   const plannedSlots = [];
   for (let i = 0; i < planCount; i += 1) {
@@ -70,17 +77,24 @@ function buildSlots(plan, sets, hiddenIndices, extraDraftCount) {
     setCursor += 1;
   }
 
-  for (let e = 0; e < extraDraftCount; e += 1) {
+  for (const extraId of extras) {
     bound.push({
-      key: `extra-${e}`,
+      key: `extra-${extraId}`,
       planIndex: Math.max(0, planCount - 1),
       kind: "extra",
+      extraId,
       set: null,
       isDraft: true,
     });
   }
 
   return bound;
+}
+
+/** Parent-owned draft key: side + planned index (or stable extra id). */
+function rowDraftKey(sideKey, slot) {
+  if (slot.kind === "extra") return `${sideKey}:extra:${slot.extraId ?? slot.key}`;
+  return `${sideKey}:plan:${slot.planIndex}`;
 }
 
 function planHasNotesKey(plan) {
@@ -132,6 +146,9 @@ function PlannedSetGrid({
   disabled,
   editingSets,
   isCompleted,
+  draftsByKey,
+  onDraftChange,
+  onDraftClear,
   onPromoteDraftSet,
   onUpdateSet,
   onRemoveSlot,
@@ -141,6 +158,7 @@ function PlannedSetGrid({
   writesFrozenRef,
 }) {
   const gridKey = side == null ? "bilat" : side;
+  const nextIdx = nextLoggableSlotIndex(slots);
   return (
     <div className="bk-log-side">
       {side === "L" || side === "R" ? (
@@ -177,6 +195,7 @@ function PlannedSetGrid({
           const rowPlanSet = plan != null ? planSetAt(plan, planIndex) : null;
           const rowTimed =
             plan != null && (isTimedPlanSet(plan, planIndex) || timedExercise);
+          const dKey = rowDraftKey(gridKey, slot);
           return (
             <BlockSetRow
               key={`${gridKey}-${slot.key}`}
@@ -190,12 +209,26 @@ function PlannedSetGrid({
               weightUnit={weightUnit}
               disabled={disabled}
               editingSets={editingSets && !isCompleted}
+              canLogAsPlanned={idx === nextIdx}
+              ownedDraft={
+                slot.isDraft
+                  ? draftsByKey[dKey] ?? blankRowDraft()
+                  : null
+              }
+              onOwnedDraftChange={
+                slot.isDraft
+                  ? (next) => onDraftChange?.(dKey, next)
+                  : null
+              }
               onPromoteDraft={async (d) => {
                 const payload =
                   side === "L" || side === "R" ? { ...d, side } : d;
                 const created = await onPromoteDraftSet(seId, payload);
-                if (created && slot.kind === "extra") {
-                  onRemoveSlot?.(slot, { demoteExtraOnly: true });
+                if (created) {
+                  onDraftClear?.(dKey);
+                  if (slot.kind === "extra") {
+                    onRemoveSlot?.(slot, { demoteExtraOnly: true });
+                  }
                 }
                 return created;
               }}
@@ -250,7 +283,13 @@ export function BlockExerciseCard({
     L: loadHiddenPlannedIndices(sessionId, se.id, "L"),
     R: loadHiddenPlannedIndices(sessionId, se.id, "R"),
   }));
-  const [extraBySide, setExtraBySide] = useState({ bilat: 0, L: 0, R: 0 });
+  const [extraIdsBySide, setExtraIdsBySide] = useState({
+    bilat: [],
+    L: [],
+    R: [],
+  });
+  const extraIdSeqRef = useRef(0);
+  const [draftsByKey, setDraftsByKey] = useState({});
   const [editingSets, setEditingSets] = useState(false);
   const [lifterNoteOpen, setLifterNoteOpen] = useState(false);
   const [lifterNotes, setLifterNotes] = useState(() =>
@@ -272,7 +311,9 @@ export function BlockExerciseCard({
       L: loadHiddenPlannedIndices(sessionId, se.id, "L"),
       R: loadHiddenPlannedIndices(sessionId, se.id, "R"),
     });
-    setExtraBySide({ bilat: 0, L: 0, R: 0 });
+    setExtraIdsBySide({ bilat: [], L: [], R: [] });
+    setDraftsByKey({});
+    extraIdSeqRef.current = 0;
     setEditingSets(false);
     setLifterNoteOpen(false);
     setLifterNotes(lifterNotesDraftFrom(se, se.plan));
@@ -304,11 +345,24 @@ export function BlockExerciseCard({
         plan,
         sideSets,
         hiddenBySide[key] || [],
-        extraBySide[key] || 0
+        extraIdsBySide[key] || []
       );
       return { side, key, slots };
     });
-  }, [sideOrder, sets, plan, hiddenBySide, extraBySide]);
+  }, [sideOrder, sets, plan, hiddenBySide, extraIdsBySide]);
+
+  const handleDraftChange = useCallback((key, next) => {
+    setDraftsByKey((prev) => ({ ...prev, [key]: next }));
+  }, []);
+
+  const handleDraftClear = useCallback((key) => {
+    setDraftsByKey((prev) => {
+      if (!(key in prev)) return prev;
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+  }, []);
 
   const loggedCount = useMemo(
     () => (sets || []).filter((s) => blockSetIsLogged(s)).length,
@@ -350,17 +404,20 @@ export function BlockExerciseCard({
     async (side, slot, opts) => {
       if (writesFrozen) return;
       const key = side == null ? "bilat" : side;
+      const dKey = rowDraftKey(key, slot);
       if (opts?.demoteExtraOnly) {
-        setExtraBySide((prev) => ({
+        setExtraIdsBySide((prev) => ({
           ...prev,
-          [key]: Math.max(0, (prev[key] || 0) - 1),
+          [key]: (prev[key] || []).filter((id) => id !== slot.extraId),
         }));
+        handleDraftClear(dKey);
         return;
       }
       // Logged (or any persisted) set: delete the server row AND drop the
       // planned slot so the card does not leave a blanked row behind.
       if (slot.set && !slot.isDraft) {
         await onDeleteSet?.(slot.set.id, { skipConfirm: true });
+        handleDraftClear(dKey);
         if (slot.kind === "planned" && Number.isInteger(slot.planIndex)) {
           const cur = hiddenBySide[key] || [];
           const next = [...new Set([...cur, slot.planIndex])].sort(
@@ -368,18 +425,19 @@ export function BlockExerciseCard({
           );
           persistHidden(side, next);
         } else if (slot.kind === "extra") {
-          setExtraBySide((prev) => ({
+          setExtraIdsBySide((prev) => ({
             ...prev,
-            [key]: Math.max(0, (prev[key] || 0) - 1),
+            [key]: (prev[key] || []).filter((id) => id !== slot.extraId),
           }));
         }
         return;
       }
       if (slot.kind === "extra") {
-        setExtraBySide((prev) => ({
+        setExtraIdsBySide((prev) => ({
           ...prev,
-          [key]: Math.max(0, (prev[key] || 0) - 1),
+          [key]: (prev[key] || []).filter((id) => id !== slot.extraId),
         }));
+        handleDraftClear(dKey);
         return;
       }
       if (slot.kind === "planned" && Number.isInteger(slot.planIndex)) {
@@ -388,9 +446,10 @@ export function BlockExerciseCard({
           (a, b) => a - b
         );
         persistHidden(side, next);
+        handleDraftClear(dKey);
       }
     },
-    [writesFrozen, onDeleteSet, hiddenBySide, persistHidden]
+    [writesFrozen, onDeleteSet, hiddenBySide, persistHidden, handleDraftClear]
   );
 
   function requestPerSideToggle() {
@@ -414,7 +473,12 @@ export function BlockExerciseCard({
       if (writesFrozen || isCompleted) return;
       onActivateExercise?.(se.id);
       const key = side == null ? "bilat" : side;
-      setExtraBySide((prev) => ({ ...prev, [key]: (prev[key] || 0) + 1 }));
+      extraIdSeqRef.current += 1;
+      const id = extraIdSeqRef.current;
+      setExtraIdsBySide((prev) => ({
+        ...prev,
+        [key]: [...(prev[key] || []), id],
+      }));
     },
     [writesFrozen, isCompleted, onActivateExercise, se.id]
   );
@@ -478,6 +542,9 @@ export function BlockExerciseCard({
           disabled={disabled}
           editingSets={editingSets}
           isCompleted={isCompleted}
+          draftsByKey={draftsByKey}
+          onDraftChange={handleDraftChange}
+          onDraftClear={handleDraftClear}
           onPromoteDraftSet={onPromoteDraftSet}
           onUpdateSet={onUpdateSet}
           onRemoveSlot={(slot, opts) => void handleRemoveSlot(side, slot, opts)}

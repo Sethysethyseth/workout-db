@@ -228,6 +228,20 @@ export function DashboardPage() {
     return `W${next.weekOrder} · ${day.name || `Day ${day.order}`}`;
   }, [activeBlock]);
 
+  /** Live block day identity for muted "Up next after this" (skips this day). */
+  const liveBlockDay = useMemo(() => {
+    if (!activeSession) return null;
+    const weekOrder =
+      activeSession.blockContext?.weekOrder ?? activeSession.blockWeekOrder;
+    const workoutOrder =
+      activeSession.blockContext?.workoutOrder ?? activeSession.blockWorkoutOrder;
+    if (weekOrder == null || workoutOrder == null) return null;
+    return {
+      weekOrder: Number(weekOrder),
+      workoutOrder: Number(workoutOrder),
+    };
+  }, [activeSession]);
+
   return (
     <div className="stack workout-tab">
       <header className="home-masthead">
@@ -308,6 +322,7 @@ export function DashboardPage() {
           progress={activeBlock.progress}
           runId={activeBlock.run.id}
           mutedOnly
+          liveDay={liveBlockDay}
         />
       ) : null}
 

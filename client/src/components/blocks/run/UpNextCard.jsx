@@ -1,12 +1,15 @@
+import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Eyebrow } from "../ui/Eyebrow.jsx";
+import { dayAfterLive } from "./dayAfterLive.js";
 import { countWorkoutVolume } from "./runExerciseHelpers.js";
 import "../../../styles/blocks/bk-run.css";
 
 /**
  * Home "Up next" card - sits below card--live when both exist.
  * Never uses card--live (that means an in-progress workout only).
- * When mutedOnly (live workout on Home): one muted line, no Start/Resume.
+ * When mutedOnly (live workout on Home): one muted line naming the day
+ * AFTER the live block day, or nothing if none remain.
  */
 export function UpNextCard({
   block,
@@ -16,8 +19,28 @@ export function UpNextCard({
   onStart,
   onResume,
   mutedOnly = false,
+  /** { weekOrder, workoutOrder } for the open live block session */
+  liveDay = null,
 }) {
   const navigate = useNavigate();
+
+  const afterLive = useMemo(() => {
+    if (!mutedOnly) return null;
+    return dayAfterLive(progress, liveDay);
+  }, [mutedOnly, progress, liveDay]);
+
+  if (mutedOnly) {
+    if (!afterLive || !block) return null;
+    const dayLabel = `W${afterLive.weekOrder} · ${
+      afterLive.name || `Day ${afterLive.workoutOrder}`
+    }`;
+    return (
+      <p className="bk-up-next-muted muted small" role="status">
+        Up next after this: {dayLabel}
+      </p>
+    );
+  }
+
   const next = progress?.nextDay;
   if (!next || !block) return null;
 
@@ -26,14 +49,6 @@ export function UpNextCard({
   if (!day) return null;
 
   const dayLabel = `W${next.weekOrder} · ${day.name || `Day ${day.order}`}`;
-
-  if (mutedOnly) {
-    return (
-      <p className="bk-up-next-muted muted small" role="status">
-        Up next after this: {dayLabel}
-      </p>
-    );
-  }
 
   const blockWeek = (block.weeks || []).find((w) => w.order === next.weekOrder);
   const workout = (blockWeek?.workouts || []).find((w) => w.order === next.workoutOrder);

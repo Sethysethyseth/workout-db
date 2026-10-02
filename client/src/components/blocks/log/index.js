@@ -16,7 +16,13 @@ export { TimedSecInput } from "./TimedSecInput.jsx";
 export { EffortCapWarn } from "./EffortCapWarn.jsx";
 export { BlockSessionHeader } from "./BlockSessionHeader.jsx";
 export { BlockExerciseCard } from "./BlockExerciseCard.jsx";
-export { BlockSetRow, blockSetIsLogged, blockDraftHasDose } from "./BlockSetRow.jsx";
+export {
+  BlockSetRow,
+  blankRowDraft,
+  blockSetIsLogged,
+  blockDraftHasDose,
+} from "./BlockSetRow.jsx";
+export { nextLoggableSlotIndex } from "./nextLoggableSlot.js";
 export { splitPlanNotes, parseLeadSide } from "./splitPlanNotes.js";
 export {
   loadHiddenPlannedIndices,
