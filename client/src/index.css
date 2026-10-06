@@ -49,6 +49,8 @@
   /* Overlays + skeletons */
   --color-overlay: rgba(0, 0, 0, 0.72);
   --color-backdrop: rgba(15, 23, 42, 0.42);
+  /* Sheet / confirm scrim - slate, not derived from text (avoids light fog in dark) */
+  --color-scrim: rgb(15 23 42 / 0.45);
   --color-skeleton-base: var(--color-surface-3);
   --color-skeleton-highlight: var(--color-surface-2);
 
@@ -135,6 +137,8 @@ html[data-theme="dark"] {
   /* Overlays + skeletons (dark-tuned) */
   --color-overlay: rgba(0, 0, 0, 0.72);
   --color-backdrop: rgba(0, 0, 0, 0.55);
+  /* Near-black navy so every sheet/confirm darkens the page in dark mode */
+  --color-scrim: rgb(2 6 23 / 0.6);
   --color-skeleton-base: var(--color-surface-2);
   --color-skeleton-highlight: var(--color-surface-3);
 }
@@ -2682,6 +2686,13 @@ html[data-theme="dark"] input,
 html[data-theme="dark"] textarea,
 html[data-theme="dark"] select {
   background: var(--color-surface-2);
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
 }
 
 textarea {
@@ -9541,7 +9552,9 @@ html:not([data-theme="dark"])[data-palette="chill"] {
 
 .session-discard-confirm__title {
   margin: 0;
+  font-size: 16px;
   font-weight: 600;
+  color: var(--color-text);
 }
 
 .session-discard-confirm__body {
@@ -9551,6 +9564,10 @@ html:not([data-theme="dark"])[data-palette="chill"] {
 .session-discard-confirm__actions {
   justify-content: flex-start;
   gap: 8px;
+}
+
+.session-discard-confirm__actions .btn {
+  font-size: 16px;
 }
 
 .session-discard-confirm__discard {

@@ -58,7 +58,7 @@ import {
   clearDraftFlag,
 } from "./blockBuilderState.js";
 import { BlockSettingsSheet } from "./BlockSettingsSheet.jsx";
-import { BuilderSheet } from "./BuilderSheet.jsx";
+import { BuilderSheet, useOverlayFocus } from "./BuilderSheet.jsx";
 import { BuilderToast } from "./BuilderToast.jsx";
 import { CoachDraftCard } from "./CoachDraftCard.jsx";
 import { CopyForwardSheet } from "./CopyForwardSheet.jsx";
@@ -88,6 +88,15 @@ function slugifyBlockName(name) {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
   return s || "block";
+}
+
+/** Hide coach/import "Week N" labels that duplicate the WEEK N title. */
+function weekSubLabel(weekNum, label) {
+  const t = String(label || "").trim();
+  if (!t) return null;
+  const m = t.match(/^weeks?\s*[-:]?\s*(\d+)$/i);
+  if (m && Number(m[1]) === weekNum) return null;
+  return t;
 }
 
 function downloadJson(filename, obj) {
@@ -187,7 +196,9 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
   const [confirmDeleteDay, setConfirmDeleteDay] = useState(false);
   const [confirmDeleteWeek, setConfirmDeleteWeek] = useState(false);
   const draftCheckedRef = useRef(false);
-  const headerMenuRef = useRef(null);
+  const cancelDiscardRef = useRef(null);
+  const cancelDeleteDayRef = useRef(null);
+  const cancelDeleteWeekRef = useRef(null);
 
   const deviceUnit = loadWeightUnit();
   const displayUnit = deviceUnitToFormat(deviceUnit);
@@ -238,23 +249,21 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
     };
   }, []);
 
-  useEffect(() => {
-    if (!headerMenuOpen) return undefined;
-    function onDoc(e) {
-      if (headerMenuRef.current && !headerMenuRef.current.contains(e.target)) {
-        setHeaderMenuOpen(false);
-      }
-    }
-    function onKey(e) {
-      if (e.key === "Escape") setHeaderMenuOpen(false);
-    }
-    document.addEventListener("mousedown", onDoc);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onDoc);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [headerMenuOpen]);
+  useOverlayFocus({
+    open: confirmDiscard,
+    onClose: () => setConfirmDiscard(false),
+    focusRef: cancelDiscardRef,
+  });
+  useOverlayFocus({
+    open: confirmDeleteDay,
+    onClose: () => setConfirmDeleteDay(false),
+    focusRef: cancelDeleteDayRef,
+  });
+  useOverlayFocus({
+    open: confirmDeleteWeek,
+    onClose: () => setConfirmDeleteWeek(false),
+    focusRef: cancelDeleteWeekRef,
+  });
 
   useEffect(() => {
     if (!isCreate && blockId == null && templateId == null) return undefined;
@@ -437,13 +446,10 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
     [days]
   );
 
-  function confirmLeave() {
-    if (!dirty) return true;
-    return window.confirm("You have unsaved changes. Leave without saving?");
-  }
-
+  // Local draft already survives leaving (Restore banner). No in-app confirm.
+  // beforeunload stays: it covers hard refresh / tab close before the draft
+  // debounce writes, which would lose data if removed.
   function handleExit() {
-    if (!confirmLeave()) return;
     discardLeavingRef.current = true;
     if (onBack) onBack();
     else navigate("/templates");
@@ -474,7 +480,10 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
       });
       setCoachPreview(preview);
       setCoachRenames({});
-      setCoachBlockName(preview?.block?.name ? String(preview.block.name) : "");
+      // Keep a name the user already typed over the coach's suggested name.
+      const userName = String(state.name || "").trim();
+      const aiName = preview?.block?.name ? String(preview.block.name) : "";
+      setCoachBlockName(userName || aiName);
       setCoachIncludeWarmups(true);
     } catch (err) {
       if (err instanceof ApiError && err.status === 422) {
@@ -503,6 +512,7 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
       const id = data?.blockTemplate?.id;
       const weeks = coachPreview?.stats?.weeks ?? block?.weeks?.length ?? 0;
       if (id) {
+        clearBuilderDraft("new");
         navigate(`/blocks/${id}/edit`, {
           state: {
             importToast: `${weekLabelPlural(weeks)} - review and tweak anything`,
@@ -769,43 +779,17 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
       >
         Save
       </button>
-      <div className="bk-builder-header-menu" ref={headerMenuRef}>
+      <div className="bk-builder-header-menu">
         <button
           type="button"
           className="bk-builder-header-menu__btn"
           aria-label="Builder menu"
-          aria-haspopup="menu"
+          aria-haspopup="dialog"
           aria-expanded={headerMenuOpen}
-          onClick={() => setHeaderMenuOpen((v) => !v)}
+          onClick={() => setHeaderMenuOpen(true)}
         >
           …
         </button>
-        {headerMenuOpen ? (
-          <div className="bk-builder-header-menu__panel" role="menu">
-            <button
-              type="button"
-              role="menuitem"
-              className="bk-builder-header-menu__item"
-              onClick={() => {
-                setHeaderMenuOpen(false);
-                setSettingsOpen(true);
-              }}
-            >
-              Settings
-            </button>
-            <button
-              type="button"
-              role="menuitem"
-              className="bk-builder-header-menu__item"
-              onClick={() => {
-                setHeaderMenuOpen(false);
-                handleExit();
-              }}
-            >
-              {isCreate ? "Back" : "Close"}
-            </button>
-          </div>
-        ) : null}
       </div>
     </div>
   );
@@ -901,6 +885,7 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
 
   const exCount = currentDay?.exercises?.length || 0;
   const setCount = countDaySets(currentDay);
+  const weekExtraLabel = weekSubLabel(safeWeekIdx + 1, currentWeek?.label);
 
   return (
     <div className="bk bk-builder">
@@ -943,8 +928,8 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
           <div className="bk-builder__week-label">
             <span className="bk-builder__week-title">
               WEEK {safeWeekIdx + 1}
-              {currentWeek?.label ? (
-                <span className="bk-builder__week-sub">{currentWeek.label}</span>
+              {weekExtraLabel ? (
+                <span className="bk-builder__week-sub">{weekExtraLabel}</span>
               ) : null}
             </span>
           </div>
@@ -1164,6 +1149,36 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
           </button>
         </div>
       </div>
+
+      <BuilderSheet
+        open={headerMenuOpen}
+        title="Block"
+        onClose={() => setHeaderMenuOpen(false)}
+        className="bk-sheet--ex-actions"
+      >
+        <div className="bk-ex-actions">
+          <button
+            type="button"
+            className="bk-ex-actions__row"
+            onClick={() => {
+              setHeaderMenuOpen(false);
+              setSettingsOpen(true);
+            }}
+          >
+            <span className="bk-ex-actions__label">Settings</span>
+          </button>
+          <button
+            type="button"
+            className="bk-ex-actions__row"
+            onClick={() => {
+              setHeaderMenuOpen(false);
+              handleExit();
+            }}
+          >
+            <span className="bk-ex-actions__label">{isCreate ? "Back" : "Close"}</span>
+          </button>
+        </div>
+      </BuilderSheet>
 
       <BlockSettingsSheet
         open={settingsOpen}
@@ -1491,10 +1506,7 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
             role="alertdialog"
             aria-labelledby="bk-discard-draft-title"
           >
-            <p
-              id="bk-discard-draft-title"
-              className="muted small session-discard-confirm__title"
-            >
+            <p id="bk-discard-draft-title" className="session-discard-confirm__title">
               Discard this draft?
             </p>
             <p className="muted small session-discard-confirm__body">
@@ -1512,6 +1524,7 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
                 Discard draft
               </button>
               <button
+                ref={cancelDiscardRef}
                 type="button"
                 className="btn btn-secondary"
                 onClick={() => setConfirmDiscard(false)}
@@ -1536,10 +1549,7 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
             role="alertdialog"
             aria-labelledby="bk-delete-day-title"
           >
-            <p
-              id="bk-delete-day-title"
-              className="muted small session-discard-confirm__title"
-            >
+            <p id="bk-delete-day-title" className="session-discard-confirm__title">
               Delete this day?
             </p>
             <p className="muted small session-discard-confirm__body">
@@ -1558,6 +1568,7 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
                 Delete day
               </button>
               <button
+                ref={cancelDeleteDayRef}
                 type="button"
                 className="btn btn-secondary"
                 onClick={() => setConfirmDeleteDay(false)}
@@ -1582,10 +1593,7 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
             role="alertdialog"
             aria-labelledby="bk-delete-week-title"
           >
-            <p
-              id="bk-delete-week-title"
-              className="muted small session-discard-confirm__title"
-            >
+            <p id="bk-delete-week-title" className="session-discard-confirm__title">
               Delete this week?
             </p>
             <p className="muted small session-discard-confirm__body">
@@ -1604,6 +1612,7 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
                 Delete week
               </button>
               <button
+                ref={cancelDeleteWeekRef}
                 type="button"
                 className="btn btn-secondary"
                 onClick={() => setConfirmDeleteWeek(false)}

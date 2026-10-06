@@ -1,8 +1,43 @@
 import { useEffect, useId, useRef } from "react";
 
 /**
+ * Focus Cancel (or a provided ref) when an overlay opens; Escape calls onClose;
+ * restore focus to the opener on unmount.
+ */
+export function useOverlayFocus({ open, onClose, focusRef }) {
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const prev =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const t = window.setTimeout(() => {
+      const target = focusRef?.current;
+      if (target && typeof target.focus === "function") {
+        target.focus();
+      }
+    }, 0);
+    function onKey(e) {
+      if (e.key === "Escape") {
+        e.stopPropagation();
+        onCloseRef.current?.();
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.clearTimeout(t);
+      window.removeEventListener("keydown", onKey);
+      if (prev && typeof prev.focus === "function" && document.contains(prev)) {
+        prev.focus();
+      }
+    };
+  }, [open, focusRef]);
+}
+
+/**
  * Phone: bottom sheet. Wide (>=720px): centered dialog.
- * Escape / backdrop closes.
+ * Escape / backdrop closes; focus returns to the control that opened it.
  */
 export function BuilderSheet({
   open,
@@ -15,9 +50,12 @@ export function BuilderSheet({
 }) {
   const titleId = useId();
   const panelRef = useRef(null);
+  const returnFocusRef = useRef(null);
 
   useEffect(() => {
     if (!open) return undefined;
+    returnFocusRef.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
     function onKey(e) {
       if (e.key === "Escape") onClose?.();
     }
@@ -27,6 +65,11 @@ export function BuilderSheet({
     return () => {
       window.removeEventListener("keydown", onKey);
       document.body.style.overflow = prev;
+      const el = returnFocusRef.current;
+      returnFocusRef.current = null;
+      if (el && typeof el.focus === "function" && document.contains(el)) {
+        el.focus();
+      }
     };
   }, [open, onClose]);
 

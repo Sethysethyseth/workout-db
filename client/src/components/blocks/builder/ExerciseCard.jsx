@@ -10,8 +10,16 @@ import {
   exerciseRxSummary,
   slotBadge,
 } from "./blockBuilderState.js";
-import { BuilderSheet } from "./BuilderSheet.jsx";
+import { BuilderSheet, useOverlayFocus } from "./BuilderSheet.jsx";
 import { ExerciseSettingSheet } from "./ExerciseSettingSheet.jsx";
+
+const REST_PRESETS = [
+  { sec: 0, label: "None" },
+  { sec: 60, label: "1:00" },
+  { sec: 90, label: "1:30" },
+  { sec: 120, label: "2:00" },
+  { sec: 180, label: "3:00" },
+];
 
 function fieldValue(v) {
   return v == null || v === "" ? "" : String(v);
@@ -30,6 +38,15 @@ function firstNotesLine(notes) {
   return t.split(/\r?\n/)[0];
 }
 
+function truncateNote(notes, max = 18) {
+  const t = String(notes || "")
+    .trim()
+    .replace(/\s+/g, " ");
+  if (!t) return null;
+  if (t.length <= max) return t;
+  return `${t.slice(0, Math.max(1, max - 1))}…`;
+}
+
 function restFormat(sec) {
   if (sec == null || sec === 0) return { text: "None", ariaLabel: "No rest" };
   const t = formatRest(sec);
@@ -37,10 +54,18 @@ function restFormat(sec) {
   return typeof t === "string" ? { text: t, ariaLabel: `Rest ${t}` } : t;
 }
 
-function noteCount(notes) {
-  const t = String(notes || "").trim();
-  if (!t) return 0;
-  return t.split(/\r?\n/).filter((line) => line.trim()).length;
+function modeChipText(sets, timed, rangeOn) {
+  if (timed) return "Time";
+  if (!rangeOn) return "Reps";
+  const withRange = sets.find(
+    (s) => s.reps != null && s.reps !== "" && s.repsMax != null && s.repsMax !== ""
+  );
+  if (withRange) return `Reps ${withRange.reps}-${withRange.repsMax}`;
+  const anyMax = sets.find((s) => s.repsMax != null && s.repsMax !== "");
+  if (anyMax && anyMax.reps != null && anyMax.reps !== "") {
+    return `Reps ${anyMax.reps}-${anyMax.repsMax}`;
+  }
+  return "Reps";
 }
 
 function setGridLineClassName(kind, { rangeOn, showEffort }) {
@@ -109,9 +134,16 @@ export function ExerciseCard({
   onDelete,
 }) {
   const gridRef = useRef(null);
+  const cancelRemoveRef = useRef(null);
   const [actionsOpen, setActionsOpen] = useState(false);
   const [settingSheet, setSettingSheet] = useState(null);
   const [confirmRemove, setConfirmRemove] = useState(false);
+
+  useOverlayFocus({
+    open: confirmRemove,
+    onClose: () => setConfirmRemove(false),
+    focusRef: cancelRemoveRef,
+  });
 
   const summary = exerciseRxSummary(exercise, { effort, unit });
   const notesLine = firstNotesLine(exercise?.notes);
@@ -124,22 +156,14 @@ export function ExerciseCard({
   const lineMods = { rangeOn: rangeOn && !timed, showEffort };
   const headClass = setGridLineClassName("head", lineMods);
   const rowClass = setGridLineClassName("row", lineMods);
-  const notes = noteCount(exercise?.notes);
-  const restActive = restSec > 0;
-  const restChipText = restActive
-    ? `Rest ${formatRest(restSec) || restSec}`
-    : "Rest";
-  const modeChipText = timed
-    ? "Time"
-    : rangeOn
-      ? "Reps · range"
-      : "Reps";
-  const modeActive = timed || rangeOn;
+  const noteText = truncateNote(exercise?.notes);
+  const restChipText =
+    restSec > 0 ? `Rest ${formatRest(restSec) || restSec}` : "Rest";
+  const modeText = modeChipText(sets, timed, rangeOn);
   const effortCap = Boolean(exercise?.effortCap);
   const effortChipText = effortCap
     ? `${effortLabel} cap`
     : `${effortLabel} target`;
-  const notesChipText = notes === 0 ? "Add note" : notes === 1 ? "1 note" : `${notes} notes`;
 
   function onFieldKeyDown(e) {
     if (e.key !== "Enter") return;
@@ -169,6 +193,10 @@ export function ExerciseCard({
     closeActions();
   }
 
+  function setRest(sec) {
+    onChange?.({ restSec: sec === 0 ? null : sec });
+  }
+
   if (!expanded || readOnly) {
     return (
       <Card
@@ -190,6 +218,7 @@ export function ExerciseCard({
       >
         <div className="bk-ex-card__top">
           <span className="bk-ex-card__slot">{slotBadge(index)}</span>
+          <h3 className="bk-ex-card__name">{exercise?.exerciseName || "Untitled"}</h3>
           {exercise?.notInLibrary ? (
             <Chip tone="warn">Not in library</Chip>
           ) : null}
@@ -199,7 +228,6 @@ export function ExerciseCard({
             </span>
           )}
         </div>
-        <h3 className="bk-ex-card__name">{exercise?.exerciseName || "Untitled"}</h3>
         {summary.uniform ? (
           <ExerciseRx rx={summary.rx} />
         ) : (
@@ -245,7 +273,7 @@ export function ExerciseCard({
       <div className="bk-ex-card__chips">
         <button
           type="button"
-          className={`bk-ex-card__chip${restActive ? " bk-ex-card__chip--active" : ""}`}
+          className="bk-ex-card__chip"
           onClick={() => setSettingSheet("rest")}
         >
           <ClockIcon />
@@ -253,15 +281,15 @@ export function ExerciseCard({
         </button>
         <button
           type="button"
-          className={`bk-ex-card__chip${modeActive ? " bk-ex-card__chip--active" : ""}`}
+          className="bk-ex-card__chip"
           onClick={() => setSettingSheet("mode")}
         >
-          <span>{modeChipText}</span>
+          <span>{modeText}</span>
         </button>
         {showEffort ? (
           <button
             type="button"
-            className={`bk-ex-card__chip${effortCap ? " bk-ex-card__chip--active" : ""}`}
+            className="bk-ex-card__chip"
             onClick={() => setSettingSheet("effort")}
           >
             <span>{effortChipText}</span>
@@ -269,11 +297,11 @@ export function ExerciseCard({
         ) : null}
         <button
           type="button"
-          className={`bk-ex-card__chip${notes > 0 ? " bk-ex-card__chip--active" : ""}`}
+          className={`bk-ex-card__chip${noteText ? "" : " bk-ex-card__chip--muted"}`}
           onClick={() => setSettingSheet("notes")}
         >
           <PencilIcon />
-          <span>{notesChipText}</span>
+          <span>{noteText || "+ Note"}</span>
         </button>
       </div>
 
@@ -470,8 +498,20 @@ export function ExerciseCard({
           step={15}
           label="Rest"
           format={restFormat}
-          onChange={(v) => onChange?.({ restSec: v === 0 ? null : v })}
+          onChange={setRest}
         />
+        <div className="bk-rest-presets" role="group" aria-label="Rest presets">
+          {REST_PRESETS.map((p) => (
+            <button
+              key={p.label}
+              type="button"
+              className={`bk-rest-presets__btn${restSec === p.sec ? " bk-rest-presets__btn--active" : ""}`}
+              onClick={() => setRest(p.sec)}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
       </ExerciseSettingSheet>
 
       <ExerciseSettingSheet
@@ -549,7 +589,7 @@ export function ExerciseCard({
           >
             <p
               id={`ex-remove-title-${exercise?.id || index}`}
-              className="muted small session-discard-confirm__title"
+              className="session-discard-confirm__title"
             >
               Remove &ldquo;{exerciseName}&rdquo;?
             </p>
@@ -568,6 +608,7 @@ export function ExerciseCard({
                 Remove exercise
               </button>
               <button
+                ref={cancelRemoveRef}
                 type="button"
                 className="btn btn-secondary"
                 onClick={() => setConfirmRemove(false)}

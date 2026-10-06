@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Segmented } from "../ui/Segmented.jsx";
-import { BuilderSheet } from "./BuilderSheet.jsx";
+import { BuilderSheet, useOverlayFocus } from "./BuilderSheet.jsx";
 
 const EFFORT_OPTIONS = [
   { value: "rpe", label: "RPE" },
@@ -21,6 +21,13 @@ export function BlockSettingsSheet({
 }) {
   const isDraft = Boolean(state?.isDraft);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const cancelDeleteRef = useRef(null);
+
+  useOverlayFocus({
+    open: confirmDelete,
+    onClose: () => setConfirmDelete(false),
+    focusRef: cancelDeleteRef,
+  });
 
   function handleClose() {
     setConfirmDelete(false);
@@ -134,10 +141,7 @@ export function BlockSettingsSheet({
             role="alertdialog"
             aria-labelledby="bk-delete-block-title"
           >
-            <p
-              id="bk-delete-block-title"
-              className="muted small session-discard-confirm__title"
-            >
+            <p id="bk-delete-block-title" className="session-discard-confirm__title">
               Delete this block?
             </p>
             <p className="muted small session-discard-confirm__body">
@@ -155,6 +159,7 @@ export function BlockSettingsSheet({
                 Delete block
               </button>
               <button
+                ref={cancelDeleteRef}
                 type="button"
                 className="btn btn-secondary"
                 onClick={() => setConfirmDelete(false)}
