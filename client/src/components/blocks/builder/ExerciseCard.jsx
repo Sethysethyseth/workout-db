@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Card } from "../ui/Card.jsx";
 import { Chip } from "../ui/Chip.jsx";
 import { ExerciseRx } from "../ui/ExerciseRx.jsx";
@@ -10,6 +10,8 @@ import {
   exerciseRxSummary,
   slotBadge,
 } from "./blockBuilderState.js";
+import { BuilderSheet } from "./BuilderSheet.jsx";
+import { ExerciseSettingSheet } from "./ExerciseSettingSheet.jsx";
 
 function fieldValue(v) {
   return v == null || v === "" ? "" : String(v);
@@ -35,42 +37,10 @@ function restFormat(sec) {
   return typeof t === "string" ? { text: t, ariaLabel: `Rest ${t}` } : t;
 }
 
-/** Collapsed meta line: rest / target-or-cap / note count when set. */
-function buildMetaSummary(exercise, effort) {
-  const parts = [];
-  const restSec = exercise?.restSec == null ? null : Number(exercise.restSec);
-  if (restSec != null && restSec > 0) {
-    const rest = formatRest(restSec);
-    if (rest) parts.push(`Rest ${rest}`);
-  }
-
-  const showEffort = effort === "rpe" || effort === "rir";
-  if (showEffort) {
-    const sets = exercise?.sets || [];
-    let effortVal = null;
-    for (const s of sets) {
-      const raw = effort === "rir" ? s.rir : s.rpe;
-      if (raw != null && raw !== "") {
-        effortVal = Number(raw);
-        break;
-      }
-    }
-    if (effortVal != null && Number.isFinite(effortVal)) {
-      if (effort === "rir") {
-        parts.push(exercise?.effortCap ? `RIR ≥ ${effortVal}` : `RIR ${effortVal}`);
-      } else {
-        parts.push(exercise?.effortCap ? `RPE ≤ ${effortVal}` : `RPE ${effortVal}`);
-      }
-    }
-  }
-
-  const notes = String(exercise?.notes || "").trim();
-  if (notes) {
-    const n = notes.split(/\r?\n/).filter((line) => line.trim()).length;
-    parts.push(n === 1 ? "1 note" : `${n} notes`);
-  }
-
-  return parts.length ? parts.join(" · ") : null;
+function noteCount(notes) {
+  const t = String(notes || "").trim();
+  if (!t) return 0;
+  return t.split(/\r?\n/).filter((line) => line.trim()).length;
 }
 
 function setGridLineClassName(kind, { rangeOn, showEffort }) {
@@ -78,6 +48,37 @@ function setGridLineClassName(kind, { rangeOn, showEffort }) {
   if (rangeOn) parts.push(`bk-set-grid__${kind}--range`);
   if (showEffort) parts.push(`bk-set-grid__${kind}--effort`);
   return parts.join(" ");
+}
+
+function ClockIcon() {
+  return (
+    <svg className="bk-ex-card__chip-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3 2" />
+    </svg>
+  );
+}
+
+function PencilIcon() {
+  return (
+    <svg className="bk-ex-card__chip-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+    </svg>
+  );
+}
+
+function ActionIcon({ children }) {
+  return (
+    <svg
+      className="bk-ex-actions__icon"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      focusable="false"
+    >
+      {children}
+    </svg>
+  );
 }
 
 /**
@@ -92,6 +93,8 @@ export function ExerciseCard({
   expanded = false,
   readOnly = false,
   invalid = false,
+  canMoveUp = true,
+  canMoveDown = true,
   onToggle,
   onChange,
   onAddSet,
@@ -106,11 +109,12 @@ export function ExerciseCard({
   onDelete,
 }) {
   const gridRef = useRef(null);
-  const menuRef = useRef(null);
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [actionsOpen, setActionsOpen] = useState(false);
+  const [settingSheet, setSettingSheet] = useState(null);
+  const [confirmRemove, setConfirmRemove] = useState(false);
+
   const summary = exerciseRxSummary(exercise, { effort, unit });
   const notesLine = firstNotesLine(exercise?.notes);
-  const metaSummary = buildMetaSummary(exercise, effort);
   const sets = exercise?.sets || [];
   const timed = sets.length > 0 && sets.every((s) => s.durationSec != null && s.durationSec !== "");
   const rangeOn = sets.some((s) => s.repsMax != null && s.repsMax !== "");
@@ -120,24 +124,22 @@ export function ExerciseCard({
   const lineMods = { rangeOn: rangeOn && !timed, showEffort };
   const headClass = setGridLineClassName("head", lineMods);
   const rowClass = setGridLineClassName("row", lineMods);
-
-  useEffect(() => {
-    if (!menuOpen) return undefined;
-    function onDoc(e) {
-      if (menuRef.current && !menuRef.current.contains(e.target)) {
-        setMenuOpen(false);
-      }
-    }
-    function onKey(e) {
-      if (e.key === "Escape") setMenuOpen(false);
-    }
-    document.addEventListener("mousedown", onDoc);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onDoc);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [menuOpen]);
+  const notes = noteCount(exercise?.notes);
+  const restActive = restSec > 0;
+  const restChipText = restActive
+    ? `Rest ${formatRest(restSec) || restSec}`
+    : "Rest";
+  const modeChipText = timed
+    ? "Time"
+    : rangeOn
+      ? "Reps · range"
+      : "Reps";
+  const modeActive = timed || rangeOn;
+  const effortCap = Boolean(exercise?.effortCap);
+  const effortChipText = effortCap
+    ? `${effortLabel} cap`
+    : `${effortLabel} target`;
+  const notesChipText = notes === 0 ? "Add note" : notes === 1 ? "1 note" : `${notes} notes`;
 
   function onFieldKeyDown(e) {
     if (e.key !== "Enter") return;
@@ -158,144 +160,14 @@ export function ExerciseCard({
     });
   }
 
-  function closeMenu() {
-    setMenuOpen(false);
+  function closeActions() {
+    setActionsOpen(false);
   }
 
-  function openMetaEditor(e) {
-    e.stopPropagation();
-    e.preventDefault();
-    if (!expanded) onToggle?.();
-    setMenuOpen(true);
+  function runAction(fn) {
+    fn?.();
+    closeActions();
   }
-
-  const menuPanel = menuOpen ? (
-    <div className="bk-ex-card__menu-panel" role="menu">
-      <button
-        type="button"
-        role="menuitem"
-        className="bk-ex-card__menu-item"
-        onClick={() => {
-          onMoveUp?.();
-          closeMenu();
-        }}
-      >
-        Move up
-      </button>
-      <button
-        type="button"
-        role="menuitem"
-        className="bk-ex-card__menu-item"
-        onClick={() => {
-          onMoveDown?.();
-          closeMenu();
-        }}
-      >
-        Move down
-      </button>
-      <button
-        type="button"
-        role="menuitem"
-        className="bk-ex-card__menu-item"
-        onClick={() => {
-          onDuplicate?.();
-          closeMenu();
-        }}
-      >
-        Duplicate
-      </button>
-      <button
-        type="button"
-        role="menuitem"
-        className="bk-ex-card__menu-item"
-        onClick={() => {
-          onReplace?.();
-          closeMenu();
-        }}
-      >
-        Replace
-      </button>
-      <button
-        type="button"
-        role="menuitem"
-        className="bk-ex-card__menu-item"
-        onClick={() => {
-          onFillAll?.();
-          closeMenu();
-        }}
-      >
-        Fill all from set 1
-      </button>
-      <div className="bk-ex-card__menu-section">
-        <Segmented
-          label="Reps or time"
-          options={[
-            { value: "reps", label: "Reps" },
-            { value: "time", label: "Time" },
-          ]}
-          value={timed ? "time" : "reps"}
-          onChange={(v) => onToggleTimed?.(v === "time")}
-        />
-      </div>
-      {!timed ? (
-        <label className="bk-ex-card__menu-item bk-ex-card__menu-check">
-          <input
-            type="checkbox"
-            checked={rangeOn}
-            onChange={(e) => onToggleRange?.(e.target.checked)}
-          />
-          <span>Rep range</span>
-        </label>
-      ) : null}
-      <div className="bk-ex-card__menu-rest">
-        <span className="bk-settings__label">Rest</span>
-        <Stepper
-          value={restSec}
-          min={0}
-          max={600}
-          step={15}
-          label="Rest"
-          format={restFormat}
-          onChange={(v) => onChange?.({ restSec: v === 0 ? null : v })}
-        />
-      </div>
-      {showEffort ? (
-        <div className="bk-ex-card__menu-section">
-          <Segmented
-            label="Effort mode"
-            options={[
-              { value: "target", label: "Target" },
-              { value: "cap", label: "Cap" },
-            ]}
-            value={exercise?.effortCap ? "cap" : "target"}
-            onChange={(v) => onChange?.({ effortCap: v === "cap" })}
-          />
-        </div>
-      ) : null}
-      <label className="bk-ex-card__menu-notes">
-        <span className="bk-settings__label">Notes</span>
-        <textarea
-          className="bk-settings__textarea"
-          value={exercise?.notes ?? ""}
-          onChange={(e) => onChange?.({ notes: e.target.value })}
-          rows={2}
-          maxLength={1000}
-          placeholder="Setup, cues, tempo, lead side..."
-        />
-      </label>
-      <button
-        type="button"
-        role="menuitem"
-        className="bk-ex-card__menu-item bk-ex-card__menu-item--danger"
-        onClick={() => {
-          onDelete?.();
-          closeMenu();
-        }}
-      >
-        Delete
-      </button>
-    </div>
-  ) : null;
 
   if (!expanded || readOnly) {
     return (
@@ -338,6 +210,8 @@ export function ExerciseCard({
     );
   }
 
+  const exerciseName = exercise?.exerciseName || "Untitled";
+
   return (
     <Card
       className={`bk-ex-card bk-ex-card--expanded${invalid ? " bk-ex-card--invalid" : ""}`}
@@ -351,36 +225,57 @@ export function ExerciseCard({
           aria-expanded="true"
         >
           <span className="bk-ex-card__slot">{slotBadge(index)}</span>
-          <h3 className="bk-ex-card__name">{exercise?.exerciseName || "Untitled"}</h3>
+          <h3 className="bk-ex-card__name">{exerciseName}</h3>
           {exercise?.notInLibrary ? (
             <Chip tone="warn">Not in library</Chip>
           ) : null}
-          <span className="bk-ex-card__chev bk-ex-card__chev--up" aria-hidden="true">
-            ▴
-          </span>
         </button>
-        <div className="bk-ex-card__menu" ref={menuRef}>
-          <button
-            type="button"
-            className="bk-ex-card__menu-btn"
-            aria-label="Exercise actions"
-            aria-haspopup="menu"
-            aria-expanded={menuOpen}
-            onClick={() => setMenuOpen((v) => !v)}
-          >
-            …
-          </button>
-          {menuPanel}
-        </div>
+        <button
+          type="button"
+          className="bk-ex-card__menu-btn"
+          aria-label="Exercise actions"
+          aria-haspopup="dialog"
+          aria-expanded={actionsOpen}
+          onClick={() => setActionsOpen(true)}
+        >
+          …
+        </button>
       </div>
 
-      {/* The collapsed card's rx line already says this; the expanded card
-          is where rest / cap / notes otherwise vanish into the ... menu. */}
-      {metaSummary ? (
-        <button type="button" className="bk-ex-card__meta" onClick={openMetaEditor}>
-          {metaSummary}
+      <div className="bk-ex-card__chips">
+        <button
+          type="button"
+          className={`bk-ex-card__chip${restActive ? " bk-ex-card__chip--active" : ""}`}
+          onClick={() => setSettingSheet("rest")}
+        >
+          <ClockIcon />
+          <span>{restChipText}</span>
         </button>
-      ) : null}
+        <button
+          type="button"
+          className={`bk-ex-card__chip${modeActive ? " bk-ex-card__chip--active" : ""}`}
+          onClick={() => setSettingSheet("mode")}
+        >
+          <span>{modeChipText}</span>
+        </button>
+        {showEffort ? (
+          <button
+            type="button"
+            className={`bk-ex-card__chip${effortCap ? " bk-ex-card__chip--active" : ""}`}
+            onClick={() => setSettingSheet("effort")}
+          >
+            <span>{effortChipText}</span>
+          </button>
+        ) : null}
+        <button
+          type="button"
+          className={`bk-ex-card__chip${notes > 0 ? " bk-ex-card__chip--active" : ""}`}
+          onClick={() => setSettingSheet("notes")}
+        >
+          <PencilIcon />
+          <span>{notesChipText}</span>
+        </button>
+      </div>
 
       <div className="bk-set-grid" ref={gridRef}>
         <div className={headClass} aria-hidden="true">
@@ -473,6 +368,216 @@ export function ExerciseCard({
           + Set
         </button>
       </div>
+
+      <BuilderSheet
+        open={actionsOpen}
+        title={exerciseName}
+        onClose={closeActions}
+        className="bk-sheet--ex-actions"
+      >
+        <div className="bk-ex-actions">
+          <button
+            type="button"
+            className="bk-ex-actions__row"
+            disabled={!canMoveUp}
+            onClick={() => runAction(onMoveUp)}
+          >
+            <ActionIcon>
+              <path d="M12 19V5" />
+              <path d="m5 12 7-7 7 7" />
+            </ActionIcon>
+            <span className="bk-ex-actions__label">Move up</span>
+          </button>
+          <button
+            type="button"
+            className="bk-ex-actions__row"
+            disabled={!canMoveDown}
+            onClick={() => runAction(onMoveDown)}
+          >
+            <ActionIcon>
+              <path d="M12 5v14" />
+              <path d="m19 12-7 7-7-7" />
+            </ActionIcon>
+            <span className="bk-ex-actions__label">Move down</span>
+          </button>
+          <button
+            type="button"
+            className="bk-ex-actions__row"
+            onClick={() => runAction(onDuplicate)}
+          >
+            <ActionIcon>
+              <rect x="9" y="9" width="13" height="13" rx="2" />
+              <path d="M5 15V5a2 2 0 0 1 2-2h10" />
+            </ActionIcon>
+            <span className="bk-ex-actions__label">Duplicate</span>
+          </button>
+          <button
+            type="button"
+            className="bk-ex-actions__row"
+            onClick={() => runAction(onReplace)}
+          >
+            <ActionIcon>
+              <path d="M16 3h5v5" />
+              <path d="M8 21H3v-5" />
+              <path d="M21 3 14 10" />
+              <path d="m3 21 7-7" />
+            </ActionIcon>
+            <span className="bk-ex-actions__label">Replace exercise</span>
+          </button>
+          <button
+            type="button"
+            className="bk-ex-actions__row"
+            onClick={() => runAction(onFillAll)}
+          >
+            <ActionIcon>
+              <path d="M8 6h13" />
+              <path d="M8 12h13" />
+              <path d="M8 18h13" />
+              <path d="M3 6h.01" />
+              <path d="M3 12h.01" />
+              <path d="M3 18h.01" />
+            </ActionIcon>
+            <span className="bk-ex-actions__label">Copy set 1 to every set</span>
+          </button>
+          <div className="bk-ex-actions__divider" role="separator" />
+          <button
+            type="button"
+            className="bk-ex-actions__row bk-ex-actions__row--danger"
+            onClick={() => {
+              closeActions();
+              setConfirmRemove(true);
+            }}
+          >
+            <ActionIcon>
+              <path d="M3 6h18" />
+              <path d="M8 6V4h8v2" />
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+            </ActionIcon>
+            <span className="bk-ex-actions__label">Remove exercise</span>
+          </button>
+        </div>
+      </BuilderSheet>
+
+      <ExerciseSettingSheet
+        open={settingSheet === "rest"}
+        title="Rest"
+        onClose={() => setSettingSheet(null)}
+      >
+        <Stepper
+          value={restSec}
+          min={0}
+          max={600}
+          step={15}
+          label="Rest"
+          format={restFormat}
+          onChange={(v) => onChange?.({ restSec: v === 0 ? null : v })}
+        />
+      </ExerciseSettingSheet>
+
+      <ExerciseSettingSheet
+        open={settingSheet === "mode"}
+        title="Reps / Time"
+        onClose={() => setSettingSheet(null)}
+      >
+        <Segmented
+          label="Reps or time"
+          options={[
+            { value: "reps", label: "Reps" },
+            { value: "time", label: "Time" },
+          ]}
+          value={timed ? "time" : "reps"}
+          onChange={(v) => onToggleTimed?.(v === "time")}
+        />
+        {!timed ? (
+          <label className="bk-ex-card__setting-check">
+            <input
+              type="checkbox"
+              checked={rangeOn}
+              onChange={(e) => onToggleRange?.(e.target.checked)}
+            />
+            <span>Rep range</span>
+          </label>
+        ) : null}
+      </ExerciseSettingSheet>
+
+      <ExerciseSettingSheet
+        open={settingSheet === "effort"}
+        title={effortLabel}
+        onClose={() => setSettingSheet(null)}
+      >
+        <Segmented
+          label="Effort mode"
+          options={[
+            { value: "target", label: "Target" },
+            { value: "cap", label: "Cap" },
+          ]}
+          value={effortCap ? "cap" : "target"}
+          onChange={(v) => onChange?.({ effortCap: v === "cap" })}
+        />
+      </ExerciseSettingSheet>
+
+      <ExerciseSettingSheet
+        open={settingSheet === "notes"}
+        title="Notes"
+        onClose={() => setSettingSheet(null)}
+      >
+        <label className="bk-settings__field">
+          <span className="bk-settings__label">Notes</span>
+          <textarea
+            className="bk-settings__textarea"
+            value={exercise?.notes ?? ""}
+            onChange={(e) => onChange?.({ notes: e.target.value })}
+            rows={4}
+            maxLength={1000}
+            placeholder="Setup, cues, tempo, lead side..."
+          />
+        </label>
+      </ExerciseSettingSheet>
+
+      {confirmRemove ? (
+        <div className="bk-builder-confirm" role="presentation">
+          <button
+            type="button"
+            className="bk-sheet__backdrop"
+            aria-label="Cancel"
+            onClick={() => setConfirmRemove(false)}
+          />
+          <div
+            className="stack session-discard-confirm bk-builder-confirm__panel"
+            role="alertdialog"
+            aria-labelledby={`ex-remove-title-${exercise?.id || index}`}
+          >
+            <p
+              id={`ex-remove-title-${exercise?.id || index}`}
+              className="muted small session-discard-confirm__title"
+            >
+              Remove &ldquo;{exerciseName}&rdquo;?
+            </p>
+            <p className="muted small session-discard-confirm__body">
+              This exercise and its sets will be removed from this day.
+            </p>
+            <div className="row session-discard-confirm__actions">
+              <button
+                type="button"
+                className="session-discard-confirm__discard"
+                onClick={() => {
+                  setConfirmRemove(false);
+                  onDelete?.();
+                }}
+              >
+                Remove exercise
+              </button>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => setConfirmRemove(false)}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </Card>
   );
 }

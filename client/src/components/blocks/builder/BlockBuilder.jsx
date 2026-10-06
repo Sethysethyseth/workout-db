@@ -183,6 +183,9 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
   const [draftOffer, setDraftOffer] = useState(null); // { state } | null
   const [headerMenuOpen, setHeaderMenuOpen] = useState(false);
   const [nameEditing, setNameEditing] = useState(isCreate);
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const [confirmDeleteDay, setConfirmDeleteDay] = useState(false);
+  const [confirmDeleteWeek, setConfirmDeleteWeek] = useState(false);
   const draftCheckedRef = useRef(false);
   const headerMenuRef = useRef(null);
 
@@ -672,8 +675,6 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
   async function handleDiscardDraft() {
     const id = blockId ?? templateId;
     if (id == null) return;
-    const ok = window.confirm("Discard this draft? It will be deleted.");
-    if (!ok) return;
     try {
       await blockTemplateApi.deleteBlockTemplate(id);
       discardLeavingRef.current = true;
@@ -681,6 +682,10 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
     } catch (err) {
       setError(err);
     }
+  }
+
+  function requestDiscardDraft() {
+    setConfirmDiscard(true);
   }
 
   async function handleDeleteBlock() {
@@ -967,7 +972,7 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
             deviceUnit={deviceUnit}
             accepting={accepting}
             onAccept={() => void handleAcceptDraft()}
-            onDiscard={() => void handleDiscardDraft()}
+            onDiscard={() => requestDiscardDraft()}
             onConvert={() => applyState(convertUnits(state, displayUnit))}
           />
         ) : null}
@@ -1083,6 +1088,8 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
                       unit={displayUnit === "kg" ? "kg" : "lb"}
                       expanded={expandedIds.has(ex.id)}
                       invalid={exerciseInvalid(ei)}
+                      canMoveUp={ei > 0}
+                      canMoveDown={ei < (currentDay.exercises || []).length - 1}
                       onToggle={() => toggleExpanded(ex.id)}
                       onChange={(patch) =>
                         applyState(updateExercise(state, safeWeekIdx, safeDayIdx, ei, patch))
@@ -1351,10 +1358,9 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
             disabled={weeks.length <= 1}
             onClick={() => {
               if (weekHasExercises(currentWeek)) {
-                const ok = window.confirm(
-                  "Delete this week and all its exercises?"
-                );
-                if (!ok) return;
+                setWeekActionsOpen(false);
+                setConfirmDeleteWeek(true);
+                return;
               }
               applyState(deleteWeek(state, safeWeekIdx));
               setWeekIdx(Math.max(0, safeWeekIdx - 1));
@@ -1427,8 +1433,9 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
             disabled={days.length <= 1}
             onClick={() => {
               if (dayHasExercises(currentDay)) {
-                const ok = window.confirm("Delete this day and its exercises?");
-                if (!ok) return;
+                setDayActionsOpen(false);
+                setConfirmDeleteDay(true);
+                return;
               }
               applyState(deleteDay(state, safeWeekIdx, safeDayIdx));
               setDayIdx(Math.max(0, safeDayIdx - 1));
@@ -1470,6 +1477,143 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
           );
         }}
       />
+
+      {confirmDiscard ? (
+        <div className="bk-builder-confirm" role="presentation">
+          <button
+            type="button"
+            className="bk-sheet__backdrop"
+            aria-label="Cancel"
+            onClick={() => setConfirmDiscard(false)}
+          />
+          <div
+            className="stack session-discard-confirm bk-builder-confirm__panel"
+            role="alertdialog"
+            aria-labelledby="bk-discard-draft-title"
+          >
+            <p
+              id="bk-discard-draft-title"
+              className="muted small session-discard-confirm__title"
+            >
+              Discard this draft?
+            </p>
+            <p className="muted small session-discard-confirm__body">
+              It will be deleted. This cannot be undone.
+            </p>
+            <div className="row session-discard-confirm__actions">
+              <button
+                type="button"
+                className="session-discard-confirm__discard"
+                onClick={() => {
+                  setConfirmDiscard(false);
+                  void handleDiscardDraft();
+                }}
+              >
+                Discard draft
+              </button>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => setConfirmDiscard(false)}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {confirmDeleteDay ? (
+        <div className="bk-builder-confirm" role="presentation">
+          <button
+            type="button"
+            className="bk-sheet__backdrop"
+            aria-label="Cancel"
+            onClick={() => setConfirmDeleteDay(false)}
+          />
+          <div
+            className="stack session-discard-confirm bk-builder-confirm__panel"
+            role="alertdialog"
+            aria-labelledby="bk-delete-day-title"
+          >
+            <p
+              id="bk-delete-day-title"
+              className="muted small session-discard-confirm__title"
+            >
+              Delete this day?
+            </p>
+            <p className="muted small session-discard-confirm__body">
+              This day and its exercises will be removed from the block.
+            </p>
+            <div className="row session-discard-confirm__actions">
+              <button
+                type="button"
+                className="session-discard-confirm__discard"
+                onClick={() => {
+                  applyState(deleteDay(state, safeWeekIdx, safeDayIdx));
+                  setDayIdx(Math.max(0, safeDayIdx - 1));
+                  setConfirmDeleteDay(false);
+                }}
+              >
+                Delete day
+              </button>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => setConfirmDeleteDay(false)}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {confirmDeleteWeek ? (
+        <div className="bk-builder-confirm" role="presentation">
+          <button
+            type="button"
+            className="bk-sheet__backdrop"
+            aria-label="Cancel"
+            onClick={() => setConfirmDeleteWeek(false)}
+          />
+          <div
+            className="stack session-discard-confirm bk-builder-confirm__panel"
+            role="alertdialog"
+            aria-labelledby="bk-delete-week-title"
+          >
+            <p
+              id="bk-delete-week-title"
+              className="muted small session-discard-confirm__title"
+            >
+              Delete this week?
+            </p>
+            <p className="muted small session-discard-confirm__body">
+              This week and all its exercises will be removed from the block.
+            </p>
+            <div className="row session-discard-confirm__actions">
+              <button
+                type="button"
+                className="session-discard-confirm__discard"
+                onClick={() => {
+                  applyState(deleteWeek(state, safeWeekIdx));
+                  setWeekIdx(Math.max(0, safeWeekIdx - 1));
+                  setConfirmDeleteWeek(false);
+                }}
+              >
+                Delete week
+              </button>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => setConfirmDeleteWeek(false)}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <BuilderToast
         message={toast?.message}
