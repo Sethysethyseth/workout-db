@@ -2456,7 +2456,13 @@ export function SessionDetailPage() {
   }, [liveBlockDay]);
 
   useEffect(() => {
-    if (!liveBlockDay) return;
+    if (!liveBlockDay) {
+      document.documentElement.classList.remove("bk-log-kbd");
+      return;
+    }
+    // Ignore iOS URL-bar collapse; real soft keyboards shrink far more.
+    const BK_LOG_KBD_VIEWPORT_SHRINK_PX = 150;
+
     function isLoggerField(el) {
       return (
         el instanceof HTMLElement &&
@@ -2464,28 +2470,44 @@ export function SessionDetailPage() {
         Boolean(document.querySelector(".session-detail-page--block")?.contains(el))
       );
     }
+
+    function syncKbdClass() {
+      const focused = isLoggerField(document.activeElement);
+      const vv = window.visualViewport;
+      // Fallback when visualViewport is missing: keep focus-only behaviour.
+      const keyboardOpen = vv
+        ? window.innerHeight - vv.height > BK_LOG_KBD_VIEWPORT_SHRINK_PX
+        : focused;
+      document.documentElement.classList.toggle("bk-log-kbd", focused && keyboardOpen);
+    }
+
     function onFocusIn(e) {
       const t = e.target;
       if (!(t instanceof HTMLElement)) return;
       if (t.tagName !== "INPUT" && t.tagName !== "TEXTAREA") return;
-      document.documentElement.classList.add("bk-log-kbd");
+      syncKbdClass();
     }
     function onFocusOut() {
       // Defer so focus moving between fields does not flicker the chrome.
       requestAnimationFrame(() => {
-        if (isLoggerField(document.activeElement)) return;
-        document.documentElement.classList.remove("bk-log-kbd");
+        syncKbdClass();
       });
     }
+    function onViewportChange() {
+      syncKbdClass();
+    }
+
     document.addEventListener("focusin", onFocusIn);
     document.addEventListener("focusout", onFocusOut);
+    window.visualViewport?.addEventListener("resize", onViewportChange, { passive: true });
+    window.visualViewport?.addEventListener("scroll", onViewportChange, { passive: true });
     // A field may already be focused when this (re)runs.
-    if (isLoggerField(document.activeElement)) {
-      document.documentElement.classList.add("bk-log-kbd");
-    }
+    syncKbdClass();
     return () => {
       document.removeEventListener("focusin", onFocusIn);
       document.removeEventListener("focusout", onFocusOut);
+      window.visualViewport?.removeEventListener("resize", onViewportChange);
+      window.visualViewport?.removeEventListener("scroll", onViewportChange);
       document.documentElement.classList.remove("bk-log-kbd");
     };
   }, [liveBlockDay]);
