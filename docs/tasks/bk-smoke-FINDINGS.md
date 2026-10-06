@@ -127,3 +127,52 @@ Oct 5: every finding below becomes a unit in a fix wave; sign-off resets.
 - An imported file's block name defaults to "Imported block" - use the file name.
 - Builder Settings -> Delete block uses the browser's native confirm, not the
   in-page confirm the rest of the app uses.
+
+## Smoke round 3 (Oct 6; staging Vercel, Seth's phone) - INTAKE ONLY
+
+Seth's notes after the bkr wave landed (12/12, `bf380bc`). Seth ruled Oct 6:
+record them and hand them to the NEXT chat - this session proposes no
+solutions. Severity is the seat's intake guess; the next agent confirms it.
+Bugs go through a DIAGNOSIS block first; CRs need authored blocks.
+
+1. **Starting another block can wipe progress - P0 if confirmed (data loss).**
+   Seth: "if you have 2 blocks, and start another im pretty sure you lose all
+   progres on the previous, we cant have this." Not yet reproduced. Diagnosis
+   first: what happens to the running block's run, its logged sessions, and
+   its progress when a second block's run is started.
+2. **Add exercise opens wrong the first time - FAIL P2 (bug).** In the block
+   builder, "+ Add exercise" usually opens (the first time) as an "ADD
+   EXERCISE" sheet with the keyboard up and no search field or list visible;
+   tapping it again opens the normal search screen. Screenshot:
+   `claudefiledrop/smoke-r3-add-exercise-first-open.png` (Android Chrome,
+   staging Vercel). Diagnosis first.
+3. **Max 7 days per week - CR.** "in block builder cant have more than 7 days
+   in a week."
+4. **Removing weeks and days isn't discoverable - CR (P2).** "no way that i can
+   see to remove weeks or days from a block, if its there it should be a
+   little more obvious but not too glaring, i trust you frontend judgement on
+   this." (Delete week/day exist behind in-page confirms since bkr4/bkrf1a -
+   the issue is finding them.)
+5. **RPE/RIR choice lives in block Settings ("..." top right) - OPEN
+   QUESTION, Seth wants the agent's opinion.** "i like them but i fear people
+   might not see thats where you select rpe/rir". Give him a recommendation
+   (with the trade-off) before authoring anything.
+6. **Add a not-in-library exercise to your library from the builder - CR.**
+   "if an exercise isnt in libray in the block builder you should be able to
+   put it in your library from the block builder".
+7. **"Single" exercises should get a left and a right side - CR.** "when using
+   a 'single' exercise it should populate a left and a right side like how
+   normally logging does it". Confirm with Seth what "single" means here
+   (exercise type / per-side flag) and where (block logger, builder plan).
+8. **Imported blocks with exercises not in the library - CR (future).** "if you
+   import a block and it has workouts that arent saved the app should probably
+   catch that and have you add them to the library".
+9. **Private / Public on blocks does nothing - CR, Seth's exact copy.** When
+   someone taps it, show a small message: "this hasnt been implemented yet bro
+   stop prying".
+
+**Process ruling (Oct 6):** the separate-agent feel critic now runs ONE
+iteration by default (still scored 0-10); Seth says when he wants more rounds.
+
+The round-3 re-smoke checklist in HANDOFF is otherwise un-run - no PASS/FAIL
+recorded for its 11 items yet.

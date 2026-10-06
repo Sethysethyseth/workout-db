@@ -10,14 +10,47 @@
 > Home logging-first with the block card under it (bkr5, Seth picked A + one
 > week strip), then critic round 1 (6/10 FAIL, no P0/P1) and its fix round
 > bkrf1a-c. **Critic round 2 was SKIPPED by Seth (Oct 6: "the critic isnt
-> working, lets skip it for now")** - his re-smoke is the check. HARD STOP for
-> Seth's smoke. Prod unchanged: `main` = `7d3b91e`.
+> working, lets skip it for now")** - his re-smoke is the check. Prod
+> unchanged: `main` = `7d3b91e`.
+>
+> **Oct 6, later: Seth's smoke round 3 INTAKE is waiting** - 9 notes (one
+> suspected P0 data loss, one bug with a screenshot, six CRs, one open
+> question for the agent's opinion) recorded verbatim in
+> `docs/tasks/bk-smoke-FINDINGS.md` -> "Smoke round 3". The session that took
+> them proposed NO solutions on purpose (Seth: "leave this to the next
+> chat"). The 11-item re-smoke checklist below is still un-run.
 
-**Next action (human):** on your phone, open the staging Vercel deploy and run
-the re-smoke checklist below (say "smoke the bkr wave with me" in a Claude Code
-session to have an agent record results).
+**Next action (human):** open a fresh Claude Code session on Opus and say
+"work the smoke round 3 intake" - it starts with the suspected block-progress
+data loss.
 
-## ▶ PICK UP HERE (Oct 6 - for the agent running the re-smoke WITH Seth)
+## ▶ PICK UP HERE (Oct 6 - smoke round 3 intake, FRONTIER seat)
+
+Seth handed the next chat his round-3 notes (FINDINGS "Smoke round 3", items
+1-9). Do them in this order and ask Seth the open calls batched at the start
+(memory: ask-seth-the-decisions):
+
+1. **Item 1 first - suspected P0:** starting a second block may wipe the
+   running block's progress. DIAGNOSIS block to Cursor (report lane) before
+   anything else; if confirmed, it is the top fix of the next wave.
+2. **Item 2 - bug:** "+ Add exercise" in the builder opens wrong the first
+   time (keyboard up, no search/list; second tap is fine). Screenshot in
+   `claudefiledrop/smoke-r3-add-exercise-first-open.png`. DIAGNOSIS block.
+3. **Ask Seth in one batch, with a recommendation each:** item 5 (is block
+   Settings the right home for the RPE/RIR choice? he wants your opinion),
+   item 7 (what "single" exercise means - per-side flag? where - block
+   logger, builder?), item 3 (hard cap at 7 days per week: disable "+ Day" at
+   7?). Items 4, 6, 8, 9 are clear enough to author (item 9's copy is Seth's,
+   verbatim: "this hasnt been implemented yet bro stop prying").
+4. Author the next wave from the answers (`author-task-block`), Home/builder
+   design units get an Artifact mock first when they change layout (memory:
+   preview-big-changes-as-artifacts).
+5. **Critic rule changed (Oct 6):** the separate-agent feel critic runs ONE
+   iteration by default (scored 0-10); more rounds only when Seth says so.
+6. The pre-main gate waits until Seth signs off a smoke of everything,
+   including the 11-item checklist below.
+
+### Agent sitting with Seth on the 11-item re-smoke (when he runs it)
 
 You sit with Seth while he smokes, ONE item at a time, and record results. You
 do NOT fix code and do NOT run the gate. Any model can do this.
@@ -28,7 +61,7 @@ do NOT fix code and do NOT run the gate. Any model can do this.
 2. Accounts: `test123` / `password` (running block "Upper/Lower Strength -
    4wk", W4 · Upper A next, nothing in progress), or Seth's own staging
    account. Coach uses are capped at 7 per rolling 7 days.
-3. Record: append `## Smoke round 3 (Oct 6+)` to
+3. Record: append `## Smoke round 4` (round 3 is Seth's intake notes) to
    `docs/tasks/bk-smoke-FINDINGS.md` - one line per item: PASS, or FAIL with
    Seth's words + screenshot (`claudefiledrop/`, untracked) + severity (P0 data
    loss / P1 blocks him / P2 friction / P3 polish). New scope = CR. Commit +
