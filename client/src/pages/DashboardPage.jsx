@@ -4,7 +4,7 @@ import * as sessionApi from "../api/sessionApi.js";
 import * as templateApi from "../api/templateApi.js";
 import * as blockRunApi from "../api/blockRunApi.js";
 import { ErrorMessage } from "../components/ErrorMessage.jsx";
-import { WeeklyReport } from "../components/analytics/WeeklyReport.jsx";
+import { WeeklyReport, weeklyReportWindows } from "../components/analytics/WeeklyReport.jsx";
 import { ActiveWorkoutHero } from "../components/workout/ActiveWorkoutHero.jsx";
 import { StartWorkoutHero } from "../components/workout/StartWorkoutHero.jsx";
 import { StartWorkoutPicker } from "../components/workout/StartWorkoutPicker.jsx";
@@ -22,6 +22,26 @@ import {
 } from "../lib/sessionDisplay.js";
 import { formatTonnage, sessionDurationLabel, sessionTonnage } from "../lib/sessionFacts.js";
 import { loadWeightUnit } from "../lib/weightUnitPref.js";
+
+/** Session hint so Home can reserve the block-card slot before /block-runs/active resolves. */
+const HOME_HAS_RUN_KEY = "workoutdb-home-has-run";
+
+function readHomeHasRunHint() {
+  try {
+    return sessionStorage.getItem(HOME_HAS_RUN_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function writeHomeHasRunHint(hasRun) {
+  try {
+    if (hasRun) sessionStorage.setItem(HOME_HAS_RUN_KEY, "1");
+    else sessionStorage.removeItem(HOME_HAS_RUN_KEY);
+  } catch {
+    /* private mode / blocked storage */
+  }
+}
 
 /** Logged-set count from the sessions-list payload (weight/reps only). */
 function countLoggedSetsFromListSession(session) {
@@ -72,7 +92,9 @@ export function DashboardPage() {
   const [workoutDiscardedFlash, setWorkoutDiscardedFlash] = useState(false);
   const [activeBlock, setActiveBlock] = useState(null);
   const [activeBlockReady, setActiveBlockReady] = useState(false);
+  const [homeHasRunHint, setHomeHasRunHint] = useState(() => readHomeHasRunHint());
   const [upNextStarting, setUpNextStarting] = useState(false);
+  const reportWindows = useMemo(() => weeklyReportWindows(), []);
 
   const quickPickTemplates = useMemo(() => {
     const list = Array.isArray(templates) ? [...templates] : [];
@@ -258,6 +280,28 @@ export function DashboardPage() {
         ?.days?.some((d) => d.order === activeBlock.progress.nextDay.workoutOrder)
   );
 
+  /** Unfinished active run with a next day - drives sessionStorage for the next visit. */
+  const hasActiveRunHint = Boolean(
+    activeBlockReady &&
+      activeBlock?.run &&
+      activeBlock.block &&
+      activeBlock.progress &&
+      !isRunFinished(activeBlock.progress) &&
+      activeBlock.progress.nextDay
+  );
+
+  useEffect(() => {
+    if (!activeBlockReady) return;
+    writeHomeHasRunHint(hasActiveRunHint);
+    setHomeHasRunHint(hasActiveRunHint);
+  }, [activeBlockReady, hasActiveRunHint]);
+
+  /** Reserve the block-card slot while the run fetch is pending (warm visitors with a run). */
+  const showBlockCardPlaceholder = Boolean(!hasActive && !activeBlockReady && homeHasRunHint);
+
+  /** Day strip only when no block card (or its placeholder) occupies the slot. */
+  const showDayStrip = !showBlockCard && !showBlockCardPlaceholder;
+
   /** Planned/logged sets for ActiveWorkoutHero when the live session is a block day. */
   const liveSetsProgress = useMemo(() => {
     if (!activeSession || blockDayPrimaryTitle(activeSession) == null) return null;
@@ -322,37 +366,46 @@ export function DashboardPage() {
         </div>
       )}
 
-      {hasActive ? (
-        <ActiveWorkoutHero
-          session={activeSession}
-          nowMs={heroNow}
-          onResume={() => navigate(`/sessions/${activeSession.id}`)}
-          setsProgress={liveSetsProgress}
-        />
-      ) : (
-        <StartWorkoutHero
-          onStartEmpty={() => void onStartEmptyWorkout()}
-          onBrowseTemplates={() => setPickerOpen(true)}
-          startingEmpty={quickStarting}
-          lastSessionLabel={
-            completedRecent[0]
-              ? `${sessionDisplayTitle(completedRecent[0])}, ${formatRelativeDay(completedRecent[0].completedAt)}`
-              : null
-          }
-        />
-      )}
+      <div className="workout-tab__log-row">
+        {hasActive ? (
+          <ActiveWorkoutHero
+            session={activeSession}
+            nowMs={heroNow}
+            onResume={() => navigate(`/sessions/${activeSession.id}`)}
+            setsProgress={liveSetsProgress}
+          />
+        ) : (
+          <StartWorkoutHero
+            onStartEmpty={() => void onStartEmptyWorkout()}
+            onBrowseTemplates={() => setPickerOpen(true)}
+            startingEmpty={quickStarting}
+            lastSessionLabel={
+              completedRecent[0]
+                ? `${sessionDisplayTitle(completedRecent[0])}, ${formatRelativeDay(completedRecent[0].completedAt)}`
+                : null
+            }
+          />
+        )}
 
-      {/* Active run + no live: bold "Next in your block" card under the log hero.
-          Live workout + active block: muted "Up next after this" only. */}
-      {showBlockCard ? (
-        <UpNextCard
-          block={activeBlock.block}
-          progress={activeBlock.progress}
-          runId={activeBlock.run.id}
-          starting={upNextStarting}
-          onStart={(next) => void onUpNextStart(next)}
-        />
-      ) : null}
+        {/* Active run + no live: bold "Next in your block" card under the log hero.
+            While pending, a same-height placeholder (hinted via sessionStorage). */}
+        {showBlockCard ? (
+          <UpNextCard
+            block={activeBlock.block}
+            progress={activeBlock.progress}
+            runId={activeBlock.run.id}
+            starting={upNextStarting}
+            onStart={(next) => void onUpNextStart(next)}
+          />
+        ) : showBlockCardPlaceholder ? (
+          <section
+            className="card bk-up-next bk-up-next--placeholder"
+            aria-hidden="true"
+          />
+        ) : null}
+      </div>
+
+      {/* Live workout + active block: muted "Up next after this" only. */}
       {hasActive && activeBlockReady && activeBlock ? (
         <UpNextCard
           block={activeBlock.block}
@@ -364,8 +417,19 @@ export function DashboardPage() {
       ) : null}
 
       {/* One week strip on Home (Seth, Oct 5): the block card's week strip
-          wins; the day strip shows only when no block card does. */}
-      <WeeklyReport weekStrip={showBlockCard ? null : <WeekStrip sessions={sessions} />} />
+          wins; the day strip shows only when no block card does. Same
+          from/to window as WeeklyReport's summary (rolling 7 days). */}
+      <WeeklyReport
+        weekStrip={
+          showDayStrip ? (
+            <WeekStrip
+              sessions={sessions}
+              from={reportWindows.current.from}
+              to={reportWindows.current.to}
+            />
+          ) : null
+        }
+      />
 
       <section className="workout-tab-recent" aria-labelledby="workout-recent-heading">
         <div className="row workout-tab-recent__head">

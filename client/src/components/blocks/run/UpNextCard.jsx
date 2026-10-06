@@ -122,7 +122,6 @@ export function UpNextCard({
             <span className="bk-up-next__ex-names">{shown.join(", ")}</span>
           ) : null}
           <span className="bk-up-next__ex-more">
-            {shown.length > 0 ? " " : ""}
             {extra > 0 ? `+${extra} · ${sets} sets` : `${sets} sets`}
           </span>
         </p>

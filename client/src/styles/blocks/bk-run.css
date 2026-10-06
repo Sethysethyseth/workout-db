@@ -470,17 +470,33 @@
 .bk-up-next {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 16px;
+  gap: 8px;
+  padding: 14px 16px;
   border-radius: 16px;
   background: var(--color-surface-1);
+  box-sizing: border-box;
+}
+
+/* Same footprint as the calm card (~190px) while /block-runs/active is pending. */
+.bk-up-next--placeholder {
+  min-height: 190px;
+  background: var(--color-surface-2, var(--bk-surface-2));
+  border: 1px solid var(--color-border, transparent);
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .bk-up-next--placeholder {
+    animation: bk-run-pulse 1.2s ease-out infinite;
+  }
 }
 
 .bk-up-next__top {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
+  min-height: 0;
 }
 
 .bk-up-next__eyebrow {
@@ -491,11 +507,18 @@
   color: var(--color-interactive);
 }
 
+/* Visual size stays ~12px; 44px tall hit via padding + negative margin (P3-4). */
 .bk-up-next__view {
   flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
   font: 500 12px/1.2 var(--font-sans);
   color: var(--color-text-secondary);
   text-decoration: none;
+  min-height: 44px;
+  padding: 0 4px;
+  margin: -15px -4px;
+  box-sizing: border-box;
 }
 
 .bk-up-next__view:hover {
@@ -504,15 +527,22 @@
 
 .bk-up-next__title {
   margin: 0;
-  font: 700 32px/1.05 var(--font-block, var(--font-display));
+  font: 700 22px/1.1 var(--font-block, var(--font-display));
   letter-spacing: 0.02em;
   text-transform: uppercase;
   color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 
 .bk-up-next__block {
   margin: 0;
   font: 400 13px/1.35 var(--font-sans);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .bk-up-next__strip {
@@ -542,23 +572,38 @@
   background: var(--color-surface-3);
 }
 
+/* One-line exercise names; muted "+N · M sets" stays visible (P2-4). */
 .bk-up-next__exercises {
   margin: 0;
-  line-height: 1.35;
+  display: flex;
+  align-items: baseline;
+  gap: 0.35em;
+  min-width: 0;
+  line-height: 1.3;
 }
 
 .bk-up-next__ex-names {
   color: var(--color-text);
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .bk-up-next__ex-more {
+  flex: 0 0 auto;
   color: var(--color-text-secondary);
+  white-space: nowrap;
 }
 
 .bk-up-next__start {
   width: 100%;
-  min-height: 46px;
-  margin-top: 0;
+  min-height: 44px;
+  margin-top: 2px;
+  font-size: 15px;
+  font-weight: 600;
+  font-family: inherit;
   color: var(--color-text);
   background: color-mix(in srgb, var(--color-interactive) 18%, var(--color-surface-1));
   border: 1px solid color-mix(in srgb, var(--color-interactive) 55%, transparent);
@@ -571,6 +616,106 @@
 .bk-up-next-muted {
   margin: 0;
   padding: 0 2px;
+}
+
+/* Home desktop: hero + block card side by side (P3-12). */
+.workout-tab__log-row {
+  display: flex;
+  flex-direction: column;
+  gap: inherit;
+  min-width: 0;
+}
+
+@media (min-width: 1024px) {
+  .workout-tab__log-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    align-items: stretch;
+  }
+
+  .workout-tab__log-row:has(> :only-child) {
+    grid-template-columns: 1fr;
+  }
+
+  .workout-tab__log-row > .workout-hero,
+  .workout-tab__log-row > .bk-up-next {
+    height: 100%;
+    min-width: 0;
+  }
+
+  .workout-tab__log-row .workout-hero__cta,
+  .workout-tab__log-row .workout-hero__browse,
+  .workout-tab__log-row .bk-up-next__start {
+    max-width: 420px;
+  }
+}
+
+/* Last-7-days skeleton sized for with/without day strip (P2-3). */
+.weekly-report--skel-no-strip {
+  min-height: 168px;
+}
+
+.weekly-report--skel-with-strip {
+  min-height: 220px;
+}
+
+.weekly-report__skel-strip {
+  height: 44px;
+  border-radius: 8px;
+  background: var(--color-surface-2, var(--bk-surface-2));
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .weekly-report__skel-strip {
+    animation: bk-run-pulse 1.2s ease-out infinite;
+  }
+}
+
+/* Rolling 7-day strip: weekday letter + date; today outlined (P3-5). */
+.week-strip--rolling .week-strip__day {
+  gap: 3px;
+  padding: 6px 2px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  box-sizing: border-box;
+}
+
+.week-strip--rolling .week-strip__dot {
+  display: none;
+}
+
+.week-strip--rolling .week-strip__label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  color: var(--color-text-secondary);
+}
+
+.week-strip--rolling .week-strip__date {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.1;
+  color: var(--color-text-secondary);
+}
+
+.week-strip--rolling .week-strip__day--trained .week-strip__label,
+.week-strip--rolling .week-strip__day--trained .week-strip__date {
+  color: var(--color-text);
+}
+
+.week-strip--rolling .week-strip__day--trained {
+  background: color-mix(in srgb, var(--color-interactive) 14%, transparent);
+}
+
+.week-strip--rolling .week-strip__day--today {
+  border-color: color-mix(in srgb, var(--color-interactive) 70%, var(--color-text));
+}
+
+.week-strip--rolling .week-strip__day--today .week-strip__label,
+.week-strip--rolling .week-strip__day--today .week-strip__date {
+  color: var(--color-text);
 }
 
 /* Home StartWorkoutHero: same-size skeleton + ghost browse */

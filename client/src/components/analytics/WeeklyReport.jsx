@@ -9,7 +9,7 @@ import { formatEstimate, formatWeight } from "../../lib/weightDisplay.js";
 import { buildExecutionVerdict } from "../../lib/executionVerdict.js";
 
 /** Current + prior 7 local-day windows as ISO datetimes (end-of-local-day). */
-function weeklyReportWindows(now = new Date()) {
+export function weeklyReportWindows(now = new Date()) {
   const priorEnd = new Date(now);
   priorEnd.setDate(priorEnd.getDate() - 7);
   return {
@@ -50,20 +50,20 @@ function formatSetCount(n) {
 }
 
 function formatCountDelta(current, prior, priorEmpty) {
-  if (priorEmpty) return "first week tracked";
+  if (priorEmpty) return "first 7 days tracked";
   const delta = current - prior;
-  if (delta > 0) return `+${delta} vs last week`;
-  if (delta < 0) return `${delta} vs last week`;
-  return "same as last week";
+  if (delta > 0) return `+${delta} vs the 7 days before`;
+  if (delta < 0) return `${delta} vs the 7 days before`;
+  return "same as the 7 days before";
 }
 
 function formatSetsDelta(current, prior, priorEmpty) {
-  if (priorEmpty) return "first week tracked";
+  if (priorEmpty) return "first 7 days tracked";
   const delta = current - prior;
   const rounded = Number(delta.toFixed(1));
-  if (rounded > 0) return `+${formatSetCount(rounded)} vs last week`;
-  if (rounded < 0) return `${formatSetCount(rounded)} vs last week`;
-  return "same as last week";
+  if (rounded > 0) return `+${formatSetCount(rounded)} vs the 7 days before`;
+  if (rounded < 0) return `${formatSetCount(rounded)} vs the 7 days before`;
+  return "same as the 7 days before";
 }
 
 function deltaTone(delta, priorEmpty) {
@@ -158,7 +158,7 @@ function computeNudgeLine(currentSummary, priorSummary) {
   const currentSets = sumEffectiveSets(currentSummary);
   const priorSets = sumEffectiveSets(priorSummary);
   if (priorSets > 0 && currentSets < priorSets * 0.8) {
-    return "Volume is down from last week.";
+    return "Volume is down from the 7 days before.";
   }
   const currentPerMuscle = currentSummary?.perMuscle ?? [];
   const priorPerMuscle = priorSummary?.perMuscle ?? [];
@@ -166,7 +166,7 @@ function computeNudgeLine(currentSummary, priorSummary) {
     if (pm.effectiveSets >= 3) {
       const currentMuscle = currentPerMuscle.find((m) => m.muscle === pm.muscle);
       if (!currentMuscle || currentMuscle.effectiveSets === 0) {
-        return `${pm.muscle} went quiet this week.`;
+        return `${pm.muscle} went quiet in the last 7 days.`;
       }
     }
   }
@@ -295,14 +295,19 @@ export function WeeklyReport({ weekStrip = null }) {
   }, [windows]);
 
   if (loading) {
+    const withStrip = Boolean(weekStrip);
     return (
       <section
-        className="card weekly-report weekly-report--skel"
+        className={
+          "card weekly-report weekly-report--skel" +
+          (withStrip ? " weekly-report--skel-with-strip" : " weekly-report--skel-no-strip")
+        }
         aria-busy="true"
-        aria-label="Loading this week"
+        aria-label="Loading last 7 days"
       >
         <div className="skeleton weekly-report__skel">
           <div className="skeleton__title" />
+          {withStrip ? <div className="weekly-report__skel-strip" aria-hidden="true" /> : null}
           <div className="skeleton__tiles">
             <div className="skeleton__tile" />
             <div className="skeleton__tile" />
@@ -331,7 +336,7 @@ export function WeeklyReport({ weekStrip = null }) {
       <section className="card weekly-report" aria-labelledby="weekly-report-heading">
         <div className="weekly-report__head row">
           <h2 id="weekly-report-heading" className="weekly-report__title">
-            This week
+            Last 7 days
           </h2>
           <Link className="weekly-report__link" to="/analytics">
             See analytics →
@@ -339,7 +344,7 @@ export function WeeklyReport({ weekStrip = null }) {
         </div>
         {weekStrip ? <div className="weekly-report__strip">{weekStrip}</div> : null}
         <p className="weekly-report__nudge muted small">
-          No workouts yet this week - last week you logged {priorWorkouts}.
+          No workouts yet in the last 7 days - the 7 days before you logged {priorWorkouts}.
         </p>
       </section>
     );
@@ -358,7 +363,7 @@ export function WeeklyReport({ weekStrip = null }) {
     <section className="card weekly-report" aria-labelledby="weekly-report-heading">
       <div className="weekly-report__head row">
         <h2 id="weekly-report-heading" className="weekly-report__title">
-          This week
+          Last 7 days
         </h2>
         <Link className="weekly-report__link" to="/analytics">
           See analytics →

@@ -42,14 +42,16 @@ export function PersistentWorkoutBar() {
   }, [now, startMs]);
 
   // Home already offers Resume on ActiveWorkoutHero - one control only.
-  if (location.pathname === "/") return null;
+  // Import preview sticky "Create block" sits under the bar - hide there too.
+  // Builder / log-focus hide via html class on the wrap (bk-builder / bk-log).
+  if (location.pathname === "/" || location.pathname === "/blocks/import") return null;
   if (!activeSession) return null;
 
   return (
     <button
       type="button"
       className="persistent-workout-bar card card--live"
-      aria-label={`Active workout: ${title}. Resume.`}
+      aria-label={`Active workout: ${title}. Resume workout.`}
       onClick={() => navigate(`/sessions/${activeSession.id}`)}
     >
       <div className="persistent-workout-bar__left">
@@ -59,7 +61,7 @@ export function PersistentWorkoutBar() {
         <span className="persistent-workout-bar__title">{title}</span>
         {exercise ? <span className="persistent-workout-bar__sub muted small">{exercise}</span> : null}
       </div>
-      <span className="persistent-workout-bar__cta">Resume</span>
+      <span className="persistent-workout-bar__cta">Resume workout</span>
     </button>
   );
 }

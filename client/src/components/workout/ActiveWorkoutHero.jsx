@@ -100,7 +100,7 @@ export function ActiveWorkoutHero({ session, nowMs, onResume, setsProgress = nul
         </p>
       ) : null}
       <button type="button" className="btn workout-hero__cta" onClick={onResume}>
-        Resume Workout
+        Resume workout
       </button>
     </section>
   );
