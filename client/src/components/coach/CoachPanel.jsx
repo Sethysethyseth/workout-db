@@ -8,6 +8,7 @@ import {
 } from "../../api/coachApi.js";
 import { loadCoachKey } from "../../lib/coachKeyPref.js";
 import { loadWeightUnit } from "../../lib/weightUnitPref.js";
+import { AiWait } from "./AiWait.jsx";
 import { CoachMarkdown } from "./CoachMarkdown.jsx";
 
 /**
@@ -387,9 +388,7 @@ export function CoachPanel({
                     <div className="coach-msg__body">
                       {m.content ? <CoachMarkdown text={m.content} /> : null}
                       {m.pending && !m.content ? (
-                        <span className="coach-working" aria-label="The coach is working">
-                          Working…
-                        </span>
+                        <AiWait variant="block" verb="Thinking..." />
                       ) : m.pending ? (
                         <span className="coach-caret" aria-label="The coach is writing" />
                       ) : null}

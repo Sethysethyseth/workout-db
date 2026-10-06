@@ -1,0 +1,99 @@
+/* Shared AI wait indicator - crown + copy ladder (bkr1). Tokens only. */
+
+.ai-wait {
+  --ai-wait-crown: 16px;
+}
+
+.ai-wait--inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.ai-wait--block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+  --ai-wait-crown: 28px;
+}
+
+.ai-wait--status {
+  display: block;
+  min-height: 1.35em;
+}
+
+.ai-wait__crown {
+  flex: 0 0 auto;
+  width: var(--ai-wait-crown);
+  height: var(--ai-wait-crown);
+  background-color: var(--color-interactive);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%3E%3Cpath%20d='M3,19L3,8L8,12L12,5L16,12L21,8L21,19Z'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%3E%3Cpath%20d='M3,19L3,8L8,12L12,5L16,12L21,8L21,19Z'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+  animation: ai-wait-breathe 2.4s ease-in-out infinite;
+}
+
+.ai-wait__label {
+  min-width: 0;
+}
+
+.ai-wait__copy {
+  display: block;
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.35;
+  color: var(--color-text-secondary);
+  animation: ai-wait-fade 180ms ease-out;
+}
+
+@keyframes ai-wait-breathe {
+  0%,
+  100% {
+    opacity: 0.78;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes ai-wait-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Keep busy-button width: idle label stays in-flow but invisible. */
+.ai-wait-btn-slot {
+  display: inline-grid;
+  justify-items: center;
+  align-items: center;
+}
+
+.ai-wait-btn-slot > * {
+  grid-area: 1 / 1;
+}
+
+.ai-wait-btn-slot__face[data-hidden="true"] {
+  visibility: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ai-wait__crown {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+
+  .ai-wait__copy {
+    animation: none;
+  }
+}

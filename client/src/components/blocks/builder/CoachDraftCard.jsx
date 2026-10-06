@@ -1,11 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ApiError } from "../../../api/http.js";
 import {
+  AI_CALL_TIMEOUT_MS,
+  AI_TIMEOUT_MESSAGE,
   coachBlockDraft,
   coachErrorMessage,
   getCoachStatus,
 } from "../../../api/coachApi.js";
 import { loadCoachKey } from "../../../lib/coachKeyPref.js";
+import { AiWait, AiWaitButtonLabel } from "../../coach/AiWait.jsx";
 
 function formatNextQuestionTime(iso) {
   if (!iso) return null;
@@ -23,6 +26,8 @@ function weeklyCapUsedCopy(weeklyCap) {
   return "You've used this week's questions.";
 }
 
+const DRAFT_VERB = "Drafting your block...";
+
 /**
  * Optional coach entry on a NEW empty block. Hidden when /coach/status
  * says unavailable. On success, calls onDrafted({ block, stats, source }).
@@ -33,6 +38,16 @@ export function CoachDraftCard({ unit = "lb", onDrafted }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const byoKey = loadCoachKey();
+  const aliveRef = useRef(true);
+  const abortRef = useRef(null);
+
+  useEffect(() => {
+    aliveRef.current = true;
+    return () => {
+      aliveRef.current = false;
+      abortRef.current?.abort();
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -63,15 +78,29 @@ export function CoachDraftCard({ unit = "lb", onDrafted }) {
     }
     setError(null);
     setBusy(true);
+    const controller = new AbortController();
+    abortRef.current = controller;
+    let timedOut = false;
+    const timer = setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, AI_CALL_TIMEOUT_MS);
     try {
       const data = await coachBlockDraft({
         mode: "generate",
         text: trimmed,
         unit,
         byoKey,
+        signal: controller.signal,
       });
+      if (!aliveRef.current) return;
       onDrafted?.(data);
     } catch (err) {
+      if (!aliveRef.current) return;
+      if (err && err.name === "AbortError") {
+        if (timedOut) setError(AI_TIMEOUT_MESSAGE);
+        return;
+      }
       if (err instanceof ApiError) {
         const body = err.body || {};
         const code = body.reason || body.error || "provider_error";
@@ -95,7 +124,9 @@ export function CoachDraftCard({ unit = "lb", onDrafted }) {
         setError(coachErrorMessage("network"));
       }
     } finally {
-      setBusy(false);
+      clearTimeout(timer);
+      if (abortRef.current === controller) abortRef.current = null;
+      if (aliveRef.current) setBusy(false);
     }
   }
 
@@ -118,14 +149,21 @@ export function CoachDraftCard({ unit = "lb", onDrafted }) {
           {cappedCopy}
         </p>
       ) : (
-        <button
-          type="button"
-          className="btn btn-secondary"
-          disabled={!text.trim() || busy}
-          onClick={() => void onDraft()}
-        >
-          {busy ? "Drafting…" : "Draft with the coach"}
-        </button>
+        <>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            disabled={!text.trim() || busy}
+            onClick={() => void onDraft()}
+          >
+            <AiWaitButtonLabel
+              busy={busy}
+              idle="Draft with the coach"
+              verb={DRAFT_VERB}
+            />
+          </button>
+          {busy ? <AiWait variant="status" verb={DRAFT_VERB} /> : null}
+        </>
       )}
       {error ? (
         <p className="bk-import-inline-error" role="alert">

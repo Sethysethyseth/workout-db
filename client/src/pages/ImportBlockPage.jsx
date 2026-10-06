@@ -1,14 +1,17 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ApiError } from "../api/http.js";
 import * as blockTemplateApi from "../api/blockTemplateApi.js";
 import {
+  AI_CALL_TIMEOUT_MS,
+  AI_TIMEOUT_MESSAGE,
   coachErrorMessage,
   coachImportMap,
   getCoachStatus,
 } from "../api/coachApi.js";
 import { loadCoachKey } from "../lib/coachKeyPref.js";
 import { loadWeightUnit } from "../lib/weightUnitPref.js";
+import { AiWait } from "../components/coach/AiWait.jsx";
 import { StickyHeader } from "../components/blocks/ui/StickyHeader.jsx";
 import {
   AiLayoutOffer,
@@ -19,6 +22,8 @@ import {
 } from "../components/blocks/import/index.js";
 import { deviceUnitToFormat } from "../components/blocks/builder/blockBuilderState.js";
 import "../styles/blocks/bk-import.css";
+
+const IMPORT_MAP_VERB = "Reading your sheet...";
 
 function kindForSource(source) {
   if (source === "oldapp") return "history";
@@ -65,6 +70,8 @@ export function ImportBlockPage() {
   const [recipeSourceText, setRecipeSourceText] = useState(null);
   const [mappingLayout, setMappingLayout] = useState(false);
   const [coachStatus, setCoachStatus] = useState(null);
+  const aliveRef = useRef(true);
+  const abortRef = useRef(null);
   // Deterministic preview / error card kept after a successful AI read (undo).
   const [priorPreview, setPriorPreview] = useState(null);
   const [priorErrors, setPriorErrors] = useState(null);
@@ -77,6 +84,14 @@ export function ImportBlockPage() {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [step]);
+
+  useEffect(() => {
+    aliveRef.current = true;
+    return () => {
+      aliveRef.current = false;
+      abortRef.current?.abort();
+    };
+  }, []);
 
   // Coach status for the AI-layout consent gate (same as convert).
   useEffect(() => {
@@ -209,13 +224,22 @@ export function ImportBlockPage() {
     // Error-card offer is only on step 1; preview offer is only on step 2.
     const fromError = step === 1 && Boolean(savedErrors?.length);
     setErrors(null);
+    const controller = new AbortController();
+    abortRef.current = controller;
+    let timedOut = false;
+    const timer = setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, AI_CALL_TIMEOUT_MS);
     try {
       const unit = sourceUnit || deviceUnit || "lb";
       const data = await coachImportMap({
         text: trimmed,
         unit,
         byoKey,
+        signal: controller.signal,
       });
+      if (!aliveRef.current) return;
       const nextRecipe = data?.recipe;
       if (!nextRecipe) {
         setErrors([{ path: "", message: "The coach didn't return a layout recipe." }]);
@@ -227,11 +251,13 @@ export function ImportBlockPage() {
       // Refresh remaining count after a successful 3-question charge.
       try {
         const status = await getCoachStatus({ byoKey });
-        setCoachStatus(status);
+        if (aliveRef.current) setCoachStatus(status);
       } catch {
         /* keep prior status */
       }
+      if (!aliveRef.current) return;
       const nextPreview = await runPreview(undefined, nextRecipe);
+      if (!aliveRef.current) return;
       // runPreview returns the 200 body (no `ok` field) or null on failure.
       if (nextPreview != null && fromError) {
         setPriorPreview(null);
@@ -254,6 +280,14 @@ export function ImportBlockPage() {
         clearAiReadSnapshot();
       }
     } catch (err) {
+      if (!aliveRef.current) return;
+      if (err && err.name === "AbortError") {
+        if (timedOut) {
+          setErrors([{ path: "", message: AI_TIMEOUT_MESSAGE }]);
+          setStep(1);
+        }
+        return;
+      }
       if (err instanceof ApiError) {
         const body = err.body || {};
         const code = body.reason || body.error || "provider_error";
@@ -289,7 +323,9 @@ export function ImportBlockPage() {
         setStep(1);
       }
     } finally {
-      setMappingLayout(false);
+      clearTimeout(timer);
+      if (abortRef.current === controller) abortRef.current = null;
+      if (aliveRef.current) setMappingLayout(false);
     }
   }
 
@@ -431,6 +467,9 @@ export function ImportBlockPage() {
                 onMap={() => void onAiReadLayout()}
               />
             ) : null}
+            {mappingLayout ? (
+              <AiWait variant="block" verb={IMPORT_MAP_VERB} />
+            ) : null}
             {networkError ? (
               <div className="bk-import-network" role="alert">
                 <p>{networkError}</p>
@@ -468,12 +507,17 @@ export function ImportBlockPage() {
               onUseOriginalRead={onUseOriginalRead}
               aiLayoutOffer={
                 showAiOnPreview ? (
-                  <AiLayoutOffer
-                    coachStatus={coachStatus}
-                    mapping={mappingLayout}
-                    disabled={previewing || creating}
-                    onMap={() => void onAiReadLayout()}
-                  />
+                  <>
+                    <AiLayoutOffer
+                      coachStatus={coachStatus}
+                      mapping={mappingLayout}
+                      disabled={previewing || creating}
+                      onMap={() => void onAiReadLayout()}
+                    />
+                    {mappingLayout ? (
+                      <AiWait variant="block" verb={IMPORT_MAP_VERB} />
+                    ) : null}
+                  </>
                 ) : null
               }
             />

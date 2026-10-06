@@ -1,10 +1,19 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { ApiError } from "../../api/http.js";
-import { coachErrorMessage, generatePalette, getCoachStatus } from "../../api/coachApi.js";
+import {
+  AI_CALL_TIMEOUT_MS,
+  AI_TIMEOUT_MESSAGE,
+  coachErrorMessage,
+  generatePalette,
+  getCoachStatus,
+} from "../../api/coachApi.js";
 import { useTheme } from "../../context/ThemeContext.jsx";
 import { CUSTOM_PALETTE_ID } from "../../lib/customPalette.js";
 import { loadCoachKey } from "../../lib/coachKeyPref.js";
+import { AiWait } from "../../components/coach/AiWait.jsx";
+
+const PALETTE_VERB = "Designing your palette...";
 
 const PALETTE_OPTIONS = [
   { value: "champ", label: "Champ" },
@@ -109,7 +118,8 @@ export function AppearancePage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const [lastDescription, setLastDescription] = useState("");
-  const abortRef = useRef(false);
+  const aliveRef = useRef(true);
+  const abortCtlRef = useRef(null);
   const byoKey = loadCoachKey();
 
   useEffect(() => {
@@ -130,9 +140,10 @@ export function AppearancePage() {
   /* Leaving the page drops any unsaved preview so the app never stays
      dressed in a palette the lifter never kept. */
   useEffect(() => {
-    abortRef.current = false;
+    aliveRef.current = true;
     return () => {
-      abortRef.current = true;
+      aliveRef.current = false;
+      abortCtlRef.current?.abort();
       previewPalette(null);
     };
   }, [previewPalette]);
@@ -144,14 +155,32 @@ export function AppearancePage() {
       setBusy(true);
       setError(null);
       setLastDescription(trimmed);
+      const controller = new AbortController();
+      abortCtlRef.current = controller;
+      let timedOut = false;
+      const timer = setTimeout(() => {
+        timedOut = true;
+        controller.abort();
+      }, AI_CALL_TIMEOUT_MS);
       try {
-        const data = await generatePalette({ description: trimmed, byoKey });
-        if (abortRef.current) return;
+        const data = await generatePalette({
+          description: trimmed,
+          byoKey,
+          signal: controller.signal,
+        });
+        if (!aliveRef.current) return;
         if (data && data.palette) previewPalette(data.palette);
       } catch (err) {
-        if (!abortRef.current) setError(paletteErrorMessage(err));
+        if (!aliveRef.current) return;
+        if (err && err.name === "AbortError") {
+          if (timedOut) setError(AI_TIMEOUT_MESSAGE);
+          return;
+        }
+        setError(paletteErrorMessage(err));
       } finally {
-        if (!abortRef.current) setBusy(false);
+        clearTimeout(timer);
+        if (abortCtlRef.current === controller) abortCtlRef.current = null;
+        if (aliveRef.current) setBusy(false);
       }
     },
     [busy, byoKey, previewPalette]
@@ -361,6 +390,7 @@ export function AppearancePage() {
                   This server is in mock mode: palettes come from a formula, not a model.
                 </p>
               ) : null}
+              {busy ? <AiWait variant="status" verb={PALETTE_VERB} /> : null}
             </form>
           ) : null}
 

@@ -8,6 +8,12 @@ import { API_BASE_URL, http, readAuthToken } from "./http.js";
 
 const BYO_KEY_HEADER = "x-coach-key";
 
+/** Hard client timeout for non-streaming AI calls (block draft, import map, palette). */
+export const AI_CALL_TIMEOUT_MS = 120_000;
+
+export const AI_TIMEOUT_MESSAGE =
+  "The coach took too long. Try again in a moment.";
+
 export class CoachError extends Error {
   constructor(code, message, { status = null, limit = null, used = null, nextAvailableAt = null } = {}) {
     super(message);
@@ -70,11 +76,12 @@ export function getCoachStatus({ byoKey } = {}) {
 }
 
 /** Generate a palette from a description; resolves { palette, source }. */
-export function generatePalette({ description, byoKey } = {}) {
+export function generatePalette({ description, byoKey, signal } = {}) {
   return http("/coach/palette", {
     method: "POST",
     body: { description },
     headers: byoKey ? { [BYO_KEY_HEADER]: byoKey } : undefined,
+    signal,
   });
 }
 
@@ -82,11 +89,12 @@ export function generatePalette({ description, byoKey } = {}) {
  * Draft or convert a block via the coach. Resolves { block, stats, source }.
  * mode: "convert" | "generate"; unit: "lb" | "kg".
  */
-export function coachBlockDraft({ mode, text, unit, byoKey } = {}) {
+export function coachBlockDraft({ mode, text, unit, byoKey, signal } = {}) {
   return http("/coach/block-draft", {
     method: "POST",
     body: { mode, text, unit },
     headers: byoKey ? { [BYO_KEY_HEADER]: byoKey } : undefined,
+    signal,
   });
 }
 
@@ -94,11 +102,12 @@ export function coachBlockDraft({ mode, text, unit, byoKey } = {}) {
  * Ask the coach to map a spreadsheet layout to an import recipe.
  * Resolves { recipe }. Costs 3 weekly coach questions when hosted-capped.
  */
-export function coachImportMap({ text, unit, byoKey } = {}) {
+export function coachImportMap({ text, unit, byoKey, signal } = {}) {
   return http("/coach/import-map", {
     method: "POST",
     body: unit ? { text, unit } : { text },
     headers: byoKey ? { [BYO_KEY_HEADER]: byoKey } : undefined,
+    signal,
   });
 }
 

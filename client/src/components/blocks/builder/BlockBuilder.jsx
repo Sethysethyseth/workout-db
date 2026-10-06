@@ -7,6 +7,7 @@ import { loadCoachKey } from "../../../lib/coachKeyPref.js";
 import { loadWeightUnit } from "../../../lib/weightUnitPref.js";
 import { ErrorMessage } from "../../ErrorMessage.jsx";
 import { LoadingState } from "../../LoadingState.jsx";
+import { AiWait } from "../../coach/AiWait.jsx";
 import { CoachPanel } from "../../coach/CoachPanel.jsx";
 import { Chip } from "../ui/Chip.jsx";
 import { DayPicker } from "../ui/DayPicker.jsx";
@@ -993,9 +994,7 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
           />
         ) : null}
         {coachPreviewBusy ? (
-          <p className="bk-import-hint" role="status">
-            Previewing coach draft…
-          </p>
+          <AiWait variant="block" verb="Previewing coach draft..." />
         ) : null}
 
         <div className="bk-builder__days">

@@ -1,17 +1,22 @@
 import { useEffect, useRef, useState } from "react";
 import { ApiError } from "../../../api/http.js";
 import {
+  AI_CALL_TIMEOUT_MS,
+  AI_TIMEOUT_MESSAGE,
   coachBlockDraft,
   coachErrorMessage,
   getCoachStatus,
 } from "../../../api/coachApi.js";
 import { loadCoachKey } from "../../../lib/coachKeyPref.js";
+import { AiWait, AiWaitButtonLabel } from "../../coach/AiWait.jsx";
 import { Disclosure } from "../ui/Disclosure.jsx";
 import { Segmented } from "../ui/Segmented.jsx";
 import { Stepper } from "../ui/Stepper.jsx";
 import * as blockTemplateApi from "../../../api/blockTemplateApi.js";
 import { SheetPicker } from "./SheetPicker.jsx";
 import { pickDefaultSheetName, xlsxRowsToTsv } from "./xlsxToTsv.js";
+
+const CONVERT_VERB = "Converting...";
 
 const SOURCE_OPTIONS = [
   { value: "paste", label: "Paste" },
@@ -116,9 +121,19 @@ export function ImportSourceStep({
   const [selectedSheet, setSelectedSheet] = useState(null);
   const pendingCoachJsonRef = useRef(null);
   const excelSheetsRef = useRef(null);
+  const aliveRef = useRef(true);
+  const abortRef = useRef(null);
   const empty = !String(text || "").trim();
   const coachSources = source === "paste" || source === "ai";
   const byoKey = loadCoachKey();
+
+  useEffect(() => {
+    aliveRef.current = true;
+    return () => {
+      aliveRef.current = false;
+      abortRef.current?.abort();
+    };
+  }, []);
 
   useEffect(() => {
     if (!copied) return undefined;
@@ -291,6 +306,13 @@ export function ImportSourceStep({
       return;
     }
     setCoachConverting(true);
+    const controller = new AbortController();
+    abortRef.current = controller;
+    let timedOut = false;
+    const timer = setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, AI_CALL_TIMEOUT_MS);
     try {
       const unit = sourceUnit || deviceUnit || "lb";
       const data = await coachBlockDraft({
@@ -298,11 +320,18 @@ export function ImportSourceStep({
         text: trimmed,
         unit,
         byoKey,
+        signal: controller.signal,
       });
+      if (!aliveRef.current) return;
       const json = JSON.stringify(data.block, null, 2);
       pendingCoachJsonRef.current = json;
       onTextChange?.(json);
     } catch (err) {
+      if (!aliveRef.current) return;
+      if (err && err.name === "AbortError") {
+        if (timedOut) setCoachError(AI_TIMEOUT_MESSAGE);
+        return;
+      }
       if (err instanceof ApiError) {
         const body = err.body || {};
         const code = body.reason || body.error || "provider_error";
@@ -324,7 +353,9 @@ export function ImportSourceStep({
         setCoachError(coachErrorMessage("network"));
       }
     } finally {
-      setCoachConverting(false);
+      clearTimeout(timer);
+      if (abortRef.current === controller) abortRef.current = null;
+      if (aliveRef.current) setCoachConverting(false);
     }
   }
 
@@ -521,11 +552,16 @@ export function ImportSourceStep({
               disabled={empty || previewing || coachConverting}
               onClick={() => void onCoachConvert()}
             >
-              {coachConverting ? "Converting…" : "Let AI read this layout"}
+              <AiWaitButtonLabel
+                busy={coachConverting}
+                idle="Let AI read this layout"
+                verb={CONVERT_VERB}
+              />
             </button>
           )
         ) : null}
       </div>
+      {coachConverting ? <AiWait variant="status" verb={CONVERT_VERB} /> : null}
     </div>
   );
 }

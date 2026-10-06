@@ -47,7 +47,10 @@ export function readAuthToken() {
   }
 }
 
-export async function http(path, { method = "GET", body, headers, credentials = "include" } = {}) {
+export async function http(
+  path,
+  { method = "GET", body, headers, credentials = "include", signal } = {}
+) {
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
   const url = `${normalizedBaseUrl}${normalizedPath}`;
 
@@ -56,6 +59,7 @@ export async function http(path, { method = "GET", body, headers, credentials = 
   const res = await fetch(url, {
     method,
     credentials,
+    signal,
     headers: {
       ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -83,6 +87,7 @@ export async function http(path, { method = "GET", body, headers, credentials = 
         const resRetry = await fetch(url, {
           method,
           credentials,
+          signal,
           headers: {
             ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
             Authorization: `Bearer ${retryToken}`,
