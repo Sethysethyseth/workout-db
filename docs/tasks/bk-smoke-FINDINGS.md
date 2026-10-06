@@ -182,3 +182,28 @@ iteration by default (still scored 0-10); Seth says when he wants more rounds.
 
 The round-3 re-smoke checklist in HANDOFF is otherwise un-run - no PASS/FAIL
 recorded for its 11 items yet.
+
+### Round 3 rulings (Seth, Oct 6 - frontier seat, Opus)
+
+- **Item 1 diagnosed by the seat from code - NOT data loss, a missing
+  resume.** `createBlockRun` (`blockRunController.js:51`) ends every open run
+  of the user, then creates a NEW run. Logged sessions keep their
+  `blockRunId` and stay in History/Analytics; nothing is deleted. But there
+  is no resume: starting block A again (whether A was switched away from OR
+  ended with "End block") makes a fresh run at W1, so the user loses their
+  PLACE. Library confirms the switch ("This ends A."); BlockRunPage's start
+  list does not (no run is active there). Severity: P1 (feels like loss).
+  **Ruling: pause + resume.** Still one block at a time; switching PAUSES
+  the old one ("pick it up where you left off"); starting a block that has
+  an unfinished earlier run offers "Resume at Wn - Day" or "Start over". No
+  schema change (reopen the old run).
+- **Item 5 ruling: Settings + a header chip.** Keep Effort scale in
+  Settings AND show a small tappable chip by the block name in the builder
+  ("Effort: off" / "RPE" / "RIR") opening the same 3-way choice.
+- **Item 3 ruling: cap everywhere.** "+ Day" greys at 7 ("7 days max"); the
+  server refuses an 8th day on save; import/AI previews list an 8+ day week
+  as a problem.
+- **Item 10 ruling: PARKED** - not this wave; later candidate (seat's take
+  for then: a today-only "Swap for today" on block days, block unchanged).
+- Item 2 goes to a Cursor DIAGNOSIS block. Items 4, 6, 7, 8, 9 are authored
+  as CRs.
