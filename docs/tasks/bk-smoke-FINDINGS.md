@@ -66,3 +66,64 @@ defect against the BK contract).
 - **Two "Resume workout" indicators** on Home at once (`claudefiledrop/image0.jpg`:
   the in-progress card plus the bottom bar). Deferred to the NEXT wave; listed under
   QUEUE Candidates.
+
+## Smoke round 2 (Oct 1+; run Oct 5)
+
+Seth smoked on staging Vercel as test123; the seat ran the items he did not touch
+locally at 390px (HEAD code, staging DB, mock coach - no uses charged). Seth ruled
+Oct 5: every finding below becomes a unit in a fix wave; sign-off resets.
+
+**Seth's results (staging, phone):**
+- Import, File tab (item 2): PASS - an old recovery block imported cleanly
+  (landed as "Imported Block", 6 weeks x 5 days).
+- Home (item 8): **CR** - a running block takes over the whole hero and hides
+  logging behind "Other workout". Wanted: logging first, the block under it as a
+  bold "next in your block" card. Fold in the duplicate Resume (in-progress card +
+  bottom bar, `claudefiledrop/image0.jpg`, deferred Sept 30). Primary screen ->
+  Artifact mock first (Seth: yes).
+- Log a block day (item 9): **FAIL P1** - in a block workout the bottom "Finish
+  workout" button disappears and only comes back after touching the workout.
+- Draft with the coach (item 12): **FAIL P1** - shows "Drafting..." and nothing
+  else happens. Staging shows test123 coach-usage rows at 2026-10-06 00:37Z and
+  01:30Z, so a use may have been charged for a draft he never saw. No loader, no
+  timeout.
+- AI waits: **CR** - one custom AI loader (the crown) for every AI wait, a small
+  crown spinner on the button, and a "this is taking a minute" line when slow.
+- Builder "..." menu (item 7): **FAIL P2** - looks out of place. Seat check: the
+  exercise "..." popover mixes actions (Move up/down, Duplicate, Replace, Fill)
+  with settings (Reps/Time, Rep range, Rest stepper) and runs under the bottom nav
+  at 390px (`.playwright-mcp/smoke-r2/07c-exercise-menu.png`). Extra UI/UX care.
+- AI file fix: **CR** - when an import has problems, offer "Have AI fix this
+  file", charged 1-4 uses by tokens actually used (paid later). Seth: merge it
+  with the existing layout read into ONE button.
+- Weekly cap: **CR** - make sure everyone gets 7 uses a week. Seat check:
+  ask / draft / layout read are capped (rolling 7 days); `/coach/palette` is NOT
+  counted at all; concurrent requests can overshoot (check-then-insert). Seth:
+  palette costs 1; close the race. `COACH_UNCAPPED_EMAILS` exempts listed emails -
+  Seth to check the prod list.
+- Coach scope: **CR** - the coach answers anything (it wrote a C# script and did
+  math, then said "that's not a workout"). Keep it to app/training topics; refuse
+  off-topic up front.
+
+**Seat-run items (local, 390px):**
+1. Library: PASS (Blocks first, running strip, Create workout greyed PARKED).
+3. Sets x Reps without AI: PASS (5 x 5, 4 x 6-8, nothing skipped).
+4. AI layout read: the standard reader already handled `Movement / Sets x Reps /
+   Load (kg) / Session` (kg -> lb, 1 change) so the offer never appeared. Note:
+   the Paste-tab "Let AI read this layout" button runs the 1-use CONVERT
+   (`/coach/block-draft`), not the 3-use layout read - confirms the merge above.
+5. Any AI: PASS (a chatty answer with a ```json fence previewed cleanly).
+6. Export: PASS (round-trip identical, Nothing skipped).
+7. Builder: one row per set PASS; "..." menu see above.
+10. Execution: PASS (lists the block's lifts; fractional numbers known/deferred).
+11. Connector drafts: deferred - needs the staging connector.
+13. Desktop 1280: builder sticky header sits under the app nav when scrolled -
+    PASS. Quick-log / saved-workout regression not run (would start a live
+    session on Seth's account).
+
+**Seat-found minors (P3):**
+- A hard load of a deep link (`/blocks/import`) flashes the Login screen for a
+  moment while the session check runs.
+- An imported file's block name defaults to "Imported block" - use the file name.
+- Builder Settings -> Delete block uses the browser's native confirm, not the
+  in-page confirm the rest of the app uses.
