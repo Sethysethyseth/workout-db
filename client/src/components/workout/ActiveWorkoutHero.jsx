@@ -1,4 +1,5 @@
 import {
+  blockDayPrimaryTitle,
   sessionDisplayBlockName,
   sessionDisplayTitle,
   sessionQuickExerciseLabel,
@@ -31,13 +32,28 @@ function startedAtMs(session) {
   return Number.isNaN(t) ? null : t;
 }
 
-export function ActiveWorkoutHero({ session, nowMs, onResume }) {
-  const title = sessionDisplayTitle(session);
+/**
+ * @param {{ logged: number, planned: number } | null | undefined} setsProgress
+ */
+export function ActiveWorkoutHero({ session, nowMs, onResume, setsProgress = null }) {
+  const blockDayLabel = blockDayPrimaryTitle(session);
+  const isBlockDay = blockDayLabel != null;
+  const title = isBlockDay ? blockDayLabel : sessionDisplayTitle(session);
   const blockName = sessionDisplayBlockName(session);
   const startMs = startedAtMs(session);
   const elapsed = startMs && nowMs ? formatElapsed(nowMs - startMs) : null;
   const started = formatStartedShort(session?.startedAt || session?.performedAt);
   const exercise = sessionQuickExerciseLabel(session);
+
+  const planned =
+    setsProgress?.planned != null && Number(setsProgress.planned) > 0
+      ? Number(setsProgress.planned)
+      : null;
+  const logged =
+    planned != null && setsProgress?.logged != null
+      ? Math.max(0, Number(setsProgress.logged) || 0)
+      : null;
+  const ratio = planned != null && logged != null ? Math.min(1, logged / planned) : null;
 
   return (
     <section
@@ -51,6 +67,26 @@ export function ActiveWorkoutHero({ session, nowMs, onResume }) {
       <p className="workout-hero__session-title">{title}</p>
       {blockName ? (
         <p className="workout-hero__session-block muted small">{blockName}</p>
+      ) : null}
+      {planned != null && logged != null ? (
+        <div className="workout-hero__sets">
+          <p className="workout-hero__sets-label muted small">
+            {`${logged} of ${planned} sets logged`}
+          </p>
+          <div
+            className="workout-hero__sets-bar"
+            role="progressbar"
+            aria-valuemin={0}
+            aria-valuemax={planned}
+            aria-valuenow={logged}
+            aria-label={`${logged} of ${planned} sets logged`}
+          >
+            <span
+              className="workout-hero__sets-fill"
+              style={{ width: `${Math.round((ratio ?? 0) * 100)}%` }}
+            />
+          </div>
+        </div>
       ) : null}
       <p className="workout-hero__meta muted small">
         {elapsed ? <span>{elapsed} elapsed</span> : null}

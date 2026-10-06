@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useActiveSession } from "../../context/ActiveSessionContext.jsx";
 import { sessionDisplayTitle, sessionQuickExerciseLabel } from "../../lib/sessionDisplay.js";
 
@@ -20,6 +20,7 @@ function startedAtMs(session) {
 
 export function PersistentWorkoutBar() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { activeSession } = useActiveSession();
   const [now, setNow] = useState(() => Date.now());
 
@@ -40,6 +41,8 @@ export function PersistentWorkoutBar() {
     return formatElapsed(now - startMs);
   }, [now, startMs]);
 
+  // Home already offers Resume on ActiveWorkoutHero - one control only.
+  if (location.pathname === "/") return null;
   if (!activeSession) return null;
 
   return (
@@ -60,4 +63,3 @@ export function PersistentWorkoutBar() {
     </button>
   );
 }
-

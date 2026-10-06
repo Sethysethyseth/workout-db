@@ -350,11 +350,6 @@
   color: var(--bk-accent);
 }
 
-.bk-up-next__block {
-  margin: 0;
-  font: 400 13px/1.35 var(--font-sans);
-}
-
 .bk-run-day__ex-list {
   list-style: none;
   margin: 4px 0 0;
@@ -473,35 +468,104 @@
 
 /* ---- Home Up next (outside .bk shell; uses palette tokens) ---- */
 .bk-up-next {
-  cursor: pointer;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  transition: border-color 160ms ease-out, box-shadow 160ms ease-out;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 16px;
+  background: var(--color-surface-1);
 }
 
-.bk-up-next:hover {
-  border-color: color-mix(in srgb, var(--color-interactive) 35%, var(--color-border));
+.bk-up-next__top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.bk-up-next__eyebrow {
+  margin: 0;
+  font: 700 11px/1 var(--font-sans);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-interactive);
+}
+
+.bk-up-next__view {
+  flex: 0 0 auto;
+  font: 500 12px/1.2 var(--font-sans);
+  color: var(--color-text-secondary);
+  text-decoration: none;
+}
+
+.bk-up-next__view:hover {
+  color: var(--color-text);
 }
 
 .bk-up-next__title {
   margin: 0;
-  font: 700 22px/1.1 var(--font-block, var(--font-display));
+  font: 700 32px/1.05 var(--font-block, var(--font-display));
   letter-spacing: 0.02em;
   text-transform: uppercase;
   color: var(--color-text);
 }
 
-.bk-up-next__summary {
+.bk-up-next__block {
   margin: 0;
+  font: 400 13px/1.35 var(--font-sans);
 }
 
-.bk-up-next__actions {
-  margin-top: 8px;
+.bk-up-next__strip {
+  display: flex;
+  gap: 6px;
+  width: 100%;
 }
 
-.bk-up-next__actions .btn {
-  min-height: 44px;
+.bk-up-next__seg {
+  flex: 1 1 0;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--color-surface-3);
+  box-sizing: border-box;
+}
+
+.bk-up-next__seg--done {
+  background: var(--color-interactive);
+}
+
+.bk-up-next__seg--current {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--color-interactive);
+}
+
+.bk-up-next__seg--future {
+  background: var(--color-surface-3);
+}
+
+.bk-up-next__exercises {
+  margin: 0;
+  line-height: 1.35;
+}
+
+.bk-up-next__ex-names {
+  color: var(--color-text);
+}
+
+.bk-up-next__ex-more {
+  color: var(--color-text-secondary);
+}
+
+.bk-up-next__start {
+  width: 100%;
+  min-height: 46px;
+  margin-top: 0;
+  color: var(--color-text);
+  background: color-mix(in srgb, var(--color-interactive) 18%, var(--color-surface-1));
+  border: 1px solid color-mix(in srgb, var(--color-interactive) 55%, transparent);
+}
+
+.bk-up-next__start:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-interactive) 26%, var(--color-surface-1));
 }
 
 .bk-up-next-muted {
@@ -509,7 +573,7 @@
   padding: 0 2px;
 }
 
-/* Home StartWorkoutHero: same-size skeleton + secondary "Other workout" */
+/* Home StartWorkoutHero: same-size skeleton + ghost browse */
 .workout-hero--skel {
   display: flex;
   flex-direction: column;
@@ -546,12 +610,7 @@
   background: var(--color-surface-2, var(--bk-surface-2));
 }
 
-.workout-hero--block-day {
-  min-height: 196px;
-  box-sizing: border-box;
-}
-
-.workout-hero__other {
+.workout-hero__browse {
   width: 100%;
   margin-top: 2px;
   min-height: 40px;
@@ -560,7 +619,7 @@
   color: var(--color-text-secondary);
 }
 
-.workout-hero__other:hover:not(:disabled) {
+.workout-hero__browse:hover:not(:disabled) {
   color: var(--color-text);
 }
 
@@ -568,11 +627,5 @@
   .workout-hero-skel__line,
   .workout-hero-skel__cta {
     animation: bk-run-pulse 1.2s ease-out infinite;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .bk-up-next {
-    transition: none;
   }
 }

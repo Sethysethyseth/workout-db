@@ -14,9 +14,23 @@ import { isRunFinished } from "../components/blocks/run/dayStatusTiles.js";
 import { useActiveSession } from "../context/ActiveSessionContext.jsx";
 import { readCurrentProgram } from "../lib/currentProgramStorage.js";
 import { ACTIVE_WORKOUT_ERROR, startAdHocWorkoutAndNavigate } from "../lib/startAdHocWorkoutFlow.js";
-import { sessionDisplayBlockName, sessionDisplayTitle } from "../lib/sessionDisplay.js";
+import { countWorkoutVolume } from "../components/blocks/run/runExerciseHelpers.js";
+import {
+  blockDayPrimaryTitle,
+  sessionDisplayBlockName,
+  sessionDisplayTitle,
+} from "../lib/sessionDisplay.js";
 import { formatTonnage, sessionDurationLabel, sessionTonnage } from "../lib/sessionFacts.js";
 import { loadWeightUnit } from "../lib/weightUnitPref.js";
+
+/** Logged-set count from the sessions-list payload (weight/reps only). */
+function countLoggedSetsFromListSession(session) {
+  const sets = Array.isArray(session?.sets) ? session.sets : [];
+  return sets.filter((s) => {
+    const reps = s?.reps;
+    return reps != null && String(reps).trim() !== "";
+  }).length;
+}
 
 function formatLoggedWhen(value) {
   if (!value) return "—";
@@ -176,12 +190,12 @@ export function DashboardPage() {
     }
   }
 
-  async function onEmptyWorkoutFromPicker() {
+  async function onStartEmptyWorkout({ closePicker = false } = {}) {
     setQuickStartError(null);
     setQuickStarting(true);
     try {
       await startAdHocWorkoutAndNavigate(navigate, { replace: false });
-      setPickerOpen(false);
+      if (closePicker) setPickerOpen(false);
       await refresh();
     } catch (err) {
       setQuickStartError(err);
@@ -219,15 +233,6 @@ export function DashboardPage() {
     day: "numeric",
   });
 
-  const nextDayLabel = useMemo(() => {
-    const next = activeBlock?.progress?.nextDay;
-    if (!next || !activeBlock?.progress) return null;
-    const week = (activeBlock.progress.weeks || []).find((w) => w.order === next.weekOrder);
-    const day = (week?.days || []).find((d) => d.order === next.workoutOrder);
-    if (!day) return null;
-    return `W${next.weekOrder} · ${day.name || `Day ${day.order}`}`;
-  }, [activeBlock]);
-
   /** Live block day identity for muted "Up next after this" (skips this day). */
   const liveBlockDay = useMemo(() => {
     if (!activeSession) return null;
@@ -241,6 +246,36 @@ export function DashboardPage() {
       workoutOrder: Number(workoutOrder),
     };
   }, [activeSession]);
+
+  /** Mirrors UpNextCard's own render guard so the week-strip rule never leaves Home with none. */
+  const showBlockCard = Boolean(
+    !hasActive &&
+      activeBlockReady &&
+      activeBlock?.block &&
+      activeBlock.progress?.nextDay &&
+      (activeBlock.progress.weeks || [])
+        .find((w) => w.order === activeBlock.progress.nextDay.weekOrder)
+        ?.days?.some((d) => d.order === activeBlock.progress.nextDay.workoutOrder)
+  );
+
+  /** Planned/logged sets for ActiveWorkoutHero when the live session is a block day. */
+  const liveSetsProgress = useMemo(() => {
+    if (!activeSession || blockDayPrimaryTitle(activeSession) == null) return null;
+    if (!liveBlockDay || !activeBlock?.block) return null;
+    const blockWeek = (activeBlock.block.weeks || []).find(
+      (w) => Number(w.order) === liveBlockDay.weekOrder
+    );
+    const workout = (blockWeek?.workouts || []).find(
+      (w) => Number(w.order) === liveBlockDay.workoutOrder
+    );
+    if (!workout) return null;
+    const { sets: planned } = countWorkoutVolume(workout);
+    if (!planned || planned <= 0) return null;
+    return {
+      planned,
+      logged: countLoggedSetsFromListSession(activeSession),
+    };
+  }, [activeSession, activeBlock, liveBlockDay]);
 
   return (
     <div className="stack workout-tab">
@@ -292,20 +327,13 @@ export function DashboardPage() {
           session={activeSession}
           nowMs={heroNow}
           onResume={() => navigate(`/sessions/${activeSession.id}`)}
+          setsProgress={liveSetsProgress}
         />
-      ) : !activeBlockReady ? (
-        <StartWorkoutHero loading onOpenPicker={() => setPickerOpen(true)} />
       ) : (
         <StartWorkoutHero
-          onOpenPicker={() => setPickerOpen(true)}
-          nextDayLabel={activeBlock ? nextDayLabel : null}
-          blockName={activeBlock?.block?.name ?? null}
-          onStartNextDay={
-            activeBlock?.progress?.nextDay && nextDayLabel
-              ? () => void onUpNextStart(activeBlock.progress.nextDay)
-              : null
-          }
-          startingNextDay={upNextStarting}
+          onStartEmpty={() => void onStartEmptyWorkout()}
+          onBrowseTemplates={() => setPickerOpen(true)}
+          startingEmpty={quickStarting}
           lastSessionLabel={
             completedRecent[0]
               ? `${sessionDisplayTitle(completedRecent[0])}, ${formatRelativeDay(completedRecent[0].completedAt)}`
@@ -314,8 +342,17 @@ export function DashboardPage() {
         />
       )}
 
-      {/* Live workout + active block: muted up-next only (no Start/Resume).
-          Active run + no live: hero is the up-next, so no separate card. */}
+      {/* Active run + no live: bold "Next in your block" card under the log hero.
+          Live workout + active block: muted "Up next after this" only. */}
+      {showBlockCard ? (
+        <UpNextCard
+          block={activeBlock.block}
+          progress={activeBlock.progress}
+          runId={activeBlock.run.id}
+          starting={upNextStarting}
+          onStart={(next) => void onUpNextStart(next)}
+        />
+      ) : null}
       {hasActive && activeBlockReady && activeBlock ? (
         <UpNextCard
           block={activeBlock.block}
@@ -326,7 +363,9 @@ export function DashboardPage() {
         />
       ) : null}
 
-      <WeeklyReport weekStrip={<WeekStrip sessions={sessions} />} />
+      {/* One week strip on Home (Seth, Oct 5): the block card's week strip
+          wins; the day strip shows only when no block card does. */}
+      <WeeklyReport weekStrip={showBlockCard ? null : <WeekStrip sessions={sessions} />} />
 
       <section className="workout-tab-recent" aria-labelledby="workout-recent-heading">
         <div className="row workout-tab-recent__head">
@@ -394,7 +433,7 @@ export function DashboardPage() {
         open={pickerOpen && !hasActive}
         onClose={() => setPickerOpen(false)}
         templates={pickerTemplates}
-        onEmptyWorkout={() => void onEmptyWorkoutFromPicker()}
+        onEmptyWorkout={() => void onStartEmptyWorkout({ closePicker: true })}
         onPickTemplate={(id) => {
           setPickerOpen(false);
           void onStartFromTemplate(id);

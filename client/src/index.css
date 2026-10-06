@@ -4909,6 +4909,34 @@ html[data-theme="dark"] .workout-hero.card--notched::before {
   line-height: 1.25;
 }
 
+.workout-hero__session-block {
+  margin: 0;
+}
+
+.workout-hero__sets {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.workout-hero__sets-label {
+  margin: 0;
+}
+
+.workout-hero__sets-bar {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--color-surface-3);
+  overflow: hidden;
+}
+
+.workout-hero__sets-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--color-interactive);
+}
+
 .workout-hero__meta {
   margin: 0;
   line-height: 1.35;
@@ -6486,6 +6514,19 @@ html[data-theme="dark"] .auth-page .auth-form.card {
 .weekly-report {
   display: grid;
   gap: 10px;
+}
+
+.weekly-report--skel {
+  min-height: 168px;
+}
+
+.weekly-report__skel {
+  display: grid;
+  gap: 12px;
+}
+
+.weekly-report__skel .skeleton__tiles {
+  margin: 0;
 }
 
 .weekly-report__head {

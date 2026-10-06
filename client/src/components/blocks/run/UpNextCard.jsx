@@ -1,12 +1,42 @@
 import { useMemo } from "react";
-import { useNavigate } from "react-router-dom";
-import { Eyebrow } from "../ui/Eyebrow.jsx";
+import { Link } from "react-router-dom";
 import { dayAfterLive } from "./dayAfterLive.js";
-import { countWorkoutVolume } from "./runExerciseHelpers.js";
+import { countWorkoutVolume, mapApiExerciseForRun } from "./runExerciseHelpers.js";
 import "../../../styles/blocks/bk-run.css";
 
+function weekStripState(weeks, currentWeekOrder) {
+  const list = Array.isArray(weeks) ? weeks : [];
+  const current =
+    currentWeekOrder != null && Number.isFinite(Number(currentWeekOrder))
+      ? Number(currentWeekOrder)
+      : null;
+  return list.map((week) => {
+    const order = Number(week.order);
+    if (current == null) {
+      return { order, state: "future" };
+    }
+    if (order < current) return { order, state: "done" };
+    if (order === current) return { order, state: "current" };
+    return { order, state: "future" };
+  });
+}
+
+function exerciseLine(workout) {
+  const exercises = Array.isArray(workout?.exercises) ? workout.exercises : [];
+  const names = exercises
+    .map((ex) => {
+      const mapped = mapApiExerciseForRun(ex);
+      return String(mapped.exerciseName || "").trim();
+    })
+    .filter(Boolean);
+  const shown = names.slice(0, 4);
+  const extra = Math.max(0, names.length - shown.length);
+  const volume = countWorkoutVolume(workout);
+  return { shown, extra, sets: volume.sets };
+}
+
 /**
- * Home "Up next" card - sits below card--live when both exist.
+ * Home "Up next" card - sits below the log hero when a run is active.
  * Never uses card--live (that means an in-progress workout only).
  * When mutedOnly (live workout on Home): one muted line naming the day
  * AFTER the live block day, or nothing if none remain.
@@ -17,13 +47,10 @@ export function UpNextCard({
   runId,
   starting = false,
   onStart,
-  onResume,
   mutedOnly = false,
   /** { weekOrder, workoutOrder } for the open live block session */
   liveDay = null,
 }) {
-  const navigate = useNavigate();
-
   const afterLive = useMemo(() => {
     if (!mutedOnly) return null;
     return dayAfterLive(progress, liveDay);
@@ -52,56 +79,62 @@ export function UpNextCard({
 
   const blockWeek = (block.weeks || []).find((w) => w.order === next.weekOrder);
   const workout = (blockWeek?.workouts || []).find((w) => w.order === next.workoutOrder);
-  const volume = countWorkoutVolume(workout);
-  const status = day.status || "todo";
-  const inProgress = status === "in_progress";
-
-  function onBodyActivate() {
-    navigate("/blocks/current");
-  }
+  const { shown, extra, sets } = exerciseLine(workout);
+  const weeksTotal = Array.isArray(progress.weeks) ? progress.weeks.length : 0;
+  const weekOf =
+    progress.currentWeekOrder != null
+      ? Number(progress.currentWeekOrder)
+      : Number(next.weekOrder);
+  const strip = weekStripState(progress.weeks, weekOf);
 
   return (
-    <section
-      className="bk card bk-up-next"
-      aria-labelledby="bk-up-next-title"
-      onClick={onBodyActivate}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          onBodyActivate();
-        }
-      }}
-      role="link"
-      tabIndex={0}
-    >
-      <Eyebrow>
-        NEXT: W{next.weekOrder} · {(day.name || `Day ${day.order}`).toUpperCase()}
-      </Eyebrow>
+    <section className="card bk-up-next" aria-labelledby="bk-up-next-title">
+      <div className="bk-up-next__top">
+        <p className="bk-up-next__eyebrow">NEXT IN YOUR BLOCK</p>
+        <Link className="bk-up-next__view" to="/blocks/current">
+          View block ›
+        </Link>
+      </div>
       <h2 id="bk-up-next-title" className="bk-up-next__title">
         {dayLabel}
       </h2>
-      <p className="bk-up-next__block muted small">{block.name || "Block"}</p>
-      <p className="bk-up-next__summary muted small">
-        {volume.exercises} exercise{volume.exercises === 1 ? "" : "s"} · {volume.sets}{" "}
-        set{volume.sets === 1 ? "" : "s"}
+      <p className="bk-up-next__block muted small">
+        {block.name || "Block"}
+        {weeksTotal > 0 ? ` · Week ${weekOf} of ${weeksTotal}` : ""}
       </p>
-      <div
-        className="bk-up-next__actions"
-        onClick={(e) => e.stopPropagation()}
-        onKeyDown={(e) => e.stopPropagation()}
-      >
-        <button
-          type="button"
-          className="btn"
-          disabled={starting || runId == null}
-          onClick={() => {
-            if (inProgress) onResume?.(next);
-            else onStart?.(next);
-          }}
+      {strip.length > 0 ? (
+        <div
+          className="bk-up-next__strip"
+          role="img"
+          aria-label={`Week ${weekOf} of ${weeksTotal}`}
         >
-          {starting ? "Starting…" : inProgress ? "Resume" : "Start"}
-        </button>
-      </div>
+          {strip.map((seg) => (
+            <span
+              key={seg.order}
+              className={`bk-up-next__seg bk-up-next__seg--${seg.state}`}
+            />
+          ))}
+        </div>
+      ) : null}
+      {shown.length > 0 || sets > 0 ? (
+        <p className="bk-up-next__exercises muted small">
+          {shown.length > 0 ? (
+            <span className="bk-up-next__ex-names">{shown.join(", ")}</span>
+          ) : null}
+          <span className="bk-up-next__ex-more">
+            {shown.length > 0 ? " " : ""}
+            {extra > 0 ? `+${extra} · ${sets} sets` : `${sets} sets`}
+          </span>
+        </p>
+      ) : null}
+      <button
+        type="button"
+        className="btn bk-up-next__start"
+        disabled={starting || runId == null}
+        onClick={() => onStart?.(next)}
+      >
+        {starting ? "Starting..." : `Start ${dayLabel}`}
+      </button>
     </section>
   );
 }

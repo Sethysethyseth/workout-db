@@ -294,7 +294,28 @@ export function WeeklyReport({ weekStrip = null }) {
     };
   }, [windows]);
 
-  if (loading || fetchFailed) return null;
+  if (loading) {
+    return (
+      <section
+        className="card weekly-report weekly-report--skel"
+        aria-busy="true"
+        aria-label="Loading this week"
+      >
+        <div className="skeleton weekly-report__skel">
+          <div className="skeleton__title" />
+          <div className="skeleton__tiles">
+            <div className="skeleton__tile" />
+            <div className="skeleton__tile" />
+            <div className="skeleton__tile" />
+            <div className="skeleton__tile" />
+          </div>
+          <div className="skeleton__block skeleton__block--short" />
+        </div>
+      </section>
+    );
+  }
+
+  if (fetchFailed) return null;
 
   const currentWorkouts = currentSummary?.workoutCount ?? 0;
   const priorWorkouts = priorSummary?.workoutCount ?? 0;
