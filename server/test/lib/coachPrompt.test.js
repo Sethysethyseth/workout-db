@@ -189,6 +189,18 @@ describe("createOffTopicStreamFilter", () => {
   });
 });
 
+describe("createOffTopicStreamFilter - leading whitespace (seat fix)", () => {
+  test("drops the space after the marker, even when it arrives in its own chunk", () => {
+    const a = createOffTopicStreamFilter(OFF_TOPIC_MARKER);
+    expect(a.push(OFF_TOPIC_MARKER + " I only coach lifting.").deltas.join("")).toBe("I only coach lifting.");
+    const b = createOffTopicStreamFilter(OFF_TOPIC_MARKER);
+    expect(b.push(OFF_TOPIC_MARKER).deltas).toEqual([]);
+    expect(b.push(" ").deltas).toEqual([]);
+    expect(b.push(" I only coach lifting.").deltas.join("")).toBe("I only coach lifting.");
+    expect(b.push(" More.").deltas.join("")).toBe(" More.");
+  });
+});
+
 describe("askCoach handler - reservation and off-topic refund", () => {
   function mockSseRes() {
     const events = [];

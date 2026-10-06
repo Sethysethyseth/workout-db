@@ -86,6 +86,12 @@
   visibility: hidden;
 }
 
+/* Busy AI buttons stay full opacity (disabled only to block double-clicks). */
+[aria-busy="true"]:disabled {
+  opacity: 1;
+  cursor: progress;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ai-wait__crown {
     animation: none;

@@ -6,15 +6,15 @@ import {
   AI_CALL_TIMEOUT_MS,
   AI_TIMEOUT_MESSAGE,
   coachErrorMessage,
-  coachImportMap,
+  coachImportFix,
   getCoachStatus,
 } from "../api/coachApi.js";
 import { loadCoachKey } from "../lib/coachKeyPref.js";
 import { loadWeightUnit } from "../lib/weightUnitPref.js";
-import { AiWait } from "../components/coach/AiWait.jsx";
+import { AiWait, AiWaitButtonLabel } from "../components/coach/AiWait.jsx";
 import { StickyHeader } from "../components/blocks/ui/StickyHeader.jsx";
 import {
-  AiLayoutOffer,
+  AiFileFixOffer,
   ImportErrorCard,
   ImportPreviewStep,
   ImportSourceStep,
@@ -23,7 +23,7 @@ import {
 import { deviceUnitToFormat } from "../components/blocks/builder/blockBuilderState.js";
 import "../styles/blocks/bk-import.css";
 
-const IMPORT_MAP_VERB = "Reading your sheet...";
+const IMPORT_FIX_VERB = "Fixing your file...";
 
 function kindForSource(source) {
   if (source === "oldapp") return "history";
@@ -31,16 +31,44 @@ function kindForSource(source) {
   return "auto";
 }
 
-function hasIgnoredColumnWarnings(warnings) {
-  if (!Array.isArray(warnings) || warnings.length === 0) return false;
-  return warnings.some((w) => {
-    const msg = w && w.message != null ? String(w.message) : "";
-    return /column '.*' was ignored/i.test(msg) || /unrecognised|unrecognized/i.test(msg);
-  });
+function collectImportProblems(errors, warnings) {
+  const out = [];
+  const push = (item) => {
+    const msg =
+      item && item.message != null
+        ? String(item.message)
+        : item != null
+          ? String(item)
+          : "";
+    const trimmed = msg.trim();
+    if (!trimmed) return;
+    const row = item && item.row != null ? `Row ${item.row}: ` : "";
+    out.push(`${row}${trimmed}`);
+  };
+  if (Array.isArray(errors)) {
+    for (const e of errors) {
+      push(e);
+      if (out.length >= 20) return out;
+    }
+  }
+  if (Array.isArray(warnings)) {
+    for (const w of warnings) {
+      push(w);
+      if (out.length >= 20) return out;
+    }
+  }
+  return out;
+}
+
+function pickBlockName(serverName, importFileName) {
+  const name = serverName != null ? String(serverName).trim() : "";
+  if (name && name !== "Imported block") return name;
+  if (importFileName) return importFileName;
+  return name;
 }
 
 /**
- * Import a block - paste, file, old app, or any AI (BK6 / bks1).
+ * Import a block - paste, file, old app, or any AI (BK6 / bks1 / bkr3).
  * Route: /blocks/import
  */
 export function ImportBlockPage() {
@@ -56,6 +84,7 @@ export function ImportBlockPage() {
   const [sourceUnit, setSourceUnit] = useState(deviceUnit);
   const [includeWarmups, setIncludeWarmups] = useState(true);
   const [fileError, setFileError] = useState(null);
+  const [importFileName, setImportFileName] = useState(null);
   const [previewing, setPreviewing] = useState(false);
   const [creating, setCreating] = useState(false);
   const [preview, setPreview] = useState(null);
@@ -68,7 +97,8 @@ export function ImportBlockPage() {
   // while the user stays on the preview that recipe produced.
   const [recipe, setRecipe] = useState(null);
   const [recipeSourceText, setRecipeSourceText] = useState(null);
-  const [mappingLayout, setMappingLayout] = useState(false);
+  const [fixingFile, setFixingFile] = useState(false);
+  const [aiFixCost, setAiFixCost] = useState(null);
   const [coachStatus, setCoachStatus] = useState(null);
   const aliveRef = useRef(true);
   const abortRef = useRef(null);
@@ -93,7 +123,7 @@ export function ImportBlockPage() {
     };
   }, []);
 
-  // Coach status for the AI-layout consent gate (same as convert).
+  // Coach status for the AI-fix consent gate.
   useEffect(() => {
     if (!delimitedSource) {
       setCoachStatus(null);
@@ -129,6 +159,7 @@ export function ImportBlockPage() {
   const invalidateAiLayout = useCallback(() => {
     clearRecipe();
     clearAiReadSnapshot();
+    setAiFixCost(null);
   }, [clearRecipe, clearAiReadSnapshot]);
 
   const buildOptions = useCallback(
@@ -142,6 +173,9 @@ export function ImportBlockPage() {
         if (oldApp === "strong") {
           options.sourceUnit = sourceUnit || deviceUnit;
         }
+      }
+      if (source === "file" && importFileName) {
+        options.name = importFileName;
       }
       let activeRecipe;
       if (recipeOverride !== undefined) {
@@ -161,6 +195,7 @@ export function ImportBlockPage() {
       historyWeeks,
       oldApp,
       sourceUnit,
+      importFileName,
       recipe,
       recipeSourceText,
       text,
@@ -168,22 +203,32 @@ export function ImportBlockPage() {
   );
 
   const runPreview = useCallback(
-    async (warmupOverride, recipeOverride) => {
+    async (warmupOverride, recipeOverride, textOverride) => {
       setFileError(null);
       setNetworkError(null);
       setErrors(null);
       setSubmittedForErrors(null);
       setPreviewing(true);
+      const previewText = textOverride != null ? textOverride : text;
       try {
         const body = {
-          text,
+          text: previewText,
           kind: kindForSource(source),
           options: buildOptions(warmupOverride, recipeOverride),
         };
+        // Converted JSON from AI fix should parse as json even on paste/file.
+        if (
+          textOverride != null &&
+          String(previewText).trim().startsWith("{")
+        ) {
+          body.kind = "json";
+        }
         const data = await blockTemplateApi.previewBlockImport(body);
         setPreview(data);
         setRenames({});
-        setBlockName(data?.block?.name ? String(data.block.name) : "");
+        setBlockName(
+          pickBlockName(data?.block?.name, source === "file" ? importFileName : null)
+        );
         setStep(2);
         return data;
       } catch (err) {
@@ -192,7 +237,7 @@ export function ImportBlockPage() {
           setErrors(Array.isArray(body.errors) ? body.errors : [{ path: "", message: err.message }]);
           let submitted = null;
           try {
-            const trimmed = String(text || "").trim();
+            const trimmed = String(previewText || "").trim();
             if (trimmed.startsWith("{")) submitted = JSON.parse(trimmed);
           } catch {
             submitted = null;
@@ -209,20 +254,22 @@ export function ImportBlockPage() {
         setPreviewing(false);
       }
     },
-    [text, source, buildOptions]
+    [text, source, buildOptions, importFileName]
   );
 
-  async function onAiReadLayout() {
+  async function onAiFixFile() {
     const trimmed = String(text || "").trim();
-    if (!trimmed || mappingLayout || previewing) return;
+    if (!trimmed || fixingFile || previewing) return;
     setNetworkError(null);
-    setMappingLayout(true);
-    // Capture the deterministic preview OR the error card before AI replaces it.
+    setFixingFile(true);
     const savedPreview = preview;
     const savedErrors = errors;
     const savedSubmitted = submittedForErrors;
-    // Error-card offer is only on step 1; preview offer is only on step 2.
     const fromError = step === 1 && Boolean(savedErrors?.length);
+    const problems = collectImportProblems(
+      savedErrors,
+      savedPreview?.warnings
+    );
     setErrors(null);
     const controller = new AbortController();
     abortRef.current = controller;
@@ -233,52 +280,103 @@ export function ImportBlockPage() {
     }, AI_CALL_TIMEOUT_MS);
     try {
       const unit = sourceUnit || deviceUnit || "lb";
-      const data = await coachImportMap({
+      const data = await coachImportFix({
         text: trimmed,
         unit,
+        problems: problems.length ? problems : undefined,
         byoKey,
         signal: controller.signal,
       });
       if (!aliveRef.current) return;
-      const nextRecipe = data?.recipe;
-      if (!nextRecipe) {
-        setErrors([{ path: "", message: "The coach didn't return a layout recipe." }]);
-        setStep(1);
+      const cost =
+        data && typeof data.cost === "number" ? data.cost : null;
+      if (cost != null) setAiFixCost(cost);
+      if (typeof data?.remaining === "number") {
+        setCoachStatus((prev) => ({
+          ...(prev || {}),
+          weeklyCap: {
+            ...(prev?.weeklyCap || {}),
+            remaining: data.remaining,
+            limit: prev?.weeklyCap?.limit ?? null,
+            used: prev?.weeklyCap?.used ?? null,
+            nextAvailableAt: prev?.weeklyCap?.nextAvailableAt ?? null,
+          },
+        }));
+      } else {
+        try {
+          const status = await getCoachStatus({ byoKey });
+          if (aliveRef.current) setCoachStatus(status);
+        } catch {
+          /* keep prior status */
+        }
+      }
+      if (!aliveRef.current) return;
+
+      if (data?.kind === "recipe") {
+        const nextRecipe = data.recipe;
+        if (!nextRecipe) {
+          setErrors([{ path: "", message: "The coach didn't return a layout recipe." }]);
+          setStep(1);
+          return;
+        }
+        setRecipe(nextRecipe);
+        setRecipeSourceText(trimmed);
+        const nextPreview = await runPreview(undefined, nextRecipe);
+        if (!aliveRef.current) return;
+        if (nextPreview != null && fromError) {
+          setPriorPreview(null);
+          setPriorErrors(savedErrors);
+          setPriorSubmittedForErrors(savedSubmitted);
+          setAiReadCompare({
+            origin: "error",
+            current: nextPreview.stats || {},
+          });
+        } else if (savedPreview != null && nextPreview != null) {
+          setPriorErrors(null);
+          setPriorSubmittedForErrors(null);
+          setPriorPreview(savedPreview);
+          setAiReadCompare({
+            origin: "preview",
+            prior: savedPreview.stats || {},
+            current: nextPreview.stats || {},
+          });
+        } else {
+          clearAiReadSnapshot();
+        }
         return;
       }
-      setRecipe(nextRecipe);
-      setRecipeSourceText(trimmed);
-      // Refresh remaining count after a successful 3-question charge.
-      try {
-        const status = await getCoachStatus({ byoKey });
-        if (aliveRef.current) setCoachStatus(status);
-      } catch {
-        /* keep prior status */
+
+      if (data?.kind === "block" && data.block) {
+        const json = JSON.stringify(data.block, null, 2);
+        setText(json);
+        clearRecipe();
+        const nextPreview = await runPreview(undefined, null, json);
+        if (!aliveRef.current) return;
+        if (nextPreview != null && fromError) {
+          setPriorPreview(null);
+          setPriorErrors(savedErrors);
+          setPriorSubmittedForErrors(savedSubmitted);
+          setAiReadCompare({
+            origin: "error",
+            current: nextPreview.stats || data.stats || {},
+          });
+        } else if (savedPreview != null && nextPreview != null) {
+          setPriorErrors(null);
+          setPriorSubmittedForErrors(null);
+          setPriorPreview(savedPreview);
+          setAiReadCompare({
+            origin: "preview",
+            prior: savedPreview.stats || {},
+            current: nextPreview.stats || data.stats || {},
+          });
+        } else {
+          clearAiReadSnapshot();
+        }
+        return;
       }
-      if (!aliveRef.current) return;
-      const nextPreview = await runPreview(undefined, nextRecipe);
-      if (!aliveRef.current) return;
-      // runPreview returns the 200 body (no `ok` field) or null on failure.
-      if (nextPreview != null && fromError) {
-        setPriorPreview(null);
-        setPriorErrors(savedErrors);
-        setPriorSubmittedForErrors(savedSubmitted);
-        setAiReadCompare({
-          origin: "error",
-          current: nextPreview.stats || {},
-        });
-      } else if (savedPreview != null && nextPreview != null) {
-        setPriorErrors(null);
-        setPriorSubmittedForErrors(null);
-        setPriorPreview(savedPreview);
-        setAiReadCompare({
-          origin: "preview",
-          prior: savedPreview.stats || {},
-          current: nextPreview.stats || {},
-        });
-      } else {
-        clearAiReadSnapshot();
-      }
+
+      setErrors([{ path: "", message: "The coach didn't return a fix." }]);
+      setStep(1);
     } catch (err) {
       if (!aliveRef.current) return;
       if (err && err.name === "AbortError") {
@@ -325,17 +423,18 @@ export function ImportBlockPage() {
     } finally {
       clearTimeout(timer);
       if (abortRef.current === controller) abortRef.current = null;
-      if (aliveRef.current) setMappingLayout(false);
+      if (aliveRef.current) setFixingFile(false);
     }
   }
 
   /**
    * Restore the pre-AI deterministic preview or error card and clear the recipe.
-   * Does not call /coach/import-map (no coach questions).
+   * Does not call the coach (no coach questions).
    */
   function onUseOriginalRead() {
     if (!aiReadCompare) return;
     clearRecipe();
+    setAiFixCost(null);
     setRenames({});
     setNetworkError(null);
     if (aiReadCompare.origin === "error" && priorErrors) {
@@ -350,7 +449,10 @@ export function ImportBlockPage() {
     if (!priorPreview) return;
     setPreview(priorPreview);
     setBlockName(
-      priorPreview?.block?.name ? String(priorPreview.block.name) : ""
+      pickBlockName(
+        priorPreview?.block?.name,
+        source === "file" ? importFileName : null
+      )
     );
     setErrors(null);
     setSubmittedForErrors(null);
@@ -407,12 +509,33 @@ export function ImportBlockPage() {
     }
   }
 
+  const previewHasProblems =
+    Array.isArray(preview?.warnings) && preview.warnings.length > 0;
   const showAiOnErrors = delimitedSource && Boolean(errors?.length);
   const showAiOnPreview =
-    delimitedSource &&
-    step === 2 &&
-    !recipe &&
-    hasIgnoredColumnWarnings(preview?.warnings);
+    delimitedSource && step === 2 && !recipe && !aiFixCost && previewHasProblems;
+
+  const fixButtonLabel = (
+    <AiWaitButtonLabel
+      busy={fixingFile}
+      idle="Have AI fix this file"
+      verb={IMPORT_FIX_VERB}
+    />
+  );
+
+  const aiFixOffer = (show) =>
+    show ? (
+      <>
+        <AiFileFixOffer
+          coachStatus={coachStatus}
+          fixing={fixingFile}
+          disabled={previewing || creating || !String(text || "").trim()}
+          onFix={() => void onAiFixFile()}
+          buttonLabel={fixButtonLabel}
+        />
+        {fixingFile ? <AiWait variant="status" verb={IMPORT_FIX_VERB} /> : null}
+      </>
+    ) : null;
 
   return (
     <div className="bk bk-import">
@@ -428,6 +551,7 @@ export function ImportBlockPage() {
                 setFileError(null);
                 setErrors(null);
                 setNetworkError(null);
+                setImportFileName(null);
                 invalidateAiLayout();
               }}
               text={text}
@@ -437,6 +561,7 @@ export function ImportBlockPage() {
                 invalidateAiLayout();
               }}
               onTextInvalidate={invalidateAiLayout}
+              onImportFileNameChange={setImportFileName}
               oldApp={oldApp}
               onOldAppChange={setOldApp}
               historyWeeks={historyWeeks}
@@ -446,7 +571,7 @@ export function ImportBlockPage() {
               deviceUnit={deviceUnit}
               fileError={fileError}
               onFileError={setFileError}
-              previewing={previewing || mappingLayout}
+              previewing={previewing || fixingFile}
               onPreview={() => {
                 // Source-step Preview is always deterministic.
                 invalidateAiLayout();
@@ -459,17 +584,7 @@ export function ImportBlockPage() {
                 submitted={submittedForErrors}
               />
             ) : null}
-            {showAiOnErrors ? (
-              <AiLayoutOffer
-                coachStatus={coachStatus}
-                mapping={mappingLayout}
-                disabled={previewing || !String(text || "").trim()}
-                onMap={() => void onAiReadLayout()}
-              />
-            ) : null}
-            {mappingLayout ? (
-              <AiWait variant="block" verb={IMPORT_MAP_VERB} />
-            ) : null}
+            {aiFixOffer(showAiOnErrors)}
             {networkError ? (
               <div className="bk-import-network" role="alert">
                 <p>{networkError}</p>
@@ -505,21 +620,8 @@ export function ImportBlockPage() {
               unit={deviceUnit}
               aiReadCompare={aiReadCompare}
               onUseOriginalRead={onUseOriginalRead}
-              aiLayoutOffer={
-                showAiOnPreview ? (
-                  <>
-                    <AiLayoutOffer
-                      coachStatus={coachStatus}
-                      mapping={mappingLayout}
-                      disabled={previewing || creating}
-                      onMap={() => void onAiReadLayout()}
-                    />
-                    {mappingLayout ? (
-                      <AiWait variant="block" verb={IMPORT_MAP_VERB} />
-                    ) : null}
-                  </>
-                ) : null
-              }
+              aiFixCost={aiFixCost}
+              aiLayoutOffer={aiFixOffer(showAiOnPreview)}
             />
             {networkError ? (
               <div className="bk-import-network" role="alert">

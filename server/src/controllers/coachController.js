@@ -13,6 +13,7 @@ const {
   WEEKLY_LIMIT,
   WINDOW_MS,
   IMPORT_MAP_COST,
+  IMPORT_FIX_MAX_COST,
   PALETTE_COST,
   ASK_COST,
   DRAFT_COST,
@@ -20,6 +21,13 @@ const {
   evaluateWeeklyCap,
   capFromEvaluation,
 } = require("../coach/weeklyCap");
+const {
+  chooseImportFixPath,
+  importFixCostForTokens,
+  resolveImportFixTokens,
+  parseImportFixRequest,
+  formatProblemsForPrompt,
+} = require("../coach/importFix");
 const { reserveUses, settleUses, refundUses } = require("../coach/usageLedger");
 const { CoachProviderError, completeAnthropic } = require("../coach/provider");
 const { completeCursor, extractFirstJsonText } = require("../coach/cursorProvider");
@@ -42,6 +50,7 @@ const {
   validateDraftCandidate,
   isOffTopicDraft,
   OFF_TOPIC_DRAFT_MESSAGE,
+  MAX_TEXT_CHARS: BLOCK_DRAFT_MAX_TEXT_CHARS,
 } = require("../coach/blockDraft");
 const { mockBlockDraftFor, mockImportRecipeFor } = require("../coach/mockProvider");
 const {
@@ -152,19 +161,28 @@ function createOffTopicStreamFilter(marker) {
   let buffer = "";
   let resolved = false;
   let offTopic = false;
+  let trimLead = false;
 
   function push(piece) {
     const text = typeof piece === "string" ? piece : "";
     if (!text && resolved) return { deltas: [], offTopic };
     if (resolved) {
-      return { deltas: text ? [text] : [], offTopic };
+      let out = text;
+      if (trimLead) {
+        out = out.replace(/^\s+/, "");
+        if (out) trimLead = false;
+      }
+      return { deltas: out ? [out] : [], offTopic };
     }
     buffer += text;
     if (buffer.startsWith(marker)) {
       resolved = true;
       offTopic = true;
-      const rest = buffer.slice(marker.length);
+      // The model often puts a space after the marker; never start the
+      // decline with whitespace.
+      const rest = buffer.slice(marker.length).replace(/^\s+/, "");
       buffer = "";
+      trimLead = rest === "";
       return { deltas: rest ? [rest] : [], offTopic };
     }
     if (buffer.length >= marker.length || !marker.startsWith(buffer)) {
@@ -781,17 +799,368 @@ async function importMap(req, res, next, deps = {}) {
   }
 }
 
+/**
+ * Shared import-map recipe completion (used by importMap + importFix).
+ * Returns { ok, recipe, usage, promptChars, replyChars } or { ok:false, status, body }.
+ */
+async function completeImportMapRecipe({
+  text,
+  unit,
+  problems,
+  resolved,
+  signal,
+  deps = {},
+}) {
+  const completeAnthropicFn = deps.completeAnthropic || completeAnthropic;
+  const completeCursorFn = deps.completeCursor || completeCursor;
+  const sample = sampleForRecipe(text);
+  const problemSuffix = formatProblemsForPrompt(problems);
+  const baseMessages = buildImportMapMessages({ sample });
+  const messages = problemSuffix
+    ? [
+        {
+          role: "user",
+          content: `${baseMessages[0].content}${problemSuffix}`,
+        },
+      ]
+    : baseMessages;
+  const systemText = buildImportMapSystemPrompt({ unit });
+  const promptChars =
+    systemText.length + messages.reduce((n, m) => n + String(m.content || "").length, 0);
+
+  let candidate;
+  let usage = null;
+  let replyChars = 0;
+
+  if (resolved.keyInfo.source === "mock") {
+    candidate = (deps.mockImportRecipeFor || mockImportRecipeFor)(text);
+    replyChars = JSON.stringify(candidate).length;
+  } else if (resolved.provider === "cursor") {
+    const raw = await completeCursorFn({
+      apiKey: resolved.keyInfo.key,
+      model: resolved.config.model,
+      system: buildCursorImportMapSystem({ unit }),
+      messages,
+      signal,
+      ...(deps.fetchImpl ? { fetchImpl: deps.fetchImpl } : {}),
+    });
+    replyChars = typeof raw === "string" ? raw.length : 0;
+    const parsedCandidate = parseImportMapCandidate(raw, { provider: "cursor" });
+    if (!parsedCandidate.ok) {
+      return {
+        ok: false,
+        status: 422,
+        body: {
+          error: "import_map_invalid",
+          errors: [{ path: "", message: parsedCandidate.error }],
+        },
+      };
+    }
+    candidate = parsedCandidate.candidate;
+  } else {
+    const message = await completeAnthropicFn({
+      apiKey: resolved.keyInfo.key,
+      model: resolved.config.model,
+      system: [{ type: "text", text: systemText }],
+      messages,
+      effort: resolved.config.effort,
+      maxTokens: IMPORT_MAP_MAX_TOKENS,
+      signal,
+      ...(deps.fetchImpl ? { fetchImpl: deps.fetchImpl } : {}),
+    });
+    const stopErr = importMapErrorForStopReason(message && message.stop_reason);
+    if (stopErr) {
+      return { ok: false, status: stopErr.status, body: stopErr.body };
+    }
+    usage = message && message.usage ? message.usage : null;
+    const parsedCandidate = parseImportMapCandidate(message && message.content, {
+      provider: "anthropic",
+    });
+    if (!parsedCandidate.ok) {
+      return {
+        ok: false,
+        status: 422,
+        body: {
+          error: "import_map_invalid",
+          errors: [{ path: "", message: parsedCandidate.error }],
+        },
+      };
+    }
+    candidate = parsedCandidate.candidate;
+    replyChars = JSON.stringify(candidate).length;
+  }
+
+  const validated = validateImportMapCandidate(candidate, text);
+  if (!validated.ok) {
+    return { ok: false, status: validated.status, body: validated.body };
+  }
+  return {
+    ok: true,
+    recipe: validated.recipe,
+    usage,
+    promptChars,
+    replyChars,
+  };
+}
+
+/**
+ * Shared convert-mode block draft completion (used by draftBlock + importFix).
+ * Returns { ok, block, stats, usage, promptChars, replyChars } or failure.
+ */
+async function completeBlockConvert({
+  text,
+  unit,
+  problems,
+  resolved,
+  signal,
+  deps = {},
+}) {
+  const completeAnthropicFn = deps.completeAnthropic || completeAnthropic;
+  const completeCursorFn = deps.completeCursor || completeCursor;
+  const mode = "convert";
+  const problemSuffix = formatProblemsForPrompt(problems);
+  const baseMessages = buildBlockDraftMessages({ mode, text });
+  const messages = problemSuffix
+    ? [
+        {
+          role: "user",
+          content: `${baseMessages[0].content}${problemSuffix}`,
+        },
+      ]
+    : baseMessages;
+  const systemText = buildBlockDraftSystemPrompt({ mode, unit, trainingSummary: null });
+  const promptChars =
+    systemText.length + messages.reduce((n, m) => n + String(m.content || "").length, 0);
+
+  let candidate;
+  let usage = null;
+  let replyChars = 0;
+
+  if (resolved.keyInfo.source === "mock") {
+    candidate = mockBlockDraftFor(mode, unit);
+    replyChars = JSON.stringify(candidate).length;
+  } else if (resolved.provider === "cursor") {
+    const raw = await completeCursorFn({
+      apiKey: resolved.keyInfo.key,
+      model: resolved.config.model,
+      system: buildCursorBlockDraftSystem({ mode, unit, trainingSummary: null }),
+      messages,
+      signal,
+      ...(deps.fetchImpl ? { fetchImpl: deps.fetchImpl } : {}),
+    });
+    replyChars = typeof raw === "string" ? raw.length : 0;
+    const parsedCandidate = parseBlockCandidate(raw, { provider: "cursor" });
+    if (!parsedCandidate.ok) {
+      return {
+        ok: false,
+        status: 502,
+        body: {
+          error: "block_invalid",
+          errors: [{ path: "", message: parsedCandidate.error }],
+        },
+      };
+    }
+    candidate = parsedCandidate.candidate;
+  } else {
+    const message = await completeAnthropicFn({
+      apiKey: resolved.keyInfo.key,
+      model: resolved.config.model,
+      system: [{ type: "text", text: systemText }],
+      messages,
+      effort: resolved.config.effort,
+      maxTokens: BLOCK_DRAFT_MAX_TOKENS,
+      outputFormat: { type: "json_schema", schema: BLOCK_FORMAT_JSON_SCHEMA },
+      signal,
+      ...(deps.fetchImpl ? { fetchImpl: deps.fetchImpl } : {}),
+    });
+    const stopErr = blockErrorForStopReason(message && message.stop_reason);
+    if (stopErr) {
+      return { ok: false, status: stopErr.status, body: stopErr.body };
+    }
+    usage = message && message.usage ? message.usage : null;
+    const parsedCandidate = parseBlockCandidate(message && message.content, {
+      provider: "anthropic",
+    });
+    if (!parsedCandidate.ok) {
+      return {
+        ok: false,
+        status: 502,
+        body: {
+          error: "block_invalid",
+          errors: [{ path: "", message: parsedCandidate.error }],
+        },
+      };
+    }
+    candidate = parsedCandidate.candidate;
+    replyChars = JSON.stringify(candidate).length;
+  }
+
+  const validated = validateDraftCandidate(candidate, unit);
+  if (!validated.ok) {
+    return { ok: false, status: validated.status, body: validated.body };
+  }
+  return {
+    ok: true,
+    block: validated.block,
+    stats: validated.stats,
+    usage,
+    promptChars,
+    replyChars,
+  };
+}
+
+/**
+ * POST /coach/import-fix { text, unit?, problems? } - bkr3.
+ * Table text -> import-map recipe path; prose -> convert. Reserves
+ * IMPORT_FIX_MAX_COST (4), settles 1-4 by tokens, refunds on any failure.
+ */
+async function importFix(req, res, next, deps = {}) {
+  let reservedIds = null;
+  let settleCost = null;
+  let delivered = false;
+  const clientGone = abortOnClientClose(res);
+  const loadAccess = deps.loadCoachAccess || loadCoachAccess;
+  const resolveProvider = deps.resolveCoachProvider || resolveCoachProvider;
+  const prismaClient = deps.prisma || prisma;
+  const reserve = deps.reserveUses || reserveUses;
+  const settle = deps.settleUses || settleUses;
+  const refund = deps.refundUses || refundUses;
+  const choosePath = deps.chooseImportFixPath || chooseImportFixPath;
+  const runRecipe = deps.completeImportMapRecipe || completeImportMapRecipe;
+  const runConvert = deps.completeBlockConvert || completeBlockConvert;
+
+  try {
+    const parsed = parseImportFixRequest(req.body);
+    if (!parsed.ok) return res.status(parsed.status).json({ error: parsed.error });
+    const { text, unit, problems } = parsed.value;
+    const path = choosePath(text);
+    // Only the recipe path samples the text; the convert path sends all of it,
+    // so it keeps block-draft's input cap (seat fix at landing).
+    if (path === "convert" && text.length > BLOCK_DRAFT_MAX_TEXT_CHARS) {
+      return res.status(400).json({
+        error: `That's too long for the AI to rewrite. Paste up to ${BLOCK_DRAFT_MAX_TEXT_CHARS.toLocaleString("en-US")} characters, or a table.`,
+      });
+    }
+    const convertUnit = unit === "kg" || unit === "lb" ? unit : "lb";
+
+    const access = await loadAccess(req.authUserId);
+    if (!access) return res.status(404).json({ error: "User not found" });
+    if (!access.consentGranted) {
+      return res.status(403).json({ error: "forbidden", reason: "no_consent" });
+    }
+
+    const resolved = resolveProvider({
+      byoKey: readByoKey(req),
+      entitled: access.entitled,
+    });
+    if (!resolved.ok) {
+      return res.status(resolved.status).json({
+        error: resolved.error,
+        reason: resolved.reason,
+      });
+    }
+
+    let remainingAfter = null;
+    const capApplies = capAppliesToAccess(resolved.keyInfo.source, access.email);
+    if (capApplies) {
+      const reserved = await reserve(
+        prismaClient,
+        req.authUserId,
+        IMPORT_FIX_MAX_COST,
+        new Date()
+      );
+      if (!reserved.ok) {
+        return res
+          .status(429)
+          .json(weeklyLimitBody(reserved.cap, IMPORT_FIX_MAX_COST));
+      }
+      reservedIds = reserved.ids;
+      remainingAfter = reserved.cap.remaining;
+    }
+
+    let result;
+    if (path === "recipe") {
+      result = await runRecipe({
+        text,
+        unit,
+        problems,
+        resolved,
+        signal: clientGone.signal,
+        deps,
+      });
+    } else {
+      result = await runConvert({
+        text,
+        unit: convertUnit,
+        problems,
+        resolved,
+        signal: clientGone.signal,
+        deps,
+      });
+    }
+
+    if (!result.ok) {
+      return res.status(result.status).json(result.body);
+    }
+
+    const { tokens } = resolveImportFixTokens({
+      usage: result.usage,
+      promptChars: result.promptChars,
+      replyChars: result.replyChars,
+    });
+    const cost = importFixCostForTokens(tokens);
+    settleCost = cost;
+    if (remainingAfter != null) {
+      remainingAfter = remainingAfter + (IMPORT_FIX_MAX_COST - cost);
+    }
+
+    delivered = true;
+    if (path === "recipe") {
+      return res.json({
+        kind: "recipe",
+        recipe: result.recipe,
+        cost,
+        remaining: remainingAfter,
+      });
+    }
+    return res.json({
+      kind: "block",
+      block: result.block,
+      stats: result.stats,
+      cost,
+      remaining: remainingAfter,
+    });
+  } catch (err) {
+    if (clientGone.signal.aborted) return res.end();
+    if (err instanceof CoachProviderError) {
+      return res.status(502).json({ error: err.code, message: err.message });
+    }
+    return next(err);
+  } finally {
+    if (reservedIds) {
+      if (delivered && settleCost != null) {
+        await settle(prismaClient, reservedIds, settleCost);
+      } else {
+        await refund(prismaClient, reservedIds);
+      }
+    }
+  }
+}
+
 module.exports = {
   getCoachStatus,
   askCoach,
   generatePalette,
   draftBlock,
   importMap,
+  importFix,
   BYO_KEY_HEADER,
   paletteErrorForStopReason,
   blockErrorForStopReason,
   importMapErrorForStopReason,
   createOffTopicStreamFilter,
+  completeImportMapRecipe,
+  completeBlockConvert,
   // Test / status helpers kept for compatibility.
   loadWeeklyCap,
   removeUsageRow,

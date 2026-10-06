@@ -154,6 +154,7 @@ export function CoachDraftCard({ unit = "lb", onDrafted }) {
             type="button"
             className="btn btn-secondary"
             disabled={!text.trim() || busy}
+            aria-busy={busy || undefined}
             onClick={() => void onDraft()}
           >
             <AiWaitButtonLabel

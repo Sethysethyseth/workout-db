@@ -37,6 +37,7 @@ export function ImportPreviewStep({
   aiLayoutOffer = null,
   aiReadCompare = null,
   onUseOriginalRead = null,
+  aiFixCost = null,
 }) {
   const block = preview?.block || null;
   const stats = preview?.stats || {};
@@ -158,6 +159,12 @@ export function ImportPreviewStep({
             </button>
           ) : null}
         </div>
+      ) : null}
+
+      {typeof aiFixCost === "number" && aiFixCost > 0 ? (
+        <p className="bk-import-hint" role="status">
+          AI fix used {aiFixCost} coach {aiFixCost === 1 ? "use" : "uses"}.
+        </p>
       ) : null}
 
       {warnings.length > 0 ? (

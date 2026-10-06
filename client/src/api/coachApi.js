@@ -111,6 +111,22 @@ export function coachImportMap({ text, unit, byoKey, signal } = {}) {
   });
 }
 
+/**
+ * Have AI fix an import file (bkr3). Table text -> recipe; prose -> block.
+ * Resolves { kind, recipe|block, stats?, cost, remaining }. Costs 1-4 uses.
+ */
+export function coachImportFix({ text, unit, problems, byoKey, signal } = {}) {
+  const body = { text };
+  if (unit) body.unit = unit;
+  if (Array.isArray(problems) && problems.length > 0) body.problems = problems;
+  return http("/coach/import-fix", {
+    method: "POST",
+    body,
+    headers: byoKey ? { [BYO_KEY_HEADER]: byoKey } : undefined,
+    signal,
+  });
+}
+
 function parseSseBlock(raw) {
   let event = null;
   const dataLines = [];

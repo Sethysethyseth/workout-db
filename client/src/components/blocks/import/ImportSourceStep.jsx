@@ -1,14 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { ApiError } from "../../../api/http.js";
-import {
-  AI_CALL_TIMEOUT_MS,
-  AI_TIMEOUT_MESSAGE,
-  coachBlockDraft,
-  coachErrorMessage,
-  getCoachStatus,
-} from "../../../api/coachApi.js";
-import { loadCoachKey } from "../../../lib/coachKeyPref.js";
-import { AiWait, AiWaitButtonLabel } from "../../coach/AiWait.jsx";
 import { Disclosure } from "../ui/Disclosure.jsx";
 import { Segmented } from "../ui/Segmented.jsx";
 import { Stepper } from "../ui/Stepper.jsx";
@@ -16,7 +6,13 @@ import * as blockTemplateApi from "../../../api/blockTemplateApi.js";
 import { SheetPicker } from "./SheetPicker.jsx";
 import { pickDefaultSheetName, xlsxRowsToTsv } from "./xlsxToTsv.js";
 
-const CONVERT_VERB = "Converting...";
+/** File name without its last extension (Phase-1-Program.xlsx -> Phase-1-Program). */
+function fileNameWithoutExtension(name) {
+  const base = String(name || "").split(/[/\\]/).pop() || "";
+  if (!base) return null;
+  const stripped = base.replace(/\.[^.]+$/, "");
+  return stripped || base;
+}
 
 const SOURCE_OPTIONS = [
   { value: "paste", label: "Paste" },
@@ -74,22 +70,6 @@ function isXlsxFile(file) {
   return lower.endsWith(".xlsx") || file.type === XLSX_MIME;
 }
 
-function formatNextQuestionTime(iso) {
-  if (!iso) return null;
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return null;
-  const weekday = d.toLocaleDateString(undefined, { weekday: "short" });
-  const time = d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
-  return `${weekday} at ${time}`;
-}
-
-function weeklyCapUsedCopy(weeklyCap) {
-  if (!weeklyCap || weeklyCap.remaining > 0) return null;
-  const when = formatNextQuestionTime(weeklyCap.nextAvailableAt);
-  if (when) return `You've used this week's questions. Your next question frees up ${when}.`;
-  return "You've used this week's questions.";
-}
-
 /**
  * Step 1 — pick a source and supply text / a file.
  */
@@ -99,6 +79,7 @@ export function ImportSourceStep({
   text,
   onTextChange,
   onTextInvalidate,
+  onImportFileNameChange,
   oldApp,
   onOldAppChange,
   historyWeeks,
@@ -113,62 +94,17 @@ export function ImportSourceStep({
 }) {
   const [copied, setCopied] = useState(false);
   const [formatLoading, setFormatLoading] = useState(false);
-  const [coachStatus, setCoachStatus] = useState(null);
-  const [coachConverting, setCoachConverting] = useState(false);
-  const [coachError, setCoachError] = useState(null);
   const [fileLoading, setFileLoading] = useState(false);
   const [sheetNames, setSheetNames] = useState([]);
   const [selectedSheet, setSelectedSheet] = useState(null);
-  const pendingCoachJsonRef = useRef(null);
   const excelSheetsRef = useRef(null);
-  const aliveRef = useRef(true);
-  const abortRef = useRef(null);
   const empty = !String(text || "").trim();
-  const coachSources = source === "paste" || source === "ai";
-  const byoKey = loadCoachKey();
-
-  useEffect(() => {
-    aliveRef.current = true;
-    return () => {
-      aliveRef.current = false;
-      abortRef.current?.abort();
-    };
-  }, []);
 
   useEffect(() => {
     if (!copied) return undefined;
     const t = window.setTimeout(() => setCopied(false), 2000);
     return () => window.clearTimeout(t);
   }, [copied]);
-
-  // Load coach status only on Paste / Any AI - entry stays hidden when unavailable.
-  useEffect(() => {
-    if (!coachSources) {
-      setCoachStatus(null);
-      return undefined;
-    }
-    let cancelled = false;
-    (async () => {
-      try {
-        const data = await getCoachStatus({ byoKey });
-        if (!cancelled) setCoachStatus(data);
-      } catch {
-        if (!cancelled) setCoachStatus(null);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [coachSources, byoKey]);
-
-  // After coach convert updates parent text, run the same Preview path as paste.
-  useEffect(() => {
-    const pending = pendingCoachJsonRef.current;
-    if (!pending) return;
-    if (String(text || "") !== pending) return;
-    pendingCoachJsonRef.current = null;
-    onPreview?.();
-  }, [text, onPreview]);
 
   function clearExcelState() {
     excelSheetsRef.current = null;
@@ -253,7 +189,11 @@ export function ImportSourceStep({
     clearExcelState();
     // Loading a file always drops any AI layout recipe (even if text matches).
     onTextInvalidate?.();
-    if (!file) return;
+    if (!file) {
+      onImportFileNameChange?.(null);
+      return;
+    }
+    onImportFileNameChange?.(fileNameWithoutExtension(file.name));
     if (isLegacyXlsName(file.name)) {
       onFileError?.(ERR_XLS);
       return;
@@ -294,76 +234,6 @@ export function ImportSourceStep({
       setFormatLoading(false);
     }
   }
-
-  async function onCoachConvert() {
-    const trimmed = String(text || "").trim();
-    if (!trimmed || coachConverting || previewing) return;
-    setCoachError(null);
-    onFileError?.(null);
-    const weeklyCap = coachStatus?.weeklyCap;
-    if (weeklyCap && weeklyCap.remaining <= 0) {
-      setCoachError(weeklyCapUsedCopy(weeklyCap));
-      return;
-    }
-    setCoachConverting(true);
-    const controller = new AbortController();
-    abortRef.current = controller;
-    let timedOut = false;
-    const timer = setTimeout(() => {
-      timedOut = true;
-      controller.abort();
-    }, AI_CALL_TIMEOUT_MS);
-    try {
-      const unit = sourceUnit || deviceUnit || "lb";
-      const data = await coachBlockDraft({
-        mode: "convert",
-        text: trimmed,
-        unit,
-        byoKey,
-        signal: controller.signal,
-      });
-      if (!aliveRef.current) return;
-      const json = JSON.stringify(data.block, null, 2);
-      pendingCoachJsonRef.current = json;
-      onTextChange?.(json);
-    } catch (err) {
-      if (!aliveRef.current) return;
-      if (err && err.name === "AbortError") {
-        if (timedOut) setCoachError(AI_TIMEOUT_MESSAGE);
-        return;
-      }
-      if (err instanceof ApiError) {
-        const body = err.body || {};
-        const code = body.reason || body.error || "provider_error";
-        if (code === "weekly_limit") {
-          setCoachStatus((prev) => ({
-            ...(prev || {}),
-            weeklyCap: {
-              limit: body.limit ?? prev?.weeklyCap?.limit ?? null,
-              used: body.used ?? prev?.weeklyCap?.used ?? null,
-              remaining: 0,
-              nextAvailableAt: body.nextAvailableAt ?? prev?.weeklyCap?.nextAvailableAt ?? null,
-            },
-          }));
-          setCoachError(weeklyCapUsedCopy({ remaining: 0, nextAvailableAt: body.nextAvailableAt }));
-        } else {
-          setCoachError(coachErrorMessage(code, err.message));
-        }
-      } else {
-        setCoachError(coachErrorMessage("network"));
-      }
-    } finally {
-      clearTimeout(timer);
-      if (abortRef.current === controller) abortRef.current = null;
-      if (aliveRef.current) setCoachConverting(false);
-    }
-  }
-
-  const coachAvailable = Boolean(coachStatus?.available);
-  const coachCapped = Boolean(
-    coachStatus?.weeklyCap && coachStatus.weeklyCap.remaining <= 0
-  );
-  const cappedCopy = weeklyCapUsedCopy(coachStatus?.weeklyCap);
 
   return (
     <div className="bk-import-source">
@@ -529,39 +399,17 @@ export function ImportSourceStep({
       ) : null}
 
       {fileError ? <p className="bk-import-inline-error" role="alert">{fileError}</p> : null}
-      {coachError ? <p className="bk-import-inline-error" role="alert">{coachError}</p> : null}
 
       <div className="bk-import-actions">
         <button
           type="button"
           className="btn"
-          disabled={empty || previewing || coachConverting}
+          disabled={empty || previewing}
           onClick={onPreview}
         >
           {previewing ? "Previewing…" : "Preview"}
         </button>
-        {coachSources && coachAvailable ? (
-          coachCapped ? (
-            <p className="bk-import-hint" role="status">
-              {cappedCopy}
-            </p>
-          ) : (
-            <button
-              type="button"
-              className="btn btn-secondary"
-              disabled={empty || previewing || coachConverting}
-              onClick={() => void onCoachConvert()}
-            >
-              <AiWaitButtonLabel
-                busy={coachConverting}
-                idle="Let AI read this layout"
-                verb={CONVERT_VERB}
-              />
-            </button>
-          )
-        ) : null}
       </div>
-      {coachConverting ? <AiWait variant="status" verb={CONVERT_VERB} /> : null}
     </div>
   );
 }

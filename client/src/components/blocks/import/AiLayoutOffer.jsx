@@ -1,9 +1,9 @@
 /**
- * "Let AI read this layout" offer - shown on import error / ignored-column
- * warnings when the coach consent gate would allow convert (bks1).
+ * "Have AI fix this file" offer - shown when import has problems (bkr3).
+ * Replaces the old AiLayoutOffer / pre-preview convert buttons.
  */
 
-const IMPORT_MAP_COST = 3;
+const IMPORT_FIX_MAX_COST = 4;
 
 function formatNextQuestionTime(iso) {
   if (!iso) return null;
@@ -20,16 +20,18 @@ function formatNextQuestionTime(iso) {
 /**
  * @param {{
  *   coachStatus: object|null,
- *   mapping: boolean,
+ *   fixing: boolean,
  *   disabled?: boolean,
- *   onMap: () => void,
+ *   onFix: () => void,
+ *   buttonLabel: import("react").ReactNode,
  * }} props
  */
-export function AiLayoutOffer({
+export function AiFileFixOffer({
   coachStatus = null,
-  mapping = false,
+  fixing = false,
   disabled = false,
-  onMap,
+  onFix,
+  buttonLabel,
 }) {
   if (!coachStatus?.available) return null;
 
@@ -38,47 +40,40 @@ export function AiLayoutOffer({
     weeklyCap && typeof weeklyCap.remaining === "number"
       ? weeklyCap.remaining
       : null;
-  const limit =
-    weeklyCap && typeof weeklyCap.limit === "number" ? weeklyCap.limit : 7;
   const notEnough =
-    weeklyCap != null && remaining != null && remaining < IMPORT_MAP_COST;
+    weeklyCap != null && remaining != null && remaining < IMPORT_FIX_MAX_COST;
   const when = notEnough
     ? formatNextQuestionTime(weeklyCap.nextAvailableAt)
     : null;
 
   let costLine;
   if (weeklyCap == null) {
-    costLine = "Uses 3 coach questions when the weekly limit applies.";
-  } else if (notEnough) {
     costLine =
-      remaining === 0
-        ? when
-          ? `Need 3 questions; you have 0 left. Next one frees up ${when}.`
-          : "Need 3 questions; you have 0 left this week."
-        : when
-          ? `Need 3 questions; you have ${remaining} left. Next one frees up ${when}.`
-          : `Need 3 questions; you have ${remaining} left this week.`;
+      "Uses 1-4 of your coach uses left this week, depending on the file.";
+  } else if (notEnough) {
+    costLine = when
+      ? `Needs 4 coach uses - you have ${remaining} left. More free up ${when}.`
+      : `Needs 4 coach uses - you have ${remaining} left.`;
   } else {
-    costLine = `Uses 3 of your ${limit} weekly coach questions (${remaining} left)`;
+    costLine = `Uses 1-4 of your ${remaining} coach uses left this week, depending on the file.`;
   }
 
   return (
-    <div className="bk-import-ai-layout" aria-busy={mapping || undefined}>
+    <div className="bk-import-ai-layout">
       <button
         type="button"
         className="btn btn-secondary"
-        disabled={disabled || mapping || notEnough}
-        onClick={onMap}
+        disabled={disabled || fixing || notEnough}
+        aria-busy={fixing || undefined}
+        onClick={onFix}
       >
-        {mapping ? "Reading layout…" : "Let AI read this layout"}
+        {buttonLabel}
       </button>
       <p className="bk-import-ai-layout__cost" role="status">
-        {mapping
-          ? "This can take up to a minute. Hang tight."
-          : costLine}
+        {costLine}
       </p>
     </div>
   );
 }
 
-export { IMPORT_MAP_COST };
+export { IMPORT_FIX_MAX_COST, formatNextQuestionTime };

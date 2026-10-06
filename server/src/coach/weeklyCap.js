@@ -8,6 +8,15 @@ const WINDOW_DAYS = 7;
 const WINDOW_MS = WINDOW_DAYS * 24 * 60 * 60 * 1000;
 /** Coach questions charged for one AI layout-import map call (bks1). */
 const IMPORT_MAP_COST = 3;
+/**
+ * Max coach uses reserved for one AI import-fix call (bkr3). Settled at
+ * 1-4 after the model returns, by total tokens.
+ */
+const IMPORT_FIX_MAX_COST = 4;
+/** Token ceilings (inclusive) for import-fix settle tiers. */
+const IMPORT_FIX_TIER_1_MAX_TOKENS = 4000;
+const IMPORT_FIX_TIER_2_MAX_TOKENS = 8000;
+const IMPORT_FIX_TIER_3_MAX_TOKENS = 14000;
 /** Hosted palette generation costs one weekly use. */
 const PALETTE_COST = 1;
 /** Ask / block-draft each cost one weekly use when capped. */
@@ -97,6 +106,10 @@ module.exports = {
   WINDOW_DAYS,
   WINDOW_MS,
   IMPORT_MAP_COST,
+  IMPORT_FIX_MAX_COST,
+  IMPORT_FIX_TIER_1_MAX_TOKENS,
+  IMPORT_FIX_TIER_2_MAX_TOKENS,
+  IMPORT_FIX_TIER_3_MAX_TOKENS,
   PALETTE_COST,
   ASK_COST,
   DRAFT_COST,

@@ -358,6 +358,7 @@ export function AppearancePage() {
                   type="submit"
                   className="btn btn-primary palette-studio__go"
                   disabled={busy || !description.trim()}
+                  aria-busy={busy || undefined}
                 >
                   {busy ? (
                     <>
@@ -428,6 +429,7 @@ export function AppearancePage() {
                   type="button"
                   className="btn btn-secondary"
                   disabled={busy || !lastDescription}
+                  aria-busy={busy || undefined}
                   onClick={() => generate(lastDescription)}
                 >
                   Try another
