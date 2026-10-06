@@ -1,192 +1,162 @@
 # HANDOFF — current state
 
-> **WHERE WE ARE (Oct 5):** Seth's BK smoke round 2 (Oct 5) turned into a
-> fix wave, **bkr**, on `ai-connector-wave`. Findings and his rulings:
-> `docs/tasks/bk-smoke-FINDINGS.md` -> "Smoke round 2". The seat ran every
-> item he hadn't touched (local, 390px): nothing glaring. Landed so far:
-> **bkr2** `ed92b31` (coach guardrails: reserve/settle/refund ledger under a
-> per-user lock - proven on staging, 9 parallel -> 7 ok / 2 refused; palette
-> costs 1; coach on-topic only, live-checked on staging: a C# ask gets a
-> one-line decline and costs nothing), **bkr-f1** `eebadf4` (Finish bar
-> returns when the iOS keypad closes), **bkr1** `3373a9b` (crown AiWait +
-> slow-wait copy + 120 s client timeouts on every AI call). Diagnoses d1-d3
-> landed as FINDINGS docs (d3 closed as by-design). **In flight:** bkr3 (one
-> "Have AI fix this file" button, 1-4 uses by tokens) in `cursor-lane`.
-> **Waiting on Seth:** bkr4 (builder "..." menu) + bkr5 (Home log-first) are
-> DRAFT until he picks from the mock. Prod unchanged: `main` = `7d3b91e`.
+> **WHERE WE ARE (Oct 6):** the **bkr fix wave is COMPLETE - 12/12 LANDED** on
+> `ai-connector-wave` (pushed). It came out of Seth's BK smoke round 2 (Oct 5,
+> `docs/tasks/bk-smoke-FINDINGS.md` -> "Smoke round 2"): coach guardrails
+> (bkr2 - usage ledger under a per-user lock, palette costs 1, coach on-topic
+> only), Finish bar on the iOS keypad (bkr-f1), the crown AI loader + client
+> timeouts (bkr1), one "Have AI fix this file" button priced 1-4 by tokens
+> (bkr3), builder settings chips + actions sheet (bkr4, Seth picked option 2),
+> Home logging-first with the block card under it (bkr5, Seth picked A + one
+> week strip), then critic round 1 (6/10 FAIL, no P0/P1) and its fix round
+> bkrf1a-c. **Critic round 2 was SKIPPED by Seth (Oct 6: "the critic isnt
+> working, lets skip it for now")** - his re-smoke is the check. HARD STOP for
+> Seth's smoke. Prod unchanged: `main` = `7d3b91e`.
 
-**Next action (human):** open https://claude.ai/artifact/E87H65uivuhARz7A94pphN
-and pick a Home option (A / B / C - seat recommends A) and a builder-menu
-option (1 / 2 - seat recommends 2); reply in the session or comment on the
-canvas.
+**Next action (human):** on your phone, open the staging Vercel deploy and run
+the re-smoke checklist below (say "smoke the bkr wave with me" in a Claude Code
+session to have an agent record results).
 
-## ▶ PICK UP HERE (Oct 5 - bkr fix wave, Opus seat running the relay)
+## ▶ PICK UP HERE (Oct 6 - for the agent running the re-smoke WITH Seth)
 
-- QUEUE.md "BK smoke round 2 -> fix wave (bkr)" is the ledger: order,
-  lanes, landing notes. N = 8 (d1, d2, d3, bkr2, bkr-f1, bkr1, bkr3 + bkr4,
-  bkr5 still DRAFT); 6 landed.
-- On Seth's pick: author bkr4 (builder menu, design fully specified from the
-  chosen artboard - fold in the in-page Delete-block confirm) and bkr5 (Home:
-  log-first hero, block card per the pick, ONE Resume while live - hide the
-  bottom "In progress" bar on Home only, keep "Up next after this"). They
-  touch disjoint files -> parallel lanes. Both are primary-screen design units
-  -> run the separate-agent critic loop after landing (memory
-  local-run-and-critic-loop).
-- bkr3 landing: also strip the leading space after the off-topic marker in
-  `createOffTopicStreamFilter` (live reply began " I only coach...").
-- Wave end: the consolidated re-smoke = the round-2 checklist below with
-  items 4/12 reworded for the merged AI button + crown loader, plus Seth's
-  iPhone check of the Finish bar (bkr-f1).
-- Cursor plan is auto-rung only; lanes run via the scratchpad runner with a
-  40-min hard kill (`run-lane.ps1`, recreate from dispatch-unit section 2 if
-  the scratchpad is gone).
+You sit with Seth while he smokes, ONE item at a time, and record results. You
+do NOT fix code and do NOT run the gate. Any model can do this.
 
-### Wave smoke checklist - BK, round 2 (staging Vercel, phone + desktop)
+1. Where: the staging Vercel preview of `ai-connector-wave`
+   (`https://workout-db-git-ai-connector-wave-sethysethyseths-projects.vercel.app`,
+   behind Vercel login), phone first. NEVER local dev (`client/.env` = prod).
+2. Accounts: `test123` / `password` (running block "Upper/Lower Strength -
+   4wk", W4 · Upper A next, nothing in progress), or Seth's own staging
+   account. Coach uses are capped at 7 per rolling 7 days.
+3. Record: append `## Smoke round 3 (Oct 6+)` to
+   `docs/tasks/bk-smoke-FINDINGS.md` - one line per item: PASS, or FAIL with
+   Seth's words + screenshot (`claudefiledrop/`, untracked) + severity (P0 data
+   loss / P1 blocks him / P2 friction / P3 polish). New scope = CR. Commit +
+   push the doc at the end.
+4. Verify, don't guess: staging API with a cookie login; READ-ONLY Prisma
+   reads from `server/` (`server/.env` = staging).
+5. Defects become DIAGNOSIS blocks after the last item; sign-off resets.
+6. On "smoke signed off": record it, set Next action to the pre-main gate
+   (`pre-main-review`, OPUS seat, with the gate notes below), stop.
 
-Pre-check done Oct 1 by the seat: staging Render answers with bksf2a's
-search ranking (test123 "press" -> Leg Press, Seated Dumbbell Press,
-Barbell Bench Press - Medium Grip, Incline), so the deploy has the code.
+### Re-smoke checklist - BK + bkr (staging Vercel, phone first)
 
-1. **Library** (bks3, bksf1d): Blocks tab first; the running block shows in
-   a strip with "Open"; "Create workout" is greyed (parked on purpose); no
-   names cut off.
-2. **Import your Phase-1 sheet** (Library -> Import a block):
-   - Paste week 1, then the File tab with all 6 weeks. Expected for the full
-     sheet: 6 weeks, 30 days, 216 exercises, 602 sets, 84 timed; the only
-     warnings are the ignored `Tier` and `Progression_Rule` columns; about 23
-     names "Not in your library" with the Analytics note.
-   - **.xlsx upload** (bks4 - the critic could NOT test this, Seth must):
-     upload `Phase-1-Program.xlsx` directly -> a sheet picker -> pick
-     `Program` -> same stats as above.
-   - Preview opens at the top, program before matching, Create sticky.
-     Create -> builder with a toast. Match one name -> it shows as matched.
-   - Counts read "6 match your library" / "1 matches your library".
-3. **Sets x Reps without AI** (bksf2b): paste a sheet whose header has a
-   combined column, e.g. `Exercise, Sets x Reps, Weight` with `5x5` and
-   `4 x 6-8` -> Preview reads 5 x 5 and 4 x 6-8, nothing ignored.
-4. **AI layout read** (bks1, bksf1c, bksf2b): paste a foreign-header sheet
-   (e.g. `Movement, Sets x Reps, Load (kg), Session`) -> "Let AI read this
-   layout" (costs 3 of 7; ~50 s) -> the preview shows the AI notice, an
-   "AI read: ... (was ...)" line - or "(the standard reader couldn't read
-   this sheet)" - and "Use the original read". Then Back -> Preview: the
-   STANDARD read comes back (the AI read must not stick). kg columns convert
-   to lb with one message.
-5. **Any AI**: Copy the instructions -> paste into ChatGPT/Claude with a
-   request -> paste the WHOLE answer back -> preview -> create.
-6. **Export**: builder Settings -> Export block -> re-import on the File tab
-   -> identical stats, "Nothing skipped".
-7. **Builder** (BK, bksf1b, bksf2a):
-   - Each set is ONE row: Set | Reps | Load | RPE | x, rep-range rows too
-     (Reps | To | Load | RPE), every header over its own field.
-   - The expanded card shows "Rest 3:00 · RPE ≤ 8 · 1 note" under the title;
-     tapping it opens the "..." menu. Nothing feels squished.
-   - Tap the block name -> edit it in place. The header says Unsaved while
-     edits are pending, Saving..., then Saved.
-   - Leave with unsaved edits, come back -> "Restore unsaved changes".
-   - Add exercise -> search "press": YOUR lifts first; the list scrolls on
-     its own with the keypad open and nothing covers the search box.
-   - Classic BK checks: 4 days with only day 1 filled -> Save names the empty
-     day -> "Remove empty days"; Reps -> Time (30 s), Range, Rest stepper,
-     Cap; label week 4 "Deload", copy week 1 forward +5 -> week 4 skipped;
-     Progression tab reads week to week.
-8. **Home + run a block** (BK, bksf2c):
-   - With a running block and no live workout, the Home hero IS the next
-     day: "W3 · Upper B", block name under it, "Start W3 · Upper B" starts
-     that day straight into the logger; "Other workout" opens Empty / Browse
-     templates. No separate "Next" card; nothing jumps ~2 s after load.
-   - `/blocks/current`: compact header (block name + "Week n of N"), week
-     strip, day tiles, NEXT, "IN PROGRESS" shown once. End block uses the
-     in-page confirm.
-9. **Log a block day** (bks2, bksf1a):
-   - One row per PLANNED set, every field greyed with the plan (weight too).
-   - Tapping the set number logs it as planned - reps/seconds + load, NEVER
-     effort; an RPE typed first is kept. Only the NEXT set's number is a
-     button (later numbers are muted - by design, bksf3b), and values typed
-     on a later row stay there until it is next. Typing only a weight keeps
-     the row a draft.
-   - "+ Add set", remove (asks first for a logged set), pencil per set,
-     "+ Note" per exercise, "How the session went" at the bottom; author
-     notes (Setup, Lead side) visible and not overwritable.
-   - L/R "Per side" logging still works where the plan has it.
-   - Keypad never covers the field being typed (phone).
-   - RPE over the cap shows "over cap", readable in light mode too.
-   - A timed set logs seconds. Finish with unlogged planned sets -> "N of M
-     planned sets not logged - finish anyway?" -> the summary counts the
-     timed set ("45 s"). Discard x sits clear of Back.
-   - During that live workout, Home shows the live card and only a muted
-     "Up next after this: ..." line naming the day AFTER the live one (no
-     second Resume button on it).
-10. **Execution**: Analytics -> Execution lists that session the same
-    evening; under-cap effort = no drift, over-cap = overshoot.
-11. **Connector drafts** (Claude connected to the STAGING connector): switch
-    off -> ask Claude to make a block -> "turned off"; switch on -> ask
-    again -> DRAFT pill -> Review -> banner -> Save to library. A draft
-    cannot be made public before it is saved. If Seth's Claude only has the
-    prod connector, mark it "deferred - needs the staging connector".
-12. **Coach**: new block -> "Describe the block you want"; builder Settings
-    -> "Ask the coach about this block"; on the Paste tab with plain prose,
-    the AI button (now also labelled "Let AI read this layout", costs 1)
-    -> preview. With AI consent off, none of these show.
-13. **Regressions + desktop**: a quick-log workout and a saved-workout
-    session behave as before; saved workouts keep "Set as current". At
-    1280, the builder/run header sits under the app nav when scrolled.
+Already PASSED in round 2, no need to repeat: Library, import from a file,
+Sets x Reps, Any AI paste, export round-trip, Execution, desktop builder
+header. Connector drafts stay deferred until a staging connector exists.
 
-**By design - do not log as defects:** unmatched imported names do not
-count toward Analytics (the preview says so); timed sets add nothing to
-volume or strength; copy forward skips Deload-labeled weeks unless the box
-is ticked; rest 0 reads "None"; the coach range stays date-only; saving is
-blocked while any day is empty (the message names it); "Create workout" is
-greyed in Library (parked); the AI layout read costs 3 coach uses.
+1. **Home with your running block:** "Start a workout" first ("Start empty
+   workout" starts one directly; "Browse templates" opens the picker). Under
+   it, a calm "Next in your block" card: W4 · Upper A on one line, the week
+   strip, one line of exercises, "Start W4 · Upper A" (starts that day in the
+   logger). The stats card is titled "Last 7 days" and has NO day strip while
+   the block card shows. Nothing jumps as the page loads (reload twice).
+2. **Home with no block running** (Seth's own account, or end-block on a
+   spare): hero, then "Last 7 days" WITH its day strip (the same 7 days as the
+   numbers), then Recent workouts.
+3. **Home during a live workout:** exactly one Resume (the card, with "n of m
+   sets logged" on block days); the bottom "In progress" bar is gone on Home
+   and on Import, still there on Analytics/History/Library/Profile.
+4. **Finish bar (iPhone):** on a block day tap a reps field - the Finish bar
+   slides away while the keypad is up; close the keypad WITHOUT tapping
+   anything else - it slides back.
+5. **Builder card:** expand an exercise: round "...", one scrolling row of
+   chips showing values (Rest 3:00, Reps, RPE cap, the note text). Each chip
+   opens a small sheet with only that setting (Rest has presets None / 1:00 /
+   1:30 / 2:00 / 3:00). "..." (card or header) opens an actions list. Sheets
+   darken the page (dark mode). Remove / delete day / delete block ask ON THE
+   PAGE, never a browser pop-up; closing with unsaved edits just leaves (the
+   draft comes back with Restore).
+6. **Library deletes:** deleting a block, workout or custom exercise asks on
+   the card ("Your logged workouts stay"), never a browser pop-up.
+7. **AI waits:** new block -> "Describe the block you want" -> Draft with the
+   coach: breathing crown + "Drafting your block..." on the button; "Still
+   working..." at 15 s; gives up with a message at 2 minutes. Costs 1 use.
+8. **AI file fix:** paste a messy sheet (odd columns, "three sets") ->
+   Preview: the problems are listed first, then "Have AI fix this file" with
+   "you have N left". A clean sheet or a LogChamp export shows NO AI button.
+   After the fix: "AI read: ... (was ...)", an "AI changed" list, "Use the
+   original read", "AI fix used N coach uses" - and the coach counter drops by
+   exactly N.
+9. **Coach limits:** ask the coach something off-topic ("write me a C#
+   script") - a one-line decline, no code, the weekly counter does NOT drop.
+   With fewer than 4 uses left the file-fix button is disabled and says when
+   uses free up.
+10. **Logger Back:** leaving a live workout with Back no longer asks.
+11. **Imported file name:** importing `Phase-1-Program.xlsx` names the block
+    "Phase-1-Program".
 
-**Known and deferred (not this wave - do not fail the smoke on them):**
-- Home shows the in-progress card AND the bottom "In progress" bar together
-  (duplicate Resume - next wave candidate, with Seth's Sept 29 discard ask).
-- No rest timer after logging a set; fractional Execution numbers
-  ("3×11.7"); the desktop In-progress bar is wider than the content column;
-  "Per side" is offered on bilateral lifts; removed planned rows are stored
-  per device only; the stats line wraps at 390px; "Match..." on its own line
-  under short names.
-- Critic round 3 leftovers NOT fixed before smoke (fair game for Seth to
-  confirm, not to fail on): import transforms not fully explained (inline
-  kg loads, columns folded into notes - R3 P2-3), the Home "This week"
-  card arrives late and pushes Recent workouts down (R3 P2-4), crimson's
-  "good" colour is amber (reads like over-cap), and the R3 P3 list.
+**By design - do not log as defects:** one AI button on import (the layout
+read and the prose convert merged); the Any AI tab has no AI button; palette
+generation costs 1 coach use; the stats are a rolling 7 days ("Last 7 days");
+unmatched imported names do not count toward Analytics; timed sets add nothing
+to volume; copy forward skips Deload-labeled weeks unless ticked; saving is
+blocked while any day is empty; "Create workout" is greyed in Library
+(parked); a ~1 s Login flash after iOS clears site data for 7+ idle days
+(candidate, not this wave).
+
+**Known and deferred (do not fail the smoke on them):** no rest timer after a
+set; fractional Execution numbers; desktop In-progress bar width; "Per side"
+offered on bilateral lifts; the builder's week pill is a bright white bar;
+crimson's "good" colour reads amber; the old quick-log set-count / L-R pair
+confirms are still browser dialogs; critic R1 P3 leftovers not in bkrf1
+(session-page skeleton, bk-log-focus before the fetch).
 
 **Gate notes for `pre-main-review` (after sign-off):**
 - Carried from Sept 29: clone isolation (BK1, cross-user) - a live clone of
   a FOREIGN public block was not possible on staging; BK11 connector write
-  path (cross-user; Claude-side check is smoke item 11); BK12 block-focus
-  owner check lives in `askCoach.js` (accepted placement); BK10 reuses
-  `templateExerciseId` for `block:<id>` keys and `judgePlanHit` is unused
-  (spec 7.5 ruling); BK7 start-from-block has no unique guard (race -> two
-  sessions); WeekStrip smooth scroll ignores reduced motion.
-- **New since Sept 30:** bksf2a adds a raw `$queryRaw` (user-scoped,
-  parameterised tagged template) to `GET /exercises/search` for usage
-  ranking - review the scoping and the cost on a heavy account (it scans
-  every SessionExercise + BlockWorkoutExercise row the user owns, per
-  search keystroke). bks4 added the `read-excel-file` dependency (`fa1ea8b`,
-  approved by Seth). bks2 moved author notes into the plan snapshot.
-  The import page has two AI actions with ONE label ("Let AI read this
-  layout"): the layout read (`/coach/import-map`, 3 uses) and the prose
-  convert (`/coach/block-draft`, 1 use) - bksf2b's naming contract; judge
-  whether the cost is still clear.
-- Direct/seat fixes outside Cursor units: `aadb365`, BK5 state fixes,
-  `0a92af6`, `8da0ae5`, `207c0f2` (Sept 29); `924bc66` (hook-order P0),
-  `8badd2f` (ghost retune), `2deedf5` (light over-cap amber, measured Oct 1
-  at 5.2-5.4:1 light / 7.4-8.9:1 dark on all palettes; Discard spacing),
-  `bd0e4b3` (builder summary line moved to the expanded card), `9633c20`
-  (bksf3b landing fix: a just-logged row PATCHed blanks over its new set -
-  caught only by a live replay; review BlockSetRow's managed-draft handoff
-  closely), `9f6b2a0`
-  (R3 P1-1 keypad mode keyed on a stable boolean; R3 P2-2 AI-read compare
-  gated on non-null - it had never rendered since bksf1c).
-- **bksf3b ruling (frontier seat):** block sessions stay POSITIONAL
-  (`blockWorkoutSetId` unused, spec 7.3) - the logger enforces in-order
-  logging and keeps drafts per planned row instead of binding sets to rows.
-  If Seth ever wants out-of-order logging, that is a schema change.
+  path (cross-user; Claude-side check is the deferred connector item); BK12
+  block-focus owner check lives in `askCoach.js` (accepted placement); BK10
+  reuses `templateExerciseId` for `block:<id>` keys and `judgePlanHit` is
+  unused (spec 7.5 ruling); BK7 start-from-block has no unique guard (race ->
+  two sessions); WeekStrip smooth scroll ignores reduced motion.
+- Since Sept 30: bksf2a's raw `$queryRaw` in `GET /exercises/search` (user-
+  scoped, parameterised; scans every SessionExercise + BlockWorkoutExercise
+  row per keystroke - check the cost on a heavy account); `read-excel-file`
+  dependency (`fa1ea8b`, Seth-approved); bks2 author notes in the plan
+  snapshot.
+- Seat fixes outside Cursor units: `aadb365`, BK5 state fixes, `0a92af6`,
+  `8da0ae5`, `207c0f2` (Sept 29); `924bc66` (hook-order P0), `8badd2f`,
+  `2deedf5`, `bd0e4b3`, `9633c20` (bksf3b: a just-logged row PATCHed blanks -
+  review BlockSetRow's managed-draft handoff), `9f6b2a0`.
+- bksf3b ruling: block sessions stay POSITIONAL (`blockWorkoutSetId` unused,
+  spec 7.3). Out-of-order logging would be a schema change.
+- **bkr wave (Oct 5-6) - review hardest:**
+  - bkr2 `ed92b31`: `usageLedger.js` takes
+    `pg_advisory_xact_lock(hashtext(userId))` via `$executeRaw` inside an
+    interactive transaction (proven on staging: 9 parallel single reserves ->
+    7 ok / 2 refused). Every hosted path reserves BEFORE the model call (ask 1,
+    draft 1, import-map 3, palette 1, import-fix 4 settled 1-4). Off-topic
+    asks: the model prefixes `[[OFF_TOPIC]]`, the server strips it and
+    refunds only a decline <= 400 chars (seat fix - a prompt that forces the
+    marker must not get free answers). Generate-mode off-topic uses a sentinel
+    block name (structured output). Seat fix: draft + import-map abort the
+    provider call on client disconnect (bkr-d2: a draft finishing after the
+    phone gave up stayed charged).
+  - bkr3 `fb896ec`: `POST /coach/import-fix` - table vs prose detection (seat
+    fix: rows must align with a short-label header, else prose with commas
+    went to the recipe path); the convert path keeps block-draft's 20k input
+    cap (seat fix - it sent up to 1 MB); tier thresholds 4k/8k/14k tokens are
+    product numbers Seth can retune (`weeklyCap.js`).
+  - bkr-f1 `eebadf4`: `bk-log-kbd` = focused logger field AND visualViewport
+    >150px shorter; proven only with a shadowed-visualViewport harness -
+    Seth's iPhone check is the real proof.
+  - bkr1 `3373a9b` / bkrf1c `4352e91`: AI calls carry AbortControllers
+    (120 s); `AiWait` two-face button slot; `aiFixChanges.js` diff helper.
+  - bkr4 `1f6d42a` / bkrf1a `07bd1ea`: every builder `window.confirm`
+    replaced (the leave guard too - the local draft covers it); new
+    `--color-scrim` token per mode; `font-family: inherit` on form controls
+    is APP-WIDE (check nothing that relied on the UA font shifted).
+  - bkr5 `52ee633` / bkrf1b `b1ed933`: the Home hero no longer depends on the
+    run fetch; sessionStorage `workoutdb-home-has-run` predicts the block-card
+    placeholder; the rolling "Last 7 days" strip changed `workout/WeekStrip`
+    (Home-only); PersistentWorkoutBar hidden on `/` and `/blocks/import`.
+  - Critic: R1 6/10 FAIL (`bkr-critic-round-1-FINDINGS.md`), all R1 P2s
+    addressed by bkrf1a-c; R2 skipped by Seth.
 - Before any merge: Seth hand-applies BK1's migration
-  `20260929120000_blocks_v2` to PROD (RUNBOOK "Schema-change deploy") and
-  the prod-vs-staging migration drift (Housekeeping) gets reconciled.
+  `20260929120000_blocks_v2` to PROD (RUNBOOK "Schema-change deploy") and the
+  prod-vs-staging migration drift (Housekeeping) gets reconciled. bkr added
+  NO migration.
 
 ### Open on prod - Seth's checks, none blocking
 
