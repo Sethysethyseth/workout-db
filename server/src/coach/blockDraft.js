@@ -15,6 +15,15 @@ const MAX_TEXT_CHARS = 20000;
 const BLOCK_DRAFT_MAX_TOKENS = 8000;
 
 /**
+ * Sentinel block name for generate-mode off-topic declines. Structured
+ * output cannot return free prose; the model returns a minimal valid
+ * block with this name and the controller rejects it with a 4xx + refund.
+ */
+const OFF_TOPIC_BLOCK_NAME = "[[OFF_TOPIC]]";
+
+const OFF_TOPIC_DRAFT_MESSAGE = "The coach can only build training blocks.";
+
+/**
  * Palette-shaped stop errors for block drafts. max_tokens is its own code
  * so a truncated answer is never mistaken for block_invalid.
  */
@@ -75,7 +84,13 @@ function buildBlockDraftSystemPrompt({ mode, unit, trainingSummary }) {
   if (mode === "generate") {
     lines.push(
       "",
-      "Mode: generate. The user describes the block they want. Invent a coherent program that matches the description. Prefer loads grounded in the training summary when one is provided; otherwise use sensible intermediate-lifter defaults and omit weight when unsure."
+      "Mode: generate. The user describes the block they want. Invent a coherent program that matches the description. Prefer loads grounded in the training summary when one is provided; otherwise use sensible intermediate-lifter defaults and omit weight when unsure.",
+      "",
+      "Scope - training blocks only:",
+      "- Build a program only when the description is about the lifter's training, lifting technique/programming, or a LogChamp training block.",
+      "- For anything else (code, general math, homework, trivia, other apps), do NOT invent a real program. Return a minimal valid block (one week, one day, one placeholder exercise) whose name is exactly " +
+        JSON.stringify(OFF_TOPIC_BLOCK_NAME) +
+        ". The server will reject it."
     );
     if (trainingSummary) {
       lines.push(
@@ -226,6 +241,16 @@ function blockToCompactText(block, unitHint) {
   return lines.join("\n");
 }
 
+/** True when generate-mode returned the off-topic sentinel block. */
+function isOffTopicDraft(candidate) {
+  return (
+    !!candidate &&
+    typeof candidate === "object" &&
+    !Array.isArray(candidate) &&
+    candidate.name === OFF_TOPIC_BLOCK_NAME
+  );
+}
+
 /**
  * Validate a candidate against the block format. Returns the validated
  * result or a 422-shaped payload (first 10 errors).
@@ -253,6 +278,8 @@ module.exports = {
   MAX_TEXT_CHARS,
   BLOCK_DRAFT_MAX_TOKENS,
   BLOCK_FORMAT_JSON_SCHEMA,
+  OFF_TOPIC_BLOCK_NAME,
+  OFF_TOPIC_DRAFT_MESSAGE,
   blockErrorForStopReason,
   parseBlockDraftRequest,
   buildBlockDraftSystemPrompt,
@@ -261,5 +288,6 @@ module.exports = {
   parseBlockCandidate,
   mockBlockDraftFor,
   blockToCompactText,
+  isOffTopicDraft,
   validateDraftCandidate,
 };

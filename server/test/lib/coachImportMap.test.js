@@ -103,6 +103,7 @@ describe("importMap handler - cap and charging", () => {
   test("with 2 uses left the map call is refused and the model is never called", async () => {
     const res = mockRes();
     let modelCalls = 0;
+    let reserveCalls = 0;
     await importMap(
       {
         authUserId: 1,
@@ -118,23 +119,23 @@ describe("importMap handler - cap and charging", () => {
           email: "capped@example.com",
         }),
         resolveCoachProvider: () => hostedResolved(),
-        loadWeeklyCap: async () => ({
-          allowed: true,
-          limit: 7,
-          used: 5,
-          remaining: 2,
-          nextAvailableAt: null,
-        }),
+        reserveUses: async (_p, _userId, n) => {
+          reserveCalls += 1;
+          expect(n).toBe(3);
+          return {
+            ok: false,
+            cap: {
+              allowed: true,
+              limit: 7,
+              used: 5,
+              remaining: 2,
+              nextAvailableAt: null,
+            },
+          };
+        },
         completeAnthropic: async () => {
           modelCalls += 1;
           return { stop_reason: "end_turn", content: [] };
-        },
-        prisma: {
-          coachUsage: {
-            createMany: async () => {
-              throw new Error("should not charge");
-            },
-          },
         },
       }
     );
@@ -143,12 +144,14 @@ describe("importMap handler - cap and charging", () => {
     expect(res.body.needed).toBe(3);
     expect(res.body.remaining).toBe(2);
     expect(modelCalls).toBe(0);
+    expect(reserveCalls).toBe(1);
   });
 
-  test("with 3 left it proceeds and records exactly 3 usage rows", async () => {
+  test("with 3 left it proceeds and settles exactly 3 reserved rows", async () => {
     const res = mockRes();
     let modelCalls = 0;
-    let created = 0;
+    const settled = [];
+    const refunded = [];
     const recipe = mockImportRecipeFor(FIXTURE_A);
     await importMap(
       {
@@ -165,13 +168,26 @@ describe("importMap handler - cap and charging", () => {
           email: "capped@example.com",
         }),
         resolveCoachProvider: () => hostedResolved(),
-        loadWeeklyCap: async () => ({
-          allowed: true,
-          limit: 7,
-          used: 4,
-          remaining: 3,
-          nextAvailableAt: null,
-        }),
+        reserveUses: async (_p, _userId, n) => {
+          expect(n).toBe(3);
+          return {
+            ok: true,
+            ids: [1, 2, 3],
+            cap: {
+              allowed: true,
+              limit: 7,
+              used: 7,
+              remaining: 0,
+              nextAvailableAt: null,
+            },
+          };
+        },
+        settleUses: async (_p, ids, cost) => {
+          settled.push({ ids, cost });
+        },
+        refundUses: async (_p, ids) => {
+          refunded.push(...ids);
+        },
         completeAnthropic: async () => {
           modelCalls += 1;
           return {
@@ -179,25 +195,19 @@ describe("importMap handler - cap and charging", () => {
             content: [{ type: "text", text: JSON.stringify(recipe) }],
           };
         },
-        prisma: {
-          coachUsage: {
-            createMany: async ({ data }) => {
-              created = data.length;
-              return { count: data.length };
-            },
-          },
-        },
       }
     );
     expect(res.statusCode).toBe(200);
     expect(res.body.recipe.prescriptionColumn).toBe("Sets x Reps");
     expect(modelCalls).toBe(1);
-    expect(created).toBe(3);
+    expect(settled).toEqual([{ ids: [1, 2, 3], cost: 3 }]);
+    expect(refunded).toHaveLength(0);
   });
 
-  test("an invalid reply records 0 usage rows", async () => {
+  test("an invalid reply refunds all reserved rows (net 0 kept)", async () => {
     const res = mockRes();
-    let created = 0;
+    const refunded = [];
+    const settled = [];
     await importMap(
       {
         authUserId: 1,
@@ -213,13 +223,23 @@ describe("importMap handler - cap and charging", () => {
           email: "capped@example.com",
         }),
         resolveCoachProvider: () => hostedResolved(),
-        loadWeeklyCap: async () => ({
-          allowed: true,
-          limit: 7,
-          used: 0,
-          remaining: 7,
-          nextAvailableAt: null,
+        reserveUses: async () => ({
+          ok: true,
+          ids: [4, 5, 6],
+          cap: {
+            allowed: true,
+            limit: 7,
+            used: 3,
+            remaining: 4,
+            nextAvailableAt: null,
+          },
         }),
+        settleUses: async (_p, ids, cost) => {
+          settled.push({ ids, cost });
+        },
+        refundUses: async (_p, ids) => {
+          refunded.push(...ids);
+        },
         completeAnthropic: async () => ({
           stop_reason: "end_turn",
           content: [
@@ -232,24 +252,62 @@ describe("importMap handler - cap and charging", () => {
             },
           ],
         }),
-        prisma: {
-          coachUsage: {
-            createMany: async ({ data }) => {
-              created += data.length;
-              return { count: data.length };
-            },
-          },
-        },
       }
     );
     expect(res.statusCode).toBe(422);
     expect(res.body.error).toBe("import_map_invalid");
-    expect(created).toBe(0);
+    expect(refunded).toEqual([4, 5, 6]);
+    expect(settled).toHaveLength(0);
   });
 
-  test("an uncapped email records 0 usage rows", async () => {
+  test("model failure refunds reserved rows (0 kept)", async () => {
     const res = mockRes();
-    let created = 0;
+    const refunded = [];
+    await importMap(
+      {
+        authUserId: 1,
+        body: { text: FIXTURE_A },
+        get: () => null,
+      },
+      res,
+      () => {},
+      {
+        loadCoachAccess: async () => ({
+          consentGranted: true,
+          entitled: true,
+          email: "capped@example.com",
+        }),
+        resolveCoachProvider: () => hostedResolved(),
+        reserveUses: async () => ({
+          ok: true,
+          ids: [7, 8, 9],
+          cap: {
+            allowed: true,
+            limit: 7,
+            used: 3,
+            remaining: 4,
+            nextAvailableAt: null,
+          },
+        }),
+        refundUses: async (_p, ids) => {
+          refunded.push(...ids);
+        },
+        settleUses: async () => {
+          throw new Error("should not settle on failure");
+        },
+        completeAnthropic: async () => {
+          const { CoachProviderError } = require("../../src/coach/provider");
+          throw new CoachProviderError("provider_error", "boom");
+        },
+      }
+    );
+    expect(res.statusCode).toBe(502);
+    expect(refunded).toEqual([7, 8, 9]);
+  });
+
+  test("an uncapped email never reserves", async () => {
+    const res = mockRes();
+    let reserveCalls = 0;
     const recipe = mockImportRecipeFor(FIXTURE_A);
     const prev = process.env.COACH_UNCAPPED_EMAILS;
     process.env.COACH_UNCAPPED_EMAILS = "uncapped@example.com";
@@ -269,21 +327,14 @@ describe("importMap handler - cap and charging", () => {
             email: "uncapped@example.com",
           }),
           resolveCoachProvider: () => hostedResolved(),
-          loadWeeklyCap: async () => {
-            throw new Error("cap should not load for uncapped email");
+          reserveUses: async () => {
+            reserveCalls += 1;
+            throw new Error("cap should not reserve for uncapped email");
           },
           completeAnthropic: async () => ({
             stop_reason: "end_turn",
             content: [{ type: "text", text: JSON.stringify(recipe) }],
           }),
-          prisma: {
-            coachUsage: {
-              createMany: async ({ data }) => {
-                created += data.length;
-                return { count: data.length };
-              },
-            },
-          },
         }
       );
     } finally {
@@ -291,7 +342,7 @@ describe("importMap handler - cap and charging", () => {
       else process.env.COACH_UNCAPPED_EMAILS = prev;
     }
     expect(res.statusCode).toBe(200);
-    expect(created).toBe(0);
+    expect(reserveCalls).toBe(0);
   });
 });
 

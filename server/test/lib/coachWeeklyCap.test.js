@@ -1,10 +1,34 @@
 const {
   WEEKLY_LIMIT,
+  IMPORT_MAP_COST,
+  PALETTE_COST,
+  ASK_COST,
+  DRAFT_COST,
   parseUncappedEmails,
   isUncappedEmail,
   weeklyCapApplies,
   evaluateWeeklyCap,
+  clampSettleCost,
+  remainingCoversCost,
 } = require("../../src/coach/weeklyCap");
+
+describe("cost constants", () => {
+  test("palette / ask / draft cost 1; import-map costs 3", () => {
+    expect(PALETTE_COST).toBe(1);
+    expect(ASK_COST).toBe(1);
+    expect(DRAFT_COST).toBe(1);
+    expect(IMPORT_MAP_COST).toBe(3);
+    expect(remainingCoversCost(0, PALETTE_COST)).toBe(false);
+    expect(remainingCoversCost(1, PALETTE_COST)).toBe(true);
+  });
+
+  test("clampSettleCost clamps to 0..reservedCount", () => {
+    expect(clampSettleCost(2, 4)).toBe(2);
+    expect(clampSettleCost(9, 4)).toBe(4);
+    expect(clampSettleCost(-1, 4)).toBe(0);
+    expect(clampSettleCost("x", 4)).toBe(0);
+  });
+});
 
 describe("parseUncappedEmails", () => {
   test('trims, lowercases, and drops empties from " Seth@Example.com , ,b@x.io"', () => {

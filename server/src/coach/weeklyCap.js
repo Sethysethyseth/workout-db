@@ -8,10 +8,37 @@ const WINDOW_DAYS = 7;
 const WINDOW_MS = WINDOW_DAYS * 24 * 60 * 60 * 1000;
 /** Coach questions charged for one AI layout-import map call (bks1). */
 const IMPORT_MAP_COST = 3;
+/** Hosted palette generation costs one weekly use. */
+const PALETTE_COST = 1;
+/** Ask / block-draft each cost one weekly use when capped. */
+const ASK_COST = 1;
+const DRAFT_COST = 1;
 
 /** True when remaining weekly questions cover `cost` (default import-map). */
 function remainingCoversCost(remaining, cost = IMPORT_MAP_COST) {
   return typeof remaining === "number" && remaining >= cost;
+}
+
+/**
+ * Clamp settle cost to 0..reservedCount. Pure helper for reservation settle.
+ * Non-finite / non-number actualCost treats as 0.
+ */
+function clampSettleCost(actualCost, reservedCount) {
+  const n = typeof reservedCount === "number" && reservedCount > 0 ? reservedCount : 0;
+  const cost =
+    typeof actualCost === "number" && Number.isFinite(actualCost) ? actualCost : 0;
+  return Math.max(0, Math.min(Math.floor(cost), n));
+}
+
+/** Cap snapshot shape returned by loadWeeklyCap / reserveUses. */
+function capFromEvaluation(evaluated) {
+  return {
+    limit: WEEKLY_LIMIT,
+    used: evaluated.used,
+    remaining: evaluated.remaining,
+    nextAvailableAt: evaluated.nextAvailableAt,
+    allowed: evaluated.allowed,
+  };
 }
 
 /** Trim, lowercase, drop empties. Unset / empty / non-string -> nobody exempt. */
@@ -70,7 +97,12 @@ module.exports = {
   WINDOW_DAYS,
   WINDOW_MS,
   IMPORT_MAP_COST,
+  PALETTE_COST,
+  ASK_COST,
+  DRAFT_COST,
   remainingCoversCost,
+  clampSettleCost,
+  capFromEvaluation,
   parseUncappedEmails,
   isUncappedEmail,
   weeklyCapApplies,

@@ -13,10 +13,14 @@ const {
   WEEKLY_LIMIT,
   WINDOW_MS,
   IMPORT_MAP_COST,
-  remainingCoversCost,
+  PALETTE_COST,
+  ASK_COST,
+  DRAFT_COST,
   weeklyCapApplies,
   evaluateWeeklyCap,
+  capFromEvaluation,
 } = require("../coach/weeklyCap");
+const { reserveUses, settleUses, refundUses } = require("../coach/usageLedger");
 const { CoachProviderError, completeAnthropic } = require("../coach/provider");
 const { completeCursor, extractFirstJsonText } = require("../coach/cursorProvider");
 const {
@@ -36,6 +40,8 @@ const {
   buildCursorBlockDraftSystem,
   parseBlockCandidate,
   validateDraftCandidate,
+  isOffTopicDraft,
+  OFF_TOPIC_DRAFT_MESSAGE,
 } = require("../coach/blockDraft");
 const { mockBlockDraftFor, mockImportRecipeFor } = require("../coach/mockProvider");
 const {
@@ -49,10 +55,12 @@ const {
   validateImportMapCandidate,
   sampleForRecipe,
 } = require("../coach/importMap");
-const { compactSummaryForCoach } = require("../coach/prompt");
+const { compactSummaryForCoach, OFF_TOPIC_MARKER } = require("../coach/prompt");
 const { loadSummary } = require("../ai/analyticsAccess");
 
 const BYO_KEY_HEADER = "x-coach-key";
+/** A real decline is two sentences; anything longer is charged as an answer. */
+const OFF_TOPIC_DECLINE_MAX_CHARS = 400;
 // Same shared thinking+response budget as MAX_TOKENS. A complete JSON
 // palette is a few hundred tokens; 3000 leaves room for thinking so
 // stop_reason: max_tokens does not become a 502. Do not lower this.
@@ -88,6 +96,31 @@ function capAppliesToAccess(source, email) {
   return weeklyCapApplies(source, email, process.env.COACH_UNCAPPED_EMAILS);
 }
 
+/**
+ * Abort an in-flight provider call when the client disconnects (bkr-d2): a
+ * draft or recipe the phone never receives must not finish and stay charged.
+ */
+function abortOnClientClose(res) {
+  const controller = new AbortController();
+  if (res && typeof res.on === "function") {
+    res.on("close", () => {
+      if (!res.writableEnded) controller.abort();
+    });
+  }
+  return controller;
+}
+
+function weeklyLimitBody(cap, needed) {
+  return {
+    error: "weekly_limit",
+    limit: cap.limit,
+    used: cap.used,
+    remaining: cap.remaining,
+    needed,
+    nextAvailableAt: cap.nextAvailableAt,
+  };
+}
+
 async function loadWeeklyCap(userId, now = new Date()) {
   const windowStart = new Date(now.getTime() - WINDOW_MS);
   const rows = await prisma.coachUsage.findMany({
@@ -98,13 +131,7 @@ async function loadWeeklyCap(userId, now = new Date()) {
     rows.map((row) => row.createdAt),
     now
   );
-  return {
-    limit: WEEKLY_LIMIT,
-    used: evaluated.used,
-    remaining: evaluated.remaining,
-    nextAvailableAt: evaluated.nextAvailableAt,
-    allowed: evaluated.allowed,
-  };
+  return capFromEvaluation(evaluated);
 }
 
 async function removeUsageRow(usageId) {
@@ -115,6 +142,53 @@ async function removeUsageRow(usageId) {
     if (err && err.code === "P2025") return;
     console.error("[coach] failed to uncount unused question", err && err.message);
   }
+}
+
+/**
+ * Strip the off-topic marker from a streaming ask reply. Buffers until the
+ * marker is confirmed or ruled out so it never appears in an SSE delta.
+ */
+function createOffTopicStreamFilter(marker) {
+  let buffer = "";
+  let resolved = false;
+  let offTopic = false;
+
+  function push(piece) {
+    const text = typeof piece === "string" ? piece : "";
+    if (!text && resolved) return { deltas: [], offTopic };
+    if (resolved) {
+      return { deltas: text ? [text] : [], offTopic };
+    }
+    buffer += text;
+    if (buffer.startsWith(marker)) {
+      resolved = true;
+      offTopic = true;
+      const rest = buffer.slice(marker.length);
+      buffer = "";
+      return { deltas: rest ? [rest] : [], offTopic };
+    }
+    if (buffer.length >= marker.length || !marker.startsWith(buffer)) {
+      resolved = true;
+      const rest = buffer;
+      buffer = "";
+      return { deltas: rest ? [rest] : [], offTopic: false };
+    }
+    return { deltas: [], offTopic: false };
+  }
+
+  function flush() {
+    if (resolved || !buffer) return { deltas: [], offTopic };
+    resolved = true;
+    const rest = buffer;
+    buffer = "";
+    return { deltas: rest ? [rest] : [], offTopic };
+  }
+
+  return {
+    push,
+    flush,
+    isOffTopic: () => offTopic,
+  };
 }
 
 /**
@@ -174,21 +248,32 @@ function writeSse(res, event, data) {
  * Refusals and provider failures arrive as `error` events so the client
  * always gets a terminal frame.
  */
-async function askCoach(req, res, next) {
-  let usageId = null;
+async function askCoach(req, res, next, deps = {}) {
+  let reservedIds = null;
   let deliveredAnswer = false;
+  let offTopicDecline = false;
+  let declineChars = 0;
+  const prismaClient = deps.prisma || prisma;
+  const reserve = deps.reserveUses || reserveUses;
+  const settle = deps.settleUses || settleUses;
+  const refund = deps.refundUses || refundUses;
+  const loadAccess = deps.loadCoachAccess || loadCoachAccess;
+  const resolveProvider = deps.resolveCoachProvider || resolveCoachProvider;
+  const loadData = deps.loadCoachData || loadCoachData;
+  const openStream = deps.openCoachStream || openCoachStream;
+
   try {
     const parsed = parseCoachRequest(req.body);
     if (!parsed.ok) return res.status(parsed.status).json({ error: parsed.error });
     const request = parsed.value;
 
-    const access = await loadCoachAccess(req.authUserId);
+    const access = await loadAccess(req.authUserId);
     if (!access) return res.status(404).json({ error: "User not found" });
     if (!access.consentGranted) {
       return res.status(403).json({ error: "forbidden", reason: "no_consent" });
     }
 
-    const resolved = resolveCoachProvider({
+    const resolved = resolveProvider({
       byoKey: readByoKey(req),
       entitled: access.entitled,
     });
@@ -201,28 +286,17 @@ async function askCoach(req, res, next) {
 
     const capApplies = capAppliesToAccess(resolved.keyInfo.source, access.email);
     if (capApplies) {
-      const cap = await loadWeeklyCap(req.authUserId);
-      if (!cap.allowed) {
-        return res.status(429).json({
-          error: "weekly_limit",
-          limit: cap.limit,
-          used: cap.used,
-          nextAvailableAt: cap.nextAvailableAt,
-        });
+      const reserved = await reserve(prismaClient, req.authUserId, ASK_COST, new Date());
+      if (!reserved.ok) {
+        return res.status(429).json(weeklyLimitBody(reserved.cap, ASK_COST));
       }
+      reservedIds = reserved.ids;
     }
 
-    const data = await loadCoachData({ userId: req.authUserId, request });
+    const data = await loadData({ userId: req.authUserId, request });
     if (!data.ok) return res.status(data.status).json({ error: data.error });
 
     const { system, messages } = buildCoachPrompt({ request, data });
-
-    if (capApplies) {
-      const row = await prisma.coachUsage.create({
-        data: { userId: req.authUserId },
-      });
-      usageId = row.id;
-    }
 
     const controller = new AbortController();
     res.on("close", () => controller.abort());
@@ -243,9 +317,10 @@ async function askCoach(req, res, next) {
       workoutCount: data.workoutCount ?? 0,
     });
 
+    const filter = createOffTopicStreamFilter(OFF_TOPIC_MARKER);
     let stopReason = null;
     try {
-      const stream = openCoachStream({
+      const stream = openStream({
         keyInfo: resolved.keyInfo,
         config: resolved.config,
         system,
@@ -258,9 +333,13 @@ async function askCoach(req, res, next) {
       for await (const item of stream) {
         if (controller.signal.aborted) break;
         if (item.type === "text") {
-          const piece = typeof item.text === "string" ? item.text : "";
-          if (piece) deliveredAnswer = true;
-          writeSse(res, "delta", { text: item.text });
+          const { deltas, offTopic } = filter.push(item.text);
+          if (offTopic) offTopicDecline = true;
+          for (const delta of deltas) {
+            if (delta) deliveredAnswer = true;
+            if (offTopicDecline) declineChars += delta.length;
+            writeSse(res, "delta", { text: delta });
+          }
         } else if (item.type === "stop") {
           stopReason = item.stopReason ?? null;
         } else if (item.type === "error") {
@@ -268,6 +347,14 @@ async function askCoach(req, res, next) {
           return res.end();
         }
       }
+      const flushed = filter.flush();
+      if (flushed.offTopic) offTopicDecline = true;
+      for (const delta of flushed.deltas) {
+        if (delta) deliveredAnswer = true;
+        if (offTopicDecline) declineChars += delta.length;
+        writeSse(res, "delta", { text: delta });
+      }
+      if (filter.isOffTopic()) offTopicDecline = true;
       if (stopReason === "refusal") {
         writeSse(res, "error", {
           code: "refusal",
@@ -293,7 +380,14 @@ async function askCoach(req, res, next) {
     }
     return next(err);
   } finally {
-    if (!deliveredAnswer) await removeUsageRow(usageId);
+    if (reservedIds) {
+      const shortDecline = offTopicDecline && declineChars <= OFF_TOPIC_DECLINE_MAX_CHARS;
+      if (!deliveredAnswer || shortDecline) {
+        await refund(prismaClient, reservedIds);
+      } else {
+        await settle(prismaClient, reservedIds, ASK_COST);
+      }
+    }
   }
 }
 
@@ -303,20 +397,31 @@ async function askCoach(req, res, next) {
  * validator is authoritative and rejects rather than repairs. Nothing is
  * persisted here: the client keeps the palette per device.
  */
-async function generatePalette(req, res, next) {
+async function generatePalette(req, res, next, deps = {}) {
+  let reservedIds = null;
+  let delivered = false;
+  const prismaClient = deps.prisma || prisma;
+  const reserve = deps.reserveUses || reserveUses;
+  const settle = deps.settleUses || settleUses;
+  const refund = deps.refundUses || refundUses;
+  const loadAccess = deps.loadCoachAccess || loadCoachAccess;
+  const resolveProvider = deps.resolveCoachProvider || resolveCoachProvider;
+  const completeAnthropicFn = deps.completeAnthropic || completeAnthropic;
+  const completeCursorFn = deps.completeCursor || completeCursor;
+
   try {
     const description = parseDescription(req.body && req.body.description);
     if (!description) {
       return res.status(400).json({ error: "description is required" });
     }
 
-    const access = await loadCoachAccess(req.authUserId);
+    const access = await loadAccess(req.authUserId);
     if (!access) return res.status(404).json({ error: "User not found" });
     if (!access.consentGranted) {
       return res.status(403).json({ error: "forbidden", reason: "no_consent" });
     }
 
-    const resolved = resolveCoachProvider({
+    const resolved = resolveProvider({
       byoKey: readByoKey(req),
       entitled: access.entitled,
     });
@@ -324,11 +429,20 @@ async function generatePalette(req, res, next) {
       return res.status(resolved.status).json({ error: resolved.error, reason: resolved.reason });
     }
 
+    const capApplies = capAppliesToAccess(resolved.keyInfo.source, access.email);
+    if (capApplies) {
+      const reserved = await reserve(prismaClient, req.authUserId, PALETTE_COST, new Date());
+      if (!reserved.ok) {
+        return res.status(429).json(weeklyLimitBody(reserved.cap, PALETTE_COST));
+      }
+      reservedIds = reserved.ids;
+    }
+
     let candidate;
     if (resolved.keyInfo.source === "mock") {
       candidate = mockPaletteFor(description);
     } else if (resolved.provider === "cursor") {
-      const raw = await completeCursor({
+      const raw = await completeCursorFn({
         apiKey: resolved.keyInfo.key,
         model: resolved.config.model,
         system: [
@@ -352,7 +466,7 @@ async function generatePalette(req, res, next) {
         return res.status(502).json({ error: "palette_invalid", errors: ["The model did not return a palette."] });
       }
     } else {
-      const message = await completeAnthropic({
+      const message = await completeAnthropicFn({
         apiKey: resolved.keyInfo.key,
         model: resolved.config.model,
         system: [{ type: "text", text: PALETTE_SYSTEM_PROMPT }],
@@ -380,12 +494,18 @@ async function generatePalette(req, res, next) {
     if (!validated.ok) {
       return res.status(422).json({ error: "palette_invalid", errors: validated.errors.slice(0, 6) });
     }
+    delivered = true;
     return res.json({ palette: validated.palette, source: resolved.keyInfo.source });
   } catch (err) {
     if (err instanceof CoachProviderError) {
       return res.status(502).json({ error: err.code, message: err.message });
     }
     return next(err);
+  } finally {
+    if (reservedIds) {
+      if (delivered) await settle(prismaClient, reservedIds, PALETTE_COST);
+      else await refund(prismaClient, reservedIds);
+    }
   }
 }
 
@@ -396,16 +516,18 @@ async function generatePalette(req, res, next) {
  * persists nothing. Optional deps let the unit lane inject fetchImpl / fakes.
  */
 async function draftBlock(req, res, next, deps = {}) {
-  let usageId = null;
+  let reservedIds = null;
   let deliveredBlock = false;
+  const clientGone = abortOnClientClose(res);
   const completeAnthropicFn = deps.completeAnthropic || completeAnthropic;
   const completeCursorFn = deps.completeCursor || completeCursor;
   const loadAccess = deps.loadCoachAccess || loadCoachAccess;
   const resolveProvider = deps.resolveCoachProvider || resolveCoachProvider;
   const prismaClient = deps.prisma || prisma;
   const loadSummaryFn = deps.loadSummary || loadSummary;
-  const removeUsage = deps.removeUsageRow || removeUsageRow;
-  const loadCap = deps.loadWeeklyCap || loadWeeklyCap;
+  const reserve = deps.reserveUses || reserveUses;
+  const settle = deps.settleUses || settleUses;
+  const refund = deps.refundUses || refundUses;
 
   try {
     const parsed = parseBlockDraftRequest(req.body);
@@ -431,15 +553,11 @@ async function draftBlock(req, res, next, deps = {}) {
 
     const capApplies = capAppliesToAccess(resolved.keyInfo.source, access.email);
     if (capApplies) {
-      const cap = await loadCap(req.authUserId);
-      if (!cap.allowed) {
-        return res.status(429).json({
-          error: "weekly_limit",
-          limit: cap.limit,
-          used: cap.used,
-          nextAvailableAt: cap.nextAvailableAt,
-        });
+      const reserved = await reserve(prismaClient, req.authUserId, DRAFT_COST, new Date());
+      if (!reserved.ok) {
+        return res.status(429).json(weeklyLimitBody(reserved.cap, DRAFT_COST));
       }
+      reservedIds = reserved.ids;
     }
 
     let trainingSummary = null;
@@ -452,13 +570,6 @@ async function draftBlock(req, res, next, deps = {}) {
       trainingSummary = compactSummaryForCoach(summaryRaw);
     }
 
-    if (capApplies) {
-      const row = await prismaClient.coachUsage.create({
-        data: { userId: req.authUserId },
-      });
-      usageId = row.id;
-    }
-
     let candidate;
     if (resolved.keyInfo.source === "mock") {
       candidate = mockBlockDraftFor(mode, unit);
@@ -468,6 +579,7 @@ async function draftBlock(req, res, next, deps = {}) {
         model: resolved.config.model,
         system: buildCursorBlockDraftSystem({ mode, unit, trainingSummary }),
         messages: buildBlockDraftMessages({ mode, text }),
+        signal: clientGone.signal,
         ...(deps.fetchImpl ? { fetchImpl: deps.fetchImpl } : {}),
       });
       const parsedCandidate = parseBlockCandidate(raw, { provider: "cursor" });
@@ -492,6 +604,7 @@ async function draftBlock(req, res, next, deps = {}) {
         effort: resolved.config.effort,
         maxTokens: BLOCK_DRAFT_MAX_TOKENS,
         outputFormat: { type: "json_schema", schema: BLOCK_FORMAT_JSON_SCHEMA },
+        signal: clientGone.signal,
         ...(deps.fetchImpl ? { fetchImpl: deps.fetchImpl } : {}),
       });
       const stopErr = blockErrorForStopReason(message && message.stop_reason);
@@ -510,6 +623,10 @@ async function draftBlock(req, res, next, deps = {}) {
       candidate = parsedCandidate.candidate;
     }
 
+    if (mode === "generate" && isOffTopicDraft(candidate)) {
+      return res.status(400).json({ error: OFF_TOPIC_DRAFT_MESSAGE });
+    }
+
     const validated = validateDraftCandidate(candidate, unit);
     if (!validated.ok) {
       return res.status(validated.status).json(validated.body);
@@ -521,27 +638,37 @@ async function draftBlock(req, res, next, deps = {}) {
       source: resolved.keyInfo.source,
     });
   } catch (err) {
+    if (clientGone.signal.aborted) return res.end();
     if (err instanceof CoachProviderError) {
       return res.status(502).json({ error: err.code, message: err.message });
     }
     return next(err);
   } finally {
-    if (!deliveredBlock) await removeUsage(usageId);
+    if (reservedIds) {
+      if (deliveredBlock) await settle(prismaClient, reservedIds, DRAFT_COST);
+      else await refund(prismaClient, reservedIds);
+    }
   }
 }
 
 /**
  * POST /coach/import-map { text, unit? } - bks1 AI layout recipe.
- * Same access / consent / provider resolution as draftBlock. Charges
- * IMPORT_MAP_COST (3) CoachUsage rows on success only.
+ * Same access / consent / provider resolution as draftBlock. Reserves
+ * IMPORT_MAP_COST (3) CoachUsage rows before the model call; refunds on
+ * any failure.
  */
 async function importMap(req, res, next, deps = {}) {
+  let reservedIds = null;
+  let delivered = false;
+  const clientGone = abortOnClientClose(res);
   const completeAnthropicFn = deps.completeAnthropic || completeAnthropic;
   const completeCursorFn = deps.completeCursor || completeCursor;
   const loadAccess = deps.loadCoachAccess || loadCoachAccess;
   const resolveProvider = deps.resolveCoachProvider || resolveCoachProvider;
   const prismaClient = deps.prisma || prisma;
-  const loadCap = deps.loadWeeklyCap || loadWeeklyCap;
+  const reserve = deps.reserveUses || reserveUses;
+  const settle = deps.settleUses || settleUses;
+  const refund = deps.refundUses || refundUses;
 
   try {
     const parsed = parseImportMapRequest(req.body);
@@ -566,19 +693,17 @@ async function importMap(req, res, next, deps = {}) {
     }
 
     const capApplies = capAppliesToAccess(resolved.keyInfo.source, access.email);
-    let cap = null;
     if (capApplies) {
-      cap = await loadCap(req.authUserId);
-      if (!remainingCoversCost(cap.remaining, IMPORT_MAP_COST)) {
-        return res.status(429).json({
-          error: "weekly_limit",
-          limit: cap.limit,
-          used: cap.used,
-          remaining: cap.remaining,
-          needed: IMPORT_MAP_COST,
-          nextAvailableAt: cap.nextAvailableAt,
-        });
+      const reserved = await reserve(
+        prismaClient,
+        req.authUserId,
+        IMPORT_MAP_COST,
+        new Date()
+      );
+      if (!reserved.ok) {
+        return res.status(429).json(weeklyLimitBody(reserved.cap, IMPORT_MAP_COST));
       }
+      reservedIds = reserved.ids;
     }
 
     const sample = sampleForRecipe(text);
@@ -592,6 +717,7 @@ async function importMap(req, res, next, deps = {}) {
         model: resolved.config.model,
         system: buildCursorImportMapSystem({ unit }),
         messages: buildImportMapMessages({ sample }),
+        signal: clientGone.signal,
         ...(deps.fetchImpl ? { fetchImpl: deps.fetchImpl } : {}),
       });
       const parsedCandidate = parseImportMapCandidate(raw, { provider: "cursor" });
@@ -615,6 +741,7 @@ async function importMap(req, res, next, deps = {}) {
         messages: buildImportMapMessages({ sample }),
         effort: resolved.config.effort,
         maxTokens: IMPORT_MAP_MAX_TOKENS,
+        signal: clientGone.signal,
         ...(deps.fetchImpl ? { fetchImpl: deps.fetchImpl } : {}),
       });
       const stopErr = importMapErrorForStopReason(message && message.stop_reason);
@@ -638,19 +765,19 @@ async function importMap(req, res, next, deps = {}) {
       return res.status(validated.status).json(validated.body);
     }
 
-    if (capApplies) {
-      const rows = Array.from({ length: IMPORT_MAP_COST }, () => ({
-        userId: req.authUserId,
-      }));
-      await prismaClient.coachUsage.createMany({ data: rows });
-    }
-
+    delivered = true;
     return res.json({ recipe: validated.recipe });
   } catch (err) {
+    if (clientGone.signal.aborted) return res.end();
     if (err instanceof CoachProviderError) {
       return res.status(502).json({ error: err.code, message: err.message });
     }
     return next(err);
+  } finally {
+    if (reservedIds) {
+      if (delivered) await settle(prismaClient, reservedIds, IMPORT_MAP_COST);
+      else await refund(prismaClient, reservedIds);
+    }
   }
 }
 
@@ -664,4 +791,9 @@ module.exports = {
   paletteErrorForStopReason,
   blockErrorForStopReason,
   importMapErrorForStopReason,
+  createOffTopicStreamFilter,
+  // Test / status helpers kept for compatibility.
+  loadWeeklyCap,
+  removeUsageRow,
+  WEEKLY_LIMIT,
 };

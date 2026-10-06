@@ -197,6 +197,7 @@ describe("draftBlock handler - injected seams", () => {
   test("valid Anthropic JSON -> 200 with block", async () => {
     const res = mockRes();
     const block = validBlock("lb");
+    const settled = [];
     await draftBlock(
       { authUserId: 1, body: { mode: "convert", text: "bench day", unit: "lb" }, get: () => null },
       res,
@@ -208,30 +209,28 @@ describe("draftBlock handler - injected seams", () => {
           email: "a@b.c",
         }),
         resolveCoachProvider: () => hostedResolved(),
-        loadWeeklyCap: async () => ({
-          allowed: true,
-          limit: 7,
-          used: 0,
-          remaining: 7,
-          nextAvailableAt: null,
+        reserveUses: async () => ({
+          ok: true,
+          ids: [42],
+          cap: { allowed: true, limit: 7, used: 1, remaining: 6, nextAvailableAt: null },
         }),
-        prisma: {
-          coachUsage: {
-            create: async () => ({ id: 42 }),
-            delete: async () => ({}),
-          },
+        settleUses: async (_p, ids, cost) => {
+          settled.push({ ids, cost });
+        },
+        refundUses: async () => {
+          throw new Error("should not refund on success");
         },
         completeAnthropic: async () => ({
           stop_reason: "end_turn",
           content: [{ type: "text", text: JSON.stringify(block) }],
         }),
-        removeUsageRow: async () => {},
       }
     );
     expect(res.statusCode).toBe(200);
     expect(res.body.block.name).toBe("Test Upper");
     expect(res.body.stats).toBeTruthy();
     expect(res.body.source).toBe("hosted");
+    expect(settled).toEqual([{ ids: [42], cost: 1 }]);
   });
 
   test("Cursor prose+fence path -> extracted and accepted", async () => {
@@ -254,30 +253,23 @@ describe("draftBlock handler - injected seams", () => {
           keyInfo: { source: "hosted", key: "key" },
           config: { provider: "cursor", model: "auto", effort: "medium", maxTokens: 8000 },
         }),
-        loadWeeklyCap: async () => ({
-          allowed: true,
-          limit: 7,
-          used: 0,
-          remaining: 7,
-          nextAvailableAt: null,
+        reserveUses: async () => ({
+          ok: true,
+          ids: [7],
+          cap: { allowed: true, limit: 7, used: 1, remaining: 6, nextAvailableAt: null },
         }),
-        prisma: {
-          coachUsage: {
-            create: async () => ({ id: 7 }),
-            delete: async () => ({}),
-          },
-        },
+        settleUses: async () => {},
+        refundUses: async () => {},
         completeCursor: async () => raw,
-        removeUsageRow: async () => {},
       }
     );
     expect(res.statusCode).toBe(200);
     expect(res.body.block.unit).toBe("kg");
   });
 
-  test("unknown field -> 422 block_invalid and CoachUsage row deleted", async () => {
+  test("unknown field -> 422 block_invalid and reserved row refunded", async () => {
     const res = mockRes();
-    const deleted = [];
+    const refunded = [];
     const bad = { ...validBlock(), mystery: true };
     await draftBlock(
       { authUserId: 1, body: { mode: "convert", text: "x", unit: "lb" }, get: () => null },
@@ -290,39 +282,77 @@ describe("draftBlock handler - injected seams", () => {
           email: "a@b.c",
         }),
         resolveCoachProvider: () => hostedResolved(),
-        loadWeeklyCap: async () => ({
-          allowed: true,
-          limit: 7,
-          used: 0,
-          remaining: 7,
-          nextAvailableAt: null,
+        reserveUses: async () => ({
+          ok: true,
+          ids: [99],
+          cap: { allowed: true, limit: 7, used: 1, remaining: 6, nextAvailableAt: null },
         }),
-        prisma: {
-          coachUsage: {
-            create: async () => ({ id: 99 }),
-            delete: async ({ where }) => {
-              deleted.push(where.id);
-            },
-          },
+        settleUses: async () => {
+          throw new Error("should not settle");
+        },
+        refundUses: async (_p, ids) => {
+          refunded.push(...ids);
         },
         completeAnthropic: async () => ({
           stop_reason: "end_turn",
           content: [{ type: "text", text: JSON.stringify(bad) }],
         }),
-        removeUsageRow: async (id) => {
-          deleted.push(id);
-        },
       }
     );
     expect(res.statusCode).toBe(422);
     expect(res.body.error).toBe("block_invalid");
     expect(res.body.errors.some((e) => e.path === "mystery")).toBe(true);
-    expect(deleted).toContain(99);
+    expect(refunded).toContain(99);
+  });
+
+  test("client disconnect aborts the provider call and refunds (bkr-d2 seat fix)", async () => {
+    const res = mockRes();
+    const listeners = {};
+    res.on = (event, fn) => {
+      listeners[event] = fn;
+      return res;
+    };
+    res.writableEnded = false;
+    res.end = () => res;
+    const refunded = [];
+    let seenSignal = null;
+    await draftBlock(
+      { authUserId: 1, body: { mode: "generate", text: "4-week upper/lower", unit: "lb" }, get: () => null },
+      res,
+      () => {
+        throw new Error("an aborted call must not reach the error handler");
+      },
+      {
+        loadCoachAccess: async () => ({ consentGranted: true, entitled: true, email: "a@b.c" }),
+        resolveCoachProvider: () => hostedResolved(),
+        loadSummary: async () => ({}),
+        reserveUses: async () => ({
+          ok: true,
+          ids: [42],
+          cap: { allowed: true, limit: 7, used: 1, remaining: 6, nextAvailableAt: null },
+        }),
+        settleUses: async () => {
+          throw new Error("should not settle");
+        },
+        refundUses: async (_p, ids) => {
+          refunded.push(...ids);
+        },
+        completeAnthropic: ({ signal }) =>
+          new Promise((_resolve, reject) => {
+            seenSignal = signal;
+            signal.addEventListener("abort", () => reject(new Error("aborted")));
+            listeners.close();
+          }),
+      }
+    );
+    expect(seenSignal).not.toBeNull();
+    expect(seenSignal.aborted).toBe(true);
+    expect(refunded).toEqual([42]);
   });
 
   test("max_tokens stop -> 422 without repair", async () => {
     const res = mockRes();
-    const deleted = [];
+    const refunded = [];
     await draftBlock(
       { authUserId: 1, body: { mode: "convert", text: "x", unit: "lb" }, get: () => null },
       res,
@@ -334,32 +364,71 @@ describe("draftBlock handler - injected seams", () => {
           email: "a@b.c",
         }),
         resolveCoachProvider: () => hostedResolved(),
-        loadWeeklyCap: async () => ({
-          allowed: true,
-          limit: 7,
-          used: 0,
-          remaining: 7,
-          nextAvailableAt: null,
+        reserveUses: async () => ({
+          ok: true,
+          ids: [11],
+          cap: { allowed: true, limit: 7, used: 1, remaining: 6, nextAvailableAt: null },
         }),
-        prisma: {
-          coachUsage: {
-            create: async () => ({ id: 11 }),
-            delete: async () => ({}),
-          },
+        settleUses: async () => {},
+        refundUses: async (_p, ids) => {
+          refunded.push(...ids);
         },
         completeAnthropic: async () => ({
           stop_reason: "max_tokens",
           content: [{ type: "text", text: '{"format":' }],
         }),
-        removeUsageRow: async (id) => {
-          deleted.push(id);
-        },
       }
     );
     expect(res.statusCode).toBe(422);
     expect(res.body.error).toBe("block_truncated");
     expect(res.body.error).not.toBe("block_invalid");
-    expect(deleted).toContain(11);
+    expect(refunded).toContain(11);
+  });
+
+  test("generate off-topic sentinel -> 400 plain message and refund", async () => {
+    const { OFF_TOPIC_BLOCK_NAME, OFF_TOPIC_DRAFT_MESSAGE } = require("../../src/coach/blockDraft");
+    const res = mockRes();
+    const refunded = [];
+    const sentinel = {
+      ...validBlock("lb"),
+      name: OFF_TOPIC_BLOCK_NAME,
+    };
+    await draftBlock(
+      {
+        authUserId: 1,
+        body: { mode: "generate", text: "write a C# sorting script", unit: "lb" },
+        get: () => null,
+      },
+      res,
+      () => {},
+      {
+        loadCoachAccess: async () => ({
+          consentGranted: true,
+          entitled: true,
+          email: "a@b.c",
+        }),
+        resolveCoachProvider: () => hostedResolved(),
+        loadSummary: async () => ({ workoutCount: 0 }),
+        reserveUses: async () => ({
+          ok: true,
+          ids: [33],
+          cap: { allowed: true, limit: 7, used: 1, remaining: 6, nextAvailableAt: null },
+        }),
+        settleUses: async () => {
+          throw new Error("should not settle off-topic");
+        },
+        refundUses: async (_p, ids) => {
+          refunded.push(...ids);
+        },
+        completeAnthropic: async () => ({
+          stop_reason: "end_turn",
+          content: [{ type: "text", text: JSON.stringify(sentinel) }],
+        }),
+      }
+    );
+    expect(res.statusCode).toBe(400);
+    expect(res.body.error).toBe(OFF_TOPIC_DRAFT_MESSAGE);
+    expect(refunded).toEqual([33]);
   });
 });
 
@@ -408,5 +477,17 @@ describe("palette pattern wiring is present", () => {
     });
     expect(prompt).toMatch(/LogChamp Block Format/);
     expect(prompt).toContain('"workoutCount":3');
+  });
+
+  test("generate-mode system prompt includes the training-only scope rule", () => {
+    const { OFF_TOPIC_BLOCK_NAME } = require("../../src/coach/blockDraft");
+    const prompt = buildBlockDraftSystemPrompt({
+      mode: "generate",
+      unit: "lb",
+      trainingSummary: null,
+    });
+    expect(prompt).toMatch(/training blocks only/i);
+    expect(prompt).toContain(OFF_TOPIC_BLOCK_NAME);
+    expect(prompt).toMatch(/code, general math, homework, trivia/i);
   });
 });

@@ -8,6 +8,8 @@ const {
   LIGHT_KEYS,
   DARK_KEYS,
 } = require("../../src/coach/palette");
+const { generatePalette } = require("../../src/controllers/coachController");
+const { CoachProviderError } = require("../../src/coach/provider");
 
 /* The shipped palettes, lifted from client/src/index.css. The validator's
    thresholds are calibrated so every one of these passes - if a threshold
@@ -178,5 +180,161 @@ describe("mockPaletteFor", () => {
   test("is deterministic", () => {
     expect(mockPaletteFor("sunrise")).toEqual(mockPaletteFor("sunrise"));
     expect(mockPaletteFor("sunrise")).not.toEqual(mockPaletteFor("midnight"));
+  });
+});
+
+describe("generatePalette handler - weekly cap reservation", () => {
+  function mockRes() {
+    return {
+      statusCode: 200,
+      body: null,
+      status(code) {
+        this.statusCode = code;
+        return this;
+      },
+      json(body) {
+        this.body = body;
+        return this;
+      },
+    };
+  }
+
+  function hostedResolved() {
+    return {
+      ok: true,
+      provider: "anthropic",
+      keyInfo: { source: "hosted", key: "sk-test" },
+      config: {
+        provider: "anthropic",
+        model: "claude-sonnet-5",
+        effort: "medium",
+        maxTokens: 3000,
+      },
+    };
+  }
+
+  test("hosted key with remaining 0 -> 429 weekly_limit needed:1, model never called", async () => {
+    const res = mockRes();
+    let modelCalls = 0;
+    await generatePalette(
+      {
+        authUserId: "u1",
+        body: { description: "cold basement gym" },
+        get: () => null,
+      },
+      res,
+      () => {},
+      {
+        loadCoachAccess: async () => ({
+          consentGranted: true,
+          entitled: true,
+          email: "capped@example.com",
+        }),
+        resolveCoachProvider: () => hostedResolved(),
+        reserveUses: async (_p, _userId, n) => {
+          expect(n).toBe(1);
+          return {
+            ok: false,
+            cap: {
+              allowed: false,
+              limit: 7,
+              used: 7,
+              remaining: 0,
+              nextAvailableAt: "2026-09-28T09:00:00.000Z",
+            },
+          };
+        },
+        completeAnthropic: async () => {
+          modelCalls += 1;
+          return { stop_reason: "end_turn", content: [] };
+        },
+      }
+    );
+    expect(res.statusCode).toBe(429);
+    expect(res.body.error).toBe("weekly_limit");
+    expect(res.body.needed).toBe(1);
+    expect(res.body.remaining).toBe(0);
+    expect(modelCalls).toBe(0);
+  });
+
+  test("palette success -> 1 row kept", async () => {
+    const res = mockRes();
+    const settled = [];
+    const refunded = [];
+    const palette = mockPaletteFor("cold basement gym");
+    await generatePalette(
+      {
+        authUserId: "u1",
+        body: { description: "cold basement gym" },
+        get: () => null,
+      },
+      res,
+      () => {},
+      {
+        loadCoachAccess: async () => ({
+          consentGranted: true,
+          entitled: true,
+          email: "capped@example.com",
+        }),
+        resolveCoachProvider: () => hostedResolved(),
+        reserveUses: async () => ({
+          ok: true,
+          ids: [91],
+          cap: { allowed: true, limit: 7, used: 1, remaining: 6, nextAvailableAt: null },
+        }),
+        settleUses: async (_p, ids, cost) => {
+          settled.push({ ids, cost });
+        },
+        refundUses: async (_p, ids) => {
+          refunded.push(...ids);
+        },
+        completeAnthropic: async () => ({
+          stop_reason: "end_turn",
+          content: [{ type: "text", text: JSON.stringify(palette) }],
+        }),
+      }
+    );
+    expect(res.statusCode).toBe(200);
+    expect(res.body.palette.name).toBeTruthy();
+    expect(settled).toEqual([{ ids: [91], cost: 1 }]);
+    expect(refunded).toHaveLength(0);
+  });
+
+  test("palette model failure -> 0 rows kept", async () => {
+    const res = mockRes();
+    const refunded = [];
+    await generatePalette(
+      {
+        authUserId: "u1",
+        body: { description: "cold basement gym" },
+        get: () => null,
+      },
+      res,
+      () => {},
+      {
+        loadCoachAccess: async () => ({
+          consentGranted: true,
+          entitled: true,
+          email: "capped@example.com",
+        }),
+        resolveCoachProvider: () => hostedResolved(),
+        reserveUses: async () => ({
+          ok: true,
+          ids: [92],
+          cap: { allowed: true, limit: 7, used: 1, remaining: 6, nextAvailableAt: null },
+        }),
+        settleUses: async () => {
+          throw new Error("should not settle on failure");
+        },
+        refundUses: async (_p, ids) => {
+          refunded.push(...ids);
+        },
+        completeAnthropic: async () => {
+          throw new CoachProviderError("provider_error", "boom");
+        },
+      }
+    );
+    expect(res.statusCode).toBe(502);
+    expect(refunded).toEqual([92]);
   });
 });

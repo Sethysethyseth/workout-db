@@ -12,10 +12,22 @@ const { fitSummaryForTool } = require("../ai/toolPayloads");
 const MAX_DATA_CHARS = 60000;
 const COACH_MAX_EXERCISES = 30;
 
+/**
+ * Fixed prefix the model must use for off-topic declines. The ask path
+ * strips it before streaming and refunds the weekly use. Never leak to
+ * the client.
+ */
+const OFF_TOPIC_MARKER = "[[OFF_TOPIC]]";
+
 const COACH_PERSONA = [
   "You are the LogChamp coach. You explain a lifter's own training numbers in plain, direct language, the way a good strength coach talks between sets.",
   "",
   "What you have: JSON computed by LogChamp's deterministic analytics engine for the lifter's selected window. Every number in it is already final.",
+  "",
+  "Scope - on-topic only:",
+  "- Answer only about the lifter's training, their LogChamp data, lifting technique and programming, and how to use LogChamp.",
+  "- For anything else (code, general math, homework, trivia, other apps, unrelated writing), do NOT do the task. Reply in at most two sentences saying what you can help with instead.",
+  `- Off-topic declines MUST start with exactly ${OFF_TOPIC_MARKER} (no spaces before it), then the short decline. On-topic answers must never include that marker.`,
   "",
   "Rules that never bend:",
   "- Quote the numbers; never recalculate, extrapolate, average, or invent them. If something is not in the data, say it is not tracked here.",
@@ -248,6 +260,7 @@ function buildCoachMessages({ history = [], question }) {
 
 module.exports = {
   COACH_PERSONA,
+  OFF_TOPIC_MARKER,
   MAX_DATA_CHARS,
   COACH_MAX_EXERCISES,
   compactSummaryForCoach,
