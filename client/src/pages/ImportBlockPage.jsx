@@ -11,7 +11,7 @@ import {
 } from "../api/coachApi.js";
 import { loadCoachKey } from "../lib/coachKeyPref.js";
 import { loadWeightUnit } from "../lib/weightUnitPref.js";
-import { AiWait, AiWaitButtonLabel } from "../components/coach/AiWait.jsx";
+import { AiWaitButtonLabel } from "../components/coach/AiWait.jsx";
 import { StickyHeader } from "../components/blocks/ui/StickyHeader.jsx";
 import {
   AiFileFixOffer,
@@ -485,6 +485,11 @@ export function ImportBlockPage() {
       const id = data?.blockTemplate?.id;
       const weeks = preview?.stats?.weeks ?? block?.weeks?.length ?? 0;
       if (id) {
+        try {
+          localStorage.removeItem("workoutdb-block-builder-draft:new");
+        } catch {
+          /* private mode / quota */
+        }
         navigate(`/blocks/${id}/edit`, {
           state: {
             importToast: formatImportToast(weeks),
@@ -525,16 +530,14 @@ export function ImportBlockPage() {
 
   const aiFixOffer = (show) =>
     show ? (
-      <>
-        <AiFileFixOffer
-          coachStatus={coachStatus}
-          fixing={fixingFile}
-          disabled={previewing || creating || !String(text || "").trim()}
-          onFix={() => void onAiFixFile()}
-          buttonLabel={fixButtonLabel}
-        />
-        {fixingFile ? <AiWait variant="status" verb={IMPORT_FIX_VERB} /> : null}
-      </>
+      <AiFileFixOffer
+        coachStatus={coachStatus}
+        fixing={fixingFile}
+        disabled={previewing || creating || !String(text || "").trim()}
+        onFix={() => void onAiFixFile()}
+        buttonLabel={fixButtonLabel}
+        waitVerb={IMPORT_FIX_VERB}
+      />
     ) : null;
 
   return (
@@ -621,6 +624,7 @@ export function ImportBlockPage() {
               aiReadCompare={aiReadCompare}
               onUseOriginalRead={onUseOriginalRead}
               aiFixCost={aiFixCost}
+              originalPreview={priorPreview}
               aiLayoutOffer={aiFixOffer(showAiOnPreview)}
             />
             {networkError ? (

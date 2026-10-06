@@ -3,7 +3,11 @@
  * Replaces the old AiLayoutOffer / pre-preview convert buttons.
  */
 
+import { AiWait } from "../../coach/AiWait.jsx";
+
 const IMPORT_FIX_MAX_COST = 4;
+const IMPORT_FIX_SLOW_COPY =
+  "Still reading your file - long files take up to a minute.";
 
 function formatNextQuestionTime(iso) {
   if (!iso) return null;
@@ -24,6 +28,7 @@ function formatNextQuestionTime(iso) {
  *   disabled?: boolean,
  *   onFix: () => void,
  *   buttonLabel: import("react").ReactNode,
+ *   waitVerb?: string,
  * }} props
  */
 export function AiFileFixOffer({
@@ -32,6 +37,7 @@ export function AiFileFixOffer({
   disabled = false,
   onFix,
   buttonLabel,
+  waitVerb = "Fixing your file...",
 }) {
   if (!coachStatus?.available) return null;
 
@@ -48,14 +54,13 @@ export function AiFileFixOffer({
 
   let costLine;
   if (weeklyCap == null) {
-    costLine =
-      "Uses 1-4 of your coach uses left this week, depending on the file.";
+    costLine = "Uses 1-4 coach uses.";
   } else if (notEnough) {
     costLine = when
       ? `Needs 4 coach uses - you have ${remaining} left. More free up ${when}.`
       : `Needs 4 coach uses - you have ${remaining} left.`;
   } else {
-    costLine = `Uses 1-4 of your ${remaining} coach uses left this week, depending on the file.`;
+    costLine = `Uses 1-4 coach uses - you have ${remaining} left this week.`;
   }
 
   return (
@@ -69,9 +74,19 @@ export function AiFileFixOffer({
       >
         {buttonLabel}
       </button>
-      <p className="bk-import-ai-layout__cost" role="status">
-        {costLine}
-      </p>
+      <div className="bk-import-ai-layout__cost">
+        {fixing ? (
+          <AiWait
+            variant="status"
+            verb={waitVerb}
+            slowCopy={IMPORT_FIX_SLOW_COPY}
+          />
+        ) : (
+          <p className="bk-import-ai-layout__cost-text" role="status">
+            {costLine}
+          </p>
+        )}
+      </div>
     </div>
   );
 }

@@ -6,6 +6,7 @@ import { SectionRule } from "../ui/SectionRule.jsx";
 import { WeekStrip } from "../ui/WeekStrip.jsx";
 import { ExerciseCard } from "../builder/ExerciseCard.jsx";
 import { ExercisePicker } from "../builder/ExercisePicker.jsx";
+import { aiFixChanges } from "./aiFixChanges.js";
 import { formatExerciseForCard } from "./formatExerciseForCard.js";
 import {
   formatAiReadCompareStats,
@@ -38,6 +39,7 @@ export function ImportPreviewStep({
   aiReadCompare = null,
   onUseOriginalRead = null,
   aiFixCost = null,
+  originalPreview = null,
 }) {
   const block = preview?.block || null;
   const stats = preview?.stats || {};
@@ -104,12 +106,20 @@ export function ImportPreviewStep({
     [preview]
   );
 
+  const changeLines = useMemo(() => {
+    if (!aiReadCompare || aiReadCompare.origin !== "preview" || !originalPreview) {
+      return [];
+    }
+    return aiFixChanges(originalPreview, preview);
+  }, [aiReadCompare, originalPreview, preview]);
+
   const dayHeading =
     currentDay?.name && String(currentDay.name).trim()
       ? String(currentDay.name).trim()
       : `Day ${safeDayIdx + 1}`;
 
   const nameSummary = blockName.trim() || "Name this block";
+  const afterAiFix = Boolean(aiReadCompare || (typeof aiFixCost === "number" && aiFixCost > 0));
 
   const aiCompareWarn = Boolean(
     aiReadCompare &&
@@ -130,6 +140,12 @@ export function ImportPreviewStep({
     }
   }
 
+  function warningText(w) {
+    const row = w?.row != null ? `Row ${w.row}: ` : "";
+    const message = w?.message != null ? String(w.message) : "Changed or skipped";
+    return `${row}${message}`;
+  }
+
   return (
     <div className="bk-import-preview">
       <p className="bk-import-stats">{statsLine}</p>
@@ -148,6 +164,16 @@ export function ImportPreviewStep({
           role="status"
         >
           <p className="bk-import-ai-compare__line">{aiCompareLine}</p>
+          {changeLines.length > 0 ? (
+            <div className="bk-import-ai-changed">
+              <p className="bk-import-ai-changed__heading">AI changed</p>
+              <ul className="bk-import-ai-changed__list">
+                {changeLines.map((line, i) => (
+                  <li key={i}>{line}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
           {typeof onUseOriginalRead === "function" ? (
             <button
               type="button"
@@ -168,20 +194,22 @@ export function ImportPreviewStep({
       ) : null}
 
       {warnings.length > 0 ? (
-        <Disclosure
-          summary={`${pluralize(warnings.length, "thing", "things")} we changed or skipped`}
-        >
+        <div className="bk-import-problems">
           <ul className="bk-import-warnings">
-            {warnings.map((w, i) => {
-              const row = w?.row != null ? `Row ${w.row}: ` : "";
-              const message = w?.message != null ? String(w.message) : "Changed or skipped";
-              return <li key={i}>{row}{message}</li>;
-            })}
+            {warnings.map((w, i) => (
+              <li key={i}>
+                {warningText(w)}
+                {afterAiFix ? (
+                  <span className="bk-import-problems__tag"> still needs you</span>
+                ) : null}
+              </li>
+            ))}
           </ul>
-        </Disclosure>
-      ) : null}
-
-      {aiLayoutOffer}
+          {aiLayoutOffer}
+        </div>
+      ) : (
+        aiLayoutOffer
+      )}
 
       {warmupRows > 0 ? (
         <label className="bk-import-toggle">

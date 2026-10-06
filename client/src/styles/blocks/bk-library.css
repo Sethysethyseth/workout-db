@@ -431,6 +431,10 @@
   color: var(--bk-ink-2);
 }
 
+.bk-lib-card-confirm {
+  margin-top: 4px;
+}
+
 .bk-lib-confirm {
   display: flex;
   flex-direction: column;

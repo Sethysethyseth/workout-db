@@ -585,9 +585,27 @@ html.bk-log-focus .persistent-workout-bar-wrap {
 
 /* Phone keyboard: hide every fixed bottom overlay while typing. */
 html.bk-log-kbd .bottom-nav,
-html.bk-log-kbd .persistent-workout-bar-wrap,
-html.bk-log-kbd .session-finish-dock {
+html.bk-log-kbd .persistent-workout-bar-wrap {
   display: none !important;
+}
+
+/* Finish dock: slide away instead of an instant display:none pop (P3-11). */
+.session-finish-dock {
+  transition:
+    transform 150ms ease-out,
+    opacity 150ms ease-out,
+    visibility 0s linear 0s;
+}
+
+html.bk-log-kbd .session-finish-dock {
+  transform: translateY(100%);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    transform 150ms ease-out,
+    opacity 150ms ease-out,
+    visibility 0s linear 150ms;
 }
 
 /* Clearance for any remaining fixed chrome (safe-area) while a field is focused. */
@@ -609,6 +627,11 @@ html.bk-log-focus .session-detail-page--block {
   .bk-log-nb,
   .bk-set-num,
   .bk-log-remove {
+    transition: none;
+  }
+
+  .session-finish-dock,
+  html.bk-log-kbd .session-finish-dock {
     transition: none;
   }
 }

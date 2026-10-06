@@ -169,7 +169,6 @@
   flex-direction: column;
   gap: 8px;
   margin-top: 12px;
-  min-height: 76px;
 }
 
 .bk-import-ai-layout .btn {
@@ -179,10 +178,59 @@
 
 .bk-import-ai-layout__cost {
   margin: 0;
+  min-height: 1.4em;
+  max-width: 65ch;
+}
+
+.bk-import-ai-layout__cost-text {
+  margin: 0;
   font: 400 13px/1.4 var(--font-sans);
   color: var(--bk-muted);
-  max-width: 65ch;
-  min-height: 1.4em;
+}
+
+.bk-import-ai-layout__cost .ai-wait--status {
+  margin: 0;
+  font: 400 13px/1.4 var(--font-sans);
+  color: var(--bk-muted);
+}
+
+.bk-import-problems {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 4px;
+  padding: 12px 14px;
+  border-radius: var(--bk-r);
+  border: 1px solid color-mix(in srgb, var(--bk-warn) 40%, var(--bk-line));
+  background: color-mix(in srgb, var(--bk-warn-soft) 70%, var(--bk-field));
+}
+
+.bk-import-problems .bk-import-ai-layout {
+  margin-top: 4px;
+}
+
+.bk-import-problems__tag {
+  font-weight: 600;
+  color: var(--bk-warn);
+}
+
+.bk-import-ai-changed {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bk-import-ai-changed__heading {
+  margin: 0;
+  font: 600 13px/1.3 var(--font-sans);
+  color: var(--bk-ink-2);
+}
+
+.bk-import-ai-changed__list {
+  margin: 0;
+  padding-left: 1.1rem;
+  font: 400 14px/1.45 var(--font-sans);
+  color: var(--bk-ink);
 }
 
 .bk-import-ai-compare {

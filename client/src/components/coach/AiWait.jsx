@@ -10,13 +10,15 @@ const ALMOST_COPY = "Almost there. Hang tight.";
 
 /**
  * Shared AI wait: LogChamp crown + optional copy ladder.
- * - inline: 16px crown left of the busy-button verb (immediate)
+ * - inline: 18px crown left of the busy-button verb (immediate)
  * - block: 28px crown above the ladder (panel-filling waits)
  * - status: ladder only, under a busy button
+ * @param {{ variant?: "inline"|"block"|"status", verb: string, slowCopy?: string }} props
  */
-export function AiWait({ variant = "inline", verb }) {
+export function AiWait({ variant = "inline", verb, slowCopy }) {
   const [line, setLine] = useState(null);
   const [lineKey, setLineKey] = useState(0);
+  const slowLine = slowCopy || SLOW_COPY;
 
   useEffect(() => {
     if (variant === "inline") return undefined;
@@ -31,7 +33,7 @@ export function AiWait({ variant = "inline", verb }) {
     }, SHOW_DELAY_MS);
     const slowTimer = setTimeout(() => {
       if (!cancelled) {
-        setLine(SLOW_COPY);
+        setLine(slowLine);
         setLineKey((k) => k + 1);
       }
     }, SLOW_DELAY_MS);
@@ -47,7 +49,7 @@ export function AiWait({ variant = "inline", verb }) {
       clearTimeout(slowTimer);
       clearTimeout(almostTimer);
     };
-  }, [variant, verb]);
+  }, [variant, verb, slowLine]);
 
   if (variant === "inline") {
     return (

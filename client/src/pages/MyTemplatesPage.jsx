@@ -179,11 +179,6 @@ export function MyTemplatesPage() {
   }
 
   async function onDeleteWorkout(t) {
-    const ok = window.confirm(
-      `Delete workout template "${t.name}"? This cannot be undone. Sessions that used it keep their history.`
-    );
-    if (!ok) return;
-
     setError(null);
     setSuccess(null);
     setActingKey(keyFor("workout", t.id));
@@ -192,7 +187,7 @@ export function MyTemplatesPage() {
       await templateApi.deleteTemplate(t.id);
       const cur = readCurrentProgram();
       if (cur?.kind === "workout" && cur.id === t.id) writeCurrentProgram(null);
-      setSuccess("Template deleted.");
+      setSuccess("Workout deleted.");
       clearFeedbackSoon();
       await load();
     } catch (err) {
@@ -204,16 +199,13 @@ export function MyTemplatesPage() {
   }
 
   async function onDeleteBlock(t) {
-    const ok = window.confirm(`Delete block template "${t.name}"? This cannot be undone.`);
-    if (!ok) return;
-
     setError(null);
     setSuccess(null);
     setActingKey(keyFor("block", t.id));
     setActingAction("delete");
     try {
       await blockTemplateApi.deleteBlockTemplate(t.id);
-      setSuccess("Block template deleted.");
+      setSuccess("Block deleted.");
       clearFeedbackSoon();
       await load();
     } catch (err) {
@@ -225,11 +217,6 @@ export function MyTemplatesPage() {
   }
 
   async function onDeleteExercise(x) {
-    const ok = window.confirm(
-      `Delete custom exercise "${x.name}"? This cannot be undone. Sessions that used it keep their logged sets, but they lose the link to this exercise, so analytics stops attributing those sets to its muscles.`
-    );
-    if (!ok) return;
-
     setError(null);
     setSuccess(null);
     setActingKey(keyFor("exercise", x.id));

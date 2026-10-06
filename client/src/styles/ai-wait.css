@@ -1,7 +1,7 @@
 /* Shared AI wait indicator - crown + copy ladder (bkr1). Tokens only. */
 
 .ai-wait {
-  --ai-wait-crown: 16px;
+  --ai-wait-crown: 18px;
 }
 
 .ai-wait--inline {
@@ -53,12 +53,12 @@
 @keyframes ai-wait-breathe {
   0%,
   100% {
-    opacity: 0.78;
-    transform: translateY(0);
+    opacity: 0.55;
+    transform: scale(0.92);
   }
   50% {
     opacity: 1;
-    transform: translateY(-2px);
+    transform: scale(1.06);
   }
 }
 

@@ -3314,13 +3314,7 @@ export function SessionDetailPage() {
         leaveSessionNow();
         return;
       }
-      if (
-        !window.confirm(
-          "Leave this workout? You can open it again from the home screen."
-        )
-      ) {
-        return;
-      }
+      // Non-block live workouts also lose nothing on Back - reopen from Home.
     }
     leaveSessionNow();
   }
