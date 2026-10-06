@@ -321,6 +321,22 @@ by the seat) | n=21 candidate. SERIALIZE AFTER bks1 (same import folder + bk-imp
 The lane needs `npm ci` in client/ before dispatch (new dependency). LANDED Sept 30 as n=20. Audit: lanes were re-run fresh and green; the pure TSV check matches byte for byte; the code uses the v9 read-excel-file API (all sheets, {sheet,data}).
 The lazy chunk is browser-*.js at 67 kB, and the main chunk grew 2.92 kB. The real workbook reads 6/30/216/602/84. Accepted: changing the sheet refreshes the text, but Preview stays a tap, the same as for text files.
 
+**BK smoke round 2 -> fix wave (bkr), opened Oct 5, 2026 (Opus frontier seat).**
+Source: `bk-smoke-FINDINGS.md` "Smoke round 2". Seth's rulings Oct 5: Home
+gets an Artifact mock first; the AI file fix and the layout read merge into ONE
+button; palette costs 1 use; finish the smoke before dispatch (done - seat ran
+the untouched items). Sign-off resets; re-smoke at wave end. Same branch
+`ai-connector-wave`, all MODEL auto, MODE 1-relay, DB-free lanes. Order:
+diagnoses d1-d3 (report lanes, parallel) + bkr2 (server) first; bkr1 (client
+loader) after d2 is verified (it absorbs the d2 fix); bkr3 after bkr1 AND bkr2
+(collides with both); bkr4 builder sheet + bkr5 Home stay DRAFT until Seth
+picks from the mock.
+
+QUEUED | bkr-d1-finish-bar-diagnosis.md | DIAGNOSIS: "Finish workout" bar vanishes in a block workout until touched (P1) | report lane.
+QUEUED | bkr-d2-coach-draft-hang-diagnosis.md | DIAGNOSIS: Draft with the coach stuck on "Drafting..." and a use charged (P1) | report lane; feeds bkr1.
+QUEUED | bkr-d3-deeplink-login-flash-diagnosis.md | DIAGNOSIS: Login form flashes on a hard load of a deep link (P3) | report lane.
+QUEUED | bkr2-coach-guardrails.md | reserve/settle/refund usage ledger (no overshoot), palette costs 1, coach on-topic only with refunded declines | server only; live staging proof at landing.
+
 DRAFT | bk0-privacy-terms-pages.md | plain-language /privacy + /terms,
 covering the AI layer and the draft-block write | Seth's Sept 26 "first
 unit of the next wave" - blocked on his OPEN FACTS (operator name, contact
