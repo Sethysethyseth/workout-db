@@ -13,9 +13,9 @@
 > working, lets skip it for now")** - his re-smoke is the check. Prod
 > unchanged: `main` = `7d3b91e`.
 >
-> **Oct 6, later: Seth's smoke round 3 INTAKE is waiting** - 9 notes (one
+> **Oct 6, later: Seth's smoke round 3 INTAKE is waiting** - 10 notes (one
 > suspected P0 data loss, one bug with a screenshot, six CRs, one open
-> question for the agent's opinion) recorded verbatim in
+> question for the agent's opinion, one undecided CR to talk through) recorded verbatim in
 > `docs/tasks/bk-smoke-FINDINGS.md` -> "Smoke round 3". The session that took
 > them proposed NO solutions on purpose (Seth: "leave this to the next
 > chat"). The 11-item re-smoke checklist below is still un-run.
@@ -27,7 +27,7 @@ data loss.
 ## ▶ PICK UP HERE (Oct 6 - smoke round 3 intake, FRONTIER seat)
 
 Seth handed the next chat his round-3 notes (FINDINGS "Smoke round 3", items
-1-9). Do them in this order and ask Seth the open calls batched at the start
+1-10; item 10 is undecided - discuss, don't author). Do them in this order and ask Seth the open calls batched at the start
 (memory: ask-seth-the-decisions):
 
 1. **Item 1 first - suspected P0:** starting a second block may wipe the

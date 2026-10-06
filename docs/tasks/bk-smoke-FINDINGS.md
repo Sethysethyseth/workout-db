@@ -171,6 +171,11 @@ Bugs go through a DIAGNOSIS block first; CRs need authored blocks.
 9. **Private / Public on blocks does nothing - CR, Seth's exact copy.** When
    someone taps it, show a small message: "this hasnt been implemented yet bro
    stop prying".
+10. **Swap an exercise while running a block without changing the block - CR,
+    UNDECIDED.** Seth: "potential way to change the exercise while using the
+    block not making the block example if the block says do bench press and
+    you do smith machine bench". Seth is on the edge about this one (Oct 6) -
+    talk it through with him before authoring anything.
 
 **Process ruling (Oct 6):** the separate-agent feel critic now runs ONE
 iteration by default (still scored 0-10); Seth says when he wants more rounds.
