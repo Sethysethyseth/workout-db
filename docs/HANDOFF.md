@@ -31,16 +31,17 @@ Seth handed the next chat his round-3 notes (FINDINGS "Smoke round 3", items
 (memory: ask-seth-the-decisions):
 
 1. **Item 1 first - suspected P0:** starting a second block may wipe the
-   running block's progress. DIAGNOSIS block to Cursor (report lane) before
+   running block's progress (Seth unsure whether the first block was still
+   running - cover both cases). DIAGNOSIS block to Cursor (report lane) before
    anything else; if confirmed, it is the top fix of the next wave.
 2. **Item 2 - bug:** "+ Add exercise" in the builder opens wrong the first
    time (keyboard up, no search/list; second tap is fine). Screenshot in
    `claudefiledrop/smoke-r3-add-exercise-first-open.png`. DIAGNOSIS block.
 3. **Ask Seth in one batch, with a recommendation each:** item 5 (is block
    Settings the right home for the RPE/RIR choice? he wants your opinion),
-   item 7 (what "single" exercise means - per-side flag? where - block
-   logger, builder?), item 3 (hard cap at 7 days per week: disable "+ Day" at
-   7?). Items 4, 6, 8, 9 are clear enough to author (item 9's copy is Seth's,
+   item 3 (hard cap at 7 days per week: disable "+ Day" at
+   7?). Item 7 is answered ("single" = one-arm/one-leg exercise -> log a left
+   and a right side). Items 4, 6, 7, 8, 9 are clear enough to author (item 9's copy is Seth's,
    verbatim: "this hasnt been implemented yet bro stop prying").
 4. Author the next wave from the answers (`author-task-block`), Home/builder
    design units get an Artifact mock first when they change layout (memory:

@@ -137,8 +137,9 @@ Bugs go through a DIAGNOSIS block first; CRs need authored blocks.
 
 1. **Starting another block can wipe progress - P0 if confirmed (data loss).**
    Seth: "if you have 2 blocks, and start another im pretty sure you lose all
-   progres on the previous, we cant have this." Not yet reproduced. Diagnosis
-   first: what happens to the running block's run, its logged sessions, and
+   progres on the previous, we cant have this." Not yet reproduced; Seth is not sure
+   whether block A was still running when he started block B (Oct 6), so the
+   diagnosis must cover BOTH cases (A running vs A ended). Diagnosis first: what happens to the running block's run, its logged sessions, and
    its progress when a second block's run is started.
 2. **Add exercise opens wrong the first time - FAIL P2 (bug).** In the block
    builder, "+ Add exercise" usually opens (the first time) as an "ADD
@@ -162,8 +163,8 @@ Bugs go through a DIAGNOSIS block first; CRs need authored blocks.
    put it in your library from the block builder".
 7. **"Single" exercises should get a left and a right side - CR.** "when using
    a 'single' exercise it should populate a left and a right side like how
-   normally logging does it". Confirm with Seth what "single" means here
-   (exercise type / per-side flag) and where (block logger, builder plan).
+   normally logging does it". Seth confirmed (Oct 6): "single" = an exercise marked one-arm / one-leg,
+   which should log a left and a right side.
 8. **Imported blocks with exercises not in the library - CR (future).** "if you
    import a block and it has workouts that arent saved the app should probably
    catch that and have you add them to the library".
