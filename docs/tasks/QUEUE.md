@@ -332,10 +332,10 @@ loader) after d2 is verified (it absorbs the d2 fix); bkr3 after bkr1 AND bkr2
 (collides with both); bkr4 builder sheet + bkr5 Home stay DRAFT until Seth
 picks from the mock.
 
-QUEUED | bkr-d1-finish-bar-diagnosis.md | DIAGNOSIS: "Finish workout" bar vanishes in a block workout until touched (P1) | report lane.
-QUEUED | bkr-d2-coach-draft-hang-diagnosis.md | DIAGNOSIS: Draft with the coach stuck on "Drafting..." and a use charged (P1) | report lane; feeds bkr1.
+DISPATCHED | bkr-d1-finish-bar-diagnosis.md | DIAGNOSIS: "Finish workout" bar vanishes in a block workout until touched (P1) | report lane. Dispatched Oct 5 (Opus seat): Channel B, `--model auto`, `cursor-lane` on `cursor/bkr-d1` @ `8162388`, 40-min hard kill.
+DISPATCHED | bkr-d2-coach-draft-hang-diagnosis.md | DIAGNOSIS: Draft with the coach stuck on "Drafting..." and a use charged (P1) | report lane; feeds bkr1. Dispatched Oct 5: Channel B, `--model auto`, `cursor-lane-2` on `cursor/bkr-d2` @ `8162388`, 40-min hard kill.
 QUEUED | bkr-d3-deeplink-login-flash-diagnosis.md | DIAGNOSIS: Login form flashes on a hard load of a deep link (P3) | report lane.
-QUEUED | bkr2-coach-guardrails.md | reserve/settle/refund usage ledger (no overshoot), palette costs 1, coach on-topic only with refunded declines | server only; live staging proof at landing.
+DISPATCHED | bkr2-coach-guardrails.md | reserve/settle/refund usage ledger (no overshoot), palette costs 1, coach on-topic only with refunded declines | server only; live staging proof at landing. Dispatched Oct 5: Channel B, `--model auto`, `cursor-lane-3` on `cursor/bkr2` @ `8162388`, 40-min hard kill.
 
 DRAFT | bk0-privacy-terms-pages.md | plain-language /privacy + /terms,
 covering the AI layer and the draft-block write | Seth's Sept 26 "first
