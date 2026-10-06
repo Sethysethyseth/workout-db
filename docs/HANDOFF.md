@@ -1,70 +1,45 @@
 # HANDOFF — current state
 
-> **WHERE WE ARE (Oct 1):** the **BK wave is COMPLETE again - 30/30 LANDED**
-> on `ai-connector-wave` (head `93301c6`+, pushed; staging Render verified
-> serving the wave's server code). Seth's Sept 30 smoke reopened the wave with four change
-> requests (bks1-4: AI layout import, block-day logger, Library, .xlsx
-> upload); then two critic fix rounds landed (bksf1a-d, bksf2a-c). The
-> separate-agent feel critic scored 5 -> 7 -> **7/10 FAIL** (round 3 was the
-> last by rule; `docs/tasks/bks-critic-round-3-FINDINGS.md`). Seth ruled
-> Oct 1: fix its open P1s before his smoke, seat-verified, no round 4 -
-> the seat fixed two directly (`9f6b2a0`), bksf3a-b fixed the other two
-> (`2fd8773`, `b5e42f2` + landing fix `9633c20`), all checked live. HARD STOP for
-> Seth's smoke, restarting from item 1 against the checklist below. Prod
-> unchanged: `main` = `7d3b91e`.
+> **WHERE WE ARE (Oct 5):** Seth's BK smoke round 2 (Oct 5) turned into a
+> fix wave, **bkr**, on `ai-connector-wave`. Findings and his rulings:
+> `docs/tasks/bk-smoke-FINDINGS.md` -> "Smoke round 2". The seat ran every
+> item he hadn't touched (local, 390px): nothing glaring. Landed so far:
+> **bkr2** `ed92b31` (coach guardrails: reserve/settle/refund ledger under a
+> per-user lock - proven on staging, 9 parallel -> 7 ok / 2 refused; palette
+> costs 1; coach on-topic only, live-checked on staging: a C# ask gets a
+> one-line decline and costs nothing), **bkr-f1** `eebadf4` (Finish bar
+> returns when the iOS keypad closes), **bkr1** `3373a9b` (crown AiWait +
+> slow-wait copy + 120 s client timeouts on every AI call). Diagnoses d1-d3
+> landed as FINDINGS docs (d3 closed as by-design). **In flight:** bkr3 (one
+> "Have AI fix this file" button, 1-4 uses by tokens) in `cursor-lane`.
+> **Waiting on Seth:** bkr4 (builder "..." menu) + bkr5 (Home log-first) are
+> DRAFT until he picks from the mock. Prod unchanged: `main` = `7d3b91e`.
 
-**Next action (human):** open the before/after gallery
-(https://claude.ai/artifact/BYfQuLW677z67Ap7WaDfwH) for a 2-minute look at
-what changed, then open a Claude Code session, say "smoke the BK wave with
-me", and work through the checklist below on your phone on the staging
-Vercel deploy.
+**Next action (human):** open https://claude.ai/artifact/E87H65uivuhARz7A94pphN
+and pick a Home option (A / B / C - seat recommends A) and a builder-menu
+option (1 / 2 - seat recommends 2); reply in the session or comment on the
+canvas.
 
-## ▶ PICK UP HERE (Oct 1 - for the agent running the smoke WITH Seth)
+## ▶ PICK UP HERE (Oct 5 - bkr fix wave, Opus seat running the relay)
 
-> **Your job: sit with Seth while he smokes the BK wave, one item at a time,
-> and record results. You do NOT fix code and do NOT run the gate.** Any
-> model can do this; Sonnet is fine.
-
-**Protocol**
-
-0. **Gallery first:** the private Artifact
-   https://claude.ai/artifact/BYfQuLW677z67Ap7WaDfwH shows phone-size
-   before/after shots of every changed screen, in checklist order (built
-   Oct 1 at Seth's ask). Use it to orient Seth, not as a substitute for any
-   item.
-1. **Where Seth tests:** the staging Vercel preview of `ai-connector-wave`,
-   branch URL
-   `https://workout-db-git-ai-connector-wave-sethysethyseths-projects.vercel.app`
-   (behind Vercel login; per-commit URLs also work). Phone first; desktop
-   only for item 13. NEVER local dev (`client/.env` points at prod). The
-   preview talks to staging Render `https://workout-db-staging.onrender.com`.
-2. **Accounts:**
-   - `test123` / `password` - holds the running block "Upper/Lower
-     Strength - 4wk" (block 126). Weeks 1-2 and W3 Upper A, Lower A, Upper B are logged (the critic finished Upper B as session 465); **W3 · Lower B is next, nothing in progress.** Staging coach: 4 of 7 left this week. AI consent is ON;
-     staging coach use is capped at 7 a week (the counter shows what is
-     left - the AI layout read costs 3, convert/draft/ask cost 1 each).
-   - Or Seth's own staging account, or `demo.critic@example.com` (password
-     in the memory note `local-run-and-critic-loop`).
-3. **Pace:** ONE item at a time, in plain words; wait for his result. If
-   something looks off, ask for a screenshot - he drops them in
-   `claudefiledrop/` (untracked; read with the Read tool; never commit it).
-4. **Record:** APPEND a `## Smoke round 2 (Oct 1+)` section to
-   `docs/tasks/bk-smoke-FINDINGS.md` at the first result - one line per item:
-   PASS, or FAIL with Seth's words + screenshot name + severity (P0 broken /
-   data loss, P1 blocks him, P2 friction, P3 polish). New scope = CR, not
-   FAIL. Commit + push it at the end (docs-only push to staging is allowed).
-5. **Verify, don't guess:** staging API calls with a cookie login
-   (`POST /auth/login` with body `{"login":"test123","password":"password"}`,
-   reuse the `workoutdb.sid` cookie); READ-ONLY Prisma reads from `server/`
-   (`server/.env` = staging). No writes, no migrations.
-6. **Defects:** do NOT fix during the smoke. After the last item, each FAIL
-   becomes a DIAGNOSIS block (`author-task-block`, diagnosis variant) ->
-   Cursor -> `land-unit`, and the sign-off resets. Only AGENTS.md's
-   direct-fix exception applies - still record it.
-7. **Sign-off:** when Seth says "smoke signed off" (or waives items), record
-   it in the FINDINGS doc and here, set the Next action line to the
-   pre-main gate, and stop. The gate is `pre-main-review` in an OPUS session
-   with the gate notes below.
+- QUEUE.md "BK smoke round 2 -> fix wave (bkr)" is the ledger: order,
+  lanes, landing notes. N = 8 (d1, d2, d3, bkr2, bkr-f1, bkr1, bkr3 + bkr4,
+  bkr5 still DRAFT); 6 landed.
+- On Seth's pick: author bkr4 (builder menu, design fully specified from the
+  chosen artboard - fold in the in-page Delete-block confirm) and bkr5 (Home:
+  log-first hero, block card per the pick, ONE Resume while live - hide the
+  bottom "In progress" bar on Home only, keep "Up next after this"). They
+  touch disjoint files -> parallel lanes. Both are primary-screen design units
+  -> run the separate-agent critic loop after landing (memory
+  local-run-and-critic-loop).
+- bkr3 landing: also strip the leading space after the off-topic marker in
+  `createOffTopicStreamFilter` (live reply began " I only coach...").
+- Wave end: the consolidated re-smoke = the round-2 checklist below with
+  items 4/12 reworded for the merged AI button + crown loader, plus Seth's
+  iPhone check of the Finish bar (bkr-f1).
+- Cursor plan is auto-rung only; lanes run via the scratchpad runner with a
+  40-min hard kill (`run-lane.ps1`, recreate from dispatch-unit section 2 if
+  the scratchpad is gone).
 
 ### Wave smoke checklist - BK, round 2 (staging Vercel, phone + desktop)
 
