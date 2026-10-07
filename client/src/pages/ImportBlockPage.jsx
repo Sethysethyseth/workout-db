@@ -469,6 +469,31 @@ export function ImportBlockPage() {
     });
   }
 
+  /**
+   * After Add-to-library succeeds: move the unmatched row to matched locally
+   * (no full re-preview - preserves renames / block name). If the library
+   * name differs from the typed name, also record a rename so create stamps it.
+   */
+  function onLibraryMatched(from, libraryName) {
+    const to = String(libraryName || "").trim();
+    const fromName = String(from || "").trim();
+    if (!fromName || !to) return;
+    setPreview((prev) => {
+      if (!prev) return prev;
+      const exercises = Array.isArray(prev.exercises)
+        ? prev.exercises.map((ex) =>
+            ex?.name === fromName
+              ? { ...ex, resolved: true, matchedName: to }
+              : ex
+          )
+        : prev.exercises;
+      return { ...prev, exercises };
+    });
+    if (to !== fromName) {
+      onRename(fromName, to);
+    }
+  }
+
   async function onCreate() {
     if (!preview?.block || creating) return;
     setCreating(true);
@@ -603,6 +628,7 @@ export function ImportBlockPage() {
               preview={preview}
               renames={renames}
               onRename={onRename}
+              onLibraryMatched={onLibraryMatched}
               includeWarmups={includeWarmups}
               onIncludeWarmupsChange={(checked) => {
                 setIncludeWarmups(checked);

@@ -117,6 +117,11 @@ export function AddExerciseToLibrarySheet({
   onCreateCommitted,
 }) {
   const isCompletedContext = context === "completed";
+  // Builder / import: no session exercise to PATCH. Pick-existing calls onLink
+  // with { name, exerciseId?, userExerciseId? } only. Live/completed logger
+  // keeps context "live"|"completed" and still requires sessionExerciseId.
+  const isLibraryContext = context === "library";
+  const canPickExisting = isLibraryContext || Boolean(sessionExerciseId);
   const titleId = useId();
   const nameInputRef = useRef(null);
   const seedInputRef = useRef(null);
@@ -330,16 +335,24 @@ export function AddExerciseToLibrarySheet({
 
   const handleLinkRow = useCallback(
     async (row) => {
-      if (!sessionExerciseId || !onLink) return;
+      if (!onLink || !canPickExisting) return;
       setLinking(true);
       setLinkError(null);
       try {
-        await onLink({
-          sessionExerciseId,
-          name: row.name,
-          exerciseId: row.exerciseId ?? undefined,
-          userExerciseId: row.userExerciseId ?? undefined,
-        });
+        if (isLibraryContext) {
+          await onLink({
+            name: row.name,
+            exerciseId: row.exerciseId ?? undefined,
+            userExerciseId: row.userExerciseId ?? undefined,
+          });
+        } else {
+          await onLink({
+            sessionExerciseId,
+            name: row.name,
+            exerciseId: row.exerciseId ?? undefined,
+            userExerciseId: row.userExerciseId ?? undefined,
+          });
+        }
         setDoneVariant("link");
         setDoneLinkName(row.name);
         setStep("done");
@@ -349,19 +362,21 @@ export function AddExerciseToLibrarySheet({
         setLinking(false);
       }
     },
-    [sessionExerciseId, onLink]
+    [sessionExerciseId, onLink, canPickExisting, isLibraryContext]
   );
 
   const handleUseThatName = useCallback(async () => {
-    if (!alreadyTrackedResolution || !sessionExerciseId || !onLink) return;
+    if (!alreadyTrackedResolution || !onLink || !canPickExisting) return;
     const row = alreadyTrackedResolution;
     setLinking(true);
     setSubmitError(null);
     try {
-      const linkPayload = {
-        sessionExerciseId,
-        name: row.canonicalName,
-      };
+      const linkPayload = isLibraryContext
+        ? { name: row.canonicalName }
+        : {
+            sessionExerciseId,
+            name: row.canonicalName,
+          };
       if (row.source === "catalog" && row.catalogId) {
         linkPayload.exerciseId = row.catalogId;
       } else if (row.source === "userExercise" && row.userExerciseId) {
@@ -376,7 +391,13 @@ export function AddExerciseToLibrarySheet({
     } finally {
       setLinking(false);
     }
-  }, [alreadyTrackedResolution, sessionExerciseId, onLink]);
+  }, [
+    alreadyTrackedResolution,
+    sessionExerciseId,
+    onLink,
+    canPickExisting,
+    isLibraryContext,
+  ]);
 
   const handleSeedSelect = useCallback((row) => {
     setMuscleRoles(muscleRolesFromSearchRow(row));
@@ -529,7 +550,9 @@ export function AddExerciseToLibrarySheet({
           {step === "suggest" && !isCompletedContext ? (
             <>
               <p className="add-exercise-library-sheet__lead muted small">
-                Pick a match to link this set row, or say it is its own thing.
+                {isLibraryContext
+                  ? "Pick a match from your library, or say it is its own thing."
+                  : "Pick a match to link this set row, or say it is its own thing."}
               </p>
               {initialSearchLoading ? (
                 <p className="add-exercise-library-sheet__loading muted small">Searching…</p>
@@ -539,7 +562,7 @@ export function AddExerciseToLibrarySheet({
                     <SearchMatchRow
                       key={`${row.source}-${row.exerciseId ?? row.userExerciseId}`}
                       row={row}
-                      disabled={linking || !sessionExerciseId}
+                      disabled={linking || !canPickExisting}
                       onSelect={(match) => void handleLinkRow(match)}
                     />
                   ))}
@@ -632,7 +655,7 @@ export function AddExerciseToLibrarySheet({
                     <button
                       type="button"
                       className="btn btn-secondary add-exercise-library-sheet__use-name-btn"
-                      disabled={linking || !sessionExerciseId}
+                      disabled={linking || !canPickExisting}
                       onClick={() => void handleUseThatName()}
                     >
                       Use that name
@@ -761,7 +784,15 @@ export function AddExerciseToLibrarySheet({
                 ) : (
                   <>
                     <p className="add-exercise-library-sheet__done-name">
-                      This row now logs as <strong>{doneLinkName}</strong>.
+                      {isLibraryContext ? (
+                        <>
+                          Using <strong>{doneLinkName}</strong> from your library.
+                        </>
+                      ) : (
+                        <>
+                          This row now logs as <strong>{doneLinkName}</strong>.
+                        </>
+                      )}
                     </p>
                     <p className="add-exercise-library-sheet__done-detail muted small">
                       Tracked - counts toward your analytics.

@@ -26,6 +26,7 @@ import {
   clearWeek,
   convertUnits,
   copyForward,
+  createEmptyExercise,
   createInitialState,
   dayHasExercises,
   deleteDay,
@@ -67,6 +68,7 @@ import { DraftBanner } from "./DraftBanner.jsx";
 import { ExerciseCard } from "./ExerciseCard.jsx";
 import { ExercisePicker } from "./ExercisePicker.jsx";
 import { ProgressionView } from "./ProgressionView.jsx";
+import { AddExerciseToLibrarySheet } from "../../workout/AddExerciseToLibrarySheet.jsx";
 import {
   clearBuilderDraft,
   readBuilderDraft,
@@ -169,6 +171,8 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerMode, setPickerMode] = useState("add"); // add | replace
   const [replaceExIdx, setReplaceExIdx] = useState(null);
+  // Library sheet from picker or card: { name, mode: "add"|"update", exIdx? }
+  const [librarySheet, setLibrarySheet] = useState(null);
   const [weekActionsOpen, setWeekActionsOpen] = useState(false);
   const [dayActionsOpen, setDayActionsOpen] = useState(false);
   const [effortSheetOpen, setEffortSheetOpen] = useState(false);
@@ -307,6 +311,10 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
     }
   }, []);
 
+  const closeLibrarySheet = useCallback(() => {
+    setLibrarySheet(null);
+  }, []);
+
   // Load for edit
   useEffect(() => {
     if (isCreate) {
@@ -407,6 +415,58 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
   useEffect(() => {
     if (dayIdx !== safeDayIdx) setDayIdx(safeDayIdx);
   }, [dayIdx, safeDayIdx]);
+
+  /** Apply a library-linked name to the day (picker add) or an existing card. */
+  const commitLibraryExercise = useCallback(
+    (libraryName) => {
+      const name = String(libraryName || "").trim();
+      if (!name || !librarySheet) return;
+      const ex = createEmptyExercise({
+        exerciseName: name,
+        notInLibrary: false,
+      });
+      if (librarySheet.mode === "update" && librarySheet.exIdx != null) {
+        applyState(
+          updateExercise(state, safeWeekIdx, safeDayIdx, librarySheet.exIdx, {
+            exerciseName: name,
+            notInLibrary: false,
+          })
+        );
+      } else if (pickerMode === "replace" && replaceExIdx != null) {
+        const next = replaceExercise(
+          state,
+          safeWeekIdx,
+          safeDayIdx,
+          replaceExIdx,
+          ex
+        );
+        applyState(next);
+        const replaced =
+          next.weeks[safeWeekIdx]?.days[safeDayIdx]?.exercises?.[replaceExIdx];
+        if (replaced) {
+          setExpandedIds((ids) => new Set([...ids, replaced.id]));
+        }
+      } else {
+        const next = addExercise(state, safeWeekIdx, safeDayIdx, ex);
+        applyState(next);
+        const list =
+          next.weeks[safeWeekIdx]?.days[safeDayIdx]?.exercises || [];
+        const last = list[list.length - 1];
+        if (last) {
+          setExpandedIds((ids) => new Set([...ids, last.id]));
+        }
+      }
+    },
+    [
+      librarySheet,
+      applyState,
+      state,
+      safeWeekIdx,
+      safeDayIdx,
+      pickerMode,
+      replaceExIdx,
+    ]
+  );
 
   const isNarrow = useCallback(() => {
     if (typeof window === "undefined") return true;
@@ -892,6 +952,25 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
                 return next;
               });
             }}
+            onLibraryMatched={(from, libraryName) => {
+              const to = String(libraryName || "").trim();
+              const fromName = String(from || "").trim();
+              if (!fromName || !to) return;
+              setCoachPreview((prev) => {
+                if (!prev) return prev;
+                const exercises = Array.isArray(prev.exercises)
+                  ? prev.exercises.map((ex) =>
+                      ex?.name === fromName
+                        ? { ...ex, resolved: true, matchedName: to }
+                        : ex
+                    )
+                  : prev.exercises;
+                return { ...prev, exercises };
+              });
+              if (to !== fromName) {
+                setCoachRenames((prev) => ({ ...prev, [fromName]: to }));
+              }
+            }}
             includeWarmups={coachIncludeWarmups}
             onIncludeWarmupsChange={setCoachIncludeWarmups}
             blockName={coachBlockName}
@@ -1165,6 +1244,17 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
                         setReplaceExIdx(ei);
                         setPickerOpen(true);
                       }}
+                      onAddToLibrary={
+                        ex.notInLibrary
+                          ? () => {
+                              setLibrarySheet({
+                                name: ex.exerciseName || "",
+                                mode: "update",
+                                exIdx: ei,
+                              });
+                            }
+                          : undefined
+                      }
                       onDelete={() => {
                         const prev = state;
                         applyState(deleteExercise(state, safeWeekIdx, safeDayIdx, ei));
@@ -1344,6 +1434,13 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
         open={pickerOpen}
         onClose={() => setPickerOpen(false)}
         title={pickerMode === "replace" ? "Replace exercise" : "Add exercise"}
+        onAddToLibrary={(name) => {
+          setPickerOpen(false);
+          setLibrarySheet({
+            name,
+            mode: "add",
+          });
+        }}
         onPick={(ex) => {
           if (pickerMode === "replace" && replaceExIdx != null) {
             const next = replaceExercise(
@@ -1365,6 +1462,19 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
             const last = list[list.length - 1];
             if (last) toggleExpanded(last.id);
           }
+        }}
+      />
+
+      <AddExerciseToLibrarySheet
+        open={Boolean(librarySheet)}
+        initialName={librarySheet?.name ?? ""}
+        context="library"
+        onClose={closeLibrarySheet}
+        onLink={async ({ name }) => {
+          commitLibraryExercise(name);
+        }}
+        onCreateCommitted={async ({ name }) => {
+          commitLibraryExercise(name);
         }}
       />
 

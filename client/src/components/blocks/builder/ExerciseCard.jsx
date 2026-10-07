@@ -133,6 +133,7 @@ export function ExerciseCard({
   onDuplicate,
   onReplace,
   onDelete,
+  onAddToLibrary,
 }) {
   const gridRef = useRef(null);
   const cancelRemoveRef = useRef(null);
@@ -484,6 +485,19 @@ export function ExerciseCard({
             </ActionIcon>
             <span className="bk-ex-actions__label">Copy set 1 to every set</span>
           </button>
+          {exercise?.notInLibrary && typeof onAddToLibrary === "function" ? (
+            <button
+              type="button"
+              className="bk-ex-actions__row"
+              onClick={() => runAction(onAddToLibrary)}
+            >
+              <ActionIcon>
+                <path d="M12 5v14" />
+                <path d="M5 12h14" />
+              </ActionIcon>
+              <span className="bk-ex-actions__label">Add to library</span>
+            </button>
+          ) : null}
           <div className="bk-ex-actions__divider" role="separator" />
           <button
             type="button"

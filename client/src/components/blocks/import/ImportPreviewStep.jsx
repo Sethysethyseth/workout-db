@@ -6,6 +6,7 @@ import { SectionRule } from "../ui/SectionRule.jsx";
 import { WeekStrip } from "../ui/WeekStrip.jsx";
 import { ExerciseCard } from "../builder/ExerciseCard.jsx";
 import { ExercisePicker } from "../builder/ExercisePicker.jsx";
+import { AddExerciseToLibrarySheet } from "../../workout/AddExerciseToLibrarySheet.jsx";
 import { aiFixChanges } from "./aiFixChanges.js";
 import { formatExerciseForCard } from "./formatExerciseForCard.js";
 import {
@@ -40,6 +41,7 @@ export function ImportPreviewStep({
   onUseOriginalRead = null,
   aiFixCost = null,
   originalPreview = null,
+  onLibraryMatched = null,
 }) {
   const block = preview?.block || null;
   const stats = preview?.stats || {};
@@ -51,6 +53,7 @@ export function ImportPreviewStep({
   const [weekIdx, setWeekIdx] = useState(0);
   const [dayIdx, setDayIdx] = useState(0);
   const [matchFrom, setMatchFrom] = useState(null);
+  const [libraryFrom, setLibraryFrom] = useState(null);
 
   const weeks = useMemo(() => (Array.isArray(block?.weeks) ? block.weeks : []), [block]);
   const safeWeekIdx = Math.min(weekIdx, Math.max(0, weeks.length - 1));
@@ -315,13 +318,22 @@ export function ImportPreviewStep({
           return (
             <li key={from} className="bk-import-match bk-import-match--compact">
               <span className="bk-import-match__name">{from}</span>
-              <button
-                type="button"
-                className="bk-import-match__link bk-import-match__match-btn"
-                onClick={() => setMatchFrom(from)}
-              >
-                Match...
-              </button>
+              <div className="bk-import-match__actions">
+                <button
+                  type="button"
+                  className="bk-import-match__link"
+                  onClick={() => setLibraryFrom(from)}
+                >
+                  Add to library
+                </button>
+                <button
+                  type="button"
+                  className="bk-import-match__link bk-import-match__match-btn"
+                  onClick={() => setMatchFrom(from)}
+                >
+                  Match...
+                </button>
+              </div>
             </li>
           );
         })}
@@ -378,6 +390,23 @@ export function ImportPreviewStep({
             onRename?.(matchFrom, picked.exerciseName);
           }
           setMatchFrom(null);
+        }}
+      />
+
+      <AddExerciseToLibrarySheet
+        open={libraryFrom != null}
+        initialName={libraryFrom ?? ""}
+        context="library"
+        onClose={() => setLibraryFrom(null)}
+        onLink={async ({ name }) => {
+          const from = libraryFrom;
+          if (!from || !name) return;
+          onLibraryMatched?.(from, name);
+        }}
+        onCreateCommitted={async ({ name }) => {
+          const from = libraryFrom;
+          if (!from || !name) return;
+          onLibraryMatched?.(from, name);
         }}
       />
     </div>

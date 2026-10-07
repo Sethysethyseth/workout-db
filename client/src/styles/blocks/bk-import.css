@@ -468,6 +468,20 @@
   align-self: center;
 }
 
+.bk-import-match__actions {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  margin-left: auto;
+  align-self: center;
+  justify-content: flex-end;
+}
+
+.bk-import-match__actions .bk-import-match__link {
+  margin-left: 0;
+}
+
 .bk-import-match__check {
   font: 700 16px/1 var(--bk-display);
   color: var(--bk-good);

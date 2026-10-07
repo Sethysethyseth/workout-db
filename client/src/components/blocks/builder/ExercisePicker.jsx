@@ -6,10 +6,17 @@ import { createEmptyExercise } from "./blockBuilderState.js";
 
 /**
  * Exercise picker: bottom sheet on phones, dialog on wide screens.
- * Debounced search + "Use '<typed text>'" name-only row (always last).
+ * Debounced search + "Use '<typed text>'" / "Add 'X' to your library" when
+ * there is no exact (case-insensitive) library match.
  * Server ranks results; search field stays pinned while the list scrolls.
  */
-export function ExercisePicker({ open, onClose, onPick, title = "Add exercise" }) {
+export function ExercisePicker({
+  open,
+  onClose,
+  onPick,
+  onAddToLibrary,
+  title = "Add exercise",
+}) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
   const [hasMore, setHasMore] = useState(false);
@@ -100,7 +107,21 @@ export function ExercisePicker({ open, onClose, onPick, title = "Add exercise" }
     handleClose();
   }
 
-  const showResults = query.trim().length > 0;
+  function addTypedToLibrary() {
+    const name = query.trim();
+    if (!name || !onAddToLibrary) return;
+    onAddToLibrary(name);
+    handleClose();
+  }
+
+  const trimmedQuery = query.trim();
+  const showResults = trimmedQuery.length > 0;
+  const hasExactMatch = results.some((row) => {
+    const name = String(row.name || row.exerciseName || "").trim();
+    return name.toLowerCase() === trimmedQuery.toLowerCase();
+  });
+  // Both free-text rows only when search has text and no exact library hit.
+  const showCustomRows = showResults && !hasExactMatch;
   const moreCount = hasMore ? Math.max(0, total - results.length) : 0;
 
   return (
@@ -158,15 +179,30 @@ export function ExercisePicker({ open, onClose, onPick, title = "Add exercise" }
               {moreCount} more - keep typing to narrow
             </li>
           ) : null}
-          {showResults ? (
-            <li>
-              <button type="button" className="bk-picker__row" onClick={pickCustom}>
-                <span>
-                  Use &lsquo;{query.trim()}&rsquo;
-                </span>
-                <Chip tone="warn">Not in library</Chip>
-              </button>
-            </li>
+          {showCustomRows ? (
+            <>
+              <li>
+                <button type="button" className="bk-picker__row" onClick={pickCustom}>
+                  <span>
+                    Use &lsquo;{trimmedQuery}&rsquo;
+                  </span>
+                  <Chip tone="warn">Not in library</Chip>
+                </button>
+              </li>
+              {typeof onAddToLibrary === "function" ? (
+                <li>
+                  <button
+                    type="button"
+                    className="bk-picker__row"
+                    onClick={addTypedToLibrary}
+                  >
+                    <span>
+                      Add &lsquo;{trimmedQuery}&rsquo; to your library
+                    </span>
+                  </button>
+                </li>
+              ) : null}
+            </>
           ) : null}
         </ul>
       </div>
