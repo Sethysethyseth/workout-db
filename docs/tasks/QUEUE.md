@@ -356,16 +356,26 @@ round-3 intake in `bk-smoke-FINDINGS.md` -> "Smoke round 3", rulings in
 pause + resume; item 5 Settings + header chip; item 3 7-day cap
 everywhere; item 10 PARKED). Lands on `ai-connector-wave`. Authoring recon
 in flight (session-scoped report lanes sr3-r1 / sr3-r2, logged in HANDOFF,
-not counted). Wave N = 6 provisional (sr3-d1 + content units sr3-1..5;
-sr3-3/4/5 authored from sr3-r2). Collisions: sr3-1 is disjoint from all;
-sr3-2 and sr3-3 both touch `BlockBuilder.jsx` (serialize 2 -> 3); sr3-4
-touches the import preview after sr3-2 (serialize 2 -> 4). DB-free lanes;
-every server route change gets a LIVE staging proof at landing. No
-migration in this wave.
+not counted). Wave N = 7 (sr3-d1 + sr3-1..6). Seth, Oct 6 (2nd batch):
+approved the builder-header mock (https://claude.ai/artifact/TD1ddiGCaHqrWLScS8w5qY)
+and added long-press drag to reorder days/weeks (= sr3-6); item 7 = a
+Per-side switch backed by ONE new column (= sr3-5, the wave's only
+MIGRATION - its landing push migrates staging, so it waits for Seth's
+"migrate staging"; prod hand-apply by Seth before the merge, next to BK1's).
+sr3-r2's full run hung twice and its C/D half hung once; the seat did C/D
+itself (logged in HANDOFF). Order: sr3-3 || sr3-5 (disjoint by contract:
+sr3-3 owns BlockBuilder.jsx + CSS, sr3-5 owns ExerciseCard.jsx +
+blockBuilderState.js + server), then sr3-4 (touches both sides), then sr3-6
+(BlockBuilder.jsx + ui strips). DB-free lanes; every server route change
+gets a LIVE staging proof at landing.
 
 LANDED (report) | sr3-d1-add-exercise-first-open-diagnosis.md | DIAGNOSIS: builder "+ Add exercise" first open shows the sheet header + keyboard, no search/list (P2, Android Chrome) | report lane. Dispatched Oct 6 (Opus seat): Channel B, `--model auto`, `cursor-lane` on `cursor/sr3-d1` @ `599c9d9`, 40-min hard kill; beside recon lanes sr3-r1 (`cursor-lane-2`) and sr3-r2 (`cursor-lane-3`). Run 2.4 min. Seat-verified (bk-builder.css picker rule + ExercisePicker empty state read): the picker panel had only a max-height, the empty query renders no rows, so the sheet collapsed to header + search and Android's overlay keyboard covered the autofocused search. Report kept as `sr3-d1-add-exercise-first-open-FINDINGS.md`. SEAT DIRECT FIX (trivial, diagnosis was the work): definite picker height (88dvh/720 phone, 80vh/640 desktop); focus code untouched (React autoFocus inside the tap is what opens the iOS keypad). Proof = Seth's Android in the smoke.
 LANDED 077f4b2 | sr3-1-block-pause-resume.md | switching blocks PAUSES the old run; Library + Current-block Start offer "Resume at Wn · Day" / "Start over" (reopen the ended run, no schema); GET /block-runs/left-off | n=2. Disjoint from everything. Dispatched Oct 6 (Opus seat): Channel B, `--model auto`, `cursor-lane`, 40-min hard kill. Run 2.8 min. Audit: scope exact (11 files), lanes fresh (533), hex clean, no new window.confirm, `.bk-lib-confirm` tokens resolve under `.bk` on the run page, API shape matches the client reads. SEAT FIX: left-off did a full block-tree include per HISTORICAL run - now a light pass picks each template's latest run, then trees + sessions load once per candidate. LIVE PROOF (local API on the staging DB, demo.critic, 10/10): left-off [] -> fresh 123 (201) pauses run 3 -> left-off lists run 3 (W1 D3 "Lower - Hip Dominant", 2/30) -> resume 3 (200), active nextDay unchanged -> re-resume open run 200 no-op -> older 123 run 409 newer -> foreign run 404 -> template mismatch 404 -> left-off [] (empty new run omitted). demo.critic left on run 3 as before (+ ended empty run 9). Confirm sits above the list (pre-existing Library placement) - critic to judge.
 LANDED 9c7f1f1 | sr3-2-seven-day-week-cap.md | a week holds at most 7 days: one server constant, Format v1 + AI schema + save-path refusal, builder "+ Day" disabled with "7 days max" | n=3. Before sr3-3 (BlockBuilder.jsx) and sr3-4 (import preview). Dispatched Oct 6 (Opus seat): Channel B, `--model auto`, `cursor-lane-2`, 40-min hard kill. Run 6.5 min. Audit: scope exact (8 files; historyToBlock untouched with reason), rebased onto sr3-1, lanes fresh on the combined tree (536), hex clean, no import cycle (blockFormat.js requires nothing). `MAX_DAYS_PER_WEEK` lives in `server/src/blocks/blockFormat.js`. LIVE PROOF (local API, staging DB, demo.critic, non-mutating): 8-day Format v1 preview -> 422 `weeks[0].days` "Week 1 has 8 days - a week holds at most 7."; 7-day -> 200; PATCH block 124 with 8 workouts -> 400 same sentence before any write. Known edge (follow-up candidate, not a bounce): Strong/Hevy history import makes one day per distinct workout title in 56 days, so 8+ titles now hard-fail the preview (8-14 used to work) - option later: keep the 7 most-used titles with a "skipped" warning.
+DISPATCHED | sr3-3-builder-header-actions-effort-public.md | builder: round "..." beside "Week n" and at the end of the day line (opens the existing actions sheets), RPE/RIR/"Effort: off" chip under the block name (same 3-way choice as Settings), Public ON shows Seth's verbatim line and changes nothing | n=4. Visual spec = the approved mock. Owns BlockBuilder.jsx + bk-builder.css this round. Dispatched Oct 6 (Opus seat): Channel B, `--model auto`, `cursor-lane`, 40-min hard kill.
+DISPATCHED | sr3-5-block-exercise-per-side.md | `BlockWorkoutExercise.perSide Boolean?` (null = name rule, true/false explicit) through normalizer, store, plan snapshot, Format v1 + AI schema; builder "Per side" chip + "· each side"; block logger defaults to the plan value | n=5. MIGRATION-CARRYING: Cursor writes the SQL offline only; landing push waits for "migrate staging". No CSS, no BlockBuilder.jsx. Dispatched Oct 6 (Opus seat): Channel B, `--model auto`, `cursor-lane-2`, 40-min hard kill.
+DRAFT | sr3-4 (add to library from builder + import, items 6 + 8) | picker "Add 'X' to your library" + card action reuse `AddExerciseToLibrarySheet`; import "Not in your library" rows get the same | n=6. After sr3-3 AND sr3-5. Builder already tracks `exercise.notInLibrary`. To author.
+DRAFT | sr3-6 (long-press drag reorder, Seth Oct 6) | hold a day or week pill to lift it, drag along the strip to reorder, Move in the menu stays as the fallback | n=7. After sr3-4 (BlockBuilder.jsx, ui strips opt-in via an `onReorder` prop). To author.
 
 DRAFT | bk0-privacy-terms-pages.md | plain-language /privacy + /terms,
 covering the AI layer and the draft-block write | Seth's Sept 26 "first
