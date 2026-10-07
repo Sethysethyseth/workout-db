@@ -27,6 +27,7 @@ const KNOWN_EXERCISE = new Set([
   "notes",
   "restSec",
   "effortCap",
+  "perSide",
   "sets",
   // shorthand set fields (only valid when sets is an integer)
   "reps",
@@ -295,6 +296,15 @@ function validateBlockDraft(input, options = {}) {
           }
         }
 
+        let perSide;
+        if (ex.perSide !== undefined) {
+          if (typeof ex.perSide !== "boolean") {
+            pushError(`${exPath}.perSide`, "optional boolean");
+          } else {
+            perSide = ex.perSide;
+          }
+        }
+
         const setsVal = ex.sets;
         let setObjects = null;
         const isShorthand = typeof setsVal === "number";
@@ -405,6 +415,7 @@ function validateBlockDraft(input, options = {}) {
           if (notes !== undefined) outEx.notes = notes;
           if (restSec !== undefined) outEx.restSec = restSec;
           if (effortCap) outEx.effortCap = true;
+          if (perSide !== undefined) outEx.perSide = perSide;
           outExercises.push(outEx);
           exerciseCount += 1;
         }

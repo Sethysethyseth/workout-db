@@ -42,6 +42,9 @@ function formatToCreatePayload(block) {
             if (ex.notes) exercise.notes = ex.notes;
             if (ex.restSec != null) exercise.restSec = ex.restSec;
             if (ex.effortCap) exercise.effortCap = true;
+            if (ex.perSide === true || ex.perSide === false) {
+              exercise.perSide = ex.perSide;
+            }
             // targetSets derived
             exercise.targetSets = sets.length;
             const repsParts = sets
@@ -144,6 +147,7 @@ function blockTreeToFormat(tree, options = {}) {
         if (notes) out.notes = notes;
         if (ex.restSec != null) out.restSec = ex.restSec;
         if (ex.effortCap) out.effortCap = true;
+        if (ex.perSide === true || ex.perSide === false) out.perSide = ex.perSide;
         return out;
       });
       return { name: w.name, exercises };

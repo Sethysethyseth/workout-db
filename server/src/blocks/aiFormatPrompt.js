@@ -18,12 +18,13 @@ Top-level fields:
 
 Each week: optional label (max 40), required days (1-${MAX_DAYS_PER_WEEK}).
 Each day: required name (1-60), required exercises (1-40).
-Each exercise: required name (1-120); optional notes (max 1000), restSec (0-3600), effortCap (boolean).
+Each exercise: required name (1-120); optional notes (max 1000), restSec (0-3600), effortCap (boolean), perSide (boolean).
 sets: EITHER an integer 1-20 (uniform shorthand — put reps/weight/rpe on the exercise) OR an array of 1-20 set objects (then set fields only inside each set).
 
 Set fields: reps (>0), repsMax (>reps), durationSec (1-3600 timed set), weight (>0, max 2000), rpe (1-10, steps of 0.5), rir (integer 0-10).
 Rules: reps and durationSec never both; omit weight for bodyweight, never 0; use RPE or RIR, not both; unknown keys are rejected.
 effortCap true means each set's rpe is a ceiling / rir a floor.
+perSide true = log each side separately (one-arm / one-leg work); omit to let the app decide from the name.
 A rep range like 8-12 is reps: 8, repsMax: 12. Timed work uses durationSec (seconds).`;
 
 const BLOCK_FORMAT_EXAMPLE = {
@@ -105,6 +106,7 @@ const BLOCK_FORMAT_JSON_SCHEMA = {
                       notes: { type: "string", maxLength: 1000 },
                       restSec: { type: "integer", minimum: 0, maximum: 3600 },
                       effortCap: { type: "boolean" },
+                      perSide: { type: "boolean" },
                       sets: {
                         oneOf: [
                           { type: "integer", minimum: 1, maximum: 20 },

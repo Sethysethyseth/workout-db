@@ -1,8 +1,11 @@
 import "../../../styles/blocks/bk-ui.css";
 import { formatRx } from "./rxFormat.js";
 
-/** Renders formatRx parts: label in body type, value in display type. */
-export function ExerciseRx({ rx, className = "", ...rest }) {
+/**
+ * Renders formatRx parts: label in body type, value in display type.
+ * `suffix` (optional) trails the parts in body type, e.g. "each side".
+ */
+export function ExerciseRx({ rx, suffix = null, className = "", ...rest }) {
   const parts = formatRx(rx ?? {});
   if (!parts.length) return null;
   const cls = className ? `bk-rx ${className}` : "bk-rx";
@@ -16,6 +19,11 @@ export function ExerciseRx({ rx, className = "", ...rest }) {
           <b className="bk-rx__value">{part.value}</b>
         </span>
       ))}
+      {suffix ? (
+        <span className="bk-rx__part">
+          <span className="bk-rx__label">{suffix}</span>
+        </span>
+      ) : null}
     </p>
   );
 }

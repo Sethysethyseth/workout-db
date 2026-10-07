@@ -197,6 +197,28 @@ describe("buildSessionFromBlockWorkout", () => {
     expect(built.exercises[0].plan.restSec).toBe(180);
   });
 
+  test("plan carries perSide true / false / null from the block exercise", () => {
+    const tree = fixtureTree();
+    tree.weeks[0].workouts[0].exercises[0].perSide = true;
+    tree.weeks[0].workouts[1].exercises[0].perSide = false;
+    // week 2 day 1 first exercise leaves perSide unset -> null
+
+    const upper = buildSessionFromBlockWorkout(tree, 1, 1, {
+      blockName: "Phase 1",
+    });
+    expect(upper.exercises[0].plan.perSide).toBe(true);
+
+    const lower = buildSessionFromBlockWorkout(tree, 1, 2, {
+      blockName: "Phase 1",
+    });
+    expect(lower.exercises[0].plan.perSide).toBe(false);
+
+    const w2 = buildSessionFromBlockWorkout(tree, 2, 1, {
+      blockName: "Phase 1",
+    });
+    expect(w2.exercises[0].plan.perSide).toBe(null);
+  });
+
   test("returns null for missing week or workout", () => {
     const tree = fixtureTree();
     expect(

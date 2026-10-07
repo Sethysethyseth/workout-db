@@ -51,7 +51,7 @@ function deriveTargetRepsFromSets(templateSetsCreate) {
 /**
  * Normalizes one exercise from POST/PATCH body into Prisma nested create shape.
  * Supports optional per-exercise `sets` for TemplateSet rows; otherwise targetSets/targetReps/notes only.
- * When `includeBlockFields` is true, also accepts restSec / effortCap and set repsMax / durationSec
+ * When `includeBlockFields` is true, also accepts restSec / effortCap / perSide and set repsMax / durationSec
  * (block templates only - workout templates omit these columns).
  * @returns {{ ok: true, value: object } | { ok: false, status: number, error: string }}
  */
@@ -77,6 +77,7 @@ function normalizeExerciseForCreate(raw, index, { includeBlockFields = false } =
 
   let restSec = null;
   let effortCap = false;
+  let perSide = null;
   if (includeBlockFields) {
     if (raw.restSec !== undefined && raw.restSec !== null && raw.restSec !== "") {
       const parsedRest = Number(raw.restSec);
@@ -99,6 +100,17 @@ function normalizeExerciseForCreate(raw, index, { includeBlockFields = false } =
         };
       }
       effortCap = raw.effortCap;
+    }
+
+    if (raw.perSide !== undefined && raw.perSide !== null) {
+      if (typeof raw.perSide !== "boolean") {
+        return {
+          ok: false,
+          status: 400,
+          error: "perSide must be a boolean when provided",
+        };
+      }
+      perSide = raw.perSide;
     }
   }
 
@@ -290,6 +302,7 @@ function normalizeExerciseForCreate(raw, index, { includeBlockFields = false } =
     if (includeBlockFields) {
       if (restSec != null) exercise.restSec = restSec;
       exercise.effortCap = effortCap;
+      exercise.perSide = perSide;
     }
     return { ok: true, value: exercise };
   }
@@ -311,6 +324,7 @@ function normalizeExerciseForCreate(raw, index, { includeBlockFields = false } =
   if (includeBlockFields) {
     if (restSec != null) exercise.restSec = restSec;
     exercise.effortCap = effortCap;
+    exercise.perSide = perSide;
   }
 
   return { ok: true, value: exercise };

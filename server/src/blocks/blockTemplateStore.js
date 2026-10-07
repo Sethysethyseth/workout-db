@@ -78,6 +78,10 @@ function buildClonePayload(sourceTree) {
             notes: exercise.notes,
             restSec: exercise.restSec,
             effortCap: Boolean(exercise.effortCap),
+            perSide:
+              exercise.perSide === true || exercise.perSide === false
+                ? exercise.perSide
+                : null,
           };
           const sets = exercise.blockWorkoutSets || [];
           if (sets.length > 0) {

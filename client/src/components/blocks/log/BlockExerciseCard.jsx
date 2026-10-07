@@ -299,7 +299,7 @@ export function BlockExerciseCard({
   const [perSideConfirm, setPerSideConfirm] = useState(null);
 
   const perSideMode = derivePerSideMode(
-    perSideOverride,
+    perSideOverride ?? plan?.perSide ?? null,
     se.exerciseName ?? "",
     sets
   );

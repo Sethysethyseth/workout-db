@@ -71,6 +71,10 @@ export function createEmptyExercise(overrides = {}) {
     notes: overrides.notes != null ? String(overrides.notes) : "",
     restSec: overrides.restSec !== undefined ? overrides.restSec : null,
     effortCap: Boolean(overrides.effortCap),
+    perSide:
+      overrides.perSide === true || overrides.perSide === false
+        ? overrides.perSide
+        : null,
     notInLibrary: Boolean(overrides.notInLibrary),
     sets,
   };
@@ -170,6 +174,7 @@ function mapApiExercise(ex) {
     notes,
     restSec: ex.restSec != null ? Number(ex.restSec) : null,
     effortCap: Boolean(ex.effortCap),
+    perSide: ex.perSide === true || ex.perSide === false ? ex.perSide : null,
     notInLibrary: false,
     sets,
   };
@@ -277,6 +282,8 @@ function serializeExercise(ex, order) {
   }
 
   if (ex.effortCap) row.effortCap = true;
+  row.perSide =
+    ex.perSide === true || ex.perSide === false ? ex.perSide : null;
 
   const repsParts = setsPayload
     .map((s) => (s.reps != null ? String(s.reps) : ""))
@@ -481,6 +488,7 @@ function deepCloneExercise(ex) {
     notes: ex.notes != null ? String(ex.notes) : "",
     restSec: ex.restSec != null ? Number(ex.restSec) : null,
     effortCap: Boolean(ex.effortCap),
+    perSide: ex.perSide === true || ex.perSide === false ? ex.perSide : null,
     notInLibrary: Boolean(ex.notInLibrary),
     sets: (ex.sets || []).map((s) =>
       createEmptySet({

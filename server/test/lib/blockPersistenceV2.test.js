@@ -94,6 +94,34 @@ describe("exercise restSec and effortCap", () => {
   });
 });
 
+describe("exercise perSide", () => {
+  test("perSide absent -> null; true -> true", () => {
+    const absent = normalizeExercisesArray(
+      [{ exerciseName: "Squat", targetSets: 3 }],
+      { includeBlockFields: true }
+    );
+    expect(absent.ok).toBe(true);
+    expect(absent.value[0].perSide).toBe(null);
+
+    const kept = normalizeExercisesArray(
+      [{ exerciseName: "Squat", perSide: true, targetSets: 3 }],
+      { includeBlockFields: true }
+    );
+    expect(kept.ok).toBe(true);
+    expect(kept.value[0].perSide).toBe(true);
+  });
+
+  test('perSide "yes" -> 400 with boolean message', () => {
+    const bad = normalizeExercisesArray(
+      [{ exerciseName: "Squat", perSide: "yes", targetSets: 3 }],
+      { includeBlockFields: true }
+    );
+    expect(bad.ok).toBe(false);
+    expect(bad.status).toBe(400);
+    expect(bad.error).toBe("perSide must be a boolean when provided");
+  });
+});
+
 describe("set repsMax and durationSec", () => {
   test("{ reps: 8, repsMax: 10 } kept", () => {
     const norm = normalizeExercisesArray(

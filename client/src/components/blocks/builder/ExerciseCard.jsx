@@ -10,6 +10,7 @@ import {
   exerciseRxSummary,
   slotBadge,
 } from "./blockBuilderState.js";
+import { exerciseNameImpliesPerSide } from "../log/perSideMode.js";
 import { BuilderSheet, useOverlayFocus } from "./BuilderSheet.jsx";
 import { ExerciseSettingSheet } from "./ExerciseSettingSheet.jsx";
 
@@ -164,6 +165,10 @@ export function ExerciseCard({
   const effortChipText = effortCap
     ? `${effortLabel} cap`
     : `${effortLabel} target`;
+  const perSideShown =
+    exercise?.perSide === true || exercise?.perSide === false
+      ? exercise.perSide
+      : exerciseNameImpliesPerSide(exercise?.exerciseName);
 
   function onFieldKeyDown(e) {
     if (e.key !== "Enter") return;
@@ -229,9 +234,12 @@ export function ExerciseCard({
           )}
         </div>
         {summary.uniform ? (
-          <ExerciseRx rx={summary.rx} />
+          <ExerciseRx rx={summary.rx} suffix={perSideShown ? "each side" : null} />
         ) : (
-          <p className="bk-rx bk-rx--summary">{summary.summary}</p>
+          <p className="bk-rx bk-rx--summary">
+            {summary.summary}
+            {perSideShown ? " · each side" : ""}
+          </p>
         )}
         {notesLine ? <p className="bk-ex-card__notes">{notesLine}</p> : null}
       </Card>
@@ -295,6 +303,15 @@ export function ExerciseCard({
             <span>{effortChipText}</span>
           </button>
         ) : null}
+        <button
+          type="button"
+          className={`bk-ex-card__chip${perSideShown ? "" : " bk-ex-card__chip--muted"}`}
+          aria-pressed={perSideShown}
+          aria-label="Per side"
+          onClick={() => onChange?.({ perSide: !perSideShown })}
+        >
+          <span>Per side</span>
+        </button>
         <button
           type="button"
           className={`bk-ex-card__chip${noteText ? "" : " bk-ex-card__chip--muted"}`}

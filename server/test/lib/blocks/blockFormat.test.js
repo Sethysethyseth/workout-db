@@ -40,6 +40,7 @@ function fakeTreeFrom(payload) {
           notes: ex.notes,
           restSec: ex.restSec,
           effortCap: ex.effortCap,
+          perSide: ex.perSide,
           blockWorkoutSets: (ex.sets || []).map((s) => ({
             order: s.order,
             reps: s.reps,
@@ -550,6 +551,104 @@ describe("round trip + AI prompt", () => {
       BLOCK_FORMAT_JSON_SCHEMA.properties.weeks.items.properties.days.maxItems
     ).toBe(7);
     expect(BLOCK_FORMAT_AI_INSTRUCTIONS).toContain("days (1-7)");
+  });
+
+  test("exercise perSide true kept; non-boolean errors at .perSide", () => {
+    const base = {
+      format: "logchamp.block",
+      version: 1,
+      name: "Per side draft",
+      weeks: [
+        {
+          days: [
+            {
+              name: "Day 1",
+              exercises: [
+                { name: "Single-Leg Calf Raise", sets: 2, reps: 12, perSide: true },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+    const ok = validateBlockDraft(base);
+    expect(ok.ok).toBe(true);
+    expect(ok.block.weeks[0].days[0].exercises[0].perSide).toBe(true);
+
+    const bad = validateBlockDraft({
+      ...base,
+      weeks: [
+        {
+          days: [
+            {
+              name: "Day 1",
+              exercises: [
+                { name: "Back Squat", sets: 3, reps: 5, perSide: "x" },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+    expect(bad.ok).toBe(false);
+    expect(bad.errors.some((e) => e.path.endsWith(".perSide"))).toBe(true);
+  });
+
+  test("BLOCK_FORMAT_JSON_SCHEMA has perSide boolean", () => {
+    const exProps =
+      BLOCK_FORMAT_JSON_SCHEMA.properties.weeks.items.properties.days.items
+        .properties.exercises.items.properties;
+    expect(exProps.perSide).toEqual({ type: "boolean" });
+  });
+
+  test("mapping round trip: perSide true exported; null omitted", () => {
+    const withTrue = {
+      name: "Side block",
+      useRPE: false,
+      useRIR: false,
+      weeks: [
+        {
+          order: 1,
+          workouts: [
+            {
+              order: 1,
+              name: "Day 1",
+              exercises: [
+                {
+                  order: 1,
+                  exerciseName: "Single-Leg Calf Raise",
+                  perSide: true,
+                  blockWorkoutSets: [{ order: 1, reps: 12 }],
+                },
+                {
+                  order: 2,
+                  exerciseName: "Back Squat",
+                  perSide: null,
+                  blockWorkoutSets: [{ order: 1, reps: 5 }],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+    const fmt = blockTreeToFormat(withTrue, { unit: "lb" });
+    expect(fmt.weeks[0].days[0].exercises[0].perSide).toBe(true);
+    expect(
+      Object.prototype.hasOwnProperty.call(
+        fmt.weeks[0].days[0].exercises[1],
+        "perSide"
+      )
+    ).toBe(false);
+
+    const payload = formatToCreatePayload(fmt);
+    expect(payload.weeks[0].workouts[0].exercises[0].perSide).toBe(true);
+    expect(
+      Object.prototype.hasOwnProperty.call(
+        payload.weeks[0].workouts[0].exercises[1],
+        "perSide"
+      )
+    ).toBe(false);
   });
 });
 

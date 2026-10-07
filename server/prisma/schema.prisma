@@ -260,6 +260,7 @@ model BlockWorkoutExercise {
   notes            String?
   restSec          Int?
   effortCap        Boolean           @default(false)
+  perSide          Boolean?
   blockWorkoutId   Int
   blockWorkout     BlockWorkout      @relation(fields: [blockWorkoutId], references: [id], onDelete: Cascade)
   blockWorkoutSets BlockWorkoutSet[]
