@@ -61,7 +61,7 @@ import {
   weekHasExercises,
   clearDraftFlag,
 } from "./blockBuilderState.js";
-import { BlockSettingsSheet, EFFORT_OPTIONS } from "./BlockSettingsSheet.jsx";
+import { BlockSettingsSheet, EFFORT_OPTIONS, effortScaleNote } from "./BlockSettingsSheet.jsx";
 import { BuilderSheet, useOverlayFocus } from "./BuilderSheet.jsx";
 import { BuilderToast } from "./BuilderToast.jsx";
 import { CoachDraftCard } from "./CoachDraftCard.jsx";
@@ -163,6 +163,9 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
   const [blockId, setBlockId] = useState(isCreate ? null : templateId);
   const [weekIdx, setWeekIdx] = useState(0);
   const [dayIdx, setDayIdx] = useState(0);
+  const [dayStripEndToken, setDayStripEndToken] = useState(0);
+  const weekUserSelectedRef = useRef(false);
+  const dayUserSelectedRef = useRef(false);
   const [expandedIds, setExpandedIds] = useState(() => new Set());
   // create + never saved: no status; "unsaved" once edited; "saved" after a successful save
   const [saveStatus, setSaveStatus] = useState(isCreate ? "clean" : "saved");
@@ -613,9 +616,12 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
     const idx = weeks.findIndex((w, i) => (w.id || String(i)) === key);
     if (idx < 0) return;
     if (idx === safeWeekIdx) {
-      openWeekActions();
+      if (weekUserSelectedRef.current) openWeekActions();
+      else weekUserSelectedRef.current = true;
       return;
     }
+    weekUserSelectedRef.current = true;
+    dayUserSelectedRef.current = false;
     setWeekIdx(idx);
     setDayIdx(0);
     setExpandedIds(new Set());
@@ -625,9 +631,11 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
     const idx = days.findIndex((d, i) => (d.id || String(i)) === key);
     if (idx < 0) return;
     if (idx === safeDayIdx) {
-      openDayActions();
+      if (dayUserSelectedRef.current) openDayActions();
+      else dayUserSelectedRef.current = true;
       return;
     }
+    dayUserSelectedRef.current = true;
     setDayIdx(idx);
     setExpandedIds(new Set());
   }
@@ -646,11 +654,13 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
 
   function handleReorderWeek(fromIdx, toIdx) {
     applyState(reorderWeek(state, fromIdx, toIdx));
+    weekUserSelectedRef.current = false;
     setWeekIdx((prev) => indexAfterReorder(prev, fromIdx, toIdx));
   }
 
   function handleReorderDay(fromIdx, toIdx) {
     applyState(reorderDay(state, safeWeekIdx, fromIdx, toIdx));
+    dayUserSelectedRef.current = false;
     setDayIdx((prev) => indexAfterReorder(prev, fromIdx, toIdx));
   }
 
@@ -665,6 +675,8 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
     const next = addWeekCopy(state);
     if (next === state) return;
     applyState(next);
+    weekUserSelectedRef.current = false;
+    dayUserSelectedRef.current = false;
     setWeekIdx(next.weeks.length - 1);
     setDayIdx(0);
     setExpandedIds(new Set());
@@ -682,6 +694,8 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
         setEmptyDayBanner(empty.message);
         setError(null);
         if (loc) {
+          weekUserSelectedRef.current = false;
+          dayUserSelectedRef.current = false;
           setWeekIdx(loc.weekIdx);
           setDayIdx(loc.dayIdx);
           setExpandedIds(new Set());
@@ -748,6 +762,8 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
     applyState(next);
     setEmptyDayBanner(null);
     const weeks = next.weeks || [];
+    weekUserSelectedRef.current = false;
+    dayUserSelectedRef.current = false;
     setWeekIdx((wi) => Math.min(wi, Math.max(0, weeks.length - 1)));
     setDayIdx(0);
     showToast("Removed empty days", prev);
@@ -1145,6 +1161,7 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
             selectedKey={currentDay?.id || String(safeDayIdx)}
             onSelect={selectDay}
             onReorder={handleReorderDay}
+            scrollEndToken={dayStripEndToken}
             trailing={
               <button
                 type="button"
@@ -1155,8 +1172,10 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
                   const next = addDay(state, safeWeekIdx);
                   applyState(next);
                   const newDays = next.weeks[safeWeekIdx]?.days || [];
+                  dayUserSelectedRef.current = false;
                   setDayIdx(Math.max(0, newDays.length - 1));
                   setExpandedIds(new Set());
+                  setDayStripEndToken((n) => n + 1);
                 }}
               >
                 {days.length >= MAX_DAYS ? "7 days max" : "+ Day"}
@@ -1210,6 +1229,8 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
                 orderWeekIdx={safeWeekIdx}
                 unit={displayUnit === "kg" ? "kg" : "lb"}
                 onSelectCell={({ weekIdx, exerciseId, exerciseName }) => {
+                  weekUserSelectedRef.current = false;
+                  dayUserSelectedRef.current = false;
                   setWeekIdx(weekIdx);
                   setPanelMode("edit");
                   const day = weeks[weekIdx]?.days?.[safeDayIdx];
@@ -1368,7 +1389,6 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
           if (patch.isPublic !== undefined) next = setIsPublic(next, patch.isPublic);
           applyState(next);
         }}
-        onToast={(message) => setToast({ message })}
         onExport={
           blockId != null || (!isCreate && templateId != null)
             ? () => void handleExportBlock()
@@ -1400,6 +1420,7 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
         </p>
         <Segmented
           label="Effort scale"
+          fill
           options={EFFORT_OPTIONS}
           value={effortValue}
           onChange={(effort) => {
@@ -1407,6 +1428,7 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
             setEffortSheetOpen(false);
           }}
         />
+        <p className="bk-effort-note">{effortScaleNote(effortValue)}</p>
       </BuilderSheet>
 
       <BuilderSheet
@@ -1530,6 +1552,8 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
               let next = setWeekLabel(state, safeWeekIdx, weekLabelDraft);
               next = duplicateWeek(next, safeWeekIdx);
               applyState(next);
+              weekUserSelectedRef.current = false;
+              dayUserSelectedRef.current = false;
               setWeekIdx(safeWeekIdx + 1);
               setWeekActionsOpen(false);
             }}
@@ -1554,6 +1578,7 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
             disabled={safeWeekIdx === 0}
             onClick={() => {
               applyState(moveWeek(state, safeWeekIdx, -1));
+              weekUserSelectedRef.current = false;
               setWeekIdx(safeWeekIdx - 1);
               setWeekActionsOpen(false);
             }}
@@ -1566,6 +1591,7 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
             disabled={safeWeekIdx >= weeks.length - 1}
             onClick={() => {
               applyState(moveWeek(state, safeWeekIdx, 1));
+              weekUserSelectedRef.current = false;
               setWeekIdx(safeWeekIdx + 1);
               setWeekActionsOpen(false);
             }}
@@ -1577,6 +1603,7 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
             className="bk-actions-list__btn"
             onClick={() => {
               applyState(clearWeek(state, safeWeekIdx));
+              dayUserSelectedRef.current = false;
               setWeekActionsOpen(false);
             }}
           >
@@ -1593,6 +1620,8 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
                 return;
               }
               applyState(deleteWeek(state, safeWeekIdx));
+              weekUserSelectedRef.current = false;
+              dayUserSelectedRef.current = false;
               setWeekIdx(Math.max(0, safeWeekIdx - 1));
               setWeekActionsOpen(false);
             }}
@@ -1628,11 +1657,12 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
               let next = renameDay(state, safeWeekIdx, safeDayIdx, dayNameDraft);
               next = duplicateDay(next, safeWeekIdx, safeDayIdx);
               applyState(next);
+              dayUserSelectedRef.current = false;
               setDayIdx(safeDayIdx + 1);
               setDayActionsOpen(false);
             }}
           >
-            {days.length >= MAX_DAYS ? "7 days max" : "Duplicate"}
+            {days.length >= MAX_DAYS ? "Duplicate - 7 days max" : "Duplicate"}
           </button>
           <button
             type="button"
@@ -1640,6 +1670,7 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
             disabled={safeDayIdx === 0}
             onClick={() => {
               applyState(moveDay(state, safeWeekIdx, safeDayIdx, -1));
+              dayUserSelectedRef.current = false;
               setDayIdx(safeDayIdx - 1);
               setDayActionsOpen(false);
             }}
@@ -1652,6 +1683,7 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
             disabled={safeDayIdx >= days.length - 1}
             onClick={() => {
               applyState(moveDay(state, safeWeekIdx, safeDayIdx, 1));
+              dayUserSelectedRef.current = false;
               setDayIdx(safeDayIdx + 1);
               setDayActionsOpen(false);
             }}
@@ -1669,6 +1701,7 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
                 return;
               }
               applyState(deleteDay(state, safeWeekIdx, safeDayIdx));
+              dayUserSelectedRef.current = false;
               setDayIdx(Math.max(0, safeDayIdx - 1));
               setDayActionsOpen(false);
             }}
@@ -1777,6 +1810,7 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
                 className="session-discard-confirm__discard"
                 onClick={() => {
                   applyState(deleteDay(state, safeWeekIdx, safeDayIdx));
+                  dayUserSelectedRef.current = false;
                   setDayIdx(Math.max(0, safeDayIdx - 1));
                   setConfirmDeleteDay(false);
                 }}
@@ -1821,6 +1855,8 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
                 className="session-discard-confirm__discard"
                 onClick={() => {
                   applyState(deleteWeek(state, safeWeekIdx));
+                  weekUserSelectedRef.current = false;
+                  dayUserSelectedRef.current = false;
                   setWeekIdx(Math.max(0, safeWeekIdx - 1));
                   setConfirmDeleteWeek(false);
                 }}

@@ -149,6 +149,15 @@ function setsFromTargets(ex) {
   return { sets, unparsed };
 }
 
+/** Catalog or user-library link on the GET block-template exercise row. */
+function exerciseNotInLibrary(ex) {
+  const catalogId = ex?.exerciseId;
+  const userId = ex?.userExerciseId;
+  const hasCatalog = catalogId != null && String(catalogId).trim() !== "";
+  const hasUser = userId != null && String(userId).trim() !== "";
+  return !hasCatalog && !hasUser;
+}
+
 function mapApiExercise(ex) {
   const rawSets = Array.isArray(ex.blockWorkoutSets)
     ? [...ex.blockWorkoutSets]
@@ -175,7 +184,7 @@ function mapApiExercise(ex) {
     restSec: ex.restSec != null ? Number(ex.restSec) : null,
     effortCap: Boolean(ex.effortCap),
     perSide: ex.perSide === true || ex.perSide === false ? ex.perSide : null,
-    notInLibrary: false,
+    notInLibrary: exerciseNotInLibrary(ex),
     sets,
   };
 }
@@ -618,12 +627,25 @@ export function deleteWeek(state, weekIdx) {
 
 /* ---------- days ---------- */
 
+/** Default names only (`Day 1`). A name the lifter typed is left as-is. */
+const DEFAULT_DAY_NAME = /^Day \d+$/;
+
+function renumberDefaultDayNames(days) {
+  return days.map((day, i) => {
+    const name = day?.name;
+    if (typeof name !== "string" || !DEFAULT_DAY_NAME.test(name)) return day;
+    const nextName = `Day ${i + 1}`;
+    if (name === nextName) return day;
+    return { ...day, name: nextName };
+  });
+}
+
 export function addDay(state, weekIdx) {
   return updateWeekAt(state, weekIdx, (week) => {
     const days = week.days || [];
     if (days.length >= MAX_DAYS) return week;
     const name = `Day ${days.length + 1}`;
-    return { ...week, days: [...days, createEmptyDay(name)] };
+    return { ...week, days: renumberDefaultDayNames([...days, createEmptyDay(name)]) };
   });
 }
 
@@ -639,7 +661,7 @@ export function duplicateDay(state, weekIdx, dayIdx) {
     const src = days[dayIdx];
     if (!src) return week;
     days.splice(dayIdx + 1, 0, deepCloneDay(src));
-    return { ...week, days };
+    return { ...week, days: renumberDefaultDayNames(days) };
   });
 }
 
@@ -651,7 +673,7 @@ export function moveDay(state, weekIdx, dayIdx, direction) {
     const tmp = days[dayIdx];
     days[dayIdx] = days[target];
     days[target] = tmp;
-    return { ...week, days };
+    return { ...week, days: renumberDefaultDayNames(days) };
   });
 }
 
@@ -675,7 +697,7 @@ export function reorderDay(state, weekIdx, fromIdx, toIdx) {
     const next = [...(w.days || [])];
     const [item] = next.splice(fromIdx, 1);
     next.splice(toIdx, 0, item);
-    return { ...w, days: next };
+    return { ...w, days: renumberDefaultDayNames(next) };
   });
 }
 
@@ -683,7 +705,7 @@ export function deleteDay(state, weekIdx, dayIdx) {
   return updateWeekAt(state, weekIdx, (week) => {
     const days = week.days || [];
     if (days.length <= 1) return week;
-    return { ...week, days: days.filter((_, i) => i !== dayIdx) };
+    return { ...week, days: renumberDefaultDayNames(days.filter((_, i) => i !== dayIdx)) };
   });
 }
 
@@ -697,7 +719,7 @@ export function removeEmptyDays(state) {
   const next = [];
   for (const week of weeksIn) {
     const days = (week.days || []).filter((d) => (d.exercises || []).length > 0);
-    if (days.length > 0) next.push({ ...week, days });
+    if (days.length > 0) next.push({ ...week, days: renumberDefaultDayNames(days) });
   }
   if (next.length === 0) {
     const last = weeksIn[weeksIn.length - 1] || createEmptyWeek();

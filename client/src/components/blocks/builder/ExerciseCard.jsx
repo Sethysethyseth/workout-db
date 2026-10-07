@@ -85,6 +85,14 @@ function ClockIcon() {
   );
 }
 
+function CheckIcon() {
+  return (
+    <svg className="bk-ex-card__chip-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M5 12.5 9.5 17 19 7" />
+    </svg>
+  );
+}
+
 function PencilIcon() {
   return (
     <svg className="bk-ex-card__chip-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -295,6 +303,16 @@ export function ExerciseCard({
         >
           <span>{modeText}</span>
         </button>
+        <button
+          type="button"
+          className={`bk-ex-card__chip${perSideShown ? "" : " bk-ex-card__chip--muted"}`}
+          aria-pressed={perSideShown}
+          aria-label="Per side"
+          onClick={() => onChange?.({ perSide: !perSideShown })}
+        >
+          {perSideShown ? <CheckIcon /> : null}
+          <span>Per side</span>
+        </button>
         {showEffort ? (
           <button
             type="button"
@@ -304,15 +322,6 @@ export function ExerciseCard({
             <span>{effortChipText}</span>
           </button>
         ) : null}
-        <button
-          type="button"
-          className={`bk-ex-card__chip${perSideShown ? "" : " bk-ex-card__chip--muted"}`}
-          aria-pressed={perSideShown}
-          aria-label="Per side"
-          onClick={() => onChange?.({ perSide: !perSideShown })}
-        >
-          <span>Per side</span>
-        </button>
         <button
           type="button"
           className={`bk-ex-card__chip${noteText ? "" : " bk-ex-card__chip--muted"}`}

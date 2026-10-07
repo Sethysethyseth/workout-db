@@ -8,6 +8,12 @@ export const EFFORT_OPTIONS = [
   { value: "none", label: "None" },
 ];
 
+export function effortScaleNote(effort) {
+  if (effort === "rpe") return "How hard each set felt, 1-10.";
+  if (effort === "rir") return "How many more reps you had left.";
+  return "No RPE or RIR targets in this block.";
+}
+
 const PUBLIC_NOT_YET_MSG = "this hasnt been implemented yet bro stop prying";
 
 export function BlockSettingsSheet({
@@ -18,12 +24,12 @@ export function BlockSettingsSheet({
   onDelete,
   onExport,
   onAskCoach,
-  onToast,
   exporting = false,
   mode,
 }) {
   const isDraft = Boolean(state?.isDraft);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [publicNote, setPublicNote] = useState(false);
   const cancelDeleteRef = useRef(null);
 
   useOverlayFocus({
@@ -39,9 +45,11 @@ export function BlockSettingsSheet({
 
   function handlePublicChange(checked) {
     if (checked) {
-      onToast?.(PUBLIC_NOT_YET_MSG);
+      setPublicNote(true);
+      onChange?.({ isPublic: false });
       return;
     }
+    setPublicNote(false);
     onChange?.({ isPublic: false });
   }
 
@@ -75,10 +83,12 @@ export function BlockSettingsSheet({
           <span className="bk-settings__label">Effort scale</span>
           <Segmented
             label="Effort scale"
+            fill
             options={EFFORT_OPTIONS}
             value={state?.effort || "none"}
             onChange={(effort) => onChange?.({ effort })}
           />
+          <p className="bk-effort-note">{effortScaleNote(state?.effort || "none")}</p>
         </div>
 
         <div className="bk-settings__field">
@@ -91,15 +101,12 @@ export function BlockSettingsSheet({
             />
             <span>Public</span>
           </label>
+          {publicNote ? <p className="bk-settings__hint">{PUBLIC_NOT_YET_MSG}</p> : null}
           {isDraft ? (
             <p className="bk-settings__hint">
               Drafts stay private until you save them to your library.
             </p>
-          ) : (
-            <p className="bk-settings__hint">
-              Visible to others for clone. Beta: community sharing is still in progress.
-            </p>
-          )}
+          ) : null}
         </div>
 
         {onExport ? (

@@ -5,9 +5,17 @@ import "../../../styles/blocks/bk-ui.css";
  * Radiogroup of option buttons; arrow keys move the selection.
  * @param {{ value: string, label: string }[]} options
  */
-export function Segmented({ options = [], value, onChange, label, className = "", ...rest }) {
+export function Segmented({
+  options = [],
+  value,
+  onChange,
+  label,
+  className = "",
+  fill = false,
+  ...rest
+}) {
   const refs = useRef(new Map());
-  const cls = className ? `bk-segmented ${className}` : "bk-segmented";
+  const cls = ["bk-segmented", fill ? "bk-segmented--fill" : "", className].filter(Boolean).join(" ");
   const index = options.findIndex((o) => o.value === value);
 
   function selectAt(i) {

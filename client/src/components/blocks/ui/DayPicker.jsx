@@ -17,9 +17,11 @@ export function DayPicker({
   onReorder,
   trailing = null,
   className = "",
+  scrollEndToken = null,
   ...rest
 }) {
   const selectedRef = useRef(null);
+  const prevEndToken = useRef(scrollEndToken);
   const reorderEnabled = typeof onReorder === "function";
   const {
     containerRef,
@@ -37,6 +39,12 @@ export function DayPicker({
   const cls = ["bk-day-picker", className, containerClassName].filter(Boolean).join(" ");
 
   useEffect(() => {
+    const tokenChanged = scrollEndToken != null && scrollEndToken !== prevEndToken.current;
+    prevEndToken.current = scrollEndToken;
+    if (tokenChanged && containerRef.current) {
+      containerRef.current.scrollTo({ left: containerRef.current.scrollWidth, behavior: "auto" });
+      return;
+    }
     if (selectedRef.current) {
       selectedRef.current.scrollIntoView({
         behavior: "smooth",
@@ -44,7 +52,7 @@ export function DayPicker({
         block: "nearest",
       });
     }
-  }, [selectedKey]);
+  }, [selectedKey, scrollEndToken]);
 
   return (
     <div ref={containerRef} className={cls} {...rest}>

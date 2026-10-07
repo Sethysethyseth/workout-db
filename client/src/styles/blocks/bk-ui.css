@@ -256,11 +256,17 @@
 }
 
 .bk-pill--lifting {
-  box-shadow: var(--bk-shadow);
+  box-shadow: 0 2px 14px color-mix(in srgb, var(--color-interactive) 55%, transparent);
   scale: 1.06;
   transition: box-shadow 150ms ease-out, scale 150ms ease-out;
   touch-action: none;
   will-change: transform;
+}
+
+.bk-day--selected.bk-pill--lifting {
+  box-shadow:
+    0 2px 14px color-mix(in srgb, var(--color-interactive) 55%, transparent),
+    inset 0 0 0 1px var(--bk-ink);
 }
 
 .bk-pill--slot-shift {
@@ -644,6 +650,16 @@ html[data-palette="iron"]:not([data-theme="dark"]) .bk {
 .bk-segmented__option--selected {
   background: var(--bk-ink);
   color: var(--bk-bg);
+}
+
+.bk-segmented--fill {
+  display: flex;
+  width: 100%;
+}
+
+.bk-segmented--fill > .bk-segmented__option {
+  flex: 1 1 0;
+  min-width: 0;
 }
 
 /* ---------- disclosure ---------- */
