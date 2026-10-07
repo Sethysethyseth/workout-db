@@ -39,11 +39,14 @@ do NOT fix code and do NOT run the gate. Any model can do this.
    (`https://workout-db-git-ai-connector-wave-sethysethyseths-projects.vercel.app`,
    behind Vercel login), phone first. NEVER local dev (`client/.env` = prod).
    Confirm `origin/ai-connector-wave` HEAD and the Render staging deploy first.
-2. Accounts: `test123` / `password` - state on Oct 6 late (read from the
-   staging DB): running block = "Imported block" (run 8) with W1 D1 IN
-   PROGRESS (session 474, from Seth's round-3 smoke); "Upper/Lower Strength -
-   4wk" was paused by that switch (run 7, W4 · Upper A next) - so Library
-   should offer "Left off at W4 · Upper A" (sr3 item A). Or Seth's own
+2. Accounts: `test123` / `password` - state re-read Oct 7 from the staging
+   DB: running block = "Imported block" (run 8) with W1 D1 IN PROGRESS
+   (session 474). "Upper/Lower Strength - 4wk" has TWO ended runs: run 5
+   (W1-W3 done, W4 · Upper A next - ended when Seth switched blocks Oct 6)
+   and run 7 (the OLD code's from-scratch restart that same afternoon, 1 of
+   16 days). Left-off offers the LATEST run only, by design, so Library
+   shows "Left off at W1 · Lower A" (not W4 · Upper A - the Oct 6 note was
+   wrong). Prod has no block runs, so no real user is in this state. Or Seth's own
    staging account. Coach uses are capped at 7 per rolling 7 days.
 3. Record: append `## Smoke round 4` (round 3 is Seth's intake notes) to
    `docs/tasks/bk-smoke-FINDINGS.md` - one line per item: PASS, or FAIL with
@@ -106,10 +109,11 @@ header. Connector drafts stay deferred until a staging connector exists.
 ### Smoke round 4 - the sr3 items (same session, after the 11 above)
 
 A. **Pause / resume (sr3-1):** Library -> "Upper/Lower Strength - 4wk" shows
-   "Left off at W4 · Upper A" -> Start -> on-page choice "Resume at W4 ·
-   Upper A" / Start over / Cancel; the confirm also says "This pauses
-   Imported block - you can pick it up where you left off." -> Resume ->
-   Current block shows W1-W3 done, W4 · Upper A next. Then Library shows
+   "Left off at W1 · Lower A" (test123's latest run - see Accounts) ->
+   Start -> on-page choice "Resume at W1 · Lower A" / Start over / Cancel;
+   the confirm also says "This pauses Imported block - you can pick it up
+   where you left off." -> Resume -> Current block shows W1 · Upper A done,
+   W1 · Lower A next. Then Library shows
    "Imported block" with its own "Left off" line. (End block's confirm now
    says "You can pick it up where you left off from your library.")
 B. **Add exercise opens right (sr3-d1, Android):** builder -> "+ Add
