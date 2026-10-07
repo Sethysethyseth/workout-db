@@ -1,69 +1,34 @@
 # HANDOFF — current state
 
-> **INTERIM (Oct 6, ~20:25, Opus seat mid-session - the full rewrite comes at
-> session end):** smoke round 3 became the **sr3 wave** on
-> `ai-connector-wave`. Seth's rulings are in `bk-smoke-FINDINGS.md` ->
-> "Round 3 rulings" (item 1 = missing resume, NOT data loss -> pause +
-> resume; item 5 = Settings + header chip; item 3 = 7-day cap everywhere;
-> item 10 PARKED). Landed: sr3-d1 diagnosis + seat CSS fix `a6f007f`
-> (picker height), **sr3-1** `077f4b2` (pause/resume, live-proven),
-> **sr3-2** `9c7f1f1` (7-day cap, live-proven). In flight: recon sr3-r2
-> (retry after a print-mode hang). Still to author: sr3-3 builder header
-> (items 4, 5, 9 - Artifact mock for Seth first), sr3-4 add-to-library
-> (items 6, 8), sr3-5 single-side L/R (item 7). QUEUE.md is current.
+> **WHERE WE ARE (Oct 6, late):** Seth's smoke round 3 became the **sr3
+> wave** on `ai-connector-wave` (pushed) - SR3_STATUS_LINE. Rulings: FINDINGS
+> "Round 3 rulings" + QUEUE's sr3 header (item 1 was a missing RESUME, not
+> data loss; item 10 swap-for-today PARKED). Landed: sr3-d1 + picker-height
+> fix `a6f007f`; **sr3-1** `077f4b2` pause/resume ("Left off at W4 · Upper
+> A", Resume / Start over); **sr3-2** `9c7f1f1` a week holds at most 7 days;
+> **sr3-3** `ba415bf` (+ `230d4c0`) round "..." for week/day actions, the
+> RPE/RIR/"Effort: off" chip, Public says Seth's line; **sr3-5** `c6ae089`
+> "Per side" on block exercises (the wave's ONE migration - STAGING applied
+> Oct 6 under "migrate staging"; PROD is Seth's hand-apply before the merge,
+> next to BK1's); **sr3-4** `f1fbf55` add a not-in-library exercise to the
+> library from the builder and import; **sr3-6** SR3_6_LINE. Every server
+> change was proven live on the staging DB. Prod unchanged: `main` =
+> `7d3b91e`.
 
-> **WHERE WE ARE (Oct 6):** the **bkr fix wave is COMPLETE - 12/12 LANDED** on
-> `ai-connector-wave` (pushed). It came out of Seth's BK smoke round 2 (Oct 5,
-> `docs/tasks/bk-smoke-FINDINGS.md` -> "Smoke round 2"): coach guardrails
-> (bkr2 - usage ledger under a per-user lock, palette costs 1, coach on-topic
-> only), Finish bar on the iOS keypad (bkr-f1), the crown AI loader + client
-> timeouts (bkr1), one "Have AI fix this file" button priced 1-4 by tokens
-> (bkr3), builder settings chips + actions sheet (bkr4, Seth picked option 2),
-> Home logging-first with the block card under it (bkr5, Seth picked A + one
-> week strip), then critic round 1 (6/10 FAIL, no P0/P1) and its fix round
-> bkrf1a-c. **Critic round 2 was SKIPPED by Seth (Oct 6: "the critic isnt
-> working, lets skip it for now")** - his re-smoke is the check. Prod
-> unchanged: `main` = `7d3b91e`.
->
-> **Oct 6, later: Seth's smoke round 3 INTAKE is waiting** - 10 notes (one
-> suspected P0 data loss, one bug with a screenshot, six CRs, one open
-> question for the agent's opinion, one undecided CR to talk through) recorded verbatim in
-> `docs/tasks/bk-smoke-FINDINGS.md` -> "Smoke round 3". The session that took
-> them proposed NO solutions on purpose (Seth: "leave this to the next
-> chat"). The 11-item re-smoke checklist below is still un-run.
+**Next action (human):** smoke the whole branch on the staging Vercel
+preview with an agent beside you - "smoke round 4" below (the BK/bkr items
+plus the new sr3 items); say "smoke signed off" when it passes.
 
-**Next action (human):** open a fresh Claude Code session on Opus and say
-"work the smoke round 3 intake" - it starts with the suspected block-progress
-data loss.
+## ▶ PICK UP HERE (Oct 6, late - smoke round 4, any model)
 
-## ▶ PICK UP HERE (Oct 6 - smoke round 3 intake, FRONTIER seat)
+1. Seth smokes; the agent records, one item at a time (section below).
+2. **Critic:** the one-round feel critic was NOT run for sr3 - the
+   Playwright MCP failed to connect this session. Ask Seth once whether he
+   wants it before or after his smoke; default is his smoke only.
+3. Defects -> DIAGNOSIS blocks; then the pre-main gate (`pre-main-review`,
+   OPUS) with the gate notes below.
 
-Seth handed the next chat his round-3 notes (FINDINGS "Smoke round 3", items
-1-10; item 10 is undecided - discuss, don't author). Do them in this order and ask Seth the open calls batched at the start
-(memory: ask-seth-the-decisions):
-
-1. **Item 1 first - suspected P0:** starting a second block may wipe the
-   running block's progress (Seth unsure whether the first block was still
-   running - cover both cases). DIAGNOSIS block to Cursor (report lane) before
-   anything else; if confirmed, it is the top fix of the next wave.
-2. **Item 2 - bug:** "+ Add exercise" in the builder opens wrong the first
-   time (keyboard up, no search/list; second tap is fine). Screenshot in
-   `claudefiledrop/smoke-r3-add-exercise-first-open.png`. DIAGNOSIS block.
-3. **Ask Seth in one batch, with a recommendation each:** item 5 (is block
-   Settings the right home for the RPE/RIR choice? he wants your opinion),
-   item 3 (hard cap at 7 days per week: disable "+ Day" at
-   7?). Item 7 is answered ("single" = one-arm/one-leg exercise -> log a left
-   and a right side). Items 4, 6, 7, 8, 9 are clear enough to author (item 9's copy is Seth's,
-   verbatim: "this hasnt been implemented yet bro stop prying").
-4. Author the next wave from the answers (`author-task-block`), Home/builder
-   design units get an Artifact mock first when they change layout (memory:
-   preview-big-changes-as-artifacts).
-5. **Critic rule changed (Oct 6):** the separate-agent feel critic runs ONE
-   iteration by default (scored 0-10); more rounds only when Seth says so.
-6. The pre-main gate waits until Seth signs off a smoke of everything,
-   including the 11-item checklist below.
-
-### Agent sitting with Seth on the 11-item re-smoke (when he runs it)
+### Agent sitting with Seth on smoke round 4 (when he runs it)
 
 You sit with Seth while he smokes, ONE item at a time, and record results. You
 do NOT fix code and do NOT run the gate. Any model can do this.
@@ -71,9 +36,13 @@ do NOT fix code and do NOT run the gate. Any model can do this.
 1. Where: the staging Vercel preview of `ai-connector-wave`
    (`https://workout-db-git-ai-connector-wave-sethysethyseths-projects.vercel.app`,
    behind Vercel login), phone first. NEVER local dev (`client/.env` = prod).
-2. Accounts: `test123` / `password` (running block "Upper/Lower Strength -
-   4wk", W4 · Upper A next, nothing in progress), or Seth's own staging
-   account. Coach uses are capped at 7 per rolling 7 days.
+   Confirm `origin/ai-connector-wave` HEAD and the Render staging deploy first.
+2. Accounts: `test123` / `password` - state on Oct 6 late (read from the
+   staging DB): running block = "Imported block" (run 8) with W1 D1 IN
+   PROGRESS (session 474, from Seth's round-3 smoke); "Upper/Lower Strength -
+   4wk" was paused by that switch (run 7, W4 · Upper A next) - so Library
+   should offer "Left off at W4 · Upper A" (sr3 item A). Or Seth's own
+   staging account. Coach uses are capped at 7 per rolling 7 days.
 3. Record: append `## Smoke round 4` (round 3 is Seth's intake notes) to
    `docs/tasks/bk-smoke-FINDINGS.md` - one line per item: PASS, or FAIL with
    Seth's words + screenshot (`claudefiledrop/`, untracked) + severity (P0 data
@@ -131,6 +100,40 @@ header. Connector drafts stay deferred until a staging connector exists.
 10. **Logger Back:** leaving a live workout with Back no longer asks.
 11. **Imported file name:** importing `Phase-1-Program.xlsx` names the block
     "Phase-1-Program".
+
+### Smoke round 4 - the sr3 items (same session, after the 11 above)
+
+A. **Pause / resume (sr3-1):** Library -> "Upper/Lower Strength - 4wk" shows
+   "Left off at W4 · Upper A" -> Start -> on-page choice "Resume at W4 ·
+   Upper A" / Start over / Cancel; the confirm also says "This pauses
+   Imported block - you can pick it up where you left off." -> Resume ->
+   Current block shows W1-W3 done, W4 · Upper A next. Then Library shows
+   "Imported block" with its own "Left off" line. (End block's confirm now
+   says "You can pick it up where you left off from your library.")
+B. **Add exercise opens right (sr3-d1, Android):** builder -> "+ Add
+   exercise" the FIRST time -> a tall sheet with the search box visible above
+   the keyboard and room for results.
+C. **7 days max (sr3-2):** a week with 7 days -> the "+ Day" button reads
+   "7 days max" and does nothing; the day "..." -> Duplicate is disabled
+   too. Importing a file with 8 days in a week -> "Week 1 has 8 days - a
+   week holds at most 7."
+D. **Week / day actions (sr3-3):** a round "..." beside "Week n" and at the
+   end of the day line, each opening rename / duplicate / move / delete.
+E. **Effort chip (sr3-3):** under the block name: "Effort: off" / "RPE" /
+   "RIR"; tap -> "Effort scale" sheet; the choice shows in Settings too.
+F. **Public (sr3-3):** Settings -> tick Public -> toast "this hasnt been
+   implemented yet bro stop prying", box stays unticked; Library "Make
+   public" says the same.
+G. **Per side (sr3-5):** expand "Single-Leg Calf Raise" in a block -> a "Per
+   side" chip that is ON and the summary ends "each side"; "Back Squat" OFF;
+   tap to flip either, save, start that day -> the logger shows Right/Left
+   grids exactly for the ones that are on.
+H. **Add to library (sr3-4):** builder search "Zercher Carry Hold" -> both
+   "Use ..." and "Add 'Zercher Carry Hold' to your library" -> add it ->
+   it lands in the day with no "Not in library" chip; a free-text exercise's
+   card "..." -> "Add to library"; import a sheet with an unknown name -> its
+   row's "Add to library" moves it out of "Not in your library".
+I. **Hold to reorder (sr3-6):** SR3_6_SMOKE
 
 **By design - do not log as defects:** one AI button on import (the layout
 read and the prose convert merged); the Any AI tab has no AI button; palette
@@ -199,24 +202,38 @@ confirms are still browser dialogs; critic R1 P3 leftovers not in bkrf1
     (Home-only); PersistentWorkoutBar hidden on `/` and `/blocks/import`.
   - Critic: R1 6/10 FAIL (`bkr-critic-round-1-FINDINGS.md`), all R1 P2s
     addressed by bkrf1a-c; R2 skipped by Seth.
-- Before any merge: Seth hand-applies BK1's migration
-  `20260929120000_blocks_v2` to PROD (RUNBOOK "Schema-change deploy") and the
-  prod-vs-staging migration drift (Housekeeping) gets reconciled. bkr added
-  NO migration.
+- **sr3 wave (Oct 6) - per-unit audits in QUEUE.md:**
+  - sr3-1 `077f4b2`: resume REOPENS an ended run (`endedAt` -> null) after
+    ending the user's other open runs in one transaction - same "two open
+    runs" race class as create (no unique guard); `GET /block-runs/left-off`
+    lists each template's LATEST run only when ended + unfinished + has a
+    done/in-progress day. A paused run and a deliberately ended one look the
+    same (no schema change, by ruling).
+  - sr3-2 `9c7f1f1`: `MAX_DAYS_PER_WEEK = 7` in `blockFormat.js` feeds Format
+    v1, the AI schema and the save-path normalizer; an existing 8+ day block
+    cannot be saved until trimmed (the builder shows why); history import
+    with 8+ distinct titles now hard-fails (follow-up candidate).
+  - sr3-3 `ba415bf` + `230d4c0`: Public is blocked in the UI only - the API
+    still accepts `isPublic: true`, and already-public blocks stay public.
+  - sr3-5 `c6ae089`: the wave's ONE migration
+    `20261006200000_block_exercise_per_side` (`perSide BOOLEAN`, nullable);
+    applied to staging from this Windows tree (CRLF checkout, no
+    `.gitattributes`) like BK1 - check checksum drift before any prod
+    `migrate deploy`. `ExerciseRx` gained an optional `suffix` (shared ui).
+  - sr3-4 `f1fbf55`: `AddExerciseToLibrarySheet` has a new `context="library"`
+    path (no session exercise) - review that the live/completed logger paths
+    are unchanged.
+  - sr3-6: SR3_6_GATE
+- Before any merge: Seth hand-applies BOTH migrations to PROD, in order -
+  BK1's `20260929120000_blocks_v2`, then sr3-5's
+  `20261006200000_block_exercise_per_side` (RUNBOOK "Schema-change deploy") -
+  and the prod-vs-staging migration drift (Housekeeping) gets reconciled. bkr
+  added NO migration.
 
 ### Open on prod - Seth's checks, none blocking
 
-1. **Connector ID1 live checks - DONE Sept 29 (Seth).** Sign-in and the
-   sign-out button both work on prod.
-2. **Prod AuthKit session lifetime - DONE Sept 29.** Prod matches staging:
-   max session 7 days, access token 5 minutes, inactivity timeout 2 days.
-3. **Patch-wave post-deploy checks - DONE Sept 29 (Seth), with two product
-   findings** (below): Render shows `7d3b91e`; coach's second answer is
-   visibly faster (CP2 confirmed by feel; `ttft_ms` not recorded); Render
-   logs clean, no "Ripgrep path not configured".
-4. **`COACH_UNCAPPED_EMAILS=sethjknisel@gmail.com` - DONE on PROD only**
-   (Seth has no staging/preview coach use); the "N of 7 left" counter no
-   longer shows for that account on prod. Staging stays capped by design.
+Checks 1-4 (connector ID1, AuthKit lifetime, patch-wave post-deploy,
+`COACH_UNCAPPED_EMAILS`) are DONE - archived Oct 6.
 5. **F/E-wave PROD smoke** - still open (section below).
 
 ### Seth's asks, Sept 29 - NOT scheduled, no unit authored (needs a wave slot)
@@ -281,8 +298,13 @@ confirms are still browser dialogs; critic R1 P3 leftovers not in bkrf1
 
 ### Next work
 
-- **The BK wave** - 28/28 landed; Seth's smoke round 2, then the gate.
-  Nothing else is queued.
+- **The BK + bkr + sr3 waves** - all landed on `ai-connector-wave`; Seth's
+  consolidated smoke (round 4), then the gate. Nothing else is queued.
+- **sr3 follow-up candidates:** history import keeps the 7 most-used titles
+  with a "skipped" warning (today 8+ titles hard-fail the preview, sr3-2);
+  swap an exercise for today on a block day (smoke round 3 item 10, PARKED by
+  Seth); a `.gitattributes` `*.sql text eol=lf` rule so migration checksums
+  stop depending on the machine that applied them.
 - **Next-wave candidates:** the duplicate Resume bars on Home + Seth's
   discard-from-entry-points ask (Sept 29, below); the round-3 critic
   leftovers and the deferred P3s in the smoke section.
@@ -311,21 +333,49 @@ user on the merge deploy); CR2 polish skipped (shipped at 7.5); `zod` declared
 > explicitly. Dogfoods the shell repo's decision-10 no-dangling-next-
 > action requirement; `land-unit` section 5 keeps it maintained.
 
+**Updated:** October 6, 2026, late (Opus, frontier seat authoring AND running
+the relay - Seth said "keep going"). Session log, sr3 wave:
+- Item 1 diagnosed by the seat from code in minutes (no Cursor lane): not
+  data loss - `createBlockRun` ends the open run and always creates a new
+  one, so the old block's PLACE was lost, never its sessions. Seth's two
+  question batches: pause + resume, Settings + header chip, 7-day cap
+  everywhere, swap PARKED; then mock approved + long-press reorder added
+  (sr3-6), Per-side switch WITH a DB field (sr3-5).
+- Builder-header mock: https://claude.ai/artifact/TD1ddiGCaHqrWLScS8w5qY.
+- Report lanes: sr3-d1 (diagnosis, 2.4 min; FINDINGS kept, seat applied the
+  one-rule CSS fix), sr3-r1 recon (1.9 min, kept only in the scratchpad).
+  sr3-r2 recon HUNG twice (print mode, zero model events); split into r2a
+  (A/B/E, 2.3 min, fine) and r2b (C/D, hung again) - the seat did C/D itself
+  with targeted reads (a bounded exception to "Cursor does the search",
+  after three hangs).
+- **Cursor auto-rung hangs were the session's main cost:** 5 runs stalled
+  before the model's first event (sr3-r2 x2, r2b, sr3-3 x2). Switching to
+  `--output-format stream-json` (scratchpad `run-lane-stream.ps1`) made a
+  stall visible within minutes instead of at the 40-min kill; a 7-10 min
+  silent stretch MID-run (sr3-3 run 3, sr3-4) can still finish - wait it out.
+- **Seat errors, on record:** (1) killing the stalled sr3-3 agent by process
+  match also killed sr3-5's agent during its final `git status` (after its
+  DELIVERY.md) - kill by PID of the lane's own parent, never by pattern;
+  (2) a bash one-liner with `npx prisma generate` in backticks inside a
+  double-quoted string EXECUTED it from the repo root; npx stopped at its
+  "will be installed: prisma@8.0.0-rc.20" prompt and was killed - verified
+  nothing installed (no root package.json/node_modules, npx cache clean,
+  server prisma still 6.19.2). Use the Edit tool for prose edits.
+- Staging migration under "migrate staging" (status -> deploy -> status,
+  each approved) - record in QUEUE's sr3-5 line.
+- Seat fixes beyond Cursor: `a6f007f` picker height, left-off query shape
+  (sr3-1), `ExerciseRx` suffix (sr3-5), `230d4c0` span-in-p (sr3-3, caught
+  by a REAL-app Playwright run during sr3-4's audit).
+- Real-app checks used the lane-3 Playwright install
+  (`C:\dev\worktrees\cursor-lane-3\.playwright-mcp\sr3-3\node_modules`) with
+  the local API on the staging DB + a lane client on :5173 - the Playwright
+  MCP never connected this session. Local API after a schema change needs
+  `npx prisma generate` from `server/` first.
+- HANDOFF is still ~600 lines (cap ~300): the standing-reference sections
+  (Durable gotchas, Workflow backlog, Still governing) need a home of their
+  own - a decision for Seth, not done unilaterally.
 
-**Updated:** October 1, 2026 (Opus, frontier seat running the relay). Landed
-bksf2b `10cfb3a`, bksf2c `848ff3b`, bksf2a `d1c1940` (run 1 died on a Cursor
-connection loss; resumed in place) + seat fix `bd0e4b3`; ran critic round 3
-(7/10 FAIL, final); direct fixes `9f6b2a0`; authored + dispatched bksf3a-b
-after Seth chose fix-before-smoke; landed bksf3a `2fd8773` and bksf3b
-`b5e42f2` with landing fix `9633c20` (live replay caught bksf3b PATCHing
-blanks over a just-logged set); rewrote this file for the smoke agent;
-built the before/after gallery Artifact at Seth's ask
-(https://claude.ai/artifact/BYfQuLW677z67Ap7WaDfwH; screenshots local-only
-under `.playwright-mcp/land-oct1/` and the critic round folders).
-Seth asked (Oct 1) for a way to preview big UI changes without changing the
-app - an Artifact mock before a wave, a before/after gallery at wave end;
-recorded as agent memory, suggested at the seat's discretion. Prior:
-Sept 30 sessions (BK smoke reopen, critic rounds 1-2). Older sessions archived.
+
 
 ### Still governing from the AI wave (full record in the archive)
 
@@ -430,9 +480,12 @@ Covers the F-wave AND the still-open E-wave prod smoke. Staging passed Aug 4.
 
 ### Lane worktree state
 
-**All three lanes are LANDED and clean (Oct 1):** `cursor-lane` on
-`cursor/bksf3b`, `cursor-lane-2` on `cursor/bksf3a`, `cursor-lane-3` on
-`cursor/bksf2b`, each fully merged into `ai-connector-wave`. Lane 2's
+**Lanes after the sr3 wave (Oct 6, late):** `cursor-lane` on `cursor/sr3-4`,
+`cursor-lane-2` on `cursor/sr3-6`, `cursor-lane-3` on `cursor/sr3-3b` (its
+`.playwright-mcp/sr3-3/` holds a working Playwright install - handy while
+the Playwright MCP is down), each merged into `ai-connector-wave` once
+landed; a stale `cursor/sr3-3` branch (the two hung attempts) can be
+deleted with Seth's OK. Lane 2's
 `server` has its own full install WITH `@cursor/sdk` (use it for any
 unit that needs a LIVE coach call); lane 3's `node_modules` are
 junctions into lane 1. Lane 3 still holds three untracked mock PNG

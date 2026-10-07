@@ -1,3 +1,100 @@
+## ARCHIVED October 6, 2026, late (Opus session, the sr3 wave) - the interim
+## sr3 header, the Oct 6 bkr-complete header + smoke-round-3 PICK UP HERE, the
+## done "Open on prod" checks 1-4, and the Oct 1 session log, moved verbatim
+## when the sr3 wave landed (its own session log is in HANDOFF).
+
+> **INTERIM (Oct 6, ~20:25, Opus seat mid-session - the full rewrite comes at
+> session end):** smoke round 3 became the **sr3 wave** on
+> `ai-connector-wave`. Seth's rulings are in `bk-smoke-FINDINGS.md` ->
+> "Round 3 rulings" (item 1 = missing resume, NOT data loss -> pause +
+> resume; item 5 = Settings + header chip; item 3 = 7-day cap everywhere;
+> item 10 PARKED). Landed: sr3-d1 diagnosis + seat CSS fix `a6f007f`
+> (picker height), **sr3-1** `077f4b2` (pause/resume, live-proven),
+> **sr3-2** `9c7f1f1` (7-day cap, live-proven). In flight: recon sr3-r2
+> (retry after a print-mode hang). Still to author: sr3-3 builder header
+> (items 4, 5, 9 - Artifact mock for Seth first), sr3-4 add-to-library
+> (items 6, 8), sr3-5 single-side L/R (item 7). QUEUE.md is current.
+
+> **WHERE WE ARE (Oct 6):** the **bkr fix wave is COMPLETE - 12/12 LANDED** on
+> `ai-connector-wave` (pushed). It came out of Seth's BK smoke round 2 (Oct 5,
+> `docs/tasks/bk-smoke-FINDINGS.md` -> "Smoke round 2"): coach guardrails
+> (bkr2 - usage ledger under a per-user lock, palette costs 1, coach on-topic
+> only), Finish bar on the iOS keypad (bkr-f1), the crown AI loader + client
+> timeouts (bkr1), one "Have AI fix this file" button priced 1-4 by tokens
+> (bkr3), builder settings chips + actions sheet (bkr4, Seth picked option 2),
+> Home logging-first with the block card under it (bkr5, Seth picked A + one
+> week strip), then critic round 1 (6/10 FAIL, no P0/P1) and its fix round
+> bkrf1a-c. **Critic round 2 was SKIPPED by Seth (Oct 6: "the critic isnt
+> working, lets skip it for now")** - his re-smoke is the check. Prod
+> unchanged: `main` = `7d3b91e`.
+>
+> **Oct 6, later: Seth's smoke round 3 INTAKE is waiting** - 10 notes (one
+> suspected P0 data loss, one bug with a screenshot, six CRs, one open
+> question for the agent's opinion, one undecided CR to talk through) recorded verbatim in
+> `docs/tasks/bk-smoke-FINDINGS.md` -> "Smoke round 3". The session that took
+> them proposed NO solutions on purpose (Seth: "leave this to the next
+> chat"). The 11-item re-smoke checklist below is still un-run.
+
+**Next action (human):** open a fresh Claude Code session on Opus and say
+"work the smoke round 3 intake" - it starts with the suspected block-progress
+data loss.
+
+## ▶ PICK UP HERE (Oct 6 - smoke round 3 intake, FRONTIER seat)
+
+Seth handed the next chat his round-3 notes (FINDINGS "Smoke round 3", items
+1-10; item 10 is undecided - discuss, don't author). Do them in this order and ask Seth the open calls batched at the start
+(memory: ask-seth-the-decisions):
+
+1. **Item 1 first - suspected P0:** starting a second block may wipe the
+   running block's progress (Seth unsure whether the first block was still
+   running - cover both cases). DIAGNOSIS block to Cursor (report lane) before
+   anything else; if confirmed, it is the top fix of the next wave.
+2. **Item 2 - bug:** "+ Add exercise" in the builder opens wrong the first
+   time (keyboard up, no search/list; second tap is fine). Screenshot in
+   `claudefiledrop/smoke-r3-add-exercise-first-open.png`. DIAGNOSIS block.
+3. **Ask Seth in one batch, with a recommendation each:** item 5 (is block
+   Settings the right home for the RPE/RIR choice? he wants your opinion),
+   item 3 (hard cap at 7 days per week: disable "+ Day" at
+   7?). Item 7 is answered ("single" = one-arm/one-leg exercise -> log a left
+   and a right side). Items 4, 6, 7, 8, 9 are clear enough to author (item 9's copy is Seth's,
+   verbatim: "this hasnt been implemented yet bro stop prying").
+4. Author the next wave from the answers (`author-task-block`), Home/builder
+   design units get an Artifact mock first when they change layout (memory:
+   preview-big-changes-as-artifacts).
+5. **Critic rule changed (Oct 6):** the separate-agent feel critic runs ONE
+   iteration by default (scored 0-10); more rounds only when Seth says so.
+6. The pre-main gate waits until Seth signs off a smoke of everything,
+   including the 11-item checklist below.
+
+(From "### Open on prod - Seth's checks, none blocking" - items 1-4, all done:)
+
+1. **Connector ID1 live checks - DONE Sept 29 (Seth).** Sign-in and the
+   sign-out button both work on prod.
+2. **Prod AuthKit session lifetime - DONE Sept 29.** Prod matches staging:
+   max session 7 days, access token 5 minutes, inactivity timeout 2 days.
+3. **Patch-wave post-deploy checks - DONE Sept 29 (Seth), with two product
+   findings** (below): Render shows `7d3b91e`; coach's second answer is
+   visibly faster (CP2 confirmed by feel; `ttft_ms` not recorded); Render
+   logs clean, no "Ripgrep path not configured".
+4. **`COACH_UNCAPPED_EMAILS=sethjknisel@gmail.com` - DONE on PROD only**
+   (Seth has no staging/preview coach use); the "N of 7 left" counter no
+   longer shows for that account on prod. Staging stays capped by design.
+
+**Updated:** October 1, 2026 (Opus, frontier seat running the relay). Landed
+bksf2b `10cfb3a`, bksf2c `848ff3b`, bksf2a `d1c1940` (run 1 died on a Cursor
+connection loss; resumed in place) + seat fix `bd0e4b3`; ran critic round 3
+(7/10 FAIL, final); direct fixes `9f6b2a0`; authored + dispatched bksf3a-b
+after Seth chose fix-before-smoke; landed bksf3a `2fd8773` and bksf3b
+`b5e42f2` with landing fix `9633c20` (live replay caught bksf3b PATCHing
+blanks over a just-logged set); rewrote this file for the smoke agent;
+built the before/after gallery Artifact at Seth's ask
+(https://claude.ai/artifact/BYfQuLW677z67Ap7WaDfwH; screenshots local-only
+under `.playwright-mcp/land-oct1/` and the critic round folders).
+Seth asked (Oct 1) for a way to preview big UI changes without changing the
+app - an Artifact mock before a wave, a before/after gallery at wave end;
+recorded as agent memory, suggested at the seat's discretion. Prior:
+Sept 30 sessions (BK smoke reopen, critic rounds 1-2). Older sessions archived.
+
 ## ARCHIVED October 6, 2026 (Opus session) - the Oct 5 bkr header, its PICK UP
 ## HERE, and the BK round-2 smoke checklist + gate notes, moved verbatim when the
 ## bkr wave reached 12/12 (gate notes carried forward, extended, in HANDOFF).
