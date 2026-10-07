@@ -1,23 +1,40 @@
 import { useEffect, useRef } from "react";
 import "../../../styles/blocks/bk-ui.css";
 import { ProgressRing } from "./ProgressRing.jsx";
+import { useHoldToReorder } from "./useHoldToReorder.js";
 
 /**
  * Day tiles with optional progress rings and bottom-edge tags.
  * Horizontally scrolls when tiles would crush at phone widths; scrolls the
  * selected tile into view (same pattern as WeekStrip).
+ * Optional `onReorder(fromIndex, toIndex)` enables hold-to-drag reorder.
  * @param {{ key: string, top: string, name: string, progress?: number | null, tag?: string | null }[]} days
  */
 export function DayPicker({
   days = [],
   selectedKey,
   onSelect,
+  onReorder,
   trailing = null,
   className = "",
   ...rest
 }) {
   const selectedRef = useRef(null);
-  const cls = className ? `bk-day-picker ${className}` : "bk-day-picker";
+  const reorderEnabled = typeof onReorder === "function";
+  const {
+    containerRef,
+    containerClassName,
+    setItemRef,
+    getItemStyle,
+    getItemClassNames,
+    getItemPointerProps,
+  } = useHoldToReorder({
+    enabled: reorderEnabled,
+    itemCount: days.length,
+    onReorder,
+  });
+
+  const cls = ["bk-day-picker", className, containerClassName].filter(Boolean).join(" ");
 
   useEffect(() => {
     if (selectedRef.current) {
@@ -30,11 +47,11 @@ export function DayPicker({
   }, [selectedKey]);
 
   return (
-    <div className={cls} {...rest}>
-      {days.map((day) => {
+    <div ref={containerRef} className={cls} {...rest}>
+      {days.map((day, index) => {
         const selected = day.key === selectedKey;
         const showRing = day.progress != null;
-        const classes = [
+        const baseClasses = [
           "bk-day",
           selected ? "bk-day--selected" : "",
           showRing ? "bk-day--has-ring" : "",
@@ -45,10 +62,15 @@ export function DayPicker({
           <button
             key={day.key}
             type="button"
-            ref={selected ? selectedRef : null}
-            className={classes}
+            ref={(el) => {
+              setItemRef(index, el);
+              if (selected) selectedRef.current = el;
+            }}
+            className={getItemClassNames(index, baseClasses)}
+            style={getItemStyle(index)}
             aria-pressed={selected}
             onClick={() => onSelect?.(day.key)}
+            {...getItemPointerProps(index)}
           >
             <span className="bk-day__top">{day.top}</span>
             <span className="bk-day__name">{day.name}</span>

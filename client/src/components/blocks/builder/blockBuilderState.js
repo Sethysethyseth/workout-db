@@ -583,6 +583,26 @@ export function moveWeek(state, weekIdx, direction) {
   return { ...state, weeks };
 }
 
+/** Remove-and-insert week reorder (not swap). Equal/OOR indices -> same state. */
+export function reorderWeek(state, fromIdx, toIdx) {
+  const weeks = state.weeks || [];
+  if (
+    !Number.isInteger(fromIdx) ||
+    !Number.isInteger(toIdx) ||
+    fromIdx < 0 ||
+    toIdx < 0 ||
+    fromIdx >= weeks.length ||
+    toIdx >= weeks.length ||
+    fromIdx === toIdx
+  ) {
+    return state;
+  }
+  const next = [...weeks];
+  const [item] = next.splice(fromIdx, 1);
+  next.splice(toIdx, 0, item);
+  return { ...state, weeks: next };
+}
+
 export function clearWeek(state, weekIdx) {
   return updateWeekAt(state, weekIdx, (w) => ({
     ...w,
@@ -632,6 +652,30 @@ export function moveDay(state, weekIdx, dayIdx, direction) {
     days[dayIdx] = days[target];
     days[target] = tmp;
     return { ...week, days };
+  });
+}
+
+/** Remove-and-insert day reorder (not swap). Equal/OOR indices -> same state. */
+export function reorderDay(state, weekIdx, fromIdx, toIdx) {
+  const week = state.weeks?.[weekIdx];
+  if (!week) return state;
+  const days = week.days || [];
+  if (
+    !Number.isInteger(fromIdx) ||
+    !Number.isInteger(toIdx) ||
+    fromIdx < 0 ||
+    toIdx < 0 ||
+    fromIdx >= days.length ||
+    toIdx >= days.length ||
+    fromIdx === toIdx
+  ) {
+    return state;
+  }
+  return updateWeekAt(state, weekIdx, (w) => {
+    const next = [...(w.days || [])];
+    const [item] = next.splice(fromIdx, 1);
+    next.splice(toIdx, 0, item);
+    return { ...w, days: next };
   });
 }
 

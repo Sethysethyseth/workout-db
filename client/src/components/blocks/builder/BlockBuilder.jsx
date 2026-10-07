@@ -44,6 +44,8 @@ import {
   moveExercise,
   moveWeek,
   renameDay,
+  reorderDay,
+  reorderWeek,
   removeEmptyDays,
   replaceExercise,
   serializeToPayload,
@@ -630,6 +632,28 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
     setExpandedIds(new Set());
   }
 
+  /** Selection index after remove-and-insert reorder (follows the same item). */
+  function indexAfterReorder(selectedIdx, fromIdx, toIdx) {
+    if (fromIdx === toIdx) return selectedIdx;
+    if (selectedIdx === fromIdx) return toIdx;
+    if (fromIdx < toIdx) {
+      if (selectedIdx > fromIdx && selectedIdx <= toIdx) return selectedIdx - 1;
+    } else if (selectedIdx >= toIdx && selectedIdx < fromIdx) {
+      return selectedIdx + 1;
+    }
+    return selectedIdx;
+  }
+
+  function handleReorderWeek(fromIdx, toIdx) {
+    applyState(reorderWeek(state, fromIdx, toIdx));
+    setWeekIdx((prev) => indexAfterReorder(prev, fromIdx, toIdx));
+  }
+
+  function handleReorderDay(fromIdx, toIdx) {
+    applyState(reorderDay(state, safeWeekIdx, fromIdx, toIdx));
+    setDayIdx((prev) => indexAfterReorder(prev, fromIdx, toIdx));
+  }
+
   function effortChipLabel(effort) {
     if (effort === "rpe") return "RPE";
     if (effort === "rir") return "RIR";
@@ -1064,6 +1088,7 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
             weeks={weekStripItems}
             selectedKey={currentWeek?.id || String(safeWeekIdx)}
             onSelect={selectWeek}
+            onReorder={handleReorderWeek}
             trailing={
               <button
                 type="button"
@@ -1119,6 +1144,7 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
             days={dayPickerItems}
             selectedKey={currentDay?.id || String(safeDayIdx)}
             onSelect={selectDay}
+            onReorder={handleReorderDay}
             trailing={
               <button
                 type="button"

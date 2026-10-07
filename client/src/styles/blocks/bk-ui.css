@@ -249,6 +249,40 @@
   align-items: stretch;
 }
 
+/* Hold-to-reorder (opt-in via onReorder on WeekStrip / DayPicker) */
+.bk-pill--reorderable {
+  -webkit-touch-callout: none;
+  user-select: none;
+}
+
+.bk-pill--lifting {
+  box-shadow: var(--bk-shadow);
+  scale: 1.06;
+  transition: box-shadow 150ms ease-out, scale 150ms ease-out;
+  touch-action: none;
+  will-change: transform;
+}
+
+.bk-pill--slot-shift {
+  transition: transform 180ms ease-out;
+  will-change: transform;
+}
+
+.bk-strip--reordering {
+  touch-action: none;
+  overscroll-behavior: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bk-pill--lifting {
+    scale: none;
+  }
+
+  .bk-pill--slot-shift {
+    transition: none;
+  }
+}
+
 /* ---------- day picker ---------- */
 .bk-day-picker {
   display: flex;
