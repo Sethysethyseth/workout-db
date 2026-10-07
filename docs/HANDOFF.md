@@ -1,5 +1,17 @@
 # HANDOFF — current state
 
+> **INTERIM (Oct 6, ~20:25, Opus seat mid-session - the full rewrite comes at
+> session end):** smoke round 3 became the **sr3 wave** on
+> `ai-connector-wave`. Seth's rulings are in `bk-smoke-FINDINGS.md` ->
+> "Round 3 rulings" (item 1 = missing resume, NOT data loss -> pause +
+> resume; item 5 = Settings + header chip; item 3 = 7-day cap everywhere;
+> item 10 PARKED). Landed: sr3-d1 diagnosis + seat CSS fix `a6f007f`
+> (picker height), **sr3-1** `077f4b2` (pause/resume, live-proven),
+> **sr3-2** `9c7f1f1` (7-day cap, live-proven). In flight: recon sr3-r2
+> (retry after a print-mode hang). Still to author: sr3-3 builder header
+> (items 4, 5, 9 - Artifact mock for Seth first), sr3-4 add-to-library
+> (items 6, 8), sr3-5 single-side L/R (item 7). QUEUE.md is current.
+
 > **WHERE WE ARE (Oct 6):** the **bkr fix wave is COMPLETE - 12/12 LANDED** on
 > `ai-connector-wave` (pushed). It came out of Seth's BK smoke round 2 (Oct 5,
 > `docs/tasks/bk-smoke-FINDINGS.md` -> "Smoke round 2"): coach guardrails
