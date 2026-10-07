@@ -1,12 +1,14 @@
 # HANDOFF — current state
 
 > **WHERE WE ARE (Oct 7):** Seth's smoke round 3 became the **sr3
-> wave** on `ai-connector-wave` (pushed, head `468bab9`+) - **7/7 LANDED,
-> wave complete, waiting on Seth's smoke round 4**. Rulings: FINDINGS
+> wave** on `ai-connector-wave` (pushed) - the 7 sr3 units LANDED; Seth's
+> one-round feel critic scored **6/10 FAIL** (one P1), so a 3-unit **fix
+> round sr3f1-3** is in flight (wave N = 10) before his smoke round 4.
+> Rulings: FINDINGS
 > "Round 3 rulings" + QUEUE's sr3 header (item 1 was a missing RESUME, not
 > data loss; item 10 swap-for-today PARKED). Landed: sr3-d1 + picker-height
-> fix `a6f007f`; **sr3-1** `077f4b2` pause/resume ("Left off at W4 · Upper
-> A", Resume / Start over); **sr3-2** `9c7f1f1` a week holds at most 7 days;
+> fix `a6f007f`; **sr3-1** `077f4b2` pause/resume ("Left off at Wn · Day",
+> Resume / Start over); **sr3-2** `9c7f1f1` a week holds at most 7 days;
 > **sr3-3** `ba415bf` (+ `230d4c0`) round "..." for week/day actions, the
 > RPE/RIR/"Effort: off" chip, Public says Seth's line; **sr3-5** `c6ae089`
 > "Per side" on block exercises (the wave's ONE migration - STAGING applied
@@ -17,18 +19,21 @@
 > change was proven live on the staging DB. Prod unchanged: `main` =
 > `7d3b91e`.
 
-**Next action (human):** smoke the whole branch on the staging Vercel
-preview with an agent beside you - "smoke round 4" below (the BK/bkr items
-plus the new sr3 items); say "smoke signed off" when it passes.
+**Next action (human):** nothing until the sr3f1-3 fix round lands (the
+relay runs it); then smoke the whole branch on the staging Vercel preview -
+"smoke round 4" below - and say "smoke signed off" when it passes.
 
-## ▶ PICK UP HERE (Oct 7 - smoke round 4, any model)
+## ▶ PICK UP HERE (Oct 7 - sr3 critic fix round, then smoke round 4)
 
-1. Seth smokes; the agent records, one item at a time (section below).
-2. **Critic:** the one-round feel critic was NOT run for sr3. The
-   Playwright MCP connects again as of Oct 7. Asked Seth once (Oct 7)
-   whether he wants it before or after his smoke; default is his smoke only.
-3. Defects -> DIAGNOSIS blocks; then the pre-main gate (`pre-main-review`,
-   OPUS) with the gate notes below.
+1. **Relay:** land sr3f1 + sr3f2 (dispatched in parallel), then dispatch and
+   land sr3f3 (QUEUE "sr3 critic fix round"). Real-app check each at landing
+   (local API on staging + lane client + Playwright, demo.critic).
+2. Then add the fix round's smoke items to "smoke round 4" below and hand
+   Seth the consolidated list (HARD STOP for smoke).
+3. **Critic:** ONE round was run Oct 7 at Seth's ask (6/10 FAIL,
+   `sr3-critic-round-1-FINDINGS.md`). Do NOT run round 2 unless Seth asks.
+4. Smoke defects -> DIAGNOSIS blocks; then the pre-main gate
+   (`pre-main-review`, OPUS) with the gate notes below.
 
 ### Agent sitting with Seth on smoke round 4 (when he runs it)
 
@@ -324,6 +329,18 @@ Checks 1-4 (connector ID1, AuthKit lifetime, patch-wave post-deploy,
 
 - **The BK + bkr + sr3 waves** - all landed on `ai-connector-wave`; Seth's
   consolidated smoke (round 4), then the gate. Nothing else is queued.
+- **HELD for Seth's next change (Oct 7, his ruling): exercise search
+  synonyms.** The sr3 critic's P2-7 said multi-word search fails ("single leg
+  calf" -> 0); the seat checked the pure `searchCatalog` and the diagnosis was
+  wrong - it already AND-matches words ("one leg calf" finds "Dumbbell Seated
+  One-Leg Calf Raise"); the miss is a SYNONYM gap ("single" vs "one"). Seth
+  said one of the changes he wants is related - fold this into that work
+  (likely `server/data/exercise-aliases.json` + its rationale doc, or
+  query-side synonyms in `server/src/analytics/searchCatalog.js`).
+- **sr3 critic deferred P3s** (`sr3-critic-round-1-FINDINGS.md`): P3-1
+  builder name gets its own row, P3-2 coach box placement / title wrap, P3-5
+  one action-sheet style, P3-8 recent exercises on an empty search, P3-10
+  Library load time.
 - **sr3 follow-up candidates:** history import keeps the 7 most-used titles
   with a "skipped" warning (today 8+ titles hard-fail the preview, sr3-2);
   swap an exercise for today on a block day (smoke round 3 item 10, PARKED by
@@ -366,7 +383,16 @@ Session log, Oct 7:
   timestamp; no Cursor process left running). Landed `468bab9` with a seat
   fix to the drop-target math - proof and numbers in QUEUE's sr3-6 line.
   The seat harness (`client/_h/` in lane 2) and its dev server were removed.
-- 7/7 - wave complete; stopped for Seth's smoke round 4.
+- 7/7 - then Seth asked for the one-round critic: separate Opus agent,
+  local app (API `COACH_PROVIDER=mock` on staging :3000, client :5173),
+  brief `.playwright-mcp/sr3-critic/BRIEF.md`, 52 screenshots, ~15 min.
+  6/10 FAIL, one P1; report kept as `sr3-critic-round-1-FINDINGS.md`;
+  demo.critic restored (run 3 "Phase 1", W1 · Day 3 next - critic-verified).
+  Seat verified the P1-1, P2-2 and P2-3 code claims; DISPROVED P2-7's
+  diagnosis (synonym gap, not tokenizing - held for Seth's next change).
+- Also found: smoke item A's expectation was wrong - test123's left-off is
+  run 7 (W1 · Lower A, the old code's restart), not run 5 (W4); corrected.
+- Seth's rulings -> fix round sr3f1-3 authored (QUEUE). N = 10.
 
 Session log, Oct 6 late (Opus, frontier seat authoring AND running the
 relay - Seth said "keep going"), sr3 wave:
