@@ -20,6 +20,30 @@ import { readCurrentProgram, writeCurrentProgram } from "../lib/currentProgramSt
 import { sessionDisplayTitle } from "../lib/sessionDisplay.js";
 import "../styles/blocks/bk-library.css";
 
+function libraryBlockSortRank(block, activeTemplateId, leftOffByBlockId) {
+  if (activeTemplateId != null && block.id === activeTemplateId) return 0;
+  if (leftOffByBlockId[block.id] && !block.isDraft) return 1;
+  return 2;
+}
+
+function sortLibraryBlocks(list, activeRun, leftOffByBlockId) {
+  const activeTemplateId = activeRun?.blockTemplateId ?? null;
+  return list
+    .map((block, index) => ({ block, index }))
+    .sort((a, b) => {
+      const rankA = libraryBlockSortRank(a.block, activeTemplateId, leftOffByBlockId);
+      const rankB = libraryBlockSortRank(b.block, activeTemplateId, leftOffByBlockId);
+      if (rankA !== rankB) return rankA - rankB;
+      if (rankA === 1) {
+        const endedA = Date.parse(leftOffByBlockId[a.block.id]?.endedAt ?? "") || 0;
+        const endedB = Date.parse(leftOffByBlockId[b.block.id]?.endedAt ?? "") || 0;
+        if (endedA !== endedB) return endedB - endedA;
+      }
+      return a.index - b.index;
+    })
+    .map((row) => row.block);
+}
+
 export function MyTemplatesPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -45,10 +69,12 @@ export function MyTemplatesPage() {
     tab === "workouts" ? workouts : tab === "blocks" ? blocks : customExercises;
   const items = useMemo(() => {
     if (tab === "exercises") return rawItems;
-    if (visibility === "all") return rawItems;
-    if (visibility === "private") return rawItems.filter((t) => !t.isPublic);
-    return rawItems.filter((t) => t.isPublic);
-  }, [rawItems, visibility, tab]);
+    let list = rawItems;
+    if (visibility === "private") list = rawItems.filter((t) => !t.isPublic);
+    else if (visibility === "public") list = rawItems.filter((t) => t.isPublic);
+    if (tab === "blocks") return sortLibraryBlocks(list, activeRun, leftOffByBlockId);
+    return list;
+  }, [rawItems, visibility, tab, activeRun, leftOffByBlockId]);
   const emptyTab = useMemo(() => !loading && items.length === 0, [loading, items.length]);
   const emptyRawTab = useMemo(() => !loading && rawItems.length === 0, [loading, rawItems.length]);
 
@@ -257,12 +283,6 @@ export function MyTemplatesPage() {
     clearFeedbackSoon();
   }
 
-  function resumeLabel(leftOff) {
-    if (!leftOff?.nextDay) return "Resume";
-    const dayName = leftOff.dayName || `Day ${leftOff.nextDay.workoutOrder}`;
-    return `Resume at W${leftOff.nextDay.weekOrder} · ${dayName}`;
-  }
-
   async function onStartBlock(t) {
     if (t.isDraft) return;
     setError(null);
@@ -431,72 +451,6 @@ export function MyTemplatesPage() {
           </div>
 
           <ErrorMessage error={error} />
-          {confirmStartBlock ? (
-            <div className="bk-lib-confirm" role="alertdialog">
-              <p className="bk-lib-confirm__title">
-                Start &ldquo;{confirmStartBlock.block.name || "this block"}&rdquo;?
-              </p>
-              {activeRun &&
-              activeRun.blockTemplateId !== confirmStartBlock.block.id ? (
-                <p className="bk-lib-confirm__body">
-                  {`This pauses ${activeRun.name?.trim() || "the current block"} - you can pick it up where you left off.`}
-                </p>
-              ) : null}
-              <div className="bk-lib-confirm__actions">
-                {confirmStartBlock.leftOff ? (
-                  <>
-                    <button
-                      type="button"
-                      className="bk-lib-btn bk-lib-btn--primary"
-                      disabled={busy}
-                      onClick={() =>
-                        void doStartBlock(confirmStartBlock.block, {
-                          resumeRunId: confirmStartBlock.leftOff.runId,
-                        })
-                      }
-                    >
-                      {resumeLabel(confirmStartBlock.leftOff)}
-                    </button>
-                    <button
-                      type="button"
-                      className="bk-lib-btn bk-lib-btn--secondary"
-                      disabled={busy}
-                      onClick={() => void doStartBlock(confirmStartBlock.block)}
-                    >
-                      Start over
-                    </button>
-                    <button
-                      type="button"
-                      className="bk-lib-btn bk-lib-btn--ghost"
-                      disabled={busy}
-                      onClick={() => setConfirmStartBlock(null)}
-                    >
-                      Cancel
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <button
-                      type="button"
-                      className="bk-lib-btn bk-lib-btn--primary"
-                      disabled={busy}
-                      onClick={() => void doStartBlock(confirmStartBlock.block)}
-                    >
-                      Start block
-                    </button>
-                    <button
-                      type="button"
-                      className="bk-lib-btn bk-lib-btn--secondary"
-                      disabled={busy}
-                      onClick={() => setConfirmStartBlock(null)}
-                    >
-                      Keep current
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
-          ) : null}
           {success ? (
             <Card className="bk-lib-feedback">
               <p className="bk-lib-feedback__title">Done</p>
@@ -548,8 +502,9 @@ export function MyTemplatesPage() {
             <Card className="bk-lib-empty">
               <p className="bk-lib-empty__title">No custom exercises</p>
               <p className="bk-lib-empty__body">
-                Create them from a live workout: when you log an exercise the library doesn&apos;t
-                know, tap its &quot;Not tracked - add?&quot; pill and it shows up here.
+                Add one with &quot;Add to your library&quot; from the block builder&apos;s exercise
+                search, or from an imported sheet&apos;s &quot;Not in your library&quot; rows. On a
+                live workout, tap the &quot;Not tracked - add?&quot; pill.
               </p>
             </Card>
           ) : null}
@@ -626,6 +581,19 @@ export function MyTemplatesPage() {
                         onStart={onStartBlock}
                         onTogglePublic={onTogglePublicBlock}
                         onDelete={onDeleteBlock}
+                        confirmStartBlock={confirmStartBlock}
+                        activeRun={activeRun}
+                        onConfirmResume={() => {
+                          if (!confirmStartBlock?.leftOff) return;
+                          void doStartBlock(confirmStartBlock.block, {
+                            resumeRunId: confirmStartBlock.leftOff.runId,
+                          });
+                        }}
+                        onConfirmStartOver={() => {
+                          if (!confirmStartBlock) return;
+                          void doStartBlock(confirmStartBlock.block);
+                        }}
+                        onConfirmCancel={() => setConfirmStartBlock(null)}
                       />
                     );
                   })}

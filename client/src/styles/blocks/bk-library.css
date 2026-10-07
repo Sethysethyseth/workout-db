@@ -447,6 +447,8 @@
   border: 1px solid var(--bk-warn);
   border-radius: var(--bk-r);
   background: var(--bk-warn-soft);
+  scroll-margin-top: 12px;
+  scroll-margin-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px) + 12px);
 }
 
 .bk-lib-confirm__title {

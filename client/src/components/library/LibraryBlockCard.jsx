@@ -4,11 +4,21 @@ import { Card, Chip } from "../blocks/ui/index.js";
 import { blockMetaLine } from "./meta.js";
 import "../../styles/blocks/bk-library.css";
 
-function leftOffLabel(leftOff) {
+function leftOffProgressLine(leftOff) {
   if (!leftOff?.nextDay) return null;
   const weekOrder = leftOff.nextDay.weekOrder;
   const dayName = leftOff.dayName || `Day ${leftOff.nextDay.workoutOrder}`;
-  return `W${weekOrder} · ${dayName}`;
+  const progress =
+    leftOff.doneDays != null && leftOff.totalDays != null
+      ? ` · ${leftOff.doneDays} of ${leftOff.totalDays} days done`
+      : "";
+  return `Left off at W${weekOrder} · ${dayName}${progress}`;
+}
+
+function resumeChoiceLabel(leftOff) {
+  if (!leftOff?.nextDay) return "Resume";
+  const dayName = leftOff.dayName || `Day ${leftOff.nextDay.workoutOrder}`;
+  return `Resume at W${leftOff.nextDay.weekOrder} · ${dayName}`;
 }
 
 export function LibraryBlockCard({
@@ -21,17 +31,59 @@ export function LibraryBlockCard({
   onStart,
   onTogglePublic,
   onDelete,
+  confirmStartBlock = null,
+  activeRun = null,
+  onConfirmResume,
+  onConfirmStartOver,
+  onConfirmCancel,
 }) {
   const isDraft = Boolean(t.isDraft);
   const meta = blockMetaLine(t);
-  const leftOffLine = !isActive && !isDraft ? leftOffLabel(leftOff) : null;
+  const isPaused = Boolean(leftOff) && !isActive && !isDraft;
+  const leftOffLine = isPaused ? leftOffProgressLine(leftOff) : null;
+  const choice =
+    confirmStartBlock && confirmStartBlock.block?.id === t.id ? confirmStartBlock : null;
+  const switchAwayName =
+    choice && activeRun && activeRun.blockTemplateId !== t.id
+      ? activeRun.name?.trim() || "the current block"
+      : null;
   const [confirmDelete, setConfirmDelete] = useState(false);
   const keepBtnRef = useRef(null);
+  const choiceRef = useRef(null);
+  const choicePrimaryRef = useRef(null);
 
   useEffect(() => {
     if (!confirmDelete) return;
     keepBtnRef.current?.focus();
   }, [confirmDelete]);
+
+  useEffect(() => {
+    if (!choice) return undefined;
+    setConfirmDelete(false);
+    const node = choiceRef.current;
+    if (node) {
+      const rect = node.getBoundingClientRect();
+      let visibleBottom = window.innerHeight;
+      const nav = document.querySelector(".bottom-nav");
+      if (nav) {
+        const navStyle = window.getComputedStyle(nav);
+        if (navStyle.display !== "none" && navStyle.visibility !== "hidden") {
+          const navTop = nav.getBoundingClientRect().top;
+          if (navTop > 0) visibleBottom = Math.min(visibleBottom, navTop);
+        }
+      }
+      const offscreen =
+        rect.top < 0 ||
+        rect.left < 0 ||
+        rect.bottom > visibleBottom ||
+        rect.right > window.innerWidth;
+      if (offscreen) {
+        node.scrollIntoView({ block: "nearest", inline: "nearest" });
+      }
+    }
+    choicePrimaryRef.current?.focus({ preventScroll: true });
+    return undefined;
+  }, [choice]);
 
   useEffect(() => {
     if (!confirmDelete) return undefined;
@@ -51,17 +103,80 @@ export function LibraryBlockCard({
         <h2 className="bk-lib-card__title">{t.name}</h2>
         {meta ? <p className="bk-lib-card__meta">{meta}</p> : null}
         {leftOffLine ? (
-          <p className="bk-lib-card__left-off muted small">Left off at {leftOffLine}</p>
+          <p className="bk-lib-card__left-off muted small">{leftOffLine}</p>
         ) : null}
         {t.description ? <p className="bk-lib-card__desc">{t.description}</p> : null}
         <div className="bk-lib-card__chips">
           <Chip tone={t.isPublic ? "accent" : "neutral"}>{t.isPublic ? "Public" : "Private"}</Chip>
           {isDraft ? <Chip tone="warn">Draft</Chip> : null}
           {isActive ? <Chip tone="good">Running</Chip> : null}
+          {isPaused ? <Chip tone="warn">Paused</Chip> : null}
         </div>
       </div>
 
-      {confirmDelete ? (
+      {choice ? (
+        <div className="bk-lib-confirm" role="alertdialog" ref={choiceRef}>
+          <p className="bk-lib-confirm__title">
+            Start &ldquo;{choice.block.name || "this block"}&rdquo;?
+          </p>
+          {switchAwayName ? (
+            <p className="bk-lib-confirm__body">
+              {`This pauses ${switchAwayName} - you can pick it up where you left off.`}
+            </p>
+          ) : null}
+          <div className="bk-lib-confirm__actions">
+            {choice.leftOff ? (
+              <>
+                <button
+                  ref={choicePrimaryRef}
+                  type="button"
+                  className="bk-lib-btn bk-lib-btn--primary"
+                  disabled={busy}
+                  onClick={() => onConfirmResume?.()}
+                >
+                  {resumeChoiceLabel(choice.leftOff)}
+                </button>
+                <button
+                  type="button"
+                  className="bk-lib-btn bk-lib-btn--secondary"
+                  disabled={busy}
+                  onClick={() => onConfirmStartOver?.()}
+                >
+                  Start over
+                </button>
+                <button
+                  type="button"
+                  className="bk-lib-btn bk-lib-btn--ghost"
+                  disabled={busy}
+                  onClick={() => onConfirmCancel?.()}
+                >
+                  Cancel
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  ref={choicePrimaryRef}
+                  type="button"
+                  className="bk-lib-btn bk-lib-btn--primary"
+                  disabled={busy}
+                  onClick={() => onConfirmStartOver?.()}
+                >
+                  Start block
+                </button>
+                <button
+                  type="button"
+                  className="bk-lib-btn bk-lib-btn--secondary"
+                  disabled={busy}
+                  onClick={() => onConfirmCancel?.()}
+                >
+                  Keep current
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      ) : confirmDelete ? (
         <div
           className="stack session-discard-confirm bk-lib-card-confirm"
           role="alertdialog"
@@ -126,7 +241,11 @@ export function LibraryBlockCard({
                 disabled={busy}
                 onClick={() => void onStart(t)}
               >
-                {isActing && actingAction === "start-block" ? "Starting…" : "Start"}
+                {isActing && actingAction === "start-block"
+                  ? "Starting…"
+                  : isPaused
+                    ? "Resume"
+                    : "Start"}
               </button>
             )}
           </div>
