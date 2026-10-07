@@ -358,7 +358,7 @@ everywhere; item 10 PARKED). Lands on `ai-connector-wave`. Authoring recon
 in flight (session-scoped report lanes sr3-r1 / sr3-r2, logged in HANDOFF,
 not counted). Content units get authored from the recon; N set then.
 
-QUEUED | sr3-d1-add-exercise-first-open-diagnosis.md | DIAGNOSIS: builder "+ Add exercise" first open shows the sheet header + keyboard, no search/list (P2, Android Chrome) | report lane; fix block follows the seat's check.
+LANDED (report) | sr3-d1-add-exercise-first-open-diagnosis.md | DIAGNOSIS: builder "+ Add exercise" first open shows the sheet header + keyboard, no search/list (P2, Android Chrome) | report lane. Dispatched Oct 6 (Opus seat): Channel B, `--model auto`, `cursor-lane` on `cursor/sr3-d1` @ `599c9d9`, 40-min hard kill; beside recon lanes sr3-r1 (`cursor-lane-2`) and sr3-r2 (`cursor-lane-3`). Run 2.4 min. Seat-verified (bk-builder.css picker rule + ExercisePicker empty state read): the picker panel had only a max-height, the empty query renders no rows, so the sheet collapsed to header + search and Android's overlay keyboard covered the autofocused search. Report kept as `sr3-d1-add-exercise-first-open-FINDINGS.md`. SEAT DIRECT FIX (trivial, diagnosis was the work): definite picker height (88dvh/720 phone, 80vh/640 desktop); focus code untouched (React autoFocus inside the tap is what opens the iOS keypad). Proof = Seth's Android in the smoke.
 
 DRAFT | bk0-privacy-terms-pages.md | plain-language /privacy + /terms,
 covering the AI layer and the draft-block write | Seth's Sept 26 "first

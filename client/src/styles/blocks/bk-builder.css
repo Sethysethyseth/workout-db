@@ -796,7 +796,12 @@ html.bk-builder-kbd .bk-builder__weeks {
 
 /* Picker: pinned search + contained scroll list (>= 60% of sheet). */
 .bk-sheet--picker .bk-sheet__panel {
-  /* Give the list room on a 390x844 phone sheet. */
+  /* Give the list room on a 390x844 phone sheet. A definite height (not
+     just max-height) keeps the empty picker tall, so the search sits in the
+     top band above Android's overlay keyboard (sr3-d1) and the list's
+     min-height: 60% resolves. */
+  height: min(88vh, 720px);
+  height: min(88dvh, 720px);
   max-height: min(88vh, 720px);
 }
 
@@ -917,6 +922,11 @@ html.bk-builder-kbd .bk-builder__weeks {
   .bk-sheet--ex-actions .bk-sheet__panel {
     max-width: 420px;
     width: min(420px, calc(100% - 32px));
+  }
+
+  .bk-sheet--picker .bk-sheet__panel {
+    height: min(80vh, 640px);
+    max-height: min(80vh, 640px);
   }
 }
 
