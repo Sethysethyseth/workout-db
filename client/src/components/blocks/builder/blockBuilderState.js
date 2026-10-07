@@ -8,7 +8,7 @@ import { formatDuration } from "../ui/rxFormat.js";
 
 const LB_PER_KG = 2.20462;
 const MAX_WEEKS = 52;
-const MAX_DAYS = 14;
+const MAX_DAYS = 7;
 const MAX_EXERCISES = 40;
 const MAX_SETS = 20;
 
@@ -351,8 +351,13 @@ export function validateState(state) {
     if (label.length > 40) push(`weeks[${wi}].label`, "Week label must be at most 40 characters");
 
     const days = week.days || [];
-    if (days.length < 1 || days.length > MAX_DAYS) {
+    if (days.length < 1) {
       push(`weeks[${wi}].days`, `Week must have 1-${MAX_DAYS} days`);
+    } else if (days.length > MAX_DAYS) {
+      push(
+        `weeks[${wi}].days`,
+        `Week ${wi + 1} has ${days.length} days - a week holds at most ${MAX_DAYS}.`
+      );
     }
 
     days.forEach((day, di) => {

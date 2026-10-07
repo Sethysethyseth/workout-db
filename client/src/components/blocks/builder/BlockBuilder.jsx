@@ -38,6 +38,7 @@ import {
   duplicateWeek,
   fillAllFromSet1,
   hydrateFromApi,
+  MAX_DAYS,
   moveDay,
   moveExercise,
   moveWeek,
@@ -996,7 +997,8 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
               <button
                 type="button"
                 className="bk-day-add"
-                aria-label="Add day"
+                aria-label={days.length >= MAX_DAYS ? "7 days max" : "Add day"}
+                disabled={days.length >= MAX_DAYS}
                 onClick={() => {
                   const next = addDay(state, safeWeekIdx);
                   applyState(next);
@@ -1005,7 +1007,7 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
                   setExpandedIds(new Set());
                 }}
               >
-                + Day
+                {days.length >= MAX_DAYS ? "7 days max" : "+ Day"}
               </button>
             }
           />
@@ -1408,6 +1410,7 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
           <button
             type="button"
             className="bk-actions-list__btn"
+            disabled={days.length >= MAX_DAYS}
             onClick={() => {
               let next = renameDay(state, safeWeekIdx, safeDayIdx, dayNameDraft);
               next = duplicateDay(next, safeWeekIdx, safeDayIdx);
@@ -1416,7 +1419,7 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
               setDayActionsOpen(false);
             }}
           >
-            Duplicate
+            {days.length >= MAX_DAYS ? "7 days max" : "Duplicate"}
           </button>
           <button
             type="button"

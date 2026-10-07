@@ -8,6 +8,8 @@ const FORMAT_VERSION = 1;
 const KG_TO_LB = 2.20462;
 const MAX_ERRORS = 50;
 const MAX_TOTAL_SETS = 5000;
+/** Hard cap: a week holds at most this many days. Shared by Format v1, AI schema, save path. */
+const MAX_DAYS_PER_WEEK = 7;
 
 const KNOWN_TOP = new Set([
   "format",
@@ -188,11 +190,22 @@ function validateBlockDraft(input, options = {}) {
     }
 
     if (!Array.isArray(week.days)) {
-      pushError(`${weekPath}.days`, "required array of 1-14 days");
+      pushError(
+        `${weekPath}.days`,
+        `required array of 1-${MAX_DAYS_PER_WEEK} days`
+      );
       continue;
     }
-    if (week.days.length < 1 || week.days.length > 14) {
-      pushError(`${weekPath}.days`, "required array of 1-14 days");
+    if (week.days.length < 1) {
+      pushError(
+        `${weekPath}.days`,
+        `required array of 1-${MAX_DAYS_PER_WEEK} days`
+      );
+    } else if (week.days.length > MAX_DAYS_PER_WEEK) {
+      pushError(
+        `${weekPath}.days`,
+        `Week ${wi + 1} has ${week.days.length} days - a week holds at most ${MAX_DAYS_PER_WEEK}.`
+      );
     }
 
     const outDays = [];
@@ -603,6 +616,7 @@ module.exports = {
   validateBlockDraft,
   FORMAT_ID,
   FORMAT_VERSION,
+  MAX_DAYS_PER_WEEK,
   KG_TO_LB,
   convertWeight,
   roundToHalf,

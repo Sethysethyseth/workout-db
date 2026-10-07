@@ -290,10 +290,22 @@ html.bk-builder-kbd .bk-builder__weeks {
 }
 
 .bk-week-add:hover,
-.bk-day-add:hover {
+.bk-day-add:hover:not(:disabled) {
   border-color: var(--bk-accent);
   color: var(--bk-accent);
   background: var(--bk-accent-soft);
+}
+
+.bk-day-add:disabled {
+  cursor: default;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--bk-ink-2);
+  border-style: solid;
+  border-color: var(--bk-line);
+  background: var(--bk-surface);
 }
 
 .bk-builder__days {

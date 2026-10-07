@@ -1,4 +1,5 @@
 const { validateOptionalNonNegDecimal } = require("./numericValidators");
+const { MAX_DAYS_PER_WEEK } = require("../blocks/blockFormat");
 
 function parsePositiveInt(value) {
   if (value == null || value === "") return null;
@@ -496,7 +497,16 @@ function normalizeBlockWeeksArray(weeks) {
       return labelResult;
     }
 
-    const normW = normalizeBlockWorkoutsArray(raw.workouts);
+    const workouts = raw.workouts;
+    if (Array.isArray(workouts) && workouts.length > MAX_DAYS_PER_WEEK) {
+      return {
+        ok: false,
+        status: 400,
+        error: `Week ${index + 1} has ${workouts.length} days - a week holds at most ${MAX_DAYS_PER_WEEK}.`,
+      };
+    }
+
+    const normW = normalizeBlockWorkoutsArray(workouts);
     if (!normW.ok) {
       return normW;
     }

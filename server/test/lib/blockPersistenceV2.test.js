@@ -5,6 +5,35 @@ const {
 } = require("../../src/lib/templateExerciseNormalize");
 const { buildClonePayload } = require("../../src/blocks/blockTemplateStore");
 
+function minimalWorkout(name) {
+  return {
+    name,
+    exercises: [{ exerciseName: "Squat", targetSets: 3 }],
+  };
+}
+
+describe("normalizeBlockWeeksArray day cap", () => {
+  test("week with 7 workouts is ok; 8 workouts refused with 400", () => {
+    const seven = normalizeBlockWeeksArray([
+      {
+        workouts: [1, 2, 3, 4, 5, 6, 7].map((n) => minimalWorkout(`D${n}`)),
+      },
+    ]);
+    expect(seven.ok).toBe(true);
+
+    const eight = normalizeBlockWeeksArray([
+      {
+        workouts: [1, 2, 3, 4, 5, 6, 7, 8].map((n) => minimalWorkout(`D${n}`)),
+      },
+    ]);
+    expect(eight.ok).toBe(false);
+    expect(eight.status).toBe(400);
+    expect(eight.error).toBe(
+      "Week 1 has 8 days - a week holds at most 7."
+    );
+  });
+});
+
 describe("week label", () => {
   test('label "  Deload " trims to "Deload"', () => {
     expect(normalizeWeekLabel("  Deload ")).toEqual({

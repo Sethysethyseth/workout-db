@@ -112,6 +112,33 @@ describe("validateBlockDraft", () => {
     expect(result.errors.some((e) => e.path === "weeks")).toBe(true);
   });
 
+  test("week with 7 days is ok; 8 days errors at weeks[0].days", () => {
+    const day = (n) => ({
+      name: `Day ${n}`,
+      exercises: [{ name: "Squat", sets: [{ reps: 5 }] }],
+    });
+    const seven = {
+      format: "logchamp.block",
+      version: 1,
+      name: "Seven",
+      weeks: [{ days: [1, 2, 3, 4, 5, 6, 7].map(day) }],
+    };
+    const sevenOk = validateBlockDraft(seven);
+    expect(sevenOk.ok).toBe(true);
+
+    const eight = {
+      ...seven,
+      name: "Eight",
+      weeks: [{ days: [1, 2, 3, 4, 5, 6, 7, 8].map(day) }],
+    };
+    const eightResult = validateBlockDraft(eight);
+    expect(eightResult.ok).toBe(false);
+    expect(eightResult.errors).toContainEqual({
+      path: "weeks[0].days",
+      message: "Week 1 has 8 days - a week holds at most 7.",
+    });
+  });
+
   test("reps and durationSec together errors on .sets[0]", () => {
     const input = {
       format: "logchamp.block",
@@ -516,6 +543,13 @@ describe("round trip + AI prompt", () => {
   test("BLOCK_FORMAT_JSON_SCHEMA is an object with draft 2020-12 marker", () => {
     expect(BLOCK_FORMAT_JSON_SCHEMA.$schema).toMatch(/2020-12/);
     expect(BLOCK_FORMAT_JSON_SCHEMA.type).toBe("object");
+  });
+
+  test("BLOCK_FORMAT_JSON_SCHEMA days maxItems is 7; instructions say days (1-7)", () => {
+    expect(
+      BLOCK_FORMAT_JSON_SCHEMA.properties.weeks.items.properties.days.maxItems
+    ).toBe(7);
+    expect(BLOCK_FORMAT_AI_INSTRUCTIONS).toContain("days (1-7)");
   });
 });
 

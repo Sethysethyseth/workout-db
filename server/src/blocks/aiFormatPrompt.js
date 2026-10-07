@@ -3,6 +3,8 @@
  * Spec: docs/specs/blocks-v2.md section 3.4.
  */
 
+const { MAX_DAYS_PER_WEEK } = require("./blockFormat");
+
 const BLOCK_FORMAT_AI_INSTRUCTIONS = `LogChamp Block Format v1 — reply with ONLY the JSON in one code block.
 
 Top-level fields:
@@ -14,7 +16,7 @@ Top-level fields:
 - effort: optional "rpe", "rir", or "none" (pick one scale for the whole block)
 - weeks: array of 1-52 weeks
 
-Each week: optional label (max 40), required days (1-14).
+Each week: optional label (max 40), required days (1-${MAX_DAYS_PER_WEEK}).
 Each day: required name (1-60), required exercises (1-40).
 Each exercise: required name (1-120); optional notes (max 1000), restSec (0-3600), effortCap (boolean).
 sets: EITHER an integer 1-20 (uniform shorthand — put reps/weight/rpe on the exercise) OR an array of 1-20 set objects (then set fields only inside each set).
@@ -83,7 +85,7 @@ const BLOCK_FORMAT_JSON_SCHEMA = {
           days: {
             type: "array",
             minItems: 1,
-            maxItems: 14,
+            maxItems: MAX_DAYS_PER_WEEK,
             items: {
               type: "object",
               additionalProperties: false,
