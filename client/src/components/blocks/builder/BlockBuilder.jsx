@@ -814,8 +814,9 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
   const effortActive = effortValue === "rpe" || effortValue === "rir";
   const dayActionsLabel = currentDay?.name || `Day ${safeDayIdx + 1}`;
 
+  // A span, not a div: StickyHeader renders the eyebrow inside a <p>.
   const nameNode = (
-    <div className="bk-builder-header-name">
+    <span className="bk-builder-header-name">
       {nameEditing ? (
         <input
           ref={nameInputRef}
@@ -861,7 +862,7 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
           ▾
         </span>
       </button>
-    </div>
+    </span>
   );
 
   if (loading) {
