@@ -1,6 +1,7 @@
 const {
   buildSessionFromBlockWorkout,
   computeRunProgress,
+  summarizeLeftOff,
 } = require("../../../src/blocks/blockRunLogic");
 
 /** 2-week x 2-day fixture with a timed set and effortCap/restSec. */
@@ -299,5 +300,83 @@ describe("computeRunProgress", () => {
     expect(progress.currentWeekOrder).toBe(2);
     expect(progress.nextDay).toBeNull();
     expect(progress.weeks.every((w) => w.done === w.total)).toBe(true);
+  });
+});
+
+describe("summarizeLeftOff", () => {
+  const tree = fixtureTree();
+
+  test("no sessions -> null", () => {
+    expect(summarizeLeftOff(tree, [])).toBeNull();
+    expect(summarizeLeftOff(tree, null)).toBeNull();
+  });
+
+  test("W1 D1 + W1 D2 done -> next is W2 D1 with counts", () => {
+    const summary = summarizeLeftOff(tree, [
+      {
+        id: 1,
+        blockWeekOrder: 1,
+        blockWorkoutOrder: 1,
+        completedAt: new Date("2026-09-01"),
+      },
+      {
+        id: 2,
+        blockWeekOrder: 1,
+        blockWorkoutOrder: 2,
+        completedAt: new Date("2026-09-02"),
+      },
+    ]);
+    expect(summary).toEqual({
+      nextDay: { weekOrder: 2, workoutOrder: 1 },
+      dayName: "Upper B",
+      doneDays: 2,
+      totalDays: 4,
+    });
+  });
+
+  test("W1 D1 in progress only -> next is W1 D1, doneDays 0", () => {
+    const summary = summarizeLeftOff(tree, [
+      {
+        id: 10,
+        blockWeekOrder: 1,
+        blockWorkoutOrder: 1,
+        completedAt: null,
+      },
+    ]);
+    expect(summary).not.toBeNull();
+    expect(summary.nextDay).toEqual({ weekOrder: 1, workoutOrder: 1 });
+    expect(summary.dayName).toBe("Upper A");
+    expect(summary.doneDays).toBe(0);
+    expect(summary.totalDays).toBe(4);
+  });
+
+  test("every day done -> null", () => {
+    const summary = summarizeLeftOff(tree, [
+      {
+        id: 1,
+        blockWeekOrder: 1,
+        blockWorkoutOrder: 1,
+        completedAt: new Date(),
+      },
+      {
+        id: 2,
+        blockWeekOrder: 1,
+        blockWorkoutOrder: 2,
+        completedAt: new Date(),
+      },
+      {
+        id: 3,
+        blockWeekOrder: 2,
+        blockWorkoutOrder: 1,
+        completedAt: new Date(),
+      },
+      {
+        id: 4,
+        blockWeekOrder: 2,
+        blockWorkoutOrder: 2,
+        completedAt: new Date(),
+      },
+    ]);
+    expect(summary).toBeNull();
   });
 });

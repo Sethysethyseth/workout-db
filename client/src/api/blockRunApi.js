@@ -10,11 +10,16 @@ function notifySessionsChanged(detail) {
   }
 }
 
-/** POST /block-runs { blockTemplateId } -> { run } */
-export function startBlockRun(blockTemplateId) {
+/**
+ * POST /block-runs { blockTemplateId, resumeRunId? } -> { run }
+ * Sends resumeRunId only when given.
+ */
+export function startBlockRun(blockTemplateId, { resumeRunId } = {}) {
+  const body = { blockTemplateId };
+  if (resumeRunId != null) body.resumeRunId = resumeRunId;
   return http("/block-runs", {
     method: "POST",
-    body: { blockTemplateId },
+    body,
   });
 }
 
@@ -24,6 +29,14 @@ export function startBlockRun(blockTemplateId) {
  */
 export function getActiveBlockRun() {
   return http("/block-runs/active");
+}
+
+/**
+ * GET /block-runs/left-off
+ * -> { runs: [{ runId, blockTemplateId, endedAt, nextDay, dayName, doneDays, totalDays }] }
+ */
+export function getLeftOffRuns() {
+  return http("/block-runs/left-off");
 }
 
 /** POST /block-runs/:id/end -> { run } */

@@ -4,9 +4,17 @@ import { Card, Chip } from "../blocks/ui/index.js";
 import { blockMetaLine } from "./meta.js";
 import "../../styles/blocks/bk-library.css";
 
+function leftOffLabel(leftOff) {
+  if (!leftOff?.nextDay) return null;
+  const weekOrder = leftOff.nextDay.weekOrder;
+  const dayName = leftOff.dayName || `Day ${leftOff.nextDay.workoutOrder}`;
+  return `W${weekOrder} · ${dayName}`;
+}
+
 export function LibraryBlockCard({
   block: t,
   isActive,
+  leftOff = null,
   busy,
   isActing,
   actingAction,
@@ -16,6 +24,7 @@ export function LibraryBlockCard({
 }) {
   const isDraft = Boolean(t.isDraft);
   const meta = blockMetaLine(t);
+  const leftOffLine = !isActive && !isDraft ? leftOffLabel(leftOff) : null;
   const [confirmDelete, setConfirmDelete] = useState(false);
   const keepBtnRef = useRef(null);
 
@@ -41,6 +50,9 @@ export function LibraryBlockCard({
       <div>
         <h2 className="bk-lib-card__title">{t.name}</h2>
         {meta ? <p className="bk-lib-card__meta">{meta}</p> : null}
+        {leftOffLine ? (
+          <p className="bk-lib-card__left-off muted small">Left off at {leftOffLine}</p>
+        ) : null}
         {t.description ? <p className="bk-lib-card__desc">{t.description}</p> : null}
         <div className="bk-lib-card__chips">
           <Chip tone={t.isPublic ? "accent" : "neutral"}>{t.isPublic ? "Public" : "Private"}</Chip>

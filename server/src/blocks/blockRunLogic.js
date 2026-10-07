@@ -141,8 +141,61 @@ function computeRunProgress(tree, sessions) {
   return { weeks, currentWeekOrder, nextDay };
 }
 
+/**
+ * Summarize where a run left off for pause/resume UX.
+ * Built on computeRunProgress (same inputs). Returns null when finished
+ * or when no day is done/in_progress (nothing to resume).
+ *
+ * @param {object} tree
+ * @param {Array<{ blockWeekOrder: number, blockWorkoutOrder: number, completedAt: Date|string|null, id: number }>} sessions
+ * @returns {{ nextDay: { weekOrder: number, workoutOrder: number }, dayName: string, doneDays: number, totalDays: number } | null}
+ */
+function summarizeLeftOff(tree, sessions) {
+  const progress = computeRunProgress(tree, sessions);
+  if (progress.nextDay == null) return null;
+
+  let doneDays = 0;
+  let totalDays = 0;
+  let hasProgress = false;
+  for (const week of progress.weeks || []) {
+    for (const day of week.days || []) {
+      totalDays += 1;
+      if (day.status === "done") {
+        doneDays += 1;
+        hasProgress = true;
+      } else if (day.status === "in_progress") {
+        hasProgress = true;
+      }
+    }
+  }
+
+  if (!hasProgress) return null;
+
+  const week = (progress.weeks || []).find(
+    (w) => w.order === progress.nextDay.weekOrder
+  );
+  const day =
+    week &&
+    (week.days || []).find((d) => d.order === progress.nextDay.workoutOrder);
+  const dayName =
+    day && day.name != null && String(day.name).trim()
+      ? String(day.name).trim()
+      : `Day ${progress.nextDay.workoutOrder}`;
+
+  return {
+    nextDay: {
+      weekOrder: progress.nextDay.weekOrder,
+      workoutOrder: progress.nextDay.workoutOrder,
+    },
+    dayName,
+    doneDays,
+    totalDays,
+  };
+}
+
 module.exports = {
   buildSessionFromBlockWorkout,
   computeRunProgress,
+  summarizeLeftOff,
   resolveEffort,
 };

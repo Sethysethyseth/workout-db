@@ -347,6 +347,10 @@
   color: var(--bk-ink-2);
 }
 
+.bk-lib-card__left-off {
+  margin: 4px 0 0;
+}
+
 .bk-lib-card__desc {
   margin: 6px 0 0;
   font: 400 14px/1.4 var(--font-sans);

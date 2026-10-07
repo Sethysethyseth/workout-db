@@ -38,6 +38,7 @@ export function MyTemplatesPage() {
   const [actingKey, setActingKey] = useState(null);
   const [actingAction, setActingAction] = useState(null);
   const [activeRun, setActiveRun] = useState(null);
+  const [leftOffByBlockId, setLeftOffByBlockId] = useState({});
   const [confirmStartBlock, setConfirmStartBlock] = useState(null);
 
   const rawItems =
@@ -67,11 +68,12 @@ export function MyTemplatesPage() {
     setLoading(true);
     setError(null);
     try {
-      const [wData, bData, eData, runData] = await Promise.all([
+      const [wData, bData, eData, runData, leftOffData] = await Promise.all([
         templateApi.getMyTemplates(),
         blockTemplateApi.getMyBlockTemplates(),
         exerciseApi.listCustomExercises(),
         blockRunApi.getActiveBlockRun().catch(() => ({ run: null })),
+        blockRunApi.getLeftOffRuns().catch(() => ({ runs: [] })),
       ]);
       setWorkouts(Array.isArray(wData.templates) ? wData.templates : []);
       setBlocks(Array.isArray(bData.blockTemplates) ? bData.blockTemplates : []);
@@ -98,6 +100,11 @@ export function MyTemplatesPage() {
       } else {
         setActiveRun(null);
       }
+      const leftOffMap = {};
+      for (const row of Array.isArray(leftOffData?.runs) ? leftOffData.runs : []) {
+        if (row?.blockTemplateId != null) leftOffMap[row.blockTemplateId] = row;
+      }
+      setLeftOffByBlockId(leftOffMap);
     } catch (err) {
       setError(err);
     } finally {
@@ -244,25 +251,40 @@ export function MyTemplatesPage() {
     clearFeedbackSoon();
   }
 
+  function resumeLabel(leftOff) {
+    if (!leftOff?.nextDay) return "Resume";
+    const dayName = leftOff.dayName || `Day ${leftOff.nextDay.workoutOrder}`;
+    return `Resume at W${leftOff.nextDay.weekOrder} · ${dayName}`;
+  }
+
   async function onStartBlock(t) {
     if (t.isDraft) return;
     setError(null);
     setSuccess(null);
 
+    const leftOff = leftOffByBlockId[t.id] || null;
+    if (leftOff) {
+      setConfirmStartBlock({ block: t, leftOff });
+      return;
+    }
+
     if (activeRun && activeRun.blockTemplateId !== t.id) {
-      setConfirmStartBlock(t);
+      setConfirmStartBlock({ block: t, leftOff: null });
       return;
     }
 
     await doStartBlock(t);
   }
 
-  async function doStartBlock(t) {
+  async function doStartBlock(t, { resumeRunId } = {}) {
     setConfirmStartBlock(null);
     setActingKey(keyFor("block", t.id));
     setActingAction("start-block");
     try {
-      await blockRunApi.startBlockRun(t.id);
+      await blockRunApi.startBlockRun(
+        t.id,
+        resumeRunId != null ? { resumeRunId } : {}
+      );
       navigate("/blocks/current");
     } catch (err) {
       setError(err);
@@ -403,31 +425,69 @@ export function MyTemplatesPage() {
           </div>
 
           <ErrorMessage error={error} />
-          {confirmStartBlock && activeRun ? (
+          {confirmStartBlock ? (
             <div className="bk-lib-confirm" role="alertdialog">
               <p className="bk-lib-confirm__title">
-                Start &ldquo;{confirmStartBlock.name || "this block"}&rdquo;?
+                Start &ldquo;{confirmStartBlock.block.name || "this block"}&rdquo;?
               </p>
-              <p className="bk-lib-confirm__body">
-                {`This ends ${activeRun.name?.trim() || "the current block"}.`}
-              </p>
+              {activeRun &&
+              activeRun.blockTemplateId !== confirmStartBlock.block.id ? (
+                <p className="bk-lib-confirm__body">
+                  {`This pauses ${activeRun.name?.trim() || "the current block"} - you can pick it up where you left off.`}
+                </p>
+              ) : null}
               <div className="bk-lib-confirm__actions">
-                <button
-                  type="button"
-                  className="bk-lib-btn bk-lib-btn--primary"
-                  disabled={busy}
-                  onClick={() => void doStartBlock(confirmStartBlock)}
-                >
-                  Start block
-                </button>
-                <button
-                  type="button"
-                  className="bk-lib-btn bk-lib-btn--secondary"
-                  disabled={busy}
-                  onClick={() => setConfirmStartBlock(null)}
-                >
-                  Keep current
-                </button>
+                {confirmStartBlock.leftOff ? (
+                  <>
+                    <button
+                      type="button"
+                      className="bk-lib-btn bk-lib-btn--primary"
+                      disabled={busy}
+                      onClick={() =>
+                        void doStartBlock(confirmStartBlock.block, {
+                          resumeRunId: confirmStartBlock.leftOff.runId,
+                        })
+                      }
+                    >
+                      {resumeLabel(confirmStartBlock.leftOff)}
+                    </button>
+                    <button
+                      type="button"
+                      className="bk-lib-btn bk-lib-btn--secondary"
+                      disabled={busy}
+                      onClick={() => void doStartBlock(confirmStartBlock.block)}
+                    >
+                      Start over
+                    </button>
+                    <button
+                      type="button"
+                      className="bk-lib-btn bk-lib-btn--ghost"
+                      disabled={busy}
+                      onClick={() => setConfirmStartBlock(null)}
+                    >
+                      Cancel
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      className="bk-lib-btn bk-lib-btn--primary"
+                      disabled={busy}
+                      onClick={() => void doStartBlock(confirmStartBlock.block)}
+                    >
+                      Start block
+                    </button>
+                    <button
+                      type="button"
+                      className="bk-lib-btn bk-lib-btn--secondary"
+                      disabled={busy}
+                      onClick={() => setConfirmStartBlock(null)}
+                    >
+                      Keep current
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           ) : null}
@@ -553,6 +613,7 @@ export function MyTemplatesPage() {
                         key={k}
                         block={t}
                         isActive={activeRun != null && activeRun.blockTemplateId === t.id}
+                        leftOff={leftOffByBlockId[t.id] || null}
                         busy={busy}
                         isActing={actingKey === k}
                         actingAction={actingAction}

@@ -1,11 +1,19 @@
 import { Link } from "react-router-dom";
 import { Card } from "../ui/Card.jsx";
 
+function leftOffLabel(leftOff) {
+  if (!leftOff?.nextDay) return null;
+  const weekOrder = leftOff.nextDay.weekOrder;
+  const dayName = leftOff.dayName || `Day ${leftOff.nextDay.workoutOrder}`;
+  return `W${weekOrder} · ${dayName}`;
+}
+
 /**
  * Empty state when no block run is active.
  */
 export function RunEmptyState({
   blocks = [],
+  leftOffByBlockId = {},
   startingId = null,
   onStart,
 }) {
@@ -25,6 +33,7 @@ export function RunEmptyState({
             const firstWeekDays = Array.isArray(b.weeks?.[0]?.workouts)
               ? b.weeks[0].workouts.length
               : 0;
+            const leftOffLine = leftOffLabel(leftOffByBlockId[b.id]);
             return (
               <li key={b.id}>
                 <Card className="bk-run-empty__card">
@@ -34,6 +43,11 @@ export function RunEmptyState({
                       {weeks} week{weeks === 1 ? "" : "s"} · {firstWeekDays} day
                       {firstWeekDays === 1 ? "" : "s"} a week
                     </p>
+                    {leftOffLine ? (
+                      <p className="bk-run-empty__left-off muted small">
+                        Left off at {leftOffLine}
+                      </p>
+                    ) : null}
                   </div>
                   <button
                     type="button"

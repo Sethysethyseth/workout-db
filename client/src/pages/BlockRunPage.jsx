@@ -16,6 +16,7 @@ import {
   resolveBlockEffort,
 } from "../components/blocks/run/index.js";
 import "../styles/blocks/bk-run.css";
+import "../styles/blocks/bk-library.css";
 
 function findWorkout(block, weekOrder, workoutOrder) {
   const week = (block?.weeks || []).find((w) => w.order === weekOrder);
@@ -32,6 +33,7 @@ export function BlockRunPage() {
   const [error, setError] = useState(null);
   const [payload, setPayload] = useState(null);
   const [libraryBlocks, setLibraryBlocks] = useState([]);
+  const [leftOffByBlockId, setLeftOffByBlockId] = useState({});
   const [selectedWeekOrder, setSelectedWeekOrder] = useState(null);
   const [selectedDayOrder, setSelectedDayOrder] = useState(null);
   const [starting, setStarting] = useState(false);
@@ -39,6 +41,7 @@ export function BlockRunPage() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [ending, setEnding] = useState(false);
   const [confirmEnd, setConfirmEnd] = useState(false);
+  const [confirmStartBlock, setConfirmStartBlock] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -51,10 +54,20 @@ export function BlockRunPage() {
         setSelectedWeekOrder(tiles.openWeekOrder);
         setSelectedDayOrder(tiles.openDayOrder);
         setLibraryBlocks([]);
+        setLeftOffByBlockId({});
+        setConfirmStartBlock(null);
       } else {
         setPayload(null);
-        const mine = await blockTemplateApi.getMyBlockTemplates();
+        const [mine, leftOffData] = await Promise.all([
+          blockTemplateApi.getMyBlockTemplates(),
+          blockRunApi.getLeftOffRuns().catch(() => ({ runs: [] })),
+        ]);
         setLibraryBlocks(Array.isArray(mine?.blockTemplates) ? mine.blockTemplates : []);
+        const leftOffMap = {};
+        for (const row of Array.isArray(leftOffData?.runs) ? leftOffData.runs : []) {
+          if (row?.blockTemplateId != null) leftOffMap[row.blockTemplateId] = row;
+        }
+        setLeftOffByBlockId(leftOffMap);
       }
     } catch (err) {
       setError(err);
@@ -119,11 +132,31 @@ export function BlockRunPage() {
     }
   }
 
-  async function onStartBlock(block) {
+  function resumeLabel(leftOff) {
+    if (!leftOff?.nextDay) return "Resume";
+    const dayName = leftOff.dayName || `Day ${leftOff.nextDay.workoutOrder}`;
+    return `Resume at W${leftOff.nextDay.weekOrder} · ${dayName}`;
+  }
+
+  function onStartBlock(block) {
+    setError(null);
+    const leftOff = leftOffByBlockId[block.id] || null;
+    if (leftOff) {
+      setConfirmStartBlock({ block, leftOff });
+      return;
+    }
+    void doStartBlock(block);
+  }
+
+  async function doStartBlock(block, { resumeRunId } = {}) {
+    setConfirmStartBlock(null);
     setStartingBlockId(block.id);
     setError(null);
     try {
-      await blockRunApi.startBlockRun(block.id);
+      await blockRunApi.startBlockRun(
+        block.id,
+        resumeRunId != null ? { resumeRunId } : {}
+      );
       await load();
     } catch (err) {
       setError(err);
@@ -196,10 +229,48 @@ export function BlockRunPage() {
               </button>
             </div>
           ) : null}
+          {confirmStartBlock ? (
+            <div className="bk-lib-confirm" role="alertdialog">
+              <p className="bk-lib-confirm__title">
+                Start &ldquo;{confirmStartBlock.block.name || "this block"}&rdquo;?
+              </p>
+              <div className="bk-lib-confirm__actions">
+                <button
+                  type="button"
+                  className="bk-lib-btn bk-lib-btn--primary"
+                  disabled={startingBlockId != null}
+                  onClick={() =>
+                    void doStartBlock(confirmStartBlock.block, {
+                      resumeRunId: confirmStartBlock.leftOff.runId,
+                    })
+                  }
+                >
+                  {resumeLabel(confirmStartBlock.leftOff)}
+                </button>
+                <button
+                  type="button"
+                  className="bk-lib-btn bk-lib-btn--secondary"
+                  disabled={startingBlockId != null}
+                  onClick={() => void doStartBlock(confirmStartBlock.block)}
+                >
+                  Start over
+                </button>
+                <button
+                  type="button"
+                  className="bk-lib-btn bk-lib-btn--ghost"
+                  disabled={startingBlockId != null}
+                  onClick={() => setConfirmStartBlock(null)}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : null}
           <RunEmptyState
             blocks={libraryBlocks}
+            leftOffByBlockId={leftOffByBlockId}
             startingId={startingBlockId}
-            onStart={(b) => void onStartBlock(b)}
+            onStart={onStartBlock}
           />
         </div>
       </div>
@@ -293,7 +364,7 @@ export function BlockRunPage() {
               End &ldquo;{payload.block?.name || "this block"}&rdquo;?
             </p>
             <p className="muted small session-discard-confirm__body">
-              You can start it again from your library.
+              You can pick it up where you left off from your library.
             </p>
             <div className="row session-discard-confirm__actions">
               <button
