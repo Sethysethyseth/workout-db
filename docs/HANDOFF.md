@@ -1,7 +1,8 @@
 # HANDOFF — current state
 
-> **WHERE WE ARE (Oct 6, late):** Seth's smoke round 3 became the **sr3
-> wave** on `ai-connector-wave` (pushed) - SR3_STATUS_LINE. Rulings: FINDINGS
+> **WHERE WE ARE (Oct 7):** Seth's smoke round 3 became the **sr3
+> wave** on `ai-connector-wave` (pushed, head `468bab9`+) - **7/7 LANDED,
+> wave complete, waiting on Seth's smoke round 4**. Rulings: FINDINGS
 > "Round 3 rulings" + QUEUE's sr3 header (item 1 was a missing RESUME, not
 > data loss; item 10 swap-for-today PARKED). Landed: sr3-d1 + picker-height
 > fix `a6f007f`; **sr3-1** `077f4b2` pause/resume ("Left off at W4 · Upper
@@ -11,7 +12,8 @@
 > "Per side" on block exercises (the wave's ONE migration - STAGING applied
 > Oct 6 under "migrate staging"; PROD is Seth's hand-apply before the merge,
 > next to BK1's); **sr3-4** `f1fbf55` add a not-in-library exercise to the
-> library from the builder and import; **sr3-6** SR3_6_LINE. Every server
+> library from the builder and import; **sr3-6** `468bab9` hold a day or
+> week pill to drag it to a new place (seat-fixed drop target). Every server
 > change was proven live on the staging DB. Prod unchanged: `main` =
 > `7d3b91e`.
 
@@ -19,12 +21,12 @@
 preview with an agent beside you - "smoke round 4" below (the BK/bkr items
 plus the new sr3 items); say "smoke signed off" when it passes.
 
-## ▶ PICK UP HERE (Oct 6, late - smoke round 4, any model)
+## ▶ PICK UP HERE (Oct 7 - smoke round 4, any model)
 
 1. Seth smokes; the agent records, one item at a time (section below).
-2. **Critic:** the one-round feel critic was NOT run for sr3 - the
-   Playwright MCP failed to connect this session. Ask Seth once whether he
-   wants it before or after his smoke; default is his smoke only.
+2. **Critic:** the one-round feel critic was NOT run for sr3. The
+   Playwright MCP connects again as of Oct 7. Asked Seth once (Oct 7)
+   whether he wants it before or after his smoke; default is his smoke only.
 3. Defects -> DIAGNOSIS blocks; then the pre-main gate (`pre-main-review`,
    OPUS) with the gate notes below.
 
@@ -133,7 +135,18 @@ H. **Add to library (sr3-4):** builder search "Zercher Carry Hold" -> both
    it lands in the day with no "Not in library" chip; a free-text exercise's
    card "..." -> "Add to library"; import a sheet with an unknown name -> its
    row's "Add to library" moves it out of "Not in your library".
-I. **Hold to reorder (sr3-6):** SR3_6_SMOKE
+I. **Hold to reorder (sr3-6), ON THE PHONE:** in the builder, press and
+   hold Day 1 about half a second -> it lifts (a little bigger, shadow, a
+   buzz on Android). Drag it slowly right past Day 3 - the other days slide
+   aside one at a time WITHOUT flickering - let go -> it lands there, the
+   days renumber, and if Day 1 was selected it is still selected. Same for
+   a week pill (a 5+ week block: drag to the strip's edge and hold - the
+   strip scrolls and stops at the end, no empty space). A quick swipe still
+   scrolls the strip; hold-and-release without moving changes nothing and
+   opens no actions; a tap still selects, a re-tap still opens the actions.
+   No text-selection or iOS callout on the long-press. The Current Block
+   page, Home and the import preview strips do NOT lift. (Touch drag is the
+   one thing desktop Playwright could not prove.)
 
 **By design - do not log as defects:** one AI button on import (the layout
 read and the prose convert merged); the Any AI tab has no AI button; palette
@@ -223,7 +236,14 @@ confirms are still browser dialogs; critic R1 P3 leftovers not in bkrf1
   - sr3-4 `f1fbf55`: `AddExerciseToLibrarySheet` has a new `context="library"`
     path (no session exercise) - review that the live/completed logger paths
     are unchanged.
-  - sr3-6: SR3_6_GATE
+  - sr3-6 `468bab9`: new `ui/useHoldToReorder.js` (pointer events, a
+    non-passive `touchmove` on the strip that cancels the pan ONLY while
+    lifted, `body.style.overflow` lock while lifted, click suppression via
+    a 400 ms capture-phase window). Seat fix folded in: drop target from
+    slot centres snapshotted at lift (live rects flickered), scroll-aware
+    offset clamped to first..last slot. Review: the touch path on iOS and
+    Android (only desktop mouse was proven), `WeekStrip` is shared with
+    Home/run page - confirm nothing changes without `onReorder`.
 - Before any merge: Seth hand-applies BOTH migrations to PROD, in order -
   BK1's `20260929120000_blocks_v2`, then sr3-5's
   `20261006200000_block_exercise_per_side` (RUNBOOK "Schema-change deploy") -
@@ -333,8 +353,19 @@ user on the merge deploy); CR2 polish skipped (shipped at 7.5); `zod` declared
 > explicitly. Dogfoods the shell repo's decision-10 no-dangling-next-
 > action requirement; `land-unit` section 5 keeps it maintained.
 
-**Updated:** October 6, 2026, late (Opus, frontier seat authoring AND running
-the relay - Seth said "keep going"). Session log, sr3 wave:
+**Updated:** October 7, 2026 (Opus seat, "read handoff and continue").
+Session log, Oct 7:
+- The Oct 6 rewrite had shipped with four unfilled placeholders
+  (`SR3_STATUS_LINE`, `SR3_6_LINE`, `SR3_6_SMOKE`, `SR3_6_GATE`) - that
+  session ended before sr3-6 landed. Filled here.
+- sr3-6 had delivered Oct 6 22:29 in `cursor-lane-2` (DELIVERY.md by
+  timestamp; no Cursor process left running). Landed `468bab9` with a seat
+  fix to the drop-target math - proof and numbers in QUEUE's sr3-6 line.
+  The seat harness (`client/_h/` in lane 2) and its dev server were removed.
+- 7/7 - wave complete; stopped for Seth's smoke round 4.
+
+Session log, Oct 6 late (Opus, frontier seat authoring AND running the
+relay - Seth said "keep going"), sr3 wave:
 - Item 1 diagnosed by the seat from code in minutes (no Cursor lane): not
   data loss - `createBlockRun` ends the open run and always creates a new
   one, so the old block's PLACE was lost, never its sessions. Seth's two
@@ -480,8 +511,8 @@ Covers the F-wave AND the still-open E-wave prod smoke. Staging passed Aug 4.
 
 ### Lane worktree state
 
-**Lanes after the sr3 wave (Oct 6, late):** `cursor-lane` on `cursor/sr3-4`,
-`cursor-lane-2` on `cursor/sr3-6`, `cursor-lane-3` on `cursor/sr3-3b` (its
+**Lanes after the sr3 wave (Oct 7):** `cursor-lane` on `cursor/sr3-4`,
+`cursor-lane-2` on `cursor/sr3-6` (= `468bab9`, clean), `cursor-lane-3` on `cursor/sr3-3b` (its
 `.playwright-mcp/sr3-3/` holds a working Playwright install - handy while
 the Playwright MCP is down), each merged into `ai-connector-wave` once
 landed; a stale `cursor/sr3-3` branch (the two hung attempts) can be
