@@ -2,11 +2,13 @@ import { useRef, useState } from "react";
 import { Segmented } from "../ui/Segmented.jsx";
 import { BuilderSheet, useOverlayFocus } from "./BuilderSheet.jsx";
 
-const EFFORT_OPTIONS = [
+export const EFFORT_OPTIONS = [
   { value: "rpe", label: "RPE" },
   { value: "rir", label: "RIR" },
   { value: "none", label: "None" },
 ];
+
+const PUBLIC_NOT_YET_MSG = "this hasnt been implemented yet bro stop prying";
 
 export function BlockSettingsSheet({
   open,
@@ -16,6 +18,7 @@ export function BlockSettingsSheet({
   onDelete,
   onExport,
   onAskCoach,
+  onToast,
   exporting = false,
   mode,
 }) {
@@ -32,6 +35,14 @@ export function BlockSettingsSheet({
   function handleClose() {
     setConfirmDelete(false);
     onClose?.();
+  }
+
+  function handlePublicChange(checked) {
+    if (checked) {
+      onToast?.(PUBLIC_NOT_YET_MSG);
+      return;
+    }
+    onChange?.({ isPublic: false });
   }
 
   return (
@@ -76,7 +87,7 @@ export function BlockSettingsSheet({
               type="checkbox"
               checked={Boolean(state?.isPublic)}
               disabled={isDraft}
-              onChange={(e) => onChange?.({ isPublic: e.target.checked })}
+              onChange={(e) => handlePublicChange(e.target.checked)}
             />
             <span>Public</span>
           </label>

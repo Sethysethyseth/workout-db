@@ -58,7 +58,7 @@ import {
   weekHasExercises,
   clearDraftFlag,
 } from "./blockBuilderState.js";
-import { BlockSettingsSheet } from "./BlockSettingsSheet.jsx";
+import { BlockSettingsSheet, EFFORT_OPTIONS } from "./BlockSettingsSheet.jsx";
 import { BuilderSheet, useOverlayFocus } from "./BuilderSheet.jsx";
 import { BuilderToast } from "./BuilderToast.jsx";
 import { CoachDraftCard } from "./CoachDraftCard.jsx";
@@ -171,6 +171,7 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
   const [replaceExIdx, setReplaceExIdx] = useState(null);
   const [weekActionsOpen, setWeekActionsOpen] = useState(false);
   const [dayActionsOpen, setDayActionsOpen] = useState(false);
+  const [effortSheetOpen, setEffortSheetOpen] = useState(false);
   const [copyForwardOpen, setCopyForwardOpen] = useState(false);
   const [panelMode, setPanelMode] = useState("edit"); // edit | progression
   const [weekLabelDraft, setWeekLabelDraft] = useState("");
@@ -536,12 +537,21 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
     setCoachAskOpen(true);
   }
 
+  function openWeekActions() {
+    setWeekLabelDraft(currentWeek?.label || "");
+    setWeekActionsOpen(true);
+  }
+
+  function openDayActions() {
+    setDayNameDraft(currentDay?.name || "");
+    setDayActionsOpen(true);
+  }
+
   function selectWeek(key) {
     const idx = weeks.findIndex((w, i) => (w.id || String(i)) === key);
     if (idx < 0) return;
     if (idx === safeWeekIdx) {
-      setWeekLabelDraft(currentWeek?.label || "");
-      setWeekActionsOpen(true);
+      openWeekActions();
       return;
     }
     setWeekIdx(idx);
@@ -553,12 +563,17 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
     const idx = days.findIndex((d, i) => (d.id || String(i)) === key);
     if (idx < 0) return;
     if (idx === safeDayIdx) {
-      setDayNameDraft(currentDay?.name || "");
-      setDayActionsOpen(true);
+      openDayActions();
       return;
     }
     setDayIdx(idx);
     setExpandedIds(new Set());
+  }
+
+  function effortChipLabel(effort) {
+    if (effort === "rpe") return "RPE";
+    if (effort === "rir") return "RIR";
+    return "Effort: off";
   }
 
   function handleAddWeek() {
@@ -795,37 +810,58 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
     </div>
   );
 
-  const nameNode = nameEditing ? (
-    <input
-      ref={nameInputRef}
-      className="bk-builder-name-input"
-      value={state.name}
-      placeholder="Name this block"
-      maxLength={120}
-      data-invalid={nameInvalid ? "true" : undefined}
-      aria-invalid={nameInvalid || undefined}
-      onChange={(e) => applyState(setName(state, e.target.value))}
-      onClick={(e) => e.stopPropagation()}
-      onBlur={() => {
-        if (!(isCreate && blockId == null)) setNameEditing(false);
-      }}
-    />
-  ) : (
-    <span
-      role="button"
-      tabIndex={0}
-      className="bk-builder-name-tap"
-      title={state.name || "Untitled block"}
-      onClick={() => setNameEditing(true)}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          setNameEditing(true);
-        }
-      }}
-    >
-      {state.name || "Untitled block"}
-    </span>
+  const effortValue = state.effort || "none";
+  const effortActive = effortValue === "rpe" || effortValue === "rir";
+  const dayActionsLabel = currentDay?.name || `Day ${safeDayIdx + 1}`;
+
+  const nameNode = (
+    <div className="bk-builder-header-name">
+      {nameEditing ? (
+        <input
+          ref={nameInputRef}
+          className="bk-builder-name-input"
+          value={state.name}
+          placeholder="Name this block"
+          maxLength={120}
+          data-invalid={nameInvalid ? "true" : undefined}
+          aria-invalid={nameInvalid || undefined}
+          onChange={(e) => applyState(setName(state, e.target.value))}
+          onClick={(e) => e.stopPropagation()}
+          onBlur={() => {
+            if (!(isCreate && blockId == null)) setNameEditing(false);
+          }}
+        />
+      ) : (
+        <span
+          role="button"
+          tabIndex={0}
+          className="bk-builder-name-tap"
+          title={state.name || "Untitled block"}
+          onClick={() => setNameEditing(true)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              setNameEditing(true);
+            }
+          }}
+        >
+          {state.name || "Untitled block"}
+        </span>
+      )}
+      <button
+        type="button"
+        className={`bk-builder-effort-chip${effortActive ? " bk-builder-effort-chip--on" : ""}`}
+        aria-label="Effort scale"
+        aria-haspopup="dialog"
+        aria-expanded={effortSheetOpen}
+        onClick={() => setEffortSheetOpen(true)}
+      >
+        <span>{effortChipLabel(effortValue)}</span>
+        <span className="bk-builder-effort-chip__caret" aria-hidden="true">
+          ▾
+        </span>
+      </button>
+    </div>
   );
 
   if (loading) {
@@ -933,6 +969,16 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
                 <span className="bk-builder__week-sub">{weekExtraLabel}</span>
               ) : null}
             </span>
+            <button
+              type="button"
+              className="bk-ex-card__menu-btn bk-builder__row-menu-btn"
+              aria-label={`Week ${safeWeekIdx + 1} actions`}
+              aria-haspopup="dialog"
+              aria-expanded={weekActionsOpen}
+              onClick={openWeekActions}
+            >
+              …
+            </button>
           </div>
           <WeekStrip
             weeks={weekStripItems}
@@ -1017,7 +1063,7 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
           <div className="bk-builder__panel" ref={dayPanelRef}>
             <div className="bk-builder__panel-head">
               <SectionRule
-                label={currentDay.name || `Day ${safeDayIdx + 1}`}
+                label={dayActionsLabel}
                 chip={
                   <span className="bk-builder__chips">
                     <Chip>
@@ -1026,6 +1072,16 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
                     <Chip>
                       {setCount} set{setCount === 1 ? "" : "s"}
                     </Chip>
+                    <button
+                      type="button"
+                      className="bk-ex-card__menu-btn bk-builder__row-menu-btn"
+                      aria-label={`${dayActionsLabel} actions`}
+                      aria-haspopup="dialog"
+                      aria-expanded={dayActionsOpen}
+                      onClick={openDayActions}
+                    >
+                      …
+                    </button>
                   </span>
                 }
               />
@@ -1195,6 +1251,7 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
           if (patch.isPublic !== undefined) next = setIsPublic(next, patch.isPublic);
           applyState(next);
         }}
+        onToast={(message) => setToast({ message })}
         onExport={
           blockId != null || (!isCreate && templateId != null)
             ? () => void handleExportBlock()
@@ -1215,6 +1272,25 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
             : undefined
         }
       />
+
+      <BuilderSheet
+        open={effortSheetOpen}
+        title="Effort scale"
+        onClose={() => setEffortSheetOpen(false)}
+      >
+        <p className="bk-builder-effort-sheet__copy">
+          How you rate effort on every set in this block.
+        </p>
+        <Segmented
+          label="Effort scale"
+          options={EFFORT_OPTIONS}
+          value={effortValue}
+          onChange={(effort) => {
+            applyState(setEffort(state, effort));
+            setEffortSheetOpen(false);
+          }}
+        />
+      </BuilderSheet>
 
       <BuilderSheet
         open={coachAskOpen}

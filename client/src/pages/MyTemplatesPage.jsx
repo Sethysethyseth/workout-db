@@ -170,11 +170,17 @@ export function MyTemplatesPage() {
   async function onTogglePublicBlock(t) {
     setError(null);
     setSuccess(null);
+    // Making public is not implemented yet (community list not launched).
+    if (!t.isPublic) {
+      setSuccess("this hasnt been implemented yet bro stop prying");
+      clearFeedbackSoon();
+      return;
+    }
     setActingKey(keyFor("block", t.id));
     setActingAction("toggle");
     try {
-      await blockTemplateApi.updateBlockTemplate(t.id, { isPublic: !t.isPublic });
-      setSuccess(t.isPublic ? "Block is now private." : "Block is now public.");
+      await blockTemplateApi.updateBlockTemplate(t.id, { isPublic: false });
+      setSuccess("Block is now private.");
       clearFeedbackSoon();
       await load();
     } catch (err) {
