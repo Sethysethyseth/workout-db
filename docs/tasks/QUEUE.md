@@ -356,9 +356,16 @@ round-3 intake in `bk-smoke-FINDINGS.md` -> "Smoke round 3", rulings in
 pause + resume; item 5 Settings + header chip; item 3 7-day cap
 everywhere; item 10 PARKED). Lands on `ai-connector-wave`. Authoring recon
 in flight (session-scoped report lanes sr3-r1 / sr3-r2, logged in HANDOFF,
-not counted). Content units get authored from the recon; N set then.
+not counted). Wave N = 6 provisional (sr3-d1 + content units sr3-1..5;
+sr3-3/4/5 authored from sr3-r2). Collisions: sr3-1 is disjoint from all;
+sr3-2 and sr3-3 both touch `BlockBuilder.jsx` (serialize 2 -> 3); sr3-4
+touches the import preview after sr3-2 (serialize 2 -> 4). DB-free lanes;
+every server route change gets a LIVE staging proof at landing. No
+migration in this wave.
 
 LANDED (report) | sr3-d1-add-exercise-first-open-diagnosis.md | DIAGNOSIS: builder "+ Add exercise" first open shows the sheet header + keyboard, no search/list (P2, Android Chrome) | report lane. Dispatched Oct 6 (Opus seat): Channel B, `--model auto`, `cursor-lane` on `cursor/sr3-d1` @ `599c9d9`, 40-min hard kill; beside recon lanes sr3-r1 (`cursor-lane-2`) and sr3-r2 (`cursor-lane-3`). Run 2.4 min. Seat-verified (bk-builder.css picker rule + ExercisePicker empty state read): the picker panel had only a max-height, the empty query renders no rows, so the sheet collapsed to header + search and Android's overlay keyboard covered the autofocused search. Report kept as `sr3-d1-add-exercise-first-open-FINDINGS.md`. SEAT DIRECT FIX (trivial, diagnosis was the work): definite picker height (88dvh/720 phone, 80vh/640 desktop); focus code untouched (React autoFocus inside the tap is what opens the iOS keypad). Proof = Seth's Android in the smoke.
+DISPATCHED | sr3-1-block-pause-resume.md | switching blocks PAUSES the old run; Library + Current-block Start offer "Resume at Wn · Day" / "Start over" (reopen the ended run, no schema); GET /block-runs/left-off | n=2. Disjoint from everything. Dispatched Oct 6 (Opus seat): Channel B, `--model auto`, `cursor-lane`, 40-min hard kill. Live staging proof of the run routes at landing.
+DISPATCHED | sr3-2-seven-day-week-cap.md | a week holds at most 7 days: one server constant, Format v1 + AI schema + save-path refusal, builder "+ Day" disabled with "7 days max" | n=3. Before sr3-3 (BlockBuilder.jsx) and sr3-4 (import preview). Dispatched Oct 6 (Opus seat): Channel B, `--model auto`, `cursor-lane-2`, 40-min hard kill.
 
 DRAFT | bk0-privacy-terms-pages.md | plain-language /privacy + /terms,
 covering the AI layer and the draft-block write | Seth's Sept 26 "first
