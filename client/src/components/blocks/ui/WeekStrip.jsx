@@ -2,6 +2,10 @@ import { useEffect, useRef } from "react";
 import "../../../styles/blocks/bk-ui.css";
 import { useHoldToReorder } from "./useHoldToReorder.js";
 
+function scrollBehavior() {
+  return window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+}
+
 /**
  * Horizontally scrollable week tiles with progress bars.
  * Optional `onReorder(fromIndex, toIndex)` enables hold-to-drag reorder.
@@ -36,7 +40,7 @@ export function WeekStrip({
   useEffect(() => {
     if (selectedRef.current) {
       selectedRef.current.scrollIntoView({
-        behavior: "smooth",
+        behavior: scrollBehavior(),
         inline: "nearest",
         block: "nearest",
       });

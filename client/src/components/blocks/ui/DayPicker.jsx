@@ -3,6 +3,10 @@ import "../../../styles/blocks/bk-ui.css";
 import { ProgressRing } from "./ProgressRing.jsx";
 import { useHoldToReorder } from "./useHoldToReorder.js";
 
+function scrollBehavior() {
+  return window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+}
+
 /**
  * Day tiles with optional progress rings and bottom-edge tags.
  * Horizontally scrolls when tiles would crush at phone widths; scrolls the
@@ -47,7 +51,7 @@ export function DayPicker({
     }
     if (selectedRef.current) {
       selectedRef.current.scrollIntoView({
-        behavior: "smooth",
+        behavior: scrollBehavior(),
         inline: "nearest",
         block: "nearest",
       });
