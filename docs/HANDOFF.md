@@ -1,8 +1,9 @@
 # HANDOFF — current state
 
-> **WHERE WE ARE (Oct 7):** Seth's smoke round 3 became the **sr3
-> wave** on `ai-connector-wave` (pushed, head `ccf468b`+) - **10/10
-> LANDED, wave complete, waiting on Seth's smoke round 4**: the 7 sr3 units,
+> **WHERE WE ARE (Oct 7, late):** **PRE-MAIN GATE: PASS** (Opus seat) for the
+> whole `ai-connector-wave` branch (BK + bkr + sr3, 142+ commits over `main`
+> `7d3b91e`) - verdict + Seth's prod steps in "Gate verdict" right below.
+> Smoke round 4 signed off. The sr3 wave: 10/10 landed - the 7 sr3 units,
 > then Seth's one-round feel critic (6/10 FAIL, one P1) and its fix round
 > **sr3f1** `cf4fdee` (Library), **sr3f2** `b64de00` (builder), **sr3f3**
 > `ccf468b` (add to library in 3 taps). Rulings: FINDINGS
@@ -22,19 +23,120 @@
 
 **SMOKE ROUND 4 SIGNED OFF (Oct 7, Seth, verbatim):** "yeah everything else
 looks good /pre-main-review" (after a future-wave note on exercise
-hold-to-move). The pre-main gate is running (Opus seat).
+hold-to-move).
 
-**Next action (human):** nothing until the pre-main gate verdict lands
-(this session); then the prod migrations + merge ritual if it passes.
+**Next action (human):** in the PROD Neon SQL editor, run the two
+migrations + their `_prisma_migrations` rows exactly as written in "Gate
+verdict -> Seth's prod steps" below, then say "push to main".
 
-## ▶ PICK UP HERE (Oct 7, late - smoke round 4, any model)
+## ▶ GATE VERDICT (Oct 7, late, Opus seat) - PASS
 
-1. Seth smokes; the agent records, one item at a time (section below).
-2. **Critic:** ONE round was run Oct 7 at Seth's ask (6/10 FAIL,
-   `sr3-critic-round-1-FINDINGS.md`), all P1/P2 + the cheap P3s fixed by
-   sr3f1-3 (P2-7 search HELD by Seth). Do NOT run round 2 unless he asks.
-3. Smoke defects -> DIAGNOSIS blocks; then the pre-main gate
-   (`pre-main-review`, OPUS) with the gate notes below.
+**PASS** - ready for the merge ritual once prod has both migrations. One
+seat fix during the gate: `1ce8fdb` (week/day strips honour reduced motion -
+the gate note carried since Sept 29). Nothing else needs code before main.
+
+What was read directly (schema / security / cross-user, never fanned out):
+- **Schema + migrations:** `blocks_v2` + `block_exercise_per_side` match the
+  schema diff one-to-one; purely ADDITIVE (nullable columns, NOT NULL only
+  with defaults, a new `BlockRun` table, indexes, FKs). `BlockRun` cascades
+  with its template/user; `WorkoutSession.blockRunId` is SET NULL, so
+  deleting a block keeps logged workouts (matches the Library copy).
+- **Clone isolation (BK1, carried since Sept 29) - CLOSED.** A clone of a
+  foreign public block carries NAMES only (`buildClonePayload`); every write
+  path re-stamps `exerciseId`/`userExerciseId` from the REQUESTER's library
+  (`stampBlockWeeksArray` -> `stampExerciseIdentityWithIndex` always sets
+  both keys) and the normalizers never accept client ids - a stranger's
+  custom-exercise id cannot be copied in.
+- **Ownership everywhere:** block templates (GET/export public-or-owner;
+  PATCH/DELETE/accept owner), block runs (all four routes `userId`-scoped;
+  runs only on OWN templates), start-from-block (own OPEN run only), left-off
+  (ids derived from own runs), coach block focus (owner-checked before any
+  text, 404 otherwise), connector `create_block_draft` (create-only drafts,
+  userId from the verified closure, consent + separate opt-in, 10/day + 20
+  open), consent toggle (revoke also clears the block-drafts opt-in).
+- **Raw SQL:** only two sites, both tagged-template parameters, both scoped
+  (advisory lock in `usageLedger.js`; the usage-ranking query in
+  `GET /exercises/search`, debounced client-side).
+- **Coach cost:** reserve-before-provider on every hosted path; refunds only
+  for an undelivered answer or a <=400-char off-topic decline.
+- **No What's New entry** in the wave - the merge fires no modal on prod.
+
+Gate fuel (Cursor report lanes, auto rung, kept as FINDINGS):
+`gate-r1-fresh-lanes-tokens-schema-FINDINGS.md` (542 unit tests, build clean;
+ZERO raw colours added across the whole wave; all 49 new `var()` names
+defined; schema/SQL/FK/NOT-NULL cross-check clean; migrations CRLF;
+`read-excel-file` lazy-loaded in its own 67 kB chunk) and
+`gate-r2-route-ownership-inventory-FINDINGS.md` (every new/changed route and
+MCP tool: SCOPED or intended PUBLIC-READ, none unscoped). Spot-checked.
+
+Accepted / follow-up, NOT blockers:
+- `/coach/import-map` + the import-fix recipe path accept 1,000,000 chars but
+  sit behind the default 100 kB JSON body limit - a >100 kB paste gets a raw
+  413. Real sheets are far smaller; follow-up: a route-level limit or a
+  friendly message.
+- No rate limiter on `/block-templates/import*` or `/block-runs` (authed,
+  DB-only, no provider cost).
+- BK7 / sr3-1 "two open sessions/runs" race (no unique guard) - accepted.
+- Public blocks: UI says "not yet", the API still accepts `isPublic: true`;
+  existing public blocks stay public - accepted (sr3-3 ruling).
+- The 7-day cap: a prod block with 8+ days in a week still opens and runs;
+  saving an edit asks to trim first. Optional check below.
+- Prod-vs-staging migration DRIFT (Housekeeping): NOT a merge blocker -
+  prod never runs `migrate deploy` (the patch wave merged with it present).
+  Stays housekeeping.
+
+### Seth's prod steps (RUNBOOK section 3 - DB first, code second)
+
+In the Neon SQL editor for **PROD** (`snowy-resonance` /
+`ep-solitary-sea-an56mioq` - confirm the host in the URL bar first):
+
+1. Paste `server/prisma/migrations/20260929120000_blocks_v2/migration.sql`
+   verbatim and run it. Then:
+   ```sql
+   INSERT INTO "_prisma_migrations"
+     (id, checksum, finished_at, migration_name, logs, rolled_back_at, started_at, applied_steps_count)
+   VALUES
+     (gen_random_uuid(), '4e6ec40478ca8e271bad1755d9cf7e635cd0b73ee298fe16fb4f409d01e985d3', now(), '20260929120000_blocks_v2', NULL, NULL, now(), 1);
+   ```
+2. Then the per-side column and its row:
+   ```sql
+   ALTER TABLE "BlockWorkoutExercise" ADD COLUMN "perSide" BOOLEAN;
+   INSERT INTO "_prisma_migrations"
+     (id, checksum, finished_at, migration_name, logs, rolled_back_at, started_at, applied_steps_count)
+   VALUES
+     (gen_random_uuid(), 'dfaa91e1eec253f0bc3a9b14436d71d6f598033ad636062e8888b57338203fe6', now(), '20261006200000_block_exercise_per_side', NULL, NULL, now(), 1);
+   ```
+   (Checksums read Oct 7 from STAGING's `_prisma_migrations`, host
+   `ep-bitter-breeze`, per the RUNBOOK rule "copy it, don't invent it".)
+3. Verify:
+   ```sql
+   SELECT table_name, column_name FROM information_schema.columns
+   WHERE (table_name = 'BlockRun')
+      OR (table_name = 'BlockWorkoutExercise' AND column_name IN ('restSec','effortCap','perSide'))
+      OR (table_name = 'WorkoutSession' AND column_name IN ('blockRunId','blockWeekOrder','blockWorkoutOrder'))
+   ORDER BY table_name, column_name;
+   SELECT migration_name, checksum FROM "_prisma_migrations"
+   WHERE migration_name IN ('20260929120000_blocks_v2','20261006200000_block_exercise_per_side');
+   ```
+   Expect 5 BlockRun columns, 3 + 3 others, and the two rows.
+4. Optional (7-day cap): `SELECT "blockWeekId", count(*) FROM "BlockWorkout"
+   GROUP BY 1 HAVING count(*) > 7;` - any rows are old blocks that will ask
+   to be trimmed on their next save.
+5. Then say **"push to main"** - the merge runs one command at a time
+   (RUNBOOK + gate item 1), using a temp worktree (OneDrive lock lesson).
+6. After the deploy: smoke prod login, Library, open a block, start a block
+   day; then M2 (repoint staging Render `workout-db-staging` to `main`, and
+   only then retire the `ai-connector-wave` preview host from the staging
+   WorkOS sign-in URI) - Housekeeping below.
+
+## ▶ PICK UP HERE (Oct 7, late - after the gate)
+
+1. Seth runs the prod steps above, then "push to main" -> the merge ritual,
+   one command at a time, report the merged SHAs + `origin/main` HEAD.
+2. Post-merge: prod smoke, M2 repoint, close the wave in HANDOFF (move the
+   sr3/BK/bkr detail to the archive verbatim).
+3. Next wave candidates: Seth's exercise hold-to-move note, the HELD search
+   synonyms, the deferred critic P3s, the import body-limit follow-up.
 
 ### Agent sitting with Seth on smoke round 4 (when he runs it)
 
@@ -452,6 +554,12 @@ Session log, Oct 7:
   /T) is in the session scratchpad as `run-lane.ps1`. sr3f2's CLI hung
   13 min AFTER its DELIVERY.md (known print-mode hang) - for sr3f3 the
   watch exited on DELIVERY.md instead of waiting on silence.
+- Smoke round 4 signed off by Seth ("everything else looks good") ->
+  pre-main gate, Opus seat: direct reads of schema/security/cross-user
+  surfaces + two Cursor report lanes (gate-r1 ~20 min, gate-r2 ~9 min, auto
+  rung, both clean exits, porcelain = report only). Seat fix `1ce8fdb`.
+  Staging checksums for the prod INSERTs read-only from `_prisma_migrations`.
+  Verdict PASS (section above).
 - Seth: the dispatch tab (cursor-watch :4646) "isn't showing" - the watcher
   was healthy (up since his 1:38 AM login, lanes correct); the boot tab had
   been closed. Opened it once. If it vanishes again, bookmark the URL.
