@@ -5382,6 +5382,12 @@ html[data-theme="dark"] .start-workout-picker__sheet {
   gap: 8px;
 }
 
+.add-exercise-library-sheet__header--library {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .add-exercise-library-sheet__back-spacer {
   width: 44px;
   height: 44px;
@@ -5408,6 +5414,16 @@ html[data-theme="dark"] .start-workout-picker__sheet {
   letter-spacing: -0.02em;
   text-align: center;
   line-height: 1.25;
+}
+
+.add-exercise-library-sheet--library .add-exercise-library-sheet__title {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  font: 700 18px/1.1 var(--font-block);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text);
 }
 
 .add-exercise-library-sheet__step {

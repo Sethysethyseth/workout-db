@@ -1523,6 +1523,7 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
         }}
         onCreateCommitted={async ({ name }) => {
           commitLibraryExercise(name);
+          setToast({ message: `Added '${name}' to your library.` });
         }}
       />
 

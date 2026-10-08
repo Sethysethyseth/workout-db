@@ -153,6 +153,9 @@ export function AddExerciseToLibrarySheet({
 
   const [doneVariant, setDoneVariant] = useState("create");
   const [doneLinkName, setDoneLinkName] = useState("");
+  // Library context only: "seed" when curate was opened from the similar step,
+  // null when that step was skipped (empty pre-filled search) so Back closes.
+  const [curateOrigin, setCurateOrigin] = useState(null);
 
   useEffect(() => {
     if (!open) return;
@@ -173,6 +176,7 @@ export function AddExerciseToLibrarySheet({
     setDoneVariant("create");
     setDoneLinkName("");
     setHadSuggestStep(false);
+    setCurateOrigin(null);
     setInitialSearchLoading(Boolean(trimmed));
 
     let cancelled = false;
@@ -205,6 +209,10 @@ export function AddExerciseToLibrarySheet({
         if (suggestions.length > 0) {
           setStep("suggest");
           setHadSuggestStep(true);
+        } else if (isLibraryContext) {
+          // Pre-filled name matched nothing: skip the empty similar step.
+          setCurateOrigin(null);
+          setStep("curate");
         } else {
           setStep("seed");
         }
@@ -219,7 +227,7 @@ export function AddExerciseToLibrarySheet({
     return () => {
       cancelled = true;
     };
-  }, [open, initialName, isCompletedContext]);
+  }, [open, initialName, isCompletedContext, isLibraryContext]);
 
   useEffect(() => {
     if (!open) return;
@@ -403,6 +411,7 @@ export function AddExerciseToLibrarySheet({
     setMuscleRoles(muscleRolesFromSearchRow(row));
     setPickerMode("main");
     setSubmitError(null);
+    setCurateOrigin("seed");
     setStep("curate");
   }, []);
 
@@ -472,25 +481,42 @@ export function AddExerciseToLibrarySheet({
           // Stamp is best-effort; library entry exists and name-based resolution still works.
         }
       }
-      setDoneVariant("create");
-      setStep("done");
+      if (isLibraryContext) {
+        // Parent already committed. Skip the "Added to your library" step.
+        onClose();
+      } else {
+        setDoneVariant("create");
+        setStep("done");
+      }
     } catch (err) {
       setSubmitError(err);
       setSubmitting(false);
     }
-  }, [canSubmit, muscleRoles, trimmedName, onCreateCommitted, isCompletedContext]);
+  }, [
+    canSubmit,
+    muscleRoles,
+    trimmedName,
+    onCreateCommitted,
+    isCompletedContext,
+    isLibraryContext,
+    onClose,
+  ]);
 
   const goBack = useCallback(() => {
     setLinkError(null);
     setSubmitError(null);
     if (step === "curate") {
+      if (isLibraryContext && curateOrigin == null) {
+        onClose();
+        return;
+      }
       setStep("seed");
       return;
     }
     if (step === "seed" && hadSuggestStep) {
       setStep("suggest");
     }
-  }, [step, hadSuggestStep]);
+  }, [step, hadSuggestStep, isLibraryContext, curateOrigin, onClose]);
 
   const showBack = step === "curate" || (step === "seed" && hadSuggestStep);
 
@@ -505,7 +531,9 @@ export function AddExerciseToLibrarySheet({
 
   const node = (
     <div
-      className="add-exercise-library-sheet"
+      className={`add-exercise-library-sheet${
+        isLibraryContext ? " add-exercise-library-sheet--library" : ""
+      }`}
       role="dialog"
       aria-modal="true"
       aria-labelledby={titleId}
@@ -517,7 +545,11 @@ export function AddExerciseToLibrarySheet({
         onClick={onClose}
       />
       <div className="add-exercise-library-sheet__card card">
-        <div className="add-exercise-library-sheet__header">
+        <div
+          className={`add-exercise-library-sheet__header${
+            isLibraryContext ? " add-exercise-library-sheet__header--library" : ""
+          }`}
+        >
           {showBack ? (
             <button
               type="button"
@@ -527,7 +559,7 @@ export function AddExerciseToLibrarySheet({
             >
               ←
             </button>
-          ) : (
+          ) : isLibraryContext ? null : (
             <span className="add-exercise-library-sheet__back-spacer" aria-hidden="true" />
           )}
           <h2 id={titleId} className="add-exercise-library-sheet__title">
@@ -617,6 +649,7 @@ export function AddExerciseToLibrarySheet({
                 onClick={() => {
                   setMuscleRoles({});
                   setPickerMode("main");
+                  setCurateOrigin("seed");
                   setStep("curate");
                 }}
               >
