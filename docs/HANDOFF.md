@@ -32,8 +32,18 @@ hand in the prod Neon SQL editor (steps 1-2 below). Step 3 verify: Seth,
 read-only prod connection file was found outside the repo this session.)
 RUNBOOK 5b (new prod config): none - no new env vars, no server deps.
 
-**Next action (human):** say "push to main" to start the merge (one command
-at a time, from the existing clean `C:\dev\worktrees\merge-main-0927`).
+**MERGED TO MAIN (Oct 7, late, Seth: "push to main", each step approved):**
+`origin/main` `7d3b91e..ef5e908` - fast-forward, 147 commits (the BK, bkr
+and sr3 waves + gate). Run from `C:\dev\worktrees\merge-main-0927`: fetch ->
+`merge --ff-only origin/ai-connector-wave` -> `push origin main`.
+Verified: `git ls-remote` main = `ef5e908`; prod API
+`workout-db-l3gc` serves the wave (`/block-templates/format` 200 with Block
+Format v1, `/block-runs/active` 401, unknown route 404); prod Vercel bundle
+`index-DMK9TWHq.js` contains sr3f2 code. Prod DB had both migrations first.
+
+**Next action (human):** smoke PROD on your phone - log in, Library, open a
+block in the builder, start a block day and log one set; then repoint
+staging Render `workout-db-staging` to `main` (M2, Housekeeping).
 
 ## ▶ GATE VERDICT (Oct 7, late, Opus seat) - PASS
 
