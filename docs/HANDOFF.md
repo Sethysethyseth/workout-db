@@ -1,10 +1,11 @@
 # HANDOFF — current state
 
 > **WHERE WE ARE (Oct 7):** Seth's smoke round 3 became the **sr3
-> wave** on `ai-connector-wave` (pushed) - the 7 sr3 units LANDED; Seth's
-> one-round feel critic scored **6/10 FAIL** (one P1), so a 3-unit **fix
-> round sr3f1-3** is in flight (wave N = 10) before his smoke round 4.
-> Rulings: FINDINGS
+> wave** on `ai-connector-wave` (pushed, head `ccf468b`+) - **10/10
+> LANDED, wave complete, waiting on Seth's smoke round 4**: the 7 sr3 units,
+> then Seth's one-round feel critic (6/10 FAIL, one P1) and its fix round
+> **sr3f1** `cf4fdee` (Library), **sr3f2** `b64de00` (builder), **sr3f3**
+> `ccf468b` (add to library in 3 taps). Rulings: FINDINGS
 > "Round 3 rulings" + QUEUE's sr3 header (item 1 was a missing RESUME, not
 > data loss; item 10 swap-for-today PARKED). Landed: sr3-d1 + picker-height
 > fix `a6f007f`; **sr3-1** `077f4b2` pause/resume ("Left off at Wn · Day",
@@ -19,20 +20,18 @@
 > change was proven live on the staging DB. Prod unchanged: `main` =
 > `7d3b91e`.
 
-**Next action (human):** nothing until the sr3f1-3 fix round lands (the
-relay runs it); then smoke the whole branch on the staging Vercel preview -
-"smoke round 4" below - and say "smoke signed off" when it passes.
+**Next action (human):** smoke the whole branch on the staging Vercel
+preview with an agent beside you - "smoke round 4" below (the 11 BK/bkr
+items, sr3 items A-I, fix-round items J-N) - and say "smoke signed off"
+when it passes.
 
-## ▶ PICK UP HERE (Oct 7 - sr3 critic fix round, then smoke round 4)
+## ▶ PICK UP HERE (Oct 7, late - smoke round 4, any model)
 
-1. **Relay:** land sr3f1 + sr3f2 (dispatched in parallel), then dispatch and
-   land sr3f3 (QUEUE "sr3 critic fix round"). Real-app check each at landing
-   (local API on staging + lane client + Playwright, demo.critic).
-2. Then add the fix round's smoke items to "smoke round 4" below and hand
-   Seth the consolidated list (HARD STOP for smoke).
-3. **Critic:** ONE round was run Oct 7 at Seth's ask (6/10 FAIL,
-   `sr3-critic-round-1-FINDINGS.md`). Do NOT run round 2 unless Seth asks.
-4. Smoke defects -> DIAGNOSIS blocks; then the pre-main gate
+1. Seth smokes; the agent records, one item at a time (section below).
+2. **Critic:** ONE round was run Oct 7 at Seth's ask (6/10 FAIL,
+   `sr3-critic-round-1-FINDINGS.md`), all P1/P2 + the cheap P3s fixed by
+   sr3f1-3 (P2-7 search HELD by Seth). Do NOT run round 2 unless he asks.
+3. Smoke defects -> DIAGNOSIS blocks; then the pre-main gate
    (`pre-main-review`, OPUS) with the gate notes below.
 
 ### Agent sitting with Seth on smoke round 4 (when he runs it)
@@ -155,7 +154,38 @@ I. **Hold to reorder (sr3-6), ON THE PHONE:** in the builder, press and
    opens no actions; a tap still selects, a re-tap still opens the actions.
    No text-selection or iOS callout on the long-press. The Current Block
    page, Home and the import preview strips do NOT lift. (Touch drag is the
-   one thing desktop Playwright could not prove.)
+   one thing desktop Playwright could not prove.) The lifted pill now glows
+   in the accent colour and keeps its selected outline (sr3f2).
+
+### Smoke round 4 - the critic fix round (sr3f1-3, after A-I)
+
+J. **Library, paused block (sr3f1):** "Upper/Lower Strength - 4wk" sits
+   right under the running block with a "Paused" chip (amber), a "Resume"
+   button and "Left off at W1 · Lower A · 1 of 16 days done". Scroll to the
+   bottom of Library and tap Start or Resume on a lower card -> the choice
+   opens ON THAT CARD, on screen (it used to open at the top of the page,
+   off-screen). Library > Exercises empty state mentions "Add to your
+   library" from the builder.
+K. **Builder state you can see (sr3f2):** Per side ON is accent-coloured
+   with a check mark and sits before the RPE/RIR chip; reorder or move days
+   -> days still called "Day n" renumber (a pill never reads "DAY 3 / Day
+   1"); names you typed stay. A saved block with free-text exercises still
+   shows "Not in library" + "Add to library" after reopening.
+L. **Effort sheets (sr3f2):** the RPE / RIR / None buttons fill the sheet's
+   width with one line under them explaining the choice - in the Effort
+   chip's sheet and in Block settings.
+M. **Small builder fixes (sr3f2):** after switching weeks, one tap on Day 1
+   just selects it (a second tap opens its actions); adding the 7th day
+   scrolls so "7 days max" is visible; the day "..." row reads "Duplicate -
+   7 days max"; ticking Public in Block settings shows your line UNDER the
+   checkbox (no toast over it) and the "Visible to others for clone" text is
+   gone.
+N. **Add to library in 3 taps (sr3f3):** builder search a made-up name ->
+   "Add '...' to your library" -> it opens straight on the muscle list ->
+   pick one -> Add exercise -> back in the builder with the exercise in the
+   day and a toast "Added '...' to your library." (no "Added" sheet). The
+   headers in that sheet match the builder's style. A live workout's "Not
+   tracked - add?" flow is unchanged.
 
 **By design - do not log as defects:** one AI button on import (the layout
 read and the prose convert merged); the Any AI tab has no AI button; palette
@@ -253,6 +283,19 @@ confirms are still browser dialogs; critic R1 P3 leftovers not in bkrf1
     offset clamped to first..last slot. Review: the touch path on iOS and
     Android (only desktop mouse was proven), `WeekStrip` is shared with
     Home/run page - confirm nothing changes without `onReorder`.
+- **sr3 critic fix round (Oct 7) - per-unit audits in QUEUE.md:**
+  - sr3f1 `cf4fdee`: the Start/Resume choice moved INTO `LibraryBlockCard`
+    (props from MyTemplatesPage); client-side sort running -> paused (by
+    `endedAt`) -> rest; Paused chip uses the `warn` tone (same as Draft).
+  - sr3f2 `b64de00`: `renumberDefaultDayNames` runs in add/duplicate/move/
+    reorder/delete/removeEmptyDays (`/^Day \d+$/` only); hydrate sets
+    `notInLibrary` from `exerciseId`/`userExerciseId`; tap-to-open-actions
+    now keyed on two refs reset by every programmatic selection (review the
+    coverage of those resets); opt-in `Segmented fill` + `DayPicker
+    scrollEndToken`; `BlockSettingsSheet` lost its `onToast` prop.
+  - sr3f3 `ccf468b`: library-context-only branches in the shared
+    `AddExerciseToLibrarySheet` (also used by the live logger) - review the
+    `isLibraryContext` gating; header tokens are :root (`--font-block`).
 - Before any merge: Seth hand-applies BOTH migrations to PROD, in order -
   BK1's `20260929120000_blocks_v2`, then sr3-5's
   `20261006200000_block_exercise_per_side` (RUNBOOK "Schema-change deploy") -
@@ -393,6 +436,17 @@ Session log, Oct 7:
 - Also found: smoke item A's expectation was wrong - test123's left-off is
   run 7 (W1 · Lower A, the old code's restart), not run 5 (W4); corrected.
 - Seth's rulings -> fix round sr3f1-3 authored (QUEUE). N = 10.
+- Fix round run: sr3f1 || sr3f2 then sr3f3, all on the auto rung, all
+  landed with a real-app check (QUEUE has each). Seat runner bug on the
+  first launch (PowerShell output callbacks on pool threads crash the
+  runner) - orphans killed by PID in ~1 min, lanes untouched; the fixed
+  runner (`Start-Process` with file redirection + `WaitForExit` + taskkill
+  /T) is in the session scratchpad as `run-lane.ps1`. sr3f2's CLI hung
+  13 min AFTER its DELIVERY.md (known print-mode hang) - for sr3f3 the
+  watch exited on DELIVERY.md instead of waiting on silence.
+- Seth: the dispatch tab (cursor-watch :4646) "isn't showing" - the watcher
+  was healthy (up since his 1:38 AM login, lanes correct); the boot tab had
+  been closed. Opened it once. If it vanishes again, bookmark the URL.
 
 Session log, Oct 6 late (Opus, frontier seat authoring AND running the
 relay - Seth said "keep going"), sr3 wave:
@@ -541,8 +595,9 @@ Covers the F-wave AND the still-open E-wave prod smoke. Staging passed Aug 4.
 
 ### Lane worktree state
 
-**Lanes after the sr3 wave (Oct 7):** `cursor-lane` on `cursor/sr3-4`,
-`cursor-lane-2` on `cursor/sr3-6` (= `468bab9`, clean), `cursor-lane-3` on `cursor/sr3-3b` (its
+**Lanes after the sr3 wave (Oct 7, late):** `cursor-lane` on `cursor/sr3f3`
+(= `ccf468b`, clean), `cursor-lane-2` on `cursor/sr3f2` (= `b64de00`,
+clean), `cursor-lane-3` on `cursor/sr3-3b` (its
 `.playwright-mcp/sr3-3/` holds a working Playwright install - handy while
 the Playwright MCP is down), each merged into `ai-connector-wave` once
 landed; a stale `cursor/sr3-3` branch (the two hung attempts) can be
