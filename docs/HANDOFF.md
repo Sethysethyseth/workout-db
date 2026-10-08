@@ -20,10 +20,12 @@
 > change was proven live on the staging DB. Prod unchanged: `main` =
 > `7d3b91e`.
 
-**Next action (human):** smoke the whole branch on the staging Vercel
-preview with an agent beside you - "smoke round 4" below (the 11 BK/bkr
-items, sr3 items A-I, fix-round items J-N) - and say "smoke signed off"
-when it passes.
+**SMOKE ROUND 4 SIGNED OFF (Oct 7, Seth, verbatim):** "yeah everything else
+looks good /pre-main-review" (after a future-wave note on exercise
+hold-to-move). The pre-main gate is running (Opus seat).
+
+**Next action (human):** nothing until the pre-main gate verdict lands
+(this session); then the prod migrations + merge ritual if it passes.
 
 ## ▶ PICK UP HERE (Oct 7, late - smoke round 4, any model)
 
@@ -372,6 +374,12 @@ Checks 1-4 (connector ID1, AuthKit lifetime, patch-wave post-deploy,
 
 - **The BK + bkr + sr3 waves** - all landed on `ai-connector-wave`; Seth's
   consolidated smoke (round 4), then the gate. Nothing else is queued.
+- **Seth's note for a FUTURE wave (Oct 7, after smoke round 4):** "you can
+  hold and move exercises like days and weeks, when held app adjusts so you
+  can move them easier" - long-press reorder for exercise cards in the
+  builder (reuse sr3-6's `useHoldToReorder`, vertical axis), with the list
+  adapting while held (e.g. cards collapse to one line) so a long day is
+  easy to drag across. Not this wave.
 - **HELD for Seth's next change (Oct 7, his ruling): exercise search
   synonyms.** The sr3 critic's P2-7 said multi-word search fails ("single leg
   calf" -> 0); the seat checked the pure `searchCatalog` and the diagnosis was
