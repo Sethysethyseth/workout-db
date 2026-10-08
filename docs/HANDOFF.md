@@ -25,9 +25,14 @@
 looks good /pre-main-review" (after a future-wave note on exercise
 hold-to-move).
 
-**Next action (human):** in the PROD Neon SQL editor, run the two
-migrations + their `_prisma_migrations` rows exactly as written in "Gate
-verdict -> Seth's prod steps" below, then say "push to main".
+**PROD MIGRATIONS APPLIED (Oct 7, late, Seth: "migrations ran"):**
+`20260929120000_blocks_v2` + `20261006200000_block_exercise_per_side` by
+hand in the prod Neon SQL editor (steps 1-2 below). Agent-side read-only
+verification not done - no read-only prod connection file was found
+outside the repo this session.
+
+**Next action (human):** confirm step 3's verify output (or paste it), then
+say "push to main".
 
 ## ▶ GATE VERDICT (Oct 7, late, Opus seat) - PASS
 
