@@ -27,12 +27,13 @@ hold-to-move).
 
 **PROD MIGRATIONS APPLIED (Oct 7, late, Seth: "migrations ran"):**
 `20260929120000_blocks_v2` + `20261006200000_block_exercise_per_side` by
-hand in the prod Neon SQL editor (steps 1-2 below). Agent-side read-only
-verification not done - no read-only prod connection file was found
-outside the repo this session.
+hand in the prod Neon SQL editor (steps 1-2 below). Step 3 verify: Seth,
+"verify queries all matched". (Agent-side read-only check not done - no
+read-only prod connection file was found outside the repo this session.)
+RUNBOOK 5b (new prod config): none - no new env vars, no server deps.
 
-**Next action (human):** confirm step 3's verify output (or paste it), then
-say "push to main".
+**Next action (human):** say "push to main" to start the merge (one command
+at a time, from the existing clean `C:\dev\worktrees\merge-main-0927`).
 
 ## ▶ GATE VERDICT (Oct 7, late, Opus seat) - PASS
 
