@@ -78,6 +78,12 @@ per unit is the crash/hand-relay fallback, not the design.
   whatever the previous invocation used (July 14: a flagless dispatch
   inherited an exhausted named model and quota-refused while
   `--model auto` worked fine).
+  **Use `scripts/run-lane.ps1`** (Oct 7): it wraps exactly this with
+  stream-json to a log file, `Start-Process` file redirection (never
+  PowerShell output callbacks - they crash the runner and orphan the
+  agent), `WaitForExit` + `taskkill /T` on the timeout, and prints the
+  run's PID. Pair it with a Monitor that exits when DELIVERY.md appears
+  (the CLI can hang after writing it) and warns on ~12 min of log silence.
 - Pop the visual (added July 15, with CW1/CW2; ONE tab per boot since
   Sept 29, Seth's ask): immediately after launching the run, check
   `http://127.0.0.1:4646`. **Answering -> do nothing** - never

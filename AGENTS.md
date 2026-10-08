@@ -75,6 +75,10 @@ Rebrand text lives in: rendered UI, `<title>`, PWA manifest name fields.
   first. The frontier seat (Opus) greps it for pre-main review and
   big-picture planning; Sonnet and Cursor never load it. Same single
   writer as HANDOFF.
+- `docs/REFERENCE.md` - standing context split out of HANDOFF (Oct 7,
+  2026): what still governs from past waves, deploy topology, lane
+  lessons, the workflow backlog, and the DURABLE GOTCHAS. Any agent may
+  read it; it changes rarely. Same single writer as HANDOFF.
 - `docs/tasks/` - file-dispatched task queue: Claude Code authors unit blocks
   as files and dispatches them to Cursor itself (relay v5, July 14 - headless
   CLI in a lane worktree as the backbone, Cloud Agents API as the gated
