@@ -103,6 +103,15 @@ export function ProfilePage() {
           Settings
         </h2>
         <div className="settings-group">
+          <Link className="settings-row settings-row--link" to="/profile/training">
+            <span className="settings-row__main">
+              <span className="settings-row__value">Training</span>
+              <span className="muted small">Units, effort, notes, rest timer</span>
+            </span>
+            <span className="settings-row__chevron" aria-hidden="true">
+              ›
+            </span>
+          </Link>
           <Link className="settings-row settings-row--link" to="/profile/appearance">
             <span className="settings-row__main">
               <span className="settings-row__value">Appearance</span>

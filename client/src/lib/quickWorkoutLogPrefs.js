@@ -2,7 +2,8 @@ const STORAGE_KEY = "workoutdb_quick_log_display_prefs_v1";
 
 /**
  * Persisted UI preferences for one-time (quick) log sessions — device-local only.
- * @returns {{ useRIR?: boolean, useRPE?: boolean, useExerciseNotes?: boolean, useSessionNotes?: boolean }}
+ * @returns {{ useRIR?: boolean, useRPE?: boolean, useExerciseNotes?: boolean, useSetNotes?: boolean, useSessionNotes?: boolean }}
+ * `useSetNotes` is the set-notes visibility flag (default false when absent).
  * `useSessionNotes` is legacy in storage; Quick Workout no longer reads or surfaces it.
  */
 export function loadQuickWorkoutLogPrefs() {

@@ -15,7 +15,6 @@ import { ErrorMessage } from "../components/ErrorMessage.jsx";
 import { LoadingState } from "../components/LoadingState.jsx";
 import { ExercisePickerSuggestions } from "../components/workout/ExercisePickerSuggestions.jsx";
 import { PlanningSetCountControl } from "../components/templates/PlanningSetCountControl.jsx";
-import { RirRpeToggleRow } from "../components/templates/RirRpeToggleRow.jsx";
 import { ViewModeToggle } from "../components/templates/ViewModeToggle.jsx";
 import { WorkoutTemplateTableView } from "../components/templates/WorkoutTemplateTableView.jsx";
 import { WorkoutSetRowShell } from "../components/workout/WorkoutSetRowShell.jsx";
@@ -26,12 +25,9 @@ import { CompletedSessionSummary } from "../components/workout/CompletedSessionS
 import { getAdHocSessionTitle, setAdHocSessionTitle } from "../lib/adHocSessionTitle.js";
 import { sessionDisplayTitle } from "../lib/sessionDisplay.js";
 import { smartWorkoutNameFromSessionExercises } from "../lib/smartWorkoutName.js";
-import {
-  loadQuickWorkoutLogPrefs,
-  saveQuickWorkoutLogPrefs,
-} from "../lib/quickWorkoutLogPrefs.js";
-import { loadEffortSignal, saveEffortSignal } from "../lib/effortSignalPref.js";
-import { loadWeightUnit, saveWeightUnit } from "../lib/weightUnitPref.js";
+import { useTrainingPrefs } from "../lib/trainingPrefs.js";
+import { loadWeightUnit } from "../lib/weightUnitPref.js";
+import "../styles/training-prefs.css";
 import { useSessionLiveLoggingGuard } from "../context/SessionLiveLoggingGuardContext.jsx";
 import {
   BLANK_SESSION_EXERCISE_NAME,
@@ -334,13 +330,6 @@ function sessionSetHasCoreLogged(set) {
   const t = (v) => (v == null ? "" : String(v)).trim();
   if (t(set.durationSec) !== "") return true;
   return t(set.weight) !== "" && t(set.reps) !== "";
-}
-
-/** Non-null, non-blank rir or rpe on a set — used to lock the live effort signal. */
-function sessionSetHasAnyEffortValue(set) {
-  if (!set || typeof set !== "object") return false;
-  const t = (v) => (v == null ? "" : String(v)).trim();
-  return t(set.rir) !== "" || t(set.rpe) !== "";
 }
 
 /** Whether a set has a value for the active effort signal (`"rir"` | `"rpe"`). */
@@ -1542,7 +1531,7 @@ function SessionExerciseBlock({
   useRPE,
   useExerciseNotes,
   useSetNotes,
-  /** Quick (ad-hoc) log: exercise notes under name, no per-set notes. */
+  /** Quick (ad-hoc) log: exercise notes sit under the name. */
   isQuickLog = false,
   onExerciseCommitted,
   onSaved,
@@ -1964,7 +1953,9 @@ function SessionExerciseBlock({
                               disabled={isCompleted || writesFrozen}
                               useRIR={useRIR}
                               useRPE={useRPE}
-                              useSetNotes={useSetNotes}
+                              useSetNotes={
+                                useSetNotes || String(s.notes ?? "").trim() !== ""
+                              }
                               isNext={
                                 !isCompleted &&
                                 nextIncompleteSetId != null &&
@@ -1998,7 +1989,9 @@ function SessionExerciseBlock({
                         disabled={isCompleted || writesFrozen}
                         useRIR={useRIR}
                         useRPE={useRPE}
-                        useSetNotes={useSetNotes}
+                        useSetNotes={
+                          useSetNotes || String(s.notes ?? "").trim() !== ""
+                        }
                         isNext={
                           !isCompleted &&
                           nextIncompleteSetId != null &&
@@ -2054,12 +2047,11 @@ export function SessionDetailPage() {
   const [addingExercise, setAddingExercise] = useState(false);
   const [sessionNotesDraft, setSessionNotesDraft] = useState("");
   const [liveViewMode, setLiveViewMode] = useState("builder");
-  const [liveUseRIR, setLiveUseRIR] = useState(false);
-  const [liveUseRPE, setLiveUseRPE] = useState(false);
-  const [liveUseSessionNotes, setLiveUseSessionNotes] = useState(false);
-  const [liveUseExerciseNotes, setLiveUseExerciseNotes] = useState(false);
-  const [liveUseSetNotes, setLiveUseSetNotes] = useState(false);
-  const [weightUnit, setWeightUnit] = useState(() => loadWeightUnit());
+  const [seededUseRIR, setSeededUseRIR] = useState(false);
+  const [seededUseRPE, setSeededUseRPE] = useState(false);
+  const [workoutNoteOpen, setWorkoutNoteOpen] = useState(false);
+  const trainingPrefs = useTrainingPrefs();
+  const weightUnit = loadWeightUnit();
   const [quickTitleDraft, setQuickTitleDraft] = useState("");
   const [scrollToExerciseId, setScrollToExerciseId] = useState(null);
   const [adjustingSetCountExerciseId, setAdjustingSetCountExerciseId] = useState(null);
@@ -2569,12 +2561,10 @@ export function SessionDetailPage() {
     if (sessionNoteTogglesInitRef.current === id) return;
     sessionNoteTogglesInitRef.current = id;
 
+    setWorkoutNoteOpen(false);
+
     if (session.workoutTemplate) {
-      setLiveUseSessionNotes(Boolean(String(session.notes ?? "").trim()));
-      const ex = session.sessionExercises || [];
-      setLiveUseExerciseNotes(ex.some((se) => String(se.notes ?? "").trim() !== ""));
       const setsList = session.sets || [];
-      setLiveUseSetNotes(setsList.some((s) => String(s.notes ?? "").trim() !== ""));
       const tplRIR = Boolean(session.workoutTemplate.useRIR);
       const tplRPE = Boolean(session.workoutTemplate.useRPE);
       // RESOLUTION: RIR wins when both true; both-false stays off (no auto-select).
@@ -2583,39 +2573,27 @@ export function SessionDetailPage() {
       // locked session onto a signal it has no values for.
       const tplSignal = tplRIR ? "rir" : tplRPE ? "rpe" : null;
       const seeded = sessionLoggedEffortSignal(setsList) ?? tplSignal;
-      setLiveUseRIR(seeded === "rir");
-      setLiveUseRPE(seeded === "rpe");
+      setSeededUseRIR(seeded === "rir");
+      setSeededUseRPE(seeded === "rpe");
       return;
     }
 
     // BK9: block sessions seed from blockContext with the SAME resolution rules.
     if (session.blockContext) {
-      setLiveUseSessionNotes(Boolean(String(session.notes ?? "").trim()));
-      // PlanLine shows coach notes without a tap - do not also open the editable field.
-      setLiveUseExerciseNotes(false);
       const setsList = session.sets || [];
-      setLiveUseSetNotes(setsList.some((s) => String(s.notes ?? "").trim() !== ""));
       const ctxRIR = Boolean(session.blockContext.useRIR);
       const ctxRPE = Boolean(session.blockContext.useRPE);
       const ctxSignal = ctxRIR ? "rir" : ctxRPE ? "rpe" : null;
       const seeded = sessionLoggedEffortSignal(setsList) ?? ctxSignal;
-      setLiveUseRIR(seeded === "rir");
-      setLiveUseRPE(seeded === "rpe");
+      setSeededUseRIR(seeded === "rir");
+      setSeededUseRPE(seeded === "rpe");
       return;
     }
 
-    const p = loadQuickWorkoutLogPrefs();
-    setLiveUseSessionNotes(false);
-    saveQuickWorkoutLogPrefs({ useSessionNotes: false });
-    setLiveUseExerciseNotes(
-      typeof p.useExerciseNotes === "boolean" ? p.useExerciseNotes : true
-    );
-    // Same rule as the template branch: what is already logged outranks the
-    // device pref, which any template screen can rewrite mid-workout.
-    const effortSignal = sessionLoggedEffortSignal(session.sets) ?? loadEffortSignal();
-    setLiveUseRIR(effortSignal === "rir");
-    setLiveUseRPE(effortSignal === "rpe");
-    setLiveUseSetNotes(false);
+    // Quick log effort is derived each render from the device pref, unless
+    // this session's sets already carry a signal.
+    setSeededUseRIR(false);
+    setSeededUseRPE(false);
   }, [session]);
 
   function setExerciseAnchorRef(exerciseId, el) {
@@ -3201,13 +3179,16 @@ export function SessionDetailPage() {
 
   const sessionExercises = orderedSessionExercises;
   const totalSetsLogged = Array.isArray(session?.sets) ? session.sets.length : 0;
-  const liveEffortSignal = liveUseRIR ? "rir" : liveUseRPE ? "rpe" : null;
   const sessionSets = Array.isArray(session?.sets) ? session.sets : [];
-  // Lock once any set carries a non-blank effort value (and a signal is active).
-  const effortSignalLocked =
-    !isCompleted &&
-    liveEffortSignal != null &&
-    sessionSets.some((s) => sessionSetHasAnyEffortValue(s));
+  const liveEffortSignal = isQuickLog
+    ? (sessionLoggedEffortSignal(sessionSets) ?? trainingPrefs.effortSignal)
+    : seededUseRIR
+      ? "rir"
+      : seededUseRPE
+        ? "rpe"
+        : null;
+  const liveUseRIR = liveEffortSignal === "rir";
+  const liveUseRPE = liveEffortSignal === "rpe";
   const coreLoggedSets = sessionSets.filter((s) => sessionSetHasCoreLogged(s));
   const setsMissingEffort =
     !isCompleted && liveEffortSignal != null
@@ -3222,20 +3203,13 @@ export function SessionDetailPage() {
       ? session.name || `${blockContext.blockName} · W${blockContext.weekOrder} · ${blockContext.dayName}`
       : sessionDisplayTitle(session);
 
-  function onLiveEffortSignalChange(next) {
-    if (effortSignalLocked) return;
-    setLiveUseRIR(next === "rir");
-    setLiveUseRPE(next === "rpe");
-    if (isQuickLog) saveEffortSignal(next);
-  }
-
   const blockLocksEffortScale =
     isFromBlock &&
     (Boolean(blockContext?.useRIR) || Boolean(blockContext?.useRPE));
   // RIR wins when both true - same resolution as session seeding.
   const blockLockedEffortLabel = blockContext?.useRIR ? "RIR" : "RPE";
 
-  const liveEffortToggle = blockLocksEffortScale ? (
+  const blockLockedEffortChip = blockLocksEffortScale ? (
     <span
       className="bk-log-effort-chip"
       title={`Effort scale locked to ${blockLockedEffortLabel} for this block day. Explainer: the block chose this scale; it stays fixed for the workout.`}
@@ -3243,27 +3217,7 @@ export function SessionDetailPage() {
     >
       {`Effort: ${blockLockedEffortLabel}`}
     </span>
-  ) : (
-    <div
-      className="session-effort-signal"
-      style={
-        effortSignalLocked
-          ? { opacity: 0.72, pointerEvents: "none" }
-          : undefined
-      }
-      aria-disabled={effortSignalLocked || undefined}
-    >
-      <RirRpeToggleRow
-        value={liveEffortSignal}
-        onChange={onLiveEffortSignalChange}
-      />
-      {effortSignalLocked ? (
-        <p className="muted small" style={{ margin: 0, lineHeight: 1.35 }}>
-          Signal locked - fixed for this workout once effort is logged on a set.
-        </p>
-      ) : null}
-    </div>
-  );
+  ) : null;
 
   function leaveSessionNow() {
     setConfirmLeave(false);
@@ -3485,7 +3439,9 @@ export function SessionDetailPage() {
               totalSets={blockProgress.total}
             />
 
-            <div className="bk-log-effort-slot bk">{liveEffortToggle}</div>
+            {blockLockedEffortChip ? (
+              <div className="bk-log-effort-slot bk">{blockLockedEffortChip}</div>
+            ) : null}
 
             {sessionExercises.length === 0 ? (
               <div className="muted small session-empty-card" style={{ margin: 0 }}>
@@ -3565,9 +3521,11 @@ export function SessionDetailPage() {
             </p>
           ) : null}
 
-          {isFromTemplate && liveUseSessionNotes ? (
+          {String(sessionNotesDraft ?? "").trim() ||
+          String(session?.notes ?? "").trim() ||
+          workoutNoteOpen ? (
             <label>
-              Description (optional)
+              Workout note
               <textarea
                 value={sessionNotesDraft}
                 onChange={(e) => setSessionNotesDraft(e.target.value)}
@@ -3576,94 +3534,14 @@ export function SessionDetailPage() {
                 disabled={discardBusy}
               />
             </label>
-          ) : null}
-
-          {isFromTemplate ? (
-            <div className="stack" style={{ gap: 10 }}>
-              <div className="template-options-grid">
-                <label className="checkbox-inline">
-                  <input
-                    type="checkbox"
-                    checked={liveUseSessionNotes}
-                    onChange={(e) => setLiveUseSessionNotes(e.target.checked)}
-                  />
-                  <span>Workout description</span>
-                </label>
-                <label className="checkbox-inline">
-                  <input
-                    type="checkbox"
-                    checked={liveUseExerciseNotes}
-                    onChange={(e) => setLiveUseExerciseNotes(e.target.checked)}
-                  />
-                  <span>Exercise notes</span>
-                </label>
-                <label className="checkbox-inline">
-                  <input
-                    type="checkbox"
-                    checked={liveUseSetNotes}
-                    onChange={(e) => setLiveUseSetNotes(e.target.checked)}
-                  />
-                  <span>Set notes</span>
-                </label>
-              </div>
-              {liveEffortToggle}
-            </div>
           ) : (
-            <div className="quick-log-display-prefs stack">
-              {liveEffortToggle}
-              <div className="quick-log-display-prefs__group stack">
-                <div className="quick-log-display-prefs__label muted small">Exercise</div>
-                <div className="quick-log-toggle-row row">
-                  <button
-                    type="button"
-                    className={`quick-log-toggle ${liveUseExerciseNotes ? "quick-log-toggle--on" : ""}`}
-                    aria-pressed={liveUseExerciseNotes}
-                    onClick={() => {
-                      const next = !liveUseExerciseNotes;
-                      setLiveUseExerciseNotes(next);
-                      saveQuickWorkoutLogPrefs({
-                        useRIR: liveUseRIR,
-                        useRPE: liveUseRPE,
-                        useExerciseNotes: next,
-                        useSessionNotes: false,
-                      });
-                    }}
-                  >
-                    Exercise notes
-                  </button>
-                </div>
-              </div>
-              <div className="quick-log-display-prefs__group stack">
-                <div className="quick-log-display-prefs__label muted small">Units</div>
-                <div className="quick-log-toggle-row row">
-                  <button
-                    type="button"
-                    className={`quick-log-toggle ${weightUnit === "lbs" ? "quick-log-toggle--on" : ""}`}
-                    aria-pressed={weightUnit === "lbs"}
-                    onClick={() => {
-                      saveWeightUnit("lbs");
-                      setWeightUnit("lbs");
-                    }}
-                  >
-                    lbs
-                  </button>
-                  <button
-                    type="button"
-                    className={`quick-log-toggle ${weightUnit === "kg" ? "quick-log-toggle--on" : ""}`}
-                    aria-pressed={weightUnit === "kg"}
-                    onClick={() => {
-                      saveWeightUnit("kg");
-                      setWeightUnit("kg");
-                    }}
-                  >
-                    kg
-                  </button>
-                </div>
-              </div>
-              <p className="muted small quick-log-display-prefs__footnote" style={{ margin: 0 }}>
-                Notes apply to each exercise (under the name), not each set.
-              </p>
-            </div>
+            <button
+              type="button"
+              className="training-prefs-note-reveal"
+              onClick={() => setWorkoutNoteOpen(true)}
+            >
+              Add a workout note
+            </button>
           )}
 
           <ViewModeToggle
@@ -3682,8 +3560,16 @@ export function SessionDetailPage() {
                 exercises={tableExercises}
                 useRIR={liveUseRIR}
                 useRPE={liveUseRPE}
-                useExerciseNotes={liveUseExerciseNotes}
-                useSetNotes={isFromTemplate && liveUseSetNotes}
+                useExerciseNotes={
+                  trainingPrefs.useExerciseNotes ||
+                  tableExercises.some((e) => String(e.notes ?? "").trim() !== "")
+                }
+                useSetNotes={
+                  trainingPrefs.useSetNotes ||
+                  tableExercises.some((e) =>
+                    (e.sets || []).some((s) => String(s.notes ?? "").trim() !== "")
+                  )
+                }
               />
             )
           ) : null}
@@ -3714,8 +3600,11 @@ export function SessionDetailPage() {
                       showPlannedTargets={isFromTemplate}
                       useRIR={liveUseRIR}
                       useRPE={liveUseRPE}
-                      useExerciseNotes={liveUseExerciseNotes}
-                      useSetNotes={isFromTemplate && liveUseSetNotes}
+                      useExerciseNotes={
+                        trainingPrefs.useExerciseNotes ||
+                        String(se.notes ?? "").trim() !== ""
+                      }
+                      useSetNotes={trainingPrefs.useSetNotes}
                       isQuickLog={isQuickLog}
                       weightUnit={undefined}
                       trackedStatus={trackedStatusByExerciseId.get(se.id) ?? null}

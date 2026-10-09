@@ -1,0 +1,273 @@
+.training-prefs-form {
+  display: grid;
+  gap: 16px;
+}
+
+.training-prefs-form--page {
+  gap: 12px;
+}
+
+.training-prefs-card,
+.training-prefs-group {
+  display: grid;
+  gap: 14px;
+}
+
+.training-prefs-card {
+  padding: 14px 16px 16px;
+}
+
+.training-prefs-group__title {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: color-mix(in srgb, var(--color-interactive) 72%, var(--color-text));
+}
+
+.training-prefs-form--sheet .training-prefs-group + .training-prefs-group {
+  border-top: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
+  padding-top: 14px;
+}
+
+.training-prefs-field {
+  display: grid;
+  gap: 6px;
+}
+
+.training-prefs-field__label,
+.training-prefs-switch__label {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.training-prefs-field__helper,
+.training-prefs-switch__helper {
+  margin: 0;
+  line-height: 1.4;
+}
+
+.training-prefs-switch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 44px;
+}
+
+.training-prefs-switch__text {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.training-prefs-stepper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.training-prefs-stepper__btn {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-2);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.training-prefs-stepper__btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.training-prefs-stepper__btn:focus-visible,
+.training-prefs-strip:focus-visible,
+.training-prefs-note-reveal:focus-visible,
+.training-prefs-sheet__done:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--color-interactive) 55%, transparent);
+  outline-offset: 2px;
+}
+
+.training-prefs-stepper__value {
+  min-width: 3.5rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  font-size: 1.05rem;
+  text-align: center;
+  color: var(--color-text);
+}
+
+.training-prefs-strip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.training-prefs-strip__icon {
+  flex: 0 0 auto;
+  color: var(--color-text-secondary);
+}
+
+.training-prefs-strip__pills {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+.training-prefs-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-2);
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+  font-weight: 650;
+  line-height: 1.2;
+}
+
+.training-prefs-pill--accent {
+  background: color-mix(in srgb, var(--color-interactive) 16%, var(--color-surface-1));
+  border-color: color-mix(in srgb, var(--color-interactive) 42%, var(--color-border));
+  color: var(--color-interactive);
+}
+
+.training-prefs-strip__edit {
+  flex: 0 0 auto;
+  color: var(--color-interactive);
+  font-size: 0.85rem;
+  font-weight: 650;
+}
+
+.start-workout-picker__sheet.training-prefs-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow: hidden;
+  padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+}
+
+.training-prefs-sheet__scroll {
+  overflow-y: auto;
+  min-height: 0;
+  display: grid;
+  gap: 8px;
+  padding-bottom: 4px;
+}
+
+.training-prefs-sheet__done {
+  flex: 0 0 auto;
+  width: 100%;
+  min-height: 48px;
+}
+
+.training-prefs-note-reveal {
+  align-self: flex-start;
+  min-height: 44px;
+  padding: 8px 2px;
+  border: none;
+  background: none;
+  color: var(--color-interactive);
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+@media (min-width: 1024px) {
+  .training-prefs-strip {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .workout-tab__log-row:not(:has(> .bk-up-next)) > .workout-hero {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .start-workout-picker__sheet.training-prefs-sheet {
+    animation: training-prefs-sheet-in 200ms ease-out;
+  }
+}
+
+@keyframes training-prefs-sheet-in {
+  from {
+    transform: translateY(12px);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+/* Segmented outside a .bk surface: the shared primitive reads --bk-* aliases
+   that only exist under .bk, so it rendered as bare text here. Give it this
+   form's own track + selected fill (matches the Oct 8 mock: primary fill). */
+.training-prefs-form .bk-segmented {
+  display: flex;
+  width: 100%;
+  padding: 3px;
+  gap: 3px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-surface-2);
+  box-sizing: border-box;
+}
+
+.training-prefs-form .bk-segmented__option {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 40px;
+  min-height: 40px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font: 600 15px/1 var(--font-sans);
+  letter-spacing: 0;
+  cursor: pointer;
+  transition: background-color 180ms ease-out, color 180ms ease-out;
+}
+
+.training-prefs-form .bk-segmented__option + .bk-segmented__option {
+  border-left: 0;
+}
+
+.training-prefs-form .bk-segmented__option--selected {
+  background: var(--color-btn-primary-bg);
+  color: var(--color-btn-primary-fg);
+}
+
+.training-prefs-form .bk-segmented__option:focus-visible {
+  outline: 2px solid var(--color-interactive);
+  outline-offset: 1px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .training-prefs-form .bk-segmented__option {
+    transition: none;
+  }
+}

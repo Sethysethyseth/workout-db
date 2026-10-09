@@ -19,6 +19,7 @@ import { SessionDetailPage } from "./pages/SessionDetailPage.jsx";
 import { StartLogWorkoutPage } from "./pages/StartLogWorkoutPage.jsx";
 import { ProfilePage } from "./pages/ProfilePage.jsx";
 import { AppearancePage } from "./pages/profile/AppearancePage.jsx";
+import { TrainingPage } from "./pages/profile/TrainingPage.jsx";
 import { SecurityPage } from "./pages/profile/SecurityPage.jsx";
 import { AiConnectorPage } from "./pages/profile/AiConnectorPage.jsx";
 import { FeedbackPage } from "./pages/profile/FeedbackPage.jsx";
@@ -146,6 +147,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <AppearancePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile/training"
+          element={
+            <ProtectedRoute>
+              <TrainingPage />
             </ProtectedRoute>
           }
         />
