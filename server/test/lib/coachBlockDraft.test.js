@@ -145,7 +145,7 @@ describe("block focus prompt - never leaks another user's block", () => {
       fromLabel: "2026-09-01",
       toLabel: "2026-09-28",
     });
-    const dataText = without[1].text;
+    const dataText = without[2].text;
     expect(dataText).toContain("(block text unavailable)");
     expect(dataText).not.toContain("Secret foreign block");
 
@@ -161,8 +161,8 @@ describe("block focus prompt - never leaks another user's block", () => {
       fromLabel: "2026-09-01",
       toLabel: "2026-09-28",
     });
-    expect(withOwned[1].text).toContain("Test Upper");
-    expect(withOwned[1].text).toContain("Bench Press");
+    expect(withOwned[2].text).toContain("Test Upper");
+    expect(withOwned[2].text).toContain("Bench Press");
   });
 });
 
@@ -459,8 +459,11 @@ describe("block focus ownership - source pin + prompt isolation", () => {
       fromLabel: "a",
       toLabel: "b",
     });
-    expect(system[1].text).toContain("(block text unavailable)");
-    expect(system[1].text).not.toMatch(/Bench Press|Secret foreign/i);
+    expect(system[2].text).toContain("(block text unavailable)");
+    // [1] is the app guide since qol6; the data block moved to [2]. Check the
+    // data block AND every block, so a foreign block can't hide anywhere.
+    expect(system[2].text).not.toMatch(/Bench Press|Secret foreign/i);
+    expect(system.map((b) => b.text).join("\n")).not.toMatch(/Secret foreign/i);
   });
 });
 

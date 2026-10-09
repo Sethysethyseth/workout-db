@@ -7,6 +7,10 @@
  */
 
 const { fitSummaryForTool } = require("../ai/toolPayloads");
+const { getAppGuide } = require("./appGuide");
+
+const APP_GUIDE_LEAD =
+  "LogChamp app guide. Answer how-to and where-is questions from this guide, using its on-screen labels. If the guide doesn't cover it, say you're not sure - never invent a screen or button.";
 
 /** Hard ceiling on the serialized data block, in characters. */
 const MAX_DATA_CHARS = 60000;
@@ -198,13 +202,25 @@ function describeFocus(focus, { weeks, fromLabel, toLabel } = {}) {
       "Answer about volume balance, deload placement, progression, and effort caps using the block text; quote the summary for live numbers. Do not invent exercises that are not in the block.",
     ].join(" ");
   }
+  if (focus.type === "help") {
+    return "Help mode. The lifter is asking how to use LogChamp. Answer from the app guide only. No training numbers were loaded for this question.";
+  }
+  if (focus.type === "general") {
+    return "The lifter is on the Coach page and may ask about their training or how to use LogChamp.";
+  }
   return null;
 }
 
+function appGuideBlockText() {
+  const guide = getAppGuide();
+  return guide ? `${APP_GUIDE_LEAD}\n\n${guide}` : APP_GUIDE_LEAD;
+}
+
 /**
- * System blocks in prefix-stable order: persona (static) -> data (stable per
- * range, carries the ONE cache breakpoint) -> volatile framing (date, unit,
- * focus). Anything that changes per request stays after the breakpoint.
+ * System blocks in prefix-stable order: persona, then the app guide (both
+ * inside the cached prefix), then data (the ONE cache breakpoint) for every
+ * focus except help, then volatile framing. Help is persona + guide +
+ * framing only, even if a summary object was passed in.
  */
 function buildCoachSystemBlocks({
   primary,
@@ -216,29 +232,44 @@ function buildCoachSystemBlocks({
   fromLabel,
   toLabel,
 }) {
-  const dataParts = [];
-  if (focus && focus.type === "session") {
-    dataParts.push(
-      `Workout being debriefed (JSON, computed by LogChamp's engine):\n${JSON.stringify(primary)}`
-    );
-    if (context) {
+  const help = Boolean(focus && focus.type === "help");
+  const blocks = [
+    { type: "text", text: COACH_PERSONA },
+    { type: "text", text: appGuideBlockText() },
+  ];
+
+  if (help) {
+    blocks[1] = { ...blocks[1], cache_control: { type: "ephemeral" } };
+  } else {
+    const dataParts = [];
+    if (focus && focus.type === "session") {
       dataParts.push(
-        `Trailing four weeks ending that day, for context (JSON):\n${JSON.stringify(context)}`
+        `Workout being debriefed (JSON, computed by LogChamp's engine):\n${JSON.stringify(primary)}`
+      );
+      if (context) {
+        dataParts.push(
+          `Trailing four weeks ending that day, for context (JSON):\n${JSON.stringify(context)}`
+        );
+      }
+    } else if (focus && focus.type === "block") {
+      const blockText =
+        typeof focus.blockText === "string" && focus.blockText
+          ? focus.blockText
+          : "(block text unavailable)";
+      dataParts.push(`Block the lifter is asking about (compact text):\n${blockText}`);
+      dataParts.push(
+        `Training data for context (JSON, computed by LogChamp's engine):\n${JSON.stringify(primary)}`
+      );
+    } else {
+      dataParts.push(
+        `Training data for the lifter's selected window (JSON, computed by LogChamp's engine):\n${JSON.stringify(primary)}`
       );
     }
-  } else if (focus && focus.type === "block") {
-    const blockText =
-      typeof focus.blockText === "string" && focus.blockText
-        ? focus.blockText
-        : "(block text unavailable)";
-    dataParts.push(`Block the lifter is asking about (compact text):\n${blockText}`);
-    dataParts.push(
-      `Training data for context (JSON, computed by LogChamp's engine):\n${JSON.stringify(primary)}`
-    );
-  } else {
-    dataParts.push(
-      `Training data for the lifter's selected window (JSON, computed by LogChamp's engine):\n${JSON.stringify(primary)}`
-    );
+    blocks.push({
+      type: "text",
+      text: dataParts.join("\n\n"),
+      cache_control: { type: "ephemeral" },
+    });
   }
 
   const framing = [
@@ -247,11 +278,8 @@ function buildCoachSystemBlocks({
     describeFocus(focus, { weeks, fromLabel, toLabel }),
   ].filter(Boolean);
 
-  return [
-    { type: "text", text: COACH_PERSONA },
-    { type: "text", text: dataParts.join("\n\n"), cache_control: { type: "ephemeral" } },
-    { type: "text", text: framing.join(" ") },
-  ];
+  blocks.push({ type: "text", text: framing.join(" ") });
+  return blocks;
 }
 
 function buildCoachMessages({ history = [], question }) {
@@ -260,6 +288,7 @@ function buildCoachMessages({ history = [], question }) {
 
 module.exports = {
   COACH_PERSONA,
+  APP_GUIDE_LEAD,
   OFF_TOPIC_MARKER,
   MAX_DATA_CHARS,
   COACH_MAX_EXERCISES,

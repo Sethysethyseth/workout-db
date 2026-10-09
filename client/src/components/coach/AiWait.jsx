@@ -15,14 +15,28 @@ const ALMOST_COPY = "Almost there. Hang tight.";
  * - status: ladder only, under a busy button
  * @param {{ variant?: "inline"|"block"|"status", verb: string, slowCopy?: string }} props
  */
-export function AiWait({ variant = "inline", verb, slowCopy }) {
+export function AiWait({ variant = "inline", verb, slowCopy, ladder }) {
   const [line, setLine] = useState(null);
   const [lineKey, setLineKey] = useState(0);
   const slowLine = slowCopy || SLOW_COPY;
+  const customLadder = Array.isArray(ladder) && ladder.length > 0 ? ladder : null;
 
   useEffect(() => {
     if (variant === "inline") return undefined;
     let cancelled = false;
+    if (customLadder) {
+      const timers = customLadder.map((step) =>
+        setTimeout(() => {
+          if (cancelled || !step || typeof step.text !== "string") return;
+          setLine(step.text);
+          setLineKey((k) => k + 1);
+        }, Number(step.atMs) || 0)
+      );
+      return () => {
+        cancelled = true;
+        timers.forEach(clearTimeout);
+      };
+    }
     // Under a busy button the verb is already on the button: the status
     // line stays quiet until the wait is genuinely slow.
     const showTimer = setTimeout(() => {
@@ -49,7 +63,7 @@ export function AiWait({ variant = "inline", verb, slowCopy }) {
       clearTimeout(slowTimer);
       clearTimeout(almostTimer);
     };
-  }, [variant, verb, slowLine]);
+  }, [variant, verb, slowLine, customLadder]);
 
   if (variant === "inline") {
     return (

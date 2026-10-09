@@ -136,6 +136,15 @@ export function ProfilePage() {
               ›
             </span>
           </Link>
+          <Link className="settings-row settings-row--link" to="/coach">
+            <span className="settings-row__main">
+              <span className="settings-row__value">Coach</span>
+              <span className="muted small">Ask about training or how to use the app</span>
+            </span>
+            <span className="settings-row__chevron" aria-hidden="true">
+              ›
+            </span>
+          </Link>
           <Link className="settings-row settings-row--link" to="/profile/feedback">
             <span className="settings-row__main">
               <span className="settings-row__value">Send feedback</span>

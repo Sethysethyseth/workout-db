@@ -242,6 +242,7 @@ async function getCoachStatus(req, res, next) {
       consentGranted: access.consentGranted,
       entitled: access.entitled,
       available: access.consentGranted && resolved.ok,
+      help: { available: resolved.ok },
       source,
       reason: access.consentGranted ? (resolved.ok ? null : resolved.reason) : "no_consent",
       provider,
@@ -287,7 +288,8 @@ async function askCoach(req, res, next, deps = {}) {
 
     const access = await loadAccess(req.authUserId);
     if (!access) return res.status(404).json({ error: "User not found" });
-    if (!access.consentGranted) {
+    const helpFocus = Boolean(request.focus && request.focus.type === "help");
+    if (!access.consentGranted && !helpFocus) {
       return res.status(403).json({ error: "forbidden", reason: "no_consent" });
     }
 
@@ -311,7 +313,21 @@ async function askCoach(req, res, next, deps = {}) {
       reservedIds = reserved.ids;
     }
 
-    const data = await loadData({ userId: req.authUserId, request });
+    let data;
+    if (!access.consentGranted) {
+      // No-consent help. loadCoachData and loadSummary are unreachable here.
+      const range = request.range ?? defaultRange();
+      data = {
+        ok: true,
+        primary: null,
+        context: null,
+        range,
+        meta: null,
+        workoutCount: 0,
+      };
+    } else {
+      data = await loadData({ userId: req.authUserId, request });
+    }
     if (!data.ok) return res.status(data.status).json({ error: data.error });
 
     const { system, messages } = buildCoachPrompt({ request, data });

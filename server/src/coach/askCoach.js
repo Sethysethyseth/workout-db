@@ -118,6 +118,18 @@ function resolveCoachProvider({ byoKey, entitled, config = getCoachConfig() }) {
 async function loadCoachData({ userId, request, now = new Date() }) {
   const { focus } = request;
 
+  // Help mode never computes or loads a summary, a session, or a block.
+  if (focus && focus.type === "help") {
+    return {
+      ok: true,
+      primary: null,
+      context: null,
+      range: request.range ?? defaultRange(now),
+      meta: null,
+      workoutCount: 0,
+    };
+  }
+
   if (focus && focus.type === "session") {
     const session = await prisma.workoutSession.findFirst({
       where: { id: focus.sessionId, userId },

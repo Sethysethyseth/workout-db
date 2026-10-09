@@ -15,6 +15,13 @@ const VIEW_QUESTIONS = {
   execution: "Am I sticking to my plan?",
 };
 
+/** How-to chips for the coach page. Stable copy, not derived from a summary. */
+export const HELP_CHIPS = [
+  "How do I start a block?",
+  "Where do I switch to kg?",
+  "How do I edit an exercise I made?",
+];
+
 export function buildSuggestedQuestions(summary, { view = "muscles" } = {}) {
   const out = [];
   const push = (q) => {

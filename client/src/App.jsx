@@ -3,6 +3,7 @@ import { ProtectedRoute } from "./components/ProtectedRoute.jsx";
 import { Layout } from "./components/Layout.jsx";
 import { AuthLayout } from "./components/AuthLayout.jsx";
 import { DashboardPage } from "./pages/DashboardPage.jsx";
+import { CoachPage } from "./pages/CoachPage.jsx";
 import { LoginPage } from "./pages/LoginPage.jsx";
 import { RegisterPage } from "./pages/RegisterPage.jsx";
 import { ConnectorLoginPage } from "./pages/ConnectorLoginPage.jsx";
@@ -123,6 +124,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <AnalyticsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/coach"
+          element={
+            <ProtectedRoute>
+              <CoachPage />
             </ProtectedRoute>
           }
         />

@@ -113,18 +113,20 @@ describe("buildCoachSystemBlocks", () => {
     toLabel: "2026-09-09",
   };
 
-  test("persona first, data second with the ONE cache breakpoint, volatile framing last", () => {
+  test("persona first, guide second, data with the ONE cache breakpoint, volatile framing last", () => {
     const blocks = buildCoachSystemBlocks(base);
-    expect(blocks).toHaveLength(3);
+    expect(blocks).toHaveLength(4);
     expect(blocks[0].text).toBe(COACH_PERSONA);
     expect(blocks[0].cache_control).toBeUndefined();
-    expect(blocks[1].cache_control).toEqual({ type: "ephemeral" });
-    expect(blocks[1].text).toContain('{"workoutCount":1}');
-    expect(blocks[2].cache_control).toBeUndefined();
-    expect(blocks[2].text).toContain("Today is 2026-09-09.");
-    expect(blocks[2].text).toContain("Weights are in kg.");
-    expect(blocks[2].text).toContain("muscles view");
-    expect(blocks[2].text).toContain("4 weeks (2026-08-13 to 2026-09-09)");
+    expect(blocks[1].text).toContain("LogChamp app guide.");
+    expect(blocks[1].cache_control).toBeUndefined();
+    expect(blocks[2].cache_control).toEqual({ type: "ephemeral" });
+    expect(blocks[2].text).toContain('{"workoutCount":1}');
+    expect(blocks[3].cache_control).toBeUndefined();
+    expect(blocks[3].text).toContain("Today is 2026-09-09.");
+    expect(blocks[3].text).toContain("Weights are in kg.");
+    expect(blocks[3].text).toContain("muscles view");
+    expect(blocks[3].text).toContain("4 weeks (2026-08-13 to 2026-09-09)");
   });
 
   test("the persona states the boundary in plain words", () => {
@@ -149,9 +151,9 @@ describe("buildCoachSystemBlocks", () => {
       primary: { workoutCount: 1, session: { id: 7 } },
       context: { workoutCount: 12 },
     });
-    expect(blocks[1].text).toContain("Workout being debriefed");
-    expect(blocks[1].text).toContain("Trailing four weeks");
-    expect(blocks[2].text).toContain("Debrief mode");
+    expect(blocks[2].text).toContain("Workout being debriefed");
+    expect(blocks[2].text).toContain("Trailing four weeks");
+    expect(blocks[3].text).toContain("Debrief mode");
   });
 
   test("describeFocus returns null without a focus", () => {

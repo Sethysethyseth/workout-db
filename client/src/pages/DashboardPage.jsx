@@ -23,6 +23,7 @@ import {
 } from "../lib/sessionDisplay.js";
 import { formatTonnage, sessionDurationLabel, sessionTonnage } from "../lib/sessionFacts.js";
 import { loadWeightUnit } from "../lib/weightUnitPref.js";
+import "../styles/coach-page.css";
 
 /** Session hint so Home can reserve the block-card slot before /block-runs/active resolves. */
 const HOME_HAS_RUN_KEY = "workoutdb-home-has-run";
@@ -328,9 +329,24 @@ export function DashboardPage() {
   return (
     <div className="stack workout-tab">
       <header className="home-masthead">
-        <div className="home-masthead__brand">
-          <span className="home-masthead__crown" aria-hidden="true" />
-          <h1 className="home-masthead__wordmark">LogChamp</h1>
+        <div className="home-masthead__top">
+          <div className="home-masthead__brand">
+            <span className="home-masthead__crown" aria-hidden="true" />
+            <h1 className="home-masthead__wordmark">LogChamp</h1>
+          </div>
+          <Link className="coach-masthead-btn" to="/coach" aria-label="Ask the coach">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path
+                d="M7 16.2 4.8 20l3.6-1.4A8.2 8.2 0 1 0 7 16.2Z"
+                stroke="currentColor"
+                strokeWidth="1.7"
+                strokeLinejoin="round"
+              />
+              <circle cx="9" cy="11" r="1" fill="currentColor" />
+              <circle cx="12" cy="11" r="1" fill="currentColor" />
+              <circle cx="15" cy="11" r="1" fill="currentColor" />
+            </svg>
+          </Link>
         </div>
         <p className="home-masthead__date">{mastheadDate}</p>
       </header>

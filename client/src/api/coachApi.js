@@ -68,7 +68,11 @@ export function coachErrorMessage(code, fallback) {
   }
 }
 
-/** Status JSON, including `weeklyCap` when the hosted weekly limit applies, else that field is null. */
+/**
+ * Status JSON. `weeklyCap` is set when the hosted weekly limit applies, else null.
+ * `help.available` is true when a provider key resolves, whether or not AI access is on.
+ * `available` stays consent plus a resolved key.
+ */
 export function getCoachStatus({ byoKey } = {}) {
   return http("/coach/status", {
     headers: byoKey ? { [BYO_KEY_HEADER]: byoKey } : undefined,
