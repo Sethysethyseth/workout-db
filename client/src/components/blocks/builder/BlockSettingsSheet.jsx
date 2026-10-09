@@ -2,6 +2,19 @@ import { useRef, useState } from "react";
 import { Segmented } from "../ui/Segmented.jsx";
 import { BuilderSheet, useOverlayFocus } from "./BuilderSheet.jsx";
 
+function ActionIcon({ children }) {
+  return (
+    <svg
+      className="bk-ex-actions__icon"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      focusable="false"
+    >
+      {children}
+    </svg>
+  );
+}
+
 export const EFFORT_OPTIONS = [
   { value: "rpe", label: "RPE" },
   { value: "rir", label: "RIR" },
@@ -109,39 +122,53 @@ export function BlockSettingsSheet({
           ) : null}
         </div>
 
-        {onExport ? (
-          <div className="bk-settings__field">
-            <button
-              type="button"
-              className="bk-actions-list__btn"
-              disabled={exporting}
-              onClick={() => onExport()}
-            >
-              {exporting ? "Exporting…" : "Export block"}
-            </button>
-          </div>
-        ) : null}
-
-        {onAskCoach ? (
-          <div className="bk-settings__field">
-            <button type="button" className="bk-actions-list__btn" onClick={() => onAskCoach()}>
-              Ask the coach about this block
-            </button>
-          </div>
-        ) : null}
-
-        {mode === "edit" && onDelete ? (
-          <div className="bk-settings__danger">
-            <button
-              type="button"
-              className="bk-settings__delete"
-              onClick={() => {
-                setConfirmDelete(true);
-                onClose?.();
-              }}
-            >
-              Delete block
-            </button>
+        {onExport || onAskCoach || (mode === "edit" && onDelete) ? (
+          <div className="bk-ex-actions">
+            {onExport ? (
+              <button
+                type="button"
+                className="bk-ex-actions__row"
+                disabled={exporting}
+                onClick={() => onExport()}
+              >
+                <ActionIcon>
+                  <path d="M12 3v12" />
+                  <path d="m7 10 5 5 5-5" />
+                  <path d="M5 21h14" />
+                </ActionIcon>
+                <span className="bk-ex-actions__label">
+                  {exporting ? "Exporting…" : "Export block"}
+                </span>
+              </button>
+            ) : null}
+            {onAskCoach ? (
+              <button type="button" className="bk-ex-actions__row" onClick={() => onAskCoach()}>
+                <ActionIcon>
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                </ActionIcon>
+                <span className="bk-ex-actions__label">Ask the coach about this block</span>
+              </button>
+            ) : null}
+            {mode === "edit" && onDelete ? (
+              <>
+                <div className="bk-ex-actions__divider" role="separator" />
+                <button
+                  type="button"
+                  className="bk-ex-actions__row bk-ex-actions__row--danger"
+                  onClick={() => {
+                    setConfirmDelete(true);
+                    onClose?.();
+                  }}
+                >
+                  <ActionIcon>
+                    <path d="M3 6h18" />
+                    <path d="M8 6V4h8v2" />
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+                  </ActionIcon>
+                  <span className="bk-ex-actions__label">Delete block</span>
+                </button>
+              </>
+            ) : null}
           </div>
         ) : null}
       </BuilderSheet>

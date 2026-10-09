@@ -28,10 +28,9 @@ html.bk-builder-kbd .bk-builder__weeks {
 .bk-builder .bk-builder-sticky {
   margin-inline: -16px;
   padding-inline: 16px;
-  /* Name + effort chip; Save / menu stay on the right at 390px. */
+  /* Save / menu on the first row; the name has its own full-width row under it. */
   padding-top: 6px;
-  padding-bottom: 6px;
-  max-height: 72px;
+  padding-bottom: 8px;
   box-sizing: border-box;
   overflow: visible;
   z-index: 30;
@@ -46,6 +45,14 @@ html.bk-builder-kbd .bk-builder__weeks {
 .bk-builder .bk-sticky-header__left {
   flex: 1 1 auto;
   min-width: 0;
+}
+
+.bk-builder .bk-sticky-header__children {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  margin-top: 2px;
 }
 
 .bk-builder .bk-sticky-header__right {
@@ -130,7 +137,7 @@ html.bk-builder-kbd .bk-builder__weeks {
   }
 }
 
-/* Name in eyebrow slot — full width, >= 16px (no iOS zoom); truncates so Save stays. */
+/* Name on its own sticky row, full width, >= 16px (no iOS zoom). */
 .bk-builder-name-input {
   display: block;
   width: 100%;
@@ -159,14 +166,11 @@ html.bk-builder-kbd .bk-builder__weeks {
 .bk-builder-name-tap {
   cursor: pointer;
   min-height: 24px;
-  max-height: 28px;
   display: block;
   width: 100%;
   font: 600 16px/1.2 var(--font-sans);
   color: var(--bk-ink);
-  white-space: nowrap;
   overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .bk-builder-name-tap:hover {
@@ -383,8 +387,12 @@ html.bk-builder-kbd .bk-builder__weeks {
   background: var(--bk-surface);
 }
 
+.bk-builder__weeks + .bk-builder__days {
+  margin-top: 8px;
+}
+
 .bk-builder__days {
-  margin-top: 14px;
+  margin-top: 8px;
 }
 
 .bk-builder__panel {
@@ -512,6 +520,11 @@ html.bk-builder-kbd .bk-builder__weeks {
   color: var(--bk-ink);
   flex: 1 1 auto;
   min-width: 0;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
 .bk-ex-card__chev {
@@ -522,10 +535,22 @@ html.bk-builder-kbd .bk-builder__weeks {
   line-height: 1;
 }
 
-.bk-ex-card:not(.bk-ex-card--expanded) .bk-ex-card__name {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.bk-ex-card--hold .bk-ex-card__name {
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+}
+
+.bk-ex-card__summary-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.bk-ex-card__summary-line .bk-rx {
+  margin: 0;
+  min-width: 0;
 }
 
 .bk-ex-card__notes {
@@ -1196,32 +1221,46 @@ html.bk-builder-kbd .bk-builder__weeks {
   cursor: pointer;
 }
 
-.bk-actions-list {
+.bk-coach-draft-toggle {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.bk-actions-list__btn {
+  align-items: center;
+  width: 100%;
   min-height: 44px;
-  text-align: left;
+  margin-top: 12px;
   padding: 0 14px;
   border-radius: 10px;
   border: 1px solid var(--bk-line);
-  background: var(--bk-field);
+  background: var(--bk-surface);
   color: var(--bk-ink);
-  font: 600 14px/1 var(--font-sans);
+  font: 600 15px/1.2 var(--font-sans);
+  text-align: left;
   cursor: pointer;
 }
 
-.bk-actions-list__btn:disabled {
-  opacity: 0.4;
-  cursor: default;
+.bk-coach-draft-toggle:hover {
+  background: var(--bk-accent-soft);
 }
 
-.bk-actions-list__btn--danger {
-  color: var(--bk-bad);
-  border-color: color-mix(in srgb, var(--bk-bad) 40%, var(--bk-line));
+.bk-builder-coach-draft-wrap {
+  margin-top: 12px;
+  animation: bk-coach-draft-in 180ms ease-out;
+}
+
+@keyframes bk-coach-draft-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bk-builder-coach-draft-wrap {
+    animation: none;
+  }
 }
 
 /* Picker rows */
@@ -1251,6 +1290,12 @@ html.bk-builder-kbd .bk-builder__weeks {
   padding: 10px 12px;
   color: var(--bk-muted);
   font: 400 13px/1.3 var(--font-sans);
+}
+
+.bk-picker__section {
+  padding: 10px 12px 2px;
+  font: 600 13px/1.2 var(--font-sans);
+  color: var(--bk-muted);
 }
 
 /* Draft banner */

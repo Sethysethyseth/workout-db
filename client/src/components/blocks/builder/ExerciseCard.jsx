@@ -267,10 +267,12 @@ export function ExerciseCard({
   const effortChipText = effortCap
     ? `${effortLabel} cap`
     : `${effortLabel} target`;
+  const nameImpliesPerSide = exerciseNameImpliesPerSide(exercise?.exerciseName);
   const perSideShown =
     exercise?.perSide === true || exercise?.perSide === false
       ? exercise.perSide
-      : exerciseNameImpliesPerSide(exercise?.exerciseName);
+      : nameImpliesPerSide;
+  const showPerSideChip = exercise?.perSide === true || nameImpliesPerSide;
 
   function onFieldKeyDown(e) {
     if (e.key !== "Enter") return;
@@ -373,23 +375,23 @@ export function ExerciseCard({
         <div className="bk-ex-card__top">
           <span className="bk-ex-card__slot">{slotBadge(index)}</span>
           <h3 className="bk-ex-card__name">{exercise?.exerciseName || "Untitled"}</h3>
-          {exercise?.notInLibrary ? (
-            <Chip tone="warn">Not in library</Chip>
-          ) : null}
           {readOnly ? null : (
             <span className="bk-ex-card__chev" aria-hidden="true">
               ▾
             </span>
           )}
         </div>
-        {summary.uniform ? (
-          <ExerciseRx rx={summary.rx} suffix={perSideShown ? "each side" : null} />
-        ) : (
-          <p className="bk-rx bk-rx--summary">
-            {summary.summary}
-            {perSideShown ? " · each side" : ""}
-          </p>
-        )}
+        <div className="bk-ex-card__summary-line">
+          {summary.uniform ? (
+            <ExerciseRx rx={summary.rx} suffix={perSideShown ? "each side" : null} />
+          ) : (
+            <p className="bk-rx bk-rx--summary">
+              {summary.summary}
+              {perSideShown ? " · each side" : ""}
+            </p>
+          )}
+          {exercise?.notInLibrary ? <Chip tone="warn">Not in library</Chip> : null}
+        </div>
         {notesLine ? <p className="bk-ex-card__notes">{notesLine}</p> : null}
       </Card>
     );
@@ -416,9 +418,6 @@ export function ExerciseCard({
         >
           <span className="bk-ex-card__slot">{slotBadge(index)}</span>
           <h3 className="bk-ex-card__name">{exerciseName}</h3>
-          {exercise?.notInLibrary ? (
-            <Chip tone="warn">Not in library</Chip>
-          ) : null}
         </button>
         <button
           type="button"
@@ -431,6 +430,12 @@ export function ExerciseCard({
           …
         </button>
       </div>
+
+      {exercise?.notInLibrary ? (
+        <div className="bk-ex-card__summary-line">
+          <Chip tone="warn">Not in library</Chip>
+        </div>
+      ) : null}
 
       <div className="bk-ex-card__chips">
         <button
@@ -448,16 +453,18 @@ export function ExerciseCard({
         >
           <span>{modeText}</span>
         </button>
-        <button
-          type="button"
-          className={`bk-ex-card__chip${perSideShown ? "" : " bk-ex-card__chip--muted"}`}
-          aria-pressed={perSideShown}
-          aria-label="Per side"
-          onClick={() => onChange?.({ perSide: !perSideShown })}
-        >
-          {perSideShown ? <CheckIcon /> : null}
-          <span>Per side</span>
-        </button>
+        {showPerSideChip ? (
+          <button
+            type="button"
+            className={`bk-ex-card__chip${perSideShown ? "" : " bk-ex-card__chip--muted"}`}
+            aria-pressed={perSideShown}
+            aria-label="Per side"
+            onClick={() => onChange?.({ perSide: !perSideShown })}
+          >
+            {perSideShown ? <CheckIcon /> : null}
+            <span>Per side</span>
+          </button>
+        ) : null}
         {showEffort ? (
           <button
             type="button"
@@ -723,6 +730,14 @@ export function ExerciseCard({
             <span>Rep range</span>
           </label>
         ) : null}
+        <label className="bk-ex-card__setting-check">
+          <input
+            type="checkbox"
+            checked={perSideShown}
+            onChange={(e) => onChange?.({ perSide: e.target.checked })}
+          />
+          <span>Per side (left and right)</span>
+        </label>
       </ExerciseSettingSheet>
 
       <ExerciseSettingSheet

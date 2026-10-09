@@ -149,6 +149,19 @@ function weekLabelPlural(n) {
  * @param {"create"|"edit"} mode
  * @param {number} [templateId] required for edit
  */
+function ActionIcon({ children }) {
+  return (
+    <svg
+      className="bk-ex-actions__icon"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      focusable="false"
+    >
+      {children}
+    </svg>
+  );
+}
+
 export function BlockBuilder({ mode = "create", templateId, onBack }) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -1069,11 +1082,9 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
   return (
     <div className="bk bk-builder">
       <div className="bk-shell">
-        <StickyHeader
-          className="bk-builder-sticky"
-          eyebrow={nameNode}
-          right={headerRight}
-        />
+        <StickyHeader className="bk-builder-sticky" right={headerRight}>
+          {nameNode}
+        </StickyHeader>
 
         {draftOffer ? (
           <div className="bk-builder-draft-offer" role="status">
@@ -1141,6 +1152,35 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
           />
         </div>
 
+        <div className="bk-builder__days">
+          <DayPicker
+            days={dayPickerItems}
+            selectedKey={currentDay?.id || String(safeDayIdx)}
+            onSelect={selectDay}
+            onReorder={handleReorderDay}
+            scrollEndToken={dayStripEndToken}
+            trailing={
+              <button
+                type="button"
+                className="bk-day-add"
+                aria-label={days.length >= MAX_DAYS ? "7 days max" : "Add day"}
+                disabled={days.length >= MAX_DAYS}
+                onClick={() => {
+                  const next = addDay(state, safeWeekIdx);
+                  applyState(next);
+                  const newDays = next.weeks[safeWeekIdx]?.days || [];
+                  dayUserSelectedRef.current = false;
+                  setDayIdx(Math.max(0, newDays.length - 1));
+                  setExpandedIds(new Set());
+                  setDayStripEndToken((n) => n + 1);
+                }}
+              >
+                {days.length >= MAX_DAYS ? "7 days max" : "+ Day"}
+              </button>
+            }
+          />
+        </div>
+
         {state.isDraft ? (
           <DraftBanner
             sourceUnit={state.sourceUnit}
@@ -1176,35 +1216,6 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
         {coachPreviewBusy ? (
           <AiWait variant="block" verb="Previewing coach draft..." />
         ) : null}
-
-        <div className="bk-builder__days">
-          <DayPicker
-            days={dayPickerItems}
-            selectedKey={currentDay?.id || String(safeDayIdx)}
-            onSelect={selectDay}
-            onReorder={handleReorderDay}
-            scrollEndToken={dayStripEndToken}
-            trailing={
-              <button
-                type="button"
-                className="bk-day-add"
-                aria-label={days.length >= MAX_DAYS ? "7 days max" : "Add day"}
-                disabled={days.length >= MAX_DAYS}
-                onClick={() => {
-                  const next = addDay(state, safeWeekIdx);
-                  applyState(next);
-                  const newDays = next.weeks[safeWeekIdx]?.days || [];
-                  dayUserSelectedRef.current = false;
-                  setDayIdx(Math.max(0, newDays.length - 1));
-                  setExpandedIds(new Set());
-                  setDayStripEndToken((n) => n + 1);
-                }}
-              >
-                {days.length >= MAX_DAYS ? "7 days max" : "+ Day"}
-              </button>
-            }
-          />
-        </div>
 
         {currentDay ? (
           <div className="bk-builder__panel" ref={dayPanelRef}>
@@ -1404,6 +1415,10 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
               setSettingsOpen(true);
             }}
           >
+            <ActionIcon>
+              <path d="M12 20h9" />
+              <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+            </ActionIcon>
             <span className="bk-ex-actions__label">Settings</span>
           </button>
           <button
@@ -1414,6 +1429,16 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
               handleExit();
             }}
           >
+            <ActionIcon>
+              {isCreate ? (
+                <path d="M15 18 9 12l6-6" />
+              ) : (
+                <>
+                  <path d="M18 6 6 18" />
+                  <path d="m6 6 12 12" />
+                </>
+              )}
+            </ActionIcon>
             <span className="bk-ex-actions__label">{isCreate ? "Back" : "Close"}</span>
           </button>
         </div>
@@ -1495,15 +1520,15 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
         open={exportCopyOpen}
         title="Export ready"
         onClose={() => setExportCopyOpen(false)}
-        wide
+        className="bk-sheet--ex-actions"
       >
         <p className="bk-settings__hint">
           Downloaded as JSON. You can also copy it to paste elsewhere or re-import via File.
         </p>
-        <div className="bk-actions-list">
+        <div className="bk-ex-actions">
           <button
             type="button"
-            className="bk-actions-list__btn"
+            className="bk-ex-actions__row"
             onClick={async () => {
               const json = lastExportedJsonRef.current;
               if (!json) return;
@@ -1516,7 +1541,11 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
               }
             }}
           >
-            Copy JSON
+            <ActionIcon>
+              <rect x="9" y="9" width="13" height="13" rx="2" />
+              <path d="M5 15V5a2 2 0 0 1 2-2h10" />
+            </ActionIcon>
+            <span className="bk-ex-actions__label">Copy JSON</span>
           </button>
         </div>
       </BuilderSheet>
@@ -1574,6 +1603,7 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
         open={weekActionsOpen}
         title={`Week ${safeWeekIdx + 1}`}
         onClose={() => setWeekActionsOpen(false)}
+        className="bk-sheet--ex-actions"
       >
         <label className="bk-settings__field">
           <span className="bk-settings__label">Label</span>
@@ -1588,10 +1618,10 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
             }
           />
         </label>
-        <div className="bk-actions-list">
+        <div className="bk-ex-actions">
           <button
             type="button"
-            className="bk-actions-list__btn"
+            className="bk-ex-actions__row"
             onClick={() => {
               let next = setWeekLabel(state, safeWeekIdx, weekLabelDraft);
               next = duplicateWeek(next, safeWeekIdx);
@@ -1602,11 +1632,15 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
               setWeekActionsOpen(false);
             }}
           >
-            Duplicate
+            <ActionIcon>
+              <rect x="9" y="9" width="13" height="13" rx="2" />
+              <path d="M5 15V5a2 2 0 0 1 2-2h10" />
+            </ActionIcon>
+            <span className="bk-ex-actions__label">Duplicate</span>
           </button>
           <button
             type="button"
-            className="bk-actions-list__btn"
+            className="bk-ex-actions__row"
             disabled={safeWeekIdx >= 51}
             onClick={() => {
               applyState(setWeekLabel(state, safeWeekIdx, weekLabelDraft));
@@ -1614,11 +1648,17 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
               setCopyForwardOpen(true);
             }}
           >
-            Copy forward...
+            <ActionIcon>
+              <path d="M16 3h5v5" />
+              <path d="M8 21H3v-5" />
+              <path d="M21 3 14 10" />
+              <path d="m3 21 7-7" />
+            </ActionIcon>
+            <span className="bk-ex-actions__label">Copy forward...</span>
           </button>
           <button
             type="button"
-            className="bk-actions-list__btn"
+            className="bk-ex-actions__row"
             disabled={safeWeekIdx === 0}
             onClick={() => {
               applyState(moveWeek(state, safeWeekIdx, -1));
@@ -1627,11 +1667,15 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
               setWeekActionsOpen(false);
             }}
           >
-            Move earlier
+            <ActionIcon>
+              <path d="M12 19V5" />
+              <path d="m5 12 7-7 7 7" />
+            </ActionIcon>
+            <span className="bk-ex-actions__label">Move earlier</span>
           </button>
           <button
             type="button"
-            className="bk-actions-list__btn"
+            className="bk-ex-actions__row"
             disabled={safeWeekIdx >= weeks.length - 1}
             onClick={() => {
               applyState(moveWeek(state, safeWeekIdx, 1));
@@ -1640,22 +1684,31 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
               setWeekActionsOpen(false);
             }}
           >
-            Move later
+            <ActionIcon>
+              <path d="M12 5v14" />
+              <path d="m19 12-7 7-7-7" />
+            </ActionIcon>
+            <span className="bk-ex-actions__label">Move later</span>
           </button>
           <button
             type="button"
-            className="bk-actions-list__btn"
+            className="bk-ex-actions__row"
             onClick={() => {
               applyState(clearWeek(state, safeWeekIdx));
               dayUserSelectedRef.current = false;
               setWeekActionsOpen(false);
             }}
           >
-            Clear
+            <ActionIcon>
+              <path d="M18 6 6 18" />
+              <path d="m6 6 12 12" />
+            </ActionIcon>
+            <span className="bk-ex-actions__label">Clear</span>
           </button>
+          <div className="bk-ex-actions__divider" role="separator" />
           <button
             type="button"
-            className="bk-actions-list__btn bk-actions-list__btn--danger"
+            className="bk-ex-actions__row bk-ex-actions__row--danger"
             disabled={weeks.length <= 1}
             onClick={() => {
               if (weekHasExercises(currentWeek)) {
@@ -1670,7 +1723,12 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
               setWeekActionsOpen(false);
             }}
           >
-            Delete
+            <ActionIcon>
+              <path d="M3 6h18" />
+              <path d="M8 6V4h8v2" />
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+            </ActionIcon>
+            <span className="bk-ex-actions__label">Delete</span>
           </button>
         </div>
       </BuilderSheet>
@@ -1679,6 +1737,7 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
         open={dayActionsOpen}
         title={currentDay?.name || `Day ${safeDayIdx + 1}`}
         onClose={() => setDayActionsOpen(false)}
+        className="bk-sheet--ex-actions"
       >
         <label className="bk-settings__field">
           <span className="bk-settings__label">Rename</span>
@@ -1692,10 +1751,10 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
             }
           />
         </label>
-        <div className="bk-actions-list">
+        <div className="bk-ex-actions">
           <button
             type="button"
-            className="bk-actions-list__btn"
+            className="bk-ex-actions__row"
             disabled={days.length >= MAX_DAYS}
             onClick={() => {
               let next = renameDay(state, safeWeekIdx, safeDayIdx, dayNameDraft);
@@ -1706,11 +1765,17 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
               setDayActionsOpen(false);
             }}
           >
-            {days.length >= MAX_DAYS ? "Duplicate - 7 days max" : "Duplicate"}
+            <ActionIcon>
+              <rect x="9" y="9" width="13" height="13" rx="2" />
+              <path d="M5 15V5a2 2 0 0 1 2-2h10" />
+            </ActionIcon>
+            <span className="bk-ex-actions__label">
+              {days.length >= MAX_DAYS ? "Duplicate - 7 days max" : "Duplicate"}
+            </span>
           </button>
           <button
             type="button"
-            className="bk-actions-list__btn"
+            className="bk-ex-actions__row"
             disabled={safeDayIdx === 0}
             onClick={() => {
               applyState(moveDay(state, safeWeekIdx, safeDayIdx, -1));
@@ -1719,11 +1784,15 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
               setDayActionsOpen(false);
             }}
           >
-            Move left
+            <ActionIcon>
+              <path d="M19 12H5" />
+              <path d="m12 19-7-7 7-7" />
+            </ActionIcon>
+            <span className="bk-ex-actions__label">Move left</span>
           </button>
           <button
             type="button"
-            className="bk-actions-list__btn"
+            className="bk-ex-actions__row"
             disabled={safeDayIdx >= days.length - 1}
             onClick={() => {
               applyState(moveDay(state, safeWeekIdx, safeDayIdx, 1));
@@ -1732,11 +1801,16 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
               setDayActionsOpen(false);
             }}
           >
-            Move right
+            <ActionIcon>
+              <path d="M5 12h14" />
+              <path d="m12 5 7 7-7 7" />
+            </ActionIcon>
+            <span className="bk-ex-actions__label">Move right</span>
           </button>
+          <div className="bk-ex-actions__divider" role="separator" />
           <button
             type="button"
-            className="bk-actions-list__btn bk-actions-list__btn--danger"
+            className="bk-ex-actions__row bk-ex-actions__row--danger"
             disabled={days.length <= 1}
             onClick={() => {
               if (dayHasExercises(currentDay)) {
@@ -1750,7 +1824,12 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
               setDayActionsOpen(false);
             }}
           >
-            Delete
+            <ActionIcon>
+              <path d="M3 6h18" />
+              <path d="M8 6V4h8v2" />
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+            </ActionIcon>
+            <span className="bk-ex-actions__label">Delete</span>
           </button>
         </div>
       </BuilderSheet>

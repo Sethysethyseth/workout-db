@@ -219,17 +219,17 @@
 }
 
 .bk-week--selected {
-  background: var(--bk-ink);
-  border-color: var(--bk-ink);
-  color: var(--bk-bg);
+  background: color-mix(in srgb, var(--color-interactive) 28%, var(--color-surface-1));
+  border-color: color-mix(in srgb, var(--color-interactive) 70%, var(--color-border));
+  color: var(--color-text);
 }
 
 .bk-week--selected .bk-week__bar {
-  background: color-mix(in srgb, var(--bk-bg) 35%, transparent);
+  background: color-mix(in srgb, var(--color-interactive) 22%, var(--color-border));
 }
 
 .bk-week--selected .bk-week__fill {
-  background: var(--bk-bg);
+  background: var(--color-interactive);
 }
 
 .bk-week--current .bk-week__label::after {

@@ -37,6 +37,7 @@ export function CoachDraftCard({ unit = "lb", onDrafted }) {
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
+  const [expanded, setExpanded] = useState(false);
   const byoKey = loadCoachKey();
   const aliveRef = useRef(true);
   const abortRef = useRef(null);
@@ -68,6 +69,19 @@ export function CoachDraftCard({ unit = "lb", onDrafted }) {
 
   const capped = Boolean(status.weeklyCap && status.weeklyCap.remaining <= 0);
   const cappedCopy = weeklyCapUsedCopy(status.weeklyCap);
+
+  if (!expanded) {
+    return (
+      <button
+        type="button"
+        className="bk-coach-draft-toggle"
+        aria-expanded="false"
+        onClick={() => setExpanded(true)}
+      >
+        Draft with the coach
+      </button>
+    );
+  }
 
   async function onDraft() {
     const trimmed = text.trim();
@@ -131,7 +145,7 @@ export function CoachDraftCard({ unit = "lb", onDrafted }) {
   }
 
   return (
-    <div className="bk-import-panel" style={{ marginTop: 16 }}>
+    <div className="bk-import-panel bk-builder-coach-draft-wrap">
       <label className="bk-import-label" htmlFor="bk-coach-draft">
         Describe the block you want
       </label>
