@@ -1,0 +1,145 @@
+/* qolf3: logger room. Overrides only; tokens live in index.css. */
+
+/* Sticky exercise header: name line only, 64px or less. */
+.session-detail-page .logger-exercise-sticky.session-exercise-heading-sticky {
+  padding: 0 2px;
+  max-height: 64px;
+  overflow: hidden;
+}
+
+.session-detail-page .logger-exercise-sticky__row {
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  min-height: 44px;
+  max-height: 64px;
+}
+
+.session-detail-page .logger-exercise-sticky .session-exercise-heading-lead {
+  flex: 1 1 auto;
+  flex-wrap: nowrap;
+  align-items: center;
+  min-width: 0;
+}
+
+.session-detail-page .logger-exercise-sticky .session-exercise-heading-toggle {
+  align-items: center;
+  min-width: 0;
+  flex: 1 1 auto;
+  padding: 0 2px;
+}
+
+.session-detail-page .logger-exercise-sticky .session-exercise-heading-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.session-detail-page .logger-exercise-sticky .session-exercise-heading-chevron {
+  margin-top: 0;
+}
+
+.logger-exercise-more {
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font: inherit;
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.logger-exercise-more:hover {
+  background: var(--color-surface-2);
+}
+
+.logger-exercise-more:focus-visible {
+  outline: 2px solid var(--color-interactive);
+  outline-offset: 2px;
+}
+
+.logger-last-time {
+  margin: 4px 0 0;
+}
+
+/* Logged dock: Finish button only, 80px or less including padding. */
+.session-detail-page .session-finish-dock.session-finish-dock--logged {
+  padding: 8px 16px calc(8px + env(safe-area-inset-bottom, 0px));
+}
+
+.session-detail-page .session-finish-dock--logged .session-finish-dock__inner {
+  gap: 0;
+}
+
+.session-detail-page .session-finish-dock--logged .session-finish-dock__btn {
+  min-height: 44px;
+}
+
+/* Missing effort: one 200ms tint pulse, then a steady tinted fill. */
+.session-detail-page .session-set-field--needs-value input {
+  background-color: color-mix(in srgb, var(--color-warn-accent) 22%, var(--color-surface-1));
+  animation: logger-missing-effort-pulse 200ms ease-out;
+}
+
+html[data-theme="dark"] .session-detail-page .session-set-field--needs-value input {
+  background-color: color-mix(in srgb, var(--color-warn-text) 24%, var(--color-surface-1));
+  animation-name: logger-missing-effort-pulse-dark;
+}
+
+@keyframes logger-missing-effort-pulse-dark {
+  0% {
+    background-color: color-mix(in srgb, var(--color-warn-text) 48%, var(--color-surface-1));
+  }
+  100% {
+    background-color: color-mix(in srgb, var(--color-warn-text) 24%, var(--color-surface-1));
+  }
+}
+
+@keyframes logger-missing-effort-pulse {
+  0% {
+    background-color: color-mix(in srgb, var(--color-warn-accent) 48%, var(--color-surface-1));
+  }
+  100% {
+    background-color: color-mix(in srgb, var(--color-warn-accent) 22%, var(--color-surface-1));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .session-detail-page .session-set-field--needs-value input,
+  html[data-theme="dark"] .session-detail-page .session-set-field--needs-value input {
+    animation: none;
+  }
+}
+
+/* Ghost rows only: the set-number button is the last-time control. */
+.session-detail-page .logger-last-time-cue {
+  display: inline-flex;
+  align-items: center;
+}
+
+.session-detail-page .logger-last-time-cue .bk-set-num {
+  position: relative;
+  border-color: color-mix(in srgb, var(--color-interactive) 70%, var(--color-border));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-interactive) 35%, transparent);
+}
+
+.session-detail-page .logger-last-time-cue .bk-set-num::after {
+  content: "\2713";
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--color-interactive);
+  pointer-events: none;
+}

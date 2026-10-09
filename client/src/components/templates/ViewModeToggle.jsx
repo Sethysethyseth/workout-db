@@ -1,4 +1,4 @@
-/** Labels must match product copy: "Builder View" | "Table View". */
+/** Labels must match product copy: "Builder view" | "Table view". */
 export function ViewModeToggle({ value, onChange, ariaGroupLabel = "Template view mode" }) {
   return (
     <div className="view-mode-toggle row" role="group" aria-label={ariaGroupLabel}>
@@ -12,7 +12,7 @@ export function ViewModeToggle({ value, onChange, ariaGroupLabel = "Template vie
           aria-pressed={value === "builder"}
           onClick={() => onChange("builder")}
         >
-          Builder View
+          Builder view
         </button>
         <button
           type="button"
@@ -20,7 +20,7 @@ export function ViewModeToggle({ value, onChange, ariaGroupLabel = "Template vie
           aria-pressed={value === "table"}
           onClick={() => onChange("table")}
         >
-          Table View
+          Table view
         </button>
       </div>
     </div>

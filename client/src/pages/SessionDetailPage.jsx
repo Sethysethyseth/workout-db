@@ -31,6 +31,7 @@ import { restDurationFor, startRestRun } from "../lib/restTimer.js";
 import { RestTimerBar } from "../components/workout/RestTimerBar.jsx";
 import { loadWeightUnit } from "../lib/weightUnitPref.js";
 import "../styles/training-prefs.css";
+import "../styles/logger.css";
 import { useSessionLiveLoggingGuard } from "../context/SessionLiveLoggingGuardContext.jsx";
 import {
   BLANK_SESSION_EXERCISE_NAME,
@@ -1412,11 +1413,13 @@ const SessionSetRow = memo(function SessionSetRow({
           isDraft && !showLastTimeButton ? null : (
             <>
               {showLastTimeButton ? (
-                <AsPlannedControl
-                  setNumber={lastTimeSetNumber}
-                  onFill={applyLastTime}
-                  disabled={disabled}
-                />
+                <span className="logger-last-time-cue">
+                  <AsPlannedControl
+                    setNumber={lastTimeSetNumber}
+                    onFill={applyLastTime}
+                    disabled={disabled}
+                  />
+                </span>
               ) : null}
               {isDraft ? null : orderField}
               {isDraft ? null : sideBadge}
@@ -1532,12 +1535,13 @@ const SessionSetRow = memo(function SessionSetRow({
                   ]
                     .filter(Boolean)
                     .join(" ")}
+                  {...(needsRirHighlight ? { "data-missing-effort": "true" } : {})}
                 >
                   <span className="session-set-field-label session-set-field-label-line">
                     <span>RIR</span> <MetricInfoButton metric="rir" />
                   </span>
                   <span className="muted small" style={{ fontWeight: 500, lineHeight: 1.2, marginTop: -1 }}>
-                    Reps in Reserve
+                    Reps in reserve
                   </span>
                   <input
                     id={fieldIds.rir}
@@ -1569,12 +1573,13 @@ const SessionSetRow = memo(function SessionSetRow({
                   ]
                     .filter(Boolean)
                     .join(" ")}
+                  {...(needsRpeHighlight ? { "data-missing-effort": "true" } : {})}
                 >
                   <span className="session-set-field-label session-set-field-label-line">
                     <span>RPE</span> <MetricInfoButton metric="rpe" />
                   </span>
                   <span className="muted small" style={{ fontWeight: 500, lineHeight: 1.2, marginTop: -1 }}>
-                    Rating of Perceived Exertion
+                    Rating of perceived exertion
                   </span>
                   <input
                     id={fieldIds.rpe}
@@ -1695,12 +1700,6 @@ function SessionExerciseBlock({
       setDraftResumeVersion((v) => v + 1);
     }
   }, [sets.length, isCompleted]);
-
-  useEffect(() => {
-    if (!confirmRemove) return;
-    const t = setTimeout(() => setConfirmRemove(false), 5000);
-    return () => clearTimeout(t);
-  }, [confirmRemove]);
 
   const rawName = se.exerciseName ?? "";
   const perSideMode = derivePerSideMode(perSideOverride, rawName, sets);
@@ -1854,61 +1853,21 @@ function SessionExerciseBlock({
 
   const isLiveCollapsible = collapsible && !isCompleted;
 
-  const removeControl =
-    !isCompleted && onDeleteExercise ? (
-      confirmRemove ? (
-        <div className="row" style={{ gap: 8, alignItems: "center", justifyContent: "flex-end" }}>
-          <span className="muted small" style={{ fontWeight: 600 }}>
-            Remove {namePart}?
-          </span>
-          <button
-            type="button"
-            className="btn"
-            onClick={() => {
-              setConfirmRemove(false);
-              void onDeleteExercise(se.id);
-            }}
-            style={{ padding: "6px 10px" }}
-          >
-            Yes, remove
-          </button>
-          <button
-            type="button"
-            className="btn btn-secondary"
-            onClick={() => setConfirmRemove(false)}
-            style={{ padding: "6px 10px" }}
-          >
-            Cancel
-          </button>
-        </div>
-      ) : (
-        <button
-          type="button"
-          className="btn btn-secondary"
-          onClick={() => setConfirmRemove(true)}
-          style={{ padding: "6px 10px" }}
-        >
-          Remove exercise
-        </button>
-      )
-    ) : null;
-
   return (
     <div className={blockClass}>
       <div
         className={
           isLiveCollapsible
-            ? "session-exercise-heading-sticky"
+            ? "session-exercise-heading-sticky logger-exercise-sticky"
             : "session-exercise-heading-sticky session-exercise-heading-sticky--static"
         }
       >
         <div
           className={
             isLiveCollapsible
-              ? "row session-exercise-heading-row"
+              ? "row session-exercise-heading-row logger-exercise-sticky__row"
               : "row session-exercise-heading-row session-exercise-heading-toggle-static"
           }
-          style={{ justifyContent: "space-between" }}
         >
           <div className="session-exercise-heading-lead">
             {isLiveCollapsible ? (
@@ -1928,15 +1887,22 @@ function SessionExerciseBlock({
             )}
             {trackedIndicator}
             {headingSummary}
-            {lastTimeLabel ? (
-              <p className="muted small" style={{ margin: "2px 0 0" }}>
-                Last time: {lastTimeLabel}
-              </p>
-            ) : null}
           </div>
-          {removeControl}
+          {!isCompleted && onDeleteExercise ? (
+            <button
+              type="button"
+              className="logger-exercise-more"
+              aria-label={`Remove ${namePart}`}
+              onClick={() => setConfirmRemove(true)}
+            >
+              ...
+            </button>
+          ) : null}
         </div>
       </div>
+      {lastTimeLabel ? (
+        <p className="muted small logger-last-time">Last time: {lastTimeLabel}</p>
+      ) : null}
 
       {expanded ? (
         <>
@@ -2347,12 +2313,24 @@ function SessionExerciseBlock({
         </>
       ) : null}
       <ConfirmPanel
+        open={confirmRemove}
+        tone="danger"
+        title={`Remove ${namePart}?`}
+        confirmLabel="Yes, remove"
+        cancelLabel="Cancel"
+        onConfirm={() => {
+          setConfirmRemove(false);
+          void onDeleteExercise(se.id);
+        }}
+        onCancel={() => setConfirmRemove(false)}
+      />
+      <ConfirmPanel
         open={pairRemoveIds != null}
         tone="danger"
         title="Remove this left and right pair?"
         body="Both sides will be deleted, including any logged weight, reps, or notes."
         confirmLabel="Remove pair"
-        cancelLabel="Keep"
+        cancelLabel="Keep pair"
         busy={pairRemoveBusy}
         onConfirm={() => void confirmPairRemove()}
         onCancel={() => {
@@ -2394,6 +2372,8 @@ export function SessionDetailPage() {
   const [scrollMissingSetId, setScrollMissingSetId] = useState(null);
   const [setCountConfirm, setSetCountConfirm] = useState(null);
   const [setCountConfirmBusy, setSetCountConfirmBusy] = useState(false);
+  const [deleteSetId, setDeleteSetId] = useState(null);
+  const [deleteSetBusy, setDeleteSetBusy] = useState(false);
   const [confirmLeave, setConfirmLeave] = useState(false);
   const [discardMessage, setDiscardMessage] = useState(null);
   const [resolutionTick, setResolutionTick] = useState(0);
@@ -2918,8 +2898,21 @@ export function SessionDetailPage() {
     if (scrollMissingSetId == null) return;
     const id = scrollMissingSetId;
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const el = document.querySelector(`[data-session-set-id="${id}"]`);
-    el?.scrollIntoView({ block: "center", behavior: reduce ? "auto" : "smooth" });
+    const row = document.querySelector(`[data-session-set-id="${id}"]`);
+    const field = row?.querySelector('[data-missing-effort="true"] input');
+    if (field) {
+      const block = field.closest(".session-exercise-block");
+      const sticky = block?.querySelector(".session-exercise-heading-sticky");
+      const dock = document.querySelector(".session-finish-dock");
+      const stickyBottom = sticky ? sticky.getBoundingClientRect().bottom : 0;
+      const dockTop = dock ? dock.getBoundingClientRect().top : window.innerHeight;
+      const mid = (stickyBottom + dockTop) / 2;
+      const rect = field.getBoundingClientRect();
+      const delta = rect.top + rect.height / 2 - mid;
+      if (Math.abs(delta) > 1) {
+        window.scrollBy({ top: delta, behavior: reduce ? "auto" : "smooth" });
+      }
+    }
     setScrollMissingSetId(null);
   }, [scrollMissingSetId]);
 
@@ -3457,16 +3450,23 @@ export function SessionDetailPage() {
   const onDeleteSet = useCallback(
     async (setId, { skipConfirm = false } = {}) => {
       if (writesFrozenRef.current) return;
-      if (!skipConfirm && !confirm("Delete this set?")) return;
+      if (!skipConfirm) {
+        setDeleteSetId(setId);
+        return;
+      }
+      setDeleteSetBusy(true);
       setError(null);
       try {
         await sessionApi.deleteSet(setId);
         if (writesFrozenRef.current) return;
         removeSetRow(setId);
+        setDeleteSetId(null);
       } catch (err) {
         if (writesFrozenRef.current) return;
         setError(err);
         await load();
+      } finally {
+        setDeleteSetBusy(false);
       }
     },
     [removeSetRow, load]
@@ -4241,19 +4241,25 @@ export function SessionDetailPage() {
       )}
 
       {!isCompleted ? (
-        <div className="session-finish-dock" role="region" aria-label="Finish workout">
+        <div
+          className={`session-finish-dock${totalSetsLogged >= 1 ? " session-finish-dock--logged" : ""}`}
+          role="region"
+          aria-label="Finish workout"
+        >
           <RestTimerBar
             sessionId={sessionId}
             enabled={Boolean(trainingPrefs.restTimer?.enabled)}
           />
           <div className="session-finish-dock__inner stack">
-            <p className="muted small session-finish-dock__hint" style={{ margin: 0 }}>
-              Autosaves as you go. Finishing saves it to your history.
-            </p>
             {totalSetsLogged < 1 ? (
-              <p className="muted small session-finish-dock__hint" style={{ margin: 0 }}>
-                Log at least one set anywhere to enable <strong>Finish workout</strong>.
-              </p>
+              <>
+                <p className="muted small session-finish-dock__hint" style={{ margin: 0 }}>
+                  Autosaves as you go. Finishing saves it to your history.
+                </p>
+                <p className="muted small session-finish-dock__hint" style={{ margin: 0 }}>
+                  Log at least one set anywhere to enable <strong>Finish workout</strong>.
+                </p>
+              </>
             ) : null}
             <button
               type="button"
@@ -4279,12 +4285,28 @@ export function SessionDetailPage() {
         onCancel={cancelFinishConfirm}
       />
       <ConfirmPanel
+        open={deleteSetId != null}
+        tone="danger"
+        title="Delete this set?"
+        body="Logged values in it will be deleted."
+        confirmLabel="Delete set"
+        cancelLabel="Keep set"
+        busy={deleteSetBusy}
+        onConfirm={() => {
+          if (deleteSetId == null) return;
+          void onDeleteSet(deleteSetId, { skipConfirm: true });
+        }}
+        onCancel={() => {
+          if (!deleteSetBusy) setDeleteSetId(null);
+        }}
+      />
+      <ConfirmPanel
         open={setCountConfirm != null}
         tone="danger"
         title={setCountTitle}
         body={setCountBody}
         confirmLabel="Remove sets"
-        cancelLabel="Keep"
+        cancelLabel="Keep sets"
         busy={setCountConfirmBusy}
         onConfirm={() => void confirmSetCountRemoval()}
         onCancel={cancelSetCountRemoval}

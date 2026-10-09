@@ -51,7 +51,7 @@ export function SetRow({
               <span className="muted small">(optional)</span>
             </span>
             <span className="muted small" style={{ display: "block", fontWeight: 400, lineHeight: 1.25 }}>
-              Reps in Reserve
+              Reps in reserve
             </span>
             <input
               value={setData.rir}
@@ -68,7 +68,7 @@ export function SetRow({
               <span className="muted small">(optional)</span>
             </span>
             <span className="muted small" style={{ display: "block", fontWeight: 400, lineHeight: 1.25 }}>
-              Rating of Perceived Exertion
+              Rating of perceived exertion
             </span>
             <input
               value={setData.rpe}

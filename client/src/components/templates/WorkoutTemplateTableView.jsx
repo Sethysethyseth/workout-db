@@ -49,7 +49,7 @@ export function WorkoutTemplateTableView({
                           <span>RIR</span> <MetricInfoButton metric="rir" />
                         </div>
                         <div className="template-table-metric-th__label-line muted small">
-                          Reps in Reserve
+                          Reps in reserve
                         </div>
                       </div>
                     </th>
@@ -61,7 +61,7 @@ export function WorkoutTemplateTableView({
                           <span>RPE</span> <MetricInfoButton metric="rpe" />
                         </div>
                         <div className="template-table-metric-th__label-line muted small">
-                          Rating of Perceived Exertion
+                          Rating of perceived exertion
                         </div>
                       </div>
                     </th>
