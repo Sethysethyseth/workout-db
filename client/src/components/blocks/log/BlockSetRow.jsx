@@ -121,6 +121,8 @@ export const BlockSetRow = memo(function BlockSetRow({
   onRemove,
   onInteractStart,
   writesFrozenRef,
+  /** (setId, logged) on a persisted false -> true or true -> false. Not on mount. */
+  onRestLoggedChange = null,
 }) {
   const rootRef = useRef(null);
   const noteInputRef = useRef(null);
@@ -146,6 +148,15 @@ export const BlockSetRow = memo(function BlockSetRow({
 
   const useRIR = effortSignal === "rir";
   const useRPE = effortSignal === "rpe";
+  const persistedLogged = !isDraft && blockSetIsLogged(set);
+  const prevLoggedRef = useRef(undefined);
+
+  useEffect(() => {
+    const prev = prevLoggedRef.current;
+    prevLoggedRef.current = persistedLogged;
+    if (prev === undefined || prev === persistedLogged) return;
+    onRestLoggedChange?.(set?.id, persistedLogged);
+  }, [persistedLogged, set?.id, onRestLoggedChange]);
 
   canLogRef.current = canLogAsPlanned;
 

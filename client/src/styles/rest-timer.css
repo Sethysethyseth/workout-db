@@ -1,0 +1,121 @@
+/* Rest timer: one accent line. Everything else stays quiet. */
+
+.rest-timer {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  max-width: 980px;
+  margin: 0 auto 8px;
+  min-height: 44px;
+  padding: 8px 0 2px;
+}
+
+.rest-timer__track {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.rest-timer__line {
+  height: 100%;
+  width: 100%;
+  background: var(--color-interactive);
+  transform-origin: left center;
+  transform: scaleX(1);
+}
+
+.rest-timer__readout {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.rest-timer__time {
+  font-variant-numeric: tabular-nums;
+  font-size: 1.75rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--color-text);
+}
+
+.rest-timer__kicker,
+.rest-timer__name {
+  color: var(--color-muted);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.rest-timer__name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rest-timer__actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
+.rest-timer__btn {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 10px;
+  border-radius: 10px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-2);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.rest-timer__btn:focus-visible {
+  outline: 2px solid var(--color-interactive);
+  outline-offset: 2px;
+}
+
+.rest-timer--done {
+  animation: rest-timer-pulse 220ms ease-out 1;
+}
+
+@keyframes rest-timer-pulse {
+  0% {
+    opacity: 1;
+  }
+  40% {
+    opacity: 0.55;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* Same keypad signal the finish dock already uses. */
+html.bk-log-kbd .rest-timer {
+  display: none;
+}
+
+.session-detail-page--live:has(.rest-timer) {
+  padding-bottom: calc(11.5rem + env(safe-area-inset-bottom, 0px));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rest-timer--done {
+    animation: none;
+  }
+}

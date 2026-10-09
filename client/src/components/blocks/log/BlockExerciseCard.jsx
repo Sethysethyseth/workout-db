@@ -21,6 +21,8 @@ import {
 import { nextLoggableSlotIndex } from "./nextLoggableSlot.js";
 import { parseLeadSide, splitPlanNotes } from "./splitPlanNotes.js";
 import { derivePerSideMode } from "./perSideMode.js";
+import { getTrainingPrefs } from "../../../lib/trainingPrefs.js";
+import { restDurationFor, startRestRun } from "../../../lib/restTimer.js";
 import "../../../styles/blocks/bk-ui.css";
 import "../../../styles/blocks/bk-log.css";
 
@@ -168,6 +170,7 @@ function PlannedSetGrid({
   onRemoveSlot,
   onActivateExercise,
   onAddSet,
+  onRestLoggedChange,
   seId,
   writesFrozenRef,
 }) {
@@ -240,6 +243,9 @@ function PlannedSetGrid({
                   side === "L" || side === "R" ? { ...d, side } : d;
                 const created = await onPromoteDraftSet(seId, payload);
                 if (created) {
+                  if (blockSetIsLogged(created)) {
+                    onRestLoggedChange?.(created.id, true);
+                  }
                   onDraftClear?.(dKey);
                   if (slot.kind === "extra") {
                     onRemoveSlot?.(slot, { demoteExtraOnly: true });
@@ -251,6 +257,7 @@ function PlannedSetGrid({
               onRemove={() => onRemoveSlot?.(slot)}
               onInteractStart={() => onActivateExercise?.(seId)}
               writesFrozenRef={writesFrozenRef}
+              onRestLoggedChange={onRestLoggedChange}
             />
           );
         })}
@@ -313,6 +320,7 @@ export function BlockExerciseCard({
   );
   const [noteError, setNoteError] = useState(null);
   const [perSideConfirm, setPerSideConfirm] = useState(null);
+  const restArmedRef = useRef(new Set());
 
   const perSideMode = derivePerSideMode(
     perSideOverride ?? plan?.perSide ?? null,
@@ -321,6 +329,7 @@ export function BlockExerciseCard({
   );
 
   useEffect(() => {
+    restArmedRef.current = new Set();
     setPerSideOverride(null);
     setHiddenBySide({
       bilat: loadHiddenPlannedIndices(sessionId, se.id),
@@ -402,6 +411,26 @@ export function BlockExerciseCard({
     se.exerciseName && String(se.exerciseName).trim()
       ? String(se.exerciseName).trim()
       : `Exercise ${se.order}`;
+
+  const onRestLoggedChange = useCallback(
+    (setId, logged) => {
+      if (setId == null || isCompleted) return;
+      if (!logged) {
+        restArmedRef.current.delete(setId);
+        return;
+      }
+      if (restArmedRef.current.has(setId)) return;
+      restArmedRef.current.add(setId);
+      const prefs = getTrainingPrefs();
+      if (!prefs.restTimer.enabled) return;
+      const seconds = restDurationFor({
+        planRestSec: plan?.restSec,
+        prefSeconds: prefs.restTimer.seconds,
+      });
+      startRestRun(sessionId, { durationSec: seconds, exerciseName: namePart });
+    },
+    [isCompleted, plan, sessionId, namePart]
+  );
 
   const useRIR = effortSignal === "rir";
   const useRPE = effortSignal === "rpe";
@@ -567,6 +596,7 @@ export function BlockExerciseCard({
           onRemoveSlot={(slot, opts) => void handleRemoveSlot(side, slot, opts)}
           onActivateExercise={onActivateExercise}
           onAddSet={handleAddSet}
+          onRestLoggedChange={isCompleted ? undefined : onRestLoggedChange}
           seId={se.id}
           writesFrozenRef={writesFrozenRef}
         />

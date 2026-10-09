@@ -26,7 +26,9 @@ import { CompletedSessionSummary } from "../components/workout/CompletedSessionS
 import { getAdHocSessionTitle, setAdHocSessionTitle } from "../lib/adHocSessionTitle.js";
 import { sessionDisplayTitle } from "../lib/sessionDisplay.js";
 import { smartWorkoutNameFromSessionExercises } from "../lib/smartWorkoutName.js";
-import { useTrainingPrefs } from "../lib/trainingPrefs.js";
+import { getTrainingPrefs, useTrainingPrefs } from "../lib/trainingPrefs.js";
+import { restDurationFor, startRestRun } from "../lib/restTimer.js";
+import { RestTimerBar } from "../components/workout/RestTimerBar.jsx";
 import { loadWeightUnit } from "../lib/weightUnitPref.js";
 import "../styles/training-prefs.css";
 import { useSessionLiveLoggingGuard } from "../context/SessionLiveLoggingGuardContext.jsx";
@@ -2485,6 +2487,8 @@ export function SessionDetailPage() {
   const lastUserScrollAtRef = useRef(0);
   const lastViewportShiftAtRef = useRef(0);
   const writesFrozenRef = useRef(false);
+  /** Quick-log only: set id -> core-logged. Null map means "not seeded yet". */
+  const quickLoggedRef = useRef({ sessionId: null, map: null });
   const discardLeavingRef = useRef(false);
   const discardBtnRef = useRef(null);
   const keepLoggingBtnRef = useRef(null);
@@ -2812,8 +2816,10 @@ export function SessionDetailPage() {
     };
   }, [liveBlockDay]);
 
+  const liveLogging = Boolean(session && !session.completedAt);
+
   useEffect(() => {
-    if (!liveBlockDay) {
+    if (!liveLogging) {
       document.documentElement.classList.remove("bk-log-kbd");
       return;
     }
@@ -2824,7 +2830,7 @@ export function SessionDetailPage() {
       return (
         el instanceof HTMLElement &&
         (el.tagName === "INPUT" || el.tagName === "TEXTAREA") &&
-        Boolean(document.querySelector(".session-detail-page--block")?.contains(el))
+        Boolean(el.closest(".session-detail-page"))
       );
     }
 
@@ -2867,7 +2873,46 @@ export function SessionDetailPage() {
       window.visualViewport?.removeEventListener("scroll", onViewportChange);
       document.documentElement.classList.remove("bk-log-kbd");
     };
-  }, [liveBlockDay]);
+  }, [liveLogging]);
+
+  // Quick-log sets: start rest on the first false -> true of sessionSetHasCoreLogged.
+  // Block days use blockSetIsLogged inside the block row instead. Seed on open
+  // so sets that are already logged do not start a timer.
+  useEffect(() => {
+    if (!session || session.completedAt || session.blockContext) {
+      quickLoggedRef.current = { sessionId: session?.id ?? null, map: null };
+      return;
+    }
+    if (quickLoggedRef.current.sessionId !== session.id) {
+      quickLoggedRef.current = { sessionId: session.id, map: null };
+    }
+    const names = new Map();
+    for (const se of session.sessionExercises || []) {
+      const n = String(se.exerciseName ?? "").trim();
+      names.set(se.id, n || "Exercise");
+    }
+    const next = new Map();
+    for (const s of session.sets || []) {
+      if (s?.id == null) continue;
+      next.set(s.id, sessionSetHasCoreLogged(s));
+    }
+    const prev = quickLoggedRef.current.map;
+    quickLoggedRef.current = { sessionId: session.id, map: next };
+    if (prev == null) return;
+    const prefs = getTrainingPrefs();
+    if (!prefs.restTimer.enabled) return;
+    for (const [id, logged] of next) {
+      if (!logged || prev.get(id) === true) continue;
+      const set = (session.sets || []).find((s) => s.id === id);
+      const seconds = restDurationFor({
+        planRestSec: null,
+        prefSeconds: prefs.restTimer.seconds,
+      });
+      const exerciseName = names.get(set?.sessionExerciseId) || "Exercise";
+      startRestRun(sessionId, { durationSec: seconds, exerciseName });
+      break;
+    }
+  }, [session, sessionId]);
 
   useEffect(() => {
     if (scrollMissingSetId == null) return;
@@ -4197,6 +4242,10 @@ export function SessionDetailPage() {
 
       {!isCompleted ? (
         <div className="session-finish-dock" role="region" aria-label="Finish workout">
+          <RestTimerBar
+            sessionId={sessionId}
+            enabled={Boolean(trainingPrefs.restTimer?.enabled)}
+          />
           <div className="session-finish-dock__inner stack">
             <p className="muted small session-finish-dock__hint" style={{ margin: 0 }}>
               Autosaves as you go. Finishing saves it to your history.
