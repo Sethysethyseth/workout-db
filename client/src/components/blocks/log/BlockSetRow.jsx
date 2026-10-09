@@ -7,6 +7,7 @@ import {
   doseGhostFromPlan,
   effortGhostFromPlan,
   fillDraftFromPlanExceptEffort,
+  planSetWithLastTimeWeight,
   weightGhostFromPlan,
 } from "./ghostPlaceholders.js";
 import "../../../styles/blocks/bk-ui.css";
@@ -104,6 +105,8 @@ export const BlockSetRow = memo(function BlockSetRow({
   set = null,
   plan = null,
   planSet = null,
+  /** Last time's set for this row index. Weight only, and only when the plan weight is empty. */
+  lastTimeSet = null,
   timedMode = false,
   effortSignal = null,
   weightUnit = "lb",
@@ -325,7 +328,11 @@ export const BlockSetRow = memo(function BlockSetRow({
     if (!canLogRef.current) return;
     if (disabled || writesFrozenRef?.current) return;
     onInteractStart?.();
-    const filled = fillDraftFromPlanExceptEffort(draftRef.current, planSet, timedMode);
+    const filled = fillDraftFromPlanExceptEffort(
+      draftRef.current,
+      planSetWithLastTimeWeight(planSet, lastTimeSet),
+      timedMode
+    );
     setDraft(filled);
     draftRef.current = filled;
     if (isBlankDraft(filled)) return;
@@ -386,7 +393,10 @@ export const BlockSetRow = memo(function BlockSetRow({
   }
 
   const dosePh = doseGhostFromPlan(planSet, timedMode);
-  const weightPh = weightGhostFromPlan(planSet, weightUnit);
+  const weightPh = weightGhostFromPlan(
+    planSetWithLastTimeWeight(planSet, lastTimeSet),
+    weightUnit
+  );
   const effortPh = effortSignal
     ? effortGhostFromPlan(plan, planSet, effortSignal)
     : "—";

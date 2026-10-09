@@ -8,6 +8,7 @@ const {
   updateSessionExercise,
   getMySessions,
   getSessionById,
+  getLastPerformance,
   createSetForSession,
   updateSet,
   updateSession,
@@ -27,6 +28,7 @@ router.post("/", authRequired, createAdHocSession);
 router.get("/mine", authRequired, getMySessions);
 router.patch("/:id/exercises/:exerciseId", authRequired, updateSessionExercise);
 router.post("/:id/exercises", authRequired, addSessionExercise);
+router.get("/:id/last-performance", authRequired, getLastPerformance);
 router.get("/:id", authRequired, getSessionById);
 router.post("/:id/complete", authRequired, completeSession);
 router.post("/:id/reopen", authRequired, reopenSession);

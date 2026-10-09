@@ -62,6 +62,23 @@ export function doseGhostFromPlan(planSet, timedMode) {
  * @param {object | null | undefined} planSet
  * @param {boolean} timedMode
  */
+/**
+ * Block day: plan weight wins. When the plan has no weight, use last time's
+ * weight for this row only. Reps and seconds stay the plan's.
+ *
+ * @param {object | null | undefined} planSet
+ * @param {object | null | undefined} lastSet
+ */
+export function planSetWithLastTimeWeight(planSet, lastSet) {
+  if (lastSet == null || lastSet.weight == null || String(lastSet.weight).trim() === "") {
+    return planSet ?? null;
+  }
+  const planned = planSet?.weight;
+  if (planned != null && String(planned).trim() !== "") return planSet ?? null;
+  if (!planSet) return { weight: lastSet.weight };
+  return { ...planSet, weight: lastSet.weight };
+}
+
 export function fillDraftFromPlanExceptEffort(draft, planSet, timedMode) {
   const next = { ...draft };
   if (!planSet) return next;

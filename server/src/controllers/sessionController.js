@@ -2,6 +2,7 @@ const prisma = require("../lib/prisma");
 const { defaultWorkoutSessionName } = require("../lib/defaultWorkoutSessionName");
 const { validateOptionalNonNegDecimal } = require("../lib/numericValidators");
 const { buildUserExerciseIndex } = require("../analytics/userExercises");
+const { buildLastPerformance } = require("../analytics/lastPerformance");
 const { loadCatalog } = require("../analytics");
 const { stampExerciseIdentityWithIndex } = require("../lib/exerciseIdentity");
 const { canDiscardSession } = require("../lib/sessionDiscard");
@@ -967,6 +968,125 @@ async function getSessionById(req, res, next) {
     return res.status(200).json({
       session: sessionWithContext,
     });
+  } catch (err) {
+    return next(err);
+  }
+}
+
+const LAST_PERFORMANCE_LOOKBACK_DAYS = 180;
+const LAST_PERFORMANCE_SESSION_CAP = 120;
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+async function getLastPerformance(req, res, next) {
+  try {
+    const userId = req.authUserId;
+
+    if (!userId) {
+      return res.status(401).json({
+        error: "Authentication required",
+      });
+    }
+
+    const sessionId = parsePositiveInt(req.params && req.params.id);
+
+    if (!sessionId) {
+      return res.status(400).json({
+        error: "Session id must be a positive integer",
+      });
+    }
+
+    const session = await prisma.workoutSession.findFirst({
+      where: {
+        id: sessionId,
+        userId,
+      },
+      select: {
+        id: true,
+        performedAt: true,
+        sessionExercises: {
+          orderBy: { order: "asc" },
+          select: {
+            id: true,
+            exerciseId: true,
+            userExerciseId: true,
+            exerciseName: true,
+          },
+        },
+      },
+    });
+
+    if (!session) {
+      return res.status(404).json({
+        error: "Session not found",
+      });
+    }
+
+    const windowStart = new Date(
+      session.performedAt.getTime() - LAST_PERFORMANCE_LOOKBACK_DAYS * MS_PER_DAY
+    );
+
+    const prior = await prisma.workoutSession.findMany({
+      where: {
+        userId,
+        id: { not: sessionId },
+        completedAt: { not: null },
+        performedAt: {
+          gte: windowStart,
+          lt: session.performedAt,
+        },
+      },
+      orderBy: { performedAt: "desc" },
+      take: LAST_PERFORMANCE_SESSION_CAP,
+      select: {
+        performedAt: true,
+        sessionExercises: {
+          orderBy: { order: "asc" },
+          select: {
+            order: true,
+            exerciseId: true,
+            userExerciseId: true,
+            exerciseName: true,
+            sets: {
+              orderBy: { order: "asc" },
+              select: {
+                order: true,
+                side: true,
+                weight: true,
+                reps: true,
+                durationSec: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const userExerciseRows = await prisma.userExercise.findMany({
+      where: { userId },
+      select: {
+        id: true,
+        name: true,
+        normalizedName: true,
+        muscles: true,
+      },
+    });
+    const userIndex = buildUserExerciseIndex(userExerciseRows);
+
+    const exercises = buildLastPerformance({
+      targets: session.sessionExercises.map((row) => ({
+        sessionExerciseId: row.id,
+        exerciseId: row.exerciseId,
+        userExerciseId: row.userExerciseId,
+        exerciseName: row.exerciseName,
+      })),
+      priorSessions: prior.map((row) => ({
+        performedAt: row.performedAt,
+        exercises: row.sessionExercises,
+      })),
+      userIndex,
+    });
+
+    return res.status(200).json({ exercises });
   } catch (err) {
     return next(err);
   }
@@ -1982,6 +2102,7 @@ module.exports = {
   updateSessionExercise,
   getMySessions,
   getSessionById,
+  getLastPerformance,
   createSetForSession,
   updateSet,
   updateSession,

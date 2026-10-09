@@ -132,6 +132,19 @@ function sideLabel(side) {
   return "";
 }
 
+/** Last-time set at this row index. Per-side grids use that side's sequence. */
+function lastTimeSetAt(sets, side, index) {
+  const list = Array.isArray(sets) ? sets : [];
+  if (!Number.isInteger(index) || index < 0) return null;
+  let rows = list;
+  if (side === "L" || side === "R") {
+    const sided = list.filter((s) => s.side === side);
+    if (sided.length > 0) rows = sided;
+    else if (list.some((s) => s.side === "L" || s.side === "R")) return null;
+  }
+  return rows[index] ?? null;
+}
+
 /**
  * One planned-set grid (bilateral, or a single L/R side).
  */
@@ -139,6 +152,7 @@ function PlannedSetGrid({
   side,
   slots,
   plan,
+  lastSets = null,
   timedExercise,
   effortLabel,
   effortSignal,
@@ -204,6 +218,7 @@ function PlannedSetGrid({
               set={slot.set}
               plan={plan}
               planSet={rowPlanSet}
+              lastTimeSet={lastTimeSetAt(lastSets, side, idx)}
               timedMode={rowTimed}
               effortSignal={effortSignal}
               weightUnit={weightUnit}
@@ -270,6 +285,7 @@ export function BlockExerciseCard({
   onDeleteSet,
   onActivateExercise,
   onExerciseNotesSaved,
+  lastPerformance = null,
   writesFrozen = false,
   writesFrozenRef,
   onStatsChange,
@@ -535,6 +551,7 @@ export function BlockExerciseCard({
           side={side}
           slots={slots}
           plan={plan}
+          lastSets={lastPerformance?.sets}
           timedExercise={timedExercise}
           effortLabel={effortLabel}
           effortSignal={effortSignal}

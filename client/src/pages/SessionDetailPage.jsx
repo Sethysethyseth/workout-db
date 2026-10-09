@@ -45,14 +45,17 @@ import {
   PlanLine,
   TimedSecInput,
   blockSetIsLogged,
+  doseGhostFromPlan,
   durationPlaceholderFromPlan,
   effortPlaceholderFromPlan,
+  fillDraftFromPlanExceptEffort,
   isOverEffortCap,
   isTimedPlanExercise,
   isTimedPlanSet,
   parseSeconds,
   planSetAt,
   repsPlaceholderFromPlan,
+  weightGhostFromPlan,
   weightPlaceholderFromPlan,
 } from "../components/blocks/log/index.js";
 import { derivePerSideMode } from "../components/blocks/log/perSideMode.js";
@@ -229,6 +232,60 @@ function formatDate(value) {
     minute: "2-digit",
   });
 }
+
+function formatLastTimeCaption(value) {
+  if (!value) return null;
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+function lastTimeRowsForSide(sets, side) {
+  const list = Array.isArray(sets) ? sets : [];
+  if (side !== "L" && side !== "R") return list;
+  const sided = list.filter((s) => s.side === side);
+  if (sided.length > 0) return sided;
+  if (list.some((s) => s.side === "L" || s.side === "R")) return [];
+  return list;
+}
+
+function ghostPlanFromLastSet(set) {
+  if (!set) return null;
+  const plan = {};
+  if (set.weight != null && String(set.weight).trim() !== "") plan.weight = set.weight;
+  if (set.reps != null && String(set.reps).trim() !== "") plan.reps = set.reps;
+  if (set.durationSec != null && String(set.durationSec).trim() !== "") {
+    plan.durationSec = set.durationSec;
+  }
+  if (plan.weight == null && plan.reps == null && plan.durationSec == null) return null;
+  return plan;
+}
+
+function lastTimeGhostTimed(planSet) {
+  return planSet != null && planSet.durationSec != null && planSet.reps == null;
+}
+
+function lastTimeFieldsForRow(lastSets, index, side) {
+  const rows = lastTimeRowsForSide(lastSets, side);
+  const planSet = ghostPlanFromLastSet(rows[index]);
+  if (!planSet) return null;
+  return {
+    planSet,
+    timedMode: lastTimeGhostTimed(planSet),
+    lastTimeSetNumber: index + 1,
+  };
+}
+
+/** Restores the session input chrome; placeholder color still comes from bk-num-field. */
+const LAST_TIME_GHOST_INPUT_STYLE = {
+  height: "auto",
+  border: "1px solid var(--color-input-border)",
+  borderRadius: "var(--radius-control)",
+  background: "var(--color-surface-1)",
+  textAlign: "start",
+  padding: "10px 12px",
+  letterSpacing: "normal",
+};
 
 function nextSetOrder(session) {
   const sets = Array.isArray(session?.sets) ? session.sets : [];
@@ -867,6 +924,10 @@ const SessionSetRow = memo(function SessionSetRow({
   plan = undefined,
   planSet = undefined,
   timedMode = false,
+  /** Distinguishes multiple unsaved ghost rows. Absent keeps the original draft field ids. */
+  draftSlot = null,
+  /** When set, this row's plan is last time: ghost placeholders and the set-number button. */
+  lastTimeSetNumber = null,
 }) {
   const rootRef = useRef(null);
   const [draft, setDraft] = useState(() =>
@@ -891,12 +952,12 @@ const SessionSetRow = memo(function SessionSetRow({
     () =>
       isDraft
         ? {
-            weight: `log-draft-${sessionExerciseId}-weight`,
-            reps: `log-draft-${sessionExerciseId}-reps`,
-            durationSec: `log-draft-${sessionExerciseId}-duration`,
-            rir: `log-draft-${sessionExerciseId}-rir`,
-            rpe: `log-draft-${sessionExerciseId}-rpe`,
-            notes: `log-draft-${sessionExerciseId}-notes`,
+            weight: `log-draft-${sessionExerciseId}${draftSlot == null ? "" : `-${draftSlot}`}-weight`,
+            reps: `log-draft-${sessionExerciseId}${draftSlot == null ? "" : `-${draftSlot}`}-reps`,
+            durationSec: `log-draft-${sessionExerciseId}${draftSlot == null ? "" : `-${draftSlot}`}-duration`,
+            rir: `log-draft-${sessionExerciseId}${draftSlot == null ? "" : `-${draftSlot}`}-rir`,
+            rpe: `log-draft-${sessionExerciseId}${draftSlot == null ? "" : `-${draftSlot}`}-rpe`,
+            notes: `log-draft-${sessionExerciseId}${draftSlot == null ? "" : `-${draftSlot}`}-notes`,
           }
         : {
             weight: `log-set-${set.id}-weight`,
@@ -906,7 +967,7 @@ const SessionSetRow = memo(function SessionSetRow({
             rpe: `log-set-${set.id}-rpe`,
             notes: `log-set-${set.id}-notes`,
           },
-    [isDraft, sessionExerciseId, set?.id]
+    [isDraft, sessionExerciseId, set?.id, draftSlot]
   );
 
   useLayoutEffect(() => {
@@ -1085,6 +1146,18 @@ const SessionSetRow = memo(function SessionSetRow({
       if (w !== "") {
         onAutofillPartnerWeight(partnerSet.id, w, partnerSet);
       }
+    }
+  }
+
+  function applyLastTime() {
+    if (planSet == null || disabled || writesFrozenRef?.current) return;
+    const filled = fillDraftFromPlanExceptEffort(draftRef.current, planSet, timedMode);
+    setDraft(filled);
+    draftRef.current = filled;
+    if (isDraft) {
+      void tryPromote();
+    } else {
+      flushNow();
     }
   }
 
@@ -1287,12 +1360,22 @@ const SessionSetRow = memo(function SessionSetRow({
       </span>
     ) : null;
 
-  const weightPh =
-    planSet != null ? weightPlaceholderFromPlan(planSet) ?? "e.g. 185" : "e.g. 185";
-  const repsPh =
-    planSet != null ? repsPlaceholderFromPlan(planSet) ?? "e.g. 8" : "e.g. 8";
-  const durationPh =
-    planSet != null ? durationPlaceholderFromPlan(planSet) ?? "e.g. 45" : "e.g. 45";
+  const lastTimeMode = lastTimeSetNumber != null && planSet != null;
+  const weightPh = lastTimeMode
+    ? weightGhostFromPlan(planSet, undefined) || "e.g. 185"
+    : planSet != null
+      ? weightPlaceholderFromPlan(planSet) ?? "e.g. 185"
+      : "e.g. 185";
+  const repsPh = lastTimeMode
+    ? doseGhostFromPlan(planSet, false) || "e.g. 8"
+    : planSet != null
+      ? repsPlaceholderFromPlan(planSet) ?? "e.g. 8"
+      : "e.g. 8";
+  const durationPh = lastTimeMode
+    ? doseGhostFromPlan(planSet, true) || "e.g. 45"
+    : planSet != null
+      ? durationPlaceholderFromPlan(planSet) ?? "e.g. 45"
+      : "e.g. 45";
   const rirPh =
     planSet != null ? effortPlaceholderFromPlan(plan, planSet, "rir") ?? "—" : "—";
   const rpePh =
@@ -1303,10 +1386,15 @@ const SessionSetRow = memo(function SessionSetRow({
     planSet != null &&
     isOverEffortCap(plan, planSet, draft.rpe, draft.rir);
 
+  const showLastTimeButton =
+    lastTimeMode && !disabled && (isDraft || !coreLogged);
+  const ghostInputClass = lastTimeMode ? "bk-num-field" : undefined;
+  const ghostInputStyle = lastTimeMode ? LAST_TIME_GHOST_INPUT_STYLE : undefined;
+
   return (
     <div
       ref={isDraft ? undefined : rootRef}
-      className="session-set-row-root"
+      className={lastTimeMode ? "session-set-row-root bk" : "session-set-row-root"}
       data-session-set-id={isDraft ? undefined : set.id}
       onFocusCapture={
         !disabled && onInteractStart
@@ -1319,12 +1407,19 @@ const SessionSetRow = memo(function SessionSetRow({
       <WorkoutSetRowShell
         label={setLabel}
         headerExtra={
-          isDraft ? null : (
+          isDraft && !showLastTimeButton ? null : (
             <>
-              {orderField}
-              {sideBadge}
-              {statusBadge}
-              {hasPR && disabled ? (
+              {showLastTimeButton ? (
+                <AsPlannedControl
+                  setNumber={lastTimeSetNumber}
+                  onFill={applyLastTime}
+                  disabled={disabled}
+                />
+              ) : null}
+              {isDraft ? null : orderField}
+              {isDraft ? null : sideBadge}
+              {isDraft ? null : statusBadge}
+              {!isDraft && hasPR && disabled ? (
                 <span className="session-set-pr-chip" title="Personal record">
                   PR
                 </span>
@@ -1345,7 +1440,7 @@ const SessionSetRow = memo(function SessionSetRow({
               : "Enter weight & reps for this set."}
           </p>
         ) : null}
-        {planSet != null && !disabled ? (
+        {planSet != null && !disabled && !lastTimeMode ? (
           <div className="bk-log-set-targets">
             <AsPlannedControl onFill={applyAsPlanned} disabled={disabled} />
           </div>
@@ -1373,6 +1468,8 @@ const SessionSetRow = memo(function SessionSetRow({
                 inputMode="decimal"
                 min="0"
                 step="0.01"
+                className={ghostInputClass}
+                style={ghostInputStyle}
                 disabled={isDraft ? false : disabled}
                 placeholder={weightPh}
                 aria-invalid={needsWeightHighlight ? true : undefined}
@@ -1412,6 +1509,8 @@ const SessionSetRow = memo(function SessionSetRow({
                   inputMode="decimal"
                   min="0"
                   step="1"
+                  className={ghostInputClass}
+                  style={ghostInputStyle}
                   disabled={isDraft ? false : disabled}
                   placeholder={repsPh}
                   aria-invalid={needsRepsHighlight ? true : undefined}
@@ -1565,6 +1664,8 @@ function SessionExerciseBlock({
   writesFrozenRef,
   /** BK9: weight unit for plan rx line (lb/kg). Absent on non-block paths. */
   weightUnit = undefined,
+  /** Last time for this exercise, when mirror-last is on. Null leaves the logger unchanged. */
+  lastPerformance = null,
 }) {
   const [draftResumeVersion, setDraftResumeVersion] = useState(0);
   const [draftTrackedStatus, setDraftTrackedStatus] = useState(null);
@@ -1604,6 +1705,12 @@ function SessionExerciseBlock({
   // Guard: plan chrome only when SessionExercise.plan is present (block sessions).
   const plan = se.plan != null && typeof se.plan === "object" ? se.plan : null;
   const timedExercise = plan != null && isTimedPlanExercise(plan);
+  const lastSets =
+    !isCompleted && plan == null && Array.isArray(lastPerformance?.sets)
+      ? lastPerformance.sets
+      : [];
+  const lastTimeLabel =
+    lastSets.length > 0 ? formatLastTimeCaption(lastPerformance.lastPerformedAt) : null;
 
   /** Live path only: one L/R pair via createSetPairForExercise when mode is on and sets are empty. */
   const maybeAutoCreateFirstPair = useCallback(() => {
@@ -1819,6 +1926,11 @@ function SessionExerciseBlock({
             )}
             {trackedIndicator}
             {headingSummary}
+            {lastTimeLabel ? (
+              <p className="muted small" style={{ margin: "2px 0 0" }}>
+                Last time: {lastTimeLabel}
+              </p>
+            ) : null}
           </div>
           {removeControl}
         </div>
@@ -1914,10 +2026,80 @@ function SessionExerciseBlock({
                 {sets.length === 0 ? (
                   isCompleted ? (
                     <div className="muted small session-empty-sets">No sets logged.</div>
-                  ) : perSideMode ? (
+                  ) : perSideMode && lastSets.length === 0 ? (
                     <div className="muted small session-empty-sets">
                       Tap "+ Add set" above to log your first left/right pair.
                     </div>
+                  ) : lastSets.length > 0 && perSideMode ? (
+                    Array.from(
+                      {
+                        length: Math.max(
+                          lastTimeRowsForSide(lastSets, "L").length,
+                          lastTimeRowsForSide(lastSets, "R").length
+                        ),
+                      },
+                      (_, i) => (
+                        <div key={`ghost-pair-${se.id}-${i}`} className="session-set-pair stack">
+                          {["L", "R"].map((side) => {
+                            const ghost = lastTimeFieldsForRow(lastSets, i, side);
+                            return (
+                              <SessionSetRow
+                                key={`ghost-${se.id}-${side}-${i}`}
+                                isDraft
+                                draftSlot={`${side}-${i}`}
+                                resumeVersion={draftResumeVersion}
+                                sessionExerciseId={se.id}
+                                setLabelOverride={
+                                  side === "L" ? `Set ${i + 1} - Left` : `Set ${i + 1} - Right`
+                                }
+                                sideBadgeLetter={side}
+                                useRIR={useRIR}
+                                useRPE={useRPE}
+                                useSetNotes={useSetNotes}
+                                onInteractStart={onActivateExercise}
+                                onPromoteDraft={(d) => onPromoteDraftSet(se.id, { ...d, side })}
+                                onUpdateSet={onUpdateSet}
+                                writesFrozenRef={writesFrozenRef}
+                                disabled={writesFrozen}
+                                {...(ghost
+                                  ? {
+                                      planSet: ghost.planSet,
+                                      timedMode: ghost.timedMode,
+                                      lastTimeSetNumber: ghost.lastTimeSetNumber,
+                                    }
+                                  : {})}
+                              />
+                            );
+                          })}
+                        </div>
+                      )
+                    )
+                  ) : lastSets.length > 0 ? (
+                    lastSets.map((_, i) => {
+                      const ghost = lastTimeFieldsForRow(lastSets, i, null);
+                      if (!ghost) return null;
+                      return (
+                        <SessionSetRow
+                          key={`session-set-slot-${se.id}-ghost-${i}`}
+                          isDraft
+                          draftSlot={i === 0 ? null : i}
+                          resumeVersion={draftResumeVersion}
+                          sessionExerciseId={se.id}
+                          setLabelOverride={i === 0 ? undefined : `Set ${i + 1}`}
+                          useRIR={useRIR}
+                          useRPE={useRPE}
+                          useSetNotes={useSetNotes}
+                          onInteractStart={onActivateExercise}
+                          onPromoteDraft={(d) => onPromoteDraftSet(se.id, d)}
+                          onUpdateSet={onUpdateSet}
+                          writesFrozenRef={writesFrozenRef}
+                          disabled={writesFrozen}
+                          planSet={ghost.planSet}
+                          timedMode={ghost.timedMode}
+                          lastTimeSetNumber={ghost.lastTimeSetNumber}
+                        />
+                      );
+                    })
                   ) : (
                     <SessionSetRow
                       key={`session-set-slot-${se.id}`}
@@ -1955,7 +2137,16 @@ function SessionExerciseBlock({
                       const rightSet = unit.sets.find((s) => s.side === "R") ?? unit.sets[1];
                       return (
                         <div key={`pair-${leftSet.id}-${rightSet.id}`} className="session-set-pair stack">
-                          {[leftSet, rightSet].map((s) => (
+                          {[leftSet, rightSet].map((s) => {
+                            const ghost =
+                              plan == null && lastSets.length > 0
+                                ? lastTimeFieldsForRow(
+                                    lastSets,
+                                    (unit.pairOrdinal ?? 1) - 1,
+                                    s.side === "L" || s.side === "R" ? s.side : null
+                                  )
+                                : null;
+                            return (
                             <SessionSetRow
                               key={s.id}
                               set={s}
@@ -1983,13 +2174,28 @@ function SessionExerciseBlock({
                               writesFrozenRef={writesFrozenRef}
                               {...(plan != null
                                 ? { plan, planSet: rowPlanSet, timedMode: rowTimed }
-                                : {})}
+                                : ghost
+                                  ? {
+                                      planSet: ghost.planSet,
+                                      timedMode: ghost.timedMode,
+                                      lastTimeSetNumber: ghost.lastTimeSetNumber,
+                                    }
+                                  : {})}
                             />
-                          ))}
+                            );
+                          })}
                         </div>
                       );
                     }
                     const s = unit.sets[0];
+                    const ghost =
+                      plan == null && lastSets.length > 0
+                        ? lastTimeFieldsForRow(
+                            lastSets,
+                            planIndex,
+                            perSideMode && (s.side === "L" || s.side === "R") ? s.side : null
+                          )
+                        : null;
                     return (
                       <SessionSetRow
                         key={idx === 0 && !perSideMode ? `session-set-slot-${se.id}` : s.id}
@@ -2019,11 +2225,105 @@ function SessionExerciseBlock({
                         writesFrozenRef={writesFrozenRef}
                         {...(plan != null
                           ? { plan, planSet: rowPlanSet, timedMode: rowTimed }
-                          : {})}
+                          : ghost
+                            ? {
+                                planSet: ghost.planSet,
+                                timedMode: ghost.timedMode,
+                                lastTimeSetNumber: ghost.lastTimeSetNumber,
+                              }
+                            : {})}
                       />
                     );
                   })
                 )}
+                {sets.length > 0 && plan == null && lastSets.length > 0
+                  ? perSideMode
+                    ? Array.from(
+                        {
+                          length: Math.max(
+                            0,
+                            Math.max(
+                              lastTimeRowsForSide(lastSets, "L").length,
+                              lastTimeRowsForSide(lastSets, "R").length
+                            ) -
+                              Math.max(
+                                sortedSets.filter((s) => s.side === "L").length,
+                                sortedSets.filter((s) => s.side === "R").length
+                              )
+                          ),
+                        },
+                        (_, offset) => {
+                          const i =
+                            Math.max(
+                              sortedSets.filter((s) => s.side === "L").length,
+                              sortedSets.filter((s) => s.side === "R").length
+                            ) + offset;
+                          return (
+                            <div key={`ghost-pair-${se.id}-${i}`} className="session-set-pair stack">
+                              {["L", "R"].map((side) => {
+                                const ghost = lastTimeFieldsForRow(lastSets, i, side);
+                                return (
+                                  <SessionSetRow
+                                    key={`ghost-${se.id}-${side}-${i}`}
+                                    isDraft
+                                    draftSlot={`${side}-${i}`}
+                                    resumeVersion={draftResumeVersion}
+                                    sessionExerciseId={se.id}
+                                    setLabelOverride={
+                                      side === "L" ? `Set ${i + 1} - Left` : `Set ${i + 1} - Right`
+                                    }
+                                    sideBadgeLetter={side}
+                                    useRIR={useRIR}
+                                    useRPE={useRPE}
+                                    useSetNotes={useSetNotes}
+                                    onInteractStart={onActivateExercise}
+                                    onPromoteDraft={(d) =>
+                                      onPromoteDraftSet(se.id, { ...d, side })
+                                    }
+                                    onUpdateSet={onUpdateSet}
+                                    writesFrozenRef={writesFrozenRef}
+                                    disabled={writesFrozen}
+                                    {...(ghost
+                                      ? {
+                                          planSet: ghost.planSet,
+                                          timedMode: ghost.timedMode,
+                                          lastTimeSetNumber: ghost.lastTimeSetNumber,
+                                        }
+                                      : {})}
+                                  />
+                                );
+                              })}
+                            </div>
+                          );
+                        }
+                      )
+                    : lastSets.slice(sortedSets.length).map((_, offset) => {
+                        const i = sortedSets.length + offset;
+                        const ghost = lastTimeFieldsForRow(lastSets, i, null);
+                        if (!ghost) return null;
+                        return (
+                          <SessionSetRow
+                            key={`session-set-slot-${se.id}-ghost-${i}`}
+                            isDraft
+                            draftSlot={i}
+                            resumeVersion={draftResumeVersion}
+                            sessionExerciseId={se.id}
+                            setLabelOverride={`Set ${i + 1}`}
+                            useRIR={useRIR}
+                            useRPE={useRPE}
+                            useSetNotes={useSetNotes}
+                            onInteractStart={onActivateExercise}
+                            onPromoteDraft={(d) => onPromoteDraftSet(se.id, d)}
+                            onUpdateSet={onUpdateSet}
+                            writesFrozenRef={writesFrozenRef}
+                            disabled={writesFrozen}
+                            planSet={ghost.planSet}
+                            timedMode={ghost.timedMode}
+                            lastTimeSetNumber={ghost.lastTimeSetNumber}
+                          />
+                        );
+                      })
+                  : null}
               </div>
               {!isCompleted && sets.length > 0 ? (
                 <div className="stack session-add-set-footer">
@@ -2121,6 +2421,41 @@ export function SessionDetailPage() {
     if (!Array.isArray(ex)) return [];
     return [...ex].sort((a, b) => a.order - b.order);
   }, [session?.sessionExercises]);
+
+  const [lastPerformanceById, setLastPerformanceById] = useState(() => new Map());
+  const mirrorLast = trainingPrefs.mirrorLast === true;
+  const mirrorExerciseKey =
+    mirrorLast && session && !session.completedAt
+      ? orderedSessionExercises
+          .map((e) =>
+            [e.id, e.exerciseId ?? "", e.userExerciseId ?? "", e.exerciseName ?? ""].join(":")
+          )
+          .join("|")
+      : "";
+
+  useEffect(() => {
+    if (!mirrorLast || session?.id == null || session.completedAt || !Number.isInteger(sessionId)) {
+      setLastPerformanceById((prev) => (prev.size === 0 ? prev : new Map()));
+      return;
+    }
+    let cancelled = false;
+    sessionApi
+      .getLastPerformance(sessionId)
+      .then((data) => {
+        if (cancelled) return;
+        const map = new Map();
+        for (const row of data?.exercises || []) {
+          if (row && row.sessionExerciseId != null) map.set(row.sessionExerciseId, row);
+        }
+        setLastPerformanceById(map);
+      })
+      .catch(() => {
+        if (!cancelled) setLastPerformanceById((prev) => (prev.size === 0 ? prev : new Map()));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [mirrorLast, session?.id, session?.completedAt, sessionId, mirrorExerciseKey]);
 
   const nextIncompleteSetId = useMemo(() => {
     if (!session || session.completedAt) return null;
@@ -3600,6 +3935,9 @@ export function SessionDetailPage() {
                         onDeleteSet={onDeleteSet}
                         onActivateExercise={() => activateExercise(se.id)}
                         onExerciseNotesSaved={mergeSessionExerciseRow}
+                        lastPerformance={
+                          mirrorLast ? lastPerformanceById.get(se.id) ?? null : null
+                        }
                         writesFrozen={discardBusy}
                         writesFrozenRef={writesFrozenRef}
                         onStatsChange={onBlockSlotStatsChange}
@@ -3762,6 +4100,9 @@ export function SessionDetailPage() {
                       highlightMissingEffort={highlightMissingEffort}
                       writesFrozen={discardBusy}
                       writesFrozenRef={writesFrozenRef}
+                      lastPerformance={
+                        mirrorLast ? lastPerformanceById.get(se.id) ?? null : null
+                      }
                     />
                   </div>
                 );
