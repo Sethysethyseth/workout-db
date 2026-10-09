@@ -37,7 +37,7 @@ export const RELEASES = [
       {
         heading: "Logging",
         items: [
-          "Units, effort, notes, repeat last time, and the rest timer now live under Training. The bar at the top of each workout switches the common ones in one tap.",
+          "Units, effort, notes, repeat last, and the rest timer live under Training. A bar on each workout switches the common ones in one tap.",
           "With Repeat last time's numbers on, empty sets show your last weight and reps. Tap the set number to log them.",
           "A rest timer starts when you log a set. Add or take away 15 seconds, or skip it.",
         ],

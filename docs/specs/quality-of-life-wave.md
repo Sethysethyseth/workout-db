@@ -6,6 +6,14 @@ mirror, finish), `qol-r2` (custom-exercise edit, What's New, coach),
 `qol-r3` (stowed backlog) - reports preserved as
 `docs/tasks/qol-r{1,2,3}-*-FINDINGS.md`.
 
+> **Amended Oct 9, 2026 (gate):** the wave grew from N = 15 to N = 24 -
+> critic fix rounds qolf1-qolf4 and qolf6-qolf7, plus Seth's smoke findings
+> qolf5, qolf8 and qolf9 (blocks in `docs/tasks/`). Ruling 1's "compact
+> strip under Home's log button" is superseded: qolf8 moved the strip to
+> the top of every live workout, and qolf9 made it a hotbar (RIR | RPE,
+> Exercise notes and Repeat last switch in one tap; Edit opens the form).
+> The original text below is kept as the record of the Oct 8 ruling.
+
 ## 1. Seth's rulings (Oct 8, asked and answered in session)
 
 1. **Logging settings move out of the logger.** lbs/kg, RIR vs RPE, notes,

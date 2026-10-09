@@ -1,44 +1,54 @@
 # HANDOFF — current state
 
-> **WHERE WE ARE (Oct 9, night):** the **quality-of-life wave is COMPLETE,
-> 24/24 LANDED** on `quality-of-life-updates`:
+> **WHERE WE ARE (Oct 9, late night):** the **quality-of-life wave is
+> COMPLETE, 24/24 LANDED** on `quality-of-life-updates`, **smoke SIGNED OFF
+> by Seth**, and the **pre-main gate PASSED WITH FIXES** (both fixes done in
+> seat). Ready for the merge ritual. The wave:
 > - qol1-qol15
 > - critic round-1 fixes qolf1-qolf4
 > - Seth's repeat-last effort hint qolf5
 > - critic round-2 fixes qolf6-qolf7
 > - Seth's strip move qolf8
 > - Seth's smoke finding qolf9 (the strip becomes a hotbar)
-> - the direct auth fix `33cd671`
+> - plus the direct auth fix `33cd671` (not a numbered unit)
 >
-> Critic round 3 was cancelled by Seth, who smokes instead. HARD STOP for
-> smoke. `main` = `b5c6777` (unchanged). Next-wave look-and-feel input:
+> `main` = `b5c6777` (unchanged). Next-wave look-and-feel input:
 > `docs/tasks/qol-critic-round-2-FINDINGS.md` Part B.
 
-**Next action (human):** smoke the wave on the staging Vercel deploy of
-`quality-of-life-updates` with the checklist below, then sign off or report
-what's off.
+**Next action (human):** do the two prod prep steps in PICK UP HERE item 1
+(hand-apply the qol1 migration on prod Neon, set `COACH_KEY_SECRET` on prod
+Render), then say "push to main" to start the merge.
 
 ## PICK UP HERE (next session)
 
-1. **Seth's smoke findings** come in as diagnosis blocks and reset the
-   sign-off. Sign-off -> the **pre-main gate** (`pre-main-review`, Opus
-   seat) over `b5c6777..HEAD`.
-2. **Before the merge (prod, Seth):**
-   - apply the qol1 migration by hand (`UserCoachKey`, `CoachConversation`,
-     `CoachMessage`)
-   - set `COACH_KEY_SECRET` on prod Render
-   - bump the What's New `2026-10-quality-of-life` date if the merge is not
-     on Oct 9
-3. **Gate notes to carry:**
-   - qol13: a logged-out visitor on a cold server waits on "Loading
-     session"
-   - qolf1: the bar's column is matched by pathname (a new narrow-column
-     page needs a line)
-   - qolf1: ConfirmPanel's focus ring also shows on a tap open
-   - qol11: `scripts/smoke-coach.mjs --key` is inert
-   - no rate limiter on `/block-templates/import*` or `/block-runs`
+1. **Before the merge (prod, Seth - in this order):**
+   - apply migration `20261008120000_coach_key_and_history` to PROD by
+     hand (RUNBOOK section 3 + the `_prisma_migrations` row template;
+     checksum copied from staging). Prod's build never migrates (RUNBOOK
+     10a "V2 RESULT"). Without it the coach breaks on prod (status, ask,
+     history all read the new tables); login does not.
+   - set `COACH_KEY_SECRET` on prod Render (32 random bytes, base64 -
+     generator in `server/.env.example`). Unset is not an outage: saving a
+     key returns 503 "byo_unavailable" and the hosted coach still works.
+   - the What's New `2026-10-quality-of-life` date is 2026-10-09; bump it
+     in `client/src/data/whatsNew.js` if the merge lands later.
+2. **Merge:** Seth's verbatim "push to main", RUNBOOK section 2, one
+   command at a time; report merged SHAs and `origin/main` HEAD after.
+3. **Gate follow-ups (not blockers, none authored):**
+   - saved coach conversations have no per-user cap (bounded by the 40 per
+     15 min coach limit and the hosted weekly cap)
+   - the `/coach` 2 MB JSON parser runs before auth (same shape as
+     `/block-templates/import`)
+   - conversation paging cursors on `updatedAt` alone (a same-millisecond
+     tie could skip a row)
+   - `.bk-log-effort-slot` (`bk-log.css`) is an unused rule
+   - carried: qol13 cold-server "Loading session" for logged-out visitors;
+     qolf1 bar column matched by pathname; qolf1 ConfirmPanel focus ring on
+     tap; qol11 `scripts/smoke-coach.mjs --key` inert; no rate limiter on
+     `/block-templates/import*` or `/block-runs`; STOWED summary endpoint
+     should exclude unfinished sessions (qolf7)
 
-## Wave smoke checklist (staging Vercel, on the phone)
+## Wave smoke checklist (staging Vercel, on the phone) - SIGNED OFF by Seth, Oct 9
 
 - **Logging setup bar (qolf8 moved it, qolf9 made it a hotbar):**
   - Home has no bar any more.
@@ -228,61 +238,34 @@ Covers the F-wave AND the still-open E-wave prod smoke. Staging passed Aug 4.
 > explicitly. Dogfoods the shell repo's decision-10 no-dangling-next-
 > action requirement; `land-unit` section 5 keeps it maintained.
 
-**Updated:** October 9, 2026 (Opus seat). Session log:
-- Picked up after a /clear. The Oct 8 critic run had shot 67 screenshots
-  (A-M) and died before writing its report. The API showed no leftovers on
-  demo.critic or the probe account (no live workouts, key, conversations or
-  custom exercises, no block saved since Sept 30).
-- A fresh critic (separate agent) wrote round 1 from those shots: **5/10**,
-  with 3 P1 / 11 P2 / 19 P3. Preserved as `qol-critic-round-1-FINDINGS.md`
-  with the seat's triage.
-- Live re-check: #5 (the reorder "not sticking") is NOT a bug - the drop
-  reorders and marks the block Unsaved. A local draft was cleared and
-  nothing was saved.
-- REVIEWER FIX, shipped directly as `33cd671`: the Login flash on a
-  signed-in cold load (#14).
-  - Root cause: `AuthContext.jsx`. At boot, pageshow starts a second
-    `/auth/me`; the superseded first call's `finally` cleared
-    `authLoading` while the user was still null, so ProtectedRoute bounced
-    to /login for about 140ms.
-  - Fix: only the current epoch clears it; login and register now settle it
-    themselves.
-  - Verified: cold loads of / and /analytics never touch /login; logged-out
-    users still redirect; login returns to `next`.
-- Authored the fix round, file-disjoint, with no index.css (rule 2):
-  - qolf1: In-progress bar, Home card, confirm focus, Analytics sideways
-    scroll
-  - qolf2: coach page thread, composer, Stop, history delete, key form, AI
-    access copy
-  - qolf3: logger sticky header, Finish dock, labels, Add RIR, last-time cue
-  - qolf4: prefs sheet, switches, Notes pill, builder selection, lift
-- Not fixed: #11 (BK's caps look), and the pre-existing P3s #26, #28, #30,
-  #31 and #32 - stowed.
-- Dispatched qolf1/2/3 on auto in lanes 1/2/3 at `702652f`. Lane 2's qol15
-  DELIVERY.md was saved to this session's scratchpad first; the commit is
-  safe on `cursor/qol15`.
-- Smoke items so far (from QUEUE notes):
-  - the Sets count picker reads 1 while 4 ghost rows show (qol7)
-  - the bottom nav sits under the Finish dock on a live session (qol12)
-  - the cold-server loader instead of instant Login for logged-out visitors
-    (qol13 gate note)
-
-- Fix round landed, serially:
-  - qolf3 `e9a893a` (9 min). Reviewer fixes: the sticky row wrapped the
-    "..."; bare Keep buttons now say what they keep.
-  - qolf1 `dd2052f` (14 min). Reviewer fix: Resume spans the Home card.
-  - qolf2 `2c59605` (12 min). Reviewer fixes: the remove-key copy claimed a
-    fallback only entitled accounts get; the coach copy names Analytics
-    again.
-  - qolf4 `6483ec4` (32 min).
-- Every real-app check used the lane's own client on :5173 against the
-  local staging-DB API; vite was swapped per lane. The main-tree vite was
-  stopped; both local servers were stopped at the end.
-- Cleanup on demo.critic: sessions 486-488 were discarded; conversations
-  deleted; the fake key removed; no block saved; no draft left.
-- qol15 landed last as `9a57cef`, with the fix round folded into its
-  details and the date set to 2026-10-09. The ledger moved to RELEASED.md.
-  The wave is 19/19 - HARD STOP for smoke.
+**Updated:** October 9, 2026, late (Opus seat). Session log:
+- Seth's smoke finding: the setup strip becomes a hotbar. Authored qolf9
+  (no critic round, his call), dispatched on auto in lane 1, landed
+  `2d4cb0e` after reviewer fixes (the block's own app-guide copy broke the
+  12,000-char guide cap - Cursor stopped correctly; dead pill CSS; chip
+  gap). 24/24. Seth smoked and signed off.
+- **Pre-main gate (`pre-main-review`) over `b5c6777..HEAD`, 61 commits,
+  105 code files.** Read in seat: the migration (3 new tables, cascade FKs,
+  no DROP, LF per `.gitattributes`), the key vault (AES-256-GCM, random
+  12-byte IV, userId as AAD, 16-byte tag enforced; status returns last4
+  only), every new coach/exercise/session handler (all owner-scoped), the
+  ask path caps (question 1000, history 12 x 4000, weekly cap covers help),
+  and the auth-epoch fix (no stuck loader).
+- Gate fuel, three Cursor report lanes (auto, lanes 1-3, ~7-12 min each,
+  porcelain-clean), preserved as `qol-gate-r{1,2,3}-*-FINDINGS.md`:
+  - r1: unit 578/578, build and hex clean, 23 new tokens all defined, no
+    raw colours, schema vs SQL clean, no dead classes; cross-doc drift
+    (spec still said N = 15 and the Home strip).
+  - r2: every new/changed route SCOPED (none unscoped); vault never logs or
+    returns key material; no conversation storage cap (follow-up).
+  - r3: 208 criteria re-run on HEAD - 96 hold, 99 reviewer-only, 11
+    process-only, 2 "broken", both by qolf9's contract (notes pill removed
+    on purpose; the Logging release bullet grew to 29 words).
+- **Verdict: PASS WITH FIXES**, both fixed in seat: the What's New Logging
+  bullet trimmed to 24 words; the wave spec got a dated amendment (N = 24,
+  strip moved and made a hotbar). r1's "does prod's build migrate"
+  contradiction is not one - RUNBOOK 10a's "V2 RESULT" already says it
+  does not.
 
 **Rule:** rewritten in place at the end of every working session; kept CAPPED
 (~300 lines). Aged session logs move VERBATIM - never summarized - to

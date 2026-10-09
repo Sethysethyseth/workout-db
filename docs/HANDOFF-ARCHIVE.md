@@ -1,3 +1,62 @@
+## ARCHIVED October 9, 2026, late (Opus session) - the Oct 9 critic and
+## fix-round relay log, moved verbatim at the pre-main gate.
+
+**Updated:** October 9, 2026 (Opus seat). Session log:
+- Picked up after a /clear. The Oct 8 critic run had shot 67 screenshots
+  (A-M) and died before writing its report. The API showed no leftovers on
+  demo.critic or the probe account (no live workouts, key, conversations or
+  custom exercises, no block saved since Sept 30).
+- A fresh critic (separate agent) wrote round 1 from those shots: **5/10**,
+  with 3 P1 / 11 P2 / 19 P3. Preserved as `qol-critic-round-1-FINDINGS.md`
+  with the seat's triage.
+- Live re-check: #5 (the reorder "not sticking") is NOT a bug - the drop
+  reorders and marks the block Unsaved. A local draft was cleared and
+  nothing was saved.
+- REVIEWER FIX, shipped directly as `33cd671`: the Login flash on a
+  signed-in cold load (#14).
+  - Root cause: `AuthContext.jsx`. At boot, pageshow starts a second
+    `/auth/me`; the superseded first call's `finally` cleared
+    `authLoading` while the user was still null, so ProtectedRoute bounced
+    to /login for about 140ms.
+  - Fix: only the current epoch clears it; login and register now settle it
+    themselves.
+  - Verified: cold loads of / and /analytics never touch /login; logged-out
+    users still redirect; login returns to `next`.
+- Authored the fix round, file-disjoint, with no index.css (rule 2):
+  - qolf1: In-progress bar, Home card, confirm focus, Analytics sideways
+    scroll
+  - qolf2: coach page thread, composer, Stop, history delete, key form, AI
+    access copy
+  - qolf3: logger sticky header, Finish dock, labels, Add RIR, last-time cue
+  - qolf4: prefs sheet, switches, Notes pill, builder selection, lift
+- Not fixed: #11 (BK's caps look), and the pre-existing P3s #26, #28, #30,
+  #31 and #32 - stowed.
+- Dispatched qolf1/2/3 on auto in lanes 1/2/3 at `702652f`. Lane 2's qol15
+  DELIVERY.md was saved to this session's scratchpad first; the commit is
+  safe on `cursor/qol15`.
+- Smoke items so far (from QUEUE notes):
+  - the Sets count picker reads 1 while 4 ghost rows show (qol7)
+  - the bottom nav sits under the Finish dock on a live session (qol12)
+  - the cold-server loader instead of instant Login for logged-out visitors
+    (qol13 gate note)
+
+- Fix round landed, serially:
+  - qolf3 `e9a893a` (9 min). Reviewer fixes: the sticky row wrapped the
+    "..."; bare Keep buttons now say what they keep.
+  - qolf1 `dd2052f` (14 min). Reviewer fix: Resume spans the Home card.
+  - qolf2 `2c59605` (12 min). Reviewer fixes: the remove-key copy claimed a
+    fallback only entitled accounts get; the coach copy names Analytics
+    again.
+  - qolf4 `6483ec4` (32 min).
+- Every real-app check used the lane's own client on :5173 against the
+  local staging-DB API; vite was swapped per lane. The main-tree vite was
+  stopped; both local servers were stopped at the end.
+- Cleanup on demo.critic: sessions 486-488 were discarded; conversations
+  deleted; the fake key removed; no block saved; no draft left.
+- qol15 landed last as `9a57cef`, with the fix round folded into its
+  details and the date set to 2026-10-09. The ledger moved to RELEASED.md.
+  The wave is 19/19 - HARD STOP for smoke.
+
 ## ARCHIVED October 9, 2026 (Opus session) - the Oct 8 wave-opening and
 ## relay session log, moved verbatim when the QOL wave reached 19/19.
 
