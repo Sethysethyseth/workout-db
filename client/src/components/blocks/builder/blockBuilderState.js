@@ -778,6 +778,35 @@ export function moveExercise(state, weekIdx, dayIdx, exIdx, direction) {
   });
 }
 
+/**
+ * Remove-and-insert exercise reorder (not a neighbor swap).
+ * `dayRef` is `{ weekIdx, dayIdx }`. Equal or out-of-range indices return
+ * the same state. Other exercises keep their relative order.
+ */
+export function reorderExercise(state, dayRef, fromIndex, toIndex) {
+  const weekIdx = dayRef?.weekIdx;
+  const dayIdx = dayRef?.dayIdx;
+  const exercises = state.weeks?.[weekIdx]?.days?.[dayIdx]?.exercises || null;
+  if (!exercises) return state;
+  if (
+    !Number.isInteger(fromIndex) ||
+    !Number.isInteger(toIndex) ||
+    fromIndex < 0 ||
+    toIndex < 0 ||
+    fromIndex >= exercises.length ||
+    toIndex >= exercises.length ||
+    fromIndex === toIndex
+  ) {
+    return state;
+  }
+  return updateDayAt(state, weekIdx, dayIdx, (day) => {
+    const next = [...(day.exercises || [])];
+    const [item] = next.splice(fromIndex, 1);
+    next.splice(toIndex, 0, item);
+    return { ...day, exercises: next };
+  });
+}
+
 export function deleteExercise(state, weekIdx, dayIdx, exIdx) {
   return updateDayAt(state, weekIdx, dayIdx, (day) => ({
     ...day,

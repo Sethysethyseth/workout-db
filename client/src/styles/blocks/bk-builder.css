@@ -1587,3 +1587,74 @@ html.bk-builder-kbd .bk-builder__weeks {
   }
 }
 
+/* Hold-to-reorder exercise rows (qol3). */
+.bk-builder__exercises .bk-ex-card.bk-pill--reorderable {
+  -webkit-touch-callout: none;
+  user-select: none;
+}
+
+.bk-builder__exercises .bk-ex-card.bk-pill--reorderable input,
+.bk-builder__exercises .bk-ex-card.bk-pill--reorderable textarea {
+  -webkit-touch-callout: default;
+  user-select: text;
+}
+
+.bk-builder__exercises.bk-strip--reordering {
+  touch-action: none;
+}
+
+.bk-builder__exercises.bk-strip--reordering .bk-ex-card {
+  -webkit-touch-callout: none;
+  user-select: none;
+  touch-action: none;
+}
+
+.bk-ex-card--hold {
+  gap: 0;
+  padding: 0 12px;
+  cursor: grabbing;
+}
+
+.bk-ex-card__hold-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 48px;
+  min-height: 48px;
+  min-width: 0;
+}
+
+.bk-ex-card--hold .bk-ex-card__name {
+  font-size: 16px;
+  line-height: 1.2;
+}
+
+.bk-ex-card__hold-sets {
+  flex: 0 0 auto;
+  font: 600 14px/1 var(--font-sans);
+  color: var(--bk-muted);
+}
+
+.bk-builder__exercises .bk-ex-card.bk-pill--lifting {
+  box-shadow: var(--shadow-card-hover);
+  scale: 1.03;
+  z-index: 3;
+  touch-action: none;
+}
+
+.bk-builder__exercises .bk-ex-card.bk-pill--slot-shift {
+  transition: transform 150ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bk-builder__exercises .bk-ex-card.bk-pill--lifting {
+    scale: none;
+    transition: none;
+  }
+
+  .bk-ex-card--hold,
+  .bk-builder__exercises .bk-ex-card.bk-pill--slot-shift {
+    transition: none;
+  }
+}
+

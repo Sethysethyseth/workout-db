@@ -4,6 +4,8 @@ const HOLD_MS = 400;
 const MOVE_CANCEL_PX = 8;
 const EDGE_SCROLL_PX = 32;
 const EDGE_SCROLL_SPEED = 10;
+const EDGE_SCROLL_Y_PX = 64;
+const EDGE_SCROLL_Y_SPEED = 14;
 const CLICK_SUPPRESS_MS = 400;
 
 function slotShiftPx(fromIndex, overIndex, index, slotSize) {
@@ -57,6 +59,114 @@ function trackDrag(d, strip) {
   return { dx, overIndex: nearestSlot(home + dx, d.mids) };
 }
 
+function isDocumentScroller(scroller) {
+  return (
+    !scroller ||
+    scroller === document.body ||
+    scroller === document.documentElement ||
+    scroller === document.scrollingElement
+  );
+}
+
+function scrollPos(scroller) {
+  if (isDocumentScroller(scroller)) {
+    return window.scrollY || document.documentElement.scrollTop || 0;
+  }
+  return scroller.scrollTop || 0;
+}
+
+function findScrollParent(el) {
+  let node = el?.parentElement || null;
+  while (node && node !== document.body && node !== document.documentElement) {
+    const oy = getComputedStyle(node).overflowY;
+    if (
+      (oy === "auto" || oy === "scroll" || oy === "overlay") &&
+      node.scrollHeight > node.clientHeight + 1
+    ) {
+      return node;
+    }
+    node = node.parentElement;
+  }
+  return document.scrollingElement || document.documentElement;
+}
+
+function visibleScrollEdges(scroller) {
+  if (isDocumentScroller(scroller)) {
+    return { top: 0, bottom: window.innerHeight };
+  }
+  const rect = scroller.getBoundingClientRect();
+  return {
+    top: Math.max(0, rect.top),
+    bottom: Math.min(window.innerHeight, rect.bottom),
+  };
+}
+
+function edgeScrollDeltaY(clientY, edges) {
+  const distTop = clientY - edges.top;
+  const distBottom = edges.bottom - clientY;
+  if (distTop < EDGE_SCROLL_Y_PX && distTop <= distBottom) {
+    const t = 1 - Math.min(EDGE_SCROLL_Y_PX, Math.max(0, distTop)) / EDGE_SCROLL_Y_PX;
+    return -Math.max(4, Math.round(EDGE_SCROLL_Y_SPEED * t));
+  }
+  if (distBottom < EDGE_SCROLL_Y_PX) {
+    const t = 1 - Math.min(EDGE_SCROLL_Y_PX, Math.max(0, distBottom)) / EDGE_SCROLL_Y_PX;
+    return Math.max(4, Math.round(EDGE_SCROLL_Y_SPEED * t));
+  }
+  return 0;
+}
+
+function layoutTopInScroller(el, scroller) {
+  const rect = el.getBoundingClientRect();
+  let translateY = 0;
+  const transform = getComputedStyle(el).transform;
+  if (transform && transform !== "none") {
+    try {
+      translateY = new DOMMatrixReadOnly(transform).m42 || 0;
+    } catch {
+      translateY = 0;
+    }
+  }
+  const layoutHeight = el.offsetHeight || rect.height;
+  const viewportTop = rect.top - translateY - (rect.height - layoutHeight) / 2;
+  if (isDocumentScroller(scroller)) {
+    return viewportTop + (window.scrollY || document.documentElement.scrollTop || 0);
+  }
+  const host = scroller.getBoundingClientRect();
+  return viewportTop - host.top + (scroller.scrollTop || 0);
+}
+
+function measureVertical(items, scroller) {
+  const tops = items.map((el) => layoutTopInScroller(el, scroller));
+  const heights = items.map((el) => el.offsetHeight || 48);
+  const mids = tops.map((top, i) => top + heights[i] / 2);
+  let slotSize = (heights[0] || 48) + 10;
+  if (tops.length >= 2) slotSize = Math.max(1, tops[1] - tops[0]);
+  return { mids, slotSize };
+}
+
+function trackDragY(d, items, scroller) {
+  const { mids, slotSize } = measureVertical(items, scroller);
+  const home = mids[d.fromIndex] ?? 0;
+  const raw = d.clientY - d.startY + (scrollPos(scroller) - d.startScroll);
+  const min = (mids[0] ?? home) - home;
+  const max = (mids[mids.length - 1] ?? home) - home;
+  const dy = Math.min(Math.max(raw, min), max);
+  return {
+    dy,
+    overIndex: mids.length ? nearestSlot(home + dy, mids) : d.fromIndex,
+    mids,
+    slotSize,
+  };
+}
+
+function verticalDragChanged(prev, next) {
+  return (
+    prev.overIndex !== next.overIndex ||
+    Math.abs((prev.dy || 0) - next.dy) >= 0.5 ||
+    Math.abs((prev.slotSize || 0) - next.slotSize) >= 0.5
+  );
+}
+
 function lockPageScroll() {
   const body = document.body;
   if (!body || body.dataset.bkReorderLock === "1") return;
@@ -74,10 +184,14 @@ function unlockPageScroll() {
 }
 
 /**
- * Hold-to-reorder for horizontal pill strips (pointer events only).
+ * Hold-to-reorder (pointer events only).
+ * `axis` `"x"` (default) is the horizontal pill-strip path. `"y"` uses
+ * clientY / top / height / translateY and edge-scrolls the nearest scroller.
  * Active only when `enabled` is true (caller passes that when onReorder exists).
  */
-export function useHoldToReorder({ enabled, itemCount, onReorder }) {
+export function useHoldToReorder({ enabled, itemCount, onReorder, axis = "x" }) {
+  const axisRef = useRef(axis === "y" ? "y" : "x");
+  axisRef.current = axis === "y" ? "y" : "x";
   const containerRef = useRef(null);
   const itemRefs = useRef([]);
   const holdTimerRef = useRef(null);
@@ -133,14 +247,33 @@ export function useHoldToReorder({ enabled, itemCount, onReorder }) {
       scrollRafRef.current = 0;
       return;
     }
-    const rect = strip.getBoundingClientRect();
-    let delta = 0;
-    if (d.clientX < rect.left + EDGE_SCROLL_PX) delta = -EDGE_SCROLL_SPEED;
-    else if (d.clientX > rect.right - EDGE_SCROLL_PX) delta = EDGE_SCROLL_SPEED;
-    if (delta) {
-      strip.scrollLeft += delta;
-      Object.assign(d, trackDrag(d, strip));
-      setDrag({ ...d });
+    if (d.axis === "y") {
+      const scroller = d.scroller || findScrollParent(strip);
+      const items = itemRefs.current.filter(Boolean);
+      const delta = items.length
+        ? edgeScrollDeltaY(d.clientY, visibleScrollEdges(scroller))
+        : 0;
+      if (delta) {
+        if (isDocumentScroller(scroller)) window.scrollBy(0, delta);
+        else scroller.scrollTop += delta;
+      }
+      if (items.length && items.length === itemRefs.current.length) {
+        const next = trackDragY(d, itemRefs.current, scroller);
+        if (delta || verticalDragChanged(d, next)) {
+          Object.assign(d, next);
+          setDrag({ ...d });
+        }
+      }
+    } else {
+      const rect = strip.getBoundingClientRect();
+      let delta = 0;
+      if (d.clientX < rect.left + EDGE_SCROLL_PX) delta = -EDGE_SCROLL_SPEED;
+      else if (d.clientX > rect.right - EDGE_SCROLL_PX) delta = EDGE_SCROLL_SPEED;
+      if (delta) {
+        strip.scrollLeft += delta;
+        Object.assign(d, trackDrag(d, strip));
+        setDrag({ ...d });
+      }
     }
     scrollRafRef.current = requestAnimationFrame(tickEdgeScroll);
   }, []);
@@ -168,22 +301,43 @@ export function useHoldToReorder({ enabled, itemCount, onReorder }) {
         /* vibrate optional */
       }
       const items = itemRefs.current.slice(0, itemCount).filter(Boolean);
-      const fromEl = items[pending.fromIndex];
-      const slotSize = fromEl
-        ? fromEl.getBoundingClientRect().width + 6
-        : 72;
-      const next = {
-        ...pending,
-        lifted: true,
-        overIndex: pending.fromIndex,
-        dx: 0,
-        slotSize,
-        mids: measureSlotMids(strip, items),
-        startScroll: strip.scrollLeft,
-      };
+      const vertical = pending.axis === "y";
+      let next;
+      if (vertical) {
+        const scroller = findScrollParent(strip);
+        const measured =
+          items.length > 0
+            ? measureVertical(items, scroller)
+            : { mids: [], slotSize: 48 };
+        next = {
+          ...pending,
+          lifted: true,
+          overIndex: pending.fromIndex,
+          dy: 0,
+          dx: 0,
+          slotSize: measured.slotSize,
+          mids: measured.mids,
+          scroller,
+          startScroll: scrollPos(scroller),
+        };
+      } else {
+        const fromEl = items[pending.fromIndex];
+        const slotSize = fromEl
+          ? fromEl.getBoundingClientRect().width + 6
+          : 72;
+        next = {
+          ...pending,
+          lifted: true,
+          overIndex: pending.fromIndex,
+          dx: 0,
+          slotSize,
+          mids: measureSlotMids(strip, items),
+          startScroll: strip.scrollLeft,
+        };
+      }
       dragRef.current = next;
       armClickSuppress();
-      lockPageScroll();
+      if (!vertical) lockPageScroll();
       setDrag(next);
       startEdgeScroll();
     },
@@ -214,6 +368,10 @@ export function useHoldToReorder({ enabled, itemCount, onReorder }) {
       if (dragRef.current?.lifted && e.cancelable) e.preventDefault();
     }
     function onContextMenu(e) {
+      if (axisRef.current === "y") {
+        const target = e.target;
+        if (target instanceof Element && target.closest("input, textarea, select")) return;
+      }
       e.preventDefault();
     }
     strip.addEventListener("touchmove", onTouchMove, { passive: false });
@@ -258,7 +416,9 @@ export function useHoldToReorder({ enabled, itemCount, onReorder }) {
         lifted: false,
         overIndex: index,
         dx: 0,
+        dy: 0,
         slotSize: 0,
+        axis: axisRef.current,
       };
       dragRef.current = pending;
       holdTimerRef.current = setTimeout(() => lift(pending), HOLD_MS);
@@ -284,7 +444,14 @@ export function useHoldToReorder({ enabled, itemCount, onReorder }) {
       e.preventDefault();
       const strip = containerRef.current;
       if (!strip) return;
-      Object.assign(d, trackDrag(d, strip));
+      if (d.axis === "y") {
+        const scroller = d.scroller || findScrollParent(strip);
+        const items = itemRefs.current;
+        if (!items.length || items.some((el) => !el)) return;
+        Object.assign(d, trackDragY(d, items, scroller));
+      } else {
+        Object.assign(d, trackDrag(d, strip));
+      }
       setDrag({ ...d });
     },
     [enabled, clearHoldTimer]
@@ -342,16 +509,18 @@ export function useHoldToReorder({ enabled, itemCount, onReorder }) {
   const getItemStyle = useCallback(
     (index) => {
       if (!drag?.lifted) return undefined;
+      const shiftAxis = drag.axis === "y" ? "Y" : "X";
+      const offset = shiftAxis === "Y" ? drag.dy || 0 : drag.dx;
       if (index === drag.fromIndex) {
         return {
-          transform: `translateX(${drag.dx}px)`,
+          transform: `translate${shiftAxis}(${offset}px)`,
           zIndex: 2,
           position: "relative",
         };
       }
       const shift = slotShiftPx(drag.fromIndex, drag.overIndex, index, drag.slotSize);
       if (!shift) return undefined;
-      return { transform: `translateX(${shift}px)` };
+      return { transform: `translate${shiftAxis}(${shift}px)` };
     },
     [drag]
   );

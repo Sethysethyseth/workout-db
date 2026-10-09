@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Card } from "../ui/Card.jsx";
 import { Chip } from "../ui/Chip.jsx";
 import { ExerciseRx } from "../ui/ExerciseRx.jsx";
@@ -102,6 +102,21 @@ function PencilIcon() {
   );
 }
 
+const REORDER_SKIP =
+  "input, textarea, select, .bk-sheet, .bk-builder-confirm, .bk-ex-card__menu-btn, .bk-ex-card__chip, .bk-ex-card__ctrl";
+
+function bindReorderPointer(pointer) {
+  if (!pointer?.onPointerDown) return pointer || {};
+  return {
+    ...pointer,
+    onPointerDown: (e) => {
+      const target = e.target;
+      if (target instanceof Element && target.closest(REORDER_SKIP)) return;
+      pointer.onPointerDown(e);
+    },
+  };
+}
+
 function ActionIcon({ children }) {
   return (
     <svg
@@ -142,6 +157,11 @@ export function ExerciseCard({
   onReplace,
   onDelete,
   onAddToLibrary,
+  compact = false,
+  cardRef,
+  reorderClassName,
+  reorderStyle,
+  reorderPointer,
 }) {
   const gridRef = useRef(null);
   const cancelRemoveRef = useRef(null);
@@ -154,6 +174,79 @@ export function ExerciseCard({
     onClose: () => setConfirmRemove(false),
     focusRef: cancelRemoveRef,
   });
+
+  const cardNodeRef = useRef(null);
+  const fullHeightRef = useRef(null);
+  const wasCompactRef = useRef(false);
+  const compactRef = useRef(compact);
+  compactRef.current = compact;
+  const [holdBox, setHoldBox] = useState(null);
+
+  function assignCard(el) {
+    cardNodeRef.current = el;
+    cardRef?.(el);
+  }
+
+  useLayoutEffect(() => {
+    const el = cardNodeRef.current;
+    if (!el || compact || holdBox) return;
+    fullHeightRef.current = el.getBoundingClientRect().height;
+  });
+
+  useLayoutEffect(() => {
+    const el = cardNodeRef.current;
+    if (!el) return undefined;
+    const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches === true;
+    if (compact) {
+      wasCompactRef.current = true;
+      if (reduce) {
+        setHoldBox({ height: 48, animate: false });
+        return undefined;
+      }
+      const from = fullHeightRef.current || el.getBoundingClientRect().height;
+      setHoldBox({ height: from, animate: false });
+      const id = requestAnimationFrame(() => {
+        if (compactRef.current) setHoldBox({ height: 48, animate: true });
+      });
+      return () => cancelAnimationFrame(id);
+    }
+    if (!wasCompactRef.current) return undefined;
+    wasCompactRef.current = false;
+    if (reduce) {
+      setHoldBox(null);
+      return undefined;
+    }
+    const previousHeight = el.style.height;
+    el.style.height = "auto";
+    const target = Math.round(el.getBoundingClientRect().height);
+    el.style.height = previousHeight || "48px";
+    setHoldBox({ height: 48, animate: false });
+    const id = requestAnimationFrame(() => {
+      if (!compactRef.current) setHoldBox({ height: target, animate: true });
+    });
+    return () => cancelAnimationFrame(id);
+  }, [compact]);
+
+  useEffect(() => {
+    if (compact || !holdBox?.animate) return undefined;
+    const el = cardNodeRef.current;
+    if (!el) return undefined;
+    let cleared = false;
+    function clear() {
+      if (cleared || compactRef.current) return;
+      cleared = true;
+      setHoldBox(null);
+    }
+    function onEnd(e) {
+      if (e.propertyName === "height" && e.target === el) clear();
+    }
+    el.addEventListener("transitionend", onEnd);
+    const timer = window.setTimeout(clear, 260);
+    return () => {
+      el.removeEventListener("transitionend", onEnd);
+      window.clearTimeout(timer);
+    };
+  }, [compact, holdBox]);
 
   const summary = exerciseRxSummary(exercise, { effort, unit });
   const notesLine = firstNotesLine(exercise?.notes);
@@ -211,10 +304,56 @@ export function ExerciseCard({
     onChange?.({ restSec: sec === 0 ? null : sec });
   }
 
+  const setCount = sets.length;
+  const holdSetsLabel = `${setCount} ${setCount === 1 ? "set" : "sets"}`;
+  const reduceMotion =
+    typeof window !== "undefined" &&
+    window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches === true;
+  const lifting = (reorderClassName || "").includes("bk-pill--lifting");
+  const shellStyle = { ...(reorderStyle || {}) };
+  if (holdBox) {
+    shellStyle.height = `${holdBox.height}px`;
+    shellStyle.overflow = "hidden";
+    shellStyle.transition =
+      reduceMotion || !holdBox.animate
+        ? "none"
+        : lifting
+          ? "height 200ms ease-out, padding 200ms ease-out, box-shadow 150ms ease-out, scale 150ms ease-out"
+          : "height 200ms ease-out, padding 200ms ease-out, transform 150ms ease-out, box-shadow 160ms ease-out, border-color 160ms ease-out";
+  }
+  const shellPointer = bindReorderPointer(reorderPointer);
+
+  function cardClass(fallback) {
+    const base = reorderClassName || fallback;
+    return compact ? `${base} bk-ex-card--hold` : base;
+  }
+
+  if (compact) {
+    return (
+      <Card
+        ref={assignCard}
+        className={cardClass(
+          `bk-ex-card${invalid ? " bk-ex-card--invalid" : ""}${readOnly ? " bk-ex-card--readonly" : ""}`
+        )}
+        style={Object.keys(shellStyle).length ? shellStyle : undefined}
+        {...shellPointer}
+      >
+        <div className="bk-ex-card__hold-row">
+          <h3 className="bk-ex-card__name">{exercise?.exerciseName || "Untitled"}</h3>
+          <span className="bk-ex-card__hold-sets">{holdSetsLabel}</span>
+        </div>
+      </Card>
+    );
+  }
+
   if (!expanded || readOnly) {
     return (
       <Card
-        className={`bk-ex-card${invalid ? " bk-ex-card--invalid" : ""}${readOnly ? " bk-ex-card--readonly" : ""}`}
+        ref={assignCard}
+        className={cardClass(
+          `bk-ex-card${invalid ? " bk-ex-card--invalid" : ""}${readOnly ? " bk-ex-card--readonly" : ""}`
+        )}
+        style={Object.keys(shellStyle).length ? shellStyle : undefined}
         role={readOnly ? undefined : "button"}
         tabIndex={readOnly ? undefined : 0}
         aria-expanded={readOnly ? undefined : false}
@@ -229,6 +368,7 @@ export function ExerciseCard({
                 }
               }
         }
+        {...shellPointer}
       >
         <div className="bk-ex-card__top">
           <span className="bk-ex-card__slot">{slotBadge(index)}</span>
@@ -259,8 +399,13 @@ export function ExerciseCard({
 
   return (
     <Card
-      className={`bk-ex-card bk-ex-card--expanded${invalid ? " bk-ex-card--invalid" : ""}`}
+      ref={assignCard}
+      className={cardClass(
+        `bk-ex-card bk-ex-card--expanded${invalid ? " bk-ex-card--invalid" : ""}`
+      )}
+      style={Object.keys(shellStyle).length ? shellStyle : undefined}
       data-ex-id={exercise?.id}
+      {...shellPointer}
     >
       <div className="bk-ex-card__head">
         <button

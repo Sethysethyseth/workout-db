@@ -14,6 +14,7 @@ import { DayPicker } from "../ui/DayPicker.jsx";
 import { SectionRule } from "../ui/SectionRule.jsx";
 import { Segmented } from "../ui/Segmented.jsx";
 import { StickyHeader } from "../ui/StickyHeader.jsx";
+import { useHoldToReorder } from "../ui/useHoldToReorder.js";
 import { WeekStrip } from "../ui/WeekStrip.jsx";
 import { ImportPreviewStep } from "../import/ImportPreviewStep.jsx";
 import "../../../styles/blocks/bk-builder.css";
@@ -45,6 +46,7 @@ import {
   moveWeek,
   renameDay,
   reorderDay,
+  reorderExercise,
   reorderWeek,
   removeEmptyDays,
   replaceExercise,
@@ -412,6 +414,26 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
   const days = useMemo(() => currentWeek?.days || [], [currentWeek]);
   const safeDayIdx = Math.min(dayIdx, Math.max(0, days.length - 1));
   const currentDay = days[safeDayIdx] || null;
+  const exerciseCount = currentDay?.exercises?.length || 0;
+  const {
+    containerRef: exerciseListRef,
+    containerClassName: exerciseReorderClass,
+    setItemRef: setExerciseRef,
+    getItemStyle: getExerciseStyle,
+    getItemClassNames: getExerciseClassNames,
+    getItemPointerProps: getExercisePointerProps,
+  } = useHoldToReorder({
+    enabled: panelMode === "edit" && exerciseCount > 0,
+    itemCount: exerciseCount,
+    axis: "y",
+    onReorder: (fromIdx, toIdx) => {
+      if (fromIdx === toIdx) return;
+      applyState((prev) =>
+        reorderExercise(prev, { weekIdx: safeWeekIdx, dayIdx: safeDayIdx }, fromIdx, toIdx)
+      );
+    },
+  });
+  const exercisesReordering = Boolean(exerciseReorderClass);
 
   useEffect(() => {
     if (weekIdx !== safeWeekIdx) setWeekIdx(safeWeekIdx);
@@ -1248,7 +1270,12 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
               />
             ) : (
               <>
-                <div className="bk-builder__exercises">
+                <div
+                  className={["bk-builder__exercises", exerciseReorderClass]
+                    .filter(Boolean)
+                    .join(" ")}
+                  ref={exerciseListRef}
+                >
                   {(currentDay.exercises || []).map((ex, ei) => (
                     <ExerciseCard
                       key={ex.id || ei}
@@ -1258,6 +1285,22 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
                       unit={displayUnit === "kg" ? "kg" : "lb"}
                       expanded={expandedIds.has(ex.id)}
                       invalid={exerciseInvalid(ei)}
+                      compact={exercisesReordering}
+                      cardRef={(el) => setExerciseRef(ei, el)}
+                      reorderClassName={getExerciseClassNames(
+                        ei,
+                        [
+                          "bk-ex-card",
+                          !exercisesReordering && expandedIds.has(ex.id)
+                            ? "bk-ex-card--expanded"
+                            : "",
+                          exerciseInvalid(ei) ? "bk-ex-card--invalid" : "",
+                        ]
+                          .filter(Boolean)
+                          .join(" ")
+                      )}
+                      reorderStyle={getExerciseStyle(ei)}
+                      reorderPointer={getExercisePointerProps(ei)}
                       canMoveUp={ei > 0}
                       canMoveDown={ei < (currentDay.exercises || []).length - 1}
                       onToggle={() => toggleExpanded(ex.id)}
