@@ -27,6 +27,8 @@ model User {
   workoutSessions    WorkoutSession[]
   feedback           Feedback[]
   userExercises      UserExercise[]
+  coachKey           UserCoachKey?
+  coachConversations CoachConversation[]
 }
 
 model AiConsent {
@@ -342,4 +344,44 @@ model BlockRun {
 
   @@index([userId])
   @@index([blockTemplateId])
+}
+
+/// One stored bring-your-own coach key per user, AES-256-GCM encrypted by
+/// server/src/coach/keyVault.js (qol11). Its own table on purpose: the User
+/// row is returned by /auth/me minus only passwordHash.
+model UserCoachKey {
+  userId     String   @id
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// "v1:<iv b64>:<tag b64>:<ciphertext b64>" - never the plaintext key.
+  ciphertext String
+  /// Last 4 characters of the key, for "Key ending in ...". Display only.
+  last4      String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model CoachConversation {
+  id        Int            @id @default(autoincrement())
+  userId    String
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  /// The ask's validated focus at creation (coachRequest.js shape), or null.
+  focus     Json?
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  messages  CoachMessage[]
+
+  @@index([userId, updatedAt])
+}
+
+model CoachMessage {
+  id             Int               @id @default(autoincrement())
+  conversationId Int
+  conversation   CoachConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  /// "user" | "coach"
+  role           String
+  content        String
+  createdAt      DateTime          @default(now())
+
+  @@index([conversationId, createdAt])
 }
