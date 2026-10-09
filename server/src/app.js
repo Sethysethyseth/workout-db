@@ -135,6 +135,9 @@ app.use((req, res, next) => {
 // Import paths accept up to 2 MB (Strong history exports); registered before
 // the global parser so the large body is parsed once and the global skip runs.
 app.use("/block-templates/import", express.json({ limit: "2mb" }));
+// Coach import-map / import-fix accept up to 1,000,000 characters. Same
+// early 2 MB parser so a large paste is not rejected by the 100 kB default.
+app.use("/coach", express.json({ limit: "2mb" }));
 app.use(express.json());
 
 if (!process.env.DATABASE_URL) {

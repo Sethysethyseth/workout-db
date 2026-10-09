@@ -4,6 +4,7 @@
  */
 
 const { normalizeHeaderKey } = require("./parseDelimited");
+const { MAX_DAYS_PER_WEEK } = require("./blockFormat");
 
 const STRONG_REQUIRED = [
   "date",
@@ -164,14 +165,32 @@ function historyToBlock(parsed, options = {}) {
   const windowEnd = newest;
   const windowStart = new Date(newest.getTime() - 56 * 24 * 60 * 60 * 1000);
 
-  // Filter to window; pick most recent session per title
+  // Filter to window; pick most recent session per title and count sessions.
   const byTitle = new Map(); // title -> session
+  const sessionCount = new Map(); // title -> in-window session count
   for (const session of sessions.values()) {
     if (session.date < windowStart || session.date > windowEnd) continue;
+    sessionCount.set(session.title, (sessionCount.get(session.title) || 0) + 1);
     const prev = byTitle.get(session.title);
     if (!prev || session.date > prev.date) {
       byTitle.set(session.title, session);
     }
+  }
+
+  if (byTitle.size > MAX_DAYS_PER_WEEK) {
+    const ranked = [...byTitle.keys()].sort((titleA, titleB) => {
+      const countDiff = sessionCount.get(titleB) - sessionCount.get(titleA);
+      if (countDiff !== 0) return countDiff;
+      const dateDiff =
+        byTitle.get(titleB).date.getTime() - byTitle.get(titleA).date.getTime();
+      if (dateDiff !== 0) return dateDiff;
+      return titleA.localeCompare(titleB);
+    });
+    const skipped = ranked.slice(MAX_DAYS_PER_WEEK);
+    for (const title of skipped) byTitle.delete(title);
+    warnings.push({
+      message: `Kept your ${MAX_DAYS_PER_WEEK} most-logged workouts. Skipped: ${skipped.join(", ")}.`,
+    });
   }
 
   // Days ordered by that session's date (oldest first)

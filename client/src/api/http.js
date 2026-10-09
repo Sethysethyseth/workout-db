@@ -37,6 +37,13 @@ export class ApiError extends Error {
   }
 }
 
+function payloadTooLargeError(body) {
+  return new ApiError(
+    "That's too large to send. Try a smaller file or paste less text.",
+    { status: 413, body }
+  );
+}
+
 export function readAuthToken() {
   try {
     if (typeof window === "undefined") return null;
@@ -71,6 +78,10 @@ export async function http(
   const data = await readJsonSafely(res);
 
   if (!res.ok) {
+    if (res.status === 413) {
+      throw payloadTooLargeError(data);
+    }
+
     const skipGlobalUnauthorized =
       res.status === 401 && method === "GET" && path === "/auth/me";
 
@@ -98,6 +109,9 @@ export async function http(
         const dataRetry = await readJsonSafely(resRetry);
         if (resRetry.ok) {
           return dataRetry;
+        }
+        if (resRetry.status === 413) {
+          throw payloadTooLargeError(dataRetry);
         }
         if (resRetry.status === 401) {
           if (!skipGlobalUnauthorized) {
