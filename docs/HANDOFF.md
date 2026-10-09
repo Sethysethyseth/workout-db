@@ -30,12 +30,10 @@ what's off.
    - qol11: `scripts/smoke-coach.mjs --key` is inert
    - no rate limiter on `/block-templates/import*` or `/block-runs`
 
-**HELD smoke finding (Seth, Oct 9) - do NOT author or queue until he says
-so:** Repeat last time should show last time's RPE/RIR as a grey hint in the
-effort box. It must still not fill the box or log the value: Seth wants
-"the rpe important for the user to see". Today `lastPerformance.js`
-returns weight/reps only and the effort placeholder is "—". When released,
-this is a smoke-fix block before sign-off.
+**Smoke finding in flight (Oct 9):** qolf5, Repeat last time's RPE/RIR
+hint. Then critic rounds 2 and 3, per Seth: each round critiques the wave's
+changes AND app-wide look and feel; the look-and-feel findings are
+collected for the next frontend wave, not fixed now.
 
 ## Wave smoke checklist (staging Vercel, on the phone)
 
