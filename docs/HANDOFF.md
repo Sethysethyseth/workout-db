@@ -1,10 +1,17 @@
 # HANDOFF — current state
 
-> **WHERE WE ARE (Oct 9, late):** the **quality-of-life wave is COMPLETE,
-> 19/19 LANDED** on `quality-of-life-updates`: qol1-qol15, plus the critic
-> fix round qolf1-qolf4 and the direct auth fix `33cd671`. HARD STOP for
-> Seth's smoke - no gate, no merge prep until he signs off. Design of record:
-> `docs/specs/quality-of-life-wave.md`. `main` = `b5c6777` (unchanged).
+> **WHERE WE ARE (Oct 9, night):** the **quality-of-life wave is COMPLETE,
+> 23/23 LANDED** on `quality-of-life-updates`:
+> - qol1-qol15
+> - critic round-1 fixes qolf1-qolf4
+> - Seth's repeat-last effort hint qolf5
+> - critic round-2 fixes qolf6-qolf7
+> - Seth's strip move qolf8
+> - the direct auth fix `33cd671`
+>
+> Critic round 3 was cancelled by Seth, who smokes instead. HARD STOP for
+> smoke. `main` = `b5c6777` (unchanged). Next-wave look-and-feel input:
+> `docs/tasks/qol-critic-round-2-FINDINGS.md` Part B.
 
 **Next action (human):** smoke the wave on the staging Vercel deploy of
 `quality-of-life-updates` with the checklist below, then sign off or report
@@ -30,33 +37,26 @@ what's off.
    - qol11: `scripts/smoke-coach.mjs --key` is inert
    - no rate limiter on `/block-templates/import*` or `/block-runs`
 
-**In flight (Oct 9, evening).**
-- Critic round 2 ran: wave 6/10, look and feel 5/10
-  (`docs/tasks/qol-critic-round-2-FINDINGS.md`). Its Part B is the
-  look-and-feel input for the NEXT frontend wave.
-- The round-2 fixes landed: qolf6 `9d6b646` and qolf7 `47328fe` (Last 7
-  days was reverted and stowed).
-- Seth then CANCELLED round 3 ("no need for critique agent; I'll smoke it")
-  and asked for qolf8: the Logging setup strip moves from Home into the live
-  workout. qolf8 is dispatched on lane 2; after it lands -> 23/23 -> smoke.
-- Local servers (detached): API pid 7116 (lane 1 server), vite on :5173
-  serving a lane client. Stop both at wave end.
-
 ## Wave smoke checklist (staging Vercel, on the phone)
 
-- **Logging setup:**
-  - The Home strip under Start a workout shows your setup. Notes reads
-    "Notes on" only when both kinds are on.
-  - Tapping the strip opens Logging setup: it fits one screen, off switches
-    are visible, and kg updates the strip live.
-  - Profile > Training is the same form and says "on this device".
+- **Logging setup (qolf8 moved it):**
+  - Home has no strip any more.
+  - Every live workout has a one-line strip under its title, showing the
+    scale THAT workout uses (a block day shows the block's).
+  - Tap it: the sheet fits one screen, and kg updates live.
+  - Log a set with RIR, then pick RPE: a note says it stays RIR for this
+    workout.
+  - Profile > Training is the same form.
 - **The logger:**
   - No unit or RIR toggles inside a workout.
-  - Only the exercise name stays pinned; its "..." removes the exercise
-    after a confirm.
+  - Only the exercise name stays pinned. Its trash icon removes the
+    exercise after a confirm that counts the logged sets.
   - Builder view / Table view are in sentence case.
 - **Repeat last time (on):**
-  - Empty sets show grey numbers and "Last time: <date>".
+  - Empty sets show grey numbers, including last time's RIR/RPE, and
+    "Last time: <date>".
+  - The effort hint stays after you log the set, until you type today's.
+  - The Sets count matches the rows; picking fewer hides extra grey rows.
   - The set number is outlined with a check, and tapping it logs those
     numbers with no effort.
 - **Rest timer:**
@@ -74,6 +74,7 @@ what's off.
   - The bar says "Resume" on the phone and lines up with the page on a
     laptop.
 - **Coach:**
+  - During a workout, the In progress bar no longer covers the text box.
   - The Home chat bubble opens /coach: suggestion rows, and answers come
     into view on their own. Stop is readable.
   - Help questions work with AI access off.
@@ -97,8 +98,9 @@ what's off.
 - **What's New:** read both releases at `/profile/whats-new?preview=1`. The
   Latest update card shows at `/profile?preview=1`.
 - **Known, not regressions:**
-  - the Sets picker can read fewer than the ghost rows shown (qol7)
   - the bottom nav sits under the Finish dock on a live workout (qol12)
+  - Last 7 days still counts an unfinished workout (stowed: the summary
+    endpoint should exclude it)
 
 ## Not in this wave (stowed; none authored)
 

@@ -35,6 +35,11 @@ shipped work to the words users read.
 - [qolf5] With Repeat last time's numbers on, last time's RPE or RIR now shows in grey in each set's effort box, even after you log the set, so you can see how hard it was last time. It's only a reminder: you always enter today's effort yourself | Where: any workout with Repeat last time on | Files: client/src/pages/SessionDetailPage.jsx, client/src/components/blocks/log/ghostPlaceholders.js
   (Landed after qol15; folded straight into the `2026-10-quality-of-life` details at landing, Oct 9.)
 
+- [qolf6/qolf7] Polish after critic round 2: Add RIR highlights properly with Repeat last on, removing an exercise is a trash icon that says how many logged sets go with it, the Sets count matches the rows, the In progress bar never covers the coach's text box, and Logging setup has room to breathe | Where: any live workout; the coach page | Files: client/src/pages/SessionDetailPage.jsx, client/src/components/workout/PersistentWorkoutBar.jsx
+  (Landed after qol15; covered by the existing "More room while you log" and "Smoother on a phone" details, no copy change.)
+- [qolf8] The Logging setup strip moved from Home to the top of every live workout, and it shows the effort scale that workout actually uses | Where: any live workout | Files: client/src/components/prefs/TrainingPrefsStrip.jsx, client/src/pages/SessionDetailPage.jsx
+  (Landed after qol15; folded into the `2026-10-quality-of-life` Logging bullet and the "Logging setup in one place" detail, Oct 9.)
+
 ### -> `2026-10-blocks-and-coach`
 
 #### Catch-up: on prod since Oct 7, 2026, never announced
