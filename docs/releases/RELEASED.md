@@ -39,6 +39,8 @@ shipped work to the words users read.
   (Landed after qol15; covered by the existing "More room while you log" and "Smoother on a phone" details, no copy change.)
 - [qolf8] The Logging setup strip moved from Home to the top of every live workout, and it shows the effort scale that workout actually uses | Where: any live workout | Files: client/src/components/prefs/TrainingPrefsStrip.jsx, client/src/pages/SessionDetailPage.jsx
   (Landed after qol15; folded into the `2026-10-quality-of-life` Logging bullet and the "Logging setup in one place" detail, Oct 9.)
+- [qolf9] The bar at the top of a live workout is now a row of switches: tap RIR or RPE to pick the effort scale, and tap Exercise notes or Repeat last to turn them on or off. What is on glows. Edit still opens the full Logging setup | Where: any live workout | Files: client/src/components/prefs/TrainingPrefsStrip.jsx, client/src/styles/training-prefs.css
+  (Landed after qol15; folded into the `2026-10-quality-of-life` Logging bullet and the "Logging setup in one place" detail in the unit itself, Oct 9.)
 
 ### -> `2026-10-blocks-and-coach`
 

@@ -1,12 +1,13 @@
 # HANDOFF — current state
 
 > **WHERE WE ARE (Oct 9, night):** the **quality-of-life wave is COMPLETE,
-> 23/23 LANDED** on `quality-of-life-updates`:
+> 24/24 LANDED** on `quality-of-life-updates`:
 > - qol1-qol15
 > - critic round-1 fixes qolf1-qolf4
 > - Seth's repeat-last effort hint qolf5
 > - critic round-2 fixes qolf6-qolf7
 > - Seth's strip move qolf8
+> - Seth's smoke finding qolf9 (the strip becomes a hotbar)
 > - the direct auth fix `33cd671`
 >
 > Critic round 3 was cancelled by Seth, who smokes instead. HARD STOP for
@@ -39,14 +40,18 @@ what's off.
 
 ## Wave smoke checklist (staging Vercel, on the phone)
 
-- **Logging setup (qolf8 moved it):**
-  - Home has no strip any more.
-  - Every live workout has a one-line strip under its title, showing the
-    scale THAT workout uses (a block day shows the block's).
-  - Tap it: the sheet fits one screen, and kg updates live.
-  - Log a set with RIR, then pick RPE: a note says it stays RIR for this
-    workout.
-  - Profile > Training is the same form.
+- **Logging setup bar (qolf8 moved it, qolf9 made it a hotbar):**
+  - Home has no bar any more.
+  - Every live workout has a one-line bar under its title: RIR | RPE,
+    Exercise notes, Repeat last, Edit. What is on glows.
+  - Quick workout: tap RPE -> RPE glows and the sets ask for RPE. Tap
+    Exercise notes or Repeat last -> they turn off and on, and a typed
+    but unlogged weight stays.
+  - Log a set with RIR, then tap RPE: the sheet opens with a note that
+    this workout stays RIR. A block day glows the plan's scale, and
+    tapping the other one shows the plan note.
+  - Edit opens the full sheet (kg updates live); Profile > Training is
+    the same form.
 - **The logger:**
   - No unit or RIR toggles inside a workout.
   - Only the exercise name stays pinned. Its trash icon removes the
