@@ -8,10 +8,11 @@
 > What's New pipeline. Recon reports: `docs/tasks/qol-r{1,2,3}-*-FINDINGS.md`.
 > `ai-connector-wave` stays MERGED and LIVE (`main` = `b5c6777`).
 
-**Next action (human):** repoint staging Render `workout-db-staging` from
-`ai-connector-wave` to `quality-of-life-updates` (Settings -> Branch), then
-say "dispatch" to start the relay. qol1's landing push will also need your
-"migrate staging".
+**Next action (human):** two things.
+1. Pick A or B on the mock (https://claude.ai/artifact/Ne8y8k6KaLXXY5jACctD9g),
+   and OK the chat-bubble coach icon. qol2 and qol6 wait on this.
+2. Say "migrate staging" so qol1 (`8ccbbab`, held on `cursor/qol1`) can
+   merge and push.
 
 ## PICK UP HERE (next session)
 
@@ -194,6 +195,23 @@ Covers the F-wave AND the still-open E-wave prod smoke. Staging passed Aug 4.
 - Lanes: `cursor-lane` / `-2` / `-3` on `recon/qol-r1|r-2|r-3` at
   `8090b10`, each holding a stale recon DELIVERY.md (gitignored).
   Delete them before dispatch.
+
+- Oct 8, relay started (same Opus session). Seth repointed staging Render
+  to `quality-of-life-updates`. Dispatched qol1 (lane 1), qol3 (lane 2) and
+  qol5 (lane 3) on auto, staggered.
+  - Built the pre-build mock at
+    https://claude.ai/artifact/Ne8y8k6KaLXXY5jACctD9g (Design canvas, 7
+    boards, real champ-dark tokens): Home today, strip options A and B, an
+    interactive setup sheet, Profile > Training, coach help-only, coach
+    thread.
+  - **qol5 LANDED `be7334a`.** Live proof: 300 kB to /coach/import-map ->
+    401, /templates still 413.
+  - **qol1 audited and committed `8ccbbab`** on `cursor/qol1`, NOT merged
+    (held for "migrate staging").
+  - Dispatched qol8 (lane 3). qol2 and qol6 are held for the mock
+    decision.
+  - Smoke items so far: history import with 8+ workout titles keeps 7 and
+    names the skipped; a huge AI-import paste says "too large".
 
 **Rule:** rewritten in place at the end of every working session; kept CAPPED
 (~300 lines). Aged session logs move VERBATIM - never summarized - to
