@@ -24,6 +24,7 @@ import {
 import { formatTonnage, sessionDurationLabel, sessionTonnage } from "../lib/sessionFacts.js";
 import { loadWeightUnit } from "../lib/weightUnitPref.js";
 import "../styles/coach-page.css";
+import "../styles/workout-bar.css";
 
 /** Session hint so Home can reserve the block-card slot before /block-runs/active resolves. */
 const HOME_HAS_RUN_KEY = "workoutdb-home-has-run";
@@ -360,8 +361,17 @@ export function DashboardPage() {
         </div>
       ) : null}
       {workoutDiscardedFlash ? (
-        <div className="workout-tab__discard-flash card muted" role="status">
-          Workout discarded
+        <div className="workout-tab__discard-flash card" role="status">
+          <strong>Workout discarded</strong>
+          <p className="muted small workout-tab__discard-copy">Nothing was saved to your history.</p>
+          <button
+            type="button"
+            className="workout-tab__discard-dismiss"
+            aria-label="Dismiss"
+            onClick={() => setWorkoutDiscardedFlash(false)}
+          >
+            <span aria-hidden="true">×</span>
+          </button>
         </div>
       ) : null}
 

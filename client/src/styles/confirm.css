@@ -31,7 +31,7 @@
 
 .confirm-panel__actions button:focus-visible,
 .confirm-discard-x:focus-visible {
-  outline: 2px solid var(--color-interactive);
+  outline: 2px solid color-mix(in srgb, var(--color-interactive) 55%, transparent);
   outline-offset: 2px;
 }
 
@@ -56,9 +56,11 @@
   }
 }
 
-/* Home hero: discard sits in the top-right, clear of Resume. */
-.workout-hero--active:has(> .confirm-discard-x) {
-  padding-right: 64px;
+/* Home hero: discard sits in the top-right. Only the lines beside it make
+   room, so Resume still spans the card like Start does. */
+.workout-hero--active:has(> .confirm-discard-x) > .workout-hero__eyebrow,
+.workout-hero--active:has(> .confirm-discard-x) > .workout-hero__headline {
+  padding-right: 48px;
 }
 
 .workout-hero--active > .confirm-discard-x {

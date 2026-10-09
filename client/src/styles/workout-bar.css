@@ -1,0 +1,143 @@
+/* In-progress bar, Home live card, and the discarded notice.
+   Overrides live here so index.css stays untouched. */
+
+.persistent-workout-bar {
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+
+.persistent-workout-bar__left {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
+}
+
+.persistent-workout-bar__eyebrow {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  line-height: 1.2;
+}
+
+.persistent-workout-bar__status,
+.persistent-workout-bar__elapsed {
+  white-space: nowrap;
+}
+
+.persistent-workout-bar__title {
+  display: block;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.persistent-workout-bar__cta {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.persistent-workout-bar > .confirm-discard-x {
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+}
+
+/* Phone: column text wins. The index.css row layout is overridden here. */
+@media (max-width: 719px) {
+  .persistent-workout-bar__left {
+    flex-direction: column;
+    align-items: stretch;
+    min-width: 0;
+  }
+}
+
+/* Desktop: match the page column.
+   Home, Analytics, and History fill .container (max-width 980px, padding 0 16px
+   in index.css). The bar sits in that same container, so width 100% lines up.
+   Library is .bk-lib { max-width: 720px; margin: 0 auto } in bk-library.css.
+   Training is .settings-page { max-width: 42rem; margin-inline: auto }. */
+@media (min-width: 900px) {
+  .persistent-workout-bar-wrap .persistent-workout-bar {
+    max-width: none;
+    width: 100%;
+    margin-inline: 0;
+  }
+
+  .persistent-workout-bar-wrap .persistent-workout-bar--library {
+    max-width: 720px;
+    margin-inline: auto;
+  }
+
+  .persistent-workout-bar-wrap .persistent-workout-bar--training {
+    max-width: 42rem;
+    margin-inline: auto;
+  }
+}
+
+/* Home live card: the heading is the workout title. Resume spans the
+   content box the same way the idle Start button does. */
+.workout-hero--active .workout-hero__cta {
+  width: 100%;
+  max-width: none;
+  align-self: stretch;
+  box-sizing: border-box;
+}
+
+/* Discarded notice: bold line, muted line, 44px dismiss. */
+.workout-tab .workout-tab__discard-flash {
+  position: relative;
+  padding: 12px 56px 12px 14px;
+  color: var(--color-text);
+  background: var(--color-surface-2);
+  border-color: var(--color-border);
+}
+
+.workout-tab .workout-tab__discard-flash strong {
+  display: block;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.workout-tab__discard-copy {
+  margin: 6px 0 0;
+}
+
+.workout-tab__discard-dismiss {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.workout-tab__discard-dismiss:hover {
+  background: var(--color-surface-3);
+  color: var(--color-text);
+}
+
+.workout-tab__discard-dismiss:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--color-interactive) 55%, transparent);
+  outline-offset: 2px;
+}

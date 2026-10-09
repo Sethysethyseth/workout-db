@@ -1,0 +1,52 @@
+/* Strength view must not widen the page. Grid items default to min-width:auto,
+   so a nowrap row meta (index.css .st-delta, .st-row-head) stretched the
+   document and clipped the tabs at 390. */
+
+.analytics-page,
+.analytics-page > *,
+.analytics-content,
+.analytics-content > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.analytics-page .table-scroll {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.analytics-page .analytics-table-card,
+.analytics-page .analytics-chart-body,
+.st-chart,
+.st-featured,
+.st-featured > *,
+.st-row,
+.st-compact,
+.st-compact-row {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.st-row-head {
+  flex-wrap: wrap;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.st-delta,
+.st-matched,
+.st-compact-delta {
+  white-space: normal;
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.st-sparkline {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.st-sparkline-svg {
+  overflow: hidden;
+}

@@ -45,7 +45,8 @@ export function ConfirmPanel({
     const trigger = document.activeElement;
     const root = dialogRef.current;
     const initial = tone === "danger" ? cancelRef.current : confirmRef.current;
-    initial?.focus();
+    // focusVisible so a keyboard open paints :focus-visible on the safe action.
+    initial?.focus({ focusVisible: true });
 
     function onKeyDown(event) {
       if (event.key === "Escape") {

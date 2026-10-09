@@ -4,6 +4,7 @@ import * as sessionApi from "../../api/sessionApi.js";
 import { useActiveSession } from "../../context/ActiveSessionContext.jsx";
 import { sessionDisplayTitle, sessionQuickExerciseLabel } from "../../lib/sessionDisplay.js";
 import { ConfirmPanel } from "../ConfirmPanel.jsx";
+import "../../styles/workout-bar.css";
 
 const DISCARD_ERROR = "Couldn't discard. Check your connection and try again.";
 
@@ -38,10 +39,26 @@ function startedAtMs(session) {
   return Number.isNaN(t) ? null : t;
 }
 
+function useCompactCta() {
+  const query = "(max-width: 420px)";
+  const [compact, setCompact] = useState(() =>
+    typeof window !== "undefined" && window.matchMedia(query).matches
+  );
+  useEffect(() => {
+    const media = window.matchMedia(query);
+    const onChange = () => setCompact(media.matches);
+    onChange();
+    media.addEventListener("change", onChange);
+    return () => media.removeEventListener("change", onChange);
+  }, []);
+  return compact;
+}
+
 export function PersistentWorkoutBar() {
   const navigate = useNavigate();
   const location = useLocation();
   const { activeSession } = useActiveSession();
+  const compactCta = useCompactCta();
   const [now, setNow] = useState(() => Date.now());
   const [discardOpen, setDiscardOpen] = useState(false);
   const [discardBusy, setDiscardBusy] = useState(false);
@@ -70,6 +87,15 @@ export function PersistentWorkoutBar() {
   if (location.pathname === "/" || location.pathname === "/blocks/import") return null;
   if (!activeSession) return null;
 
+  // Column the bar floats over. Default is the shared .container. Library and
+  // Training are narrower columns inside that container.
+  const column =
+    location.pathname === "/templates"
+      ? "library"
+      : location.pathname === "/profile/training"
+        ? "training"
+        : "container";
+
   const offerDiscard = canOfferDiscard(activeSession);
   const count = loggedSetCount(activeSession);
 
@@ -89,7 +115,7 @@ export function PersistentWorkoutBar() {
 
   return (
     <>
-      <div className="persistent-workout-bar card card--live">
+      <div className={`persistent-workout-bar persistent-workout-bar--${column} card card--live`}>
         <button
           type="button"
           className="persistent-workout-bar__main"
@@ -97,15 +123,18 @@ export function PersistentWorkoutBar() {
           onClick={() => navigate(`/sessions/${activeSession.id}`)}
         >
           <div className="persistent-workout-bar__left">
-            <span className="persistent-workout-bar__eyebrow muted small">
-              In progress{elapsed ? ` · ${elapsed}` : ""}
+            <span className="persistent-workout-bar__eyebrow small">
+              <span className="persistent-workout-bar__status">In progress</span>
+              {elapsed ? (
+                <span className="persistent-workout-bar__elapsed muted">{elapsed}</span>
+              ) : null}
             </span>
             <span className="persistent-workout-bar__title">{title}</span>
             {exercise ? (
               <span className="persistent-workout-bar__sub muted small">{exercise}</span>
             ) : null}
           </div>
-          <span className="persistent-workout-bar__cta">Resume workout</span>
+          <span className="persistent-workout-bar__cta">{compactCta ? "Resume" : "Resume workout"}</span>
         </button>
         {offerDiscard ? (
           <button

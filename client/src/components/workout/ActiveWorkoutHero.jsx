@@ -1,6 +1,7 @@
 import { useState } from "react";
 import * as sessionApi from "../../api/sessionApi.js";
 import { ConfirmPanel } from "../ConfirmPanel.jsx";
+import "../../styles/workout-bar.css";
 import {
   blockDayPrimaryTitle,
   sessionDisplayBlockName,
@@ -116,9 +117,8 @@ export function ActiveWorkoutHero({ session, nowMs, onResume, setsProgress = nul
       ) : null}
       <p className="workout-hero__eyebrow muted small">In progress</p>
       <h1 id="workout-hero-active-headline" className="workout-hero__headline">
-        Resume workout
+        {title}
       </h1>
-      <p className="workout-hero__session-title">{title}</p>
       {blockName ? (
         <p className="workout-hero__session-block muted small">{blockName}</p>
       ) : null}
