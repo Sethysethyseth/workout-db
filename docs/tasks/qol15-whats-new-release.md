@@ -53,8 +53,16 @@ CHANGE:
    - No hype ("revolutionary", "seamless", "powerful", "supercharge"), no
      exclamation marks, no emoji.
    - Write "LogChamp", never "WorkoutDB".
-4. Update `app-guide.md` wherever a ledger entry changes how something is
-   done or where it lives. Add a section if a new area appeared. Keep the
+4. **Known guide error to correct first** (reviewer, Oct 8): the Blocks
+   section's "Pause" paragraph says to pause by opening Block options and
+   choosing End block. That conflates ending with pausing. Read the code
+   (`client/src/pages/BlockRunPage.jsx`, the Library card Start/Resume flow
+   from sr3-1 / sr3f1) and describe each one correctly:
+   - starting a different block pauses the running one
+   - Resume / Start over appear on the paused block
+   - End block ends the run
+   Then update `app-guide.md` wherever a ledger entry changes how something
+   is done or where it lives. Add a section if a new area appeared. Keep the
    guide's style and keep it under 12,000 characters (trim older, wordier
    passages if you must). Update its "Not in LogChamp yet" list if
    something on it now exists.
