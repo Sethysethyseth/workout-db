@@ -64,7 +64,9 @@ export function doseGhostFromPlan(planSet, timedMode) {
  */
 /**
  * Block day: plan weight wins. When the plan has no weight, use last time's
- * weight for this row only. Reps and seconds stay the plan's.
+ * weight for this row only. Reps and seconds stay the plan's. Effort is
+ * not merged here (it must never be filled in); the placeholder is
+ * `effortPlaceholderWithLastTime`.
  *
  * @param {object | null | undefined} planSet
  * @param {object | null | undefined} lastSet
@@ -77,6 +79,25 @@ export function planSetWithLastTimeWeight(planSet, lastSet) {
   if (planned != null && String(planned).trim() !== "") return planSet ?? null;
   if (!planSet) return { weight: lastSet.weight };
   return { ...planSet, weight: lastSet.weight };
+}
+
+/**
+ * Effort placeholder for a block-day row. The plan target wins, including
+ * its cap glyph. When the plan set has none for this signal, last time's
+ * effort shows as a plain number (never "≤" / "≥"). No RIR/RPE conversion.
+ *
+ * @param {object | null | undefined} plan
+ * @param {object | null | undefined} planSet
+ * @param {object | null | undefined} lastSet
+ * @param {"rir" | "rpe"} signal
+ */
+export function effortPlaceholderWithLastTime(plan, planSet, lastSet, signal) {
+  const fromPlan = effortGhostFromPlan(plan, planSet, signal);
+  if (fromPlan !== "—") return fromPlan;
+  if (signal !== "rir" && signal !== "rpe") return "—";
+  const raw = lastSet?.[signal];
+  if (raw == null || String(raw).trim() === "") return "—";
+  return String(raw);
 }
 
 export function fillDraftFromPlanExceptEffort(draft, planSet, timedMode) {

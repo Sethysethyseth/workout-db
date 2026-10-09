@@ -41,8 +41,8 @@ describe("buildLastPerformance", () => {
         sessionExerciseId: 10,
         lastPerformedAt: "2026-09-01T15:00:00.000Z",
         sets: [
-          { side: null, weight: 185, reps: 8, durationSec: null },
-          { side: null, weight: 185, reps: 6, durationSec: null },
+          { side: null, weight: 185, reps: 8, durationSec: null, rir: null, rpe: null },
+          { side: null, weight: 185, reps: 6, durationSec: null, rir: null, rpe: null },
         ],
       },
     ]);
@@ -68,7 +68,7 @@ describe("buildLastPerformance", () => {
     expect(result).toHaveLength(1);
     expect(result[0].sessionExerciseId).toBe(11);
     expect(result[0].sets).toEqual([
-      { side: null, weight: 135, reps: 10, durationSec: null },
+      { side: null, weight: 135, reps: 10, durationSec: null, rir: null, rpe: null },
     ]);
   });
 
@@ -105,7 +105,7 @@ describe("buildLastPerformance", () => {
       {
         sessionExerciseId: 12,
         lastPerformedAt: "2026-07-04T18:00:00.000Z",
-        sets: [{ side: null, weight: 95, reps: 5, durationSec: null }],
+        sets: [{ side: null, weight: 95, reps: 5, durationSec: null, rir: null, rpe: null }],
       },
     ]);
   });
@@ -126,9 +126,9 @@ describe("buildLastPerformance", () => {
     });
 
     expect(result[0].sets).toEqual([
-      { side: "L", weight: 40, reps: 10, durationSec: null },
-      { side: "R", weight: 40, reps: 8, durationSec: null },
-      { side: "L", weight: 40, reps: 8, durationSec: null },
+      { side: "L", weight: 40, reps: 10, durationSec: null, rir: null, rpe: null },
+      { side: "R", weight: 40, reps: 8, durationSec: null, rir: null, rpe: null },
+      { side: "L", weight: 40, reps: 8, durationSec: null, rir: null, rpe: null },
     ]);
   });
 
@@ -149,8 +149,8 @@ describe("buildLastPerformance", () => {
     });
 
     expect(result[0].sets).toEqual([
-      { side: null, weight: 185, reps: 5, durationSec: null },
-      { side: null, weight: null, reps: null, durationSec: 45 },
+      { side: null, weight: 185, reps: 5, durationSec: null, rir: null, rpe: null },
+      { side: null, weight: null, reps: null, durationSec: 45, rir: null, rpe: null },
     ]);
   });
 
@@ -189,7 +189,7 @@ describe("buildLastPerformance", () => {
     });
 
     expect(result[0].sets).toEqual([
-      { side: null, weight: 185, reps: 8, durationSec: null },
+      { side: null, weight: 185, reps: 8, durationSec: null, rir: null, rpe: null },
     ]);
   });
 
@@ -248,5 +248,53 @@ describe("buildLastPerformance", () => {
     });
 
     expect(result.map((row) => row.sessionExerciseId)).toEqual([18]);
+  });
+
+  test("a prior set with rpe returns that rpe and null rir", () => {
+    const result = buildLastPerformance({
+      targets: [{ sessionExerciseId: 30, exerciseId: BENCH_ID, exerciseName: "Bench" }],
+      priorSessions: [
+        session("2026-09-15T12:00:00.000Z", [
+          exercise({ exerciseId: BENCH_ID }, [set({ weight: 100, reps: 10, rpe: 7 })]),
+        ]),
+      ],
+      userIndex: new Map(),
+    });
+
+    expect(result[0].sets).toEqual([
+      { side: null, weight: 100, reps: 10, durationSec: null, rpe: 7, rir: null },
+    ]);
+  });
+
+  test("a prior set with rir returns that rir and null rpe", () => {
+    const result = buildLastPerformance({
+      targets: [{ sessionExerciseId: 31, exerciseId: BENCH_ID, exerciseName: "Bench" }],
+      priorSessions: [
+        session("2026-09-16T12:00:00.000Z", [
+          exercise({ exerciseId: BENCH_ID }, [set({ weight: 100, reps: 10, rir: 2 })]),
+        ]),
+      ],
+      userIndex: new Map(),
+    });
+
+    expect(result[0].sets).toEqual([
+      { side: null, weight: 100, reps: 10, durationSec: null, rir: 2, rpe: null },
+    ]);
+  });
+
+  test("a prior set with neither effort returns both null", () => {
+    const result = buildLastPerformance({
+      targets: [{ sessionExerciseId: 32, exerciseId: BENCH_ID, exerciseName: "Bench" }],
+      priorSessions: [
+        session("2026-09-17T12:00:00.000Z", [
+          exercise({ exerciseId: BENCH_ID }, [set({ weight: 100, reps: 10 })]),
+        ]),
+      ],
+      userIndex: new Map(),
+    });
+
+    expect(result[0].sets).toEqual([
+      { side: null, weight: 100, reps: 10, durationSec: null, rir: null, rpe: null },
+    ]);
   });
 });

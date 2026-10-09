@@ -16,7 +16,7 @@ A workout is a list of exercises and sets. Open one from Home, from History, or 
 
 Tap + Add exercise to add a movement. For each set, enter the weight and the reps. Effort is either RIR (reps in reserve) or RPE, whichever you chose under Training. Exercise notes and Set notes appear only when those switches are on.
 
-Repeat last time's numbers, also under Training, shows the last session's weight and reps in empty fields, in grey. Tap the set number to use them. Typing your own numbers replaces that hint. Nothing is saved until you log it. Effort is never filled in. On a block day the plan comes first, and last time only fills a weight the plan left blank.
+Repeat last time's numbers, also under Training, shows the last session's weight and reps in empty fields, in grey. Tap the set number to use them. Typing your own numbers replaces that hint. Nothing is saved until you log it. Last time's RPE or RIR shows in grey as a reminder, but you always enter today's yourself. On a block day the plan comes first, and last time only fills a weight the plan left blank.
 
 Log at least one set, then tap Finish workout. If a logged set has no effort, LogChamp warns you those sets will not count toward effort stats, and Finish anyway still saves the workout. You can go back and add the missing RIR or RPE instead.
 

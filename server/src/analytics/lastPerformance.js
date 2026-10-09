@@ -16,8 +16,9 @@ const { normalizeExerciseName } = require("./normalize");
  * The most recent prior session (by performedAt) that contains the key
  * wins. Sets come from the first matching exercise in that session, in
  * logged order. Only core-logged sets are kept: weight and reps both
- * present, or durationSec present. Older sessions are not used once that
- * exercise is found. A target with no core-logged history is omitted.
+ * present, or durationSec present. Each set also returns rir and rpe
+ * (null when that scale was not logged). Older sessions are not used once
+ * that exercise is found. A target with no core-logged history is omitted.
  *
  * @param {{ targets?: object[], priorSessions?: object[], userIndex?: Map }} input
  * @returns {{ sessionExerciseId: number, lastPerformedAt: string, sets: object[] }[]}
@@ -116,6 +117,8 @@ function coreLoggedSets(exercise) {
       weight: asNumber(set.weight),
       reps: asNumber(set.reps),
       durationSec: asNumber(set.durationSec),
+      rir: asNumber(set.rir),
+      rpe: asNumber(set.rpe),
     }));
 }
 

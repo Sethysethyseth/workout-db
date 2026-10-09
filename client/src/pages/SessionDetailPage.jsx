@@ -260,6 +260,8 @@ function ghostPlanFromLastSet(set) {
   if (set.durationSec != null && String(set.durationSec).trim() !== "") {
     plan.durationSec = set.durationSec;
   }
+  if (set.rir != null && String(set.rir).trim() !== "") plan.rir = set.rir;
+  if (set.rpe != null && String(set.rpe).trim() !== "") plan.rpe = set.rpe;
   if (plan.weight == null && plan.reps == null && plan.durationSec == null) return null;
   return plan;
 }
@@ -269,6 +271,9 @@ function lastTimeGhostTimed(planSet) {
 }
 
 function lastTimeFieldsForRow(lastSets, index, side) {
+  // Index is last time's set k for this row, including a set that is already
+  // logged. Callers pass logged rows here so an empty effort field keeps
+  // last time's RPE/RIR as a placeholder after "Log set k as last time".
   const rows = lastTimeRowsForSide(lastSets, side);
   const planSet = ghostPlanFromLastSet(rows[index]);
   if (!planSet) return null;
@@ -1379,6 +1384,9 @@ const SessionSetRow = memo(function SessionSetRow({
     : planSet != null
       ? durationPlaceholderFromPlan(planSet) ?? "e.g. 45"
       : "e.g. 45";
+  // Placeholder only. A logged set still receives last time's set k via
+  // lastTimeFieldsForRow, so an empty effort field keeps that grey hint
+  // until the lifter types a value. The draft value stays empty.
   const rirPh =
     planSet != null ? effortPlaceholderFromPlan(plan, planSet, "rir") ?? "—" : "—";
   const rpePh =
@@ -1551,6 +1559,8 @@ const SessionSetRow = memo(function SessionSetRow({
                     onKeyDown={(e) => onEnterNext(e, "rir")}
                     enterKeyHint={useRPE || useSetNotes ? "next" : "done"}
                     inputMode="numeric"
+                    className={ghostInputClass}
+                    style={ghostInputStyle}
                     disabled={isDraft ? false : disabled}
                     placeholder={rirPh}
                     title="Optional"
@@ -1589,6 +1599,8 @@ const SessionSetRow = memo(function SessionSetRow({
                     onKeyDown={(e) => onEnterNext(e, "rpe")}
                     enterKeyHint={useSetNotes ? "next" : "done"}
                     inputMode="decimal"
+                    className={ghostInputClass}
+                    style={ghostInputStyle}
                     disabled={isDraft ? false : disabled}
                     placeholder={rpePh}
                     title="Optional"

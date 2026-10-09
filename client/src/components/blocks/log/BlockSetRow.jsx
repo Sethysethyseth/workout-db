@@ -5,7 +5,7 @@ import { parseSeconds } from "./parseSeconds.js";
 import { isOverEffortCap } from "./planHelpers.js";
 import {
   doseGhostFromPlan,
-  effortGhostFromPlan,
+  effortPlaceholderWithLastTime,
   fillDraftFromPlanExceptEffort,
   planSetWithLastTimeWeight,
   weightGhostFromPlan,
@@ -409,7 +409,7 @@ export const BlockSetRow = memo(function BlockSetRow({
     weightUnit
   );
   const effortPh = effortSignal
-    ? effortGhostFromPlan(plan, planSet, effortSignal)
+    ? effortPlaceholderWithLastTime(plan, planSet, lastTimeSet, effortSignal)
     : "—";
 
   const overCap = isOverEffortCap(plan, planSet, draft.rpe, draft.rir);

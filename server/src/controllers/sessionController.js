@@ -1054,6 +1054,8 @@ async function getLastPerformance(req, res, next) {
                 weight: true,
                 reps: true,
                 durationSec: true,
+                rir: true,
+                rpe: true,
               },
             },
           },
