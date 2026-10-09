@@ -38,3 +38,4 @@ releases it as ONE catch-up entry dated 2026-10-07.
 
 <!-- land-unit appends one entry per user-facing landing below this line -->
 - [qol5] Importing workout history with more than 7 different workouts no longer fails: your 7 most-logged are kept and the skipped ones are named. Very large pastes to the AI import get a clear "too large" message instead of an error code | Where: Library, then Import | Files: client/src/pages/ImportBlockPage.jsx, client/src/components/blocks/import/ImportPreviewStep.jsx
+- [qol3] In the block builder, press and hold an exercise to drag it to a new spot; the day shrinks to one line per exercise while you move it | Where: Library, then Blocks, then edit a block | Files: client/src/components/blocks/builder/BlockBuilder.jsx, client/src/components/blocks/builder/ExerciseCard.jsx
