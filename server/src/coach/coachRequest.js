@@ -73,7 +73,16 @@ function parseFocus(raw) {
     }
     return { ok: true, focus: { type: "block", blockId: id } };
   }
-  return { ok: false, error: "focus.type must be 'view', 'session', or 'block'" };
+  if (raw.type === "general") {
+    return { ok: true, focus: { type: "general" } };
+  }
+  if (raw.type === "help") {
+    return { ok: true, focus: { type: "help" } };
+  }
+  return {
+    ok: false,
+    error: "focus.type must be 'view', 'session', 'block', 'general', or 'help'",
+  };
 }
 
 /**
