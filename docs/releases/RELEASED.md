@@ -32,6 +32,9 @@ shipped work to the words users read.
 - [qolf2] The coach page is easier to follow: a conversation fills the screen and scrolls as one, and new answers come into view on their own. Deleting a saved conversation is one tap from Library, then Coach, with a clear confirm. Saving your own Anthropic key on the AI access page works properly on a phone | Where: the chat bubble at the top of Home; Library, then Coach; Profile, then AI access | Files: client/src/components/coach/CoachPanel.jsx, client/src/components/library/CoachConversationList.jsx, client/src/pages/profile/AiConnectorPage.jsx
 - [qolf4] Logging setup fits on one phone screen, switches that are off are easy to see, and the Home strip says exactly which notes are on. In the block builder, the selected day and tab are highlighted the same way as the selected week, and an exercise you're holding to move lifts off the page so you can see it | Where: Home, the strip under Start a workout; Library, then Blocks, then edit a block | Files: client/src/components/prefs/TrainingPrefsSheet.jsx, client/src/components/prefs/TrainingPrefsStrip.jsx, client/src/styles/blocks/bk-builder.css
 
+- [qolf5] With Repeat last time's numbers on, last time's RPE or RIR now shows in grey in each set's effort box, even after you log the set, so you can see how hard it was last time. It's only a reminder: you always enter today's effort yourself | Where: any workout with Repeat last time on | Files: client/src/pages/SessionDetailPage.jsx, client/src/components/blocks/log/ghostPlaceholders.js
+  (Landed after qol15; folded straight into the `2026-10-quality-of-life` details at landing, Oct 9.)
+
 ### -> `2026-10-blocks-and-coach`
 
 #### Catch-up: on prod since Oct 7, 2026, never announced

@@ -66,7 +66,7 @@ export const RELEASES = [
       {
         heading: "Repeat last time's numbers",
         body: [
-          "Turn this on under Training. Every empty set shows what you lifted last time, in grey. Tap the set number to log those numbers, or type your own. Effort is never filled in, and nothing is saved until you log it. On a block day the plan still comes first. Last time only fills a weight the plan left blank.",
+          "Turn this on under Training. Every empty set shows what you lifted last time, in grey. Tap the set number to log those numbers, or type your own. Last time's RPE or RIR shows in grey as a reminder, but you always enter today's yourself, and nothing is saved until you log it. On a block day the plan still comes first. Last time only fills a weight the plan left blank.",
         ],
         where: "Profile, then Training, then Repeat last time's numbers",
       },
