@@ -18,7 +18,7 @@
 }
 
 .training-prefs-form--sheet .training-prefs-group {
-  gap: 4px;
+  gap: 8px;
 }
 
 .training-prefs-card {
@@ -36,8 +36,8 @@
 
 .training-prefs-form--sheet .training-prefs-group + .training-prefs-group {
   border-top: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
-  padding-top: 4px;
-  margin-top: 4px;
+  padding-top: 0;
+  margin-top: 16px;
 }
 
 .training-prefs-form--sheet .training-prefs-field__label,
@@ -47,7 +47,7 @@
 }
 
 .training-prefs-form--sheet .training-prefs-group__title {
-  padding-bottom: 6px;
+  padding-bottom: 0;
 }
 
 .training-prefs-field {
@@ -209,13 +209,14 @@
   flex-direction: column;
   gap: 8px;
   overflow: hidden;
-  height: 86vh;
-  max-height: 86vh;
+  height: 90vh;
+  max-height: 90vh;
   padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
 }
 
 .training-prefs-sheet .start-workout-picker__lead {
-  margin-bottom: 0;
+  margin: 0;
+  line-height: 1.25;
 }
 
 .training-prefs-sheet__scroll {
@@ -309,6 +310,15 @@
 .training-prefs-form .bk-segmented__option--selected {
   background: var(--color-btn-primary-bg);
   color: var(--color-btn-primary-fg);
+}
+
+.training-prefs-form--sheet .bk-segmented {
+  padding: 2px;
+}
+
+.training-prefs-form--sheet .bk-segmented__option {
+  height: 36px;
+  min-height: 36px;
 }
 
 .training-prefs-form .bk-segmented__option:focus-visible {

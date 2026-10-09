@@ -230,6 +230,7 @@ export function CoachPanel({
   const followRef = useRef(true);
   const prevCountRef = useRef(0);
   const prevTailRef = useRef("");
+  const coldEndPinRef = useRef(null);
 
   useEffect(() => {
     purgeLegacyCoachKey();
@@ -478,6 +479,47 @@ export function CoachPanel({
     }
     if (followRef.current) pinPageBottom(el);
   }, [thread, pageLayout]);
+
+  // Cold load of /coach?c=id: the layout pin runs before fonts settle, so the
+  // last lines sit below the fold. Pin again on the next frame and after
+  // fonts are ready. Later sends keep qolf2's follow and don't-yank rules.
+  useEffect(() => {
+    if (!pageLayout || historyLoading) return undefined;
+    if (resumeConversationId == null) {
+      coldEndPinRef.current = null;
+      return undefined;
+    }
+    if (thread.length === 0) return undefined;
+    if (loadedIdRef.current !== resumeConversationId) return undefined;
+    if (coldEndPinRef.current === resumeConversationId) return undefined;
+    coldEndPinRef.current = resumeConversationId;
+
+    let cancelled = false;
+
+    function pin() {
+      if (cancelled) return;
+      const node = threadRef.current;
+      if (!node) return;
+      pinPageBottom(node);
+      followRef.current = nearPageBottom(node);
+    }
+
+    const frame = requestAnimationFrame(pin);
+    let fontsFrame = 0;
+    const fontsReady = typeof document !== "undefined" ? document.fonts?.ready : null;
+    if (fontsReady && typeof fontsReady.then === "function") {
+      fontsReady.then(() => {
+        if (cancelled) return;
+        fontsFrame = requestAnimationFrame(pin);
+      });
+    }
+
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(frame);
+      if (fontsFrame) cancelAnimationFrame(fontsFrame);
+    };
+  }, [pageLayout, historyLoading, resumeConversationId, thread]);
 
   function onPageScroll() {
     const el = threadRef.current;

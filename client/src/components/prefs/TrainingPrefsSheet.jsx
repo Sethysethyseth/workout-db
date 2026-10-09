@@ -31,7 +31,7 @@ export function TrainingPrefsSheet({ open, onClose }) {
     function fit() {
       const sheet = sheetRef.current;
       if (!sheet) return;
-      const cap = Math.max(240, Math.round(vv.height * 0.86));
+      const cap = Math.max(240, Math.round(vv.height * 0.9));
       sheet.style.maxHeight = `${cap}px`;
       sheet.style.height = `${cap}px`;
     }

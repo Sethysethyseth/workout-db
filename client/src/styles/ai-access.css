@@ -21,3 +21,15 @@
 .settings-group .ai-key-form > .btn {
   min-height: 44px;
 }
+
+/* Off state, same pair as the Training switches. On stays .ai-switch--on.
+   Knob and track mix text into surface-1 so they separate in champ dark
+   (both surfaces are navy) and in crimson light. */
+.ai-switch-row .ai-switch:not(.ai-switch--on) {
+  background: color-mix(in srgb, var(--color-text) 18%, var(--color-surface-1));
+  border-color: color-mix(in srgb, var(--color-text) 34%, var(--color-surface-1));
+}
+
+.ai-switch-row .ai-switch:not(.ai-switch--on) .ai-switch__knob {
+  background: color-mix(in srgb, var(--color-text) 92%, var(--color-surface-1));
+}

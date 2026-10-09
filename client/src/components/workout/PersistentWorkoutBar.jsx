@@ -83,8 +83,17 @@ export function PersistentWorkoutBar() {
 
   // Home already offers Resume on ActiveWorkoutHero - one control only.
   // Import preview sticky "Create block" sits under the bar - hide there too.
+  // Coach's composer sits where the bar would, and the bar's x discards the
+  // workout. Home's live card is one tap away. Query string does not matter:
+  // pathname stays /coach for /coach?c=id.
   // Builder / log-focus hide via html class on the wrap (bk-builder / bk-log).
-  if (location.pathname === "/" || location.pathname === "/blocks/import") return null;
+  if (
+    location.pathname === "/" ||
+    location.pathname === "/blocks/import" ||
+    location.pathname === "/coach"
+  ) {
+    return null;
+  }
   if (!activeSession) return null;
 
   // Column the bar floats over. Default is the shared .container. Library and

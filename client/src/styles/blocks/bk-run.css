@@ -79,6 +79,25 @@
   margin: 12px 0 16px;
 }
 
+/* Selected day matches the builder pill. Scoped here so the builder and
+   the shared bk-ui outline stay as they are. */
+.bk-run .bk-day--selected {
+  background: color-mix(in srgb, var(--color-interactive) 28%, var(--color-surface-1));
+  border-color: color-mix(in srgb, var(--color-interactive) 70%, var(--color-border));
+  color: var(--color-text);
+  box-shadow: none;
+}
+
+/* NEXT hangs on bottom: -8px in bk-ui and crosses the pill border.
+   Keep it inside the border box, with room under the day name. */
+.bk-run .bk-day:has(.bk-day__tag) {
+  padding-bottom: 18px;
+}
+
+.bk-run .bk-day__tag {
+  bottom: 4px;
+}
+
 /* ---- header right ---- */
 .bk-run-header-right {
   display: flex;

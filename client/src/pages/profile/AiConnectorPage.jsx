@@ -402,8 +402,8 @@ export function AiConnectorPage() {
           </h2>
           <div className="settings-group settings-security-form">
             <p>
-              The coach has its own page. Open it from the chat bubble at the
-              top of Home. It also appears on Analytics and on every finished
+              The coach has its own page. <Link to="/coach">Open it</Link> from the chat
+              bubble at the top of Home. It also appears on Analytics and on every finished
               workout. It reads the same numbers you see and explains them; it
               never computes a stat of its own.
             </p>
@@ -482,9 +482,6 @@ export function AiConnectorPage() {
                 ) : null}
               </div>
             </details>
-            <p className="muted small" style={{ margin: 0 }}>
-              <Link to="/coach">Open the coach</Link> from the chat bubble at the top of Home.
-            </p>
           </div>
         </section>
       ) : null}

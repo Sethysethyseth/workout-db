@@ -242,6 +242,16 @@
   backdrop-filter: saturate(1.1) blur(10px);
 }
 
+/* Phone: the page ends at the content box, and .main keeps another 16px
+   under that before the nav. Extra padding keeps the field put; the
+   negative margin lets the backing fill that strip down to the nav. */
+@media (max-width: 719px) {
+  html:not(.coach-kbd) .coach-page__composer {
+    margin-bottom: -16px;
+    padding-bottom: calc(2px + 16px);
+  }
+}
+
 .coach-page__cap {
   margin: 0;
   line-height: 1.35;
