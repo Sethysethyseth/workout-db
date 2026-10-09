@@ -56,6 +56,19 @@
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
+  scroll-behavior: auto;
+}
+
+/* The shared .coach-thread box (max-height, its own scrollbar) is for the
+   embedded panel. On this page the conversation uses the one scroller above. */
+.coach-page .coach-thread {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-height: none;
+  overflow: visible;
+  scroll-behavior: auto;
+  padding: 8px 0 12px;
 }
 
 .coach-page__intro {
@@ -219,12 +232,25 @@
 
 .coach-page__composer {
   display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 0 0 auto;
+  margin-inline: -16px;
+  padding: 10px 16px 2px;
+  border-top: 1px solid color-mix(in srgb, var(--color-border) 35%, transparent);
+  background: color-mix(in srgb, var(--color-surface-1) 55%, transparent);
+  backdrop-filter: saturate(1.1) blur(10px);
+}
+
+.coach-page__cap {
+  margin: 0;
+  line-height: 1.35;
+}
+
+.coach-page__composer-row {
+  display: flex;
   align-items: flex-end;
   gap: 8px;
-  flex: 0 0 auto;
-  padding: 10px 0 2px;
-  border-top: 1px solid var(--color-border);
-  background: var(--color-bg);
 }
 
 .coach-page__input {
@@ -273,6 +299,20 @@
   outline-offset: 2px;
 }
 
+.coach-page__send--stop {
+  width: auto;
+  min-width: 44px;
+  padding: 0 12px;
+  background: color-mix(in srgb, var(--color-surface-2) 88%, var(--color-surface-1));
+  color: var(--color-text);
+  border: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
+  box-shadow: none;
+}
+
+html[data-theme="dark"] .coach-page__send--stop {
+  background: color-mix(in srgb, var(--color-surface-2) 75%, var(--color-surface-1));
+}
+
 .home-masthead__top {
   display: flex;
   align-items: center;
@@ -317,6 +357,11 @@
   .coach-page-wait__dots i {
     animation: none;
     opacity: 1;
+  }
+
+  .coach-page__scroll,
+  .coach-page .coach-thread {
+    scroll-behavior: auto;
   }
 }
 

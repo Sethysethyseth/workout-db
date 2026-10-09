@@ -7,9 +7,8 @@
 }
 
 .coach-history__row {
-  position: relative;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 8px;
   border-bottom: 1px solid var(--color-border);
 }
@@ -49,56 +48,23 @@
   color: var(--color-text-secondary);
 }
 
-.coach-history__more {
-  flex: 0 0 auto;
-  margin-top: 10px;
-  min-width: 44px;
-  min-height: 44px;
-  padding: 0 8px;
+.coach-history__delete {
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
   border: 0;
   border-radius: 8px;
   background: transparent;
   color: var(--color-text-secondary);
-  font: 700 1rem/1 var(--font-sans);
-  letter-spacing: 0.08em;
   cursor: pointer;
 }
 
-.coach-history__more:focus-visible,
-.coach-history__menu-item:focus-visible,
+.coach-history__delete:focus-visible,
 .coach-history__delete-all:focus-visible {
   outline: 2px solid var(--color-interactive);
   outline-offset: 2px;
-}
-
-.coach-history__menu {
-  position: absolute;
-  top: 48px;
-  right: 0;
-  z-index: 2;
-  min-width: 140px;
-  padding: 4px;
-  border: 1px solid var(--color-border);
-  border-radius: 10px;
-  background: var(--color-surface-1);
-}
-
-.coach-history__menu-item {
-  display: block;
-  width: 100%;
-  min-height: 44px;
-  padding: 0 12px;
-  border: 0;
-  border-radius: 8px;
-  background: transparent;
-  color: var(--color-text);
-  font: 600 0.95rem/1 var(--font-sans);
-  text-align: left;
-  cursor: pointer;
-}
-
-.coach-history__menu-item:hover {
-  background: color-mix(in srgb, var(--color-interactive) 12%, transparent);
 }
 
 .coach-history__footer {

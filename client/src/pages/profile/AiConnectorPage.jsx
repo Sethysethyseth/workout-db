@@ -9,6 +9,7 @@ import { ConfirmPanel } from "../../components/ConfirmPanel.jsx";
 import { ErrorMessage } from "../../components/ErrorMessage.jsx";
 import { LoadingState } from "../../components/LoadingState.jsx";
 import { looksLikeAnthropicKey, purgeLegacyCoachKey } from "../../lib/coachKeyPref.js";
+import "../../styles/ai-access.css";
 
 const CONNECTOR_SETUP_SECTIONS = [
   {
@@ -401,7 +402,8 @@ export function AiConnectorPage() {
           </h2>
           <div className="settings-group settings-security-form">
             <p>
-              The coach lives on the Analytics page and on every finished
+              The coach has its own page. Open it from the chat bubble at the
+              top of Home. It also appears on Analytics and on every finished
               workout. It reads the same numbers you see and explains them; it
               never computes a stat of its own.
             </p>
@@ -481,7 +483,7 @@ export function AiConnectorPage() {
               </div>
             </details>
             <p className="muted small" style={{ margin: 0 }}>
-              <Link to="/analytics">Open Analytics</Link> to ask the coach.
+              <Link to="/coach">Open the coach</Link> from the chat bubble at the top of Home.
             </p>
           </div>
         </section>
@@ -625,8 +627,9 @@ export function AiConnectorPage() {
         open={confirmRemoveKey}
         tone="danger"
         title="Remove your key?"
+        body="The coach stops using it right away. You can add it again any time."
         confirmLabel="Remove key"
-        cancelLabel="Keep"
+        cancelLabel="Keep key"
         busy={keyBusy}
         onConfirm={() => void onRemoveKey()}
         onCancel={() => {

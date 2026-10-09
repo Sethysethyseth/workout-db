@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   CoachError,
@@ -127,6 +127,74 @@ function NewConversationIcon() {
   );
 }
 
+function SuggestMark() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M7 16.2 4.8 20l3.6-1.4A8.2 8.2 0 1 0 7 16.2Z"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+const PAGE_FOLLOW_PX = 64;
+
+function nearPageBottom(el) {
+  return el.scrollHeight - el.scrollTop - el.clientHeight <= PAGE_FOLLOW_PX;
+}
+
+function pinPageBottom(el) {
+  el.scrollTop = el.scrollHeight;
+}
+
+function lastRoleNode(el, role) {
+  const nodes = el.querySelectorAll(`[data-coach-role="${role}"]`);
+  return nodes.length > 0 ? nodes[nodes.length - 1] : null;
+}
+
+function intersectsViewport(container, node) {
+  if (!node) return true;
+  const c = container.getBoundingClientRect();
+  const n = node.getBoundingClientRect();
+  return n.bottom > c.top + 1 && n.top < c.bottom - 1;
+}
+
+/** After a send: the new user line stays on screen, and the answer's start does too. */
+function placeAfterSend(el) {
+  pinPageBottom(el);
+  const userNode = lastRoleNode(el, "user");
+  const answerNode = lastRoleNode(el, "assistant");
+  if (!userNode) return;
+  if (!intersectsViewport(el, userNode)) {
+    const c = el.getBoundingClientRect();
+    const u = userNode.getBoundingClientRect();
+    el.scrollTop += u.bottom - c.bottom;
+  }
+  if (!answerNode) return;
+  const c = el.getBoundingClientRect();
+  const a = answerNode.getBoundingClientRect();
+  if (a.top <= c.bottom - 8) return;
+  const need = a.top - (c.bottom - 16);
+  const u = userNode.getBoundingClientRect();
+  const spare = u.bottom - c.top - 16;
+  if (spare > 0) el.scrollTop += Math.min(need, spare);
+}
+
+/** A new answer while already following: show its start, not the tail of a long first paint. */
+function placeAnswerStart(el) {
+  const answerNode = lastRoleNode(el, "assistant");
+  if (!answerNode || answerNode.offsetHeight <= el.clientHeight) {
+    pinPageBottom(el);
+    return;
+  }
+  const c = el.getBoundingClientRect();
+  const a = answerNode.getBoundingClientRect();
+  el.scrollTop += a.top - c.top;
+}
+
 export function CoachPanel({
   mode = "ask",
   range = null,
@@ -159,6 +227,9 @@ export function CoachPanel({
   const conversationIdRef = useRef(null);
   const loadedIdRef = useRef(null);
   const loadGenRef = useRef(0);
+  const followRef = useRef(true);
+  const prevCountRef = useRef(0);
+  const prevTailRef = useRef("");
 
   useEffect(() => {
     purgeLegacyCoachKey();
@@ -363,11 +434,56 @@ export function CoachPanel({
     void ask(autoAsk);
   }, [open, autoAsk, status, ask]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = threadRef.current;
-    if (!el || thread.length === 0) return;
-    el.scrollTop = el.scrollHeight;
-  }, [thread]);
+    const last = thread[thread.length - 1];
+    const tailKey = last ? `${last.id}:${last.content ? 1 : 0}` : "";
+    const firstWords =
+      Boolean(last && last.role !== "user" && last.content) &&
+      prevTailRef.current === `${last.id}:0`;
+    prevTailRef.current = tailKey;
+
+    if (!el || thread.length === 0) {
+      prevCountRef.current = 0;
+      followRef.current = true;
+      prevTailRef.current = "";
+      return;
+    }
+    if (!pageLayout) {
+      el.scrollTop = el.scrollHeight;
+      prevCountRef.current = thread.length;
+      return;
+    }
+    const prev = prevCountRef.current;
+    const appended = thread.length - prev;
+    prevCountRef.current = thread.length;
+    const added = appended > 0 ? thread.slice(thread.length - appended) : [];
+    const sent = prev > 0 && added.some((m) => m.role === "user");
+    const answerStarted = prev > 0 && !sent && added.some((m) => m.role !== "user");
+
+    if (prev === 0) {
+      pinPageBottom(el);
+      followRef.current = nearPageBottom(el);
+      return;
+    }
+    if (sent) {
+      placeAfterSend(el);
+      followRef.current = nearPageBottom(el);
+      return;
+    }
+    if ((answerStarted || firstWords) && followRef.current) {
+      placeAnswerStart(el);
+      followRef.current = nearPageBottom(el);
+      return;
+    }
+    if (followRef.current) pinPageBottom(el);
+  }, [thread, pageLayout]);
+
+  function onPageScroll() {
+    const el = threadRef.current;
+    if (!el) return;
+    followRef.current = nearPageBottom(el);
+  }
 
   function openWith(question) {
     setOpen(true);
@@ -491,11 +607,11 @@ export function CoachPanel({
   function renderThread() {
     return thread.map((m) =>
       m.role === "user" ? (
-        <div key={m.id} className="coach-msg coach-msg--user">
+        <div key={m.id} className="coach-msg coach-msg--user" data-coach-role="user">
           {m.content}
         </div>
       ) : pageLayout ? (
-        <div key={m.id} className="coach-page-reply">
+        <div key={m.id} className="coach-page-reply" data-coach-role="assistant">
           <p className="coach-page-reply__who">
             <span className="coach-msg__crown" aria-hidden="true" />
             <span>Coach</span>
@@ -541,7 +657,7 @@ export function CoachPanel({
           </button>
         </header>
 
-        <div className="coach-page__scroll" ref={threadRef}>
+        <div className="coach-page__scroll" ref={threadRef} onScroll={onPageScroll}>
           {historyLoading ? (
             <div className="coach-panel__notice muted small coach-panel__notice--loading">
               <span className="barbell barbell--inline" aria-hidden="true">
@@ -602,7 +718,7 @@ export function CoachPanel({
                       onClick={() => void ask(q)}
                     >
                       <span className="coach-page-suggest__mark" aria-hidden="true">
-                        ?
+                        <SuggestMark />
                       </span>
                       <span>{q}</span>
                     </button>
@@ -621,37 +737,44 @@ export function CoachPanel({
               {unavailable.body} <Link to="/profile/ai">Open AI access</Link>
             </p>
           ) : null}
-          {remainingCopy ? <p className="coach-panel__cap muted small">{remainingCopy}</p> : null}
-          {usedCopy ? <p className="coach-panel__cap muted small">{usedCopy}</p> : null}
         </div>
 
         {showComposer ? (
           <form className="coach-page__composer" onSubmit={onSubmit}>
-            <textarea
-              ref={inputRef}
-              className="coach-page__input"
-              rows={1}
-              value={input}
-              placeholder="Ask the coach"
-              aria-label="Ask the coach"
-              onChange={onInputChange}
-              onKeyDown={onKeyDown}
-              disabled={streaming || capped}
-            />
-            {streaming ? (
-              <button type="button" className="coach-page__send" aria-label="Stop" onClick={stop}>
-                Stop
-              </button>
-            ) : (
-              <button
-                type="submit"
-                className="coach-page__send"
-                aria-label="Send"
-                disabled={capped || !input.trim()}
-              >
-                <SendIcon />
-              </button>
-            )}
+            {remainingCopy ? <p className="coach-page__cap muted small">{remainingCopy}</p> : null}
+            {usedCopy ? <p className="coach-page__cap muted small">{usedCopy}</p> : null}
+            <div className="coach-page__composer-row">
+              <textarea
+                ref={inputRef}
+                className="coach-page__input"
+                rows={1}
+                value={input}
+                placeholder="Ask the coach"
+                aria-label="Ask the coach"
+                onChange={onInputChange}
+                onKeyDown={onKeyDown}
+                disabled={streaming || capped}
+              />
+              {streaming ? (
+                <button
+                  type="button"
+                  className="coach-page__send coach-page__send--stop"
+                  aria-label="Stop"
+                  onClick={stop}
+                >
+                  Stop
+                </button>
+              ) : (
+                <button
+                  type="submit"
+                  className="coach-page__send"
+                  aria-label="Send"
+                  disabled={capped || !input.trim()}
+                >
+                  <SendIcon />
+                </button>
+              )}
+            </div>
           </form>
         ) : null}
       </section>

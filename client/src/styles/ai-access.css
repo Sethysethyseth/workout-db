@@ -1,0 +1,23 @@
+/* Profile > AI access. The empty own-key form stacks full width.
+   The saved-key row is unchanged and stays on the rules in index.css. */
+
+.settings-group .ai-key-form {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  width: 100%;
+}
+
+.settings-group .ai-key-form > label,
+.settings-group .ai-key-form > input,
+.settings-group .ai-key-form > .btn,
+.settings-group .ai-key-form > p {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.settings-group .ai-key-form > .btn {
+  min-height: 44px;
+}

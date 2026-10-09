@@ -32,18 +32,30 @@ function contextLabel(focusType) {
   return FOCUS_LABELS[focusType] || null;
 }
 
+function DeleteIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M4 7h16M9 7V5h6v2M7 7l1 13h8l1-13"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 export function CoachConversationList() {
   const [items, setItems] = useState([]);
   const [nextBefore, setNextBefore] = useState(null);
   const [status, setStatus] = useState("loading");
   const [error, setError] = useState(null);
-  const [menuId, setMenuId] = useState(null);
   const [pendingDelete, setPendingDelete] = useState(null);
   const [confirmAll, setConfirmAll] = useState(false);
   const [busy, setBusy] = useState(false);
   const sentinelRef = useRef(null);
   const pagingRef = useRef(false);
-  const menuRef = useRef(null);
 
   const applyPage = useCallback((page, mode) => {
     const incoming = Array.isArray(page?.items) ? page.items : [];
@@ -108,15 +120,6 @@ export function CoachConversationList() {
     return () => observer.disconnect();
   }, [nextBefore, loadMore]);
 
-  useEffect(() => {
-    if (menuId == null) return undefined;
-    function onPointerDown(event) {
-      if (menuRef.current && !menuRef.current.contains(event.target)) setMenuId(null);
-    }
-    document.addEventListener("pointerdown", onPointerDown);
-    return () => document.removeEventListener("pointerdown", onPointerDown);
-  }, [menuId]);
-
   async function confirmDeleteOne() {
     if (!pendingDelete || busy) return;
     setBusy(true);
@@ -125,7 +128,6 @@ export function CoachConversationList() {
       await deleteCoachConversation(pendingDelete.id);
       setItems((prev) => prev.filter((row) => row.id !== pendingDelete.id));
       setPendingDelete(null);
-      setMenuId(null);
     } catch (err) {
       setError(err);
     } finally {
@@ -142,7 +144,6 @@ export function CoachConversationList() {
       setItems([]);
       setNextBefore(null);
       setConfirmAll(false);
-      setMenuId(null);
     } catch (err) {
       setError(err);
     } finally {
@@ -183,39 +184,21 @@ export function CoachConversationList() {
         {items.map((row) => {
           const label = contextLabel(row.focusType);
           const when = formatRelativeDate(row.updatedAt);
-          const meta = [label, when].filter(Boolean).join(" · ");
-          const menuOpen = menuId === row.id;
+          const meta = [label, when].filter(Boolean).join(", ");
           return (
-            <li key={row.id} className="coach-history__row" ref={menuOpen ? menuRef : null}>
+            <li key={row.id} className="coach-history__row">
               <Link className="coach-history__open" to={`/coach?c=${row.id}`}>
                 <span className="coach-history__title">{row.title}</span>
                 {meta ? <span className="coach-history__meta">{meta}</span> : null}
               </Link>
               <button
                 type="button"
-                className="coach-history__more"
-                aria-label={`More actions for ${row.title}`}
-                aria-expanded={menuOpen}
-                aria-haspopup="menu"
-                onClick={() => setMenuId(menuOpen ? null : row.id)}
+                className="coach-history__delete"
+                aria-label="Delete conversation"
+                onClick={() => setPendingDelete(row)}
               >
-                ...
+                <DeleteIcon />
               </button>
-              {menuOpen ? (
-                <div className="coach-history__menu" role="menu">
-                  <button
-                    type="button"
-                    role="menuitem"
-                    className="coach-history__menu-item"
-                    onClick={() => {
-                      setMenuId(null);
-                      setPendingDelete(row);
-                    }}
-                  >
-                    Delete
-                  </button>
-                </div>
-              ) : null}
             </li>
           );
         })}
@@ -228,9 +211,11 @@ export function CoachConversationList() {
       </div>
       <ConfirmPanel
         open={pendingDelete != null}
+        tone="danger"
         title="Delete this conversation?"
-        confirmLabel="Delete"
-        cancelLabel="Keep"
+        body="It's removed from your coach history. This can't be undone."
+        confirmLabel="Delete conversation"
+        cancelLabel="Keep conversation"
         busy={busy}
         onConfirm={() => void confirmDeleteOne()}
         onCancel={() => {
@@ -241,8 +226,9 @@ export function CoachConversationList() {
         open={confirmAll}
         tone="danger"
         title="Delete all coach conversations?"
+        body="Every saved conversation is removed. This can't be undone."
         confirmLabel="Delete all"
-        cancelLabel="Keep"
+        cancelLabel="Keep conversations"
         busy={busy}
         onConfirm={() => void confirmDeleteAll()}
         onCancel={() => {
