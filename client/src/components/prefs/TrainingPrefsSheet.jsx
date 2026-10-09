@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { TrainingPrefsForm } from "./TrainingPrefsForm.jsx";
 import "../../styles/training-prefs.css";
 
-export function TrainingPrefsSheet({ open, onClose }) {
+export function TrainingPrefsSheet({ open, onClose, effortNote }) {
   const sheetRef = useRef(null);
 
   useEffect(() => {
@@ -75,7 +75,7 @@ export function TrainingPrefsSheet({ open, onClose }) {
           Saved on this device. Changes apply right away.
         </p>
         <div className="training-prefs-sheet__scroll">
-          <TrainingPrefsForm variant="sheet" />
+          <TrainingPrefsForm variant="sheet" effortNote={effortNote} />
         </div>
         <button type="button" className="btn training-prefs-sheet__done" onClick={onClose}>
           Done

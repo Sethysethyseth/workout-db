@@ -56,7 +56,7 @@ function Group({ variant, title, children }) {
   );
 }
 
-export function TrainingPrefsForm({ variant = "page" }) {
+export function TrainingPrefsForm({ variant = "page", effortNote }) {
   const prefs = useTrainingPrefs();
   const rest = prefs.restTimer;
 
@@ -85,10 +85,14 @@ export function TrainingPrefsForm({ variant = "page" }) {
             value={prefs.effortSignal}
             onChange={(value) => setTrainingPref("effortSignal", value)}
           />
-          <p className="training-prefs-field__helper muted small">
-            Used for quick workouts and new templates. Blocks and templates keep the scale they
-            were built with.
-          </p>
+          {effortNote ? (
+            <p className="training-prefs-field__helper muted small">{effortNote}</p>
+          ) : (
+            <p className="training-prefs-field__helper muted small">
+              Used for quick workouts and new templates. Blocks and templates keep the scale they
+              were built with.
+            </p>
+          )}
         </div>
       </Group>
 

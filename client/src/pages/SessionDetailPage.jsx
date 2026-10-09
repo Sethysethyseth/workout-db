@@ -27,6 +27,7 @@ import { getAdHocSessionTitle, setAdHocSessionTitle } from "../lib/adHocSessionT
 import { sessionDisplayTitle } from "../lib/sessionDisplay.js";
 import { smartWorkoutNameFromSessionExercises } from "../lib/smartWorkoutName.js";
 import { getTrainingPrefs, useTrainingPrefs } from "../lib/trainingPrefs.js";
+import { TrainingPrefsStrip } from "../components/prefs/TrainingPrefsStrip.jsx";
 import { restDurationFor, startRestRun } from "../lib/restTimer.js";
 import { RestTimerBar } from "../components/workout/RestTimerBar.jsx";
 import { loadWeightUnit } from "../lib/weightUnitPref.js";
@@ -3743,6 +3744,14 @@ export function SessionDetailPage() {
         : null;
   const liveUseRIR = liveEffortSignal === "rir";
   const liveUseRPE = liveEffortSignal === "rpe";
+  const liveScaleName =
+    liveEffortSignal === "rpe" ? "RPE" : liveEffortSignal === "rir" ? "RIR" : null;
+  let liveEffortNote = null;
+  if (liveScaleName && !isQuickLog) {
+    liveEffortNote = `This workout's plan uses ${liveScaleName}. Your choice applies to quick workouts.`;
+  } else if (liveScaleName && sessionLoggedEffortSignal(sessionSets)) {
+    liveEffortNote = `This workout already has ${liveScaleName} logged, so it stays ${liveScaleName}. Your choice applies from your next workout.`;
+  }
   const coreLoggedSets = sessionSets.filter((s) => sessionSetHasCoreLogged(s));
   const setsMissingEffort =
     !isCompleted && liveEffortSignal != null
@@ -3757,21 +3766,7 @@ export function SessionDetailPage() {
       ? session.name || `${blockContext.blockName} · W${blockContext.weekOrder} · ${blockContext.dayName}`
       : sessionDisplayTitle(session);
 
-  const blockLocksEffortScale =
-    isFromBlock &&
-    (Boolean(blockContext?.useRIR) || Boolean(blockContext?.useRPE));
-  // RIR wins when both true - same resolution as session seeding.
-  const blockLockedEffortLabel = blockContext?.useRIR ? "RIR" : "RPE";
 
-  const blockLockedEffortChip = blockLocksEffortScale ? (
-    <span
-      className="bk-log-effort-chip"
-      title={`Effort scale locked to ${blockLockedEffortLabel} for this block day. Explainer: the block chose this scale; it stays fixed for the workout.`}
-      aria-label={`Effort: ${blockLockedEffortLabel}. Locked by this block day; the scale stays fixed for the workout.`}
-    >
-      {`Effort: ${blockLockedEffortLabel}`}
-    </span>
-  ) : null;
 
   function leaveSessionNow() {
     setConfirmLeave(false);
@@ -3984,6 +3979,10 @@ export function SessionDetailPage() {
         </div>
       )}
 
+      {!isCompleted && !isFromBlock ? (
+        <TrainingPrefsStrip effortSignal={liveEffortSignal} effortNote={liveEffortNote} />
+      ) : null}
+
       {confirmLeave ? (
         <div className="stack session-leave-confirm">
           <p className="muted small session-leave-confirm__title">
@@ -4068,9 +4067,8 @@ export function SessionDetailPage() {
               totalSets={blockProgress.total}
             />
 
-            {blockLockedEffortChip ? (
-              <div className="bk-log-effort-slot bk">{blockLockedEffortChip}</div>
-            ) : null}
+            <TrainingPrefsStrip effortSignal={liveEffortSignal} effortNote={liveEffortNote} />
+
 
             {sessionExercises.length === 0 ? (
               <div className="muted small session-empty-card" style={{ margin: 0 }}>

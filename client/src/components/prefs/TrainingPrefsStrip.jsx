@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTrainingPrefs } from "../../lib/trainingPrefs.js";
 import { TrainingPrefsSheet } from "./TrainingPrefsSheet.jsx";
 import "../../styles/training-prefs.css";
@@ -37,19 +37,33 @@ function notesPillLabel(exerciseOn, setOn) {
   return null;
 }
 
-export function TrainingPrefsStrip() {
+export function TrainingPrefsStrip({ effortSignal, effortNote } = {}) {
   const prefs = useTrainingPrefs();
+  const stripRef = useRef(null);
   const [open, setOpen] = useState(false);
+  const wasOpenRef = useRef(false);
   const notesLabel = notesPillLabel(prefs.useExerciseNotes, prefs.useSetNotes);
-  const effortLabel = prefs.effortSignal === "rpe" ? "RPE" : "RIR";
+  const resolvedEffort = effortSignal === undefined ? prefs.effortSignal : effortSignal;
+  const effortLabel =
+    resolvedEffort === "rpe" ? "RPE" : resolvedEffort === "rir" ? "RIR" : null;
+
+  useEffect(() => {
+    if (wasOpenRef.current && !open) stripRef.current?.focus();
+    wasOpenRef.current = open;
+  }, [open]);
 
   return (
     <>
-      <button type="button" className="training-prefs-strip" onClick={() => setOpen(true)}>
+      <button
+        ref={stripRef}
+        type="button"
+        className="training-prefs-strip"
+        onClick={() => setOpen(true)}
+      >
         <SlidersIcon />
         <span className="training-prefs-strip__pills">
           <span className="training-prefs-pill">{prefs.weightUnit}</span>
-          <span className="training-prefs-pill">{effortLabel}</span>
+          {effortLabel ? <span className="training-prefs-pill">{effortLabel}</span> : null}
           {notesLabel ? <span className="training-prefs-pill">{notesLabel}</span> : null}
           {prefs.mirrorLast ? (
             <span className="training-prefs-pill training-prefs-pill--accent">Repeat last</span>
@@ -57,7 +71,11 @@ export function TrainingPrefsStrip() {
         </span>
         <span className="training-prefs-strip__edit">Edit</span>
       </button>
-      <TrainingPrefsSheet open={open} onClose={() => setOpen(false)} />
+      <TrainingPrefsSheet
+        open={open}
+        onClose={() => setOpen(false)}
+        effortNote={effortNote}
+      />
     </>
   );
 }

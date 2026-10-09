@@ -7,7 +7,6 @@ import { ErrorMessage } from "../components/ErrorMessage.jsx";
 import { WeeklyReport, weeklyReportWindows } from "../components/analytics/WeeklyReport.jsx";
 import { ActiveWorkoutHero } from "../components/workout/ActiveWorkoutHero.jsx";
 import { StartWorkoutHero } from "../components/workout/StartWorkoutHero.jsx";
-import { TrainingPrefsStrip } from "../components/prefs/TrainingPrefsStrip.jsx";
 import { StartWorkoutPicker } from "../components/workout/StartWorkoutPicker.jsx";
 import { WeekStrip } from "../components/workout/WeekStrip.jsx";
 import { UpNextCard } from "../components/blocks/run/UpNextCard.jsx";
@@ -421,8 +420,6 @@ export function DashboardPage() {
             }
           />
         )}
-
-        <TrainingPrefsStrip />
 
         {/* Active run + no live: bold "Next in your block" card under the log hero.
             While pending, a same-height placeholder (hinted via sessionStorage). */}

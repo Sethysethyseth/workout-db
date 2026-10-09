@@ -150,13 +150,14 @@
 .training-prefs-strip {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   width: 100%;
   min-height: 44px;
   padding: 8px 12px;
   border-radius: 12px;
   border: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
-  background: transparent;
+  /* On a surface, not the scene: it sits over the art at the top of a workout. */
+  background: var(--color-surface-1);
   color: var(--color-text-secondary);
   font: inherit;
   text-align: left;
@@ -172,7 +173,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   flex: 1;
   min-width: 0;
 }
@@ -181,7 +182,7 @@
   display: inline-flex;
   align-items: center;
   min-height: 22px;
-  padding: 2px 8px;
+  padding: 2px 7px;
   border-radius: 999px;
   border: 1px solid var(--color-border);
   background: var(--color-surface-2);
@@ -249,11 +250,6 @@
 }
 
 @media (min-width: 1024px) {
-  .training-prefs-strip {
-    grid-column: 1 / -1;
-    grid-row: 2;
-  }
-
   .workout-tab__log-row:not(:has(> .bk-up-next)) > .workout-hero {
     grid-column: 1 / -1;
   }
