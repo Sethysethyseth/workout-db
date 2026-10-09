@@ -284,16 +284,75 @@ function lastTimeFieldsForRow(lastSets, index, side) {
   };
 }
 
-/** Restores the session input chrome; placeholder color still comes from bk-num-field. */
-const LAST_TIME_GHOST_INPUT_STYLE = {
-  height: "auto",
-  border: "1px solid var(--color-input-border)",
-  borderRadius: "var(--radius-control)",
-  background: "var(--color-surface-1)",
-  textAlign: "start",
-  padding: "10px 12px",
-  letterSpacing: "normal",
-};
+/**
+ * Last-time rows after the Sets select capped them. Without a cap every
+ * last-time row ghosts; with one, only the first `cap` rows (per side for
+ * sided history) do, so picking a lower number hides extra ghost rows
+ * instead of adding blank sets.
+ */
+function capLastSets(list, cap) {
+  if (cap == null || !Array.isArray(list)) return list;
+  let left = 0;
+  let right = 0;
+  let plain = 0;
+  return list.filter((s) => {
+    if (s?.side === "L") return (left += 1) <= cap;
+    if (s?.side === "R") return (right += 1) <= cap;
+    return (plain += 1) <= cap;
+  });
+}
+
+/**
+ * Rows on screen for the Sets (or Pairs) select: logged rows plus last-time
+ * ghost rows that render after them. Repeat last pads the list up to last
+ * time, so the logged count alone reads short.
+ */
+function visibleSetCountForExercise({
+  perSideMode,
+  sets,
+  sortedSets,
+  lastSets,
+  plan,
+  isCompleted,
+  renderUnits,
+}) {
+  if (perSideMode) {
+    const lastPairs = Math.max(
+      lastTimeRowsForSide(lastSets, "L").length,
+      lastTimeRowsForSide(lastSets, "R").length
+    );
+    if (sets.length === 0) {
+      if (!isCompleted && lastSets.length > 0) return Math.max(1, lastPairs);
+      return 1;
+    }
+    const loggedPairs = Math.max(
+      sortedSets.filter((s) => s.side === "L").length,
+      sortedSets.filter((s) => s.side === "R").length
+    );
+    const extra =
+      plan == null && lastSets.length > 0 ? Math.max(0, lastPairs - loggedPairs) : 0;
+    return Math.max(1, renderUnits.length + extra);
+  }
+
+  if (sets.length === 0) {
+    if (!isCompleted && lastSets.length > 0) {
+      let n = 0;
+      for (let i = 0; i < lastSets.length; i += 1) {
+        if (lastTimeFieldsForRow(lastSets, i, null)) n += 1;
+      }
+      return Math.max(1, n);
+    }
+    return 1;
+  }
+
+  let extra = 0;
+  if (plan == null && lastSets.length > 0) {
+    for (let i = sortedSets.length; i < lastSets.length; i += 1) {
+      if (lastTimeFieldsForRow(lastSets, i, null)) extra += 1;
+    }
+  }
+  return Math.max(1, sortedSets.length + extra);
+}
 
 function nextSetOrder(session) {
   const sets = Array.isArray(session?.sets) ? session.sets : [];
@@ -620,6 +679,43 @@ function SessionExerciseFields({
 
     return () => window.clearTimeout(timer);
   }, [disabled, name]);
+
+  useLayoutEffect(() => {
+    if (disabled || !suggestionsOpen) return undefined;
+
+    function measure() {
+      const wrap = nameWrapRef.current;
+      if (!wrap) return;
+      // The list sits 4px under the wrap (index.css top: calc(100% + 4px)).
+      const listTop = wrap.getBoundingClientRect().bottom + 4;
+      const dock = document.querySelector(".session-finish-dock");
+      const vv = window.visualViewport;
+      const viewportBottom = vv ? vv.offsetTop + vv.height : window.innerHeight;
+      let limit = viewportBottom;
+      if (dock && !document.documentElement.classList.contains("bk-log-kbd")) {
+        const cs = window.getComputedStyle(dock);
+        const hidden = cs.visibility === "hidden" || cs.display === "none";
+        if (!hidden) limit = dock.getBoundingClientRect().top;
+      }
+      // Stay strictly above the dock (or the viewport when the dock is hidden).
+      const next = Math.max(0, Math.floor(limit - listTop) - 1);
+      const list = wrap.querySelector(".exercise-picker-suggestions");
+      if (list) list.style.maxHeight = `${next}px`;
+    }
+
+    measure();
+    window.addEventListener("resize", measure);
+    window.addEventListener("scroll", measure, true);
+    const vv = window.visualViewport;
+    vv?.addEventListener("resize", measure);
+    vv?.addEventListener("scroll", measure);
+    return () => {
+      window.removeEventListener("resize", measure);
+      window.removeEventListener("scroll", measure, true);
+      vv?.removeEventListener("resize", measure);
+      vv?.removeEventListener("scroll", measure);
+    };
+  }, [disabled, suggestionsOpen, suggestions.length]);
 
   useEffect(() => {
     if (disabled) return undefined;
@@ -1399,8 +1495,7 @@ const SessionSetRow = memo(function SessionSetRow({
 
   const showLastTimeButton =
     lastTimeMode && !disabled && (isDraft || !coreLogged);
-  const ghostInputClass = lastTimeMode ? "bk-num-field" : undefined;
-  const ghostInputStyle = lastTimeMode ? LAST_TIME_GHOST_INPUT_STYLE : undefined;
+  const ghostInputClass = lastTimeMode ? "bk-num-field logger-last-time-input" : undefined;
 
   return (
     <div
@@ -1482,7 +1577,6 @@ const SessionSetRow = memo(function SessionSetRow({
                 min="0"
                 step="0.01"
                 className={ghostInputClass}
-                style={ghostInputStyle}
                 disabled={isDraft ? false : disabled}
                 placeholder={weightPh}
                 aria-invalid={needsWeightHighlight ? true : undefined}
@@ -1523,7 +1617,6 @@ const SessionSetRow = memo(function SessionSetRow({
                   min="0"
                   step="1"
                   className={ghostInputClass}
-                  style={ghostInputStyle}
                   disabled={isDraft ? false : disabled}
                   placeholder={repsPh}
                   aria-invalid={needsRepsHighlight ? true : undefined}
@@ -1560,7 +1653,6 @@ const SessionSetRow = memo(function SessionSetRow({
                     enterKeyHint={useRPE || useSetNotes ? "next" : "done"}
                     inputMode="numeric"
                     className={ghostInputClass}
-                    style={ghostInputStyle}
                     disabled={isDraft ? false : disabled}
                     placeholder={rirPh}
                     title="Optional"
@@ -1600,7 +1692,6 @@ const SessionSetRow = memo(function SessionSetRow({
                     enterKeyHint={useSetNotes ? "next" : "done"}
                     inputMode="decimal"
                     className={ghostInputClass}
-                    style={ghostInputStyle}
                     disabled={isDraft ? false : disabled}
                     placeholder={rpePh}
                     title="Optional"
@@ -1692,6 +1783,8 @@ function SessionExerciseBlock({
   const prevSetsLenRef = useRef(null);
   const autoCreateBusyRef = useRef(false);
   const [confirmRemove, setConfirmRemove] = useState(false);
+  /** Sets-select cap on last-time ghost rows (null = show every last-time row). */
+  const [ghostCap, setGhostCap] = useState(null);
   const [pairRemoveIds, setPairRemoveIds] = useState(null);
   const [pairRemoveBusy, setPairRemoveBusy] = useState(false);
 
@@ -1718,10 +1811,11 @@ function SessionExerciseBlock({
   // Guard: plan chrome only when SessionExercise.plan is present (block sessions).
   const plan = se.plan != null && typeof se.plan === "object" ? se.plan : null;
   const timedExercise = plan != null && isTimedPlanExercise(plan);
-  const lastSets =
+  const allLastSets =
     !isCompleted && plan == null && Array.isArray(lastPerformance?.sets)
       ? lastPerformance.sets
       : [];
+  const lastSets = capLastSets(allLastSets, ghostCap);
   const lastTimeLabel =
     lastSets.length > 0 ? formatLastTimeCaption(lastPerformance.lastPerformedAt) : null;
 
@@ -1758,7 +1852,22 @@ function SessionExerciseBlock({
     () => groupSetsIntoRenderUnits(sortedSets, perSideMode),
     [sortedSets, perSideMode]
   );
-  const pairCount = perSideMode ? Math.max(1, Math.ceil(sortedSets.length / 2)) : Math.max(1, sets.length);
+  const pairCount = visibleSetCountForExercise({
+    perSideMode,
+    sets,
+    sortedSets,
+    lastSets,
+    plan,
+    isCompleted,
+    renderUnits,
+  });
+  const loggedSetCount = sets.filter((s) => sessionSetHasCoreLogged(s)).length;
+  const removeExerciseBody =
+    loggedSetCount === 0
+      ? "Nothing is logged yet."
+      : loggedSetCount === 1
+        ? "Your 1 logged set will be deleted."
+        : `Your ${loggedSetCount} logged sets will be deleted.`;
 
   const onAutofillPartnerWeight = useCallback(
     (partnerSetId, weight, partnerSet) => {
@@ -1907,7 +2016,13 @@ function SessionExerciseBlock({
               aria-label={`Remove ${namePart}`}
               onClick={() => setConfirmRemove(true)}
             >
-              ...
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M3 6h18" />
+                <path d="M8 6V4h8v2" />
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+                <path d="M10 11v6" />
+                <path d="M14 11v6" />
+              </svg>
             </button>
           ) : null}
         </div>
@@ -1957,9 +2072,12 @@ function SessionExerciseBlock({
                     {...(perSideMode ? { label: "Pairs" } : {})}
                     value={pairCount}
                     disabled={setCountBusy || writesFrozen}
-                    onChange={(n) =>
-                      onAdjustSetCount(se.id, n, perSideMode ? { perSide: true } : undefined)
-                    }
+                    onChange={(n) => {
+                      // With ghost rows on screen the select counts them, so the
+                      // chosen number also caps how many last-time rows ghost.
+                      if (allLastSets.length > 0) setGhostCap(n);
+                      onAdjustSetCount(se.id, n, perSideMode ? { perSide: true } : undefined);
+                    }}
                   />
                   <button
                     type="button"
@@ -1986,19 +2104,6 @@ function SessionExerciseBlock({
                   Sets
                 </span>
               )}
-              {!isCompleted && sets.length === 0 ? (
-                <button
-                  type="button"
-                  className="btn btn-secondary exercise-editor-add-set-btn"
-                  onClick={() => {
-                    onActivateExercise?.();
-                    onCreateSet(se.id, perSideMode ? { perSide: true } : undefined);
-                  }}
-                  disabled={setCountBusy || writesFrozen}
-                >
-                  + Add set
-                </button>
-              ) : null}
             </div>
 
             <>
@@ -2008,7 +2113,7 @@ function SessionExerciseBlock({
                     <div className="muted small session-empty-sets">No sets logged.</div>
                   ) : perSideMode && lastSets.length === 0 ? (
                     <div className="muted small session-empty-sets">
-                      Tap "+ Add set" above to log your first left/right pair.
+                      Tap "+ Add set" below to log your first left/right pair.
                     </div>
                   ) : lastSets.length > 0 && perSideMode ? (
                     Array.from(
@@ -2305,7 +2410,7 @@ function SessionExerciseBlock({
                       })
                   : null}
               </div>
-              {!isCompleted && sets.length > 0 ? (
+              {!isCompleted ? (
                 <div className="stack session-add-set-footer">
                   <button
                     type="button"
@@ -2328,8 +2433,9 @@ function SessionExerciseBlock({
         open={confirmRemove}
         tone="danger"
         title={`Remove ${namePart}?`}
-        confirmLabel="Yes, remove"
-        cancelLabel="Cancel"
+        body={removeExerciseBody}
+        confirmLabel="Remove exercise"
+        cancelLabel="Keep exercise"
         onConfirm={() => {
           setConfirmRemove(false);
           void onDeleteExercise(se.id);
