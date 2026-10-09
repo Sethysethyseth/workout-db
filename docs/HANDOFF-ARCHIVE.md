@@ -1,3 +1,55 @@
+## ARCHIVED October 9, 2026 (Opus session) - the Oct 8 wave-opening and
+## relay session log, moved verbatim when the QOL wave reached 19/19.
+
+**Updated:** October 8, 2026 (Opus seat). Session log:
+- Seth opened the next wave: `quality-of-life-updates`, with "all stowed
+  changes" plus his 6 asks:
+  - prefs out of the logger
+  - a What's New system
+  - repeat last time
+  - finish without effort
+  - edit custom exercises
+  - coach app help
+- Cut the branch and dispatched 3 Cursor recon report lanes (qol-r1/r2/r3,
+  auto rung, lanes 1-3, ~6 min each, all clean); reports preserved as
+  FINDINGS.
+- Asked Seth the batched decisions. Answers (spec section 1):
+  - prefs: Profile + Home strip
+  - repeat last: ghosts
+  - app help works without consent, with no data
+  - connector hardening, BYO-key server encryption and coach history
+    (Library tab, kept until deleted) all IN
+- Authored qol1-qol15 + the spec + the What's New pipeline:
+  - `docs/releases/UNRELEASED.md`, seeded with the Aug-Oct catch-up
+  - `RELEASED.md`
+  - the standing `docs/tasks/_WHATS_NEW.md`
+  - `land-unit` and `author-task-block` updates
+- Shipped `.gitattributes` directly (migrations `eol=lf`; blobs were
+  already LF, so no content change).
+- Memory: the Aug 1 effort-mandate memory is marked REVERSED.
+- Lanes: `cursor-lane` / `-2` / `-3` on `recon/qol-r1|r-2|r-3` at
+  `8090b10`, each holding a stale recon DELIVERY.md (gitignored).
+  Delete them before dispatch.
+
+- Oct 8, relay started (same Opus session). Seth repointed staging Render
+  to `quality-of-life-updates`. Dispatched qol1 (lane 1), qol3 (lane 2) and
+  qol5 (lane 3) on auto, staggered.
+  - Built the pre-build mock at
+    https://claude.ai/artifact/Ne8y8k6KaLXXY5jACctD9g (Design canvas, 7
+    boards, real champ-dark tokens): Home today, strip options A and B, an
+    interactive setup sheet, Profile > Training, coach help-only, coach
+    thread.
+  - **qol5 LANDED `be7334a`.** Live proof: 300 kB to /coach/import-map ->
+    401, /templates still 413.
+  - **qol1 audited and committed `8ccbbab`** on `cursor/qol1`, NOT merged
+    (held for "migrate staging").
+  - Dispatched qol8 (lane 3). qol2 and qol6 are held for the mock
+    decision.
+  - Smoke items so far: history import with 8+ workout titles keeps 7 and
+    names the skipped; a huge AI-import paste says "too large".
+
+---
+
 ## ARCHIVED October 8, 2026 (Opus session) - the Oct 7 close-out session
 ## log, moved verbatim when the quality-of-life wave opened.
 
