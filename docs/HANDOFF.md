@@ -30,10 +30,18 @@ what's off.
    - qol11: `scripts/smoke-coach.mjs --key` is inert
    - no rate limiter on `/block-templates/import*` or `/block-runs`
 
-**Smoke finding in flight (Oct 9):** qolf5, Repeat last time's RPE/RIR
-hint. Then critic rounds 2 and 3, per Seth: each round critiques the wave's
-changes AND app-wide look and feel; the look-and-feel findings are
-collected for the next frontend wave, not fixed now.
+**In flight (Oct 9, evening): critic rounds 2-3 (Seth's ask).** qolf5 LANDED
+`f857166` (20/20): the Repeat last RPE/RIR grey hint. Critic round 2 is
+RUNNING with brief `.playwright-mcp/qol-critic/BRIEF-round-2.md`, which has
+two parts:
+- Part A: the wave's changes - fix between rounds
+- Part B: app-wide look and feel for the NEXT frontend wave - collect, do
+  not fix
+
+Round 3 follows the round-2 fixes. Local servers are detached: API pid 7116
+(lane 1 server, staging DB, mock coach, throwaway key secret), vite pid
+19500 (main-tree client). Stop both when the rounds end. Memory is tight
+(~1.5 GB free); the reaper stops idle background shells.
 
 ## Wave smoke checklist (staging Vercel, on the phone)
 
