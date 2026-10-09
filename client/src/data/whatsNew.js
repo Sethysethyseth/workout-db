@@ -10,9 +10,22 @@
  * Copy is display-layer: say "LogChamp" in text. Identifiers/keys keep the
  * workoutdb- prefix (rename boundary - see AGENTS.md). Keep copy
  * non-technical - user-facing outcomes, no internal metric names.
+ * Plain language only: what changed for the person using the app.
+ *
+ * Shape:
+ * - `sections: [{ heading, items }]` is the concise layer. Five bullets
+ *   or fewer across the whole release (count every item, not every
+ *   heading). The modal and the first view of a release show only this.
+ * - `details` is optional:
+ *   `[{ heading, body: string[], where?: string }]`. `body` holds short
+ *   paragraphs. `where` is a plain tap path such as "Profile, then
+ *   Training". Releases without `details` render exactly as the concise
+ *   layer alone.
  *
  * The modal + archive page are PROD-ONLY (gated via isProdEnv); publishing
  * a release still just means prepend an entry here and merge to main.
+ * Staging can preview the page and the Profile card with ?preview=1
+ * (see isWhatsNewPreview). The modal has no preview path.
  */
 export const RELEASES = [
   {

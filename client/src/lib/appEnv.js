@@ -17,3 +17,17 @@ export function isProdEnv() {
   const apiUrl = import.meta.env.VITE_API_URL || "";
   return apiUrl.includes(PROD_API_HOST);
 }
+
+/**
+ * Off-prod preview of the What's New page and Profile card. True only when
+ * this is not production and `search` contains preview=1. The modal has
+ * no preview path and must keep using isProdEnv alone.
+ *
+ * @param {string} search URL search string, with or without the leading ?
+ */
+export function isWhatsNewPreview(search) {
+  if (isProdEnv()) return false;
+  const raw = typeof search === "string" ? search : "";
+  const params = new URLSearchParams(raw.startsWith("?") ? raw.slice(1) : raw);
+  return params.get("preview") === "1";
+}

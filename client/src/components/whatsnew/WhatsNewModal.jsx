@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   WhatsNewReleaseHeader,
   WhatsNewReleaseSections,
@@ -7,11 +7,15 @@ import {
 
 /**
  * Once-per-release announcement modal (patch-notes style). Behavior lives
- * here (dismiss paths, a11y); visual treatment in index.css whats-new-* rules.
- * Same fixed-overlay pattern as UsernameRequiredModal - rendered inside #root,
- * so it sits above the scene layer without a portal.
+ * here (dismiss paths, a11y); visual treatment in index.css whats-new-* rules
+ * plus client/src/styles/whats-new.css. Concise sections only. When the
+ * release has details, "See the details" marks it seen and opens the archive
+ * at that release. Same fixed-overlay pattern as UsernameRequiredModal -
+ * rendered inside #root, so it sits above the scene layer without a portal.
  */
 export function WhatsNewModal({ release, onDismiss }) {
+  const navigate = useNavigate();
+
   useEffect(() => {
     function onKeyDown(e) {
       if (e.key === "Escape") onDismiss();
@@ -21,6 +25,13 @@ export function WhatsNewModal({ release, onDismiss }) {
   }, [onDismiss]);
 
   if (!release) return null;
+
+  const hasDetails = Array.isArray(release.details) && release.details.length > 0;
+
+  function onSeeDetails() {
+    onDismiss();
+    navigate(`/profile/whats-new#${release.id}`);
+  }
 
   return (
     <div
@@ -41,9 +52,16 @@ export function WhatsNewModal({ release, onDismiss }) {
           <WhatsNewReleaseSections release={release} />
         </div>
         <footer className="whats-new-footer">
-          <button type="button" className="btn" onClick={onDismiss}>
-            Got it
-          </button>
+          <div className="whats-new-footer__actions">
+            <button type="button" className="btn" onClick={onDismiss}>
+              Got it
+            </button>
+            {hasDetails ? (
+              <button type="button" className="btn btn-secondary" onClick={onSeeDetails}>
+                See the details
+              </button>
+            ) : null}
+          </div>
           <Link
             className="whats-new-all-link muted small"
             to="/profile/whats-new"

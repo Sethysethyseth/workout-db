@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useActiveSession } from "../context/ActiveSessionContext.jsx";
 import { ApiError } from "../api/http.js";
 import { ErrorMessage } from "../components/ErrorMessage.jsx";
 import { canReviewFeedback } from "../lib/reviewerEmails.js";
-import { isProdEnv } from "../lib/appEnv.js";
+import { isProdEnv, isWhatsNewPreview } from "../lib/appEnv.js";
+import { LatestUpdateCard } from "../components/whatsnew/LatestUpdateCard.jsx";
 import { countCompleted, countThisWeek, weekStreak } from "../lib/profileStats.js";
 
 function getInitials(user) {
@@ -35,6 +36,8 @@ export function ProfilePage() {
   const { currentUser, logout } = useAuth();
   const { sessions, loading: sessionsLoading } = useActiveSession();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const whatsNewPreview = isWhatsNewPreview(searchParams.toString());
   const [loggingOut, setLoggingOut] = useState(false);
   const [error, setError] = useState(null);
 
@@ -98,6 +101,8 @@ export function ProfilePage() {
         </div>
       </div>
 
+      {isProdEnv() || whatsNewPreview ? <LatestUpdateCard preview={whatsNewPreview} /> : null}
+
       <section className="settings-section profile-hub-settings" aria-labelledby="profile-settings-heading">
         <h2 id="profile-settings-heading" className="settings-section-heading">
           Settings
@@ -153,16 +158,6 @@ export function ProfilePage() {
               ›
             </span>
           </Link>
-          {isProdEnv() ? (
-            <Link className="settings-row settings-row--link" to="/profile/whats-new">
-              <span className="settings-row__main">
-                <span className="settings-row__value">What&apos;s new</span>
-              </span>
-              <span className="settings-row__chevron" aria-hidden="true">
-                ›
-              </span>
-            </Link>
-          ) : null}
           {showDevFeedback ? (
             <Link className="settings-row settings-row--link" to="/dev/feedback">
               <span className="settings-row__main">

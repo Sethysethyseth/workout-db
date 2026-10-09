@@ -1,0 +1,236 @@
+/* What's New display (qol14). Tokens only. Existing .whats-new-* rules
+   stay in index.css; this file adds the note, details, and Profile card. */
+
+.whats-new-preview-note {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  color: var(--color-text-secondary);
+}
+
+.whats-new-note__headline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 0.85rem;
+  row-gap: 0.2rem;
+}
+
+.whats-new-note__title {
+  margin: 0;
+  font-size: clamp(1.85rem, 7vw, 2.4rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.12;
+  color: var(--color-text);
+}
+
+.whats-new-note__date {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.whats-new-note .whats-new-release__tagline {
+  margin-top: 0.65rem;
+}
+
+.whats-new-note,
+.whats-new-older {
+  scroll-margin-top: 5rem;
+}
+
+.whats-new-details {
+  margin-top: 0.35rem;
+}
+
+.whats-new-details__summary {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0.35rem 0;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--color-interactive);
+  list-style: none;
+}
+
+.whats-new-details__summary::-webkit-details-marker {
+  display: none;
+}
+
+.whats-new-details__summary:focus-visible {
+  outline: 2px solid var(--color-interactive);
+  outline-offset: 2px;
+}
+
+.whats-new-details__body {
+  display: grid;
+  gap: 1rem;
+  padding: 0.15rem 0 0.25rem;
+}
+
+.whats-new-detail__heading {
+  margin: 0 0 0.4rem;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--color-text);
+}
+
+.whats-new-detail__body {
+  margin: 0;
+  line-height: 1.5;
+  color: var(--color-text);
+}
+
+.whats-new-detail__body + .whats-new-detail__body {
+  margin-top: 0.55rem;
+}
+
+.whats-new-detail__where {
+  margin: 0.55rem 0 0;
+}
+
+.whats-new-older {
+  padding: 0;
+  overflow: hidden;
+}
+
+.whats-new-older__toggle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.35rem 0.85rem;
+  width: 100%;
+  min-height: 44px;
+  padding: 0.85rem 1rem;
+  border: 0;
+  background: transparent;
+  color: var(--color-text);
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+
+.whats-new-older__toggle:focus-visible {
+  outline: 2px solid var(--color-interactive);
+  outline-offset: -2px;
+}
+
+.whats-new-older__title {
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.whats-new-older__date {
+  font-weight: 500;
+}
+
+.whats-new-older__body {
+  padding: 0 1rem 1rem;
+}
+
+.whats-new-card .whats-new-footer {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.whats-new-footer__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.whats-new-footer__actions .btn {
+  width: 100%;
+  min-height: 44px;
+}
+
+.whats-new-card .whats-new-all-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  align-self: flex-start;
+}
+
+.latest-update {
+  display: grid;
+  gap: 4px;
+  padding: 14px 16px;
+}
+
+.latest-update__title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--color-text);
+}
+
+.latest-update__date,
+.latest-update__tagline {
+  margin: 0;
+}
+
+.latest-update__action {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin-top: 4px;
+  font-weight: 600;
+  color: var(--color-interactive);
+  text-decoration: none;
+}
+
+.latest-update__action:hover {
+  text-decoration: underline;
+}
+
+.latest-update__action:focus-visible {
+  outline: 2px solid var(--color-interactive);
+  outline-offset: 2px;
+}
+
+@media (min-width: 900px) {
+  .settings-page.profile-page.stack:has(.latest-update) {
+    grid-template-areas:
+      "head settings"
+      "stats settings"
+      "latest settings"
+      "error settings"
+      "logout settings";
+  }
+
+  .latest-update {
+    grid-area: latest;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .whats-new-details[open] .whats-new-details__body,
+  .whats-new-older__body {
+    animation: whats-new-expand 200ms ease-out;
+  }
+}
+
+@keyframes whats-new-expand {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .whats-new-details[open] .whats-new-details__body,
+  .whats-new-older__body {
+    animation: none;
+  }
+}
