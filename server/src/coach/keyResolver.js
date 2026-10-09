@@ -1,11 +1,13 @@
 /**
  * Coach key resolution - ai-layer.md section 5: "BYO-key and hosted are ONE
  * code path with a different key source." The key resolves, in order, from
- *   1. the caller's own key, sent per request and never stored or logged;
+ *   1. the caller's own key, already decrypted from the server vault
+ *      (UserCoachKey). Request headers are not a key source and are ignored;
  *   2. the server's hosted key, only for an entitled user;
  *   3. nothing - with a reason the client can explain in plain words.
  *
  * Pure property reads only (no env, no Prisma) so the unit lane can load it.
+ * The vault load happens before this function; `byoKey` is plaintext or null.
  */
 
 // Anthropic keys are `sk-ant-<kind>-<body>`. A loose shape check keeps a

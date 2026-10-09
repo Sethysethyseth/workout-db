@@ -6,8 +6,6 @@ import { API_BASE_URL, http, readAuthToken } from "./http.js";
  * renders as it is written instead of after a long silence.
  */
 
-const BYO_KEY_HEADER = "x-coach-key";
-
 /** Hard client timeout for non-streaming AI calls (block draft, import map, palette). */
 export const AI_CALL_TIMEOUT_MS = 120_000;
 
@@ -73,18 +71,25 @@ export function coachErrorMessage(code, fallback) {
  * `help.available` is true when a provider key resolves, whether or not AI access is on.
  * `available` stays consent plus a resolved key.
  */
-export function getCoachStatus({ byoKey } = {}) {
-  return http("/coach/status", {
-    headers: byoKey ? { [BYO_KEY_HEADER]: byoKey } : undefined,
-  });
+export function getCoachStatus() {
+  return http("/coach/status");
+}
+
+/** Store the user's Anthropic key. The server encrypts it and returns { saved, last4 }. */
+export function saveCoachKey(key) {
+  return http("/coach/key", { method: "PUT", body: { key } });
+}
+
+/** Forget the stored key. Resolves with an empty body (204). */
+export function deleteCoachKey() {
+  return http("/coach/key", { method: "DELETE" });
 }
 
 /** Generate a palette from a description; resolves { palette, source }. */
-export function generatePalette({ description, byoKey, signal } = {}) {
+export function generatePalette({ description, signal } = {}) {
   return http("/coach/palette", {
     method: "POST",
     body: { description },
-    headers: byoKey ? { [BYO_KEY_HEADER]: byoKey } : undefined,
     signal,
   });
 }
@@ -93,11 +98,10 @@ export function generatePalette({ description, byoKey, signal } = {}) {
  * Draft or convert a block via the coach. Resolves { block, stats, source }.
  * mode: "convert" | "generate"; unit: "lb" | "kg".
  */
-export function coachBlockDraft({ mode, text, unit, byoKey, signal } = {}) {
+export function coachBlockDraft({ mode, text, unit, signal } = {}) {
   return http("/coach/block-draft", {
     method: "POST",
     body: { mode, text, unit },
-    headers: byoKey ? { [BYO_KEY_HEADER]: byoKey } : undefined,
     signal,
   });
 }
@@ -106,11 +110,10 @@ export function coachBlockDraft({ mode, text, unit, byoKey, signal } = {}) {
  * Ask the coach to map a spreadsheet layout to an import recipe.
  * Resolves { recipe }. Costs 3 weekly coach questions when hosted-capped.
  */
-export function coachImportMap({ text, unit, byoKey, signal } = {}) {
+export function coachImportMap({ text, unit, signal } = {}) {
   return http("/coach/import-map", {
     method: "POST",
     body: unit ? { text, unit } : { text },
-    headers: byoKey ? { [BYO_KEY_HEADER]: byoKey } : undefined,
     signal,
   });
 }
@@ -140,14 +143,13 @@ export function deleteAllCoachConversations() {
  * Have AI fix an import file (bkr3). Table text -> recipe; prose -> block.
  * Resolves { kind, recipe|block, stats?, cost, remaining }. Costs 1-4 uses.
  */
-export function coachImportFix({ text, unit, problems, byoKey, signal } = {}) {
+export function coachImportFix({ text, unit, problems, signal } = {}) {
   const body = { text };
   if (unit) body.unit = unit;
   if (Array.isArray(problems) && problems.length > 0) body.problems = problems;
   return http("/coach/import-fix", {
     method: "POST",
     body,
-    headers: byoKey ? { [BYO_KEY_HEADER]: byoKey } : undefined,
     signal,
   });
 }
@@ -186,7 +188,6 @@ export async function askCoachStream({
   focus,
   history,
   conversationId,
-  byoKey,
   signal,
   onMeta,
   onDelta,
@@ -201,7 +202,6 @@ export async function askCoachStream({
         "Content-Type": "application/json",
         Accept: "text/event-stream",
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        ...(byoKey ? { [BYO_KEY_HEADER]: byoKey } : {}),
       },
       body: JSON.stringify({
         question,

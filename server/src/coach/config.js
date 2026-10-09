@@ -7,6 +7,8 @@
  * credentials. COACH_PROVIDER=mock streams a canned answer with no key.
  */
 
+const { parseVaultSecret } = require("./keyVault");
+
 const DEFAULT_MODEL = "claude-sonnet-5";
 const CURSOR_DEFAULT_MODEL = "auto";
 const DEFAULT_EFFORT = "medium";
@@ -28,6 +30,11 @@ function defaultModelFor(provider) {
   return provider === "cursor" ? CURSOR_DEFAULT_MODEL : DEFAULT_MODEL;
 }
 
+/** 32-byte vault secret, or null. Never log the return value. */
+function getCoachKeySecret(env = process.env) {
+  return parseVaultSecret(env.COACH_KEY_SECRET);
+}
+
 function getCoachConfig(env = process.env) {
   const hostedKey = (env.COACH_API_KEY || "").trim() || null;
   const provider = resolveProvider(env.COACH_PROVIDER);
@@ -42,11 +49,13 @@ function getCoachConfig(env = process.env) {
     effort,
     maxTokens: MAX_TOKENS,
     modelExplicit: Boolean(modelRaw),
+    byoStorageAvailable: getCoachKeySecret(env) != null,
   };
 }
 
 module.exports = {
   getCoachConfig,
+  getCoachKeySecret,
   DEFAULT_MODEL,
   CURSOR_DEFAULT_MODEL,
   DEFAULT_EFFORT,

@@ -2,7 +2,9 @@ const prisma = require("../lib/prisma");
 const { parseCoachRequest } = require("../coach/coachRequest");
 const { deriveConversationTitle } = require("../coach/conversationTitle");
 const conversationStore = require("../coach/conversationStore");
-const { getCoachConfig } = require("../coach/config");
+const { getCoachConfig, getCoachKeySecret } = require("../coach/config");
+const { KEY_FORMAT_RE } = require("../coach/keyResolver");
+const { encryptCoachKey, decryptCoachKey } = require("../coach/keyVault");
 const {
   loadCoachAccess,
   resolveCoachProvider,
@@ -69,7 +71,6 @@ const {
 const { compactSummaryForCoach, OFF_TOPIC_MARKER } = require("../coach/prompt");
 const { loadSummary } = require("../ai/analyticsAccess");
 
-const BYO_KEY_HEADER = "x-coach-key";
 /** A real decline is two sentences; anything longer is charged as an answer. */
 const OFF_TOPIC_DECLINE_MAX_CHARS = 400;
 // Same shared thinking+response budget as MAX_TOKENS. A complete JSON
@@ -98,9 +99,63 @@ function paletteErrorForStopReason(stopReason) {
   return null;
 }
 
-function readByoKey(req) {
-  const raw = req.get(BYO_KEY_HEADER);
-  return typeof raw === "string" && raw.trim() ? raw.trim() : null;
+/**
+ * Decrypted BYO key for this user, or null when there is no row, no vault
+ * secret, or the blob does not open. A failure logs one line and nothing else.
+ */
+async function loadStoredByoKey(userId, db = prisma) {
+  const secret = getCoachKeySecret();
+  if (!secret || userId == null || userId === "") return null;
+  if (!db || !db.userCoachKey || typeof db.userCoachKey.findUnique !== "function") {
+    return null;
+  }
+  const row = await db.userCoachKey.findUnique({
+    where: { userId },
+    select: { ciphertext: true },
+  });
+  if (!row || typeof row.ciphertext !== "string" || !row.ciphertext) return null;
+  try {
+    return decryptCoachKey(row.ciphertext, secret, userId);
+  } catch {
+    console.error(`byo key decrypt failed ${userId}`);
+    return null;
+  }
+}
+
+/** PUT /coach/key { key } - encrypt and upsert. Never echoes the key. */
+async function putCoachKey(req, res, next) {
+  try {
+    const raw = req.body && typeof req.body.key === "string" ? req.body.key.trim() : "";
+    if (!KEY_FORMAT_RE.test(raw)) {
+      return res.status(400).json({
+        error: "That doesn't look like an Anthropic API key.",
+      });
+    }
+    if (!getCoachConfig().byoStorageAvailable) {
+      return res.status(503).json({ error: "byo_unavailable" });
+    }
+    const secret = getCoachKeySecret();
+    const ciphertext = encryptCoachKey(raw, secret, req.authUserId);
+    const last4 = raw.slice(-4);
+    await prisma.userCoachKey.upsert({
+      where: { userId: req.authUserId },
+      create: { userId: req.authUserId, ciphertext, last4 },
+      update: { ciphertext, last4 },
+    });
+    return res.json({ saved: true, last4 });
+  } catch (err) {
+    return next(err);
+  }
+}
+
+/** DELETE /coach/key - 204 whether or not a row existed. */
+async function deleteCoachKey(req, res, next) {
+  try {
+    await prisma.userCoachKey.deleteMany({ where: { userId: req.authUserId } });
+    return res.status(204).end();
+  } catch (err) {
+    return next(err);
+  }
 }
 
 function capAppliesToAccess(source, email) {
@@ -222,7 +277,7 @@ async function getCoachStatus(req, res, next) {
 
     const config = getCoachConfig();
     const resolved = resolveCoachProvider({
-      byoKey: readByoKey(req),
+      byoKey: await loadStoredByoKey(req.authUserId),
       entitled: access.entitled,
       config,
     });
@@ -230,6 +285,10 @@ async function getCoachStatus(req, res, next) {
     const provider = resolved.ok ? resolved.provider : config.provider;
     const model = resolved.ok ? resolved.config.model : config.model;
     const source = resolved.ok ? resolved.keyInfo.source : null;
+    const keyRow = await prisma.userCoachKey.findUnique({
+      where: { userId: req.authUserId },
+      select: { last4: true },
+    });
     let weeklyCap = null;
     if (source && capAppliesToAccess(source, access.email)) {
       const cap = await loadWeeklyCap(req.authUserId);
@@ -250,6 +309,11 @@ async function getCoachStatus(req, res, next) {
       provider,
       model: provider === "mock" ? "mock" : model,
       weeklyCap,
+      byoKey: {
+        saved: Boolean(keyRow),
+        last4: keyRow ? keyRow.last4 : null,
+        storageAvailable: config.byoStorageAvailable,
+      },
     });
   } catch (err) {
     return next(err);
@@ -303,7 +367,7 @@ async function askCoach(req, res, next, deps = {}) {
     }
 
     const resolved = resolveProvider({
-      byoKey: readByoKey(req),
+      byoKey: await loadStoredByoKey(req.authUserId, prismaClient),
       entitled: access.entitled,
     });
     if (!resolved.ok) {
@@ -485,7 +549,7 @@ async function generatePalette(req, res, next, deps = {}) {
     }
 
     const resolved = resolveProvider({
-      byoKey: readByoKey(req),
+      byoKey: await loadStoredByoKey(req.authUserId, prismaClient),
       entitled: access.entitled,
     });
     if (!resolved.ok) {
@@ -604,7 +668,7 @@ async function draftBlock(req, res, next, deps = {}) {
     }
 
     const resolved = resolveProvider({
-      byoKey: readByoKey(req),
+      byoKey: await loadStoredByoKey(req.authUserId, prismaClient),
       entitled: access.entitled,
     });
     if (!resolved.ok) {
@@ -745,7 +809,7 @@ async function importMap(req, res, next, deps = {}) {
     }
 
     const resolved = resolveProvider({
-      byoKey: readByoKey(req),
+      byoKey: await loadStoredByoKey(req.authUserId, prismaClient),
       entitled: access.entitled,
     });
     if (!resolved.ok) {
@@ -1095,7 +1159,7 @@ async function importFix(req, res, next, deps = {}) {
     }
 
     const resolved = resolveProvider({
-      byoKey: readByoKey(req),
+      byoKey: await loadStoredByoKey(req.authUserId, prismaClient),
       entitled: access.entitled,
     });
     if (!resolved.ok) {
@@ -1268,7 +1332,9 @@ module.exports = {
   getCoachConversation,
   deleteCoachConversation,
   deleteAllCoachConversations,
-  BYO_KEY_HEADER,
+  putCoachKey,
+  deleteCoachKey,
+  loadStoredByoKey,
   paletteErrorForStopReason,
   blockErrorForStopReason,
   importMapErrorForStopReason,

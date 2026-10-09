@@ -3,7 +3,6 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { ApiError } from "../../../api/http.js";
 import * as blockTemplateApi from "../../../api/blockTemplateApi.js";
 import { getCoachStatus } from "../../../api/coachApi.js";
-import { loadCoachKey } from "../../../lib/coachKeyPref.js";
 import { loadWeightUnit } from "../../../lib/weightUnitPref.js";
 import { ErrorMessage } from "../../ErrorMessage.jsx";
 import { LoadingState } from "../../LoadingState.jsx";
@@ -298,7 +297,7 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
     let cancelled = false;
     (async () => {
       try {
-        const data = await getCoachStatus({ byoKey: loadCoachKey() });
+        const data = await getCoachStatus();
         if (!cancelled) setCoachStatus(data);
       } catch {
         if (!cancelled) setCoachStatus(null);

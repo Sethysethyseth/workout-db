@@ -7,7 +7,7 @@ import {
   getCoachConversation,
   getCoachStatus,
 } from "../../api/coachApi.js";
-import { loadCoachKey } from "../../lib/coachKeyPref.js";
+import { purgeLegacyCoachKey } from "../../lib/coachKeyPref.js";
 import { HELP_CHIPS, buildSuggestedQuestions } from "../../lib/coachSuggestions.js";
 import { loadWeightUnit } from "../../lib/weightUnitPref.js";
 import { AiWait } from "./AiWait.jsx";
@@ -30,7 +30,7 @@ const UNAVAILABLE_COPY = {
   },
   no_key: {
     title: "The coach isn't set up on this server yet",
-    body: "You can use your own Anthropic key from Profile, AI access. It stays in this browser tab.",
+    body: "You can use your own Anthropic key from Profile, AI access. It's encrypted and stored on our server, never shown again.",
   },
   not_entitled: {
     title: "The coach isn't included for your account yet",
@@ -160,14 +160,16 @@ export function CoachPanel({
   const loadedIdRef = useRef(null);
   const loadGenRef = useRef(0);
 
-  const byoKey = loadCoachKey();
+  useEffect(() => {
+    purgeLegacyCoachKey();
+  }, []);
 
   useEffect(() => {
     if (!open || status) return;
     let cancelled = false;
     (async () => {
       try {
-        const data = await getCoachStatus({ byoKey });
+        const data = await getCoachStatus();
         if (!cancelled) setStatus(data);
       } catch (err) {
         if (!cancelled) setStatusError(err);
@@ -176,7 +178,7 @@ export function CoachPanel({
     return () => {
       cancelled = true;
     };
-  }, [open, status, byoKey]);
+  }, [open, status]);
 
   useEffect(() => () => abortRef.current?.abort(), []);
 
@@ -284,7 +286,6 @@ export function CoachPanel({
           focus: effectiveFocus,
           history,
           conversationId: conversationIdRef.current,
-          byoKey,
           signal: controller.signal,
           onMeta: (meta) => {
             if (meta && meta.effortCoverage !== undefined) setCoverage(meta.effortCoverage);
@@ -312,7 +313,7 @@ export function CoachPanel({
         );
         if (status?.weeklyCap) {
           try {
-            const next = await getCoachStatus({ byoKey });
+            const next = await getCoachStatus();
             setStatus(next);
           } catch {
             setStatus((prev) => {
@@ -351,7 +352,7 @@ export function CoachPanel({
         setStreaming(false);
       }
     },
-    [streaming, historyLoading, thread, mode, range, effectiveFocus, byoKey, status, onConversationId]
+    [streaming, historyLoading, thread, mode, range, effectiveFocus, status, onConversationId]
   );
 
   useEffect(() => {

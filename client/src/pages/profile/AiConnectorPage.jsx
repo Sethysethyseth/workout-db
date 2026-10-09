@@ -1,17 +1,14 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import * as aiApi from "../../api/aiApi.js";
-import { getCoachStatus } from "../../api/coachApi.js";
+import { ApiError } from "../../api/http.js";
+import { deleteCoachKey, getCoachStatus, saveCoachKey as storeCoachKey } from "../../api/coachApi.js";
 import { AiConsentFacts } from "../../components/ai/AiConsentFacts.jsx";
 import { ConnectorSetupAccordion } from "../../components/ai/ConnectorSetupAccordion.jsx";
+import { ConfirmPanel } from "../../components/ConfirmPanel.jsx";
 import { ErrorMessage } from "../../components/ErrorMessage.jsx";
 import { LoadingState } from "../../components/LoadingState.jsx";
-import {
-  clearCoachKey,
-  loadCoachKey,
-  looksLikeAnthropicKey,
-  saveCoachKey,
-} from "../../lib/coachKeyPref.js";
+import { looksLikeAnthropicKey, purgeLegacyCoachKey } from "../../lib/coachKeyPref.js";
 
 const CONNECTOR_SETUP_SECTIONS = [
   {
@@ -124,7 +121,7 @@ function buildConnectorUrl() {
   return `${base}/mcp`;
 }
 
-function coachStatusLine(status, hasOwnKey) {
+function coachStatusLine(status) {
   if (!status) return null;
   if (!status.consentGranted) return "Waiting for AI access to be turned on.";
   if (status.available) {
@@ -133,14 +130,24 @@ function coachStatusLine(status, hasOwnKey) {
         ? "Running in mock mode on this server: canned answers, no model."
         : "Ready.";
     }
-    if (status.source === "byo") return "Ready, using the key saved in this browser tab.";
+    if (status.source === "byo") return "Ready, using your Anthropic key.";
     return "Ready. Hosted by LogChamp on this server.";
   }
-  if (hasOwnKey && status.reason === "bad_key_format") {
-    return "The key saved in this tab doesn't look like an Anthropic key.";
+  if (status.reason === "bad_key_format") {
+    return "The saved key doesn't look like an Anthropic key.";
   }
   if (status.reason === "not_entitled") return "Not included for your account yet. Your own key still works.";
   return "Not set up on this server yet. Your own key still works.";
+}
+
+function coachKeyErrorText(err) {
+  const code = err && err.body && err.body.error;
+  if (code === "byo_unavailable") return "Saving your own key isn't available right now.";
+  if (typeof code === "string" && code.includes(" ")) return code;
+  if (err instanceof ApiError && typeof err.message === "string" && err.message.includes(" ")) {
+    return err.message;
+  }
+  return "Couldn't save your key. Try again.";
 }
 
 export function AiConnectorPage() {
@@ -152,13 +159,18 @@ export function AiConnectorPage() {
   const [copyStatus, setCopyStatus] = useState(null); // null | "copied" | "failed"
   const [coachStatus, setCoachStatus] = useState(null);
   const [keyDraft, setKeyDraft] = useState("");
-  const [savedKey, setSavedKey] = useState(() => loadCoachKey());
   const [keyNotice, setKeyNotice] = useState(null);
+  const [keyBusy, setKeyBusy] = useState(false);
+  const [confirmRemoveKey, setConfirmRemoveKey] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [signOutResult, setSignOutResult] = useState(null);
   const [draftsSubmitting, setDraftsSubmitting] = useState(false);
 
   const connectorUrl = buildConnectorUrl();
+
+  useEffect(() => {
+    purgeLegacyCoachKey();
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -185,7 +197,7 @@ export function AiConnectorPage() {
     let cancelled = false;
     (async () => {
       try {
-        const data = await getCoachStatus({ byoKey: savedKey });
+        const data = await getCoachStatus();
         if (!cancelled) setCoachStatus(data);
       } catch {
         if (!cancelled) setCoachStatus(null);
@@ -194,7 +206,7 @@ export function AiConnectorPage() {
     return () => {
       cancelled = true;
     };
-  }, [consent, savedKey]);
+  }, [consent]);
 
   useEffect(() => {
     if (copyStatus !== "copied") return;
@@ -252,23 +264,40 @@ export function AiConnectorPage() {
     }
   }
 
-  function onSaveKey(e) {
+  async function onSaveKey(e) {
     e.preventDefault();
     const trimmed = keyDraft.trim();
-    if (!looksLikeAnthropicKey(trimmed)) {
-      setKeyNotice({ tone: "error", text: "That doesn't look like an Anthropic key. They start with sk-ant-." });
-      return;
+    if (!looksLikeAnthropicKey(trimmed) || keyBusy) return;
+    setKeyBusy(true);
+    setKeyNotice(null);
+    try {
+      await storeCoachKey(trimmed);
+      setKeyDraft("");
+      const data = await getCoachStatus();
+      setCoachStatus(data);
+    } catch (err) {
+      setKeyNotice({ tone: "error", text: coachKeyErrorText(err) });
+    } finally {
+      setKeyBusy(false);
     }
-    saveCoachKey(trimmed);
-    setSavedKey(trimmed);
-    setKeyDraft("");
-    setKeyNotice({ tone: "success", text: "Key saved for this browser tab." });
   }
 
-  function onForgetKey() {
-    clearCoachKey();
-    setSavedKey(null);
-    setKeyNotice({ tone: "success", text: "Key forgotten." });
+  async function onRemoveKey() {
+    if (keyBusy) return;
+    setKeyBusy(true);
+    setKeyNotice(null);
+    try {
+      await deleteCoachKey();
+      setConfirmRemoveKey(false);
+      setKeyDraft("");
+      const data = await getCoachStatus();
+      setCoachStatus(data);
+    } catch (err) {
+      setConfirmRemoveKey(false);
+      setKeyNotice({ tone: "error", text: coachKeyErrorText(err) });
+    } finally {
+      setKeyBusy(false);
+    }
   }
 
   async function onSignOutConnector() {
@@ -306,7 +335,10 @@ export function AiConnectorPage() {
   const granted = Boolean(consent?.granted);
   const draftsAllowed = Boolean(consent?.blockDraftsAllowed);
   const grantDate = formatGrantDate(consent?.grantedAt);
-  const maskedKey = savedKey ? `${savedKey.slice(0, 10)}…${savedKey.slice(-4)}` : null;
+  const byo = coachStatus?.byoKey;
+  const keySaved = Boolean(byo?.saved);
+  const keyLast4 = byo?.last4 || "";
+  const keyStorageAvailable = byo ? byo.storageAvailable !== false : true;
 
   return (
     <div className="settings-page stack">
@@ -380,7 +412,7 @@ export function AiConnectorPage() {
             {coachStatus ? (
               <p className={`ai-coach-status${coachStatus.available ? " ai-coach-status--ready" : ""}`}>
                 <span className="ai-coach-status__dot" aria-hidden="true" />
-                {coachStatusLine(coachStatus, Boolean(savedKey))}
+                {coachStatusLine(coachStatus)}
               </p>
             ) : null}
 
@@ -389,36 +421,49 @@ export function AiConnectorPage() {
                 Use your own Anthropic key
               </summary>
               <div className="ai-key-details__body stack">
-                <p className="muted small" style={{ margin: 0 }}>
-                  The key stays in this browser tab, is sent with each question, and is
-                  never stored by LogChamp. Closing the tab forgets it. Calls bill
-                  your Anthropic account.
-                </p>
-                {savedKey ? (
+                {keySaved ? (
                   <div className="ai-key-row">
-                    <code className="ai-key-row__mask">{maskedKey}</code>
-                    <button type="button" className="btn btn-secondary btn--toolbar" onClick={onForgetKey}>
-                      Forget key
+                    <p style={{ margin: 0 }}>Key ending in {keyLast4}</p>
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn--toolbar"
+                      onClick={() => setConfirmRemoveKey(true)}
+                    >
+                      Remove key
                     </button>
                   </div>
-                ) : (
-                  <form className="ai-key-form" onSubmit={onSaveKey}>
+                ) : keyStorageAvailable ? (
+                  <form className="ai-key-form" onSubmit={(e) => void onSaveKey(e)}>
+                    <label className="settings-row__label" htmlFor="coach-byo-key">
+                      Your Anthropic API key
+                    </label>
                     <input
+                      id="coach-byo-key"
                       type="password"
                       autoComplete="off"
                       spellCheck={false}
                       placeholder="sk-ant-…"
-                      aria-label="Anthropic API key"
                       value={keyDraft}
                       onChange={(e) => {
                         setKeyDraft(e.target.value);
                         setKeyNotice(null);
                       }}
                     />
-                    <button type="submit" className="btn btn--toolbar" disabled={!keyDraft.trim()}>
+                    <button
+                      type="submit"
+                      className="btn btn--toolbar"
+                      disabled={!looksLikeAnthropicKey(keyDraft) || keyBusy}
+                    >
                       Save key
                     </button>
+                    <p className="muted small" style={{ margin: 0 }}>
+                      Your key is encrypted and stored on our server. It's only used for your coach requests and is never shown again.
+                    </p>
                   </form>
+                ) : (
+                  <p className="muted small" style={{ margin: 0 }}>
+                    Saving your own key isn't available right now.
+                  </p>
                 )}
                 {keyNotice ? (
                   <p
@@ -576,6 +621,18 @@ export function AiConnectorPage() {
           ) : null}
         </div>
       </section>
+      <ConfirmPanel
+        open={confirmRemoveKey}
+        tone="danger"
+        title="Remove your key?"
+        confirmLabel="Remove key"
+        cancelLabel="Keep"
+        busy={keyBusy}
+        onConfirm={() => void onRemoveKey()}
+        onCancel={() => {
+          if (!keyBusy) setConfirmRemoveKey(false);
+        }}
+      />
     </div>
   );
 }

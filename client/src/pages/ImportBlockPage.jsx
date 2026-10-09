@@ -9,7 +9,6 @@ import {
   coachImportFix,
   getCoachStatus,
 } from "../api/coachApi.js";
-import { loadCoachKey } from "../lib/coachKeyPref.js";
 import { loadWeightUnit } from "../lib/weightUnitPref.js";
 import { AiWaitButtonLabel } from "../components/coach/AiWait.jsx";
 import { StickyHeader } from "../components/blocks/ui/StickyHeader.jsx";
@@ -109,7 +108,6 @@ export function ImportBlockPage() {
   const [aiReadCompare, setAiReadCompare] = useState(null);
 
   const delimitedSource = source === "paste" || source === "file";
-  const byoKey = loadCoachKey();
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -132,7 +130,7 @@ export function ImportBlockPage() {
     let cancelled = false;
     (async () => {
       try {
-        const data = await getCoachStatus({ byoKey });
+        const data = await getCoachStatus();
         if (!cancelled) setCoachStatus(data);
       } catch {
         if (!cancelled) setCoachStatus(null);
@@ -141,7 +139,7 @@ export function ImportBlockPage() {
     return () => {
       cancelled = true;
     };
-  }, [delimitedSource, byoKey]);
+  }, [delimitedSource]);
 
   const clearAiReadSnapshot = useCallback(() => {
     setPriorPreview(null);
@@ -284,7 +282,6 @@ export function ImportBlockPage() {
         text: trimmed,
         unit,
         problems: problems.length ? problems : undefined,
-        byoKey,
         signal: controller.signal,
       });
       if (!aliveRef.current) return;
@@ -304,7 +301,7 @@ export function ImportBlockPage() {
         }));
       } else {
         try {
-          const status = await getCoachStatus({ byoKey });
+          const status = await getCoachStatus();
           if (aliveRef.current) setCoachStatus(status);
         } catch {
           /* keep prior status */

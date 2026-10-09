@@ -64,6 +64,9 @@ async function loadCoachAccess(userId) {
 
 /**
  * Resolve the provider + key for this request without doing any data work.
+ * `byoKey` is the decrypted vault plaintext from loadStoredByoKey, or null.
+ * Mock still short-circuits. Otherwise a stored BYO key wins and forces
+ * Anthropic; the hosted key applies when there is no stored key.
  * Returns { ok: true, keyInfo, config } or { ok: false, status, error, reason }.
  */
 function resolveCoachProvider({ byoKey, entitled, config = getCoachConfig() }) {

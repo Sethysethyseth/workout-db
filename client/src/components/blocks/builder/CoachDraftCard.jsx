@@ -7,7 +7,6 @@ import {
   coachErrorMessage,
   getCoachStatus,
 } from "../../../api/coachApi.js";
-import { loadCoachKey } from "../../../lib/coachKeyPref.js";
 import { AiWait, AiWaitButtonLabel } from "../../coach/AiWait.jsx";
 
 function formatNextQuestionTime(iso) {
@@ -38,7 +37,6 @@ export function CoachDraftCard({ unit = "lb", onDrafted }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const [expanded, setExpanded] = useState(false);
-  const byoKey = loadCoachKey();
   const aliveRef = useRef(true);
   const abortRef = useRef(null);
 
@@ -54,7 +52,7 @@ export function CoachDraftCard({ unit = "lb", onDrafted }) {
     let cancelled = false;
     (async () => {
       try {
-        const data = await getCoachStatus({ byoKey });
+        const data = await getCoachStatus();
         if (!cancelled) setStatus(data);
       } catch {
         if (!cancelled) setStatus(null);
@@ -63,7 +61,7 @@ export function CoachDraftCard({ unit = "lb", onDrafted }) {
     return () => {
       cancelled = true;
     };
-  }, [byoKey]);
+  }, []);
 
   if (!status?.available) return null;
 
@@ -104,7 +102,6 @@ export function CoachDraftCard({ unit = "lb", onDrafted }) {
         mode: "generate",
         text: trimmed,
         unit,
-        byoKey,
         signal: controller.signal,
       });
       if (!aliveRef.current) return;

@@ -10,7 +10,6 @@ import {
 } from "../../api/coachApi.js";
 import { useTheme } from "../../context/ThemeContext.jsx";
 import { CUSTOM_PALETTE_ID } from "../../lib/customPalette.js";
-import { loadCoachKey } from "../../lib/coachKeyPref.js";
 import { AiWait } from "../../components/coach/AiWait.jsx";
 
 const PALETTE_VERB = "Designing your palette...";
@@ -120,13 +119,11 @@ export function AppearancePage() {
   const [lastDescription, setLastDescription] = useState("");
   const aliveRef = useRef(true);
   const abortCtlRef = useRef(null);
-  const byoKey = loadCoachKey();
-
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const data = await getCoachStatus({ byoKey });
+        const data = await getCoachStatus();
         if (!cancelled) setStatus(data);
       } catch {
         if (!cancelled) setStatusFailed(true);
@@ -135,7 +132,7 @@ export function AppearancePage() {
     return () => {
       cancelled = true;
     };
-  }, [byoKey]);
+  }, []);
 
   /* Leaving the page drops any unsaved preview so the app never stays
      dressed in a palette the lifter never kept. */
@@ -165,7 +162,6 @@ export function AppearancePage() {
       try {
         const data = await generatePalette({
           description: trimmed,
-          byoKey,
           signal: controller.signal,
         });
         if (!aliveRef.current) return;
@@ -183,7 +179,7 @@ export function AppearancePage() {
         if (aliveRef.current) setBusy(false);
       }
     },
-    [busy, byoKey, previewPalette]
+    [busy, previewPalette]
   );
 
   const onSubmit = (event) => {
