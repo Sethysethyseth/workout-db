@@ -62,6 +62,12 @@ CHANGE:
      streams store nothing.
    - Before `done`, emit one SSE event, `event: meta` with data
      `{"conversationId": <id>}`. The client keeps it for follow-ups.
+   - NOTE (reviewer, Oct 8): the stream ALREADY emits an `event: meta`
+     at its START (`{model, source, range, effortCoverage,
+     workoutCount}`). The conversation id is known only after
+     persistence, so it arrives in a SECOND `meta` event. The client must
+     MERGE meta events (read `conversationId` when present) rather than
+     replace the first one.
    - Every focus type persists, `help` included (it is user-owned
      content).
 4. **Routes** (all owner-scoped in the WHERE clause; another user's id
