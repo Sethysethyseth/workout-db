@@ -8,11 +8,9 @@
 > What's New pipeline. Recon reports: `docs/tasks/qol-r{1,2,3}-*-FINDINGS.md`.
 > `ai-connector-wave` stays MERGED and LIVE (`main` = `b5c6777`).
 
-**Next action (human):** two things.
-1. Pick A or B on the mock (https://claude.ai/artifact/Ne8y8k6KaLXXY5jACctD9g),
-   and OK the chat-bubble coach icon. qol2 and qol6 wait on this.
-2. Say "migrate staging" so qol1 (`8ccbbab`, held on `cursor/qol1`) can
-   merge and push.
+**Next action (human):** nothing blocked on you mid-wave. `COACH_KEY_SECRET` is
+set on staging Render (Oct 8). The relay runs to N/N, then hands you ONE
+smoke checklist.
 
 ## PICK UP HERE (next session)
 
