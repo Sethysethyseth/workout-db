@@ -113,6 +113,15 @@ function normalizeHistory(raw) {
   return merged;
 }
 
+function parseConversationId(raw) {
+  if (raw == null || raw === "") return { ok: true, conversationId: null };
+  const id = typeof raw === "number" ? raw : typeof raw === "string" ? Number(raw) : NaN;
+  if (!Number.isInteger(id) || id <= 0) {
+    return { ok: false, error: "conversationId must be a positive integer" };
+  }
+  return { ok: true, conversationId: id };
+}
+
 function parseCoachRequest(body) {
   if (!body || typeof body !== "object") return fail("request body must be JSON");
 
@@ -130,16 +139,20 @@ function parseCoachRequest(body) {
   const rangeParsed = parseRange(body.range);
   if (!rangeParsed.ok) return fail(rangeParsed.error);
 
-  return {
-    ok: true,
-    value: {
-      question,
-      unit,
-      focus: focusParsed.focus,
-      range: rangeParsed.range,
-      history: normalizeHistory(body.history),
-    },
+  const conversationParsed = parseConversationId(body.conversationId);
+  if (!conversationParsed.ok) return fail(conversationParsed.error);
+
+  const value = {
+    question,
+    unit,
+    focus: focusParsed.focus,
+    range: rangeParsed.range,
+    history: normalizeHistory(body.history),
   };
+  if (conversationParsed.conversationId != null) {
+    value.conversationId = conversationParsed.conversationId;
+  }
+  return { ok: true, value };
 }
 
 module.exports = {

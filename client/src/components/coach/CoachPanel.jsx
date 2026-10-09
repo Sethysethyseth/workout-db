@@ -4,6 +4,7 @@ import {
   CoachError,
   askCoachStream,
   coachErrorMessage,
+  getCoachConversation,
   getCoachStatus,
 } from "../../api/coachApi.js";
 import { loadCoachKey } from "../../lib/coachKeyPref.js";
@@ -136,6 +137,8 @@ export function CoachPanel({
   autoAsk = null,
   defaultOpen = false,
   layout = "panel",
+  resumeConversationId = null,
+  onConversationId = null,
 }) {
   const headingId = useId();
   const pageLayout = layout === "page";
@@ -146,11 +149,16 @@ export function CoachPanel({
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
   const [coverage, setCoverage] = useState(null);
+  const [historyLoading, setHistoryLoading] = useState(resumeConversationId != null);
+  const [historyError, setHistoryError] = useState(null);
   const abortRef = useRef(null);
   const autoAskedRef = useRef(false);
   const threadRef = useRef(null);
   const inputRef = useRef(null);
   const pendingQuestionRef = useRef(null);
+  const conversationIdRef = useRef(null);
+  const loadedIdRef = useRef(null);
+  const loadGenRef = useRef(0);
 
   const byoKey = loadCoachKey();
 
@@ -171,6 +179,46 @@ export function CoachPanel({
   }, [open, status, byoKey]);
 
   useEffect(() => () => abortRef.current?.abort(), []);
+
+  useEffect(() => {
+    if (resumeConversationId == null) {
+      setHistoryLoading(false);
+      return undefined;
+    }
+    if (loadedIdRef.current === resumeConversationId) {
+      setHistoryLoading(false);
+      return undefined;
+    }
+    const gen = loadGenRef.current;
+    let cancelled = false;
+    setHistoryLoading(true);
+    setHistoryError(null);
+    getCoachConversation(resumeConversationId)
+      .then((data) => {
+        if (cancelled || gen !== loadGenRef.current) return;
+        loadedIdRef.current = data.id;
+        conversationIdRef.current = data.id;
+        setThread(
+          (Array.isArray(data.messages) ? data.messages : []).map((message) =>
+            makeMessage(message.role === "coach" ? "assistant" : "user", message.content)
+          )
+        );
+        setCoverage(null);
+      })
+      .catch((err) => {
+        if (cancelled || gen !== loadGenRef.current) return;
+        loadedIdRef.current = null;
+        conversationIdRef.current = null;
+        setThread([]);
+        setHistoryError(err);
+      })
+      .finally(() => {
+        if (!cancelled && gen === loadGenRef.current) setHistoryLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [resumeConversationId]);
 
   const effectiveFocus = useMemo(() => {
     if (!pageLayout) return focus;
@@ -211,11 +259,15 @@ export function CoachPanel({
   const ask = useCallback(
     async (questionRaw) => {
       const question = String(questionRaw ?? "").trim();
-      if (!question || streaming) return;
+      if (!question || streaming || historyLoading) return;
       if (status?.weeklyCap && status.weeklyCap.remaining <= 0) return;
       const history = thread
-        .filter((m) => !m.error && m.content)
-        .map((m) => ({ role: m.role, content: m.content }));
+        .filter((m) => !m.error && !m.pending && m.content)
+        .slice(-12)
+        .map((m) => ({
+          role: m.role === "coach" ? "assistant" : m.role,
+          content: m.content,
+        }));
       const userMsg = makeMessage("user", question);
       const pending = makeMessage("assistant", "", { pending: true });
       setThread((prev) => [...prev, userMsg, pending]);
@@ -231,10 +283,19 @@ export function CoachPanel({
           unit: loadWeightUnit(),
           focus: effectiveFocus,
           history,
+          conversationId: conversationIdRef.current,
           byoKey,
           signal: controller.signal,
           onMeta: (meta) => {
             if (meta && meta.effortCoverage !== undefined) setCoverage(meta.effortCoverage);
+            if (meta && meta.conversationId != null) {
+              const id = Number(meta.conversationId);
+              if (Number.isInteger(id) && id > 0) {
+                conversationIdRef.current = id;
+                loadedIdRef.current = id;
+                onConversationId?.(id);
+              }
+            }
           },
           onDelta: (_piece, full) => {
             setThread((prev) =>
@@ -290,7 +351,7 @@ export function CoachPanel({
         setStreaming(false);
       }
     },
-    [streaming, thread, mode, range, effectiveFocus, byoKey, status]
+    [streaming, historyLoading, thread, mode, range, effectiveFocus, byoKey, status, onConversationId]
   );
 
   useEffect(() => {
@@ -349,10 +410,16 @@ export function CoachPanel({
   }
 
   function reset() {
+    loadGenRef.current += 1;
     stop();
     setThread([]);
     setCoverage(null);
+    setHistoryError(null);
+    setHistoryLoading(false);
+    conversationIdRef.current = null;
+    loadedIdRef.current = null;
     autoAskedRef.current = false;
+    onConversationId?.(null);
     inputRef.current?.focus();
   }
 
@@ -401,7 +468,8 @@ export function CoachPanel({
   const capped = Boolean(weeklyCap && weeklyCap.remaining <= 0);
   const remainingCopy = weeklyCapRemainingCopy(weeklyCap);
   const usedCopy = weeklyCapUsedCopy(weeklyCap);
-  const showComposer = Boolean(status) && !unavailable && !statusError;
+  const showComposer =
+    Boolean(status) && !unavailable && !statusError && !historyLoading && !historyError;
 
   function renderWait() {
     if (pageLayout) {
@@ -473,7 +541,29 @@ export function CoachPanel({
         </header>
 
         <div className="coach-page__scroll" ref={threadRef}>
-          {statusError ? (
+          {historyLoading ? (
+            <div className="coach-panel__notice muted small coach-panel__notice--loading">
+              <span className="barbell barbell--inline" aria-hidden="true">
+                <span className="barbell__bar" />
+                <span className="barbell__plate barbell__plate--l2" />
+                <span className="barbell__plate barbell__plate--l1" />
+                <span className="barbell__plate barbell__plate--r1" />
+                <span className="barbell__plate barbell__plate--r2" />
+              </span>
+              Opening that conversation…
+            </div>
+          ) : historyError ? (
+            <div className="coach-panel__notice">
+              <p className="coach-panel__notice-title">That conversation isn&apos;t available</p>
+              <p className="muted small" style={{ margin: 0 }}>
+                It may have been deleted. Start a new one with the button above.
+              </p>
+            </div>
+          ) : thread.length > 0 ? (
+            <div className="coach-thread coach-page__thread" role="log" aria-live="polite">
+              {renderThread()}
+            </div>
+          ) : statusError ? (
             <p className="coach-panel__notice muted small">{coachErrorMessage("network")}</p>
           ) : !status ? (
             <div className="coach-panel__notice muted small coach-panel__notice--loading">
@@ -492,10 +582,6 @@ export function CoachPanel({
               <p className="muted small" style={{ margin: 0 }}>
                 {unavailable.body} <Link to="/profile/ai">Open AI access</Link>
               </p>
-            </div>
-          ) : thread.length > 0 ? (
-            <div className="coach-thread coach-page__thread" role="log" aria-live="polite">
-              {renderThread()}
             </div>
           ) : (
             <div className="coach-page__intro">
@@ -529,6 +615,11 @@ export function CoachPanel({
               ) : null}
             </div>
           )}
+          {thread.length > 0 && unavailable ? (
+            <p className="coach-panel__notice muted small">
+              {unavailable.body} <Link to="/profile/ai">Open AI access</Link>
+            </p>
+          ) : null}
           {remainingCopy ? <p className="coach-panel__cap muted small">{remainingCopy}</p> : null}
           {usedCopy ? <p className="coach-panel__cap muted small">{usedCopy}</p> : null}
         </div>

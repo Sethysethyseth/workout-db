@@ -1,5 +1,7 @@
 const prisma = require("../lib/prisma");
 const { parseCoachRequest } = require("../coach/coachRequest");
+const { deriveConversationTitle } = require("../coach/conversationTitle");
+const conversationStore = require("../coach/conversationStore");
 const { getCoachConfig } = require("../coach/config");
 const {
   loadCoachAccess,
@@ -262,6 +264,7 @@ function writeSse(res, event, data) {
  * POST /coach/ask - streams the answer as Server-Sent Events:
  *   meta  { model, source, range, effortCoverage, workoutCount }
  *   delta { text }
+ *   meta  { conversationId }  (second meta, only after a successful save)
  *   done  { stopReason }
  *   error { code, message }
  * Refusals and provider failures arrive as `error` events so the client
@@ -280,11 +283,17 @@ async function askCoach(req, res, next, deps = {}) {
   const resolveProvider = deps.resolveCoachProvider || resolveCoachProvider;
   const loadData = deps.loadCoachData || loadCoachData;
   const openStream = deps.openCoachStream || openCoachStream;
+  const store = deps.conversationStore || conversationStore;
 
   try {
     const parsed = parseCoachRequest(req.body);
     if (!parsed.ok) return res.status(parsed.status).json({ error: parsed.error });
     const request = parsed.value;
+
+    if (request.conversationId != null) {
+      const owned = await store.findOwned(prismaClient, req.authUserId, request.conversationId);
+      if (!owned) return res.status(404).json({ error: "not_found" });
+    }
 
     const access = await loadAccess(req.authUserId);
     if (!access) return res.status(404).json({ error: "User not found" });
@@ -353,7 +362,17 @@ async function askCoach(req, res, next, deps = {}) {
 
     const filter = createOffTopicStreamFilter(OFF_TOPIC_MARKER);
     let stopReason = null;
+    let streamedAnswer = "";
     try {
+      const emitDelta = (delta) => {
+        if (delta) {
+          deliveredAnswer = true;
+          streamedAnswer += delta;
+        }
+        if (offTopicDecline) declineChars += delta.length;
+        writeSse(res, "delta", { text: delta });
+      };
+
       const stream = openStream({
         keyInfo: resolved.keyInfo,
         config: resolved.config,
@@ -369,11 +388,7 @@ async function askCoach(req, res, next, deps = {}) {
         if (item.type === "text") {
           const { deltas, offTopic } = filter.push(item.text);
           if (offTopic) offTopicDecline = true;
-          for (const delta of deltas) {
-            if (delta) deliveredAnswer = true;
-            if (offTopicDecline) declineChars += delta.length;
-            writeSse(res, "delta", { text: delta });
-          }
+          for (const delta of deltas) emitDelta(delta);
         } else if (item.type === "stop") {
           stopReason = item.stopReason ?? null;
         } else if (item.type === "error") {
@@ -383,11 +398,7 @@ async function askCoach(req, res, next, deps = {}) {
       }
       const flushed = filter.flush();
       if (flushed.offTopic) offTopicDecline = true;
-      for (const delta of flushed.deltas) {
-        if (delta) deliveredAnswer = true;
-        if (offTopicDecline) declineChars += delta.length;
-        writeSse(res, "delta", { text: delta });
-      }
+      for (const delta of flushed.deltas) emitDelta(delta);
       if (filter.isOffTopic()) offTopicDecline = true;
       if (stopReason === "refusal") {
         writeSse(res, "error", {
@@ -396,6 +407,24 @@ async function askCoach(req, res, next, deps = {}) {
         });
         return res.end();
       }
+      if (!controller.signal.aborted) {
+        try {
+          const savedId = await store.saveSuccessfulExchange(prismaClient, {
+            userId: req.authUserId,
+            conversationId: request.conversationId ?? null,
+            question: request.question,
+            answer: streamedAnswer,
+            title: deriveConversationTitle(request.question),
+            focus: request.focus,
+          });
+          if (savedId != null && !controller.signal.aborted) {
+            writeSse(res, "meta", { conversationId: savedId });
+          }
+        } catch (err) {
+          console.error("[coach] failed to save conversation", err && err.message);
+        }
+      }
+      if (controller.signal.aborted) return res.end();
       writeSse(res, "done", { stopReason });
       return res.end();
     } catch (err) {
@@ -1163,6 +1192,71 @@ async function importFix(req, res, next, deps = {}) {
   }
 }
 
+function parseConversationParam(raw) {
+  const id = Number(raw);
+  if (!Number.isInteger(id) || id <= 0) return null;
+  return id;
+}
+
+function parseBeforeQuery(raw) {
+  if (raw == null || raw === "") return { ok: true, before: null };
+  const value = Array.isArray(raw) ? raw[0] : raw;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return { ok: false };
+  return { ok: true, before: date };
+}
+
+/** GET /coach/conversations - newest updatedAt first, 20 per page. No AI consent. */
+async function listCoachConversations(req, res, next) {
+  try {
+    const parsed = parseBeforeQuery(req.query.before);
+    if (!parsed.ok) return res.status(400).json({ error: "before must be a date" });
+    const page = await conversationStore.listConversations(prisma, {
+      userId: req.authUserId,
+      before: parsed.before,
+    });
+    return res.json(page);
+  } catch (err) {
+    return next(err);
+  }
+}
+
+/** GET /coach/conversations/:id - messages oldest first. Another user is 404. */
+async function getCoachConversation(req, res, next) {
+  try {
+    const id = parseConversationParam(req.params.id);
+    if (id == null) return res.status(404).json({ error: "not_found" });
+    const row = await conversationStore.getConversation(prisma, req.authUserId, id);
+    if (!row) return res.status(404).json({ error: "not_found" });
+    return res.json(row);
+  } catch (err) {
+    return next(err);
+  }
+}
+
+/** DELETE /coach/conversations/:id - 204, or 404 when it is not this user's. */
+async function deleteCoachConversation(req, res, next) {
+  try {
+    const id = parseConversationParam(req.params.id);
+    if (id == null) return res.status(404).json({ error: "not_found" });
+    const result = await conversationStore.deleteConversation(prisma, req.authUserId, id);
+    if (!result.count) return res.status(404).json({ error: "not_found" });
+    return res.status(204).end();
+  } catch (err) {
+    return next(err);
+  }
+}
+
+/** DELETE /coach/conversations - every conversation this user owns. */
+async function deleteAllCoachConversations(req, res, next) {
+  try {
+    await conversationStore.deleteAllConversations(prisma, req.authUserId);
+    return res.status(204).end();
+  } catch (err) {
+    return next(err);
+  }
+}
+
 module.exports = {
   getCoachStatus,
   askCoach,
@@ -1170,6 +1264,10 @@ module.exports = {
   draftBlock,
   importMap,
   importFix,
+  listCoachConversations,
+  getCoachConversation,
+  deleteCoachConversation,
+  deleteAllCoachConversations,
   BYO_KEY_HEADER,
   paletteErrorForStopReason,
   blockErrorForStopReason,

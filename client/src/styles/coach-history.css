@@ -1,0 +1,147 @@
+/* Library Coach tab. Typographic rhythm: title weight against quiet meta. Tokens only. */
+
+.coach-history__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.coach-history__row {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.coach-history__open {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 16px 0 15px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.coach-history__open:focus-visible {
+  outline: 2px solid var(--color-interactive);
+  outline-offset: 2px;
+}
+
+.coach-history__title {
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--color-text);
+}
+
+.coach-history__meta {
+  font-family: var(--font-sans);
+  font-size: 0.8125rem;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  line-height: 1.3;
+  color: var(--color-text-secondary);
+}
+
+.coach-history__more {
+  flex: 0 0 auto;
+  margin-top: 10px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font: 700 1rem/1 var(--font-sans);
+  letter-spacing: 0.08em;
+  cursor: pointer;
+}
+
+.coach-history__more:focus-visible,
+.coach-history__menu-item:focus-visible,
+.coach-history__delete-all:focus-visible {
+  outline: 2px solid var(--color-interactive);
+  outline-offset: 2px;
+}
+
+.coach-history__menu {
+  position: absolute;
+  top: 48px;
+  right: 0;
+  z-index: 2;
+  min-width: 140px;
+  padding: 4px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-surface-1);
+}
+
+.coach-history__menu-item {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-text);
+  font: 600 0.95rem/1 var(--font-sans);
+  text-align: left;
+  cursor: pointer;
+}
+
+.coach-history__menu-item:hover {
+  background: color-mix(in srgb, var(--color-interactive) 12%, transparent);
+}
+
+.coach-history__footer {
+  display: flex;
+  justify-content: flex-start;
+  padding: 18px 0 8px;
+}
+
+.coach-history__delete-all {
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font: 600 0.875rem/1 var(--font-sans);
+  cursor: pointer;
+}
+
+.coach-history__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 28px 0 12px;
+}
+
+.coach-history__empty-copy {
+  margin: 0;
+  max-width: 28rem;
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--color-text);
+}
+
+.coach-history__status {
+  margin: 12px 0;
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+}
+
+.coach-history__sentinel {
+  height: 1px;
+}

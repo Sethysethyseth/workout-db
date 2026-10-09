@@ -373,6 +373,10 @@ export function AiConnectorPage() {
               workout. It reads the same numbers you see and explains them; it
               never computes a stat of its own.
             </p>
+            <p>
+              Your coach conversations are saved to your account. Find or delete them in
+              Library, under Coach.
+            </p>
             {coachStatus ? (
               <p className={`ai-coach-status${coachStatus.available ? " ai-coach-status--ready" : ""}`}>
                 <span className="ai-coach-status__dot" aria-hidden="true" />

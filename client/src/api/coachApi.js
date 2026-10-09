@@ -116,6 +116,27 @@ export function coachImportMap({ text, unit, byoKey, signal } = {}) {
 }
 
 /**
+ * Saved coach conversations. These read the user's own text and do not
+ * require an AI provider call.
+ */
+export function listCoachConversations({ before } = {}) {
+  const query = before ? `?before=${encodeURIComponent(before)}` : "";
+  return http(`/coach/conversations${query}`);
+}
+
+export function getCoachConversation(id) {
+  return http(`/coach/conversations/${id}`);
+}
+
+export function deleteCoachConversation(id) {
+  return http(`/coach/conversations/${id}`, { method: "DELETE" });
+}
+
+export function deleteAllCoachConversations() {
+  return http("/coach/conversations", { method: "DELETE" });
+}
+
+/**
  * Have AI fix an import file (bkr3). Table text -> recipe; prose -> block.
  * Resolves { kind, recipe|block, stats?, cost, remaining }. Costs 1-4 uses.
  */
@@ -164,6 +185,7 @@ export async function askCoachStream({
   unit,
   focus,
   history,
+  conversationId,
   byoKey,
   signal,
   onMeta,
@@ -181,7 +203,14 @@ export async function askCoachStream({
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...(byoKey ? { [BYO_KEY_HEADER]: byoKey } : {}),
       },
-      body: JSON.stringify({ question, range, unit, focus, history }),
+      body: JSON.stringify({
+        question,
+        range,
+        unit,
+        focus,
+        history,
+        ...(conversationId != null ? { conversationId } : {}),
+      }),
       signal,
     });
   } catch (err) {
@@ -217,7 +246,7 @@ export async function askCoachStream({
 
   const handle = (evt) => {
     if (evt.event === "meta") {
-      meta = evt.data;
+      meta = { ...(meta || {}), ...(evt.data || {}) };
       if (onMeta) onMeta(meta);
     } else if (evt.event === "delta") {
       const piece = typeof evt.data.text === "string" ? evt.data.text : "";

@@ -15,6 +15,7 @@ import {
   LibraryRunningStrip,
   LibraryWorkoutCard,
 } from "../components/library/index.js";
+import { CoachConversationList } from "../components/library/CoachConversationList.jsx";
 import { pickLatestActiveSession } from "../lib/activeSession.js";
 import { readCurrentProgram, writeCurrentProgram } from "../lib/currentProgramStorage.js";
 import { sessionDisplayTitle } from "../lib/sessionDisplay.js";
@@ -68,7 +69,7 @@ export function MyTemplatesPage() {
   const [confirmStartBlock, setConfirmStartBlock] = useState(null);
 
   const rawItems =
-    tab === "workouts" ? workouts : tab === "blocks" ? blocks : customExercises;
+    tab === "workouts" ? workouts : tab === "blocks" ? blocks : tab === "exercises" ? customExercises : [];
   const items = useMemo(() => {
     if (tab === "exercises") return rawItems;
     let list = rawItems;
@@ -78,7 +79,13 @@ export function MyTemplatesPage() {
     return list;
   }, [rawItems, visibility, tab, activeRun, leftOffByBlockId]);
   const tabStatus =
-    tab === "workouts" ? workoutsStatus : tab === "blocks" ? blocksStatus : exercisesStatus;
+    tab === "workouts"
+      ? workoutsStatus
+      : tab === "blocks"
+        ? blocksStatus
+        : tab === "exercises"
+          ? exercisesStatus
+          : "ready";
   const tabLoading = tabStatus === "loading";
   const emptyTab = useMemo(
     () => tabStatus === "ready" && items.length === 0,
@@ -461,7 +468,7 @@ export function MyTemplatesPage() {
             { value: "community", label: "Community" },
           ]}
         />
-        {area === "yours" && tab !== "exercises" ? (
+        {area === "yours" && tab !== "exercises" && tab !== "coach" ? (
           <div className="bk-lib-filter-wrap">
             <button
               type="button"
@@ -476,7 +483,7 @@ export function MyTemplatesPage() {
         ) : null}
       </div>
 
-      {area === "yours" && tab !== "exercises" && filterOpen ? (
+      {area === "yours" && tab !== "exercises" && tab !== "coach" && filterOpen ? (
         <div
           id="bk-lib-filter-panel"
           className="bk-lib-filters"
@@ -542,6 +549,15 @@ export function MyTemplatesPage() {
               <span className="bk-lib-type-tab__title">Exercises</span>
               <span className="bk-lib-type-tab__count">{customExercises.length}</span>
             </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={tab === "coach"}
+              className={`bk-lib-type-tab${tab === "coach" ? " bk-lib-type-tab--active" : ""}`}
+              onClick={() => setTab("coach")}
+            >
+              <span className="bk-lib-type-tab__title">Coach</span>
+            </button>
           </div>
 
           <ErrorMessage error={error} />
@@ -552,7 +568,7 @@ export function MyTemplatesPage() {
             </Card>
           ) : null}
 
-          {tabLoading ? (
+          {tabLoading && tab !== "coach" ? (
             <LoadingState tone="skeleton" variant="list" rows={3} slowLabel="Taking longer than usual…" />
           ) : null}
 
@@ -624,13 +640,19 @@ export function MyTemplatesPage() {
             className="bk-lib-list"
             role="tabpanel"
             aria-label={
-              tab === "workouts" ? "Workouts" : tab === "blocks" ? "Blocks" : "Custom exercises"
+              tab === "workouts"
+                ? "Workouts"
+                : tab === "blocks"
+                  ? "Blocks"
+                  : tab === "coach"
+                    ? "Coach"
+                    : "Custom exercises"
             }
           >
-            {tabLoading
-              ? null
-              : tab === "exercises"
-              ? items.map((x) => {
+            {tab === "coach" ? (
+              <CoachConversationList />
+            ) : tabLoading ? null : tab === "exercises" ? (
+              items.map((x) => {
                   const k = keyFor("exercise", x.id);
                   return (
                     <LibraryExerciseCard
@@ -644,8 +666,8 @@ export function MyTemplatesPage() {
                     />
                   );
                 })
-              : tab === "workouts"
-                ? items.map((t) => {
+            ) : tab === "workouts" ? (
+              items.map((t) => {
                     const k = keyFor("workout", t.id);
                     return (
                       <LibraryWorkoutCard
@@ -664,7 +686,8 @@ export function MyTemplatesPage() {
                       />
                     );
                   })
-                : items.map((t) => {
+            ) : (
+              items.map((t) => {
                     const k = keyFor("block", t.id);
                     return (
                       <LibraryBlockCard
@@ -693,7 +716,8 @@ export function MyTemplatesPage() {
                         onConfirmCancel={() => setConfirmStartBlock(null)}
                       />
                     );
-                  })}
+                  })
+            )}
           </div>
         </>
       )}

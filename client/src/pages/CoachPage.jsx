@@ -1,9 +1,31 @@
 import { useEffect, useRef } from "react";
+import { useSearchParams } from "react-router-dom";
 import { CoachPanel } from "../components/coach/CoachPanel.jsx";
 import "../styles/coach-page.css";
 
+function parseConversationParam(raw) {
+  if (raw == null || !/^\d+$/.test(raw)) return null;
+  const id = Number(raw);
+  if (!Number.isInteger(id) || id <= 0) return null;
+  return id;
+}
+
 export function CoachPage() {
   const pageRef = useRef(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const resumeConversationId = parseConversationParam(searchParams.get("c"));
+
+  function onConversationId(id) {
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        if (id == null) next.delete("c");
+        else next.set("c", String(id));
+        return next;
+      },
+      { replace: true }
+    );
+  }
 
   useEffect(() => {
     const page = pageRef.current;
@@ -38,7 +60,12 @@ export function CoachPage() {
 
   return (
     <div className="coach-page" ref={pageRef}>
-      <CoachPanel layout="page" defaultOpen />
+      <CoachPanel
+        layout="page"
+        defaultOpen
+        resumeConversationId={resumeConversationId}
+        onConversationId={onConversationId}
+      />
     </div>
   );
 }
