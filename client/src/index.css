@@ -5913,6 +5913,20 @@ html[data-theme="dark"] .start-workout-picker__sheet {
   }
 }
 
+/* Desktop: the bar matches the 720px content column (builder, library),
+   centered in the page container. The wrap no longer paints a 980px strip. */
+@media (min-width: 720px) {
+  .persistent-workout-bar-wrap {
+    background: transparent;
+    border-bottom: none;
+  }
+
+  .persistent-workout-bar {
+    max-width: 720px;
+    margin-inline: auto;
+  }
+}
+
 /* --- Auth layout (navbar-less, scene-backed, centered card) --- */
 
 .auth-shell {
@@ -8925,7 +8939,9 @@ html[data-theme="dark"][data-palette="iron"] .analytics-page {
 /* --- Positive tone per palette ---
    One mint green on every palette collided with amber and red accents; the
    "up" tone now sits in each palette's family: cool green on champ/forest,
-   lime on iron, gold on crimson, teal on chill. */
+   lime on iron, teal on chill. Crimson used gold here, but that gold sat
+   on the same hue as the warning amber and read as a warning. It is a
+   green now (hue about 142) so "good" stays distinct from warning. */
 html[data-theme="dark"][data-palette="iron"] {
   --color-success-accent: rgb(163 230 53);
   --color-success-text: #bef264;
@@ -8933,9 +8949,9 @@ html[data-theme="dark"][data-palette="iron"] {
 }
 
 html[data-theme="dark"][data-palette="crimson"] {
-  --color-success-accent: rgb(251 191 36);
-  --color-success-text: #fde68a;
-  --color-success-bg: color-mix(in srgb, rgb(146 64 14) 34%, var(--color-surface-2));
+  --color-success-accent: #22c55e;
+  --color-success-text: #86efac;
+  --color-success-bg: color-mix(in srgb, rgb(22 101 52) 35%, var(--color-surface-2));
 }
 
 html[data-theme="dark"][data-palette="chill"] {
@@ -8954,8 +8970,8 @@ html:not([data-theme="dark"])[data-palette="iron"] {
 }
 
 html:not([data-theme="dark"])[data-palette="crimson"] {
-  --color-success-accent: rgb(217 119 6);
-  --color-success-text: #92400e;
+  --color-success-accent: #15803d;
+  --color-success-text: #14532d;
 }
 
 html:not([data-theme="dark"])[data-palette="chill"] {

@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { ProtectedRoute } from "./components/ProtectedRoute.jsx";
 import { Layout } from "./components/Layout.jsx";
 import { AuthLayout } from "./components/AuthLayout.jsx";
@@ -28,6 +28,19 @@ import { WhatsNewPage } from "./pages/profile/WhatsNewPage.jsx";
 import { DevFeedbackPage } from "./pages/DevFeedbackPage.jsx";
 import { HelloPage } from "./pages/HelloPage.jsx";
 
+function HomeRoute() {
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  if (location.pathname === "/" && params.has("external_auth_id")) {
+    return <Navigate to={`/connector/login${location.search}`} replace />;
+  }
+  return (
+    <ProtectedRoute>
+      <DashboardPage />
+    </ProtectedRoute>
+  );
+}
+
 export default function App() {
   return (
     <Routes>
@@ -38,14 +51,7 @@ export default function App() {
       </Route>
 
       <Route element={<Layout />}>
-        <Route
-          path="/"
-          element={
-            <ProtectedRoute>
-              <DashboardPage />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/" element={<HomeRoute />} />
         <Route
           path="/templates"
           element={

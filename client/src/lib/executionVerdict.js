@@ -1,10 +1,10 @@
 /** Pure verdict/comparison formatters for the Execution card. */
 
-function formatDecimalCount(n) {
+function formatWholeCount(n) {
   if (n === null || n === undefined) return null;
-  const rounded = Number(Number(n).toFixed(1));
-  const s = rounded.toFixed(1);
-  return s.endsWith(".0") ? s.slice(0, -2) : s;
+  const value = Number(n);
+  if (!Number.isFinite(value)) return null;
+  return String(Math.round(value));
 }
 
 function loadClause(loadAdherence) {
@@ -71,8 +71,8 @@ export function buildExecutionVerdict({ loadAdherence, volumeAdherence, effortDr
 }
 
 function formatSide(prefix, obj, unit) {
-  const sets = formatDecimalCount(obj.setsPerSession);
-  const reps = formatDecimalCount(obj.reps);
+  const sets = formatWholeCount(obj.setsPerSession);
+  const reps = formatWholeCount(obj.reps);
   let line = prefix;
 
   if (sets !== null && reps !== null) {
@@ -84,10 +84,10 @@ function formatSide(prefix, obj, unit) {
   }
 
   if (obj.weight !== null) {
-    line += ` @ ${formatDecimalCount(obj.weight)} ${unit}`;
+    line += ` @ ${formatWholeCount(obj.weight)} ${unit}`;
   }
   if (obj.effortRir !== null) {
-    line += ` @ ${formatDecimalCount(obj.effortRir)} RIR`;
+    line += ` @ ${formatWholeCount(obj.effortRir)} RIR`;
   }
 
   return line;
