@@ -6,7 +6,7 @@ Home is where a workout starts. On a phone the bottom bar says Home. On a wide s
 
 The wordmark sits at the top with the date under it. A round button on the right, labeled Ask the coach, opens the coach.
 
-Start a workout is the main button. Start empty workout begins a blank workout right away. The setup strip sits at the top of a live workout and shows your logging setup (units, effort, notes). Tap it to open Logging setup. The same choices live under Profile, then Training.
+Start a workout is the main button. Start empty workout begins a blank workout right away. The setup bar sits at the top of a live workout. Tap RIR or RPE to pick the effort scale, and tap Exercise notes or Repeat last to turn them on or off. Edit opens the rest of Logging setup. The same choices live under Profile, then Training.
 
 If a block is running, Home shows that block and the next day. Recent workouts lists what you finished. A live workout stays on screen until you finish or discard it.
 
@@ -105,7 +105,7 @@ Old app keeps your seven most-logged workouts when the export has more than seve
 
 Open Profile. The top shows a few counts. Settings is the list under that.
 
-Training: Weight unit (lbs or kg), Effort scale (RIR or RPE), Exercise notes, Set notes, Repeat last time's numbers, and Rest timer. Weights you already logged are not converted when you switch units. Blocks and templates keep the effort scale they were built with. Rest timer starts after you log a set. A block's own rest time wins. The setup strip sits at the top of a live workout. The same choices live under Profile, then Training.
+Training: Weight unit (lbs or kg), Effort scale (RIR or RPE), Exercise notes, Set notes, Repeat last time's numbers, and Rest timer. Weights you already logged are not converted when you switch units. Blocks and templates keep the effort scale they were built with. Rest timer starts after you log a set. A block's own rest time wins. The setup bar sits at the top of a live workout. The same choices live under Profile, then Training.
 
 Appearance: Theme (light, dark, or system) and Accent color (Champ, Iron, Forest, Crimson, Chill, or a custom palette). Describe a look in your own words when AI access is on. On Crimson, good results show in green.
 

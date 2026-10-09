@@ -37,7 +37,7 @@ export const RELEASES = [
       {
         heading: "Logging",
         items: [
-          "Units, effort, notes, repeat last time, and the rest timer now live under Training. A strip at the top of each workout shows your setup.",
+          "Units, effort, notes, repeat last time, and the rest timer now live under Training. The bar at the top of each workout switches the common ones in one tap.",
           "With Repeat last time's numbers on, empty sets show your last weight and reps. Tap the set number to log them.",
           "A rest timer starts when you log a set. Add or take away 15 seconds, or skip it.",
         ],
@@ -59,9 +59,9 @@ export const RELEASES = [
       {
         heading: "Logging setup in one place",
         body: [
-          "Weight unit, effort scale, exercise notes, and set notes moved out of the workout screen. Open them from the strip at the top of a live workout, or from Profile, then Training. The strip shows what that workout uses: lbs or kg, RIR or RPE, and which notes are on.",
+          "Weight unit, effort scale, exercise notes, and set notes moved out of the workout screen. The bar at the top of a live workout switches RIR or RPE, exercise notes, and Repeat last in one tap. Edit on that bar, or Profile, then Training, has the rest.",
         ],
-        where: "The strip at the top of a live workout, or Profile, then Training",
+        where: "The bar at the top of a live workout, or Profile, then Training",
       },
       {
         heading: "Repeat last time's numbers",

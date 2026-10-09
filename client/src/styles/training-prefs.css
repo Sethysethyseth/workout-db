@@ -131,7 +131,8 @@
 }
 
 .training-prefs-stepper__btn:focus-visible,
-.training-prefs-strip:focus-visible,
+.training-prefs-chip:focus-visible,
+.training-prefs-strip__edit:focus-visible,
 .training-prefs-note-reveal:focus-visible,
 .training-prefs-sheet__done:focus-visible {
   outline: 2px solid color-mix(in srgb, var(--color-interactive) 55%, transparent);
@@ -150,10 +151,12 @@
 .training-prefs-strip {
   display: flex;
   align-items: center;
-  gap: 8px;
+  flex-wrap: nowrap;
+  gap: 6px;
   width: 100%;
-  min-height: 44px;
-  padding: 8px 12px;
+  max-height: 56px;
+  box-sizing: border-box;
+  padding: 4px 6px;
   border-radius: 12px;
   border: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
   /* On a surface, not the scene: it sits over the art at the top of a workout. */
@@ -161,48 +164,79 @@
   color: var(--color-text-secondary);
   font: inherit;
   text-align: left;
-  cursor: pointer;
 }
 
-.training-prefs-strip__icon {
+.training-prefs-pair {
+  display: inline-flex;
   flex: 0 0 auto;
-  color: var(--color-text-secondary);
-}
-
-.training-prefs-strip__pills {
-  display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: 4px;
-  flex: 1;
-  min-width: 0;
 }
 
-.training-prefs-pill {
+.training-prefs-chip {
   display: inline-flex;
   align-items: center;
-  min-height: 22px;
-  padding: 2px 7px;
+  justify-content: center;
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 6px;
   border-radius: 999px;
   border: 1px solid var(--color-border);
   background: var(--color-surface-2);
   color: var(--color-text-secondary);
-  font-size: 0.75rem;
+  font: inherit;
+  font-size: 0.72rem;
   font-weight: 650;
-  line-height: 1.2;
+  line-height: 1.1;
+  white-space: nowrap;
+  cursor: pointer;
 }
 
-.training-prefs-pill--accent {
+.training-prefs-pair .training-prefs-chip:first-child {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.training-prefs-pair .training-prefs-chip:last-child {
+  margin-left: -1px;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.training-prefs-chip--lit {
   background: color-mix(in srgb, var(--color-interactive) 16%, var(--color-surface-1));
   border-color: color-mix(in srgb, var(--color-interactive) 42%, var(--color-border));
   color: var(--color-interactive);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--color-interactive) 38%, transparent);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .training-prefs-chip {
+    transition:
+      background-color 180ms ease-out,
+      border-color 180ms ease-out,
+      color 180ms ease-out,
+      box-shadow 180ms ease-out;
+  }
 }
 
 .training-prefs-strip__edit {
   flex: 0 0 auto;
+  margin-left: auto;
+  box-sizing: border-box;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 6px;
+  border: none;
+  background: none;
   color: var(--color-interactive);
+  font: inherit;
   font-size: 0.85rem;
   font-weight: 650;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
 }
 
 .start-workout-picker__sheet.training-prefs-sheet {
