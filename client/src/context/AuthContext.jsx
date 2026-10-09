@@ -77,7 +77,11 @@ export function AuthProvider({ children }) {
       setCurrentUser(null);
       return null;
     } finally {
-      if (!loggingOutRef.current) {
+      // A superseded call must not end the boot wait: on load, pageshow starts
+      // a second /auth/me, and clearing authLoading here while currentUser is
+      // still null bounced signed-in users through /login. Whoever bumped the
+      // epoch (a newer refresh, login, register, logout) settles it instead.
+      if (!loggingOutRef.current && authEpochRef.current === epoch) {
         setAuthLoading(false);
       }
     }
@@ -118,6 +122,7 @@ export function AuthProvider({ children }) {
     authEpochRef.current += 1;
     setStoredAuthToken(data.token);
     setCurrentUser(data.user);
+    setAuthLoading(false);
     return data.user;
   }, []);
 
@@ -126,6 +131,7 @@ export function AuthProvider({ children }) {
     authEpochRef.current += 1;
     setStoredAuthToken(data.token);
     setCurrentUser(data.user);
+    setAuthLoading(false);
     return data.user;
   }, []);
 
