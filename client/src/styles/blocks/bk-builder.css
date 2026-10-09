@@ -1681,10 +1681,33 @@ html.bk-builder-kbd .bk-builder__weeks {
 }
 
 .bk-builder__exercises .bk-ex-card.bk-pill--lifting {
-  box-shadow: var(--shadow-card-hover);
+  border-color: color-mix(in srgb, var(--color-interactive) 72%, var(--color-border));
+  box-shadow:
+    inset 0 0 0 2px color-mix(in srgb, var(--color-interactive) 70%, transparent),
+    0 12px 28px color-mix(in srgb, var(--color-interactive) 42%, transparent),
+    0 2px 14px color-mix(in srgb, var(--color-interactive) 55%, transparent);
   scale: 1.03;
   z-index: 3;
   touch-action: none;
+  transition: box-shadow 200ms ease-out, border-color 200ms ease-out, scale 200ms ease-out;
+}
+
+/* Selected day and segment match the selected week pill. Scoped here so
+   Library, Home, import, and the run page keep the shared bk-ui look. */
+.bk-builder .bk-day--selected {
+  background: color-mix(in srgb, var(--color-interactive) 28%, var(--color-surface-1));
+  border-color: color-mix(in srgb, var(--color-interactive) 70%, var(--color-border));
+  color: var(--color-text);
+  box-shadow: none;
+}
+
+.bk-builder .bk-day--selected.bk-pill--lifting {
+  box-shadow: 0 2px 14px color-mix(in srgb, var(--color-interactive) 55%, transparent);
+}
+
+.bk-builder .bk-segmented__option--selected {
+  background: color-mix(in srgb, var(--color-interactive) 28%, var(--color-surface-1));
+  color: var(--color-text);
 }
 
 .bk-builder__exercises .bk-ex-card.bk-pill--slot-shift {

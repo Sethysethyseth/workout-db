@@ -30,10 +30,17 @@ function SlidersIcon() {
   );
 }
 
+function notesPillLabel(exerciseOn, setOn) {
+  if (exerciseOn && setOn) return "Notes on";
+  if (exerciseOn) return "Exercise notes";
+  if (setOn) return "Set notes";
+  return null;
+}
+
 export function TrainingPrefsStrip() {
   const prefs = useTrainingPrefs();
   const [open, setOpen] = useState(false);
-  const notesOn = prefs.useExerciseNotes || prefs.useSetNotes;
+  const notesLabel = notesPillLabel(prefs.useExerciseNotes, prefs.useSetNotes);
   const effortLabel = prefs.effortSignal === "rpe" ? "RPE" : "RIR";
 
   return (
@@ -43,7 +50,7 @@ export function TrainingPrefsStrip() {
         <span className="training-prefs-strip__pills">
           <span className="training-prefs-pill">{prefs.weightUnit}</span>
           <span className="training-prefs-pill">{effortLabel}</span>
-          <span className="training-prefs-pill">{notesOn ? "Notes on" : "Notes off"}</span>
+          {notesLabel ? <span className="training-prefs-pill">{notesLabel}</span> : null}
           {prefs.mirrorLast ? (
             <span className="training-prefs-pill training-prefs-pill--accent">Repeat last</span>
           ) : null}

@@ -7,10 +7,18 @@
   gap: 12px;
 }
 
+.training-prefs-form--sheet {
+  gap: 0;
+}
+
 .training-prefs-card,
 .training-prefs-group {
   display: grid;
   gap: 14px;
+}
+
+.training-prefs-form--sheet .training-prefs-group {
+  gap: 4px;
 }
 
 .training-prefs-card {
@@ -19,6 +27,7 @@
 
 .training-prefs-group__title {
   margin: 0;
+  padding-bottom: 8px;
   font-size: 0.8rem;
   font-weight: 700;
   letter-spacing: 0.01em;
@@ -27,12 +36,32 @@
 
 .training-prefs-form--sheet .training-prefs-group + .training-prefs-group {
   border-top: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
-  padding-top: 14px;
+  padding-top: 4px;
+  margin-top: 4px;
+}
+
+.training-prefs-form--sheet .training-prefs-field__label,
+.training-prefs-form--sheet .training-prefs-switch__label,
+.training-prefs-form--sheet .training-prefs-group__title {
+  line-height: 1.15;
+}
+
+.training-prefs-form--sheet .training-prefs-group__title {
+  padding-bottom: 6px;
 }
 
 .training-prefs-field {
   display: grid;
   gap: 6px;
+}
+
+.training-prefs-form--sheet .training-prefs-field {
+  gap: 2px;
+}
+
+.training-prefs-form--sheet .training-prefs-field__helper,
+.training-prefs-form--sheet .training-prefs-switch__helper {
+  line-height: 1.25;
 }
 
 .training-prefs-field__label,
@@ -61,6 +90,18 @@
   display: grid;
   gap: 2px;
   min-width: 0;
+}
+
+/* Off state only. On stays the shared .ai-switch--on fill.
+   Knob and track are mixed from text and surface so they separate in every
+   palette, including champ dark where surface-1 and surface-3 are both navy. */
+.training-prefs-switch .ai-switch:not(.ai-switch--on) {
+  background: color-mix(in srgb, var(--color-text) 18%, var(--color-surface-1));
+  border-color: color-mix(in srgb, var(--color-text) 34%, var(--color-surface-1));
+}
+
+.training-prefs-switch .ai-switch:not(.ai-switch--on) .ai-switch__knob {
+  background: color-mix(in srgb, var(--color-text) 92%, var(--color-surface-1));
 }
 
 .training-prefs-stepper {
@@ -166,17 +207,26 @@
 .start-workout-picker__sheet.training-prefs-sheet {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   overflow: hidden;
+  height: 86vh;
+  max-height: 86vh;
   padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+}
+
+.training-prefs-sheet .start-workout-picker__lead {
+  margin-bottom: 0;
 }
 
 .training-prefs-sheet__scroll {
   overflow-y: auto;
   min-height: 0;
+  flex: 1 1 auto;
   display: grid;
+  align-items: start;
   gap: 8px;
-  padding-bottom: 4px;
+  padding-right: 12px;
+  padding-bottom: 2px;
 }
 
 .training-prefs-sheet__done {
@@ -264,6 +314,12 @@
 .training-prefs-form .bk-segmented__option:focus-visible {
   outline: 2px solid var(--color-interactive);
   outline-offset: 1px;
+}
+
+@media (min-width: 900px) {
+  .training-prefs-form .bk-segmented {
+    max-width: 360px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

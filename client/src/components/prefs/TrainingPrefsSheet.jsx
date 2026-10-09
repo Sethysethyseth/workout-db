@@ -31,8 +31,9 @@ export function TrainingPrefsSheet({ open, onClose }) {
     function fit() {
       const sheet = sheetRef.current;
       if (!sheet) return;
-      const available = vv.height - 12;
-      sheet.style.maxHeight = `${Math.max(240, Math.round(available))}px`;
+      const cap = Math.max(240, Math.round(vv.height * 0.86));
+      sheet.style.maxHeight = `${cap}px`;
+      sheet.style.height = `${cap}px`;
     }
     fit();
     vv.addEventListener("resize", fit);
@@ -40,7 +41,10 @@ export function TrainingPrefsSheet({ open, onClose }) {
     return () => {
       vv.removeEventListener("resize", fit);
       vv.removeEventListener("scroll", fit);
-      if (sheetRef.current) sheetRef.current.style.maxHeight = "";
+      if (sheetRef.current) {
+        sheetRef.current.style.maxHeight = "";
+        sheetRef.current.style.height = "";
+      }
     };
   }, [open]);
 
@@ -68,7 +72,7 @@ export function TrainingPrefsSheet({ open, onClose }) {
           Logging setup
         </h2>
         <p className="start-workout-picker__lead muted small">
-          Saved on this phone. Changes apply right away.
+          Saved on this device. Changes apply right away.
         </p>
         <div className="training-prefs-sheet__scroll">
           <TrainingPrefsForm variant="sheet" />
