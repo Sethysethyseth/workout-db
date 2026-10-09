@@ -147,8 +147,9 @@ Rebrand text lives in: rendered UI, `<title>`, PWA manifest name fields.
   collide = serialize). Many hands, ONE gate: all deliveries land
   serially through the single Claude Code reviewer; width cap 3. Design:
   `docs/specs/autonomous-cursor-dispatch.md`, "Fan-out (relay v5.2)".
-- Seth personally runs everything the gate marks ask-first (main merges,
-  prod, migrations).
+- Seth personally approves everything the gate marks ask-first (main
+  merges, prod, migrations): agents run those only behind the trigger
+  phrase, one command at a time, each approved by him.
 
 ## Conventions
 
@@ -188,10 +189,20 @@ ASK BEFORE RUNNING (the short gate):
      `dbHostGuard.assertSafeForBoot()` already makes it impossible for
      `server/.env` to point at prod, so the gate governs sequencing, not
      blast radius.
-   - **PRODUCTION migrations: Seth runs them personally.** Item 2 stacks on
-     top of this. An agent may prepare and display the exact command
-     sequence; it never executes one. A bad prod migration corrupts live
-     data and is not locally reversible.
+   - **PRODUCTION migrations: trigger-phrase tier too** (changed by Seth,
+     October 9, 2026; was "Seth runs them personally"). Do not start until
+     the user says "migrate prod" verbatim. Then Claude Code runs ONE
+     command at a time, and Seth approves each one at the permission
+     prompt - never batch, never auto-run. Item 2 stacks on top of this.
+     Cursor never touches prod. The prod connection string lives OUTSIDE
+     the repo and OneDrive (`C:\dev\secrets\prod-db.env`, Seth's file); it
+     is read only at run time, never printed, never copied into the repo or
+     `server/.env`. Method is the RUNBOOK "Schema-change deploy" ritual
+     (SQL + a `_prisma_migrations` row with staging's checksum), NOT
+     `prisma migrate deploy` - prod's history has known checksum drift
+     (HANDOFF, Housekeeping). Report what applied (migration name, prod host, the
+     verify query output) before considering it done. A bad prod migration
+     corrupts live data and is not locally reversible.
 
    **Ordering invariant (both environments, never relaxed):** the DB
    migration lands BEFORE the code that depends on it deploys. Code ahead of
@@ -241,4 +252,4 @@ pre-main review and big-picture work).
   of `main()`.
 - Migrations are a separate track from deploys - pushing code does not migrate
   any DB. Who runs them is gate item 3: staging behind the "migrate staging"
-  trigger phrase, prod always Seth.
+  trigger phrase, prod behind "migrate prod" (each command approved by Seth).

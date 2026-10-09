@@ -207,9 +207,9 @@ git worktree remove C:\dev\worktrees\<unit-id>
 ## 9. Safety invariants (never violate)
 
 - `server/.env` → staging or localhost only. Never prod.
-- Never paste prod connection strings into local files or ad-hoc CLI. Prod SQL = Neon SQL editor only.
+- Prod connection strings live ONLY in `C:\dev\secrets\prod-db.env` (outside the repo and OneDrive) - never in the repo, `server/.env`, or a transcript. Prod SQL = the Neon SQL editor (Seth), or Claude Code under "migrate prod" reading that file at run time (AGENTS.md gate 3, changed Oct 9, 2026).
 - Never disable `dbHostGuard` to make a test pass. New DB-connecting scripts call `assertSafeForReset(process.env.DATABASE_URL)` at top of `main()`.
-- All git merge/commit/push and all prod DB ops: manual, by Seth, never Cursor.
+- All main merges and all prod DB ops: behind Seth's trigger phrase, every command approved by him; never Cursor.
 
 ---
 
