@@ -30,18 +30,17 @@ what's off.
    - qol11: `scripts/smoke-coach.mjs --key` is inert
    - no rate limiter on `/block-templates/import*` or `/block-runs`
 
-**In flight (Oct 9, evening): critic rounds 2-3 (Seth's ask).** qolf5 LANDED
-`f857166` (20/20): the Repeat last RPE/RIR grey hint. Critic round 2 is
-RUNNING with brief `.playwright-mcp/qol-critic/BRIEF-round-2.md`, which has
-two parts:
-- Part A: the wave's changes - fix between rounds
-- Part B: app-wide look and feel for the NEXT frontend wave - collect, do
-  not fix
-
-Round 3 follows the round-2 fixes. Local servers are detached: API pid 7116
-(lane 1 server, staging DB, mock coach, throwaway key secret), vite pid
-19500 (main-tree client). Stop both when the rounds end. Memory is tight
-(~1.5 GB free); the reaper stops idle background shells.
+**In flight (Oct 9, evening).**
+- Critic round 2 ran: wave 6/10, look and feel 5/10
+  (`docs/tasks/qol-critic-round-2-FINDINGS.md`). Its Part B is the
+  look-and-feel input for the NEXT frontend wave.
+- The round-2 fixes landed: qolf6 `9d6b646` and qolf7 `47328fe` (Last 7
+  days was reverted and stowed).
+- Seth then CANCELLED round 3 ("no need for critique agent; I'll smoke it")
+  and asked for qolf8: the Logging setup strip moves from Home into the live
+  workout. qolf8 is dispatched on lane 2; after it lands -> 23/23 -> smoke.
+- Local servers (detached): API pid 7116 (lane 1 server), vite on :5173
+  serving a lane client. Stop both at wave end.
 
 ## Wave smoke checklist (staging Vercel, on the phone)
 
@@ -204,6 +203,9 @@ Covers the F-wave AND the still-open E-wave prod smoke. Staging passed Aug 4.
 ## Seth items (decisions, not work)
 
 - Still open:
+  - **BOOKMARKED for discussion (Oct 9):** which button the "N sets have no
+    RIR" finish sheet focuses by default. It stays "Finish anyway" for now;
+    critic r2 #10 suggested "Add RIR".
   - the R6 tagline pick (a one-line `AuthLayout.jsx` swap)
   - FP8 icon PNGs (drop them into `claudefiledrop/`)
   - the Cursor model-routing question
