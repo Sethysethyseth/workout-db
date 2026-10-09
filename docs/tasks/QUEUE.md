@@ -6,6 +6,50 @@ Statuses: DRAFT / QUEUED / DISPATCHED / AWAITING-REVIEW / LANDED <sha> / BOUNCED
 
 ## Active
 
+**Quality-of-life wave (QOL), opened October 8, 2026 (Opus frontier seat).**
+Branch `quality-of-life-updates` (cut from `main` at `b5c6777`). Design of
+record: `docs/specs/quality-of-life-wave.md`:
+- section 1: Seth's Oct 8 rulings
+- section 2: the design language every UI unit follows
+- section 3: order and collisions
+- section 4: the What's New pipeline
+
+Recon lanes qol-r1/r2/r3 are preserved as `qol-r*-FINDINGS.md`.
+
+Wave N = 15. All units are MODEL auto, MODE 1-relay, DB-free lanes. Every
+server route needs a LIVE staging proof at landing.
+
+ONE migration (qol1). Its landing push MIGRATES STAGING once Render tracks
+this branch, so that push waits for Seth's "migrate staging". Prod gets it
+by hand before the merge.
+
+qol11 needs `COACH_KEY_SECRET` on staging Render (Seth) before its live
+check.
+
+Order: ONE critic round after qol14, then qol15 (What's New) LAST, then
+N/N -> Seth smokes -> gate. Serial chains (spec section 3):
+- logger: qol2 -> qol4 -> qol7 -> qol12
+- Home/Profile/App: qol2 -> qol4 -> qol6 -> qol13/qol14
+- builder: qol3 -> qol9 -> qol11
+- coach: qol6 -> qol10 -> qol11
+- Library: qol8 -> qol10
+
+QUEUED | qol1-schema-coach-key-history.md | the wave's one migration: `UserCoachKey`, `CoachConversation`, `CoachMessage` | n=1. Parallel-safe with qol3, qol5. MIGRATION-CARRYING: landing push waits for "migrate staging".
+QUEUED | qol2-training-preferences.md | one prefs form (Profile > Training + Home strip): lbs/kg, RIR/RPE, notes, repeat-last, rest timer; toggles out of the logger | n=2. Parallel-safe with qol1, qol3, qol5.
+QUEUED | qol3-builder-exercise-hold-to-move.md | hold an exercise to drag it; the list collapses while held (`useHoldToReorder` axis y) | n=3. Builder files only.
+QUEUED | qol4-confirm-panel-finish-discard.md | `ConfirmPanel`; Finish no longer gated on effort (warn + allow); discard from the Home hero and the floating bar; the logger's 3 `window.confirm` out | n=4. After qol2 (SessionDetailPage, DashboardPage).
+QUEUED | qol5-server-fixes-413-history-cap.md | `/coach` 2mb parser + friendly 413; history import keeps the top 7 titles with a warning | n=5. Disjoint from everything but qol6 (no shared file; keep it apart anyway).
+QUEUED | qol6-coach-app-help-everywhere.md | app guide + help focus with no consent and NO data; `/coach` page; Home crown + Profile row; coach wait copy | n=6. After qol4. Privacy-adjacent: audit the no-consent path hard.
+QUEUED | qol7-repeat-last-time.md | `GET /sessions/:id/last-performance` (pure `lastPerformance.js`) + last time's numbers as ghosts | n=7. After qol4. Cross-user surface.
+QUEUED | qol8-edit-custom-exercises.md | `PATCH /exercises/custom/:id` with a rename that rewrites and adopts name-only rows; edit mode in the add sheet; Library loads per tab | n=8. Parallel-safe with qol6, qol7, qol9.
+QUEUED | qol9-builder-polish.md | sr3 P3-1/2/5/8, per-side chip only where it fits, accent week pill | n=9. After qol3.
+QUEUED | qol10-coach-history.md | conversations persisted (SSE `meta`), 4 owner-scoped routes, Library Coach tab, continue and delete | n=10. After qol1 (migrated), qol6, qol8. CROSS-USER ISOLATION: frontier audit.
+QUEUED | qol11-byo-key-vault.md | AES-256-GCM key vault (AAD = userId), PUT/DELETE `/coach/key`, `x-coach-key` removed, AI access key UI | n=11. After qol9, qol10. SECURITY: frontier audit. Needs `COACH_KEY_SECRET`.
+QUEUED | qol12-rest-timer.md | rest timer bar above the Finish dock; block `restSec` wins, else the pref | n=12. After qol7.
+QUEUED | qol13-small-visual-fixes-connector-forward.md | crimson good -> green, desktop bar width, whole Execution numbers, no login flash, root forwards `external_auth_id` | n=13. After qol4, qol6.
+QUEUED | qol14-whats-new-system.md | concise + "See the details" layer, Latest update card on Profile, `?preview=1` off-prod (the modal stays prod-only) | n=14. After qol6.
+QUEUED | qol15-whats-new-release.md | first `_WHATS_NEW.md` run: the Aug-Oct catch-up release + this wave's release + app-guide update | n=15. LAST, after the critic round. Set the wave release's date at landing.
+
 **Blocks-v2 wave (BK), opened September 28, 2026 (Opus frontier seat).**
 Design of record: `docs/specs/blocks-v2.md` (read section 12 for order and
 collisions). Seth's rulings, asked + answered in session: build + run +

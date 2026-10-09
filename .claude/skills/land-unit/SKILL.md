@@ -114,6 +114,14 @@ one of these, so they only get caught by looking):
 ## 5. Bookkeeping
 
 - `docs/tasks/QUEUE.md`: flip the unit to `LANDED <sha>` (or BOUNCED).
+- **What's New ledger (Oct 8, Seth's ask):** if the unit changed anything
+  a lifter can notice, append ONE entry to the current wave section of
+  `docs/releases/UNRELEASED.md`, in the format its header gives. Write it
+  in plain words from the user's side, not the block's. Internal-only
+  units get none. When a What's New unit (`_WHATS_NEW.md`) lands, move the
+  sections it consumed VERBATIM to `docs/releases/RELEASED.md` and reset
+  the ledger to its header. Spec: `docs/specs/quality-of-life-wave.md`
+  section 4.
 - Wave task list (`dispatch-unit` section 2b-2): flip this unit's task to
   `completed`. A BOUNCED unit stays `in_progress` with the bounce reason
   appended to its description - never complete it.

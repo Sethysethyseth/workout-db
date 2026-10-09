@@ -1,0 +1,5 @@
+# Migration SQL must hash the same on every machine: Prisma checksums the
+# working-tree bytes, and Windows autocrlf checkouts were turning LF blobs
+# into CRLF (the Sept 26 prod-vs-staging checksum drift). Blobs are already LF.
+server/prisma/migrations/**/*.sql text eol=lf
+server/prisma/migrations/migration_lock.toml text eol=lf

@@ -1,0 +1,39 @@
+# UNRELEASED - What's New ledger (single writer: Claude Code)
+
+Shipped work waiting for release notes. The What's New lane
+(`docs/tasks/_WHATS_NEW.md`) turns this into `RELEASES` entries at wave end.
+Then Claude Code moves the consumed sections VERBATIM to
+`docs/releases/RELEASED.md` (newest first) and resets this file to its
+header. Process of record: `docs/specs/quality-of-life-wave.md` section 4.
+
+Entry format, one per user-facing landing (`land-unit` section 5 appends
+it):
+
+`- [<unit>] <what changed, plain words> | Where: <tap path> | Files: <1-3 key UI files the writer should read>`
+
+Write what a lifter would notice. Internal-only work gets no entry.
+
+---
+
+## Catch-up: on prod since Oct 7, 2026, never announced
+
+Everything below merged to `main` between Aug 6 and Oct 7 but has no
+release entry (the last is `2026-08-ai-assistant`, Aug 5). The writer
+releases it as ONE catch-up entry dated 2026-10-07.
+
+- [bk5/bk8/sr3-1] Build training blocks: weeks of planned workouts with sets, reps, weight, rest, timed sets and effort targets, then run them day by day; switching blocks pauses the old one and you can resume or start over | Where: Library, then Blocks; Home shows the running block under Start a workout | Files: client/src/components/blocks/builder/BlockBuilder.jsx, client/src/pages/BlockRunPage.jsx, client/src/components/blocks/run/UpNextCard.jsx
+- [bks2/bk9] Block days log one row per planned set, with the plan shown as grey hints; tap a set number to log it as planned | Where: start a block day | Files: client/src/components/blocks/log/BlockSetRow.jsx, client/src/components/blocks/log/BlockExerciseCard.jsx
+- [bk6/bks4/bks1] Import a block from a spreadsheet, Excel file or pasted text, or turn your workout history into a block; AI can read messy sheets and fix a file that won't import | Where: Library, then Import | Files: client/src/pages/ImportBlockPage.jsx
+- [bk12] The coach can draft a block from a description | Where: the block builder, Draft with the coach | Files: client/src/components/blocks/builder/CoachDraftCard.jsx
+- [8455059/bkr2/cq1] An in-app coach explains your numbers on Analytics and debriefs a finished workout; it stays on training topics and has a weekly limit of 7 questions | Where: Analytics, Ask about these numbers; a finished workout, Debrief this workout | Files: client/src/components/coach/CoachPanel.jsx
+- [d28989b] Create your own colour palette with AI | Where: Profile, then Appearance | Files: client/src/pages/profile/AppearancePage.jsx
+- [bks3/bksf1d] A redesigned Library with your blocks first, and your running block at the top | Where: Library | Files: client/src/pages/MyTemplatesPage.jsx
+- [sr3-4/sr3f3] Add an exercise that isn't in the catalog to your library straight from the builder or an import | Where: block builder search, Add to your library | Files: client/src/components/workout/AddExerciseToLibrarySheet.jsx
+- [sr3-6] Hold a day or week to drag it into a new order | Where: block builder | Files: client/src/components/blocks/ui/useHoldToReorder.js
+- [sr3-5] Mark a block exercise as per side to log left and right | Where: block builder, exercise card, Per side | Files: client/src/components/blocks/builder/ExerciseCard.jsx
+- [wd1] Discard a workout you started by mistake | Where: the x at the top of a live workout | Files: client/src/pages/SessionDetailPage.jsx
+- [bkr5] Home leads with Start a workout, and your running block sits right under it | Where: Home | Files: client/src/pages/DashboardPage.jsx
+
+## quality-of-life-updates (wave opened Oct 8, 2026)
+
+<!-- land-unit appends one entry per user-facing landing below this line -->

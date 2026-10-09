@@ -1,3 +1,18 @@
+## ARCHIVED October 8, 2026 (Opus session) - the Oct 7 close-out session
+## log, moved verbatim when the quality-of-life wave opened.
+
+**Updated:** October 7, 2026, late (Opus seat). Session log:
+- Read HANDOFF and continued: landed sr3-6 `468bab9` (seat-fixed drop
+  target), ran Seth's ONE-round feel critic (6/10 FAIL), authored and landed
+  the fix round sr3f1 `cf4fdee`, sr3f2 `b64de00`, sr3f3 `ccf468b` (sr3 wave
+  10/10), Seth signed off smoke round 4, pre-main gate PASS (+ seat fix
+  `1ce8fdb`), Seth applied the prod migrations, merged `7d3b91e..ef5e908`.
+- Close-out: HANDOFF split three ways (archive / REFERENCE / this file),
+  `scripts/run-lane.ps1` saved from the scratchpad and wired into
+  `dispatch-unit`, git cleanup above, lanes reset. Full log in the archive.
+
+---
+
 ## ARCHIVED October 7, 2026, late (Opus session) - the close of
 ## `ai-connector-wave`: the WHERE WE ARE header + merge record, the gate
 ## verdict + Seth's prod steps, the smoke-round-4 protocol and checklists,

@@ -107,6 +107,11 @@ lane that is itself a roadmap unit gets a QUEUE entry like any other).
 
 - Filename: `<unit-id>-<slug>.md`, lowercase, in `docs/tasks/`.
 - Register in `docs/tasks/QUEUE.md` as QUEUED with a one-line scope.
+- **Every wave ends with a What's New unit** (Oct 8): copy
+  `docs/tasks/_WHATS_NEW.md` to `<wave>-wn-whats-new-release.md`, fill its
+  RELEASES-TO-WRITE list, and queue it LAST (after any critic round,
+  before Seth's smoke). It counts toward N. Pipeline:
+  `docs/specs/quality-of-life-wave.md` section 4.
 - Commit AND PUSH - `dispatch-unit` preconditions on committed AND
   pushed (Channel A reads from GitHub; keeping the invariant means any
   rung can pick the unit up).

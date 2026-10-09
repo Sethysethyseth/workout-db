@@ -1,108 +1,60 @@
 # HANDOFF — current state
 
-> **WHERE WE ARE (Oct 7, late):** `ai-connector-wave` is **MERGED and LIVE**.
-> `main` = `ef5e908` (fast-forward `7d3b91e..ef5e908`, 147 commits - the BK
-> blocks wave, the bkr fix wave and the sr3 wave + its critic fix round), gate
-> PASS, prod DB migrated first (`blocks_v2`, `block_exercise_per_side`), prod
-> API + Vercel verified serving it, and Seth smoked prod ("looks beautiful").
-> **Nothing is in flight:** no wave open, nothing QUEUED, all three lanes idle
-> and clean. The full wave record (gate verdict, prod steps, smoke rounds,
-> session logs) is in `docs/HANDOFF-ARCHIVE.md` (top block); standing
-> reference moved to **`docs/REFERENCE.md`** (Seth's call, Oct 7).
+> **WHERE WE ARE (Oct 8):** the **quality-of-life wave is AUTHORED, nothing
+> dispatched.** Branch `quality-of-life-updates` (cut from `main` at
+> `b5c6777`, pushed). There are 15 blocks QUEUED (`docs/tasks/QUEUE.md`, top).
+> Design of record: `docs/specs/quality-of-life-wave.md` - Seth's Oct 8
+> rulings, the wave's design language, order and collisions, and the new
+> What's New pipeline. Recon reports: `docs/tasks/qol-r{1,2,3}-*-FINDINGS.md`.
+> `ai-connector-wave` stays MERGED and LIVE (`main` = `b5c6777`).
 
-**Next action (human):** repoint staging Render `workout-db-staging` to
-`main` (M2, Housekeeping below), then tell the next session which candidates
-make the next wave.
+**Next action (human):** repoint staging Render `workout-db-staging` from
+`ai-connector-wave` to `quality-of-life-updates` (Settings -> Branch), then
+say "dispatch" to start the relay. qol1's landing push will also need your
+"migrate staging".
 
-## ▶ PICK UP HERE (next session)
+## PICK UP HERE (next session)
 
-1. **No wave is open.** Start by asking Seth which candidates below form the
-   next wave - batched, with a recommendation (Seth's standing ask).
-2. Read `docs/REFERENCE.md` -> "Durable gotchas" once before planning; the
-   frontier seat greps `docs/HANDOFF-ARCHIVE.md` for history.
-3. Author with `author-task-block`; dispatch with `dispatch-unit` +
-   `scripts/run-lane.ps1` (repoint a lane with `git checkout -B
-   cursor/<unit> <wave-branch>` first - they sit detached at `ef5e908`).
-4. Wave branch: decide with Seth at wave start. The staging WorkOS sign-in
-   URI is pinned to the `ai-connector-wave` Vercel PREVIEW host (see M2), so
-   either keep using `ai-connector-wave` (fast-forward it to `main` first) or
-   cut a new branch and move that URI.
+1. **Run the QOL relay** with `dispatch-unit` + `land-unit` (one resident
+   session). Repoint each lane first: `git checkout -B cursor/<unit>
+   quality-of-life-updates`. The lanes sit on `recon/qol-r*` branches,
+   clean, holding only stale recon DELIVERY.md files - delete those
+   first. Opening pair: qol1 + qol3 (disjoint), then qol2.
+2. **Gates inside the wave:**
+   - qol1's landing push migrates staging ("migrate staging",
+     status -> deploy -> status).
+   - qol11 needs `COACH_KEY_SECRET` on staging Render (Seth; the command
+     is in `server/.env.example` after qol11).
+   - qol6, qol7, qol10 and qol11 are privacy, cross-user or security
+     surfaces - audit them as frontier escalations.
+3. **Wave end:** ONE critic round after qol14 (Seth's Oct 6 rule), then
+   qol15 (What's New) LAST, then N/N -> Seth smokes (What's New copy at
+   `/profile/whats-new?preview=1`) -> gate. Prod before merge:
+   - the qol1 migration (Seth, by hand)
+   - `COACH_KEY_SECRET` on prod Render
+4. **New standing process (Oct 8):** every landing appends a plain-language
+   entry to `docs/releases/UNRELEASED.md` (`land-unit` section 5), and
+   every wave ends with a What's New unit from `docs/tasks/_WHATS_NEW.md`
+   (`author-task-block` Finish).
 
-## Next-wave candidates (none authored)
+## Not in this wave (stowed; none authored)
 
-- **Exercise hold-to-move (Seth, Oct 7, after smoke round 4):** "you can
-  hold and move exercises like days and weeks, when held app adjusts so you
-  can move them easier" - long-press reorder for exercise cards in the
-  builder (reuse sr3-6's `useHoldToReorder`, vertical axis), with the list
-  adapting while held (e.g. cards collapse to one line) so a long day is
-  easy to drag across.
 - **Exercise search synonyms - HELD for Seth's own planned change (Oct 7).**
-  The sr3 critic's "multi-word search fails" was a misdiagnosis: the pure
-  `searchCatalog` already AND-matches words ("one leg calf" finds "Dumbbell
-  Seated One-Leg Calf Raise"); "single leg calf" misses on a SYNONYM gap
-  ("single" vs "one"). Fold into Seth's change (likely
-  `server/data/exercise-aliases.json` + its rationale doc, or query-side
-  synonyms in `server/src/analytics/searchCatalog.js`).
-- **sr3 critic deferred P3s** (`docs/tasks/sr3-critic-round-1-FINDINGS.md`):
-  P3-1 the builder name gets its own row, P3-2 coach box placement / title
-  wrap, P3-5 one action-sheet style, P3-8 recent exercises on an empty
-  search, P3-10 Library load time.
-- **Gate follow-up (Oct 7):** `/coach/import-map` and the import-fix recipe
-  path accept 1,000,000 chars but sit behind the default 100 kB JSON body
-  limit - a >100 kB paste gets a raw 413. Route-level limit or a friendly
-  message. (Also noted: no rate limiter on `/block-templates/import*` or
-  `/block-runs` - authed, DB-only.)
-- **sr3 follow-ups:** history import keeps the 7 most-used titles with a
-  "skipped" warning (today 8+ distinct titles hard-fail the preview); swap an
-  exercise for today on a block day (PARKED by Seth); a `.gitattributes`
-  `*.sql text eol=lf` rule so migration checksums stop depending on the
-  machine that applied them.
-- **Known and deferred from the BK smokes:** no rest timer after a set;
-  fractional Execution numbers; desktop In-progress bar width; "Per side"
-  offered on bilateral lifts; the builder's week pill is a bright white bar;
-  crimson's "good" colour reads amber; the old quick-log set-count / L-R pair
-  confirms are still browser dialogs; a ~1 s Login flash after iOS clears
-  site data for 7+ idle days.
-- **Privacy page + ToS** (BK0, `ai-layer.md` section 6) - DRAFT until Seth
-  supplies its open facts (below).
-- **Connector hardening - offered Sept 28, NOT decided:** make the site root
-  forward `?external_auth_id=` to `/connector/login`, so a wrong sign-in URI
-  can no longer strand the handshake (bit twice: Aug 8, Sept 26-28).
+  The pure `searchCatalog` already AND-matches words. "single leg calf"
+  misses on a SYNONYM gap ("single" vs "one"). Fold it into Seth's change
+  (likely `server/data/exercise-aliases.json` + its rationale doc).
+- **Swap an exercise for today on a block day** - PARKED by Seth.
+- **Privacy page + ToS (BK0)** - DRAFT until Seth supplies the operator
+  name, the contact email and the US state. **BK0's copy must change
+  before it queues:**
+  - qol10 STORES coach chat content, so the "records only who and when"
+    claim is no longer true
+  - qol11 makes "encrypted at rest" true for BYO keys
 - **CP3** only if prod Render spins down when idle (QUEUE's CP2 notes).
-- Coach discoverability and CR2 polish - REFERENCE "Still governing".
-
-### Seth's asks, Sept 29 - NOT scheduled, no unit authored (needs a wave slot)
-
-- **Discard on the live-workout entry points.** The discard X (WD1) exists
-  only inside `SessionDetailPage`. Seth wants it reachable from the Home
-  "In progress / Resume workout" card and the floating "In progress" bar
-  (his screenshot: `claudefiledrop/image0.jpg`, untracked, both circled),
-  with a warning confirm before it deletes. Reuse WD1's confirm pattern
-  (`.session-discard-confirm`) and the existing race-safe
-  `POST /sessions/:id/discard`.
-- **Coach "thinking" state.** The first coach question is slow; add a
-  custom loading state while the coach is working so users know it is not
-  stuck (CoachPanel.jsx).
-- **No way to view past coach conversations.** Coach history is not stored
-  or browsable today; Seth flagged it. Product decision first (persist
-  content? that changes the privacy page's "records only who and when"
-  cap statement in BK0).
-- **RULING (Seth, Sept 29): the bring-your-own coach key MUST be
-  encrypted.** Today it is not - it lives plaintext in the browser's
-  `sessionStorage` (`client/src/lib/coachKeyPref.js`) and rides each coach
-  request in the `x-coach-key` header; the server stores no user key. BK0's
-  block claims "encrypted at rest and never shown again", which is FALSE
-  for the current code. Two things follow: (1) BK0 must not publish that
-  claim until the design below ships - correct the block first; (2) a
-  design decision is owed (server-side encrypted storage with a secret in
-  Render env + a schema change, vs keeping it browser-only and saying so).
-  Schema + secrets = a frontier-seat / security escalation, not a Sonnet
-  unit. Nothing authored yet. Also logged in `docs/legal/LEGAL-QUESTIONS.md`.
-- **BK0 (privacy/ToS) facts - Seth took the recommended defaults Sept 29,
-  to be critiqued later:** deletion = "email us, we delete within 30 days"
-  (manual prod delete, Seth only); effective date = go-live date; contact =
-  a dedicated address, not personal Gmail. STILL NEEDED before BK0 flips
-  to QUEUED: operator name, the actual contact email, US state.
+- **CR2 polish** remains the live UI work order (REFERENCE "Still
+  governing").
+- **Gate note (Oct 7):** no rate limiter on `/block-templates/import*` or
+  `/block-runs` (authed, DB-only).
 
 ## Open on prod - Seth's checks, none blocking
 
@@ -123,8 +75,9 @@ Covers the F-wave AND the still-open E-wave prod smoke. Staging passed Aug 4.
 
 ## Housekeeping
 
-- **M2 - repoint staging Render to `main` (now unblocked).** Staging Render
-  `workout-db-staging` still tracks `ai-connector-wave`. The STAGING WorkOS
+- **M2 - SUPERSEDED Oct 8: repoint staging Render to
+  `quality-of-life-updates`** (the Next action above). It still tracks
+  `ai-connector-wave`. The STAGING WorkOS
   External Sign-in URI is pinned to the `ai-connector-wave` Vercel PREVIEW
   host - never delete `ai-connector-wave` (or its preview) while that URI
   points at it. If staging ever looks stale, check Render -> Settings ->
@@ -164,10 +117,11 @@ Covers the F-wave AND the still-open E-wave prod smoke. Staging passed Aug 4.
 - Stable topology (prod env, WorkOS, verify-from-services, branch-deletion
   cautions): REFERENCE -> "Deploy topology".
 
-## Lanes + verification (Oct 7, late)
+## Lanes + verification (Oct 8)
 
-- `cursor-lane`, `-2`, `-3`: all detached at `ef5e908`, porcelain clean,
-  stale reports removed. Lane 2's `server` has its own install WITH
+- `cursor-lane`, `-2`, `-3` (Oct 8): on `recon/qol-r1|r-2|r-3` at `8090b10`,
+  porcelain clean, each holding a STALE recon DELIVERY.md (gitignored) -
+  delete them before the first QOL dispatch. Lane 2's `server` has its own install WITH
   `@cursor/sdk` (live coach calls); lane 3's `node_modules` are junctions
   into lane 1; lane 3 holds three untracked mock PNGs in
   `client/src/assets/scenes/` - never stage them. Lessons: REFERENCE.
@@ -185,11 +139,15 @@ Covers the F-wave AND the still-open E-wave prod smoke. Staging passed Aug 4.
 
 ## Seth items (decisions, not work)
 
-- The connector-hardening yes/no; the R6 tagline pick (one-line
-  `AuthLayout.jsx` swap); FP8 icon PNGs (drop into `claudefiledrop/`); the
-  Cursor model-routing question; the `docs/parked/*` ruling; BK0's open facts
-  (operator name, contact email, US state); the BYO-key encryption design
-  and the coach-history product call (both in "Seth's asks" above).
+- Still open:
+  - the R6 tagline pick (a one-line `AuthLayout.jsx` swap)
+  - FP8 icon PNGs (drop them into `claudefiledrop/`)
+  - the Cursor model-routing question
+  - the `docs/parked/*` ruling
+  - BK0's open facts (operator name, contact email, US state)
+- Settled Oct 8, recorded in the wave spec section 1: connector hardening
+  (in), BYO-key design (server-encrypted), coach history (Library tab,
+  kept until deleted).
 
 > **Standing rule:** the Next action line is filled on EVERY rewrite and is
 > never empty or deferred - one sentence, the single thing SETH does
@@ -206,6 +164,36 @@ Covers the F-wave AND the still-open E-wave prod smoke. Staging passed Aug 4.
 - Close-out: HANDOFF split three ways (archive / REFERENCE / this file),
   `scripts/run-lane.ps1` saved from the scratchpad and wired into
   `dispatch-unit`, git cleanup above, lanes reset. Full log in the archive.
+
+**Updated:** October 8, 2026 (Opus seat). Session log:
+- Seth opened the next wave: `quality-of-life-updates`, with "all stowed
+  changes" plus his 6 asks:
+  - prefs out of the logger
+  - a What's New system
+  - repeat last time
+  - finish without effort
+  - edit custom exercises
+  - coach app help
+- Cut the branch and dispatched 3 Cursor recon report lanes (qol-r1/r2/r3,
+  auto rung, lanes 1-3, ~6 min each, all clean); reports preserved as
+  FINDINGS.
+- Asked Seth the batched decisions. Answers (spec section 1):
+  - prefs: Profile + Home strip
+  - repeat last: ghosts
+  - app help works without consent, with no data
+  - connector hardening, BYO-key server encryption and coach history
+    (Library tab, kept until deleted) all IN
+- Authored qol1-qol15 + the spec + the What's New pipeline:
+  - `docs/releases/UNRELEASED.md`, seeded with the Aug-Oct catch-up
+  - `RELEASED.md`
+  - the standing `docs/tasks/_WHATS_NEW.md`
+  - `land-unit` and `author-task-block` updates
+- Shipped `.gitattributes` directly (migrations `eol=lf`; blobs were
+  already LF, so no content change).
+- Memory: the Aug 1 effort-mandate memory is marked REVERSED.
+- Lanes: `cursor-lane` / `-2` / `-3` on `recon/qol-r1|r-2|r-3` at
+  `8090b10`, each holding a stale recon DELIVERY.md (gitignored).
+  Delete them before dispatch.
 
 **Rule:** rewritten in place at the end of every working session; kept CAPPED
 (~300 lines). Aged session logs move VERBATIM - never summarized - to
