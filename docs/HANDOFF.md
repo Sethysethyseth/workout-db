@@ -1,40 +1,35 @@
 # HANDOFF — current state
 
-> **WHERE WE ARE (Oct 8):** the **quality-of-life wave is AUTHORED, nothing
-> dispatched.** Branch `quality-of-life-updates` (cut from `main` at
-> `b5c6777`, pushed). There are 15 blocks QUEUED (`docs/tasks/QUEUE.md`, top).
-> Design of record: `docs/specs/quality-of-life-wave.md` - Seth's Oct 8
-> rulings, the wave's design language, order and collisions, and the new
-> What's New pipeline. Recon reports: `docs/tasks/qol-r{1,2,3}-*-FINDINGS.md`.
+> **WHERE WE ARE (Oct 9):** the **quality-of-life wave is in its critic fix
+> round.** qol1-qol14 LANDED. qol15 (What's New) is audited and committed as
+> `f5f2c3e` on `cursor/qol15`, HELD because it lands LAST. The ONE critic
+> round scored **5/10** (`docs/tasks/qol-critic-round-1-FINDINGS.md`), and its
+> fix round qolf1-qolf4 is authored. qolf1-3 were DISPATCHED Oct 9; qolf4
+> waits for a free lane. Wave N = 19. Branch `quality-of-life-updates`
+> (origin `702652f`+). Design of record: `docs/specs/quality-of-life-wave.md`.
 > `ai-connector-wave` stays MERGED and LIVE (`main` = `b5c6777`).
 
-**Next action (human):** nothing blocked on you mid-wave. `COACH_KEY_SECRET` is
-set on staging Render (Oct 8). The relay runs to N/N, then hands you ONE
-smoke checklist.
+**Next action (human):** nothing blocked on you mid-wave. The relay runs to
+19/19, then hands you ONE smoke checklist.
 
 ## PICK UP HERE (next session)
 
-1. **Run the QOL relay** with `dispatch-unit` + `land-unit` (one resident
-   session). Repoint each lane first: `git checkout -B cursor/<unit>
-   quality-of-life-updates`. The lanes sit on `recon/qol-r*` branches,
-   clean, holding only stale recon DELIVERY.md files - delete those
-   first. Opening pair: qol1 + qol3 (disjoint), then qol2.
-2. **Gates inside the wave:**
-   - qol1's landing push migrates staging ("migrate staging",
-     status -> deploy -> status).
-   - qol11 needs `COACH_KEY_SECRET` on staging Render (Seth; the command
-     is in `server/.env.example` after qol11).
-   - qol6, qol7, qol10 and qol11 are privacy, cross-user or security
-     surfaces - audit them as frontier escalations.
-3. **Wave end:** ONE critic round after qol14 (Seth's Oct 6 rule), then
-   qol15 (What's New) LAST, then N/N -> Seth smokes (What's New copy at
-   `/profile/whats-new?preview=1`) -> gate. Prod before merge:
+1. **Land qolf1-qolf3** from lanes 1-3 with `land-unit`, then dispatch qolf4
+   on the first free lane. All four are file-disjoint, so land them serially
+   in any order.
+2. **Then land qol15 LAST.**
+   - cherry-pick `f5f2c3e` from `cursor/qol15`
+   - fold any fix-round ledger entries into the wave release
+   - set the release date
+   - move the consumed UNRELEASED sections to RELEASED.md
+   - its saved delivery report: this session's scratchpad `qol15-DELIVERY.md`
+3. **Wave end (19/19) -> Seth smokes.** Build the consolidated checklist
+   from QUEUE's per-unit notes. What's New copy is at
+   `/profile/whats-new?preview=1`. Then the gate. Prod before the merge:
    - the qol1 migration (Seth, by hand)
    - `COACH_KEY_SECRET` on prod Render
-4. **New standing process (Oct 8):** every landing appends a plain-language
-   entry to `docs/releases/UNRELEASED.md` (`land-unit` section 5), and
-   every wave ends with a What's New unit from `docs/tasks/_WHATS_NEW.md`
-   (`author-task-block` Finish).
+4. **Standing process (Oct 8):** every landing appends a plain-language
+   entry to `docs/releases/UNRELEASED.md` (`land-unit` section 5).
 
 ## Not in this wave (stowed; none authored)
 
@@ -154,16 +149,6 @@ Covers the F-wave AND the still-open E-wave prod smoke. Staging passed Aug 4.
 > explicitly. Dogfoods the shell repo's decision-10 no-dangling-next-
 > action requirement; `land-unit` section 5 keeps it maintained.
 
-**Updated:** October 7, 2026, late (Opus seat). Session log:
-- Read HANDOFF and continued: landed sr3-6 `468bab9` (seat-fixed drop
-  target), ran Seth's ONE-round feel critic (6/10 FAIL), authored and landed
-  the fix round sr3f1 `cf4fdee`, sr3f2 `b64de00`, sr3f3 `ccf468b` (sr3 wave
-  10/10), Seth signed off smoke round 4, pre-main gate PASS (+ seat fix
-  `1ce8fdb`), Seth applied the prod migrations, merged `7d3b91e..ef5e908`.
-- Close-out: HANDOFF split three ways (archive / REFERENCE / this file),
-  `scripts/run-lane.ps1` saved from the scratchpad and wired into
-  `dispatch-unit`, git cleanup above, lanes reset. Full log in the archive.
-
 **Updated:** October 8, 2026 (Opus seat). Session log:
 - Seth opened the next wave: `quality-of-life-updates`, with "all stowed
   changes" plus his 6 asks:
@@ -210,6 +195,45 @@ Covers the F-wave AND the still-open E-wave prod smoke. Staging passed Aug 4.
     decision.
   - Smoke items so far: history import with 8+ workout titles keeps 7 and
     names the skipped; a huge AI-import paste says "too large".
+
+**Updated:** October 9, 2026 (Opus seat). Session log:
+- Picked up after a /clear. The Oct 8 critic run had shot 67 screenshots
+  (A-M) and died before writing its report. The API showed no leftovers on
+  demo.critic or the probe account (no live workouts, key, conversations or
+  custom exercises, no block saved since Sept 30).
+- A fresh critic (separate agent) wrote round 1 from those shots: **5/10**,
+  with 3 P1 / 11 P2 / 19 P3. Preserved as `qol-critic-round-1-FINDINGS.md`
+  with the seat's triage.
+- Live re-check: #5 (the reorder "not sticking") is NOT a bug - the drop
+  reorders and marks the block Unsaved. A local draft was cleared and
+  nothing was saved.
+- REVIEWER FIX, shipped directly as `33cd671`: the Login flash on a
+  signed-in cold load (#14).
+  - Root cause: `AuthContext.jsx`. At boot, pageshow starts a second
+    `/auth/me`; the superseded first call's `finally` cleared
+    `authLoading` while the user was still null, so ProtectedRoute bounced
+    to /login for about 140ms.
+  - Fix: only the current epoch clears it; login and register now settle it
+    themselves.
+  - Verified: cold loads of / and /analytics never touch /login; logged-out
+    users still redirect; login returns to `next`.
+- Authored the fix round, file-disjoint, with no index.css (rule 2):
+  - qolf1: In-progress bar, Home card, confirm focus, Analytics sideways
+    scroll
+  - qolf2: coach page thread, composer, Stop, history delete, key form, AI
+    access copy
+  - qolf3: logger sticky header, Finish dock, labels, Add RIR, last-time cue
+  - qolf4: prefs sheet, switches, Notes pill, builder selection, lift
+- Not fixed: #11 (BK's caps look), and the pre-existing P3s #26, #28, #30,
+  #31 and #32 - stowed.
+- Dispatched qolf1/2/3 on auto in lanes 1/2/3 at `702652f`. Lane 2's qol15
+  DELIVERY.md was saved to this session's scratchpad first; the commit is
+  safe on `cursor/qol15`.
+- Smoke items so far (from QUEUE notes):
+  - the Sets count picker reads 1 while 4 ghost rows show (qol7)
+  - the bottom nav sits under the Finish dock on a live session (qol12)
+  - the cold-server loader instead of instant Login for logged-out visitors
+    (qol13 gate note)
 
 **Rule:** rewritten in place at the end of every working session; kept CAPPED
 (~300 lines). Aged session logs move VERBATIM - never summarized - to
