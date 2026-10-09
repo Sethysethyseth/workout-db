@@ -536,27 +536,6 @@
   min-width: 44px;
 }
 
-.session-finish-confirm {
-  gap: 8px;
-}
-
-.session-finish-confirm__title {
-  margin: 0;
-  font-weight: 600;
-}
-
-.session-finish-confirm__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.session-finish-confirm__actions .btn,
-.session-finish-confirm__go {
-  min-height: 44px;
-  flex: 1 1 auto;
-}
-
 .session-leave-confirm {
   gap: 8px;
   margin: 0 0 8px;

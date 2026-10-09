@@ -91,6 +91,9 @@ export function DashboardPage() {
   const [heroNow, setHeroNow] = useState(() => Date.now());
   const [workoutSavedFlash, setWorkoutSavedFlash] = useState(false);
   const [workoutDiscardedFlash, setWorkoutDiscardedFlash] = useState(false);
+  // Bumped after an in-place discard so WeeklyReport (fetches once on
+  // mount) refetches and stops counting the discarded workout.
+  const [weeklyReportKey, setWeeklyReportKey] = useState(0);
   const [activeBlock, setActiveBlock] = useState(null);
   const [activeBlockReady, setActiveBlockReady] = useState(false);
   const [homeHasRunHint, setHomeHasRunHint] = useState(() => readHomeHasRunHint());
@@ -374,6 +377,11 @@ export function DashboardPage() {
             nowMs={heroNow}
             onResume={() => navigate(`/sessions/${activeSession.id}`)}
             setsProgress={liveSetsProgress}
+            onDiscarded={() => {
+              setWorkoutDiscardedFlash(true);
+              setWeeklyReportKey((k) => k + 1);
+              refresh?.();
+            }}
           />
         ) : (
           <StartWorkoutHero
@@ -423,6 +431,7 @@ export function DashboardPage() {
           wins; the day strip shows only when no block card does. Same
           from/to window as WeeklyReport's summary (rolling 7 days). */}
       <WeeklyReport
+        key={weeklyReportKey}
         weekStrip={
           showDayStrip ? (
             <WeekStrip

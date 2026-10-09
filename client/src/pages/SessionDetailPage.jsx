@@ -20,6 +20,7 @@ import { WorkoutTemplateTableView } from "../components/templates/WorkoutTemplat
 import { WorkoutSetRowShell } from "../components/workout/WorkoutSetRowShell.jsx";
 import { MetricInfoButton } from "../components/workout/MetricInfoButton.jsx";
 import { AddExerciseToLibrarySheet } from "../components/workout/AddExerciseToLibrarySheet.jsx";
+import { ConfirmPanel } from "../components/ConfirmPanel.jsx";
 import { CoachPanel } from "../components/coach/CoachPanel.jsx";
 import { CompletedSessionSummary } from "../components/workout/CompletedSessionSummary.jsx";
 import { getAdHocSessionTitle, setAdHocSessionTitle } from "../lib/adHocSessionTitle.js";
@@ -1557,7 +1558,7 @@ function SessionExerciseBlock({
   onOpenAddToLibrary,
   /** Callback: (exerciseName, weight, reps) => boolean. Passed from parent for completed views. */
   setHasPR = () => false,
-  /** Soft-cue missing effort fields on core-logged sets when finish is blocked. */
+  /** Soft-cue missing effort fields after "Add RIR" / "Add RPE" from finish. */
   highlightMissingEffort = false,
   /** Discard in flight / succeeded: freeze field writes without flipping completed chrome. */
   writesFrozen = false,
@@ -1571,6 +1572,8 @@ function SessionExerciseBlock({
   const prevSetsLenRef = useRef(null);
   const autoCreateBusyRef = useRef(false);
   const [confirmRemove, setConfirmRemove] = useState(false);
+  const [pairRemoveIds, setPairRemoveIds] = useState(null);
+  const [pairRemoveBusy, setPairRemoveBusy] = useState(false);
 
   useEffect(() => {
     setPerSideOverride(null);
@@ -1656,13 +1659,11 @@ function SessionExerciseBlock({
       if (!onDeleteSet) return;
       if (perSideMode && unit?.type === "pair" && unit.sets.length === 2) {
         const filled = unit.sets.some((s) => !sessionSetRowIsBlank(s));
-        if (filled) {
-          const ok = window.confirm(
-            "Remove this left/right pair? Both sides will be deleted, including any entered weight, reps, or notes."
-          );
-          if (!ok) return;
-        }
         const ids = [...unit.sets].reverse().map((s) => s.id);
+        if (filled) {
+          setPairRemoveIds(ids);
+          return;
+        }
         for (const id of ids) {
           void onDeleteSet(id, { skipConfirm: true });
         }
@@ -1672,6 +1673,19 @@ function SessionExerciseBlock({
     },
     [onDeleteSet, perSideMode, writesFrozen]
   );
+
+  async function confirmPairRemove() {
+    if (!pairRemoveIds || pairRemoveBusy || !onDeleteSet) return;
+    setPairRemoveBusy(true);
+    try {
+      for (const id of pairRemoveIds) {
+        await onDeleteSet(id, { skipConfirm: true });
+      }
+      setPairRemoveIds(null);
+    } finally {
+      setPairRemoveBusy(false);
+    }
+  }
 
   const namePart =
     isBlankSessionExerciseName(rawName) || !String(rawName).trim()
@@ -2030,6 +2044,19 @@ function SessionExerciseBlock({
           </div>
         </>
       ) : null}
+      <ConfirmPanel
+        open={pairRemoveIds != null}
+        tone="danger"
+        title="Remove this left and right pair?"
+        body="Both sides will be deleted, including any logged weight, reps, or notes."
+        confirmLabel="Remove pair"
+        cancelLabel="Keep"
+        busy={pairRemoveBusy}
+        onConfirm={() => void confirmPairRemove()}
+        onCancel={() => {
+          if (!pairRemoveBusy) setPairRemoveIds(null);
+        }}
+      />
     </div>
   );
 }
@@ -2061,6 +2088,10 @@ export function SessionDetailPage() {
   const [discardBusy, setDiscardBusy] = useState(false);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
   const [confirmFinish, setConfirmFinish] = useState(false);
+  const [missingEffortHighlightOn, setMissingEffortHighlightOn] = useState(false);
+  const [scrollMissingSetId, setScrollMissingSetId] = useState(null);
+  const [setCountConfirm, setSetCountConfirm] = useState(null);
+  const [setCountConfirmBusy, setSetCountConfirmBusy] = useState(false);
   const [confirmLeave, setConfirmLeave] = useState(false);
   const [discardMessage, setDiscardMessage] = useState(null);
   const [resolutionTick, setResolutionTick] = useState(0);
@@ -2122,7 +2153,6 @@ export function SessionDetailPage() {
   const discardLeavingRef = useRef(false);
   const discardBtnRef = useRef(null);
   const keepLoggingBtnRef = useRef(null);
-  const finishAnywayBtnRef = useRef(null);
   const sessionNoteRef = useRef(null);
   /** bks2: per-exercise slot stats for the block session progress bar. */
   const [blockSlotStats, setBlockSlotStats] = useState(() => new Map());
@@ -2505,15 +2535,13 @@ export function SessionDetailPage() {
   }, [liveBlockDay]);
 
   useEffect(() => {
-    if (!confirmFinish || completeBusy) return;
-    const t = setTimeout(() => setConfirmFinish(false), 10000);
-    return () => clearTimeout(t);
-  }, [confirmFinish, completeBusy]);
-
-  useEffect(() => {
-    if (!confirmFinish || completeBusy) return;
-    finishAnywayBtnRef.current?.focus();
-  }, [confirmFinish, completeBusy]);
+    if (scrollMissingSetId == null) return;
+    const id = scrollMissingSetId;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const el = document.querySelector(`[data-session-set-id="${id}"]`);
+    el?.scrollIntoView({ block: "center", behavior: reduce ? "auto" : "smooth" });
+    setScrollMissingSetId(null);
+  }, [scrollMissingSetId]);
 
   useEffect(() => {
     if (!confirmLeave) return;
@@ -2892,13 +2920,12 @@ export function SessionDetailPage() {
         const rowsToRemove = sorted.slice(sorted.length - pairsToRemove * 2);
         const anyFilled = rowsToRemove.some((s) => !sessionSetRowIsBlank(s));
         if (anyFilled) {
-          const ok = window.confirm(
-            `Lower the set count to ${targetCount}? This removes ${pairsToRemove} left/right pair(s) from the end, including some with entered weight, reps, or notes.`
-          );
-          if (!ok) {
-            setSession(sess);
-            return;
-          }
+          setSetCountConfirm({
+            count: rowsToRemove.length,
+            rows: rowsToRemove,
+            restore: sess,
+          });
+          return;
         }
         for (let i = rowsToRemove.length - 1; i >= 0; i -= 1) {
           await sessionApi.deleteSet(rowsToRemove[i].id);
@@ -2937,13 +2964,12 @@ export function SessionDetailPage() {
       const toRemove = sorted.slice(targetCount);
       const anyFilled = toRemove.some((s) => !sessionSetRowIsBlank(s));
       if (anyFilled) {
-        const ok = window.confirm(
-          `Lower the set count to ${targetCount}? This removes ${toRemove.length} set(s) from the end, including some with entered weight, reps, or notes.`
-        );
-        if (!ok) {
-          setSession(sess);
-          return;
-        }
+        setSetCountConfirm({
+          count: toRemove.length,
+          rows: toRemove,
+          restore: sess,
+        });
+        return;
       }
       for (let i = toRemove.length - 1; i >= 0; i -= 1) {
         await sessionApi.deleteSet(toRemove[i].id);
@@ -2956,6 +2982,36 @@ export function SessionDetailPage() {
       await load();
     } finally {
       setAdjustingSetCountExerciseId(null);
+    }
+  }
+
+  function cancelSetCountRemoval() {
+    if (setCountConfirmBusy) return;
+    if (setCountConfirm?.restore) setSession(setCountConfirm.restore);
+    setSetCountConfirm(null);
+  }
+
+  async function confirmSetCountRemoval() {
+    const pending = setCountConfirm;
+    if (!pending || setCountConfirmBusy) return;
+    setSetCountConfirmBusy(true);
+    setError(null);
+    try {
+      const rows = pending.rows;
+      for (let i = rows.length - 1; i >= 0; i -= 1) {
+        await sessionApi.deleteSet(rows[i].id);
+      }
+      const end = await sessionApi.getSessionById(sessionId);
+      if (end?.session) setSession(end.session);
+      setSetCountConfirm(null);
+    } catch (err) {
+      if (!writesFrozenRef.current) {
+        setError(err);
+        await load();
+      }
+      setSetCountConfirm(null);
+    } finally {
+      setSetCountConfirmBusy(false);
     }
   }
 
@@ -3194,9 +3250,9 @@ export function SessionDetailPage() {
     !isCompleted && liveEffortSignal != null
       ? coreLoggedSets.filter((s) => !sessionSetHasSignalEffort(s, liveEffortSignal)).length
       : 0;
-  const effortMandateOk = liveEffortSignal == null || setsMissingEffort === 0;
-  const canFinishWorkout = totalSetsLogged >= 1 && effortMandateOk;
-  const highlightMissingEffort = !isCompleted && setsMissingEffort > 0;
+  const canFinishWorkout = totalSetsLogged >= 1;
+  const highlightMissingEffort =
+    missingEffortHighlightOn && !isCompleted && setsMissingEffort > 0;
   const readonlyWorkoutName = isFromTemplate
     ? session.workoutTemplate.name
     : isFromBlock
@@ -3225,13 +3281,49 @@ export function SessionDetailPage() {
     else navigate("/");
   }
 
+  function firstSetMissingEffort() {
+    if (liveEffortSignal == null) return null;
+    for (const se of orderedSessionExercises) {
+      const list = [...(setsByExercise.get(se.id) || [])].sort((a, b) => a.order - b.order);
+      for (const s of list) {
+        if (sessionSetHasCoreLogged(s) && !sessionSetHasSignalEffort(s, liveEffortSignal)) return s;
+      }
+    }
+    return null;
+  }
+
   function requestFinishWorkout() {
     if (!canFinishWorkout || completeBusy || discardBusy) return;
-    if (isFromBlock && blockUnloggedPlanned > 0) {
+    const effortGap = setsMissingEffort > 0;
+    const planGap = isFromBlock && blockUnloggedPlanned > 0;
+    if (effortGap || planGap) {
       setConfirmFinish(true);
       return;
     }
     void onComplete();
+  }
+
+  function cancelFinishConfirm() {
+    if (completeBusy) return;
+    const effortOnly = setsMissingEffort > 0 && !(isFromBlock && blockUnloggedPlanned > 0);
+    setConfirmFinish(false);
+    if (!effortOnly) return;
+    setMissingEffortHighlightOn(true);
+    const first = firstSetMissingEffort();
+    if (!first) return;
+    const owner = orderedSessionExercises.find((se) =>
+      (setsByExercise.get(se.id) || []).some((s) => s.id === first.id)
+    );
+    if (owner) {
+      setActiveExerciseId(owner.id);
+      setCollapsedExerciseIds((prev) => {
+        if (!prev.has(owner.id)) return prev;
+        const next = new Set(prev);
+        next.delete(owner.id);
+        return next;
+      });
+    }
+    setScrollMissingSetId(first.id);
   }
 
   async function commitQuickTitle() {
@@ -3272,6 +3364,45 @@ export function SessionDetailPage() {
     }
     leaveSessionNow();
   }
+
+  const finishSignalName = liveEffortSignal === "rpe" ? "RPE" : "RIR";
+  const finishEffortGap = setsMissingEffort > 0;
+  const finishPlanGap = isFromBlock && blockUnloggedPlanned > 0;
+  const effortGapLine =
+    setsMissingEffort === 1
+      ? `1 set has no ${finishSignalName}`
+      : `${setsMissingEffort} sets have no ${finishSignalName}`;
+  const planGapLine = `${blockUnloggedPlanned} of ${blockProgress.total} planned sets not logged`;
+  let finishTitle = "";
+  let finishBody = null;
+  let finishCancelLabel = "Keep logging";
+  if (finishEffortGap && finishPlanGap) {
+    finishTitle = "Finish with gaps?";
+    finishCancelLabel = "Keep logging";
+    finishBody = (
+      <>
+        <p className="muted small confirm-panel__copy">{effortGapLine}</p>
+        <p className="muted small confirm-panel__copy">{planGapLine}</p>
+      </>
+    );
+  } else if (finishEffortGap) {
+    finishTitle = effortGapLine;
+    finishBody =
+      "They'll still be saved, but they won't count toward effort stats like stimulating sets.";
+    finishCancelLabel = `Add ${finishSignalName}`;
+  } else if (finishPlanGap) {
+    finishTitle = planGapLine;
+    finishBody = "Unlogged sets won't count toward this block day.";
+    finishCancelLabel = "Keep logging";
+  }
+
+  const setCountN = setCountConfirm?.count ?? 0;
+  const setCountTitle =
+    setCountN === 1 ? "Remove the last set?" : `Remove the last ${setCountN} sets?`;
+  const setCountBody =
+    setCountN === 1
+      ? "Logged values in it will be deleted."
+      : "Logged values in them will be deleted.";
 
   return (
     <div
@@ -3617,7 +3748,9 @@ export function SessionDetailPage() {
                       onDeleteSet={onDeleteSet}
                       onDeleteExercise={onDeleteExercise}
                       onAdjustSetCount={onAdjustSetCountForExercise}
-                      setCountBusy={adjustingSetCountExerciseId === se.id}
+                      setCountBusy={
+                        adjustingSetCountExerciseId === se.id || setCountConfirm != null
+                      }
                       collapsible
                       isCollapsed={collapsedExerciseIds.has(se.id)}
                       onToggleCollapsed={() => toggleExerciseCollapsed(se.id)}
@@ -3724,70 +3857,48 @@ export function SessionDetailPage() {
       {!isCompleted ? (
         <div className="session-finish-dock" role="region" aria-label="Finish workout">
           <div className="session-finish-dock__inner stack">
-            {confirmFinish && isFromBlock ? (
-              <div className="stack session-finish-confirm">
-                <p className="muted small session-finish-confirm__title">
-                  {`${blockUnloggedPlanned} of ${blockProgress.total} planned sets not logged - finish anyway?`}
-                </p>
-                <div className="session-finish-confirm__actions">
-                  <button
-                    ref={finishAnywayBtnRef}
-                    type="button"
-                    className="btn session-finish-btn session-finish-confirm__go"
-                    onClick={() => void onComplete()}
-                    disabled={completeBusy || discardBusy}
-                    aria-busy={completeBusy}
-                  >
-                    {completeBusy ? "Saving…" : "Finish anyway"}
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    onClick={() => setConfirmFinish(false)}
-                    disabled={completeBusy}
-                  >
-                    Keep logging
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <>
-                <p className="muted small session-finish-dock__hint" style={{ margin: 0 }}>
-                  Autosaves as you go. Finishing saves it to your history.
-                </p>
-                {!canFinishWorkout ? (
-                  <p className="muted small session-finish-dock__hint" style={{ margin: 0 }}>
-                    {totalSetsLogged < 1 ? (
-                      <>
-                        Log at least one set anywhere to enable <strong>Finish workout</strong>.
-                      </>
-                    ) : setsMissingEffort > 0 ? (
-                      <>
-                        Add {liveEffortSignal === "rpe" ? "RPE" : "RIR"} on {setsMissingEffort} more{" "}
-                        {setsMissingEffort === 1 ? "set" : "sets"} to enable{" "}
-                        <strong>Finish workout</strong>.
-                      </>
-                    ) : (
-                      <>
-                        Log at least one set anywhere to enable <strong>Finish workout</strong>.
-                      </>
-                    )}
-                  </p>
-                ) : null}
-                <button
-                  type="button"
-                  className="btn session-finish-btn session-finish-dock__btn"
-                  onClick={() => requestFinishWorkout()}
-                  disabled={!canFinishWorkout || completeBusy || discardBusy}
-                  aria-busy={completeBusy}
-                >
-                  {completeBusy ? "Saving…" : "Finish workout"}
-                </button>
-              </>
-            )}
+            <p className="muted small session-finish-dock__hint" style={{ margin: 0 }}>
+              Autosaves as you go. Finishing saves it to your history.
+            </p>
+            {totalSetsLogged < 1 ? (
+              <p className="muted small session-finish-dock__hint" style={{ margin: 0 }}>
+                Log at least one set anywhere to enable <strong>Finish workout</strong>.
+              </p>
+            ) : null}
+            <button
+              type="button"
+              className="btn session-finish-btn session-finish-dock__btn"
+              onClick={() => requestFinishWorkout()}
+              disabled={!canFinishWorkout || completeBusy || discardBusy}
+              aria-busy={completeBusy}
+            >
+              {completeBusy ? "Saving…" : "Finish workout"}
+            </button>
           </div>
         </div>
       ) : null}
+
+      <ConfirmPanel
+        open={confirmFinish}
+        title={finishTitle}
+        body={finishBody}
+        confirmLabel="Finish anyway"
+        cancelLabel={finishCancelLabel}
+        busy={completeBusy}
+        onConfirm={() => void onComplete()}
+        onCancel={cancelFinishConfirm}
+      />
+      <ConfirmPanel
+        open={setCountConfirm != null}
+        tone="danger"
+        title={setCountTitle}
+        body={setCountBody}
+        confirmLabel="Remove sets"
+        cancelLabel="Keep"
+        busy={setCountConfirmBusy}
+        onConfirm={() => void confirmSetCountRemoval()}
+        onCancel={cancelSetCountRemoval}
+      />
 
       <AddExerciseToLibrarySheet
         open={Boolean(addToLibrarySheet)}

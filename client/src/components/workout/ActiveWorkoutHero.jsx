@@ -1,9 +1,30 @@
+import { useState } from "react";
+import * as sessionApi from "../../api/sessionApi.js";
+import { ConfirmPanel } from "../ConfirmPanel.jsx";
 import {
   blockDayPrimaryTitle,
   sessionDisplayBlockName,
   sessionDisplayTitle,
   sessionQuickExerciseLabel,
 } from "../../lib/sessionDisplay.js";
+
+const DISCARD_ERROR = "Couldn't discard. Check your connection and try again.";
+
+function canOfferDiscard(session) {
+  return Boolean(session) && !session.completedAt && session.reopenedAt == null;
+}
+
+function loggedSetCount(session) {
+  if (Array.isArray(session?.sets)) return session.sets.length;
+  const n = Number(session?._count?.sets);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function discardBody(count) {
+  if (!count) return "Nothing has been logged yet.";
+  const noun = count === 1 ? "set" : "sets";
+  return `Your ${count} logged ${noun} will be deleted. This can't be undone.`;
+}
 
 function formatStartedShort(value) {
   if (!value) return null;
@@ -35,7 +56,11 @@ function startedAtMs(session) {
 /**
  * @param {{ logged: number, planned: number } | null | undefined} setsProgress
  */
-export function ActiveWorkoutHero({ session, nowMs, onResume, setsProgress = null }) {
+export function ActiveWorkoutHero({ session, nowMs, onResume, setsProgress = null, onDiscarded }) {
+  const [discardOpen, setDiscardOpen] = useState(false);
+  const [discardBusy, setDiscardBusy] = useState(false);
+  const [discardError, setDiscardError] = useState(null);
+  const offerDiscard = canOfferDiscard(session);
   const blockDayLabel = blockDayPrimaryTitle(session);
   const isBlockDay = blockDayLabel != null;
   const title = isBlockDay ? blockDayLabel : sessionDisplayTitle(session);
@@ -55,11 +80,40 @@ export function ActiveWorkoutHero({ session, nowMs, onResume, setsProgress = nul
       : null;
   const ratio = planned != null && logged != null ? Math.min(1, logged / planned) : null;
 
+  async function confirmDiscard() {
+    if (discardBusy || !session?.id) return;
+    setDiscardBusy(true);
+    setDiscardError(null);
+    try {
+      await sessionApi.discardSession(session.id);
+      setDiscardOpen(false);
+      onDiscarded?.();
+    } catch {
+      setDiscardError(DISCARD_ERROR);
+      setDiscardBusy(false);
+    }
+  }
+
+  const count = loggedSetCount(session);
+
   return (
     <section
       className="workout-hero workout-hero--active card card--notched card--live"
       aria-labelledby="workout-hero-active-headline"
     >
+      {offerDiscard ? (
+        <button
+          type="button"
+          className="session-discard-x confirm-discard-x"
+          aria-label="Discard workout"
+          onClick={() => {
+            setDiscardError(null);
+            setDiscardOpen(true);
+          }}
+        >
+          <span aria-hidden="true">×</span>
+        </button>
+      ) : null}
       <p className="workout-hero__eyebrow muted small">In progress</p>
       <h1 id="workout-hero-active-headline" className="workout-hero__headline">
         Resume workout
@@ -102,6 +156,28 @@ export function ActiveWorkoutHero({ session, nowMs, onResume, setsProgress = nul
       <button type="button" className="btn workout-hero__cta" onClick={onResume}>
         Resume workout
       </button>
+      <ConfirmPanel
+        open={discardOpen}
+        tone="danger"
+        title="Discard this workout?"
+        body={
+          <>
+            <p className="muted small confirm-panel__copy">{discardBody(count)}</p>
+            {discardError ? (
+              <p className="confirm-panel__error" role="alert">
+                {discardError}
+              </p>
+            ) : null}
+          </>
+        }
+        confirmLabel="Discard workout"
+        cancelLabel="Keep workout"
+        busy={discardBusy}
+        onConfirm={() => void confirmDiscard()}
+        onCancel={() => {
+          if (!discardBusy) setDiscardOpen(false);
+        }}
+      />
     </section>
   );
 }

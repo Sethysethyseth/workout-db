@@ -1,7 +1,27 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import * as sessionApi from "../../api/sessionApi.js";
 import { useActiveSession } from "../../context/ActiveSessionContext.jsx";
 import { sessionDisplayTitle, sessionQuickExerciseLabel } from "../../lib/sessionDisplay.js";
+import { ConfirmPanel } from "../ConfirmPanel.jsx";
+
+const DISCARD_ERROR = "Couldn't discard. Check your connection and try again.";
+
+function canOfferDiscard(session) {
+  return Boolean(session) && !session.completedAt && session.reopenedAt == null;
+}
+
+function loggedSetCount(session) {
+  if (Array.isArray(session?.sets)) return session.sets.length;
+  const n = Number(session?._count?.sets);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function discardBody(count) {
+  if (!count) return "Nothing has been logged yet.";
+  const noun = count === 1 ? "set" : "sets";
+  return `Your ${count} logged ${noun} will be deleted. This can't be undone.`;
+}
 
 function formatElapsed(ms) {
   if (!Number.isFinite(ms) || ms <= 0) return null;
@@ -23,6 +43,9 @@ export function PersistentWorkoutBar() {
   const location = useLocation();
   const { activeSession } = useActiveSession();
   const [now, setNow] = useState(() => Date.now());
+  const [discardOpen, setDiscardOpen] = useState(false);
+  const [discardBusy, setDiscardBusy] = useState(false);
+  const [discardError, setDiscardError] = useState(null);
 
   useEffect(() => {
     if (!activeSession) return;
@@ -47,21 +70,79 @@ export function PersistentWorkoutBar() {
   if (location.pathname === "/" || location.pathname === "/blocks/import") return null;
   if (!activeSession) return null;
 
+  const offerDiscard = canOfferDiscard(activeSession);
+  const count = loggedSetCount(activeSession);
+
+  async function confirmDiscard() {
+    if (discardBusy) return;
+    setDiscardBusy(true);
+    setDiscardError(null);
+    try {
+      await sessionApi.discardSession(activeSession.id);
+      setDiscardOpen(false);
+      navigate("/", { state: { workoutDiscarded: true } });
+    } catch {
+      setDiscardError(DISCARD_ERROR);
+      setDiscardBusy(false);
+    }
+  }
+
   return (
-    <button
-      type="button"
-      className="persistent-workout-bar card card--live"
-      aria-label={`Active workout: ${title}. Resume workout.`}
-      onClick={() => navigate(`/sessions/${activeSession.id}`)}
-    >
-      <div className="persistent-workout-bar__left">
-        <span className="persistent-workout-bar__eyebrow muted small">
-          In progress{elapsed ? ` · ${elapsed}` : ""}
-        </span>
-        <span className="persistent-workout-bar__title">{title}</span>
-        {exercise ? <span className="persistent-workout-bar__sub muted small">{exercise}</span> : null}
+    <>
+      <div className="persistent-workout-bar card card--live">
+        <button
+          type="button"
+          className="persistent-workout-bar__main"
+          aria-label={`Active workout: ${title}. Resume workout.`}
+          onClick={() => navigate(`/sessions/${activeSession.id}`)}
+        >
+          <div className="persistent-workout-bar__left">
+            <span className="persistent-workout-bar__eyebrow muted small">
+              In progress{elapsed ? ` · ${elapsed}` : ""}
+            </span>
+            <span className="persistent-workout-bar__title">{title}</span>
+            {exercise ? (
+              <span className="persistent-workout-bar__sub muted small">{exercise}</span>
+            ) : null}
+          </div>
+          <span className="persistent-workout-bar__cta">Resume workout</span>
+        </button>
+        {offerDiscard ? (
+          <button
+            type="button"
+            className="session-discard-x confirm-discard-x"
+            aria-label="Discard workout"
+            onClick={() => {
+              setDiscardError(null);
+              setDiscardOpen(true);
+            }}
+          >
+            <span aria-hidden="true">×</span>
+          </button>
+        ) : null}
       </div>
-      <span className="persistent-workout-bar__cta">Resume workout</span>
-    </button>
+      <ConfirmPanel
+        open={discardOpen}
+        tone="danger"
+        title="Discard this workout?"
+        body={
+          <>
+            <p className="muted small confirm-panel__copy">{discardBody(count)}</p>
+            {discardError ? (
+              <p className="confirm-panel__error" role="alert">
+                {discardError}
+              </p>
+            ) : null}
+          </>
+        }
+        confirmLabel="Discard workout"
+        cancelLabel="Keep workout"
+        busy={discardBusy}
+        onConfirm={() => void confirmDiscard()}
+        onCancel={() => {
+          if (!discardBusy) setDiscardOpen(false);
+        }}
+      />
+    </>
   );
 }

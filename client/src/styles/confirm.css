@@ -1,0 +1,98 @@
+/* Confirm sheet motion and actions. Chrome is the existing
+   start-workout-picker sheet (no new sheet style). */
+
+.confirm-panel__copy {
+  margin: 0;
+}
+
+.confirm-panel__body {
+  display: grid;
+  gap: 6px;
+}
+
+.confirm-panel__error {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-error-text);
+}
+
+.confirm-panel__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.confirm-panel__actions button {
+  min-height: 44px;
+  min-width: 44px;
+  width: 100%;
+}
+
+.confirm-panel__actions button:focus-visible,
+.confirm-discard-x:focus-visible {
+  outline: 2px solid var(--color-interactive);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .confirm-panel__sheet {
+    animation: confirm-panel-in 200ms ease-out;
+  }
+}
+
+@keyframes confirm-panel-in {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .confirm-panel__sheet {
+    animation: none;
+  }
+}
+
+/* Home hero: discard sits in the top-right, clear of Resume. */
+.workout-hero--active:has(> .confirm-discard-x) {
+  padding-right: 64px;
+}
+
+.workout-hero--active > .confirm-discard-x {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+}
+
+/* Floating bar: at least 8px between Resume and discard. The bar's own
+   gap is 12px; this keeps the hit target from stretching. */
+.persistent-workout-bar__main {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.persistent-workout-bar:has(.persistent-workout-bar__main) {
+  cursor: default;
+}
+
+.persistent-workout-bar .confirm-discard-x {
+  flex: 0 0 auto;
+  margin-left: 8px;
+}
