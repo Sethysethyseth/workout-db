@@ -1,35 +1,92 @@
 # HANDOFF — current state
 
-> **WHERE WE ARE (Oct 9):** the **quality-of-life wave is in its critic fix
-> round.** qol1-qol14 LANDED. qol15 (What's New) is audited and committed as
-> `f5f2c3e` on `cursor/qol15`, HELD because it lands LAST. The ONE critic
-> round scored **5/10** (`docs/tasks/qol-critic-round-1-FINDINGS.md`), and its
-> fix round qolf1-qolf4 is authored. qolf1-3 were DISPATCHED Oct 9; qolf4
-> waits for a free lane. Wave N = 19. Branch `quality-of-life-updates`
-> (origin `702652f`+). Design of record: `docs/specs/quality-of-life-wave.md`.
-> `ai-connector-wave` stays MERGED and LIVE (`main` = `b5c6777`).
+> **WHERE WE ARE (Oct 9, late):** the **quality-of-life wave is COMPLETE,
+> 19/19 LANDED** on `quality-of-life-updates`: qol1-qol15, plus the critic
+> fix round qolf1-qolf4 and the direct auth fix `33cd671`. HARD STOP for
+> Seth's smoke - no gate, no merge prep until he signs off. Design of record:
+> `docs/specs/quality-of-life-wave.md`. `main` = `b5c6777` (unchanged).
 
-**Next action (human):** nothing blocked on you mid-wave. The relay runs to
-19/19, then hands you ONE smoke checklist.
+**Next action (human):** smoke the wave on the staging Vercel deploy of
+`quality-of-life-updates` with the checklist below, then sign off or report
+what's off.
 
 ## PICK UP HERE (next session)
 
-1. **Land qolf1-qolf3** from lanes 1-3 with `land-unit`, then dispatch qolf4
-   on the first free lane. All four are file-disjoint, so land them serially
-   in any order.
-2. **Then land qol15 LAST.**
-   - cherry-pick `f5f2c3e` from `cursor/qol15`
-   - fold any fix-round ledger entries into the wave release
-   - set the release date
-   - move the consumed UNRELEASED sections to RELEASED.md
-   - its saved delivery report: this session's scratchpad `qol15-DELIVERY.md`
-3. **Wave end (19/19) -> Seth smokes.** Build the consolidated checklist
-   from QUEUE's per-unit notes. What's New copy is at
-   `/profile/whats-new?preview=1`. Then the gate. Prod before the merge:
-   - the qol1 migration (Seth, by hand)
-   - `COACH_KEY_SECRET` on prod Render
-4. **Standing process (Oct 8):** every landing appends a plain-language
-   entry to `docs/releases/UNRELEASED.md` (`land-unit` section 5).
+1. **Seth's smoke findings** come in as diagnosis blocks and reset the
+   sign-off. Sign-off -> the **pre-main gate** (`pre-main-review`, Opus
+   seat) over `b5c6777..HEAD`.
+2. **Before the merge (prod, Seth):**
+   - apply the qol1 migration by hand (`UserCoachKey`, `CoachConversation`,
+     `CoachMessage`)
+   - set `COACH_KEY_SECRET` on prod Render
+   - bump the What's New `2026-10-quality-of-life` date if the merge is not
+     on Oct 9
+3. **Gate notes to carry:**
+   - qol13: a logged-out visitor on a cold server waits on "Loading
+     session"
+   - qolf1: the bar's column is matched by pathname (a new narrow-column
+     page needs a line)
+   - qolf1: ConfirmPanel's focus ring also shows on a tap open
+   - qol11: `scripts/smoke-coach.mjs --key` is inert
+   - no rate limiter on `/block-templates/import*` or `/block-runs`
+
+## Wave smoke checklist (staging Vercel, on the phone)
+
+- **Logging setup:**
+  - The Home strip under Start a workout shows your setup. Notes reads
+    "Notes on" only when both kinds are on.
+  - Tapping the strip opens Logging setup: it fits one screen, off switches
+    are visible, and kg updates the strip live.
+  - Profile > Training is the same form and says "on this device".
+- **The logger:**
+  - No unit or RIR toggles inside a workout.
+  - Only the exercise name stays pinned; its "..." removes the exercise
+    after a confirm.
+  - Builder view / Table view are in sentence case.
+- **Repeat last time (on):**
+  - Empty sets show grey numbers and "Last time: <date>".
+  - The set number is outlined with a check, and tapping it logs those
+    numbers with no effort.
+- **Rest timer:**
+  - It starts after a logged set and sits above Finish: -15s, +15s, Skip.
+  - It keeps counting when you leave and come back.
+  - The Finish dock hides while the phone keypad is up.
+- **Finish without effort:**
+  - Finish with some RIR missing shows "N sets have no RIR". Add RIR lands
+    on the first missing field, highlighted. Finish anyway also works.
+  - RIR 0 counts as filled.
+- **Discard:**
+  - The x on the Home card, or on the In progress bar, asks "Discard this
+    workout?".
+  - Then a "Workout discarded" notice with a dismiss x.
+  - The bar says "Resume" on the phone and lines up with the page on a
+    laptop.
+- **Coach:**
+  - The Home chat bubble opens /coach: suggestion rows, and answers come
+    into view on their own. Stop is readable.
+  - Help questions work with AI access off.
+  - Library > Coach lists conversations. Reopening one fills the screen;
+    the trash icon and Delete all both confirm first.
+- **Own key:** Profile > AI access stacks the form. Save shows "Key ending
+  in ...", and Remove confirms.
+- **Builder:**
+  - Hold an exercise: the list collapses, the card lifts with a glow, and
+    a drop reorders it.
+  - The selected week, day and Edit tab share one accent look.
+  - Recent shows in an empty search. Per side shows only on one-sided lifts.
+- **Library > Exercises:** edit your own exercise, rename it, and past
+  workouts show the new name.
+- **Import:** history with 8+ workout titles keeps 7 and names the
+  skipped. A huge AI paste says "too large".
+- **Small fixes:**
+  - Crimson "good" is green, and Execution shows whole numbers.
+  - Analytics > Strength doesn't slide sideways.
+  - Opening the app while signed in shows no Login flash.
+- **What's New:** read both releases at `/profile/whats-new?preview=1`. The
+  Latest update card shows at `/profile?preview=1`.
+- **Known, not regressions:**
+  - the Sets picker can read fewer than the ghost rows shown (qol7)
+  - the bottom nav sits under the Finish dock on a live workout (qol12)
 
 ## Not in this wave (stowed; none authored)
 
@@ -234,6 +291,23 @@ Covers the F-wave AND the still-open E-wave prod smoke. Staging passed Aug 4.
   - the bottom nav sits under the Finish dock on a live session (qol12)
   - the cold-server loader instead of instant Login for logged-out visitors
     (qol13 gate note)
+
+- Fix round landed, serially:
+  - qolf3 `e9a893a` (9 min). Reviewer fixes: the sticky row wrapped the
+    "..."; bare Keep buttons now say what they keep.
+  - qolf1 `dd2052f` (14 min). Reviewer fix: Resume spans the Home card.
+  - qolf2 `2c59605` (12 min). Reviewer fixes: the remove-key copy claimed a
+    fallback only entitled accounts get; the coach copy names Analytics
+    again.
+  - qolf4 `6483ec4` (32 min).
+- Every real-app check used the lane's own client on :5173 against the
+  local staging-DB API; vite was swapped per lane. The main-tree vite was
+  stopped. Lane 3's vite (pid 19048) may still run - stop it.
+- Cleanup on demo.critic: sessions 486-488 were discarded; conversations
+  deleted; the fake key removed; no block saved; no draft left.
+- qol15 landed last as `9a57cef`, with the fix round folded into its
+  details and the date set to 2026-10-09. The ledger moved to RELEASED.md.
+  The wave is 19/19 - HARD STOP for smoke.
 
 **Rule:** rewritten in place at the end of every working session; kept CAPPED
 (~300 lines). Aged session logs move VERBATIM - never summarized - to
