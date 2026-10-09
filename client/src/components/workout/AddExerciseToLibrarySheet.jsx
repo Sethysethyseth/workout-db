@@ -74,6 +74,34 @@ function muscleRolesFromSearchRow(row) {
   return roles;
 }
 
+/** Stored UserExercise.muscles (primary/secondary) -> picker roles. */
+function muscleRolesFromStored(muscles) {
+  const roles = {};
+  if (!muscles || typeof muscles !== "object" || Array.isArray(muscles)) return roles;
+  for (const [muscle, designation] of Object.entries(muscles)) {
+    if (designation === "primary") roles[muscle] = "main";
+    else if (designation === "secondary") roles[muscle] = "assist";
+  }
+  return roles;
+}
+
+function sameMuscleRoles(a, b) {
+  const keys = new Set([...Object.keys(a || {}), ...Object.keys(b || {})]);
+  for (const key of keys) {
+    if ((a[key] || "off") !== (b[key] || "off")) return false;
+  }
+  return true;
+}
+
+function musclesPayloadFromRoles(roles) {
+  const muscles = {};
+  for (const [muscle, role] of Object.entries(roles)) {
+    if (role === "main") muscles[muscle] = "primary";
+    else if (role === "assist") muscles[muscle] = "secondary";
+  }
+  return muscles;
+}
+
 function formatMatchMeta(row) {
   const parts = [];
   if (row.equipment) parts.push(row.equipment);
@@ -112,10 +140,14 @@ export function AddExerciseToLibrarySheet({
   initialName = "",
   sessionExerciseId = null,
   context = "live",
+  mode = "create",
+  exercise = null,
   onClose,
   onLink,
   onCreateCommitted,
+  onSaved,
 }) {
+  const isEditMode = mode === "edit";
   const isCompletedContext = context === "completed";
   // Builder / import: no session exercise to PATCH. Pick-existing calls onLink
   // with { name, exerciseId?, userExerciseId? } only. Live/completed logger
@@ -131,6 +163,7 @@ export function AddExerciseToLibrarySheet({
   // initial suggest search or the seed search) - lets the seed step reuse those
   // rows instead of re-firing the identical query on the suggest->seed hop.
   const seedFetchedTermRef = useRef(null);
+  const editInitRef = useRef(null);
 
   const [step, setStep] = useState("suggest");
   const [hadSuggestStep, setHadSuggestStep] = useState(false);
@@ -142,7 +175,9 @@ export function AddExerciseToLibrarySheet({
   const [seedSearchLoading, setSeedSearchLoading] = useState(false);
 
   const [name, setName] = useState("");
+  const [baselineName, setBaselineName] = useState("");
   const [muscleRoles, setMuscleRoles] = useState({});
+  const [baselineRoles, setBaselineRoles] = useState({});
   const [pickerMode, setPickerMode] = useState("main");
   const [submitError, setSubmitError] = useState(null);
   const [linkError, setLinkError] = useState(null);
@@ -158,9 +193,43 @@ export function AddExerciseToLibrarySheet({
   const [curateOrigin, setCurateOrigin] = useState(null);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      editInitRef.current = null;
+      return;
+    }
+    if (isEditMode) {
+      const token = String(exercise?.id ?? "");
+      if (editInitRef.current === token) return;
+      editInitRef.current = token;
+      const trimmed = String(exercise?.name ?? "").trim();
+      const roles = muscleRolesFromStored(exercise?.muscles);
+      setName(trimmed);
+      setBaselineName(trimmed);
+      setSeedQuery(trimmed);
+      setMuscleRoles(roles);
+      setBaselineRoles(roles);
+      setPickerMode("main");
+      setSubmitError(null);
+      setLinkError(null);
+      setSubmitting(false);
+      setLinking(false);
+      setAlreadyTracked(null);
+      setAlreadyTrackedResolution(null);
+      setSuggestMatches([]);
+      setSeedMatches([]);
+      seedFetchedTermRef.current = null;
+      setDoneVariant("create");
+      setDoneLinkName("");
+      setHadSuggestStep(false);
+      setCurateOrigin(null);
+      setInitialSearchLoading(false);
+      setStep("curate");
+      return;
+    }
     const trimmed = String(initialName ?? "").trim();
     setName(trimmed);
+    setBaselineName("");
+    setBaselineRoles({});
     setSeedQuery(trimmed);
     setMuscleRoles({});
     setPickerMode("main");
@@ -227,7 +296,7 @@ export function AddExerciseToLibrarySheet({
     return () => {
       cancelled = true;
     };
-  }, [open, initialName, isCompletedContext, isLibraryContext]);
+  }, [open, initialName, isCompletedContext, isLibraryContext, isEditMode, exercise?.id, exercise?.name, exercise?.muscles]);
 
   useEffect(() => {
     if (!open) return;
@@ -280,7 +349,11 @@ export function AddExerciseToLibrarySheet({
         .then((data) => {
           if (cancelled) return;
           const row = data?.results?.[0];
-          if (row?.resolved && row.canonicalName) {
+          const isThisExercise =
+            isEditMode &&
+            row?.source === "userExercise" &&
+            Number(row.userExerciseId) === Number(exercise?.id);
+          if (row?.resolved && row.canonicalName && !isThisExercise) {
             setAlreadyTracked(row.canonicalName);
             setAlreadyTrackedResolution(row);
           } else {
@@ -299,7 +372,7 @@ export function AddExerciseToLibrarySheet({
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [open, step, name]);
+  }, [open, step, name, isEditMode, exercise?.id]);
 
   useEffect(() => {
     if (!open || step !== "seed") return undefined;
@@ -439,12 +512,21 @@ export function AddExerciseToLibrarySheet({
 
   const mainCount = Object.values(muscleRoles).filter((r) => r === "main").length;
   const trimmedName = String(name ?? "").trim();
-  const canSubmit =
-    Boolean(trimmedName) &&
-    mainCount > 0 &&
-    !alreadyTracked &&
-    !submitting &&
-    !linking;
+  const nameDiffers = trimmedName !== String(baselineName ?? "").trim();
+  const musclesDiffer = !sameMuscleRoles(muscleRoles, baselineRoles);
+  const editDiffers = nameDiffers || musclesDiffer;
+  const canSubmit = isEditMode
+    ? Boolean(trimmedName) &&
+      mainCount > 0 &&
+      editDiffers &&
+      !alreadyTracked &&
+      !submitting &&
+      !linking
+    : Boolean(trimmedName) &&
+      mainCount > 0 &&
+      !alreadyTracked &&
+      !submitting &&
+      !linking;
 
   const submitBlockReason = (() => {
     if (submitting || linking) return null;
@@ -460,10 +542,21 @@ export function AddExerciseToLibrarySheet({
     if (!canSubmit) return;
     setSubmitting(true);
     setSubmitError(null);
-    const muscles = {};
-    for (const [muscle, role] of Object.entries(muscleRoles)) {
-      if (role === "main") muscles[muscle] = "primary";
-      else if (role === "assist") muscles[muscle] = "secondary";
+    const muscles = musclesPayloadFromRoles(muscleRoles);
+    if (isEditMode) {
+      const patch = {};
+      if (nameDiffers) patch.name = trimmedName;
+      if (musclesDiffer) patch.muscles = muscles;
+      try {
+        const data = await exerciseApi.updateCustomExercise(exercise.id, patch);
+        const updated = data?.userExercise;
+        if (updated && onSaved) onSaved(updated);
+        onClose();
+      } catch (err) {
+        setSubmitError(err);
+        setSubmitting(false);
+      }
+      return;
     }
     try {
       const data = await exerciseApi.createCustomExercise({ name: trimmedName, muscles });
@@ -499,6 +592,11 @@ export function AddExerciseToLibrarySheet({
     onCreateCommitted,
     isCompletedContext,
     isLibraryContext,
+    isEditMode,
+    nameDiffers,
+    musclesDiffer,
+    exercise,
+    onSaved,
     onClose,
   ]);
 
@@ -518,16 +616,19 @@ export function AddExerciseToLibrarySheet({
     }
   }, [step, hadSuggestStep, isLibraryContext, curateOrigin, onClose]);
 
-  const showBack = step === "curate" || (step === "seed" && hadSuggestStep);
+  const showBack =
+    !isEditMode && (step === "curate" || (step === "seed" && hadSuggestStep));
 
   if (!open) return null;
 
   const stepTitle =
-    step === "done"
-      ? doneVariant === "link"
-        ? "Linked"
-        : "Added to your library"
-      : STEP_TITLES[step];
+    isEditMode && step === "curate"
+      ? "Edit exercise"
+      : step === "done"
+        ? doneVariant === "link"
+          ? "Linked"
+          : "Added to your library"
+        : STEP_TITLES[step];
 
   const node = (
     <div
@@ -661,7 +762,9 @@ export function AddExerciseToLibrarySheet({
           {step === "curate" ? (
             <>
               <p className="add-exercise-library-sheet__lead muted small">
-                Name it and confirm what it works.
+                {isEditMode
+                  ? "Change the name or what it works."
+                  : "Name it and confirm what it works."}
               </p>
 
               <label className="add-exercise-library-sheet__name-field">
@@ -678,6 +781,16 @@ export function AddExerciseToLibrarySheet({
                   enterKeyHint="done"
                 />
               </label>
+
+              {isEditMode && submitError ? (
+                <p className="bk-lib-edit-error" role="alert">
+                  {submitError.message || "Could not save this exercise."}
+                </p>
+              ) : null}
+
+              {isEditMode && nameDiffers ? (
+                <p className="bk-lib-edit-note">Past workouts will show the new name.</p>
+              ) : null}
 
               {alreadyTracked ? (
                 <div className="add-exercise-library-sheet__already-tracked">
@@ -697,7 +810,7 @@ export function AddExerciseToLibrarySheet({
                 </div>
               ) : null}
 
-              {submitError ? <ErrorMessage error={submitError} /> : null}
+              {!isEditMode && submitError ? <ErrorMessage error={submitError} /> : null}
 
               <div
                 className="add-exercise-library-sheet__role-toggle"
@@ -788,7 +901,7 @@ export function AddExerciseToLibrarySheet({
                   aria-busy={submitting}
                   onClick={() => void handleSubmit()}
                 >
-                  {submitting ? "Adding..." : "Add exercise"}
+                  {submitting ? (isEditMode ? "Saving..." : "Adding...") : isEditMode ? "Save changes" : "Add exercise"}
                 </button>
                 <button
                   type="button"

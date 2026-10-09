@@ -56,11 +56,13 @@ export function MyTemplatesPage() {
   const [tab, setTab] = useState("blocks");
   const [visibility, setVisibility] = useState("all");
   const [filterOpen, setFilterOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [actingKey, setActingKey] = useState(null);
   const [actingAction, setActingAction] = useState(null);
+  const [workoutsStatus, setWorkoutsStatus] = useState("loading");
+  const [blocksStatus, setBlocksStatus] = useState("loading");
+  const [exercisesStatus, setExercisesStatus] = useState("loading");
   const [activeRun, setActiveRun] = useState(null);
   const [leftOffByBlockId, setLeftOffByBlockId] = useState({});
   const [confirmStartBlock, setConfirmStartBlock] = useState(null);
@@ -75,8 +77,17 @@ export function MyTemplatesPage() {
     if (tab === "blocks") return sortLibraryBlocks(list, activeRun, leftOffByBlockId);
     return list;
   }, [rawItems, visibility, tab, activeRun, leftOffByBlockId]);
-  const emptyTab = useMemo(() => !loading && items.length === 0, [loading, items.length]);
-  const emptyRawTab = useMemo(() => !loading && rawItems.length === 0, [loading, rawItems.length]);
+  const tabStatus =
+    tab === "workouts" ? workoutsStatus : tab === "blocks" ? blocksStatus : exercisesStatus;
+  const tabLoading = tabStatus === "loading";
+  const emptyTab = useMemo(
+    () => tabStatus === "ready" && items.length === 0,
+    [tabStatus, items.length]
+  );
+  const emptyRawTab = useMemo(
+    () => tabStatus === "ready" && rawItems.length === 0,
+    [tabStatus, rawItems.length]
+  );
 
   function setArea(next) {
     setSearchParams(
@@ -90,57 +101,135 @@ export function MyTemplatesPage() {
     );
   }
 
+  function applyRunPayload(runData, leftOffData) {
+    if (runData?.run) {
+      const progressWeeks = Array.isArray(runData.progress?.weeks)
+        ? runData.progress.weeks.length
+        : null;
+      const blockWeeks = Array.isArray(runData.block?.weeks) ? runData.block.weeks.length : null;
+      const duration =
+        runData.block?.durationWeeks != null ? Number(runData.block.durationWeeks) : null;
+      setActiveRun({
+        id: runData.run.id,
+        blockTemplateId: runData.run.blockTemplateId,
+        name: runData.block?.name || "",
+        currentWeek:
+          runData.progress?.currentWeekOrder != null
+            ? Number(runData.progress.currentWeekOrder)
+            : null,
+        totalWeeks: progressWeeks || duration || blockWeeks || null,
+      });
+    } else {
+      setActiveRun(null);
+    }
+    const leftOffMap = {};
+    for (const row of Array.isArray(leftOffData?.runs) ? leftOffData.runs : []) {
+      if (row?.blockTemplateId != null) leftOffMap[row.blockTemplateId] = row;
+    }
+    setLeftOffByBlockId(leftOffMap);
+  }
+
+  function loadLibrary({ includeRuns }) {
+    const jobs = [
+      templateApi
+        .getMyTemplates()
+        .then((wData) => {
+          setWorkouts(Array.isArray(wData.templates) ? wData.templates : []);
+          setWorkoutsStatus("ready");
+        })
+        .catch((err) => {
+          setError(err);
+          setWorkoutsStatus("error");
+        }),
+      blockTemplateApi
+        .getMyBlockTemplates()
+        .then((bData) => {
+          setBlocks(Array.isArray(bData.blockTemplates) ? bData.blockTemplates : []);
+          setBlocksStatus("ready");
+        })
+        .catch((err) => {
+          setError(err);
+          setBlocksStatus("error");
+        }),
+      exerciseApi
+        .listCustomExercises()
+        .then((eData) => {
+          setCustomExercises(Array.isArray(eData.userExercises) ? eData.userExercises : []);
+          setExercisesStatus("ready");
+        })
+        .catch((err) => {
+          setError(err);
+          setExercisesStatus("error");
+        }),
+    ];
+    if (includeRuns) {
+      jobs.push(
+        Promise.all([
+          blockRunApi.getActiveBlockRun().catch(() => ({ run: null })),
+          blockRunApi.getLeftOffRuns().catch(() => ({ runs: [] })),
+        ]).then(([runData, leftOffData]) => applyRunPayload(runData, leftOffData))
+      );
+    }
+    return Promise.all(jobs);
+  }
+
   async function load() {
-    setLoading(true);
     setError(null);
     try {
-      const [wData, bData, eData, runData, leftOffData] = await Promise.all([
-        templateApi.getMyTemplates(),
-        blockTemplateApi.getMyBlockTemplates(),
-        exerciseApi.listCustomExercises(),
-        blockRunApi.getActiveBlockRun().catch(() => ({ run: null })),
-        blockRunApi.getLeftOffRuns().catch(() => ({ runs: [] })),
-      ]);
-      setWorkouts(Array.isArray(wData.templates) ? wData.templates : []);
-      setBlocks(Array.isArray(bData.blockTemplates) ? bData.blockTemplates : []);
-      setCustomExercises(Array.isArray(eData.userExercises) ? eData.userExercises : []);
-      if (runData?.run) {
-        const progressWeeks = Array.isArray(runData.progress?.weeks)
-          ? runData.progress.weeks.length
-          : null;
-        const blockWeeks = Array.isArray(runData.block?.weeks)
-          ? runData.block.weeks.length
-          : null;
-        const duration =
-          runData.block?.durationWeeks != null ? Number(runData.block.durationWeeks) : null;
-        setActiveRun({
-          id: runData.run.id,
-          blockTemplateId: runData.run.blockTemplateId,
-          name: runData.block?.name || "",
-          currentWeek:
-            runData.progress?.currentWeekOrder != null
-              ? Number(runData.progress.currentWeekOrder)
-              : null,
-          totalWeeks: progressWeeks || duration || blockWeeks || null,
-        });
-      } else {
-        setActiveRun(null);
-      }
-      const leftOffMap = {};
-      for (const row of Array.isArray(leftOffData?.runs) ? leftOffData.runs : []) {
-        if (row?.blockTemplateId != null) leftOffMap[row.blockTemplateId] = row;
-      }
-      setLeftOffByBlockId(leftOffMap);
+      await loadLibrary({ includeRuns: area !== "community" });
     } catch (err) {
       setError(err);
-    } finally {
-      setLoading(false);
     }
   }
 
   useEffect(() => {
-    load();
+    let cancelled = false;
+    templateApi.getMyTemplates().then((wData) => {
+      if (cancelled) return;
+      setWorkouts(Array.isArray(wData.templates) ? wData.templates : []);
+      setWorkoutsStatus("ready");
+    }).catch((err) => {
+      if (cancelled) return;
+      setError(err);
+      setWorkoutsStatus("error");
+    });
+    blockTemplateApi.getMyBlockTemplates().then((bData) => {
+      if (cancelled) return;
+      setBlocks(Array.isArray(bData.blockTemplates) ? bData.blockTemplates : []);
+      setBlocksStatus("ready");
+    }).catch((err) => {
+      if (cancelled) return;
+      setError(err);
+      setBlocksStatus("error");
+    });
+    exerciseApi.listCustomExercises().then((eData) => {
+      if (cancelled) return;
+      setCustomExercises(Array.isArray(eData.userExercises) ? eData.userExercises : []);
+      setExercisesStatus("ready");
+    }).catch((err) => {
+      if (cancelled) return;
+      setError(err);
+      setExercisesStatus("error");
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
+
+  useEffect(() => {
+    if (area === "community") return undefined;
+    let cancelled = false;
+    Promise.all([
+      blockRunApi.getActiveBlockRun().catch(() => ({ run: null })),
+      blockRunApi.getLeftOffRuns().catch(() => ({ runs: [] })),
+    ]).then(([runData, leftOffData]) => {
+      if (cancelled) return;
+      applyRunPayload(runData, leftOffData);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [area]);
 
   function clearFeedbackSoon() {
     setTimeout(() => setSuccess(null), 4000);
@@ -271,6 +360,11 @@ export function MyTemplatesPage() {
       setActingKey(null);
       setActingAction(null);
     }
+  }
+
+  function onUpdateExercise(updated) {
+    if (!updated || updated.id == null) return;
+    setCustomExercises((prev) => prev.map((e) => (e.id === updated.id ? updated : e)));
   }
 
   const busy = Boolean(actingKey);
@@ -458,7 +552,7 @@ export function MyTemplatesPage() {
             </Card>
           ) : null}
 
-          {loading ? (
+          {tabLoading ? (
             <LoadingState tone="skeleton" variant="list" rows={3} slowLabel="Taking longer than usual…" />
           ) : null}
 
@@ -498,7 +592,7 @@ export function MyTemplatesPage() {
             </Card>
           ) : null}
 
-          {tab === "exercises" && !loading && customExercises.length === 0 ? (
+          {tab === "exercises" && exercisesStatus === "ready" && customExercises.length === 0 ? (
             <Card className="bk-lib-empty">
               <p className="bk-lib-empty__title">No custom exercises</p>
               <p className="bk-lib-empty__body">
@@ -509,7 +603,7 @@ export function MyTemplatesPage() {
             </Card>
           ) : null}
 
-          {tab !== "exercises" && !loading && !emptyRawTab && emptyTab ? (
+          {tab !== "exercises" && tabStatus === "ready" && !emptyRawTab && emptyTab ? (
             <Card className="bk-lib-empty">
               <p className="bk-lib-empty__body">
                 No {tab === "workouts" ? "workouts" : "blocks"} match this filter.
@@ -533,7 +627,9 @@ export function MyTemplatesPage() {
               tab === "workouts" ? "Workouts" : tab === "blocks" ? "Blocks" : "Custom exercises"
             }
           >
-            {tab === "exercises"
+            {tabLoading
+              ? null
+              : tab === "exercises"
               ? items.map((x) => {
                   const k = keyFor("exercise", x.id);
                   return (
@@ -544,6 +640,7 @@ export function MyTemplatesPage() {
                       isActing={actingKey === k}
                       actingAction={actingAction}
                       onDelete={onDeleteExercise}
+                      onUpdated={onUpdateExercise}
                     />
                   );
                 })

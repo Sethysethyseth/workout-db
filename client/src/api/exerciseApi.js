@@ -24,6 +24,10 @@ export function listCustomExercises() {
   return http("/exercises/custom");
 }
 
+export function updateCustomExercise(id, patch) {
+  return http(`/exercises/custom/${id}`, { method: "PATCH", body: patch });
+}
+
 export function deleteCustomExercise(id) {
   return http(`/exercises/custom/${id}`, { method: "DELETE" });
 }

@@ -1,12 +1,23 @@
 import { useEffect, useRef, useState } from "react";
 import { Card } from "../blocks/ui/index.js";
+import { AddExerciseToLibrarySheet } from "../workout/AddExerciseToLibrarySheet.jsx";
 import { summarizeCustomExerciseMuscles } from "./meta.js";
 import "../../styles/blocks/bk-library.css";
 
-export function LibraryExerciseCard({ exercise: x, busy, isActing, actingAction, onDelete }) {
+export function LibraryExerciseCard({
+  exercise: x,
+  busy,
+  isActing,
+  actingAction,
+  onDelete,
+  onUpdated,
+}) {
   const muscleSummary = summarizeCustomExerciseMuscles(x.muscles);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [saved, setSaved] = useState(false);
   const keepBtnRef = useRef(null);
+  const savedTimerRef = useRef(null);
 
   useEffect(() => {
     if (!confirmDelete) return;
@@ -25,12 +36,30 @@ export function LibraryExerciseCard({ exercise: x, busy, isActing, actingAction,
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [confirmDelete]);
 
+  useEffect(() => () => clearTimeout(savedTimerRef.current), []);
+
+  function openEdit() {
+    if (busy || confirmDelete) return;
+    setEditOpen(true);
+  }
+
+  function acknowledgeSaved() {
+    setSaved(true);
+    clearTimeout(savedTimerRef.current);
+    savedTimerRef.current = setTimeout(() => setSaved(false), 2000);
+  }
+
   return (
     <Card className="bk-lib-card">
-      <div>
+      <button type="button" className="bk-lib-card__open" onClick={openEdit} disabled={busy}>
         <h2 className="bk-lib-card__title">{x.name}</h2>
         {muscleSummary ? <p className="bk-lib-card__meta">{muscleSummary}</p> : null}
-      </div>
+      </button>
+      {saved ? (
+        <p className="bk-lib-card__saved" role="status">
+          Saved
+        </p>
+      ) : null}
       {confirmDelete ? (
         <div
           className="stack session-discard-confirm bk-lib-card-confirm"
@@ -74,6 +103,14 @@ export function LibraryExerciseCard({ exercise: x, busy, isActing, actingAction,
         <div className="bk-lib-card__secondary" style={{ borderTop: "none", paddingTop: 0 }}>
           <button
             type="button"
+            className="bk-lib-btn bk-lib-btn--ghost"
+            onClick={openEdit}
+            disabled={busy}
+          >
+            Edit
+          </button>
+          <button
+            type="button"
             className="bk-lib-btn bk-lib-btn--ghost bk-lib-btn--danger"
             onClick={() => setConfirmDelete(true)}
             disabled={busy}
@@ -82,6 +119,17 @@ export function LibraryExerciseCard({ exercise: x, busy, isActing, actingAction,
           </button>
         </div>
       )}
+      <AddExerciseToLibrarySheet
+        open={editOpen}
+        mode="edit"
+        exercise={x}
+        onClose={() => setEditOpen(false)}
+        onSaved={(updated) => {
+          setEditOpen(false);
+          if (onUpdated) onUpdated(updated);
+          acknowledgeSaved();
+        }}
+      />
     </Card>
   );
 }

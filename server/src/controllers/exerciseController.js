@@ -1,6 +1,7 @@
 const prisma = require("../lib/prisma");
 const { loadCatalog, resolveExercise, normalizeExerciseName, searchCatalog } = require("../analytics");
 const { buildUserExerciseIndex } = require("../analytics/userExercises");
+const { selectRowsToAdopt } = require("../lib/customExerciseRename");
 
 const MAX_NAMES = 100;
 const MAX_EXERCISE_NAME_LENGTH = 120;
@@ -120,6 +121,73 @@ async function getMuscles(req, res, next) {
   }
 }
 
+/**
+ * Name and muscle checks shared by create and update so the two routes
+ * cannot drift. Pass only the fields being applied. `excludeId` skips the
+ * row being edited when checking the owner's own library.
+ */
+async function assertCustomExerciseFields(userId, fields, { excludeId = null } = {}) {
+  const result = {};
+
+  if (Object.prototype.hasOwnProperty.call(fields, "name")) {
+    const name = fields.name;
+    if (typeof name !== "string" || !name.trim()) {
+      return { ok: false, error: "name is required" };
+    }
+
+    const trimmedName = name.trim();
+    if (trimmedName.length > MAX_EXERCISE_NAME_LENGTH) {
+      return {
+        ok: false,
+        error: `name must be at most ${MAX_EXERCISE_NAME_LENGTH} characters`,
+      };
+    }
+
+    const normalizedName = normalizeExerciseName(trimmedName);
+    if (!normalizedName) {
+      return {
+        ok: false,
+        error: "name must contain recognizable characters after normalization",
+      };
+    }
+
+    const catalogResolution = resolveExercise({ exerciseName: trimmedName });
+    if (catalogResolution.resolved) {
+      return {
+        ok: false,
+        error: `already tracked as ${catalogResolution.catalogEntry.name}`,
+      };
+    }
+
+    const existing = await prisma.userExercise.findFirst({
+      where: {
+        userId,
+        normalizedName,
+        ...(excludeId != null ? { id: { not: excludeId } } : {}),
+      },
+    });
+    if (existing) {
+      return {
+        ok: false,
+        error: "a custom exercise with this name already exists in your library",
+      };
+    }
+
+    result.trimmedName = trimmedName;
+    result.normalizedName = normalizedName;
+  }
+
+  if (Object.prototype.hasOwnProperty.call(fields, "muscles")) {
+    const muscleCheck = validateMuscles(fields.muscles, deriveMuscleVocabulary());
+    if (!muscleCheck.ok) {
+      return { ok: false, error: muscleCheck.error };
+    }
+    result.muscles = muscleCheck.value;
+  }
+
+  return { ok: true, ...result };
+}
+
 async function createCustomExercise(req, res, next) {
   try {
     const userId = req.authUserId;
@@ -131,55 +199,17 @@ async function createCustomExercise(req, res, next) {
     }
 
     const { name, muscles } = req.body || {};
-
-    if (typeof name !== "string" || !name.trim()) {
-      return res.status(400).json({
-        error: "name is required",
-      });
-    }
-
-    const trimmedName = name.trim();
-
-    if (trimmedName.length > MAX_EXERCISE_NAME_LENGTH) {
-      return res.status(400).json({
-        error: `name must be at most ${MAX_EXERCISE_NAME_LENGTH} characters`,
-      });
-    }
-
-    const normalizedName = normalizeExerciseName(trimmedName);
-    if (!normalizedName) {
-      return res.status(400).json({
-        error: "name must contain recognizable characters after normalization",
-      });
-    }
-
-    const catalogResolution = resolveExercise({ exerciseName: trimmedName });
-    if (catalogResolution.resolved) {
-      return res.status(400).json({
-        error: `already tracked as ${catalogResolution.catalogEntry.name}`,
-      });
-    }
-
-    const existing = await prisma.userExercise.findFirst({
-      where: { userId, normalizedName },
-    });
-    if (existing) {
-      return res.status(400).json({
-        error: "a custom exercise with this name already exists in your library",
-      });
-    }
-
-    const muscleCheck = validateMuscles(muscles, deriveMuscleVocabulary());
-    if (!muscleCheck.ok) {
-      return res.status(400).json({ error: muscleCheck.error });
+    const check = await assertCustomExerciseFields(userId, { name, muscles });
+    if (!check.ok) {
+      return res.status(400).json({ error: check.error });
     }
 
     const userExercise = await prisma.userExercise.create({
       data: {
         userId,
-        name: trimmedName,
-        normalizedName,
-        muscles: muscleCheck.value,
+        name: check.trimmedName,
+        normalizedName: check.normalizedName,
+        muscles: check.muscles,
       },
     });
 
@@ -243,6 +273,182 @@ async function deleteCustomExercise(req, res, next) {
 
     return res.status(204).send();
   } catch (err) {
+    return next(err);
+  }
+}
+
+async function adoptNameOnlyRows(tx, model, rows, oldNormalized, id, nextName, ownerWhere) {
+  const matches = selectRowsToAdopt(rows, oldNormalized);
+  if (matches.length === 0) return 0;
+  const updated = await model.updateMany({
+    where: {
+      id: { in: matches.map((row) => row.id) },
+      ...ownerWhere,
+    },
+    data: { userExerciseId: id, exerciseName: nextName },
+  });
+  return updated.count;
+}
+
+async function updateCustomExercise(req, res, next) {
+  try {
+    const userId = req.authUserId;
+
+    if (!userId) {
+      return res.status(401).json({
+        error: "Authentication required",
+      });
+    }
+
+    const id = Number.parseInt(req.params.id, 10);
+    if (!Number.isInteger(id) || id < 1) {
+      return res.status(404).json({
+        error: "User exercise not found",
+      });
+    }
+
+    const body = req.body && typeof req.body === "object" ? req.body : {};
+    const hasName = Object.prototype.hasOwnProperty.call(body, "name");
+    const hasMuscles = Object.prototype.hasOwnProperty.call(body, "muscles");
+    if (!hasName && !hasMuscles) {
+      return res.status(400).json({
+        error: "name or muscles is required",
+      });
+    }
+
+    const existing = await prisma.userExercise.findFirst({
+      where: { id, userId },
+    });
+    if (!existing) {
+      return res.status(404).json({
+        error: "User exercise not found",
+      });
+    }
+
+    const fields = {};
+    if (hasName) fields.name = body.name;
+    if (hasMuscles) fields.muscles = body.muscles;
+    const check = await assertCustomExerciseFields(userId, fields, { excludeId: id });
+    if (!check.ok) {
+      return res.status(400).json({ error: check.error });
+    }
+
+    const nextName = hasName ? check.trimmedName : existing.name;
+    const nextNormalized = hasName ? check.normalizedName : existing.normalizedName;
+    const data = {};
+    if (hasName) {
+      data.name = nextName;
+      data.normalizedName = nextNormalized;
+    }
+    if (hasMuscles) {
+      data.muscles = check.muscles;
+    }
+
+    const nameChanged = nextName !== existing.name || nextNormalized !== existing.normalizedName;
+
+    const outcome = await prisma.$transaction(async (tx) => {
+      const written = await tx.userExercise.updateMany({
+        where: { id, userId },
+        data,
+      });
+      if (written.count !== 1) {
+        const missing = new Error("User exercise not found");
+        missing.statusCode = 404;
+        throw missing;
+      }
+
+      let renamedRows = 0;
+      if (nameChanged) {
+        const [sessionLinked, templateLinked, blockLinked] = await Promise.all([
+          tx.sessionExercise.updateMany({
+            where: { userExerciseId: id, workoutSession: { userId } },
+            data: { exerciseName: nextName },
+          }),
+          tx.templateExercise.updateMany({
+            where: { userExerciseId: id, workoutTemplate: { userId } },
+            data: { exerciseName: nextName },
+          }),
+          tx.blockWorkoutExercise.updateMany({
+            where: {
+              userExerciseId: id,
+              blockWorkout: { blockWeek: { blockTemplate: { userId } } },
+            },
+            data: { exerciseName: nextName },
+          }),
+        ]);
+        renamedRows += sessionLinked.count + templateLinked.count + blockLinked.count;
+
+        const [sessionCandidates, templateCandidates, blockCandidates] = await Promise.all([
+          tx.sessionExercise.findMany({
+            where: {
+              exerciseId: null,
+              userExerciseId: null,
+              workoutSession: { userId },
+            },
+            select: { id: true, exerciseName: true },
+          }),
+          tx.templateExercise.findMany({
+            where: {
+              exerciseId: null,
+              userExerciseId: null,
+              workoutTemplate: { userId },
+            },
+            select: { id: true, exerciseName: true },
+          }),
+          tx.blockWorkoutExercise.findMany({
+            where: {
+              exerciseId: null,
+              userExerciseId: null,
+              blockWorkout: { blockWeek: { blockTemplate: { userId } } },
+            },
+            select: { id: true, exerciseName: true },
+          }),
+        ]);
+
+        renamedRows += await adoptNameOnlyRows(
+          tx,
+          tx.sessionExercise,
+          sessionCandidates,
+          existing.normalizedName,
+          id,
+          nextName,
+          { exerciseId: null, userExerciseId: null, workoutSession: { userId } }
+        );
+        renamedRows += await adoptNameOnlyRows(
+          tx,
+          tx.templateExercise,
+          templateCandidates,
+          existing.normalizedName,
+          id,
+          nextName,
+          { exerciseId: null, userExerciseId: null, workoutTemplate: { userId } }
+        );
+        renamedRows += await adoptNameOnlyRows(
+          tx,
+          tx.blockWorkoutExercise,
+          blockCandidates,
+          existing.normalizedName,
+          id,
+          nextName,
+          {
+            exerciseId: null,
+            userExerciseId: null,
+            blockWorkout: { blockWeek: { blockTemplate: { userId } } },
+          }
+        );
+      }
+
+      const userExercise = await tx.userExercise.findFirst({
+        where: { id, userId },
+      });
+      return { userExercise, renamedRows };
+    });
+
+    return res.json(outcome);
+  } catch (err) {
+    if (err && err.statusCode === 404) {
+      return res.status(404).json({ error: "User exercise not found" });
+    }
     return next(err);
   }
 }
@@ -377,6 +583,7 @@ module.exports = {
   getMuscles,
   createCustomExercise,
   listCustomExercises,
+  updateCustomExercise,
   deleteCustomExercise,
   resolveExerciseNames,
   searchExercises,
