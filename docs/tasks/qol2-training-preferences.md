@@ -92,6 +92,26 @@ CHANGE:
    border. **The one memorable element on this surface is the live
    update** - changing a pref in the sheet updates the pills behind the
    sheet immediately.
+
+   **Seth picked this layout from the Oct 8 mock (option A).** The strip
+   is the ONLY addition to Home. Every other Home section renders exactly
+   as today: the masthead, the Start / Active hero, the block card, the
+   `WeeklyReport` "Last 7 days" card with all of its stats, PRs and notes,
+   and Recent workouts. Do not restyle, reorder or trim any of them.
+
+   Mock details to match:
+   - The strip has a leading sliders icon (muted), then the pills, then
+     "Edit" in `--color-interactive`.
+   - The "Repeat last" pill is accent-tinted: a `color-mix` of
+     `--color-interactive` for its fill and border. The other pills are
+     neutral surface pills.
+   - The sheet's title is "Logging setup", with the subline "Saved on this
+     phone. Changes apply right away."
+   - Group headings are small, bold, and in an accent-light tint. Hairline
+     dividers separate the groups.
+   - A full-width primary "Done" is pinned at the bottom of the sheet.
+   - The Profile page title is "Training", with the subline "How LogChamp
+     logs your workouts on this phone." Each group is its own card.
 5. **Logger (`SessionDetailPage.jsx`):** remove every preference control
    from the live session:
    - the quick-log Units row

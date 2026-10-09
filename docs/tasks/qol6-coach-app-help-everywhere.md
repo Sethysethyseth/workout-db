@@ -110,10 +110,34 @@ CHANGE:
      `CoachPanel`'s existing unavailable copy.
    - **The one memorable element: the empty state.** Make it a calm,
      well-set intro, not a wall of chips.
+
+   Layout from the Oct 8 mock:
+   - **Header:** "Coach" in the display font, plus a round "New
+     conversation" icon button (qol10 wires it; render it now and have
+     it clear the thread).
+   - **Empty state:** left-aligned in the upper third.
+     - A small rounded-square tile holding the chat-bubble icon, with an
+       accent tint and border.
+     - The intro line set large (~25px) in the display font, with
+       balanced wrapping.
+     - The chips as full-width suggestion ROWS (52px or taller, a leading
+       question-mark icon, left-aligned text), not pills.
+     - The AI-access line in muted text, with "Turn on AI access" as the
+       link.
+   - **Thread:**
+     - Your messages are right-aligned accent-tinted bubbles.
+     - Coach replies are plain text on the page, under a small crown +
+       "Coach" label - no bubble.
+     - The wait state is a small surface chip: three accent dots plus
+       the ladder text.
+   - **Composer:** an input plus a square send button, pinned above the
+     bottom nav, with a hairline top border.
 8. **Entry points**
-   - Home masthead: an icon button on the right, beside the date, that
-     reuses the coach's crown mark, aria-label "Ask the coach", leading to
-     `/coach`.
+   - Home masthead: a 44px round icon button on the right, level with
+     the wordmark, aria-label "Ask the coach", leading to `/coach`. Use a
+     CHAT-BUBBLE icon (an outline bubble with three dots), NOT the crown:
+     the Oct 8 mock showed a second crown beside the logo reads as a
+     duplicate. The crown stays the coach's signature INSIDE the panel.
    - Profile Settings: a "Coach" row, subtitle "Ask about training or how
      to use the app", leading to `/coach`.
    - The existing panels (Analytics, debrief, builder) keep their behavior.
