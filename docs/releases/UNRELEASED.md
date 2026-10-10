@@ -14,3 +14,7 @@ it):
 Write what a lifter would notice. Internal-only work gets no entry.
 
 ---
+
+## Motion wave (MX) - motion-wave
+
+- [mx1-4] Analytics comes alive: cards rise in, numbers roll up, bars and trend lines draw themselves, gains show in a clear "up" color in every theme, and exercise names no longer get cut off | Where: Analytics (all four tabs) | Files: client/src/pages/AnalyticsPage.jsx, client/src/styles/analytics-motion.css, client/src/components/analytics/ExercisesView.jsx

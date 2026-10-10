@@ -1,29 +1,73 @@
 # HANDOFF — current state
 
-> **WHERE WE ARE (Oct 9, night): BETWEEN WAVES.** The quality-of-life
-> wave (24 units) is MERGED to `main` and LIVE on prod; Seth smoked prod
-> and signed off. No wave is open, nothing is queued or in flight, and
-> nothing is blocked on an agent.
-> - `main` = `b82ad8c` (`b5c6777..b82ad8c`, 64 commits), served by prod
->   Render `workout-db-l3gc` and prod Vercel.
-> - `quality-of-life-updates` = `main` + docs-only state commits (this
->   file, QUEUE). Cut the next wave from it so the docs come along.
-> - Staging Render tracks `main` again (Seth, Oct 9).
-> - `COACH_KEY_SECRET` is set on prod Render (Seth, Oct 9).
+> **WHERE WE ARE (Oct 9, late night): MOTION WAVE (MX) OPEN on
+> `motion-wave`.** Seth's direction: "wicked" motion and graphics,
+> analytics first; Fable 5.1 in Cursor (`claude-fable-5-1-thinking-high`,
+> Cursor Pro) is the designer and its suggestions win; the Claude Code seat
+> writes broad briefs and audits. The old restraint anti-goal is replaced
+> by the motion stance in AGENTS.md.
+> - Design of record: `docs/design/mocks/motion/MOTION-DIRECTION.md`
+>   (Seth's rulings at the top win: PR celebration RARE, milestones at
+>   100/1,000/10,000 workouts, per-palette scenes) + `ROADMAP.md` (the
+>   wave's state: MX1-MX16 + MX-S + SRV-1/2, "Last checkpoint" line) +
+>   `IDEAS.md` (14 PARKED ideas for Seth to pick from).
+> - LANDED: MX0 `f651c21` (direction + previews), MX1-4 `2cdeee0`
+>   (motion primitives + Analytics in motion + per-palette scene
+>   previews). Next code unit per ROADMAP: MX5 (shell transitions).
+> - Previews (private Artifacts): analytics X52VRgnoGLer3gGgphQnBU, PR
+>   2kWaZboR6dtMGXgwJqhPSN, navigation T5WpDyvFkAX5rdex1Y5k67, session
+>   flow 7dk9zTUhc2nxAbjDLS9i2S, scenes PTk4q9Gww5xhBy5cHkgQBx
+>   (claude.ai/artifact/<id>).
+> - Cursor usage is capped this month: every Fable run must leave
+>   ROADMAP.md current. Fable runs RESUME chat
+>   `eb56cfff-dfbb-4abc-99f2-6d794c36b307` (`run-lane.ps1 -Resume`) to
+>   keep its context. Seth: never dispatch the next unit until the
+>   current Fable run has fully delivered; never stop a run mid-flight.
+> - Staging Render: Seth was repointing it to `motion-wave` (Oct 9) - no
+>   migrations on this branch, so the deploy does not migrate.
+> - `main` = `b82ad8c` (QOL wave, live on prod). `quality-of-life-updates`
+>   = main + docs; `motion-wave` was cut from it.
 
-**Next action (human):** nothing is blocked on Seth - when ready, pick the
-next wave's direction (inputs listed in PICK UP HERE item 1).
+**Next action (human):** smoke the Analytics page on the staging Vercel
+deploy of `motion-wave` (list in "MX smoke items" below) and pick any
+IDEAS.md entries you want - nothing else is blocked on you.
+
+## MX smoke items (carry forward - Seth smokes once at wave end)
+
+From MX1-4 (`2cdeee0`), on a phone, two palettes, both modes:
+1. Cold load `/analytics`: skeleton at once (no blank scene), title
+   wipes in, KPI tiles rise in order, numbers roll up from 0 (no flash of
+   the final number first), top hairline charges.
+2. Range chips: the selected pill slides; KPIs roll from old to new
+   values; the page does not replay its entrance.
+3. View tabs: the pill slides; the new view slides in from the tab's
+   side; Muscles bars charge with a glowing head, Strength sparklines draw
+   then dot pops, Execution meters charge.
+4. Exercises view at 390: full names wrap (no "..."), one big top-set
+   number plus a delta line; tapping a row still opens the detail.
+5. Crimson dark and forest dark: gains read in the success color, never
+   danger red or the accent green.
+6. All card titles one size; only the page title is bigger.
+7. Empty state (fresh account / tiny range): ghosts breathe slowly.
+8. OS reduce-motion on: everything prints at its final state, pills jump.
 
 ## PICK UP HERE (next session)
 
-1. **Opening the next wave** (Opus seat, `author-task-block` after recon):
-   - branch from `quality-of-life-updates` (main + docs), then repoint
-     staging Render to the new branch (RUNBOOK section 2).
-   - inputs: `docs/tasks/qol-critic-round-2-FINDINGS.md` Part B (next-wave
-     look and feel), the stowed list below, the gate follow-ups (item 3),
-     and Seth items at the bottom.
+1. **Continue the MX wave** (opened Oct 9, see the top block):
+   - next unit = the first non-DONE unit in `ROADMAP.md` (MX5 shell
+     transitions); write a broad brief (MX0/MX1-4 briefs are the
+     pattern), dispatch as a RESUME of Fable's chat, land via `land-unit`.
+   - after MX1-4, one critic round on the new Analytics page is owed
+     (Seth's critic loop, one round by default) - fold its fixes into the
+     next brief.
    - every wave ends with a What's New unit (`_WHATS_NEW.md`); release
-     bullets stay at 25 words or fewer.
+     bullets stay at 25 words or fewer. The ledger has the MX section.
+   - known lint noise from MX1-4 (lint is not in CI): Cascade.jsx `Tag`
+     unused (JSX false positive) + mixed exports; useCountUp setState in
+     effect - same patterns as pre-existing files.
+   - legacy `.exercise-roster-stat*` rules in index.css are now unmatched
+     (cleanup later); `--chart-up/down` live on `.analytics-page`
+     (promote to `:root` when MX8/MX9 need them).
 2. **Prod migration-history drift - reconcile under "migrate prod"
    before anyone points `prisma migrate deploy` at prod** (found Oct 9):
    - prod HAS the schema for `20260929120000_blocks_v2` and
