@@ -299,6 +299,25 @@ Conventions for every unit below:
   the first-open note is a device-local marker written on show; History has
   a `SlidingIndicator` Workouts / Coach switch (`?view=coach`).
 
+## MXF3 - Seth's smoke round 2 (coach keyboard, chat-bubble icon, test keyboard)
+
+- **Goal:** Seth's second Oct 10 phone smoke (MXF2 + MXC1). (1) On `/coach`
+  the keyboard covers the field and the send button. The fit must hold
+  however the browser reports the keyboard (Chrome's virtualKeyboard first,
+  then visualViewport against a baseline), with a self-check and a
+  `?kbdebug=1` readout. (2) The coach icon becomes a plain chat bubble, with
+  no crown and no dots, centred (Seth: "the crown needs to go"). (3) A test
+  keyboard (`scripts/virtual-keyboard-shim.js`) so the critic can catch
+  covered fields before Seth does.
+- **Surface:** `/coach`, Home masthead.
+- **Variant:** n/a (fixes).
+- **Files:** block `docs/tasks/mxf3-smoke-round-2-fixes.md`.
+- **Done when:** the block's acceptance criteria pass, three critic rounds
+  (typing surfaces / icons and alignment / coach flow and app sweep) are
+  fixed, and Seth re-smokes.
+- **Depends on:** MXF2, MXC1. **Packages:** none.
+- **Status:** TODO.
+
 ## MX7 - Logger quiet confirm + rest dock
 
 - **Goal:** the floor stays quiet: logging a set scales the number out and
