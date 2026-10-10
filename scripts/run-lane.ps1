@@ -3,7 +3,8 @@ param(
   [Parameter(Mandatory)] [string] $Unit,     # task file name under docs/tasks, without .md
   [string] $Model = 'auto',                  # ALWAYS explicit - the CLI remembers the last model
   [int] $TimeoutMin = 40,
-  [string] $LogDir = $env:TEMP
+  [string] $LogDir = $env:TEMP,
+  [string] $Resume = ''                      # chat/session id to continue (stream log's session_id)
 )
 # Headless Cursor run for the dispatch-unit skill (Channel B), with its OWN
 # hard kill. Run it as a background task from Claude Code:
@@ -28,6 +29,8 @@ $prompt = "Read docs/tasks/$Unit.md and execute it exactly. It is the complete t
 $env:CURSOR_API_KEY = [Environment]::GetEnvironmentVariable('CURSOR_API_KEY', 'User')
 $cli = 'C:\Users\Sethy\AppData\Local\cursor-agent\cursor-agent.ps1'
 $argLine = "-NoProfile -File `"$cli`" -p `"$prompt`" --force --model $Model --output-format stream-json"
+# A resumed run keeps the earlier chat's recon in context (cheaper than a cold start).
+if ($Resume) { $argLine += " --resume $Resume" }
 
 $p = Start-Process -FilePath (Get-Command pwsh).Source -ArgumentList $argLine `
   -WorkingDirectory $wt -RedirectStandardOutput $log -RedirectStandardError $err `
