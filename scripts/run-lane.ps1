@@ -4,7 +4,8 @@ param(
   [string] $Model = 'auto',                  # ALWAYS explicit - the CLI remembers the last model
   [int] $TimeoutMin = 40,
   [string] $LogDir = $env:TEMP,
-  [string] $Resume = ''                      # chat/session id to continue (stream log's session_id)
+  [string] $Resume = '',                     # chat/session id to continue (stream log's session_id)
+  [string] $Note = ''                        # extra sentence appended to the prompt (e.g. a salvage resume)
 )
 # Headless Cursor run for the dispatch-unit skill (Channel B), with its OWN
 # hard kill. Run it as a background task from Claude Code:
@@ -25,6 +26,7 @@ $wt = "C:\dev\worktrees\$Lane"
 $log = Join-Path $LogDir "$Unit.stream.log"
 $err = Join-Path $LogDir "$Unit.stderr.log"
 $prompt = "Read docs/tasks/$Unit.md and execute it exactly. It is the complete task; do not ask for the task in chat. Write the delivery report to DELIVERY.md in this directory and make NO git operations."
+if ($Note) { $prompt += " $($Note -replace '"', "'")" }
 # The key lives in the User registry; $env: can be stale in an agent shell.
 $env:CURSOR_API_KEY = [Environment]::GetEnvironmentVariable('CURSOR_API_KEY', 'User')
 $cli = 'C:\Users\Sethy\AppData\Local\cursor-agent\cursor-agent.ps1'

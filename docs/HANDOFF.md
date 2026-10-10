@@ -11,9 +11,9 @@
 >   100/1,000/10,000 workouts, per-palette scenes) + `ROADMAP.md` (the
 >   wave's state: MX1-MX16 + MX-S + SRV-1/2, "Last checkpoint" line) +
 >   `IDEAS.md` (14 PARKED ideas for Seth to pick from).
-> - LANDED: MX0 `f651c21` (direction + previews), MX1-4 `2cdeee0`
+> - LANDED: MX0 `f651c21` (direction + previews), MX1-4 `2cdeee0`, MX5-6 `d309919`
 >   (motion primitives + Analytics in motion + per-palette scene
->   previews). Next code unit per ROADMAP: MX5 (shell transitions).
+>   previews), MX5-6 (shell transitions + History FLIP). Next: ONE critic round on Analytics + shell (Seth, Oct 9), then MX7 (logger floor) per ROADMAP. Fable + Opus are capped in Cursor until Oct 18 - Seth chose Cursor auto + a harder Opus-seat audit meanwhile.
 > - Previews (private Artifacts): analytics X52VRgnoGLer3gGgphQnBU, PR
 >   2kWaZboR6dtMGXgwJqhPSN, navigation T5WpDyvFkAX5rdex1Y5k67, session
 >   flow 7dk9zTUhc2nxAbjDLS9i2S, scenes PTk4q9Gww5xhBy5cHkgQBx
@@ -51,14 +51,30 @@ From MX1-4 (`2cdeee0`), on a phone, two palettes, both modes:
 7. Empty state (fresh account / tiny range): ghosts breathe slowly.
 8. OS reduce-motion on: everything prints at its final state, pills jump.
 
+From MX5-6 (`d309919`):
+9. Analytics on a cold load: the range chips, view tabs and chart/table
+   toggle each SHOW a selected pill (it was missing until the d309919
+   reviewer fix).
+10. Bottom tabs: the accent bar + halo glide to the tapped tab, the icon
+    pops once; pages slide left/right in tab order; the masthead, tab bar
+    and workout bar never get covered or move mid-slide.
+11. Tap a second tab mid-slide: the second page wins at once.
+12. Desktop (wide window): top bar reads Home / Analytics / History /
+    Library / Profile, the pill sits on the active tab.
+13. Cold load Home, Library, History, a block run page: a page-shaped
+    skeleton on first paint; Library tab counts are a ghost pill, not "0".
+14. History: tap a finished workout - its row grows into the summary
+    header; Back shrinks it into the row. Open an in-progress workout:
+    no fly-in, logging a set is instant.
+
 ## PICK UP HERE (next session)
 
 1. **Continue the MX wave** (opened Oct 9, see the top block):
-   - next unit = the first non-DONE unit in `ROADMAP.md` (MX5 shell
-     transitions); write a broad brief (MX0/MX1-4 briefs are the
+   - next unit = the first non-DONE unit in `ROADMAP.md` (MX7 logger
+     floor); write a broad brief (MX0/MX1-4/MX5-6 briefs are the
      pattern), dispatch as a RESUME of Fable's chat, land via `land-unit`.
-   - after MX1-4, one critic round on the new Analytics page is owed
-     (Seth's critic loop, one round by default) - fold its fixes into the
+   - ONE critic round on Analytics + the new shell is owed NOW (Seth agreed
+     to run it after MX5-6) - fold its fixes into the
      next brief.
    - every wave ends with a What's New unit (`_WHATS_NEW.md`); release
      bullets stay at 25 words or fewer. The ledger has the MX section.

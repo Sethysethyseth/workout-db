@@ -18,3 +18,4 @@ Write what a lifter would notice. Internal-only work gets no entry.
 ## Motion wave (MX) - motion-wave
 
 - [mx1-4] Analytics comes alive: cards rise in, numbers roll up, bars and trend lines draw themselves, gains show in a clear "up" color in every theme, and exercise names no longer get cut off | Where: Analytics (all four tabs) | Files: client/src/pages/AnalyticsPage.jsx, client/src/styles/analytics-motion.css, client/src/components/analytics/ExercisesView.jsx
+- [mx5-6] Moving between tabs now slides pages left or right in tab order, the tab bar's highlight glides to the tab you tapped, pages show their shape while loading, and a finished workout in History grows into its summary | Where: bottom tabs, desktop top bar, History | Files: client/src/components/motion/RouteTransition.jsx, client/src/components/layout/BottomNav.jsx, client/src/pages/SessionsPage.jsx
