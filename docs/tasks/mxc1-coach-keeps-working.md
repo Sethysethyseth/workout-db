@@ -51,7 +51,15 @@ CHANGES:
    a question, leave, and the coach keeps working and lets them know when
    it is done. Shown once (localStorage; new keys use the existing
    `workoutdb-` prefix - never rename existing keys). Never covers the
-   composer or blocks typing.
+   composer or blocks typing. ONCE MEANS ONCE (Seth, Oct 10: "not every
+   time you log in"): follow `client/src/lib/whatsNewStorage.js` (a
+   device-local seen marker in localStorage) - never sessionStorage, React
+   state or anything tied to the auth session; logout (`AuthContext`
+   removes only `authToken`) must not clear it, and it must not be keyed
+   to a login or token. Mark it seen when it is SHOWN, not only on
+   dismiss, so leaving the page without tapping it does not bring it back.
+   A different device shows it once more (cross-device once would need a
+   server flag - out of scope).
 3. "Coach is working" bar. While an answer is in flight and the user is NOT
    on `/coach`, show a persistent bar in the same language as
    `PersistentWorkoutBar` (the resume-workout bar): the coach crown (the
@@ -158,7 +166,9 @@ in a real browser at 390x844 on the staging DB with the mock coach):
   the full exchange and the bar is gone; ask -> leave -> come back before it
   finishes -> stream still running; New conversation clears it; reload on
   `/coach` reopens the conversation via `?c=`; first-open note shows once
-  and never again after dismiss; live workout page + working coach -> the
+  and never again - not after dismiss, not after leaving without
+  dismissing, not after a reload, and not after log out -> log back in
+  (show the localStorage key and that logout leaves it); live workout page + working coach -> the
   bar does not overlap the workout bar, Finish dock, bottom nav, or a
   focused input (rects); History Coach side: open, delete one, delete all,
   load more, empty state; Back from a conversation lands on the Coach side;
