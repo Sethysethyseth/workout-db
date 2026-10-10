@@ -337,6 +337,22 @@ Conventions for every unit below:
 - **Depends on:** MXF3. **Packages:** none.
 - **Status:** DONE (Oct 10, 2026). Resume no longer opens suggestion lists. A promoted quick-log row keeps its slot and its input node until focus leaves that exercise's sets, then saved order applies. Search scrolls the name field up when the list opens (flips above only if three rows still will not fit). The builder list ends at the keyboard. The coach chip publishes `--coach-working-chip-h` and sticky headings sit below it. "Add a workout note" focuses in the same tap. `?kbdebug=1` follows the visual viewport off the title, and coach cards clear the overlay scrollbar.
 
+## MXF5 - Critic round 2 after MXF3 (icons, alignment, contrast)
+
+- **Goal:** fixes from critic round 2 (all 10 combos, 5/10): white on the
+  dark-mode accent, Analytics chart cards without side padding, text-glyph
+  icons sitting low, the off-centre Stop label, iron light amber text, one
+  coach mark at nav weight, and small alignment, contrast and copy fixes.
+- **Surface:** app-wide tokens, /coach, Analytics, the logger header,
+  Profile, the block day card, Library.
+- **Variant:** n/a (fixes).
+- **Files:** block `docs/tasks/mxf5-critic-r2-visual-fixes.md`; findings
+  `docs/tasks/mxf3-critic-round-2-FINDINGS.md`.
+- **Done when:** the block acceptance criteria pass and the seat re-measures
+  round 2 clean.
+- **Depends on:** MXF4. **Packages:** none.
+- **Status:** TODO.
+
 ## MX7 - Logger quiet confirm + rest dock
 
 - **Goal:** the floor stays quiet: logging a set scales the number out and
