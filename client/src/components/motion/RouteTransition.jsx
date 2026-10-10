@@ -4,7 +4,7 @@ import { useLocation, useNavigationType, useOutlet } from "react-router-dom";
 import "../../styles/shell-motion.css";
 import { prefersReducedMotion } from "../../lib/useReducedMotion.js";
 import { routeDirection } from "./navOrder.js";
-import { takeRouteFade } from "./useFlip.js";
+import { flipSourcePending, takeRouteFade } from "./useFlip.js";
 
 /**
  * MX5 shared-axis route transition. Mounted as a pathless layout route in
@@ -68,17 +68,30 @@ export function RouteTransition() {
     if (from === pathname) return undefined;
     prevPathRef.current = pathname;
 
-    const dir = takeRouteFade() ? "fade" : routeDirection(from, pathname);
+    /* Fade (no slide, no View Transition snapshot) when a shrink will run:
+       the forward tap set the flag, or we are leaving a shrink source for
+       History - the source is still mounted at this point, so ask it. */
+    const fadeFlag = takeRouteFade();
+    const toHistoryShrink = pathname === "/sessions" && flipSourcePending();
+    const dir = fadeFlag || toHistoryShrink ? "fade" : routeDirection(from, pathname);
     const push = navType === "PUSH";
     const scrollTop = () => {
       if (push && typeof window !== "undefined") window.scrollTo(0, 0);
     };
 
-    if (!supportsViewTransitions) {
+    /* A pending FLIP fades the live page instead of snapshotting it, so the
+       card surface (a sibling of this wrapper, on #root) stays visible and
+       the grow/shrink reads as the same motion as the fade. */
+    const reduced = prefersReducedMotion();
+    const flipFade = dir === "fade" && !reduced;
+
+    if (!supportsViewTransitions || flipFade) {
+      if (flipFade && supportsViewTransitions) {
+        flushSync(() => setCommitted(pathname));
+      }
       scrollTop();
       const el = wrapperRef.current;
       if (el && typeof el.animate === "function") {
-        const reduced = prefersReducedMotion();
         const a = el.animate(enterKeyframes(dir), {
           duration: reduced ? 180 : 420,
           easing: reduced ? "ease-out" : "cubic-bezier(0.16, 1, 0.3, 1)",

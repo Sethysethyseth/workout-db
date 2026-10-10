@@ -1,3 +1,5 @@
+import { useRef } from "react";
+import { analyticsQuiet } from "../../lib/analyticsSessionCache.js";
 import { useCountUp } from "../../lib/useCountUp.js";
 import { formatRolling, splitLeadingNumber } from "../../lib/motionFormat.js";
 
@@ -10,9 +12,15 @@ import { formatRolling, splitLeadingNumber } from "../../lib/motionFormat.js";
  * rolls); callers pass the cascade slot's data delay.
  */
 export function CountUp({ text, delay = 0, enabled = true, className = "" }) {
+  /* A quiet Analytics return prints the cached number. A later change
+     (stale-while-revalidate) rolls from that number and keeps rolling;
+     the flag is latched so a re-render does not cancel it. */
+  const initialText = useRef(text);
+  const quietMount = useRef(analyticsQuiet());
+  const roll = enabled && (!quietMount.current || text !== initialText.current);
   const parts = splitLeadingNumber(text);
   const target = parts ? parts.value : NaN;
-  const { value, rolling } = useCountUp(target, { delay, enabled: enabled && parts != null });
+  const { value, rolling } = useCountUp(target, { delay, enabled: roll && parts != null });
 
   if (!parts) return <span className={className || undefined}>{text}</span>;
 

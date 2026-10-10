@@ -28,7 +28,7 @@ export function BalanceScale({ label, value, leftCaption, rightCaption, unavaila
         <div className="row analytics-balance-row">
           <span>{label}</span>
           <span className="muted small">
-            {unavailable ? "not available" : "— not enough data"}
+            {unavailable ? "not available" : "- not enough data"}
           </span>
         </div>
         <GhostTrack />

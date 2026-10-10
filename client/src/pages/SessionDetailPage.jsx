@@ -7,7 +7,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import * as analyticsApi from "../api/analyticsApi.js";
 import * as exerciseApi from "../api/exerciseApi.js";
 import * as sessionApi from "../api/sessionApi.js";
@@ -23,7 +23,12 @@ import { AddExerciseToLibrarySheet } from "../components/workout/AddExerciseToLi
 import { ConfirmPanel } from "../components/ConfirmPanel.jsx";
 import { CoachPanel } from "../components/coach/CoachPanel.jsx";
 import { CompletedSessionSummary } from "../components/workout/CompletedSessionSummary.jsx";
-import { useFlipIn, useFlipOutOnUnmount } from "../components/motion/useFlip.js";
+import {
+  hasPendingFlip,
+  setFlipSource,
+  useFlipIn,
+  useFlipOutOnUnmount,
+} from "../components/motion/useFlip.js";
 import { getAdHocSessionTitle, setAdHocSessionTitle } from "../lib/adHocSessionTitle.js";
 import { sessionDisplayTitle } from "../lib/sessionDisplay.js";
 import { smartWorkoutNameFromSessionExercises } from "../lib/smartWorkoutName.js";
@@ -2463,6 +2468,7 @@ function SessionExerciseBlock({
 
 export function SessionDetailPage() {
   const { id } = useParams();
+  const location = useLocation();
   const sessionId = Number(id);
   const navigate = useNavigate();
 
@@ -2503,19 +2509,37 @@ export function SessionDetailPage() {
   const sessionNoteTogglesInitRef = useRef(null);
 
   const isCompleted = Boolean(session?.completedAt);
+  const rowPreview = location.state?.mxRow;
+  const previewMatches = Boolean(rowPreview && String(rowPreview.id) === String(sessionId));
 
-  /* MX6: the completed-session header flies from the History row. The ref
-     and both hooks stay inert while the session is live, so set entry never
-     waits on a transition. */
+  /* MXF1: a card surface grows from the tapped History row into the header
+     slot. It starts on the first paint, from the row data passed with the
+     navigation, and never attaches to a live session. */
   const flipHeadRef = useRef(null);
   const flipRefs = useRef({ head: flipHeadRef });
+  const [holdFor, setHoldFor] = useState(() =>
+    hasPendingFlip(String(sessionId)) ? String(sessionId) : null
+  );
+  if (hasPendingFlip(String(sessionId)) && holdFor !== String(sessionId)) {
+    setHoldFor(String(sessionId));
+  }
+  const holdHead = holdFor === String(sessionId);
+  const flipActive = previewMatches || (!loading && isCompleted);
   useFlipIn(String(sessionId), flipRefs.current, {
-    enabled: !loading && isCompleted,
-    scaleNames: ["head"],
+    enabled: flipActive,
+    onDone: () => setHoldFor(null),
   });
   useFlipOutOnUnmount(String(sessionId), flipRefs.current, {
-    enabled: !loading && isCompleted,
+    enabled: flipActive,
   });
+  /* While a completed session is shown it is a shrink source: leaving it for
+     History fades instead of sliding (the route layer decides before this
+     page unmounts). Never registered for a live session. */
+  useLayoutEffect(() => {
+    if (!flipActive) return undefined;
+    setFlipSource(String(sessionId));
+    return () => setFlipSource(null);
+  }, [flipActive, sessionId]);
 
   const setsByExercise = useMemo(() => {
     const sets = Array.isArray(session?.sets) ? session.sets : [];
@@ -3695,12 +3719,45 @@ export function SessionDetailPage() {
     }
   }
 
+  if (loading && previewMatches && !session) {
+      return (
+        <div className="stack session-detail-page">
+          <div
+            className={`row session-detail-head${holdHead ? " mx-flip-hold" : ""}`}
+            ref={flipHeadRef}
+          >
+            <div className="session-detail-head__text">
+              <h1 style={{ marginBottom: 6 }}>{rowPreview.title}</h1>
+              <p className="muted small" style={{ margin: 0 }}>
+                {rowPreview.when}
+                {rowPreview.time ? ` · ${rowPreview.time}` : ""}
+              </p>
+              {rowPreview.top || rowPreview.volume ? (
+                <p className="muted small" style={{ margin: "4px 0 0" }}>
+                  {rowPreview.top ? `Top set ${rowPreview.top}` : null}
+                  {rowPreview.top && rowPreview.volume ? " · " : null}
+                  {rowPreview.volume || null}
+                </p>
+              ) : null}
+            </div>
+          </div>
+          <div className={holdHead ? "mx-flip-reveal" : undefined}>
+            <LoadingState
+              tone="skeleton"
+              variant="sessionbody"
+              caption={false}
+              label="Loading workout…"
+            />
+          </div>
+        </div>
+      );
+  }
+
   if (loading) {
     return (
       <LoadingState
         tone="skeleton"
-        variant="session"
-        rows={3}
+        variant="sessiondetail"
         label="Loading workout…"
         slowLabel="Taking longer than usual…"
       />
@@ -3941,7 +3998,10 @@ export function SessionDetailPage() {
           </button>
         </div>
       ) : (
-        <div className="row session-detail-head" ref={isCompleted ? flipHeadRef : undefined}>
+        <div
+          className={`row session-detail-head${isCompleted && holdHead ? " mx-flip-hold" : ""}`}
+          ref={isCompleted ? flipHeadRef : undefined}
+        >
           <div className="session-detail-head__text">
             {blockContext ? (
               <div className="bk bk-log-eyebrow-wrap">
@@ -4298,7 +4358,7 @@ export function SessionDetailPage() {
         )
       ) : (
         <div className="stack session-completed">
-          <div className="stack mx-cascade">
+          <div className={`stack mx-cascade${holdHead ? " mx-flip-reveal" : ""}`}>
           <CompletedSessionSummary
             session={session}
             exercises={sessionExercises}
@@ -4307,16 +4367,15 @@ export function SessionDetailPage() {
             setHasPR={setHasPR}
             renderTracked={(se) => {
               const status = trackedStatusByExerciseId.get(se.id) ?? null;
-              if (!status) return null;
-              const interactive = status === "unresolved";
+              if (status !== "unresolved") return null;
               return (
-                <ExerciseTrackedIndicator
-                  status={status}
-                  interactive={interactive}
-                  onOpenAddToLibrary={
-                    interactive ? () => openAddToLibrarySheet(se.exerciseName, se.id) : undefined
-                  }
-                />
+                <button
+                  type="button"
+                  className="session-summary__track-link"
+                  onClick={() => openAddToLibrarySheet(se.exerciseName, se.id)}
+                >
+                  Track this exercise
+                </button>
               );
             }}
           />

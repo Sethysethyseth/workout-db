@@ -17,6 +17,13 @@ import { MuscleVolumeHeatmap } from "../components/analytics/MuscleVolumeHeatmap
 import { StrengthTrendChart } from "../components/analytics/StrengthTrendChart.jsx";
 import { ExercisesView } from "../components/analytics/ExercisesView.jsx";
 import { CoachPanel } from "../components/coach/CoachPanel.jsx";
+import {
+  hasPlayedEntrance,
+  markEntrancePlayed,
+  peekAnalytics,
+  putAnalytics,
+  setAnalyticsQuiet,
+} from "../lib/analyticsSessionCache.js";
 import { buildSuggestedQuestions } from "../lib/coachSuggestions.js";
 import { Meter } from "../components/analytics/Meter.jsx";
 import { BalanceScale } from "../components/analytics/BalanceScale.jsx";
@@ -58,7 +65,7 @@ function parseAnalyticsView(searchParams) {
 const HOW_EFFECTIVE_SETS =
   "Each set counts toward a muscle by its fractional attribution from the exercise catalog (a bench set is mostly chest, partly triceps and shoulders). Counted for every set, with or without RIR (RPE counts too: RIR = 10 − RPE).";
 const HOW_STIMULATING_SETS =
-  "Attribution fraction × a stimulus multiplier from the set's RIR (RPE counts too: RIR = 10 − RPE) — sets closer to failure count for more. Sets logged without RIR or RPE are excluded from this number.";
+  "Attribution fraction × a stimulus multiplier from the set's RIR (RPE counts too: RIR = 10 - RPE). Sets closer to failure count for more. Sets logged without RIR or RPE are excluded from this number.";
 const HOW_MATCHED_EFFORT =
   "Compares your estimated 1RM only across sets you took at the same RIR (RPE counts too: RIR = 10 − RPE), so progress shows up even when you never max out. Uses the RIR you log most often for this exercise; needs 2 or more sessions at the same RIR.";
 const HOW_EXECUTION =
@@ -172,7 +179,7 @@ function absMatchedEffortDelta(ex) {
 
 /** Noteworthy (>= 2 sessions) first by |matched-effort delta| DESC; ties /
     no-delta keep input order. Singles collapsed only when mixed with
-    noteworthy rows — all-single lists render unchanged. */
+    noteworthy rows. All-single lists render unchanged. */
 function partitionStrengthTableRows(perExercise) {
   const list = Array.isArray(perExercise) ? perExercise : [];
   const noteworthy = [];
@@ -330,7 +337,7 @@ function PerMuscleSection({ perMuscle, granularity, effortCoverage }) {
                     <td className="num">{m.effectiveSets}</td>
                     <td className="num">
                       {m.stimulatingSets === null ? (
-                        <span className="muted">—</span>
+                        <span className="muted">-</span>
                       ) : (
                         m.stimulatingSets
                       )}
@@ -348,7 +355,7 @@ function PerMuscleSection({ perMuscle, granularity, effortCoverage }) {
           </div>
           {anyLocked ? (
             <p className="muted small analytics-table-footnote">
-              — stimulating needs RIR or RPE logged for that muscle.
+              - stimulating needs RIR or RPE logged for that muscle.
             </p>
           ) : null}
         </>
@@ -373,8 +380,8 @@ function PerExerciseSection({ perExercise }) {
         sub={
           <>
             Matched-effort <HowCalculatedButton title="Matched effort" copy={HOW_MATCHED_EFFORT} />{" "}
-            trend per exercise where unlocked, with each session's top set — the weight you
-            actually lifted — as the evidence.
+            trend per exercise where unlocked, with each session's top set, the weight you
+            actually lifted, as the evidence.
           </>
         }
         view={view}
@@ -698,11 +705,24 @@ function DataQualitySection({ meta }) {
 export function AnalyticsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [weeks, setWeeks] = useState(() => loadAnalyticsWeeks());
-  const [summary, setSummary] = useState(null);
+  const [summary, setSummary] = useState(() => peekAnalytics(loadAnalyticsWeeks()));
+  /* The range the DISPLAYED summary belongs to. The content re-keys on it, so
+     a range change keeps the old numbers on screen, dimmed (critic KEEP),
+     until the new ones land - then the full entrance plays on the new data. */
+  const [summaryWeeks, setSummaryWeeks] = useState(() => loadAnalyticsWeeks());
   const [exerciseIndex, setExerciseIndex] = useState(null);
   const [indexReady, setIndexReady] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => peekAnalytics(loadAnalyticsWeeks()) == null);
   const [error, setError] = useState(null);
+  const [seenWeeks, setSeenWeeks] = useState(weeks);
+  const [epoch, setEpoch] = useState(0);
+  if (weeks !== seenWeeks) {
+    setSeenWeeks(weeks);
+    setEpoch((n) => n + 1);
+  }
+  const [visitQuiet] = useState(() => hasPlayedEntrance());
+  const quiet = visitQuiet && epoch === 0;
+  setAnalyticsQuiet(quiet);
   const view = parseAnalyticsView(searchParams);
 
   /* Shared-axis direction for the view switch: the incoming view slides in
@@ -768,12 +788,23 @@ export function AnalyticsPage() {
     let cancelled = false;
 
     async function load() {
-      setLoading(true);
+      const hit = peekAnalytics(weeks);
+      if (hit) {
+        setSummary(hit);
+        setSummaryWeeks(weeks);
+        setLoading(false);
+      } else {
+        setLoading(true);
+      }
       setError(null);
       try {
         const { from, to } = rangeForWeeks(weeks);
         const data = await analyticsApi.getSummary({ from, to });
-        if (!cancelled) setSummary(data);
+        if (!cancelled) {
+          putAnalytics(weeks, data);
+          setSummary(data);
+          setSummaryWeeks(weeks);
+        }
       } catch (err) {
         if (!cancelled) setError(err);
       } finally {
@@ -786,6 +817,10 @@ export function AnalyticsPage() {
       cancelled = true;
     };
   }, [weeks]);
+
+  useEffect(() => {
+    if (summary) markEntrancePlayed();
+  }, [summary]);
 
   const isEmpty =
     summary &&
@@ -802,7 +837,7 @@ export function AnalyticsPage() {
   );
 
   return (
-    <div className="stack analytics-page">
+    <div className={`stack analytics-page${quiet ? " mx-quiet" : ""}`}>
       <div>
         <h1 className="page-title">Analytics</h1>
         <p className="muted analytics-intro">
@@ -827,7 +862,7 @@ export function AnalyticsPage() {
 
       {!error && summary ? (
         isEmpty && view !== "exercises" ? (
-          <Cascade className={`stack analytics-content mx-fade-in${loading ? " is-refreshing" : ""}`}>
+          <Cascade key={summaryWeeks} className={`stack analytics-content mx-fade-in${loading ? " is-refreshing" : ""}`}>
             <AnalyticsViewTabs value={view} onChange={setView} />
             <Cascade key={view} axis={axis} className="card stack analytics-page-empty analytics-empty-surface">
               {!indexReady ? (
@@ -838,7 +873,7 @@ export function AnalyticsPage() {
                 <>
                   <StrengthEmptyGhost />
                   <p className="analytics-unlock" style={{ margin: 0 }}>
-                    Log sets with weight and this becomes your strength trend.
+                    Two sessions of the same lift unlock its trend.
                   </p>
                   {isNewUser ? (
                     <p className="small" style={{ margin: 0 }}>
@@ -888,7 +923,7 @@ export function AnalyticsPage() {
             </Cascade>
           </Cascade>
         ) : (
-          <Cascade className={`stack analytics-content mx-fade-in${loading ? " is-refreshing" : ""}`}>
+          <Cascade key={summaryWeeks} className={`stack analytics-content mx-fade-in${loading ? " is-refreshing" : ""}`}>
             <StatTiles summary={summary} />
             <CoachPanel
               mode="ask"

@@ -7,6 +7,13 @@
 /* -- Type scale inside Analytics (critic #5): page title 27px display face;
    card titles ONE step below in the body face; eyebrows 11px caps. -- */
 
+/* Balance sits in a padded card, so its head must not add a second inset.
+   Other card titles live in a zero-padding card plus this head's padding. */
+.analytics-page section.card > .analytics-card-head {
+  padding-left: 0;
+  padding-right: 0;
+}
+
 .analytics-page .analytics-card-head h2,
 .analytics-page .analytics-section-title,
 .analytics-page .ex-detail-title {
@@ -93,14 +100,9 @@
 
 .analytics-page {
   --chart-up: var(--color-success-accent);
-  --chart-up-text: var(--color-success-text);
+  --chart-up-text: var(--chart-up);
   --chart-down: var(--color-warn-accent);
   --chart-down-text: var(--color-warn-text);
-}
-
-html[data-palette="forest"] .analytics-page {
-  --chart-up: color-mix(in srgb, var(--color-success-accent) 55%, var(--color-text));
-  --chart-up-text: color-mix(in srgb, var(--color-success-text) 70%, var(--color-text));
 }
 
 .analytics-page .st-delta--up,
@@ -108,7 +110,7 @@ html[data-palette="forest"] .analytics-page {
 .analytics-page .st-compact-delta--up,
 .analytics-page .exercise-roster-stat__value.is-up,
 .analytics-page .stat-tile-value--up {
-  color: var(--chart-up-text);
+  color: var(--chart-up);
 }
 
 .analytics-page .st-compact-delta--down,
@@ -370,6 +372,47 @@ html[data-palette="forest"] .analytics-page {
   .analytics-page .exercise-roster-spark {
     display: block;
   }
+}
+
+.analytics-page .st-row-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.analytics-page .st-meta {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--color-text-secondary);
+}
+
+.analytics-page .st-meta--up {
+  color: var(--chart-up);
+}
+
+.analytics-page .st-meta--down {
+  color: var(--chart-down);
+}
+
+/* A return visit fades once. Draws and charges stay off; a range change
+   drops this class so the full entrance runs again. */
+.analytics-page.mx-quiet .page-title,
+.analytics-page.mx-quiet .mx-cascade > * {
+  animation: mx-fade 200ms ease-out both;
+  animation-delay: 0ms;
+}
+
+.analytics-page.mx-quiet .analytics-kpis .stat-tile::before,
+.analytics-page.mx-quiet .st-sparkline-line,
+.analytics-page.mx-quiet .st-sparkline-area,
+.analytics-page.mx-quiet .st-sparkline-dot,
+.analytics-page.mx-quiet .st-sparkline-dot-ring,
+.analytics-page.mx-quiet .st-row .st-delta,
+.analytics-page.mx-quiet .st-row .st-matched,
+.analytics-page.mx-quiet .mv-bar--stimulating::after,
+.analytics-page.mx-quiet .meter-fill {
+  animation: none;
 }
 
 /* ======================================================================

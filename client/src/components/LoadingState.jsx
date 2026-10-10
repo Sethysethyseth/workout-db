@@ -66,7 +66,12 @@ const SKELETON_VARIANTS = {
         <div className="skeleton__tile" />
       </div>
       <div className="skeleton__bar" />
-      <div className="skeleton__tabs" />
+      <div className="skeleton__tabs" aria-hidden="true">
+        <span className="skeleton__tab" />
+        <span className="skeleton__tab" />
+        <span className="skeleton__tab" />
+        <span className="skeleton__tab" />
+      </div>
       <div className="skeleton__block skeleton__block--chart">
         {Array.from({ length: 10 }, (_, i) => (
           <span key={i} className="skeleton__chart-row" style={{ "--w": `${88 - i * 6}%` }} />
@@ -129,6 +134,33 @@ const SKELETON_VARIANTS = {
       <div className="skeleton__block skeleton__block--day" />
     </div>
   ),
+  /* Completed session, before the row preview exists: back chip, title,
+     a 3x2 stat grid, then two exercise cards. */
+  sessiondetail: () => (
+    <div className="skeleton skeleton--sessiondetail">
+      <div className="skeleton__chip" />
+      <div className="skeleton__title skeleton__title--bar" />
+      <div className="skeleton__stats">
+        {Array.from({ length: 6 }, (_, i) => (
+          <div key={i} className="skeleton__stat" />
+        ))}
+      </div>
+      <div className="skeleton__block skeleton__block--short" />
+      <div className="skeleton__block skeleton__block--short" />
+    </div>
+  ),
+  /* The body under a header already drawn from the tapped row. */
+  sessionbody: () => (
+    <div className="skeleton skeleton--sessionbody">
+      <div className="skeleton__stats">
+        {Array.from({ length: 6 }, (_, i) => (
+          <div key={i} className="skeleton__stat" />
+        ))}
+      </div>
+      <div className="skeleton__block skeleton__block--short" />
+      <div className="skeleton__block skeleton__block--short" />
+    </div>
+  ),
   /* A single card-sized slot (Home's "next in your block" card while the
      run fetch is pending). */
   card: () => (
@@ -139,11 +171,10 @@ const SKELETON_VARIANTS = {
 };
 
 /**
- * The one loading language (MX5 / critic B6). Skeletons reserve the final
- * layout and show AT ONCE - the 400 ms hold-back only applies to the
- * text/barbell tones, where a flash of "Loading..." on a fast load is the
- * thing to avoid. The skeleton's caption still waits (CSS), so an instant
- * load shows ghost geometry for a frame, never a caption.
+ * The one loading language (MX5 / critic B6, MXF1). Skeletons reserve the
+ * final layout and show AT ONCE. The barbell caption under a skeleton stays
+ * hidden until the load has already taken about 2.5s, so a fast paint is
+ * geometry only. The 400 ms hold-back still applies to the text/barbell tones.
  */
 export function LoadingState({
   label = "Loading…",
@@ -156,6 +187,12 @@ export function LoadingState({
 }) {
   const holdBack = delayed ?? tone !== "skeleton";
   const { visible, slow } = useDelayedReveal(holdBack, SHOW_DELAY_MS, SLOW_DELAY_MS);
+  const [skeletonSlow, setSkeletonSlow] = useState(false);
+  useEffect(() => {
+    if (tone !== "skeleton" || !caption) return undefined;
+    const timer = setTimeout(() => setSkeletonSlow(true), 2500);
+    return () => clearTimeout(timer);
+  }, [tone, caption]);
   if (!visible) return null;
 
   const text = slow && slowLabel ? slowLabel : label;
@@ -194,10 +231,10 @@ export function LoadingState({
     return (
       <div className="skeleton-wrap" role="status" aria-live="polite" aria-label={text}>
         {render({ rows })}
-        {caption ? (
+        {caption && skeletonSlow ? (
           <div className="skeleton__caption">
             <Barbell plates={2} inline />
-            <span className="skeleton__caption-text">{text}</span>
+            <span className="skeleton__caption-text">{slow && slowLabel ? slowLabel : label}</span>
           </div>
         ) : null}
       </div>

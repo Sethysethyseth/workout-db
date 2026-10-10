@@ -9,6 +9,12 @@
    - WAAPI fallback runs on the wrapper itself (RouteTransition.jsx); only the
      base rule below applies to it. */
 
+/* The masthead and the page share one scrollbar slot, so the wordmark
+   does not jump sideways between a short page and a scrolling one. */
+html {
+  scrollbar-gutter: stable;
+}
+
 .mx-route {
   view-transition-name: mx-page;
   min-width: 0;
@@ -153,5 +159,37 @@ html[data-mx-dir="back"]::view-transition-new(mx-page) {
 
   ::view-transition-new(mx-page) {
     animation-name: mx-vt-fade-in !important;
+  }
+}
+
+/* MXF1: the History row and the session header trade places via an empty
+   card. Left/top/width/height only - the node has no text, so type never
+   scales. It lives on #root (z-index 1) under the nav (z-index 5). */
+.mx-flip-surface {
+  position: fixed;
+  z-index: 4;
+  margin: 0;
+  pointer-events: none;
+  background: var(--color-surface-1);
+  border: 1px solid color-mix(in srgb, var(--color-border) 55%, transparent);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+}
+
+.session-detail-head.mx-flip-hold > * {
+  opacity: 0;
+}
+
+.mx-flip-reveal {
+  animation: mx-fade 150ms ease-out 276ms both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .session-detail-head.mx-flip-hold > * {
+    opacity: 1;
+  }
+
+  .mx-flip-reveal {
+    animation: none;
   }
 }

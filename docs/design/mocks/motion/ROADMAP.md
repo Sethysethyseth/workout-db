@@ -1,6 +1,6 @@
 # MX wave roadmap - motion + visuals for LogChamp
 
-**Last checkpoint:** MX5 and MX6 DONE (Oct 9, 2026). MX5: shared-axis route transitions, one sliding nav indicator on phone and desktop, one skeleton language shown at once. MX6: History row grows into the completed-session header and Back reverses it; a live session does not flip. `npm run build` green. Next code unit: MX7 (logger floor) - or MX5b (one shell column) / MX10 if Seth picks scenes first. MX1-MX4 and MX-S stay DONE.
+**Last checkpoint:** MXF1 DONE (Oct 9, 2026). Critic round 1, Seth's rulings applied: route stay 420ms and the surface stay 460ms; Analytics replays in full on the first view of a session and on a range change, and fades on a return. History grows an empty card surface (no scaled type) from the tap. Next code unit: MX7 (logger floor) - or MX5b (one shell column) / MX10 if Seth picks scenes first. MX1-MX6 and MX-S stay DONE.
 
 This file is the wave's state. It stands on its own next to
 `MOTION-DIRECTION.md` (the design) and needs no chat history. Whoever picks
@@ -235,6 +235,33 @@ Conventions for every unit below:
   on unmount of a completed session and the History row flies home once the
   list has loaded. Reduced motion skips the FLIP; the route crossfade
   remains.
+
+## MXF1 - Critic round 1
+
+- **Goal:** the nine critic-round-1 fixes, with Seth's two overrides: do not
+  change the 420ms route or the 460ms surface duration, and replay Analytics
+  in full on the first view of a browser session and on a range change. A
+  return to Analytics in the same session fades (~200ms) and rolls only
+  values that changed.
+- **Surface:** History to session detail, skeletons, Analytics, the desktop
+  masthead, chart color, the completed-session summary, boot splash, the
+  History month heading.
+- **Variant:** n/a (fixes, not a new A/B).
+- **Files:** `client/src/components/motion/`, `client/src/pages/SessionsPage.jsx`,
+  `client/src/pages/SessionDetailPage.jsx` (loading branch and the completed
+  header/summary only), `client/src/components/workout/CompletedSessionSummary.jsx`,
+  `client/src/components/LoadingState.jsx`, `client/src/components/analytics/WeeklyReport.jsx`,
+  `client/src/pages/AnalyticsPage.jsx`, `client/src/components/analytics/`,
+  `client/src/styles/analytics-motion.css`, `client/src/lib/historySessionCache.js`,
+  `client/src/lib/analyticsSessionCache.js`, `client/src/components/layout/Navbar.jsx`,
+  `client/src/styles/shell-motion.css`, `client/src/index.css`.
+- **Done when:** each of the nine changes is visible, durations are unchanged,
+  the live logger is untouched, build passes, check-hex is clean.
+- **Depends on:** MX5, MX6. **Packages:** none.
+- **Status:** DONE (Oct 9, 2026). The grow is an empty card surface
+  (left/top/width/height), started from the tapped row's own data. Back
+  fades and shrinks together. Skeleton captions wait 2.5s. Analytics keeps
+  a session cache per range.
 
 ## MX7 - Logger quiet confirm + rest dock
 

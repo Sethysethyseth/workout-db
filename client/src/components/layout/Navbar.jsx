@@ -24,6 +24,10 @@ export function Navbar() {
   const settled = !authLoading;
   const activeIndex = sectionIndexOf(pathname);
 
+  /* The boot splash is the only wordmark. A masthead brand above it was a
+     second, smaller LogChamp pressed to the screen edge. */
+  if (authLoading) return null;
+
   return (
     <header className="nav">
       <div className="container nav-inner">

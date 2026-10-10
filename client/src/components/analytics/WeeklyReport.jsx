@@ -23,6 +23,24 @@ function hasSummaryData(summary) {
   return (summary.perMuscle?.length ?? 0) > 0 || (summary.perExercise?.length ?? 0) > 0;
 }
 
+const WEEKLY_MODE_KEY = "workoutdb-weekly-mode";
+
+function readWeeklyMode() {
+  try {
+    return sessionStorage.getItem(WEEKLY_MODE_KEY) === "full" ? "full" : "compact";
+  } catch {
+    return "compact";
+  }
+}
+
+function writeWeeklyMode(mode) {
+  try {
+    sessionStorage.setItem(WEEKLY_MODE_KEY, mode);
+  } catch {
+    /* private mode */
+  }
+}
+
 function sumEffectiveSets(summary) {
   return (summary?.perMuscle ?? []).reduce((sum, m) => sum + m.effectiveSets, 0);
 }
@@ -296,11 +314,13 @@ export function WeeklyReport({ weekStrip = null }) {
 
   if (loading) {
     const withStrip = Boolean(weekStrip);
+    const compact = readWeeklyMode() === "compact";
     return (
       <section
         className={
           "card weekly-report weekly-report--skel" +
-          (withStrip ? " weekly-report--skel-with-strip" : " weekly-report--skel-no-strip")
+          (withStrip ? " weekly-report--skel-with-strip" : " weekly-report--skel-no-strip") +
+          (compact ? " weekly-report--skel-compact" : "")
         }
         aria-busy="true"
         aria-label="Loading last 7 days"
@@ -308,13 +328,19 @@ export function WeeklyReport({ weekStrip = null }) {
         <div className="skeleton weekly-report__skel">
           <div className="skeleton__title" />
           {withStrip ? <div className="weekly-report__skel-strip" aria-hidden="true" /> : null}
-          <div className="skeleton__tiles">
-            <div className="skeleton__tile" />
-            <div className="skeleton__tile" />
-            <div className="skeleton__tile" />
-            <div className="skeleton__tile" />
-          </div>
-          <div className="skeleton__block skeleton__block--short" />
+          {compact ? (
+            <div className="skeleton__block skeleton__block--short" />
+          ) : (
+            <>
+              <div className="skeleton__tiles">
+                <div className="skeleton__tile" />
+                <div className="skeleton__tile" />
+                <div className="skeleton__tile" />
+                <div className="skeleton__tile" />
+              </div>
+              <div className="skeleton__block skeleton__block--short" />
+            </>
+          )}
         </div>
       </section>
     );
@@ -332,6 +358,7 @@ export function WeeklyReport({ weekStrip = null }) {
   const priorEmpty = !priorHasData;
 
   if (!currentHasData && priorHasData) {
+    writeWeeklyMode("compact");
     return (
       <section className="card weekly-report" aria-labelledby="weekly-report-heading">
         <div className="weekly-report__head row">
@@ -354,6 +381,8 @@ export function WeeklyReport({ weekStrip = null }) {
   const priorSets = sumEffectiveSets(priorSummary);
   const topSet = pickTopSet(currentSummary?.perExercise);
   const topGain = pickTopGain(currentSummary?.perExercise ?? []);
+
+  writeWeeklyMode("full");
 
   const workoutDelta = formatCountDelta(currentWorkouts, priorWorkouts, priorEmpty);
   const setsDelta = formatSetsDelta(currentSets, priorSets, priorEmpty);
@@ -390,14 +419,14 @@ export function WeeklyReport({ weekStrip = null }) {
               ? topSet.reps != null
                 ? `${formatWeight(topSet.weight)} × ${formatRepsValue(topSet.reps)}`
                 : formatWeight(topSet.weight)
-              : "—"
+              : "-"
           }
           delta={topSet ? topSet.name : "not enough data"}
           deltaTone={null}
         />
         <ReportStat
           label="Top gain"
-          value={topGain ? `+${formatEstimate(topGain.delta)}` : "—"}
+          value={topGain ? `+${formatEstimate(topGain.delta)}` : "-"}
           delta={
             topGain
               ? topGain.matched

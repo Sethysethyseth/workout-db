@@ -42,7 +42,7 @@ function cellTip(muscle, period, granularity, stimulatingLeads) {
   const label = periodLabel(period, granularity);
   const eff = period.effectiveSets;
   const stim = period.stimulatingSets;
-  if (eff <= 0) return `${muscle} — ${label}: not trained`;
+  if (eff <= 0) return `${muscle}, ${label}: not trained`;
   const effPart = `${fmt1(eff)} effective`;
   const stimPart =
     stim === null
@@ -50,8 +50,8 @@ function cellTip(muscle, period, granularity, stimulatingLeads) {
       : `${fmt1(stim)} stimulating`;
   // Lead with whichever metric colors the cell.
   return stimulatingLeads && stim !== null
-    ? `${muscle} — ${label}: ${stimPart} · ${effPart}`
-    : `${muscle} — ${label}: ${effPart} · ${stimPart}`;
+    ? `${muscle}, ${label}: ${stimPart} · ${effPart}`
+    : `${muscle}, ${label}: ${effPart} · ${stimPart}`;
 }
 
 /** Cell value = the volume headline metric (same adaptive rule as the N2

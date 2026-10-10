@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { captureFlip, peekFlip, useFlipIn } from "../components/motion/useFlip.js";
+import { captureFlip, peekFlip, playCapturedSurface } from "../components/motion/useFlip.js";
+import { peekHistorySessions, putHistorySessions } from "../lib/historySessionCache.js";
 import * as sessionApi from "../api/sessionApi.js";
 import { ErrorMessage } from "../components/ErrorMessage.jsx";
 import { LoadingState } from "../components/LoadingState.jsx";
@@ -36,32 +37,34 @@ function monthKey(value) {
 }
 
 export function SessionsPage() {
-  const [sessions, setSessions] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [loadedOnce, setLoadedOnce] = useState(false);
+  const cached = peekHistorySessions();
+  const [sessions, setSessions] = useState(cached || []);
+  const [loading, setLoading] = useState(!cached);
+  const [loadedOnce, setLoadedOnce] = useState(Boolean(cached));
   const [error, setError] = useState(null);
   const unit = loadWeightUnit();
-  /* The capture is written by the detail page's unmount, which runs after
-     this page's first render, so the key is picked up in layout. */
-  const [flipKey, setFlipKey] = useState(null);
-  const flipRowRef = useRef(null);
+  /* Back's capture is written by the detail page's unmount, which runs
+     before this layout effect. The row is already on screen when the list
+     was cached, so the shrink starts in the same commit as the route fade. */
+  const rowEls = useRef(new Map());
   useLayoutEffect(() => {
-    if (!loadedOnce || flipKey) return;
+    if (!loadedOnce) return;
     const key = peekFlip();
     if (key == null) return;
-    if (sessions.some((s) => String(s.id) === String(key) && s.completedAt)) setFlipKey(String(key));
-  }, [loadedOnce, sessions, flipKey]);
-  useFlipIn(flipKey, { head: flipRowRef }, {
-    enabled: flipKey != null,
-    scaleNames: ["head"],
-  });
+    const el = rowEls.current.get(String(key));
+    if (!el) return;
+    if (!sessions.some((s) => String(s.id) === String(key) && s.completedAt)) return;
+    playCapturedSurface(key, el);
+  }, [loadedOnce, sessions]);
 
   async function load() {
     setLoading(true);
     setError(null);
     try {
       const data = await sessionApi.getMySessions();
-      setSessions(data.sessions || []);
+      const list = data.sessions || [];
+      putHistorySessions(list);
+      setSessions(list);
       setLoadedOnce(true);
     } catch (err) {
       setError(err);
@@ -141,11 +144,36 @@ export function SessionsPage() {
               const duration = live ? null : sessionDurationLabel(s);
               const tonnage = formatTonnage(sessionTonnage(s), unit);
               const top = sessionTopSet(s);
+              const topLabel = top
+                ? `${formatWeight(top.weight, unit)}${top.reps != null ? ` × ${formatRepsValue(top.reps)}` : ""}`
+                : null;
               return (
                 <Link
                   key={s.id}
                   to={`/sessions/${s.id}`}
-                  ref={!live && flipKey != null && String(s.id) === String(flipKey) ? flipRowRef : undefined}
+                  ref={
+                    live
+                      ? undefined
+                      : (node) => {
+                          const id = String(s.id);
+                          if (node) rowEls.current.set(id, node);
+                          else rowEls.current.delete(id);
+                        }
+                  }
+                  state={
+                    live
+                      ? undefined
+                      : {
+                          mxRow: {
+                            id: s.id,
+                            title,
+                            when: `${when.weekday} ${when.day}`.trim(),
+                            time: when.time,
+                            top: topLabel,
+                            volume: tonnage || null,
+                          },
+                        }
+                  }
                   className={`history-row${live ? " history-row--live" : ""}`}
                   onClick={(e) => {
                     if (live) return;

@@ -188,6 +188,7 @@ export function CompletedSessionSummary({
                 </span>
                 <div className="session-summary__exercise-title">
                   <h2>{se.exerciseName}</h2>
+                  {renderTracked ? renderTracked(se) : null}
                   <p className="session-summary__exercise-meta">
                     {sets.length} {sets.length === 1 ? "set" : "sets"}
                     {best ? (
@@ -205,9 +206,6 @@ export function CompletedSessionSummary({
                     ) : null}
                   </p>
                 </div>
-                {renderTracked ? (
-                  <span className="session-summary__exercise-tracked">{renderTracked(se)}</span>
-                ) : null}
               </header>
               {se.notes && String(se.notes).trim() ? (
                 <p className="session-summary__exercise-notes" style={notesPreserveStyle}>

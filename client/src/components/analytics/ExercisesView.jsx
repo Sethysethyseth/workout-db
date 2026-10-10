@@ -178,7 +178,7 @@ function WeeklyVolumeMini({ weeklyVolume, weeks }) {
   if (!anyInRange) {
     return (
       <p className="muted small ex-detail-range-empty">
-        No sets in the last {weeks} weeks — try a longer range with the chips above.
+        No sets in the last {weeks} weeks. Try a longer range with the chips above.
       </p>
     );
   }
@@ -499,7 +499,8 @@ function rangeStatsFor(row, stats) {
     appears on wide screens only (analytics-motion.css). */
 function RosterRow({ row, stats, selected, weeks, onSelect }) {
   const ago = daysAgo(row.lastPerformed);
-  const agoLabel = ago === 0 ? "today" : ago === 1 ? "yesterday" : `${ago}d ago`;
+  const agoLabel =
+    ago === 0 ? "today" : ago === 1 ? "yesterday" : `${ago} days ago`;
   const series = Array.isArray(stats?.topSetSeries) ? stats.topSetSeries : [];
   const inRange = series.length;
   const delta = series.length >= 2 ? series[series.length - 1].weight - series[0].weight : null;
@@ -517,7 +518,7 @@ function RosterRow({ row, stats, selected, weeks, onSelect }) {
         <span className="exercise-roster-main">
           <span className="exercise-roster-name">{row.name}</span>
           <span className="exercise-roster-meta muted small">
-            last {agoLabel}
+            last trained {agoLabel}
             <span aria-hidden="true"> · </span>
             {row.sessionCount} session{row.sessionCount === 1 ? "" : "s"}
             {inRange ? (
@@ -541,7 +542,7 @@ function RosterRow({ row, stats, selected, weeks, onSelect }) {
           <span className="exercise-roster-hero__value">
             {top
               ? `${formatWeight(top.weight)}${top.reps != null ? ` × ${formatRepsValue(top.reps)}` : ""}`
-              : "—"}
+              : "-"}
           </span>
           <span
             className={`exercise-roster-hero__delta${delta > 0 ? " is-up" : ""}${delta < 0 ? " is-down" : ""}`}

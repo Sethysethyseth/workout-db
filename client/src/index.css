@@ -547,7 +547,8 @@ a {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 6px 0;
+  max-width: 980px;
+  padding: 6px 16px;
 }
 
 .brand a {
@@ -1192,9 +1193,46 @@ html[data-theme="dark"] .loading-state {
 }
 
 .skeleton__tabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: center;
+  gap: 8px;
   height: 52px;
+  padding: 0 10px;
   border-radius: 12px;
   border: 1px solid color-mix(in srgb, var(--color-border) 40%, transparent);
+  background: var(--color-surface-1);
+}
+
+.skeleton__tab {
+  height: 28px;
+  border-radius: 999px;
+  background: var(--color-skeleton-base);
+}
+
+.skeleton__chip {
+  width: 72px;
+  height: 32px;
+  border-radius: 999px;
+  background: var(--color-skeleton-base);
+}
+
+.skeleton__title--bar {
+  height: 28px;
+  width: 62%;
+  border-radius: 8px;
+  background: var(--color-skeleton-base);
+}
+
+.skeleton__stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.skeleton__stat {
+  height: 64px;
+  border-radius: 12px;
   background: var(--color-skeleton-base);
 }
 
@@ -6775,9 +6813,23 @@ html[data-theme="dark"] .auth-page .auth-form.card {
 
 .analytics-page {
   --chart-accent: var(--color-interactive);
+  --chart-line: color-mix(in srgb, var(--color-text) 55%, transparent);
   --chart-context: color-mix(in srgb, var(--color-text-secondary) 46%, var(--color-surface-3));
   --chart-track: color-mix(in srgb, var(--color-text-secondary) 14%, var(--color-surface-2));
   --chart-hairline: color-mix(in srgb, var(--color-text) 14%, transparent);
+}
+
+/* Crimson's accent is alarm red. Non-directional marks (muscle bars, the
+   heatmap, stimulating heads) use a green mixed toward the text so they
+   stay in the palette without reading as a warning. */
+html[data-palette="crimson"] .analytics-page {
+  --chart-accent: color-mix(in srgb, var(--color-success-accent) 68%, var(--color-text));
+}
+
+/* Forest's success green is the same hue as its accent. "Up" shifts to
+   teal so a gain is a different hue, not a lighter green. */
+html[data-palette="forest"] .analytics-page {
+  --chart-up: rgb(13 148 136);
 }
 
 /* Refetch: hold the previous render dimmed instead of a skeleton flash. */
@@ -7609,7 +7661,7 @@ html[data-theme="dark"][data-palette="iron"] .analytics-page {
   width: 100%;
   height: 40px;
   overflow: visible;
-  color: var(--chart-accent);
+  color: var(--chart-line);
 }
 
 .st-sparkline-line {
@@ -7624,7 +7676,7 @@ html[data-theme="dark"][data-palette="iron"] .analytics-page {
 /* Area wash under the line - fills stretch fine under
    preserveAspectRatio="none", only strokes need non-scaling. */
 .st-sparkline-area {
-  fill: color-mix(in srgb, var(--chart-accent) 10%, transparent);
+  fill: color-mix(in srgb, var(--color-text) 12%, transparent);
   stroke: none;
 }
 
@@ -9103,12 +9155,15 @@ html[data-theme="dark"][data-palette="iron"] .analytics-page {
 
 .history-group__label {
   margin: 4px 0 0;
-  padding: 0 2px;
+  padding: 6px 10px;
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--color-text-secondary);
+  background: color-mix(in srgb, var(--color-surface-1) 92%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-border) 45%, transparent);
+  border-radius: 10px;
 }
 
 .history-list {
@@ -9383,6 +9438,26 @@ html:not([data-theme="dark"])[data-palette="chill"] {
   flex-shrink: 0;
 }
 
+.session-summary__track-link {
+  display: inline;
+  margin: 2px 0 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-text-secondary);
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.3;
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.session-summary__track-link:hover {
+  color: var(--color-text);
+}
+
 /* ---------------------------------------------------------------------------
    Finished workout summary - a record, not a form. Totals ledger up top,
    then one card per exercise with its sets as a compact table. Tokens only.
@@ -9575,11 +9650,17 @@ html:not([data-theme="dark"])[data-palette="chill"] {
 
 @media (max-width: 719px) {
   .session-summary__ledger {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(6, minmax(0, 1fr));
   }
 
   .session-summary__stat {
+    grid-column: span 2;
     padding: 12px 12px 10px;
+  }
+
+  .session-summary__stat:nth-child(4),
+  .session-summary__stat:nth-child(5) {
+    grid-column: span 3;
   }
 
   .session-summary__stat:nth-child(4) {

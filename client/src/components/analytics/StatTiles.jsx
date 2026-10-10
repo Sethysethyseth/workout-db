@@ -101,7 +101,7 @@ export function StatTiles({ summary }) {
   ) : (
     <StatTile
       label="Stimulating / week"
-      value="—"
+      value="-"
       sub="log RIR or RPE to unlock"
       index={stimulatingLeads ? 0 : 1}
     />
@@ -133,7 +133,7 @@ export function StatTiles({ summary }) {
             ? topSet.reps != null
               ? `${formatWeight(topSet.weight)} × ${formatRepsValue(topSet.reps)}`
               : formatWeight(topSet.weight)
-            : "—"
+            : "-"
         }
         sub={topSet ? topSet.name : "not enough data"}
         to={topSet ? exerciseDetailTo(topSet.exerciseId) : null}
@@ -141,7 +141,7 @@ export function StatTiles({ summary }) {
       />
       <StatTile
         label="Top gain"
-        value={topGain ? `+${formatEstimate(topGain.delta)}` : "—"}
+        value={topGain ? `+${formatEstimate(topGain.delta)}` : "-"}
         tone={topGain ? "up" : null}
         index={3}
         sub={

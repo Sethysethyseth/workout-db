@@ -20,25 +20,21 @@ function bareWeight(n) {
   return formatWeight(n).replace(/ (lbs|kg)$/, "");
 }
 
-function topSetNote(topSet) {
-  if (!topSet) return "";
-  const reps = topSet.reps != null ? ` × ${formatRepsValue(topSet.reps)}` : "";
-  return ` · top set ${bareWeight(topSet.weight)}${reps}`;
+function topSetLine(ex) {
+  const ts = ex.topSet;
+  const weight = ts ? bareWeight(ts.weight) : bareWeight(ex.series[ex.series.length - 1].weight);
+  const reps = ts?.reps != null ? ` × ${formatRepsValue(ts.reps)}` : "";
+  if (ex.series.length < 2 || ex.delta === 0) return `Top set ${weight}${reps}`;
+  const dir = ex.delta > 0 ? "up" : "down";
+  return `Top set ${weight}${reps}, ${dir} ${formatWeight(Math.abs(ex.delta))}`;
 }
 
-function DeltaChip({ delta, topSet }) {
-  if (delta === 0) {
-    return <span className="st-delta">no change{topSetNote(topSet)}</span>;
-  }
-  const up = delta > 0;
-  return (
-    <span className={`st-delta${up ? " st-delta--up" : ""}`}>
-      <span className="st-delta__label">top set </span>
-      {up ? "+" : "−"}
-      {formatWeight(Math.abs(delta))}
-      {topSetNote(topSet)}
-    </span>
-  );
+function matchedLine(trend) {
+  const dir =
+    trend.delta > 0 ? `up ${formatEstimate(trend.delta)}` : trend.delta < 0 ? `down ${formatEstimate(Math.abs(trend.delta))}` : "unchanged";
+  const effort = formatEffort({ rir: trend.rir, effortUnit: trend.effortUnit });
+  const sessions = `${trend.sessions} ${trend.sessions === 1 ? "session" : "sessions"}`;
+  return `Matched effort ${dir} at ${effort}, ${sessions}`;
 }
 
 function paddedRange(min, max) {
@@ -198,27 +194,19 @@ function StrengthTrendRow({ ex, featured = false, index = 0 }) {
       aria-label={tip}
       style={{ "--row": index }}
     >
-      <div className="row st-row-head">
+      <div className="st-row-copy">
         <span className="st-name">{ex.name}</span>
-        {series.length === 1 ? (
-          <span className="muted small">1 session</span>
-        ) : (
-          <DeltaChip delta={ex.delta} topSet={ex.topSet} />
-        )}
+        <p className={`st-meta${ex.delta > 0 ? " st-meta--up" : ""}${ex.delta < 0 ? " st-meta--down" : ""}`}>
+          {topSetLine(ex)}
+        </p>
+        {ex.matchedEffortTrend ? (
+          <p
+            className={`st-meta${ex.matchedEffortTrend.delta > 0 ? " st-meta--up" : ""}${ex.matchedEffortTrend.delta < 0 ? " st-meta--down" : ""}`}
+          >
+            {matchedLine(ex.matchedEffortTrend)}
+          </p>
+        ) : null}
       </div>
-      {ex.matchedEffortTrend ? (
-        <span
-          className={`st-matched small${ex.matchedEffortTrend.delta > 0 ? " st-matched--up" : " muted"}`}
-        >
-          matched effort {ex.matchedEffortTrend.delta >= 0 ? "+" : "−"}
-          {formatEstimate(Math.abs(ex.matchedEffortTrend.delta))} @{" "}
-          {formatEffort({
-            rir: ex.matchedEffortTrend.rir,
-            effortUnit: ex.matchedEffortTrend.effortUnit,
-          })}{" "}
-          · {ex.matchedEffortTrend.sessions} sessions
-        </span>
-      ) : null}
       <SparklinePlot series={series} />
     </div>
   );
@@ -239,7 +227,7 @@ export function StrengthTrendChart({ perExercise, betweenRows = null, afterPerEx
       <div className="stack analytics-empty-surface">
         <StrengthEmptyGhost />
         <p className="analytics-unlock" style={{ margin: 0 }}>
-          Log sets with weight and this becomes your strength trend.
+          Two sessions of the same lift unlock its trend.
         </p>
       </div>
     );

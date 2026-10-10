@@ -2,15 +2,13 @@ import { useLayoutEffect, useRef } from "react";
 import { prefersReducedMotion } from "../../lib/useReducedMotion.js";
 
 /**
- * FLIP across a route change (MX6): the page that is leaving records where
- * its named parts sit on screen; the page that arrives animates its matching
- * parts from those rects to their own. WAAPI, transform-only, no layout
- * thrash. Captures expire so a slow fetch never flies stale geometry.
+ * Shared-element motion across a route change (MX6, MXF1). The page that is
+ * leaving records a rect; the page that arrives grows or shrinks a card-shaped
+ * SURFACE between the two rects. The surface is an empty node (no text), so
+ * nothing scales the type. Header and row contents stay put and fade.
  *
- * Both halves exist only after data loads, so this deliberately does NOT use
- * `view-transition-name` (a View Transition would end before either side
- * had rendered); the route-level View Transition stays a plain fade when a
- * FLIP is pending - see RouteTransition.
+ * Captures expire so a slow fetch never flies stale geometry. The route layer
+ * fades (instead of sliding) while a capture is pending.
  */
 
 const MAX_AGE_MS = 2500;
@@ -20,7 +18,7 @@ const EASE = "cubic-bezier(0.16, 1, 0.3, 1)";
 const store = new Map();
 
 /* Set by a capture, read once by the route transition so the shared-axis
-   slide yields to the FLIP. Separate from the rect store: the arriving
+   slide yields to the surface. Separate from the rect store: the arriving
    page consumes the rects in its own layout effect, which runs before the
    route transition's. */
 let routeFade = false;
@@ -55,24 +53,54 @@ function readRects(refsByName) {
   return out;
 }
 
-/** Record the current rects of the named elements under `key`. */
-export function captureFlip(key, refsOrElements) {
+/* A mounted page that can be the SOURCE of a shrink (the completed session
+   detail) registers here, so the route layer knows to fade - not slide - when
+   the user leaves it for History. The route layer decides BEFORE the source
+   unmounts (it holds the old page for the View Transition snapshot), so the
+   unmount capture alone arrives too late (MXF1 audit). */
+let flipSource = null;
+let lastCaptureAt = 0;
+
+export function setFlipSource(key) {
+  flipSource = key == null ? null : String(key);
+}
+
+/** True while a shrink source is mounted, or a capture landed in the last 150ms. */
+export function flipSourcePending() {
+  return flipSource != null || Date.now() - lastCaptureAt < 150;
+}
+
+/**
+ * Record the current rects of the named elements under `key`. `fade` also
+ * tells the next navigation to fade (the forward tap); an unmount capture
+ * passes false so no stale flag is left for the navigation after it.
+ */
+export function captureFlip(key, refsOrElements, { fade = true } = {}) {
   const refs = {};
+  let src = null;
   for (const name of Object.keys(refsOrElements)) {
     const v = refsOrElements[name];
     refs[name] = v && "current" in v ? v : { current: v };
+    if (!src && refs[name].current) src = refs[name].current;
   }
   const rects = readRects(refs);
   if (Object.keys(rects).length === 0) return;
-  store.set(key, { rects, at: Date.now() });
-  routeFade = true;
+  store.set(String(key), { rects, at: Date.now(), src });
+  lastCaptureAt = Date.now();
+  if (fade) routeFade = true;
+}
+
+/* A capture whose source element is still in the document was taken by a
+   remount (React StrictMode / re-run effects), not a navigation - never play it. */
+function isStale(capture) {
+  return Boolean(capture.src && capture.src.isConnected);
 }
 
 /** True when a fresh capture is waiting for `key` (or for any key). */
 export function hasPendingFlip(key) {
   const now = Date.now();
   if (key != null) {
-    const c = store.get(key);
+    const c = store.get(String(key));
     return Boolean(c && now - c.at <= MAX_AGE_MS);
   }
   for (const c of store.values()) if (now - c.at <= MAX_AGE_MS) return true;
@@ -83,62 +111,118 @@ export function clearFlip(key) {
   store.delete(key);
 }
 
-function inViewport(r) {
-  const h = window.innerHeight || 0;
-  return r.top + r.height > 0 && r.top < h;
+function rectOf(el) {
+  const r = el.getBoundingClientRect();
+  return { left: r.left, top: r.top, width: r.width, height: r.height };
 }
 
 /**
- * On mount, animate each named element from its captured rect to where it
- * is now. Runs once per mount; `enabled` gates it (e.g. wait for data).
+ * Animate an empty card surface from `from` to `to`. The node holds no text.
+ * Returns a handle the caller can cancel; the node removes itself when done.
  */
-export function useFlipIn(key, refsByName, { enabled = true, scaleNames = [] } = {}) {
+function playSurface(from, to) {
+  const el = document.createElement("div");
+  el.className = "mx-flip-surface";
+  el.setAttribute("aria-hidden", "true");
+  const root = document.getElementById("root") || document.body;
+  root.appendChild(el);
+  const anim = el.animate(
+    [
+      {
+        left: `${from.left}px`,
+        top: `${from.top}px`,
+        width: `${from.width}px`,
+        height: `${from.height}px`,
+      },
+      {
+        left: `${to.left}px`,
+        top: `${to.top}px`,
+        width: `${to.width}px`,
+        height: `${to.height}px`,
+      },
+    ],
+    { duration: DURATION_MS, easing: EASE, fill: "both" }
+  );
+  const remove = () => el.remove();
+  anim.finished.then(remove, remove);
+  return {
+    finished: anim.finished,
+    cancel() {
+      anim.cancel();
+      remove();
+    },
+  };
+}
+
+/**
+ * Play a waiting capture onto `el` (the History row on the way back). Hides
+ * the row until the surface lands so the type is never scaled. No-op when
+ * nothing is waiting or motion is reduced.
+ */
+export function playCapturedSurface(key, el) {
+  if (!el || key == null) return;
+  const capture = store.get(String(key));
+  if (!capture || Date.now() - capture.at > MAX_AGE_MS || isStale(capture)) {
+    store.delete(String(key));
+    return;
+  }
+  const from = capture.rects.head;
+  store.delete(String(key));
+  if (!from) return;
+  if (prefersReducedMotion() || typeof Element === "undefined" || !Element.prototype.animate) return;
+  const to = rectOf(el);
+  const prev = el.style.opacity;
+  el.style.opacity = "0";
+  const handle = playSurface(from, to);
+  handle.finished.then(
+    () => {
+      el.style.opacity = prev;
+    },
+    () => {
+      el.style.opacity = prev;
+    }
+  );
+}
+
+/**
+ * On mount, grow the captured rect into the named element's box via a
+ * surface. `onDone` fires when the surface lands (or immediately when there
+ * is nothing to play). Runs once per mount, and again if `enabled` flips on.
+ */
+export function useFlipIn(key, refsByName, { enabled = true, onDone } = {}) {
+  const onDoneRef = useRef(onDone);
+  onDoneRef.current = onDone;
   useLayoutEffect(() => {
     if (!enabled || !key) return undefined;
-    const capture = store.get(key);
-    if (!capture) return undefined;
-    store.delete(key);
-    if (Date.now() - capture.at > MAX_AGE_MS) return undefined;
-    if (prefersReducedMotion()) return undefined;
-    if (typeof Element === "undefined" || !Element.prototype.animate) return undefined;
-
-    const now = readRects(refsByName);
-    const anims = [];
-    for (const name of Object.keys(now)) {
-      const from = capture.rects[name];
-      const to = now[name];
-      if (!from || !inViewport(to)) continue;
-      const el = refsByName[name].current;
-      const dx = from.left - to.left;
-      const dy = from.top - to.top;
-      const scale = scaleNames.includes(name);
-      const sx = scale && to.width ? from.width / to.width : 1;
-      const sy = scale && to.height ? from.height / to.height : 1;
-      if (Math.abs(dx) < 1 && Math.abs(dy) < 1 && Math.abs(sx - 1) < 0.01 && Math.abs(sy - 1) < 0.01) continue;
-      const prevOrigin = el.style.transformOrigin;
-      const prevZ = el.style.zIndex;
-      const prevPos = el.style.position;
-      el.style.transformOrigin = "0 0";
-      el.style.zIndex = "4";
-      if (getComputedStyle(el).position === "static") el.style.position = "relative";
-      const a = el.animate(
-        [
-          { transform: `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})` },
-          { transform: "translate(0, 0) scale(1, 1)" },
-        ],
-        { duration: DURATION_MS, easing: EASE, fill: "both" }
-      );
-      a.finished
-        .catch(() => {})
-        .finally(() => {
-          a.cancel();
-          el.style.transformOrigin = prevOrigin;
-          el.style.zIndex = prevZ;
-          el.style.position = prevPos;
-        });
-      anims.push(a);
+    const capture = store.get(String(key));
+    if (!capture || Date.now() - capture.at > MAX_AGE_MS || isStale(capture)) {
+      if (capture) store.delete(String(key));
+      /* Release any hold the caller set from an earlier hasPendingFlip() -
+         an expired capture must never leave the header hidden. */
+      onDoneRef.current?.();
+      return undefined;
     }
-    return () => anims.forEach((a) => a.cancel());
+    const from = capture.rects.head;
+    store.delete(String(key));
+    const el = refsByName.head && refsByName.head.current;
+    if (!from || !el || prefersReducedMotion() || typeof Element === "undefined" || !Element.prototype.animate) {
+      onDoneRef.current?.();
+      return undefined;
+    }
+    const handle = playSurface(from, rectOf(el));
+    let cancelled = false;
+    handle.finished.then(
+      () => {
+        if (!cancelled) onDoneRef.current?.();
+      },
+      () => {
+        if (!cancelled) onDoneRef.current?.();
+      }
+    );
+    return () => {
+      cancelled = true;
+      handle.cancel();
+    };
     // Runs once per mount by design (plus when `enabled` flips on).
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enabled, key]);
@@ -157,7 +241,7 @@ export function useFlipOutOnUnmount(key, refsByName, { enabled = true } = {}) {
   useLayoutEffect(() => {
     return () => {
       if (!enabledRef.current || keyRef.current == null) return;
-      captureFlip(keyRef.current, refsByName);
+      captureFlip(keyRef.current, refsByName, { fade: false });
     };
     // Unmount-only: refsByName is a stable object of refs.
     // eslint-disable-next-line react-hooks/exhaustive-deps
