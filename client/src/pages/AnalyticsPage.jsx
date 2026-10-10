@@ -1,6 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import "../styles/analytics-motion.css";
 import * as analyticsApi from "../api/analyticsApi.js";
+import { SlidingIndicator } from "../components/motion/SlidingIndicator.jsx";
+import { Cascade, axisBetween } from "../components/motion/Cascade.jsx";
+import { CountUp } from "../components/motion/CountUp.jsx";
+import { MX_DATA_LEAD_MS, MX_STAGGER_MS } from "../lib/useCountUp.js";
 import { ErrorMessage } from "../components/ErrorMessage.jsx";
 import { LoadingState } from "../components/LoadingState.jsx";
 import { HowCalculatedButton } from "../components/analytics/HowCalculatedButton.jsx";
@@ -77,6 +82,33 @@ function coachRangeForWeeks(weeks) {
   const fromDate = new Date(today);
   fromDate.setDate(fromDate.getDate() - (weeks * 7 - 1));
   return { from: toDateOnlyString(fromDate), to: toDateOnlyString(today) };
+}
+
+/** 2 / 4 / 8 / 12 weeks. Selects instantly (the body dims while it
+    refetches - a critic KEEP); the selected look is one sliding pill. */
+function RangeChips({ weeks, onSelect }) {
+  const hostRef = useRef(null);
+  return (
+    <div
+      ref={hostRef}
+      className="analytics-range-chips mx-slide-host"
+      role="group"
+      aria-label="Date range"
+    >
+      <SlidingIndicator containerRef={hostRef} activeKey={weeks} />
+      {RANGE_PRESETS.map((preset) => (
+        <button
+          key={preset.weeks}
+          type="button"
+          className={`range-chip${preset.weeks === weeks ? " is-active" : ""}`}
+          aria-pressed={preset.weeks === weeks}
+          onClick={() => onSelect(preset.weeks)}
+        >
+          {preset.label}
+        </button>
+      ))}
+    </div>
+  );
 }
 
 function TopSetCell({ topSet }) {
@@ -404,7 +436,7 @@ function PerExerciseSection({ perExercise }) {
       {/* Until N3 lands, ?view=exercises falls back to muscles via
           parseAnalyticsView - acceptable, this ships before N3 by design. */}
       <p className="small analytics-card-footlink">
-        <Link to="?view=exercises">Estimated 1RM has its own view →</Link>
+        <Link to="?view=exercises">Estimated 1RM has its own view</Link>
       </p>
     </section>
   );
@@ -492,7 +524,7 @@ function EffortDriftCompact({ value }) {
 /* Meters cap the fill at 120%; the printed % is always the true value. */
 const ADHERENCE_METER_MAX = 1.2;
 
-function AdherenceMetric({ label, value, compact = false }) {
+function AdherenceMetric({ label, value, compact = false, delay = 0 }) {
   return (
     <div className={`exec-metric${compact ? " exec-metric--compact" : ""}`}>
       <span className="muted small">{label}</span>
@@ -504,7 +536,9 @@ function AdherenceMetric({ label, value, compact = false }) {
       ) : (
         <>
           <Meter value={value} max={ADHERENCE_METER_MAX} target={1} />
-          <span className="exec-val">{Math.round(value * 100)}%</span>
+          <span className="exec-val">
+            <CountUp text={`${Math.round(value * 100)}%`} delay={delay} />
+          </span>
         </>
       )}
     </div>
@@ -547,8 +581,8 @@ function ExecutionSection({ execution }) {
       ) : view === "chart" ? (
         <div className="analytics-chart-body">
           <div className="exec-rows">
-            {execution.map((ex) => (
-              <div key={ex.exerciseId} className="exec-row">
+            {execution.map((ex, i) => (
+              <div key={ex.exerciseId} className="exec-row" style={{ "--row": i }}>
                 <div className="exec-row-head stack">
                   <span className="exec-name">{ex.name}</span>
                   <span className="exec-verdict muted small">
@@ -563,8 +597,18 @@ function ExecutionSection({ execution }) {
                   {formatPlanActual(ex.planned, ex.actual, loadWeightUnit())}
                 </p>
                 <div className="exec-metrics-secondary">
-                  <AdherenceMetric label="Load" value={ex.loadAdherence} compact />
-                  <AdherenceMetric label="Volume" value={ex.volumeAdherence} compact />
+                  <AdherenceMetric
+                    label="Load"
+                    value={ex.loadAdherence}
+                    compact
+                    delay={MX_DATA_LEAD_MS + Math.min(i, 8) * MX_STAGGER_MS}
+                  />
+                  <AdherenceMetric
+                    label="Volume"
+                    value={ex.volumeAdherence}
+                    compact
+                    delay={MX_DATA_LEAD_MS + Math.min(i, 8) * MX_STAGGER_MS}
+                  />
                   <div className="exec-metric exec-metric--compact">
                     <span className="muted small">Effort</span>
                     <span />
@@ -631,7 +675,7 @@ function DataQualitySection({ meta }) {
             <div className="coverage-meter">
               <Meter value={meta.effortCoverage} />
               <span className="coverage-meter__value">
-                {Math.round(meta.effortCoverage * 100)}%
+                <CountUp text={`${Math.round(meta.effortCoverage * 100)}%`} delay={MX_DATA_LEAD_MS} />
               </span>
             </div>
           </div>
@@ -660,6 +704,15 @@ export function AnalyticsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const view = parseAnalyticsView(searchParams);
+
+  /* Shared-axis direction for the view switch: the incoming view slides in
+     from the side of the tab the user moved toward. Remembered across the
+     render so the Cascade below can read where we came from. */
+  const prevViewRef = useRef(view);
+  const axis = axisBetween(ANALYTICS_VIEWS, prevViewRef.current, view);
+  useEffect(() => {
+    prevViewRef.current = view;
+  }, [view]);
 
   function selectWeeks(nextWeeks) {
     setWeeks(nextWeeks);
@@ -757,32 +810,26 @@ export function AnalyticsPage() {
         </p>
       </div>
 
-      <div className="analytics-range-chips" role="group" aria-label="Date range">
-        {RANGE_PRESETS.map((preset) => (
-          <button
-            key={preset.weeks}
-            type="button"
-            className={`range-chip${preset.weeks === weeks ? " is-active" : ""}`}
-            aria-pressed={preset.weeks === weeks}
-            onClick={() => selectWeeks(preset.weeks)}
-          >
-            {preset.label}
-          </button>
-        ))}
-      </div>
+      <RangeChips weeks={weeks} onSelect={selectWeeks} />
 
       <ErrorMessage error={error} />
-      {/* Skeleton only on first load; a range refetch dims the previous
-          render in place instead of flashing it away. */}
+      {/* Skeleton only on first load, shown AT ONCE (no reveal delay) so the
+          body never loads as a blank scene; it reserves the final layout.
+          A range refetch dims the previous render in place instead. */}
       {loading && !summary ? (
-        <LoadingState tone="skeleton" variant="analytics" slowLabel="Taking longer than usual…" />
+        <LoadingState
+          tone="skeleton"
+          variant="analytics"
+          delayed={false}
+          slowLabel="Taking longer than usual…"
+        />
       ) : null}
 
       {!error && summary ? (
         isEmpty && view !== "exercises" ? (
-          <div className={`stack analytics-content${loading ? " is-refreshing" : ""}`}>
+          <Cascade className={`stack analytics-content mx-fade-in${loading ? " is-refreshing" : ""}`}>
             <AnalyticsViewTabs value={view} onChange={setView} />
-            <div className="card stack analytics-page-empty analytics-empty-surface">
+            <Cascade key={view} axis={axis} className="card stack analytics-page-empty analytics-empty-surface">
               {!indexReady ? (
                 <p className="muted small" style={{ margin: 0 }}>
                   Checking your history…
@@ -795,11 +842,11 @@ export function AnalyticsPage() {
                   </p>
                   {isNewUser ? (
                     <p className="small" style={{ margin: 0 }}>
-                      <Link to="/log-workout">Log your first workout →</Link>
+                      <Link to="/log-workout">Log your first workout</Link>
                     </p>
                   ) : (
                     <p className="muted" style={{ margin: 0 }}>
-                      No sets in the last {weeks} weeks — try a longer range with the chips above.
+                      No sets in the last {weeks} weeks - try a longer range with the chips above.
                     </p>
                   )}
                 </>
@@ -811,7 +858,7 @@ export function AnalyticsPage() {
                   </p>
                   {isNewUser ? (
                     <p className="small" style={{ margin: 0 }}>
-                      <Link to="/log-workout">Log your first workout →</Link>
+                      <Link to="/log-workout">Log your first workout</Link>
                     </p>
                   ) : null}
                 </>
@@ -828,20 +875,20 @@ export function AnalyticsPage() {
                         strength trends will show up here.
                       </p>
                       <p className="small" style={{ margin: 0 }}>
-                        <Link to="/log-workout">Log your first workout →</Link>
+                        <Link to="/log-workout">Log your first workout</Link>
                       </p>
                     </>
                   ) : (
                     <p className="muted" style={{ margin: 0 }}>
-                      No sets in the last {weeks} weeks — try a longer range with the chips above.
+                      No sets in the last {weeks} weeks - try a longer range with the chips above.
                     </p>
                   )}
                 </>
               )}
-            </div>
-          </div>
+            </Cascade>
+          </Cascade>
         ) : (
-          <div className={`stack analytics-content${loading ? " is-refreshing" : ""}`}>
+          <Cascade className={`stack analytics-content mx-fade-in${loading ? " is-refreshing" : ""}`}>
             <StatTiles summary={summary} />
             <CoachPanel
               mode="ask"
@@ -851,33 +898,38 @@ export function AnalyticsPage() {
               suggestions={coachSuggestions}
             />
             <AnalyticsViewTabs value={view} onChange={setView} />
-            {view === "muscles" ? (
-              <>
-                <PerMuscleSection
-                  perMuscle={summary.perMuscle}
-                  granularity={summary.meta?.seriesGranularity}
-                  effortCoverage={summary.meta?.effortCoverage}
+            {/* Re-keyed per view: the incoming view slides in along the tab
+                order (shared axis) and its cards cascade, then each chart
+                runs its own data draw. */}
+            <Cascade key={view} axis={axis} className="stack analytics-view">
+              {view === "muscles" ? (
+                <>
+                  <PerMuscleSection
+                    perMuscle={summary.perMuscle}
+                    granularity={summary.meta?.seriesGranularity}
+                    effortCoverage={summary.meta?.effortCoverage}
+                  />
+                  <BalanceSection balance={summary.balance} />
+                </>
+              ) : null}
+              {view === "strength" ? (
+                <PerExerciseSection perExercise={summary.perExercise} />
+              ) : null}
+              {view === "exercises" ? (
+                <ExercisesView
+                  weeks={weeks}
+                  range={rangeForWeeks(weeks)}
+                  perExercise={summary?.perExercise ?? []}
+                  exerciseParam={searchParams.get("exercise")}
+                  onExerciseParamChange={setExerciseParam}
                 />
-                <BalanceSection balance={summary.balance} />
-              </>
-            ) : null}
-            {view === "strength" ? (
-              <PerExerciseSection perExercise={summary.perExercise} />
-            ) : null}
-            {view === "exercises" ? (
-              <ExercisesView
-                weeks={weeks}
-                range={rangeForWeeks(weeks)}
-                perExercise={summary?.perExercise ?? []}
-                exerciseParam={searchParams.get("exercise")}
-                onExerciseParamChange={setExerciseParam}
-              />
-            ) : null}
-            {view === "execution" ? (
-              <ExecutionSection execution={summary.execution ?? []} />
-            ) : null}
-            {view !== "exercises" ? <DataQualitySection meta={summary.meta} /> : null}
-          </div>
+              ) : null}
+              {view === "execution" ? (
+                <ExecutionSection execution={summary.execution ?? []} />
+              ) : null}
+              {view !== "exercises" ? <DataQualitySection meta={summary.meta} /> : null}
+            </Cascade>
+          </Cascade>
         )
       ) : null}
     </div>

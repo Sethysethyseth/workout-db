@@ -54,11 +54,26 @@
   --color-skeleton-base: var(--color-surface-3);
   --color-skeleton-highlight: var(--color-surface-2);
 
-  /* Motion (theme-invariant) */
+  /* Motion (theme-invariant) - micro-states: hover, pressed, focus */
   --motion-fast: 120ms;
   --motion-base: 180ms;
   --motion-slow: 240ms;
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+
+  /* MX motion vocabulary (docs/design/mocks/motion/MOTION-DIRECTION.md 1.2).
+     quick = a tap's visual answer (the logger ceiling); reveal = a card or
+     row rising into place; draw = a chart line drawing or a bar charging;
+     count = a number rolling; stagger = the step between cascading
+     siblings. out-expo lands reveals, spring pops arrivals once (overshoot
+     <= 1.15x), draw keeps a continuous motion trackable by eye. */
+  --mx-quick: 90ms;
+  --mx-reveal: 420ms;
+  --mx-draw: 1000ms;
+  --mx-count: 1100ms;
+  --mx-stagger: 55ms;
+  --mx-ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --mx-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --mx-ease-draw: cubic-bezier(0.65, 0, 0.35, 1);
 
   /* Legacy aliases (same names both themes) */
   --accent: var(--color-interactive);
@@ -1185,6 +1200,172 @@ html[data-theme="dark"] .loading-state {
 .skeleton__caption .barbell--inline {
   --bb-w: 40px;
   --bb-h: 13px;
+}
+
+/* --- MX motion primitives (shared vocabulary; see MOTION-DIRECTION.md) ---
+   .mx-cascade: children rise into place top-to-bottom, each one
+   --mx-stagger after the previous, capped at 8 steps so a long list lands
+   together below the fold. The cascade runs when the element mounts, so a
+   view switch re-keys its container to replay it. .mx-axis-left/right: the
+   container itself slides in along the axis of the control that switched
+   it (shared-axis). .mx-ghost: an empty-state silhouette that breathes so
+   "not yet" never reads as "still loading". All of it collapses to a 200ms
+   fade (or nothing) under prefers-reduced-motion. */
+
+.mx-cascade > * {
+  --mx-i: 8;
+  animation: mx-rise var(--mx-reveal) var(--mx-ease-out-expo) both;
+  animation-delay: calc(var(--mx-nest, 0ms) + var(--mx-i) * var(--mx-stagger));
+}
+
+/* A cascade inside a cascade: its children wait for it to land (its own
+   slot delay becomes their base), so nested reveals read as one sequence. */
+.mx-cascade > .mx-cascade {
+  --mx-nest: calc(var(--mx-i) * var(--mx-stagger));
+  animation-delay: calc(var(--mx-i) * var(--mx-stagger));
+}
+
+.mx-cascade > :nth-child(1) { --mx-i: 0; }
+.mx-cascade > :nth-child(2) { --mx-i: 1; }
+.mx-cascade > :nth-child(3) { --mx-i: 2; }
+.mx-cascade > :nth-child(4) { --mx-i: 3; }
+.mx-cascade > :nth-child(5) { --mx-i: 4; }
+.mx-cascade > :nth-child(6) { --mx-i: 5; }
+.mx-cascade > :nth-child(7) { --mx-i: 6; }
+.mx-cascade > :nth-child(8) { --mx-i: 7; }
+
+/* Data inside a cascading card starts ~120ms after the card lands - the
+   structure-first rule. Charts read this to delay their draw. */
+.mx-cascade > * {
+  --mx-data-delay: calc(var(--mx-nest, 0ms) + var(--mx-i) * var(--mx-stagger) + 120ms);
+}
+
+/* A shared-axis switch replaces a sibling in place: no slot delay, and its
+   children cascade from zero. (Declared after the nesting rules so the
+   same-specificity override wins.) */
+.mx-cascade > .mx-axis-left,
+.mx-cascade > .mx-axis-right,
+.mx-axis-left,
+.mx-axis-right {
+  --mx-nest: 0ms;
+  animation-delay: 0ms;
+}
+
+.mx-axis-left {
+  animation: mx-axis-in-left var(--mx-reveal) var(--mx-ease-out-expo) both;
+}
+
+.mx-axis-right {
+  animation: mx-axis-in-right var(--mx-reveal) var(--mx-ease-out-expo) both;
+}
+
+.mx-fade-in {
+  animation: mx-fade var(--mx-reveal) var(--ease-standard) both;
+}
+
+@keyframes mx-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes mx-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes mx-axis-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-28px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes mx-axis-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(28px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Charging bars and meters: scaleX from the baseline, data curve, the
+   element's own --mx-data-delay (inherited from its cascading card) plus a
+   per-row stagger set by the chart. */
+@keyframes mx-charge {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* A pop for marks that arrive: checks, crowns, pins, arrows. */
+@keyframes mx-pop {
+  from {
+    transform: scale(0);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+/* Empty-state ghosts breathe; loading skeletons shimmer (above). Two
+   relatives, one dashed/ghost family, never confused. */
+.mx-ghost {
+  animation: mx-breathe 3s ease-in-out infinite;
+}
+
+@keyframes mx-breathe {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}
+
+/* Numbers roll in tabular figures so the layout never jitters, then drop
+   back to the display face's proportional figures when they land. */
+.mx-rolling {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mx-cascade > * {
+    animation: mx-fade 200ms ease-out both;
+    animation-delay: 0ms;
+    --mx-data-delay: 0ms;
+  }
+
+  .mx-axis-left,
+  .mx-axis-right,
+  .mx-fade-in {
+    animation: mx-fade 200ms ease-out both;
+  }
+
+  .mx-ghost {
+    animation: none;
+    opacity: 0.7;
+  }
 }
 
 /* -- Cold-start splash -- */
@@ -8721,58 +8902,10 @@ html[data-theme="dark"][data-palette="iron"] .analytics-page {
 }
 
 /* ---------------------------------------------------------------------------
-   Analytics polish: a quiet entrance and a sharper KPI row. Cards rise 6px
-   and fade in once, staggered by row; a range refetch keeps the existing
+   Analytics entrance: the MX cascade (`.mx-cascade`, index.css "MX motion
+   primitives") - the page and the KPI row are cascades, so the old
+   rise-in stagger that lived here is gone. A range refetch keeps the
    dim-in-place behaviour and never replays the entrance. */
-
-@media (prefers-reduced-motion: no-preference) {
-  .analytics-content > * {
-    animation: rise-in var(--motion-slow) var(--ease-standard) both;
-  }
-
-  .analytics-content > :nth-child(2) {
-    animation-delay: 40ms;
-  }
-
-  .analytics-content > :nth-child(3) {
-    animation-delay: 80ms;
-  }
-
-  .analytics-content > :nth-child(4) {
-    animation-delay: 120ms;
-  }
-
-  .analytics-content > :nth-child(n + 5) {
-    animation-delay: 160ms;
-  }
-
-  .analytics-kpis > .stat-tile {
-    animation: rise-in var(--motion-slow) var(--ease-standard) both;
-  }
-
-  .analytics-kpis > .stat-tile:nth-child(2) {
-    animation-delay: 30ms;
-  }
-
-  .analytics-kpis > .stat-tile:nth-child(3) {
-    animation-delay: 60ms;
-  }
-
-  .analytics-kpis > .stat-tile:nth-child(4) {
-    animation-delay: 90ms;
-  }
-}
-
-@keyframes rise-in {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
 
 /* KPI tiles: an accent hairline along the top edge gives the headline row a
    read of its own without borrowing the live-workout L-bar. */

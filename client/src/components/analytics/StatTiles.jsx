@@ -9,18 +9,22 @@ import { pickTopGain } from "../../lib/topGain.js";
 import { formatEffort } from "../../lib/effortDisplay.js";
 import { formatRepsValue } from "../../lib/repsDisplay.js";
 import { formatEstimate, formatWeight } from "../../lib/weightDisplay.js";
+import { CountUp } from "../motion/CountUp.jsx";
+import { MX_DATA_LEAD_MS, MX_STAGGER_MS } from "../../lib/useCountUp.js";
 
 /** When effort coverage clears this, stimulating sets lead the volume pair.
     Exported so the muscles heatmap reuses the SAME adaptive rule (single
     definition - an N2 acceptance criterion). */
 export const EFFORT_COVERAGE_HEADLINE_THRESHOLD = 0.6;
 
-function StatTile({ label, value, sub, tone = null, to = null }) {
+/* Structure first, data second: the tile rises (cascade slot `index`), then
+   its number rolls. The JS delay mirrors the CSS --mx-data-delay. */
+function StatTile({ label, value, sub, tone = null, to = null, index = 0 }) {
   const body = (
     <>
       <span className="stat-tile-label muted small">{label}</span>
       <span className={`stat-tile-value${tone ? ` stat-tile-value--${tone}` : ""}`}>
-        {value}
+        <CountUp text={value} delay={MX_DATA_LEAD_MS + index * MX_STAGGER_MS} />
       </span>
       {sub ? <span className="stat-tile-sub muted small">{sub}</span> : null}
     </>
@@ -84,6 +88,7 @@ export function StatTiles({ summary }) {
       value={weeklySets.toFixed(1)}
       sub={`effective sets across ${perMuscle.length} muscle${perMuscle.length === 1 ? "" : "s"}`}
       to={hasVolumeData ? "?view=muscles" : null}
+      index={stimulatingLeads ? 1 : 0}
     />
   );
   const stimulatingTile = stimulatingComputable ? (
@@ -91,12 +96,14 @@ export function StatTiles({ summary }) {
       label="Stimulating / week"
       value={weeklyStimulating.toFixed(1)}
       sub="effort-weighted sets (RIR or RPE)"
+      index={stimulatingLeads ? 0 : 1}
     />
   ) : (
     <StatTile
       label="Stimulating / week"
       value="—"
       sub="log RIR or RPE to unlock"
+      index={stimulatingLeads ? 0 : 1}
     />
   );
 
@@ -107,7 +114,7 @@ export function StatTiles({ summary }) {
     : null;
 
   return (
-    <div className="analytics-kpis">
+    <div className="analytics-kpis mx-cascade">
       {stimulatingLeads ? (
         <>
           {stimulatingTile}
@@ -130,11 +137,13 @@ export function StatTiles({ summary }) {
         }
         sub={topSet ? topSet.name : "not enough data"}
         to={topSet ? exerciseDetailTo(topSet.exerciseId) : null}
+        index={2}
       />
       <StatTile
         label="Top gain"
         value={topGain ? `+${formatEstimate(topGain.delta)}` : "—"}
         tone={topGain ? "up" : null}
+        index={3}
         sub={
           topGain
             ? topGain.matched

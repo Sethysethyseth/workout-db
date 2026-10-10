@@ -1,4 +1,4 @@
-<title>Navigation Transitions</title>
+<title>Palette Scenes</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow+Condensed:wght@500;600;700&display=swap">
 <style>
 /* shared: tokens + preview chrome (identical in every preview) - begin */
@@ -357,125 +357,88 @@ html:not(.mx-reduce) .mx-skel i { animation: mx-shimmer 1.3s linear infinite; }
 
 /* shared: tokens + preview chrome - end */
 /* ======================================================================
-   NAVIGATION + PAGE TRANSITIONS - the connective tissue. Every arrival is
-   choreographed (page move + content cascade); loading is one skeleton
-   language; a list row becomes its detail page (container transform).
+   SCENES - five environments, each alive in its own way. The scene is the
+   stage, never the show: every ambient layer sits under the content, is
+   drawn from the palette's own tokens, and goes still under reduced motion.
+   The rasters + layer stack come from the shared block above (identical in
+   every preview). What this file adds is the LIFE per palette - that is
+   MX10's spec, written as code.
    ====================================================================== */
-.nv-options { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-.nv-hint { margin: 0 0 10px; font-size: 12px; color: var(--color-text-secondary); }
-.mx-app.nv { padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px)); }
+.sc-probe-band { position: absolute; left: 0; top: 0; width: 0; height: var(--scene-band-h); visibility: hidden; pointer-events: none; }
 
-/* App shell */
-.shell { position: relative; min-height: 70dvh; }
-.masthead { display: flex; align-items: center; justify-content: space-between; padding: 2px 0 12px; }
-.brand { display: inline-flex; align-items: center; gap: 8px; }
-.brand__crown { width: 22px; height: 22px; background: var(--color-interactive); -webkit-mask: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%3E%3Cpath%20d='M3,19L3,8L8,12L12,5L16,12L21,8L21,19Z'/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%3E%3Cpath%20d='M3,19L3,8L8,12L12,5L16,12L21,8L21,19Z'/%3E%3C/svg%3E") center / contain no-repeat; }
-.brand__word { font-family: var(--font-display); font-size: 1.35rem; font-weight: 700; letter-spacing: -.01em; }
-.masthead__date { font-size: 12px; color: var(--color-text-secondary); }
-.pages { position: relative; }
-.page { display: grid; gap: 10px; }
-.page[hidden] { display: none; }
-.page-title { margin: 0 0 2px; font-family: var(--font-display); font-size: clamp(1.5rem, 4.5vw, 1.7rem); font-weight: 700; letter-spacing: -.01em; line-height: 1.15; }
-.page-sub { margin: 0; font-size: 13px; color: var(--color-text-secondary); }
-.pg-skel { display: grid; gap: 10px; }
-.pg-skel i { display: block; height: 14px; border-radius: 7px; background: linear-gradient(90deg, var(--color-skeleton-base) 0 30%, var(--color-skeleton-highlight) 50%, var(--color-skeleton-base) 70% 100%); background-size: 200% 100%; }
-.pg-skel i.card-ish { height: 84px; border-radius: var(--radius-card); }
-.pg-skel i.row-ish { height: 58px; border-radius: 12px; }
-html:not(.mx-reduce) .pg-skel i { animation: mx-shimmer 1.3s linear infinite; }
-.pg-skel.is-out { animation: mx-fade-out 220ms ease-out forwards; pointer-events: none; }
+/* Ambient layer: fixed, above both photograph layers (z 1, before .mx-app
+   in the DOM so the content still paints over it), under the toolbar. */
+.sc-ambient { position: fixed; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
+.sc-ambient > * { position: absolute; }
+.sc-canvas { inset: 0; width: 100%; height: 100%; }
 
-/* Home bits */
-.hero { padding: 18px 16px 18px; display: grid; gap: 10px; }
-.hero h2 { margin: 0; font-family: var(--font-display); font-size: 20px; }
-.hero p { margin: 0; font-size: 13px; color: var(--color-text-secondary); }
-.card--notched { border: 0; border-radius: 0; background: color-mix(in srgb, var(--color-interactive) 60%, var(--color-border)); filter: drop-shadow(0 0 10px var(--notch-glow));
-  clip-path: polygon(0 var(--notch-size), var(--notch-size) var(--notch-size), var(--notch-size) 0, calc(100% - var(--notch-size)) 0, calc(100% - var(--notch-size)) var(--notch-size), 100% var(--notch-size), 100% calc(100% - var(--notch-size)), calc(100% - var(--notch-size)) calc(100% - var(--notch-size)), calc(100% - var(--notch-size)) 100%, var(--notch-size) 100%, var(--notch-size) calc(100% - var(--notch-size)), 0 calc(100% - var(--notch-size))); }
-.card--notched::before { content: ""; position: absolute; inset: var(--notch-stroke); z-index: 0; background: linear-gradient(165deg, color-mix(in srgb, var(--color-surface-3) 28%, transparent), transparent 55%), var(--color-surface-1);
-  clip-path: polygon(0 var(--notch-size), var(--notch-size) var(--notch-size), var(--notch-size) 0, calc(100% - var(--notch-size)) 0, calc(100% - var(--notch-size)) var(--notch-size), 100% var(--notch-size), 100% calc(100% - var(--notch-size)), calc(100% - var(--notch-size)) calc(100% - var(--notch-size)), calc(100% - var(--notch-size)) 100%, var(--notch-size) 100%, var(--notch-size) calc(100% - var(--notch-size)), 0 calc(100% - var(--notch-size))); }
-.card--notched > * { position: relative; z-index: 1; }
-.week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
-.week span { display: grid; place-items: center; gap: 4px; font-size: 11px; color: var(--color-text-secondary); font-family: var(--font-block); letter-spacing: .06em; }
-.week i { width: 10px; height: 10px; border-radius: 3px; background: var(--color-surface-3); }
-.week i.on { background: var(--color-interactive); box-shadow: 0 0 8px var(--notch-glow); }
-.kpi2 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-.kpi2 div { display: grid; gap: 2px; }
-.kpi2 .eyebrow { font-size: 10.5px; }
-.kpi2 b { font-family: var(--font-display); font-size: 20px; font-weight: 700; }
+/* Soft light sources (moon, forge) - a radial glow placed by JS, breathing */
+.sc-light { width: 1px; height: 1px; left: 0; top: 0; opacity: 0; border-radius: 50%; transform: translate(-50%, -50%); }
+.sc-light::before { content: ""; position: absolute; left: 50%; top: 50%; width: var(--sz, 40vmin); height: var(--sz, 40vmin); transform: translate(-50%, -50%); border-radius: 50%;
+  background: radial-gradient(circle, var(--c1) 0%, var(--c2) 35%, transparent 70%); }
+.sc-light.is-on { opacity: 1; }
+html:not(.mx-reduce) .sc-light.is-on::before { animation: sc-breathe var(--per, 6s) ease-in-out infinite; }
+@keyframes sc-breathe { 0%, 100% { opacity: .62; transform: translate(-50%, -50%) scale(.96); } 50% { opacity: 1; transform: translate(-50%, -50%) scale(1.04); } }
 
-/* History list + detail */
-.hx-row { display: grid; grid-template-columns: 50px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px 12px; border-radius: 12px; border: 1px solid color-mix(in srgb, var(--color-border) 55%, transparent); background: var(--color-surface-1); box-shadow: var(--shadow-card); width: 100%; text-align: left; cursor: pointer; transition: transform var(--mx-quick) var(--ease-standard); }
-.hx-row:active { transform: scale(.985); }
-.date-tile { display: grid; justify-items: center; line-height: 1; }
-.date-tile small { font-family: var(--font-block); font-weight: 700; letter-spacing: .1em; font-size: 10px; color: var(--color-interactive); text-transform: uppercase; }
-.date-tile b { font-family: var(--font-display); font-size: 24px; font-weight: 700; }
-.hx-title { font-weight: 700; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.hx-meta { font-size: 12px; color: var(--color-text-secondary); }
-.hx-right { text-align: right; font-size: 12px; color: var(--color-text-secondary); display: grid; gap: 2px; }
-.hx-right b { color: var(--color-text); font-variant-numeric: tabular-nums; }
-.detail { position: absolute; inset: 0 0 auto 0; display: grid; gap: 10px; }
-.detail[hidden] { display: none; }
-.sd-head { display: grid; grid-template-columns: 50px minmax(0, 1fr); gap: 12px; align-items: center; padding: 10px 12px; border-radius: 12px; border: 1px solid color-mix(in srgb, var(--color-border) 55%, transparent); background: var(--color-surface-1); box-shadow: var(--shadow-card); transform-origin: top left; }
-.sd-head .hx-title { font-size: 17px; font-family: var(--font-display); white-space: normal; }
-.back { justify-self: start; display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 12px 0 8px; border-radius: 999px; border: 1px solid var(--color-border); background: var(--color-surface-2); font-weight: 600; font-size: 13px; cursor: pointer; }
-.back svg { width: 14px; height: 14px; } .back path { fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
-.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
-.tbl th { text-align: left; font-family: var(--font-block); font-weight: 600; letter-spacing: .08em; text-transform: uppercase; font-size: 10.5px; color: var(--color-text-secondary); padding: 4px 6px; border-bottom: 1px solid color-mix(in srgb, var(--color-border) 55%, transparent); }
-.tbl td { padding: 7px 6px; border-bottom: 1px solid color-mix(in srgb, var(--color-border) 35%, transparent); font-variant-numeric: tabular-nums; }
-.tbl td:not(:first-child), .tbl th:not(:first-child) { text-align: right; }
-.tbl .pr { color: var(--color-interactive); font-weight: 700; }
+/* Drifting bands (mist, cloud wisps): repeating gradients that slide. Two
+   layers at different speeds give parallax for free. */
+.sc-drift { left: -50%; right: -50%; bottom: 0; height: calc(var(--scene-band-h) * var(--h, .6)); opacity: 0; filter: blur(var(--blur, 14px));
+  background: repeating-linear-gradient(90deg, transparent 0 14%, var(--c) 28%, transparent 46%, var(--c) 60%, transparent 72%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to top, rgba(0,0,0,0) 0, rgba(0,0,0,1) 18%, rgba(0,0,0,1) 60%, rgba(0,0,0,0) 100%);
+  mask-image: linear-gradient(to top, rgba(0,0,0,0) 0, rgba(0,0,0,1) 18%, rgba(0,0,0,1) 60%, rgba(0,0,0,0) 100%);
+  transition: opacity 600ms var(--ease-standard); }
+.sc-drift.is-on { opacity: var(--op, .6); }
+html:not(.mx-reduce) .sc-drift.is-on { animation: sc-drift var(--per, 80s) linear infinite; }
+.sc-drift--rev { animation-direction: reverse !important; }
+@keyframes sc-drift { from { transform: translateX(0); } to { transform: translateX(-16.6667%); } }
+html.mx-reduce .sc-drift { transform: translateX(-8%); }
 
-/* Library grid */
-.lib-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-.lib-card { display: grid; gap: 6px; min-height: 110px; }
-.lib-card .eyebrow { font-size: 10.5px; }
-.lib-card h3 { margin: 0; font-size: 15px; font-weight: 700; }
-.lib-card p { margin: 0; font-size: 12px; color: var(--color-text-secondary); }
-.pill { justify-self: start; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--color-nav-active-bg); color: var(--color-interactive); border: 1px solid color-mix(in srgb, var(--color-interactive) 30%, transparent); }
+/* Light shafts (forest): two soft diagonals that breathe out of phase. */
+.sc-shaft { top: -10%; bottom: 0; width: 18vw; opacity: 0; filter: blur(18px); transform: skewX(-14deg);
+  background: linear-gradient(180deg, var(--c) 0%, transparent 75%); transition: opacity 600ms var(--ease-standard); }
+.sc-shaft.is-on { opacity: var(--op, .5); }
+html:not(.mx-reduce) .sc-shaft.is-on { animation: sc-shaft var(--per, 11s) ease-in-out infinite; }
+@keyframes sc-shaft { 0%, 100% { opacity: calc(var(--op, .5) * .45); } 50% { opacity: var(--op, .5); } }
 
-/* Profile rows */
-.pf-row { display: flex; justify-content: space-between; align-items: center; min-height: 48px; padding: 0 2px; border-bottom: 1px solid color-mix(in srgb, var(--color-border) 45%, transparent); font-size: 14px; }
-.pf-row:last-child { border-bottom: 0; }
-.pf-row small { color: var(--color-text-secondary); }
-.switch { width: 40px; height: 24px; border-radius: 999px; background: var(--color-surface-3); border: 1px solid var(--color-border); position: relative; }
-.switch.on { background: var(--color-interactive); border-color: var(--color-interactive); }
-.switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: var(--color-surface-1); transition: transform 220ms var(--mx-ease-spring); }
-.switch.on::after { transform: translateX(16px); }
-
-/* Bottom nav */
-.bottom-nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 8; display: grid; grid-template-columns: repeat(5, 1fr); min-height: 3.5rem; padding-bottom: env(safe-area-inset-bottom); background: color-mix(in srgb, var(--color-surface-1) 62%, transparent); border-top: 1px solid color-mix(in srgb, var(--color-border) 35%, transparent); -webkit-backdrop-filter: saturate(1.1) blur(12px); backdrop-filter: saturate(1.1) blur(12px); }
-.bottom-nav__inner { position: relative; grid-column: 1 / -1; display: grid; grid-template-columns: repeat(5, 1fr); max-width: 520px; width: 100%; margin: 0 auto; }
-.bn-item { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; min-height: 56px; padding: 6px 4px 4px; border: 0; background: transparent; color: var(--color-text-secondary); cursor: pointer; transition: color var(--motion-fast) var(--ease-standard); }
-.bn-item svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-.bn-item span { line-height: 1.1; font-weight: 500; font-family: var(--font-block); letter-spacing: .04em; font-size: 12px; }
-.bn-item.active { color: var(--color-interactive); }
-.bn-item.active span { font-weight: 700; }
-.bn-item.is-pop svg { animation: bn-pop 420ms var(--mx-ease-spring); }
-@keyframes bn-pop { 0% { transform: none; } 40% { transform: translateY(-3px) scale(1.18); } 100% { transform: none; } }
-.bn-ind { position: absolute; top: 0; left: 0; width: 28px; height: 3px; border-radius: 0 0 3px 3px; background: var(--color-interactive); box-shadow: 0 0 12px var(--color-interactive); }
-.bn-halo { position: absolute; top: 4px; left: 0; width: 44px; height: 32px; border-radius: 12px; background: color-mix(in srgb, var(--color-interactive) 14%, transparent); z-index: 0; }
-
-/* ======================================================================
-   REDUCED MOTION - page changes crossfade (200ms); the indicator jumps;
-   the container transform becomes a fade; cascades collapse to one fade.
-   ====================================================================== */
-@media (prefers-reduced-motion: reduce) {
-  html { --mx-reveal: 200ms; --mx-stagger: 0ms; }
-  .mx-in.is-in { animation-name: mx-fade; animation-duration: 200ms; }
-  .mx-glow, .pg-skel i, .bn-item.is-pop svg { animation: none !important; }
-  .switch::after, .mx-seg__ind { transition-duration: 1ms !important; }
-}
-html.mx-reduce { --mx-reveal: 200ms; --mx-stagger: 0ms; }
-html.mx-reduce .mx-in.is-in { animation-name: mx-fade; animation-duration: 200ms; }
-html.mx-reduce .mx-glow, html.mx-reduce .pg-skel i, html.mx-reduce .bn-item.is-pop svg { animation: none !important; }
-html.mx-reduce .switch::after, html.mx-reduce .mx-seg__ind { transition-duration: 1ms !important; }
+/* ---------- the stage: sample content to judge legibility over the scene ---------- */
+.sc-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 6px 0 2px; }
+.sc-title { font-family: var(--font-display); font-weight: 700; font-size: 26px; letter-spacing: -.01em; margin: 0; }
+.sc-sub { margin: 0 0 12px; color: var(--color-text-secondary); font-size: 14px; }
+.sc-stack { display: grid; gap: 12px; }
+.sc-eyebrow { font-family: var(--font-block); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--color-text-secondary); margin: 0 0 4px; }
+.sc-what { display: grid; gap: 6px; }
+.sc-what h2 { font-family: var(--font-display); font-weight: 700; font-size: 17px; margin: 0; }
+.sc-what p { margin: 0; font-size: 14px; line-height: 1.45; }
+.sc-what .sc-reduced { color: var(--color-text-secondary); font-size: 13px; }
+.sc-kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.sc-kpi { padding: 10px 12px; border-radius: var(--radius-card); background: var(--color-surface-1); border: 1px solid color-mix(in srgb, var(--color-border) 55%, transparent); box-shadow: var(--shadow-card); }
+.sc-kpi b { display: block; font-family: var(--font-display); font-size: 20px; font-weight: 700; margin-top: 2px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.sc-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.sc-list li { display: flex; justify-content: space-between; gap: 10px; align-items: center; padding: 10px 12px; border-radius: var(--radius-card); background: var(--color-surface-1); border: 1px solid color-mix(in srgb, var(--color-border) 55%, transparent); box-shadow: var(--shadow-card); font-size: 14px; }
+.sc-list li span:last-child { color: var(--color-text-secondary); font-size: 13px; }
+.sc-spacer { height: 42vh; }
+.sc-footer { font-size: 12px; color: var(--color-text-secondary); margin: 0; }
+.sc-footer a { text-decoration: underline; }
+html.sc-stage-only .sc-stack > :not(.sc-what-card) { visibility: hidden; }
 </style>
 
 <span class="mx-probe" id="probe" aria-hidden="true"></span>
+<span class="sc-probe-band" id="bandProbe" aria-hidden="true"></span>
 <canvas class="mx-scene" id="scene" aria-hidden="true"></canvas>
 <div class="mx-glow" aria-hidden="true"></div>
 
+<div class="sc-ambient" id="ambient" aria-hidden="true">
+  <canvas class="sc-canvas" id="amb"></canvas>
+  <div class="sc-light" id="light1"></div>
+  <div class="sc-light" id="light2"></div>
+  <div class="sc-drift" id="drift1"></div>
+  <div class="sc-drift sc-drift--rev" id="drift2"></div>
+  <div class="sc-shaft" id="shaft1"></div>
+  <div class="sc-shaft" id="shaft2"></div>
+</div>
+
 <header class="mx-bar" role="toolbar" aria-label="Preview controls">
-  <span class="mx-bar__title">MX · Navigation</span>
+  <span class="mx-bar__title">MX · Scenes</span>
   <div class="mx-pals" role="group" aria-label="Palette">
     <button class="mx-pal is-on" data-pal="champ" aria-label="Champ palette"></button>
     <button class="mx-pal" data-pal="iron" aria-label="Iron palette"></button>
@@ -485,98 +448,38 @@ html.mx-reduce .switch::after, html.mx-reduce .mx-seg__ind { transition-duration
   </div>
   <button class="mx-tog" id="themeTog" aria-pressed="false">Dark</button>
   <button class="mx-tog" id="rmTog" aria-pressed="false" title="Simulate prefers-reduced-motion">Reduced</button>
-  <button class="mx-tog mx-tog--primary" id="replay">Reload</button>
+  <button class="mx-tog" id="stageTog" aria-pressed="false" title="Hide the sample content to see the scene alone">Scene only</button>
 </header>
 
-<main class="mx-app nv" id="app">
-  <div class="nv-options">
-    <div class="mx-seg" id="mode" role="group" aria-label="Page transition">
-      <span class="mx-seg__ind"></span>
-      <button aria-pressed="true" data-v="axis">A · Shared axis</button>
-      <button aria-pressed="false" data-v="depth">B · Depth</button>
-    </div>
+<main class="mx-app" id="app">
+  <div class="sc-head">
+    <h1 class="sc-title">Scenes</h1>
+    <span class="sc-footer" id="palName">champ</span>
   </div>
-  <p class="nv-hint">Use the bottom tabs. First visit to a tab shows the one skeleton language, then content cascades in. In History, tap a workout: the row becomes the page.</p>
+  <p class="sc-sub">Each palette is a place. The place breathes; the cards stay still. Switch palettes and modes above.</p>
 
-  <div class="shell">
-    <div class="masthead"><span class="brand"><i class="brand__crown" aria-hidden="true"></i><span class="brand__word">LogChamp</span></span><span class="masthead__date" id="today"></span></div>
-    <div class="pages" id="pages">
-      <section class="page" data-page="home">
-        <div class="pg-skel" aria-hidden="true"><i class="card-ish"></i><i style="width:40%"></i><i class="card-ish"></i><i class="row-ish"></i></div>
-        <div class="pg-body" hidden>
-          <section class="card card--notched hero mx-in"><h2>Start a workout</h2><p>Up next in your block: W4 · Lower - hip dominant</p><button class="btn btn-primary" type="button">Start W4 Lower</button></section>
-          <section class="card mx-in" style="display:grid;gap:10px"><p class="eyebrow">Last 7 days</p>
-            <div class="week"><span><i class="on"></i>M</span><span><i></i>T</span><span><i class="on"></i>W</span><span><i></i>T</span><span><i class="on"></i>F</span><span><i></i>S</span><span><i></i>S</span></div>
-            <div class="kpi2"><div><span class="eyebrow">Workouts</span><b>3</b></div><div><span class="eyebrow">Sets</span><b>58</b></div><div><span class="eyebrow">Volume</span><b>41.2k</b></div></div></section>
-          <button class="hx-row mx-in" type="button"><span class="date-tile"><small>Thu</small><b>8</b></span><span><span class="hx-title">W4 · Upper - push</span><br><span class="hx-meta">6 exercises · 22 sets · 58 min</span></span><span class="hx-right"><span>Top set</span><b>225 × 5</b></span></button>
-        </div>
-      </section>
-      <section class="page" data-page="analytics" hidden>
-        <div class="pg-skel" aria-hidden="true"><i class="h24" style="width:45%;height:28px"></i><i class="card-ish"></i><i class="card-ish"></i><i class="card-ish" style="height:160px"></i></div>
-        <div class="pg-body" hidden>
-          <div class="mx-in"><h1 class="page-title">Analytics</h1><p class="page-sub">Volume, strength trends, and balance from your logged sets.</p></div>
-          <div class="kpi2 mx-in"><div class="card"><span class="eyebrow">Sets / wk</span><b>91.8</b></div><div class="card"><span class="eyebrow">Top set</span><b>405</b></div><div class="card"><span class="eyebrow">Top gain</span><b style="color:var(--color-success-text)">+24</b></div></div>
-          <section class="card mx-in" style="display:grid;gap:8px"><p class="eyebrow">Weekly volume by muscle</p>
-            <div style="display:grid;gap:6px"><div style="display:grid;grid-template-columns:80px 1fr;gap:8px;align-items:center;font-size:13px"><span>Chest</span><span style="height:14px;border-radius:0 4px 4px 0;background:var(--color-interactive);width:92%"></span></div>
-            <div style="display:grid;grid-template-columns:80px 1fr;gap:8px;align-items:center;font-size:13px"><span>Lats</span><span style="height:14px;border-radius:0 4px 4px 0;background:var(--color-interactive);width:78%;opacity:.9"></span></div>
-            <div style="display:grid;grid-template-columns:80px 1fr;gap:8px;align-items:center;font-size:13px"><span>Quads</span><span style="height:14px;border-radius:0 4px 4px 0;background:var(--color-interactive);width:66%;opacity:.8"></span></div>
-            <div style="display:grid;grid-template-columns:80px 1fr;gap:8px;align-items:center;font-size:13px"><span>Shoulders</span><span style="height:14px;border-radius:0 4px 4px 0;background:var(--color-interactive);width:58%;opacity:.7"></span></div></div>
-            <p class="page-sub">Full chart motion lives in the Analytics preview.</p></section>
-        </div>
-      </section>
-      <section class="page" data-page="history" hidden>
-        <div class="pg-skel" aria-hidden="true"><i class="h24" style="width:40%;height:28px"></i><i class="row-ish"></i><i class="row-ish"></i><i class="row-ish"></i><i class="row-ish"></i><i class="row-ish"></i></div>
-        <div class="pg-body" hidden>
-          <div class="mx-in"><h1 class="page-title">History</h1><p class="page-sub">Every workout, newest first. Tap one.</p></div>
-          <div id="hxList" style="display:grid;gap:8px"></div>
-        </div>
-        <div class="detail" id="detail" hidden>
-          <button class="back mx-in" type="button" id="backBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>History</button>
-          <div class="sd-head" id="sdHead"><span class="date-tile"><small id="sdDow">Thu</small><b id="sdDay">8</b></span><span><span class="hx-title" id="sdTitle">W4 · Upper - push</span><br><span class="hx-meta" id="sdMeta">6 exercises · 22 sets · 58 min</span></span></div>
-          <section class="card mx-in" style="display:grid;gap:8px">
-            <div class="kpi2"><div><span class="eyebrow">Volume</span><b>14.8k</b></div><div><span class="eyebrow">Top set</span><b>225 × 5</b></div><div><span class="eyebrow">PRs</span><b style="color:var(--color-interactive)">1</b></div></div>
-          </section>
-          <section class="card mx-in" style="display:grid;gap:8px"><p class="eyebrow" style="margin:0">Bench Press</p>
-            <table class="tbl"><thead><tr><th>Set</th><th>Weight</th><th>Reps</th><th>Effort</th></tr></thead><tbody><tr><td>1</td><td>205</td><td>5</td><td>RIR 3</td></tr><tr><td>2</td><td>215</td><td>5</td><td>RIR 2</td></tr><tr><td>3</td><td class="pr">225</td><td class="pr">5</td><td>RIR 2</td></tr><tr><td>4</td><td>225</td><td>4</td><td>RIR 1</td></tr></tbody></table></section>
-          <section class="card mx-in" style="display:grid;gap:8px"><p class="eyebrow" style="margin:0">Incline DB Press</p>
-            <table class="tbl"><thead><tr><th>Set</th><th>Weight</th><th>Reps</th><th>Effort</th></tr></thead><tbody><tr><td>1</td><td>80</td><td>10</td><td>RIR 2</td></tr><tr><td>2</td><td>80</td><td>9</td><td>RIR 1</td></tr><tr><td>3</td><td>75</td><td>10</td><td>RIR 1</td></tr></tbody></table></section>
-        </div>
-      </section>
-      <section class="page" data-page="library" hidden>
-        <div class="pg-skel" aria-hidden="true"><i class="h24" style="width:40%;height:28px"></i><i class="card-ish" style="height:110px"></i><i class="card-ish" style="height:110px"></i></div>
-        <div class="pg-body" hidden>
-          <div class="mx-in"><h1 class="page-title">Library</h1><p class="page-sub">Your blocks and saved workouts.</p></div>
-          <div class="lib-grid">
-            <section class="card lib-card mx-in"><span class="pill">Running</span><h3>Hypertrophy block</h3><p>4 days · week 4 of 8</p></section>
-            <section class="card lib-card mx-in"><span class="eyebrow">Block</span><h3>Strength peak</h3><p>3 days · 6 weeks</p></section>
-            <section class="card lib-card mx-in"><span class="eyebrow">Workout</span><h3>Quick push</h3><p>5 exercises · 45 min</p></section>
-            <section class="card lib-card mx-in"><span class="eyebrow">Workout</span><h3>Pull + arms</h3><p>6 exercises · 55 min</p></section>
-          </div>
-        </div>
-      </section>
-      <section class="page" data-page="profile" hidden>
-        <div class="pg-skel" aria-hidden="true"><i class="h24" style="width:40%;height:28px"></i><i class="row-ish"></i><i class="row-ish"></i><i class="row-ish"></i></div>
-        <div class="pg-body" hidden>
-          <div class="mx-in"><h1 class="page-title">Profile</h1><p class="page-sub">seth · training since Mar 2026</p></div>
-          <section class="card mx-in" style="padding:4px 14px"><div class="pf-row"><span>Appearance<br><small>Dark · Champ</small></span><span class="switch on" aria-hidden="true"></span></div><div class="pf-row"><span>Units<br><small>lbs · RIR</small></span><span class="switch" aria-hidden="true"></span></div><div class="pf-row"><span>Repeat last<br><small>Prefill from last session</small></span><span class="switch on" aria-hidden="true"></span></div></section>
-          <section class="card mx-in" style="padding:4px 14px"><div class="pf-row"><span>Coach</span><small>Key saved</small></div><div class="pf-row"><span>What's new</span><small>v0.9</small></div><div class="pf-row"><span>Security</span><small></small></div></section>
-        </div>
-      </section>
+  <div class="sc-stack">
+    <section class="card sc-what-card">
+      <p class="sc-eyebrow">What moves here</p>
+      <div class="sc-what" id="what"></div>
+    </section>
+
+    <div class="sc-kpis" aria-label="Sample numbers">
+      <div class="sc-kpi"><span class="sc-eyebrow">Sets / wk</span><b>33.0</b></div>
+      <div class="sc-kpi"><span class="sc-eyebrow">Top set</span><b>220 × 10</b></div>
+      <div class="sc-kpi"><span class="sc-eyebrow">PRs</span><b>4</b></div>
     </div>
+
+    <ul class="sc-list" aria-label="Sample list">
+      <li><span>W4 · Upper - push</span><span>Wed · 22 sets</span></li>
+      <li><span>W3 · Upper - pull</span><span>Mon · 20 sets</span></li>
+      <li><span>W3 · Lower - hip dominant</span><span>Sat · 18 sets</span></li>
+    </ul>
+
+    <div class="sc-spacer" aria-hidden="true"></div>
+    <p class="sc-footer">Rules this stage keeps: motion only under the content (never on it), nothing faster than a breath, one light source per palette, everything from the palette's own tokens, and `prefers-reduced-motion` freezes the whole place.</p>
   </div>
 </main>
-
-<nav class="bottom-nav" aria-label="Main">
-  <div class="bottom-nav__inner" id="bn">
-    <span class="bn-halo" id="bnHalo" aria-hidden="true"></span>
-    <span class="bn-ind" id="bnInd" aria-hidden="true"></span>
-    <button class="bn-item active" data-page="home" type="button" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 9.6V20h13V9.6"/></svg><span>Home</span></button>
-    <button class="bn-item" data-page="analytics" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20v-7"/><path d="M10 20V7"/><path d="M15 20v-4"/><path d="M20 20V4"/></svg><span>Analytics</span></button>
-    <button class="bn-item" data-page="history" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg><span>History</span></button>
-    <button class="bn-item" data-page="library" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></svg><span>Library</span></button>
-    <button class="bn-item" data-page="profile" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.9 3.1-6 7-6s7 2.1 7 6"/></svg><span>Profile</span></button>
-  </div>
-</nav>
 
 <script>
 (() => {
@@ -672,104 +575,139 @@ html.mx-reduce .switch::after, html.mx-reduce .mx-seg__ind { transition-duration
   }
 
   /* shared helpers - end */
-  /* ---------- navigation ---------- */
-  const EASE_OUT_EXPO2 = 'cubic-bezier(0.16, 1, 0.3, 1)';
-  const EASE_SPRING2 = 'cubic-bezier(0.34, 1.56, 0.64, 1)';
-  const ORDER = ['home', 'analytics', 'history', 'library', 'profile'];
-  const state = { page: 'home', mode: 'axis', loaded: new Set(), busy: false, detailOpen: false };
-  $('#today').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+  /* ---------- scenes ---------- */
+  const amb = $('#amb'); const ctx = amb.getContext('2d');
+  const light1 = $('#light1'), light2 = $('#light2'), drift1 = $('#drift1'), drift2 = $('#drift2'), shaft1 = $('#shaft1'), shaft2 = $('#shaft2');
+  const bandProbe = $('#bandProbe');
 
-  const SESSIONS = [
-    ['Thu', 8, 'W4 · Upper - push', '6 exercises · 22 sets · 58 min', '225 × 5', '14.8k'],
-    ['Tue', 6, 'W4 · Lower - hip dominant', '5 exercises · 18 sets · 64 min', '405 × 3', '21.3k'],
-    ['Sun', 4, 'W3 · Upper - pull', '6 exercises · 20 sets · 52 min', '185 × 8', '12.1k'],
-    ['Fri', 2, 'W3 · Lower - knee dominant', '5 exercises · 19 sets · 61 min', '315 × 5', '19.6k'],
-    ['Wed', 30, 'W3 · Upper - push', '6 exercises · 22 sets · 55 min', '220 × 5', '14.2k'],
-    ['Mon', 28, 'Quick arms', '4 exercises · 12 sets · 31 min', '95 × 10', '5.8k'],
-  ];
-  $('#hxList').innerHTML = SESSIONS.map((s, i) => `<button class="hx-row mx-in" type="button" data-i="${i}"><span class="date-tile"><small>${s[0]}</small><b>${s[1]}</b></span><span><span class="hx-title">${s[2]}</span><br><span class="hx-meta">${s[3]}</span></span><span class="hx-right"><span>Top set</span><b>${s[4]}</b><span>${s[5]} lbs</span></span></button>`).join('');
+  const WHAT = {
+    champ: { title: 'Champ - the city at night', body: 'Windows in the real skyline switch on and off a few at a time, stars twinkle above the roofline, and the accent glow over the sky breathes. In light mode the skyline is a pale paper band and only the windows flicker.', reduced: 'Reduced motion: no flicker, no twinkle, the glow holds still.' },
+    iron: { title: 'Iron - the forge', body: 'Embers rise off the anvil and die out before they reach the cards; the forge light under them pulses on a slow 3.4 s cycle. The chalk grain stays. In light mode the embers are faint sparks over the washed band.', reduced: 'Reduced motion: no embers, the forge light holds at mid glow.' },
+    chill: { title: 'Chill - the moonlit ridge', body: 'Two layers of mist slide across the pines at different speeds (parallax), and the moon above breathes on an 8 s cycle. The band is lifted (brightness + contrast) so the ridge actually reads in dark mode - the critic\u2019s "nearly invisible" note.', reduced: 'Reduced motion: mist frozen mid-drift, moon at mid glow.' },
+    forest: { title: 'Forest - the canopy', body: 'Fireflies drift low in the undergrowth and pulse out of phase; two soft light shafts breathe through the trees. In light mode the fireflies become pollen motes and the shafts carry the scene.', reduced: 'Reduced motion: no fireflies, shafts hold at mid brightness.' },
+    crimson: { title: 'Crimson - the blood moon', body: 'Cloud wisps cross the moon on a 90 s drift and the moon itself pulses on a 6 s cycle. The backdrop is blurred harder and pulled to 40% brightness so the page no longer floods red - the critic\u2019s note - and the band keeps the wolves sharp.', reduced: 'Reduced motion: wisps frozen, moon at mid glow.' }
+  };
 
-  /* cascade reveal for a page body: 40ms steps, chrome first */
-  function cascade(root, base = 0) {
-    $$('.mx-in', root).forEach((el, i) => { el.classList.remove('is-in'); void el.offsetWidth; el.style.setProperty('--d', (RM() ? 0 : base + i * 40) + 'ms'); el.classList.add('is-in'); });
-  }
-  const pageEl = n => $(`.page[data-page="${n}"]`);
-
-  /* first visit: skeleton reserves the layout, then content morphs in */
-  function loadPage(name) {
-    const pg = pageEl(name); const skel = $('.pg-skel', pg), body = $('.pg-body', pg);
-    if (state.loaded.has(name)) { skel.hidden = true; body.hidden = false; cascade(body, 40); return; }
-    skel.hidden = false; skel.classList.remove('is-out'); body.hidden = true;
-    later(() => { state.loaded.add(name); skel.classList.add('is-out'); later(() => { skel.hidden = true; }, 220); body.hidden = false; cascade(body, 60); }, RM() ? 250 : 480);
+  /* geometry: where the band draws the raster (mirrors `center bottom / cover`) */
+  let geo = null; let img = null; let imgPal = null; let W = 0, H = 0;
+  const imageUrl = () => { const v = getComputedStyle(html).getPropertyValue('--scene-image').trim(); const m = v.match(/url\(("|')?(.*?)\1\)/); return m ? m[2] : null; };
+  function computeGeo() {
+    W = innerWidth; H = innerHeight; amb.width = W; amb.height = H;
+    const bandH = bandProbe.offsetHeight || Math.round(H * .32);
+    if (!img || !img.naturalWidth) { geo = null; return; }
+    const iw = img.naturalWidth, ih = img.naturalHeight;
+    const s = Math.max(W / iw, bandH / ih); const dw = iw * s, dh = ih * s;
+    const ox = (W - dw) / 2, oy = H - dh;
+    /* the blurred backdrop: inset -8%, center 40% / cover */
+    const bw = W * 1.16, bh = H * 1.16; const s2 = Math.max(bw / iw, bh / ih); const dw2 = iw * s2, dh2 = ih * s2;
+    const ox2 = -W * .08 + (bw - dw2) / 2, oy2 = -H * .08 + (bh - dh2) * .4;
+    geo = { s, dw, dh, ox, oy, bandH, bandTop: H - bandH, map: (u, v) => [ox + u * dw, oy + v * dh], mapBack: (u, v) => [ox2 + u * dw2, oy2 + v * dh2] };
   }
 
-  /* bottom nav: indicator + halo FLIP to the new tab, icon pops */
-  const bn = $('#bn'), ind = $('#bnInd'), halo = $('#bnHalo');
-  function placeNav(animate) {
-    const b = $(`.bn-item[data-page="${state.page}"]`, bn); const r = b.getBoundingClientRect(), br = bn.getBoundingClientRect();
-    const ix = r.left - br.left + r.width / 2 - 14, hx = r.left - br.left + r.width / 2 - 22;
-    const dur = animate && !RM() ? 480 : 0;
-    ind.animate([{ left: ix + 'px' }], { duration: dur, easing: EASE_SPRING2, fill: 'forwards' });
-    halo.animate([{ left: hx + 'px' }], { duration: dur, easing: EASE_SPRING2, fill: 'forwards' });
-  }
-  function go(name) {
-    if (state.busy || name === state.page) return;
-    if (state.detailOpen) closeDetail(true);
-    state.busy = true; gen++; clearTimers();
-    const from = pageEl(state.page), to = pageEl(name); const dir = ORDER.indexOf(name) > ORDER.indexOf(state.page) ? 1 : -1;
-    $$('.bn-item', bn).forEach(b => { const on = b.dataset.page === name; b.classList.toggle('active', on); if (on) { b.removeAttribute('aria-current'); b.setAttribute('aria-current', 'page'); b.classList.remove('is-pop'); void b.offsetWidth; b.classList.add('is-pop'); } else b.removeAttribute('aria-current'); });
-    state.page = name; placeNav(true);
-    const finish = () => { from.getAnimations().forEach(a => a.cancel()); from.hidden = true; to.hidden = false; loadPage(name); state.busy = false; };
-    if (RM()) { from.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 120, fill: 'forwards' }); later(() => { finish(); to.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 200 }); }, 130); return; }
-    const out = state.mode === 'axis' ? [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: `translateX(${-28 * dir}px)` }] : [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(.96)' }];
-    const inn = state.mode === 'axis' ? [{ opacity: 0, transform: `translateX(${32 * dir}px)` }, { opacity: 1, transform: 'none' }] : [{ opacity: 0, transform: 'scale(1.04)' }, { opacity: 1, transform: 'none' }];
-    from.animate(out, { duration: 150, easing: 'ease-in', fill: 'forwards' });
-    later(() => { finish(); to.animate(inn, { duration: 360, easing: EASE_OUT_EXPO2 }); }, 150);
-  }
-  $$('.bn-item', bn).forEach(b => b.addEventListener('click', () => go(b.dataset.page)));
+  /* per-palette systems */
+  let sys = null; let raf = 0; let last = 0; let windows = []; let stars = []; let particles = []; let tickAcc = 0;
+  const dark = () => html.dataset.theme === 'dark';
+  const placeLight = (el, x, y, sz, c1, c2, per) => { el.style.left = x + 'px'; el.style.top = y + 'px'; el.style.setProperty('--sz', sz); el.style.setProperty('--c1', c1); el.style.setProperty('--c2', c2); el.style.setProperty('--per', per); el.classList.add('is-on'); };
+  const off = (...els) => els.forEach(e => e.classList.remove('is-on'));
+  const drift = (el, c, h, op, per, blur) => { el.style.setProperty('--c', c); el.style.setProperty('--h', h); el.style.setProperty('--op', op); el.style.setProperty('--per', per); el.style.setProperty('--blur', blur); el.classList.add('is-on'); };
+  const shaft = (el, x, c, op, per) => { el.style.left = x; el.style.setProperty('--c', c); el.style.setProperty('--op', op); el.style.setProperty('--per', per); el.classList.add('is-on'); };
 
-  /* container transform: the tapped row becomes the detail header */
-  const detail = $('#detail'), list = $('.pg-body', pageEl('history')), head = $('#sdHead');
-  let lastRow = null;
-  function openDetail(row) {
-    if (state.busy) return; state.busy = true; state.detailOpen = true; lastRow = row;
-    const s = SESSIONS[+row.dataset.i]; $('#sdDow').textContent = s[0]; $('#sdDay').textContent = s[1]; $('#sdTitle').textContent = s[2]; $('#sdMeta').textContent = s[3];
-    const first = row.getBoundingClientRect();
-    detail.hidden = false; $$('.mx-in', detail).forEach(el => el.classList.remove('is-in'));
-    const last = head.getBoundingClientRect();
-    const dx = first.left - last.left, dy = first.top - last.top, sx = first.width / last.width, sy = first.height / last.height;
-    const done = () => { list.getAnimations().forEach(a => a.cancel()); list.hidden = true; row.style.visibility = ''; cascade(detail, 0); state.busy = false; };
-    if (RM()) { list.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 150, fill: 'forwards' }); later(done, 160); return; }
-    row.style.visibility = 'hidden';
-    list.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 220, easing: 'ease-out', fill: 'forwards' });
-    head.animate([{ transform: `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})` }, { transform: 'none' }], { duration: 460, easing: EASE_OUT_EXPO2 });
-    later(done, 470);
+  function sampleWindows() {
+    /* find the lit windows in the real raster so the flicker lands on them */
+    windows = []; if (!img || !img.naturalWidth) return;
+    const iw = img.naturalWidth, ih = img.naturalHeight;
+    const c = document.createElement('canvas'); c.width = iw; c.height = ih; const g = c.getContext('2d'); g.drawImage(img, 0, 0);
+    const d = g.getImageData(0, 0, iw, ih).data; const rnd = mulberry32(7);
+    for (let y = Math.floor(ih * .28); y < ih - 2; y += 1) for (let x = 1; x < iw - 1; x += 1) {
+      const i = (y * iw + x) * 4; const lum = (d[i] * .3 + d[i + 1] * .59 + d[i + 2] * .11);
+      if (lum > 140 && rnd() < .5) windows.push({ u: x / iw, v: y / ih, on: true });
+    }
+    if (windows.length > 900) { const keep = []; for (let i = 0; i < 900; i++) keep.push(windows[Math.floor(rnd() * windows.length)]); windows = keep; }
   }
-  function closeDetail(instant) {
-    if (!state.detailOpen) return; state.detailOpen = false;
-    const row = lastRow; list.hidden = false;
-    if (instant || RM()) { detail.hidden = true; return; }
-    state.busy = true;
-    const first = head.getBoundingClientRect(), last = row.getBoundingClientRect();
-    const dx = last.left - first.left, dy = last.top - first.top, sx = last.width / first.width, sy = last.height / first.height;
-    row.style.visibility = 'hidden';
-    $$('.mx-in', detail).forEach(el => el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 160, fill: 'forwards' }));
-    list.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 300, easing: 'ease-out' });
-    head.animate([{ transform: 'none' }, { transform: `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})` }], { duration: 380, easing: EASE_OUT_EXPO2, fill: 'forwards' });
-    later(() => { $$('.mx-in', detail).forEach(el => el.getAnimations().forEach(a => a.cancel())); head.getAnimations().forEach(a => a.cancel()); row.style.visibility = ''; detail.hidden = true; state.busy = false; }, 390);
-  }
-  $('#hxList').addEventListener('click', e => { const row = e.target.closest('.hx-row'); if (row) openDetail(row); });
-  $('#backBtn').addEventListener('click', () => closeDetail(false));
 
-  function reload() {
-    gen++; clearTimers(); state.loaded.clear(); if (state.detailOpen) closeDetail(true); state.busy = false;
-    ORDER.forEach(n => { const pg = pageEl(n); pg.hidden = n !== state.page; });
-    loadPage(state.page);
+  function setup() {
+    cancelAnimationFrame(raf); ctx.clearRect(0, 0, W, H); particles = []; stars = []; tickAcc = 0;
+    off(light1, light2, drift1, drift2, shaft1, shaft2);
+    const pal = html.dataset.palette; $('#palName').textContent = pal;
+    const w = WHAT[pal]; $('#what').innerHTML = `<h2>${w.title}</h2><p>${w.body}</p><p class="sc-reduced">${w.reduced}</p>`;
+    computeGeo(); if (!geo) return;
+    const acc = rgb(token('--color-interactive')), bg = rgb(token('--color-bg')), txt = rgb(token('--color-text'));
+    const D = dark();
+    const mixA = (a, b, t, al) => mix(a, b, t).replace('rgb(', 'rgba(').replace(')', `,${al})`);
+    sys = { pal, acc, bg, txt, D, mixA };
+    if (pal === 'champ') {
+      if (imgPal !== pal) { sampleWindows(); imgPal = pal; }
+      sys.winOn = D ? mix(acc, txt, .55) : mix(bg, acc, .55); sys.winOff = D ? mix(bg, acc, .22) : mix(bg, acc, .12);
+      const rnd = mulberry32(2026); for (let i = 0; i < (D ? 60 : 0); i++) stars.push({ x: rnd() * W, y: rnd() * geo.bandTop * .9, a: .2 + rnd() * .6, ph: rnd() * 6.28, sp: .6 + rnd() * 1.2 });
+      sys.star = mix(acc, txt, .6);
+    } else if (pal === 'iron') {
+      const [ax, ay] = geo.map(.5, .8);
+      placeLight(light1, ax, ay, '46vmin', mixA(acc, txt, .1, D ? .34 : .22), mixA(acc, bg, .3, D ? .14 : .08), '3.4s');
+      sys.ember = [mix(acc, txt, .35), mix(acc, txt, .1), mix(acc, bg, .25)]; sys.anvil = [ax, ay];
+    } else if (pal === 'chill') {
+      const [mx, my] = D ? geo.mapBack(.5, .02) : geo.map(.5, .02);
+      placeLight(light1, mx, Math.max(my, 60), '52vmin', mixA(txt, acc, .3, D ? .22 : .14), mixA(acc, bg, .2, D ? .1 : .05), '8s');
+      drift(drift1, mixA(txt, acc, .2, D ? .16 : .10), .62, 1, '110s', '16px');
+      drift(drift2, mixA(txt, acc, .4, D ? .10 : .07), .5, 1, '70s', '12px');
+    } else if (pal === 'forest') {
+      shaft(shaft1, '18%', D ? mixA(txt, acc, .2, .10) : mixA(acc, bg, .4, .14), 1, '11s');
+      shaft(shaft2, '62%', D ? mixA(txt, acc, .4, .07) : mixA(acc, bg, .6, .10), 1, '14s');
+      const rnd = mulberry32(99); for (let i = 0; i < 20; i++) particles.push({ u: rnd(), v: .45 + rnd() * .5, ph: rnd() * 6.28, per: 1.8 + rnd() * 2.6, vx: (rnd() - .5) * 6, vy: (rnd() - .5) * 4 });
+      sys.fly = D ? mix(acc, txt, .25) : mix(bg, txt, .55); sys.flyGlow = D ? mixA(acc, txt, .1, .35) : mixA(bg, acc, .5, .25);
+    } else if (pal === 'crimson') {
+      const [mx, my] = geo.map(.56, .3);
+      placeLight(light1, mx, my, '38vmin', mixA(acc, txt, .25, D ? .30 : .16), mixA(acc, bg, .2, D ? .12 : .06), '6s');
+      drift(drift1, mixA(bg, acc, .3, D ? .32 : .18), .62, 1, '90s', '22px');
+      drift(drift2, mixA(bg, txt, .1, D ? .2 : .12), .48, 1, '140s', '18px');
+    }
+    if (!RM()) { last = performance.now(); raf = requestAnimationFrame(frame); } else drawStill();
   }
-  const placeMode = wireSeg($('#mode'), v => { state.mode = v; });
-  wireChrome({ replay: reload, onRM: reload });
-  addEventListener('resize', () => { drawScene(); placeNav(false); placeMode(); });
-  drawScene();
-  (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(() => { placeMode(); placeNav(false); reload(); });
+
+  function drawStill() { /* reduced motion: one quiet frame, nothing moves */
+    ctx.clearRect(0, 0, W, H);
+    if (sys.pal === 'forest') for (const p of particles) dot(p, .5);
+    if (sys.pal === 'champ') for (const s of stars) { ctx.globalAlpha = s.a; ctx.fillStyle = sys.star; ctx.fillRect(Math.round(s.x), Math.round(s.y), 1, 1); }
+    ctx.globalAlpha = 1;
+  }
+  function dot(p, a) {
+    const [x, y] = geo.map(p.u, p.v);
+    ctx.globalAlpha = a * .7; ctx.fillStyle = sys.flyGlow; ctx.beginPath(); ctx.arc(x, y, 7, 0, 6.283); ctx.fill();
+    ctx.globalAlpha = a; ctx.fillStyle = sys.fly; ctx.fillRect(Math.round(x) - 1, Math.round(y) - 1, 3, 3);
+  }
+
+  function frame(now) {
+    if (RM()) { drawStill(); return; }
+    const dt = Math.min(.05, (now - last) / 1000); last = now; const t = now / 1000;
+    if (sys.pal === 'champ') {
+      tickAcc += dt;
+      if (tickAcc > .38) { tickAcc = 0; const px = Math.max(1, Math.ceil(geo.s)); for (let i = 0; i < 4 && windows.length; i++) { const w = windows[Math.floor(Math.random() * windows.length)]; w.on = !w.on; const [x, y] = geo.map(w.u, w.v); ctx.fillStyle = w.on ? sys.winOn : sys.winOff; ctx.globalAlpha = w.on ? .9 : .85; ctx.fillRect(Math.floor(x), Math.floor(y), px, px); } }
+      for (const s of stars) { ctx.clearRect(Math.round(s.x), Math.round(s.y), 1, 1); ctx.globalAlpha = s.a * (.55 + .45 * Math.sin(s.ph + t * s.sp)); ctx.fillStyle = sys.star; ctx.fillRect(Math.round(s.x), Math.round(s.y), 1, 1); }
+      ctx.globalAlpha = 1;
+    } else if (sys.pal === 'iron') {
+      ctx.clearRect(0, 0, W, H);
+      const rate = sys.D ? 7 : 3; tickAcc += dt * rate;
+      while (tickAcc > 1) { tickAcc -= 1; const [ax, ay] = sys.anvil; particles.push({ x: ax + (Math.random() - .5) * geo.dw * .09, y: ay - Math.random() * 6, vx: (Math.random() - .5) * 8, vy: -(10 + Math.random() * 22), life: 0, ttl: 2.4 + Math.random() * 2.8, sz: Math.random() < .3 ? 2 : 1, ph: Math.random() * 6.28 }); }
+      particles = particles.filter(p => p.life < p.ttl);
+      for (const p of particles) { p.life += dt; p.x += (p.vx + Math.sin(p.ph + t * 1.7) * 6) * dt; p.y += p.vy * dt; const k = p.life / p.ttl; const a = k < .15 ? k / .15 : 1 - (k - .15) / .85; ctx.globalAlpha = Math.max(0, a) * (sys.D ? .95 : .6); ctx.fillStyle = sys.ember[k < .4 ? 0 : k < .75 ? 1 : 2]; ctx.fillRect(Math.round(p.x), Math.round(p.y), p.sz, p.sz); }
+      ctx.globalAlpha = 1;
+    } else if (sys.pal === 'forest') {
+      ctx.clearRect(0, 0, W, H);
+      for (const p of particles) { p.u += (p.vx * dt) / geo.dw; p.v += (p.vy * dt + Math.sin(p.ph + t * .8) * 2 * dt) / geo.dh; if (p.u < 0) p.u = 1; if (p.u > 1) p.u = 0; p.v = Math.min(.97, Math.max(.4, p.v)); const a = Math.max(0, Math.sin(p.ph + t * (6.283 / p.per))); dot(p, a * (sys.D ? 1 : .7)); }
+      ctx.globalAlpha = 1;
+    }
+    raf = requestAnimationFrame(frame);
+  }
+
+  function loadScene() {
+    const url = imageUrl(); if (!url) { setup(); return; }
+    if (img && img.src === url) { setup(); return; }
+    img = new Image(); imgPal = null; img.onload = () => { computeGeo(); setup(); }; img.src = url;
+  }
+  sceneHooks.push(loadScene);
+
+  wireChrome({ onRM: () => setup() });
+  const stageBtn = $('#stageTog'); stageBtn.addEventListener('click', () => { const on = !html.classList.contains('sc-stage-only'); html.classList.toggle('sc-stage-only', on); stageBtn.setAttribute('aria-pressed', String(on)); });
+  let rz; addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { computeGeo(); setup(); }, 160); });
+  loadScene();
 })();
 </script>

@@ -493,6 +493,10 @@ function rangeStatsFor(row, stats) {
   return stats.byName.get(String(row.name || "").toLowerCase()) || null;
 }
 
+/** One row = the name plus ONE hero number (the top set in range) with its
+    range delta under it; best e1RM and session counts live in the meta line;
+    everything else is on demand in the detail panel. The sparkline column
+    appears on wide screens only (analytics-motion.css). */
 function RosterRow({ row, stats, selected, weeks, onSelect }) {
   const ago = daysAgo(row.lastPerformed);
   const agoLabel = ago === 0 ? "today" : ago === 1 ? "yesterday" : `${ago}d ago`;
@@ -501,6 +505,7 @@ function RosterRow({ row, stats, selected, weeks, onSelect }) {
   const delta = series.length >= 2 ? series[series.length - 1].weight - series[0].weight : null;
   const top = stats?.topSet ?? null;
   const best = stats?.e1rmTrend?.best ?? null;
+  const heroLabel = top ? "top set" : inRange ? "top set" : "no sets in range";
   return (
     <li>
       <button
@@ -514,11 +519,17 @@ function RosterRow({ row, stats, selected, weeks, onSelect }) {
           <span className="exercise-roster-meta muted small">
             last {agoLabel}
             <span aria-hidden="true"> · </span>
-            {row.sessionCount} session{row.sessionCount === 1 ? "" : "s"} all time
+            {row.sessionCount} session{row.sessionCount === 1 ? "" : "s"}
             {inRange ? (
               <>
                 <span aria-hidden="true"> · </span>
                 {inRange} in {weeks}w
+              </>
+            ) : null}
+            {best != null ? (
+              <>
+                <span aria-hidden="true"> · </span>
+                best e1RM {formatEstimate(best)}
               </>
             ) : null}
           </span>
@@ -526,25 +537,21 @@ function RosterRow({ row, stats, selected, weeks, onSelect }) {
         <span className="exercise-roster-spark" aria-hidden="true">
           {series.length > 1 ? <SparklinePlot series={series} compact /> : null}
         </span>
-        <span className="exercise-roster-stat">
-          <span className="exercise-roster-stat__value">
+        <span className="exercise-roster-hero">
+          <span className="exercise-roster-hero__value">
             {top
               ? `${formatWeight(top.weight)}${top.reps != null ? ` × ${formatRepsValue(top.reps)}` : ""}`
               : "—"}
           </span>
-          <span className="exercise-roster-stat__label">top set</span>
-        </span>
-        <span className="exercise-roster-stat">
-          <span className="exercise-roster-stat__value">{best != null ? formatEstimate(best) : "—"}</span>
-          <span className="exercise-roster-stat__label">best e1RM</span>
-        </span>
-        <span className="exercise-roster-stat exercise-roster-stat--delta">
           <span
-            className={`exercise-roster-stat__value${delta > 0 ? " is-up" : ""}${delta < 0 ? " is-down" : ""}`}
+            className={`exercise-roster-hero__delta${delta > 0 ? " is-up" : ""}${delta < 0 ? " is-down" : ""}`}
           >
-            {delta == null ? "—" : delta === 0 ? "no change" : `${delta > 0 ? "+" : "−"}${formatWeight(Math.abs(delta))}`}
+            {delta == null
+              ? heroLabel
+              : delta === 0
+                ? `no change, ${weeks}w`
+                : `${delta > 0 ? "+" : "−"}${formatWeight(Math.abs(delta))}, ${weeks}w`}
           </span>
-          <span className="exercise-roster-stat__label">top set, {weeks}w</span>
         </span>
       </button>
     </li>
@@ -689,7 +696,7 @@ export function ExercisesView({ weeks, range, perExercise = [], exerciseParam, o
           Log a workout to build your exercise history.
         </p>
         <p className="small" style={{ margin: 0 }}>
-          <Link to="/log-workout">Log your first workout →</Link>
+          <Link to="/log-workout">Log your first workout</Link>
         </p>
       </section>
     );

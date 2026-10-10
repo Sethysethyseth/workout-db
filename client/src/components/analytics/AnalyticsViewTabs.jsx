@@ -1,3 +1,6 @@
+import { useRef } from "react";
+import { SlidingIndicator } from "../motion/SlidingIndicator.jsx";
+
 const VIEW_OPTIONS = [
   { value: "muscles", label: "Muscles" },
   { value: "strength", label: "Strength" },
@@ -5,10 +8,18 @@ const VIEW_OPTIONS = [
   { value: "execution", label: "Execution" },
 ];
 
-/** Page-level Muscles | Strength | Exercises | Execution lens control. */
+/** Page-level Muscles | Strength | Exercises | Execution lens control. The
+    selected look is ONE sliding pill (SlidingIndicator), not a per-tab tint. */
 export function AnalyticsViewTabs({ value, onChange }) {
+  const hostRef = useRef(null);
   return (
-    <div className="analytics-view-tabs" role="group" aria-label="Analytics view">
+    <div
+      ref={hostRef}
+      className="analytics-view-tabs mx-slide-host"
+      role="group"
+      aria-label="Analytics view"
+    >
+      <SlidingIndicator containerRef={hostRef} activeKey={value} />
       {VIEW_OPTIONS.map(({ value: mode, label }) => (
         <button
           key={mode}

@@ -30,7 +30,7 @@ export function MuscleVolumeChart({ perMuscle }) {
         </span>
       </div>
       <div className="mv-rows" style={{ "--mv-ticks": 4 }}>
-        {rows.map((m) => {
+        {rows.map((m, i) => {
           const effFrac = Math.min(m.effectiveSets / max, 1);
           const stimFrac =
             m.stimulatingSets === null ? null : Math.min(m.stimulatingSets / max, 1);
@@ -38,6 +38,7 @@ export function MuscleVolumeChart({ perMuscle }) {
             m.stimulatingSets === null
               ? `${m.muscle}: ${fmt1(m.effectiveSets)} effective sets/wk · log RIR or RPE for stimulating`
               : `${m.muscle}: ${fmt1(m.effectiveSets)} effective · ${fmt1(m.stimulatingSets)} stimulating sets/wk`;
+          /* --row staggers the bar charge top-to-bottom (analytics-motion.css). */
           return (
             <div
               key={m.muscle}
@@ -45,6 +46,7 @@ export function MuscleVolumeChart({ perMuscle }) {
               tabIndex={0}
               aria-label={tip}
               data-tip={tip}
+              style={{ "--row": i }}
             >
               <span className="mv-name">{m.muscle}</span>
               <div className="mv-track">

@@ -85,9 +85,13 @@ export function SparklinePlot({ series, compact = false }) {
       ? `1 session: top set ${formatWeight(first.weight)}`
       : `${series.length} sessions: top set ${formatWeight(first.weight)} → ${formatWeight(last.weight)}`;
 
+  /* Direction class colours the end dot with the meaning token (--chart-up /
+     --chart-down), never the accent - so a gain reads as a gain on crimson. */
+  const dir = last.weight > first.weight ? " st-sparkline--up" : last.weight < first.weight ? " st-sparkline--down" : "";
+
   return (
     <div
-      className={`st-sparkline chart-tip-host${compact ? " st-sparkline--compact" : ""}`}
+      className={`st-sparkline chart-tip-host${compact ? " st-sparkline--compact" : ""}${dir}`}
       tabIndex={compact ? -1 : 0}
       aria-label={tip}
       data-tip={compact ? undefined : tip}
@@ -168,7 +172,7 @@ function StrengthCompactRow({ ex }) {
   );
 }
 
-function StrengthTrendRow({ ex, featured = false }) {
+function StrengthTrendRow({ ex, featured = false, index = 0 }) {
   const { series } = ex;
   if (series.length === 0) {
     return (
@@ -186,8 +190,14 @@ function StrengthTrendRow({ ex, featured = false }) {
       ? `${ex.name}: top set ${formatWeight(series[0].weight)} · 1 session in range`
       : `${ex.name}: top set ${formatWeight(series[0].weight)} → ${formatWeight(series[series.length - 1].weight)} · ${series.length} sessions`;
 
+  /* --row staggers the draw: line, then area, then the end dot, then the
+     delta chip (analytics-motion.css). */
   return (
-    <div className={`st-row${featured ? " st-row--featured" : ""}`} aria-label={tip}>
+    <div
+      className={`st-row${featured ? " st-row--featured" : ""}`}
+      aria-label={tip}
+      style={{ "--row": index }}
+    >
       <div className="row st-row-head">
         <span className="st-name">{ex.name}</span>
         {series.length === 1 ? (
@@ -246,8 +256,8 @@ export function StrengthTrendChart({ perExercise, betweenRows = null, afterPerEx
     <div className="st-chart stack">
       {featured.length > 0 ? (
         <div className="st-featured">
-          {featured.map((ex) => (
-            <StrengthTrendRow key={ex.exerciseId} ex={ex} featured />
+          {featured.map((ex, i) => (
+            <StrengthTrendRow key={ex.exerciseId} ex={ex} featured index={i} />
           ))}
         </div>
       ) : null}

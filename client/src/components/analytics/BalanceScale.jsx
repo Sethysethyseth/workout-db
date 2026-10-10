@@ -59,9 +59,15 @@ export function BalanceScale({ label, value, leftCaption, rightCaption, unavaila
       <div className="balance-scale chart-tip-host" tabIndex={0} aria-label={tip} data-tip={tip}>
         <span className="balance-track" />
         <span className="balance-zone" aria-hidden="true" />
+        {/* The fill charges out from the center hairline toward the heavy
+            side; --bal-origin tells the charge which edge is the baseline. */}
         <span
           className="balance-fill"
-          style={{ left: `${fillLeft}%`, width: `${fillWidth}%` }}
+          style={{
+            left: `${fillLeft}%`,
+            width: `${fillWidth}%`,
+            "--bal-origin": pct >= 50 ? "left center" : "right center",
+          }}
         />
         <span className="balance-center" />
         <span

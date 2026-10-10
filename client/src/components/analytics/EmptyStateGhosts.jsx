@@ -1,6 +1,8 @@
 /**
  * Static empty-state ghost previews for analytics surfaces (FP4).
- * Tokens-only muted washes; aria-hidden; zero interactivity; no motion.
+ * Tokens-only muted washes; aria-hidden; zero interactivity. They breathe
+ * (index.css .mx-ghost, still under reduced motion) so "not yet" never reads
+ * as "still loading" - the loading skeleton shimmers, the ghost breathes.
  */
 
 const MUSCLE_BAR_WIDTHS = ["78%", "62%", "48%", "34%"];
@@ -13,7 +15,7 @@ const SPARKLINE_POINTS = "4,28 22,24 40,26 58,18 76,14 96,10";
 
 export function MusclesEmptyGhost() {
   return (
-    <div className="analytics-ghost analytics-ghost--muscles" aria-hidden="true">
+    <div className="analytics-ghost mx-ghost analytics-ghost--muscles" aria-hidden="true">
       <div className="mv-rows analytics-ghost-mv-rows">
         {MUSCLE_BAR_WIDTHS.map((width) => (
           <div key={width} className="mv-row analytics-ghost-mv-row">
@@ -34,7 +36,7 @@ export function MusclesEmptyGhost() {
 
 export function StrengthEmptyGhost() {
   return (
-    <div className="analytics-ghost analytics-ghost--strength" aria-hidden="true">
+    <div className="analytics-ghost mx-ghost analytics-ghost--strength" aria-hidden="true">
       <div className="analytics-ghost-sparkline">
         <svg
           className="analytics-ghost-sparkline-svg"
@@ -59,7 +61,7 @@ export function StrengthEmptyGhost() {
 
 export function ExercisesEmptyGhost() {
   return (
-    <div className="analytics-ghost analytics-ghost--exercises" aria-hidden="true">
+    <div className="analytics-ghost mx-ghost analytics-ghost--exercises" aria-hidden="true">
       <ul className="analytics-ghost-roster">
         {EXERCISE_NAME_WIDTHS.map((width, i) => (
           <li key={width} className="analytics-ghost-roster-row">
@@ -85,7 +87,7 @@ export function ExecutionEmptyGhost() {
     [48, 40],
   ];
   return (
-    <div className="analytics-ghost analytics-ghost--execution" aria-hidden="true">
+    <div className="analytics-ghost mx-ghost analytics-ghost--execution" aria-hidden="true">
       <svg viewBox="0 0 200 84" className="analytics-ghost-diagram" preserveAspectRatio="none">
         {rows.map(([planned, actual], i) => {
           const y = 8 + i * 26;

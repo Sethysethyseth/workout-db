@@ -1,0 +1,42 @@
+/* Shared motion primitives - the component-side half of the MX vocabulary.
+   Tokens and keyframes live in index.css (--mx-*, mx-rise, mx-charge...);
+   this file styles the primitives that own DOM: the sliding selected
+   indicator and the cascade/axis wrappers. Tokens-only. */
+
+/* A segmented control that hosts a SlidingIndicator. Options sit above the
+   pill; the pill is the only "selected" paint. */
+.mx-slide-host {
+  position: relative;
+  isolation: isolate;
+}
+
+.mx-slide-host > :not(.mx-slide-ind) {
+  position: relative;
+  z-index: 1;
+}
+
+.mx-slide-ind {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 0;
+  border-radius: var(--mx-ind-radius, 999px);
+  border: 1px solid var(--color-interactive);
+  background: var(--color-nav-active-bg);
+  box-shadow: var(--shadow-ring-accent);
+  pointer-events: none;
+  will-change: transform, width;
+}
+
+.mx-slide-ind.is-ready {
+  transition:
+    transform 380ms var(--mx-ease-spring),
+    width 380ms var(--mx-ease-spring),
+    height 200ms var(--ease-standard);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mx-slide-ind.is-ready {
+    transition: none;
+  }
+}

@@ -1,0 +1,405 @@
+/* Analytics in motion (MX2-MX4) - the page-side half of the MX vocabulary.
+   Tokens, keyframes and the cascade primitives live in index.css; this
+   file applies them to the Analytics page and carries the critic fixes
+   scoped to it (type scale, one selected look, meaning tokens). Tokens-only.
+   Imported by AnalyticsPage.jsx. */
+
+/* -- Type scale inside Analytics (critic #5): page title 27px display face;
+   card titles ONE step below in the body face; eyebrows 11px caps. -- */
+
+.analytics-page .analytics-card-head h2,
+.analytics-page .analytics-section-title,
+.analytics-page .ex-detail-title {
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+
+.analytics-page .ex-detail-title {
+  font-size: 20px;
+}
+
+.analytics-page .ex-detail-support h3,
+.analytics-page .ex-pr-slot h3 {
+  font-size: 14px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.analytics-page .stat-tile-label {
+  letter-spacing: 0.06em;
+}
+
+/* -- Title: wipes in once, left to right. -- */
+
+.analytics-page .page-title {
+  animation: ax-title-wipe 520ms var(--mx-ease-out-expo) both;
+}
+
+@keyframes ax-title-wipe {
+  from {
+    clip-path: inset(0 100% 0 0);
+    transform: translateX(-6px);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+    transform: none;
+  }
+}
+
+/* -- One selected look: the sliding pill IS the selection. The buttons under
+   it drop their own tint (critic #2 - "one selected token"). -- */
+
+.analytics-range-chips .range-chip.is-active,
+.chart-table-toggle .range-chip.is-active {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  color: var(--color-text);
+}
+
+.analytics-view-tabs {
+  --mx-ind-radius: 9px;
+}
+
+.analytics-view-tab.is-active {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+/* -- KPI tiles: the existing accent hairline (index.css .stat-tile::before)
+   charges across as the number rolls. -- */
+
+.analytics-kpis .stat-tile::before {
+  transform-origin: left center;
+  animation: mx-charge var(--mx-count) var(--mx-ease-draw) both;
+  animation-delay: var(--mx-data-delay, 120ms);
+}
+
+/* The Top-gain arrow pops in once the number has landed. */
+.analytics-kpis .stat-tile-value--up::after {
+  animation: mx-pop 380ms var(--mx-ease-spring) both;
+  animation-delay: calc(var(--mx-data-delay, 120ms) + 600ms);
+}
+
+/* -- Meaning tokens (critic palette notes): "up" and "down" are never the
+   accent, so a rising trend on crimson is not drawn in alarm red and a gain
+   on forest does not vanish into the accent green. Default: the palette's
+   positive tone (already per-palette in index.css) and the warn tone.
+   Forest's success green sits on the accent hue, so it leans toward mint
+   for separation. -- */
+
+.analytics-page {
+  --chart-up: var(--color-success-accent);
+  --chart-up-text: var(--color-success-text);
+  --chart-down: var(--color-warn-accent);
+  --chart-down-text: var(--color-warn-text);
+}
+
+html[data-palette="forest"] .analytics-page {
+  --chart-up: color-mix(in srgb, var(--color-success-accent) 55%, var(--color-text));
+  --chart-up-text: color-mix(in srgb, var(--color-success-text) 70%, var(--color-text));
+}
+
+.analytics-page .st-delta--up,
+.analytics-page .st-matched--up,
+.analytics-page .st-compact-delta--up,
+.analytics-page .exercise-roster-stat__value.is-up,
+.analytics-page .stat-tile-value--up {
+  color: var(--chart-up-text);
+}
+
+.analytics-page .st-compact-delta--down,
+.analytics-page .exercise-roster-stat__value.is-down {
+  color: var(--chart-down-text);
+}
+
+/* ======================================================================
+   MX3 - data draws. Structure first (the card rises), then the data
+   animates from --mx-data-delay, staggered per row by --row (capped at 8).
+   Every mark animates transform / opacity / stroke only - widths are set
+   by the component and transition on a range change. -- */
+
+/* Declared on every descendant (not on the page) so each mark resolves it
+   from ITS inherited --mx-data-delay (the card's slot) and --row (set inline
+   by the chart) - a custom property is computed where it is declared. */
+.analytics-page * {
+  --ax-row-delay: calc(var(--mx-data-delay, 120ms) + min(var(--row, 0), 8) * var(--mx-stagger));
+}
+
+/* Bars and meters charge from the baseline. */
+.analytics-page .mv-bar,
+.analytics-page .meter-fill,
+.analytics-page .ex-rep-target-bar,
+.analytics-page .ex-weekly-volume-bar:not(.ex-weekly-volume-bar--empty) {
+  transform-origin: left center;
+  animation: mx-charge var(--mx-draw) var(--mx-ease-draw) both;
+  animation-delay: var(--ax-row-delay);
+  transition: width var(--mx-draw) var(--mx-ease-draw);
+}
+
+.analytics-page .ex-weekly-volume-bar:not(.ex-weekly-volume-bar--empty) {
+  transform-origin: center bottom;
+  animation-name: ax-charge-up;
+  transition: height var(--mx-draw) var(--mx-ease-draw);
+}
+
+@keyframes ax-charge-up {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+/* The stimulating bar's glowing head: lights as the bar charges, fades once
+   it lands. Rides the bar, so it needs no position of its own. */
+.analytics-page .mv-bar--stimulating::after {
+  content: "";
+  position: absolute;
+  right: -1px;
+  top: -3px;
+  width: 5px;
+  height: 14px;
+  border-radius: 3px;
+  background: var(--chart-accent);
+  box-shadow: 0 0 12px 3px color-mix(in srgb, var(--chart-accent) 70%, transparent);
+  opacity: 0;
+  animation: ax-head calc(var(--mx-draw) + 500ms) ease-out both;
+  animation-delay: var(--ax-row-delay);
+}
+
+@keyframes ax-head {
+  0% {
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Balance: the fill charges out from the center hairline toward the heavy
+   side, then the pin springs onto its ratio. */
+.analytics-page .balance-fill {
+  transform-origin: var(--bal-origin, left center);
+  animation: mx-charge var(--mx-draw) var(--mx-ease-draw) both;
+  animation-delay: var(--mx-data-delay, 120ms);
+  transition: left var(--mx-draw) var(--mx-ease-draw), width var(--mx-draw) var(--mx-ease-draw);
+}
+
+.analytics-page .balance-marker {
+  animation: ax-pin 520ms var(--mx-ease-spring) both;
+  animation-delay: calc(var(--mx-data-delay, 120ms) + var(--mx-draw) - 200ms);
+  transition: left var(--mx-draw) var(--mx-ease-draw);
+}
+
+@keyframes ax-pin {
+  from {
+    transform: translateX(-50%) scale(0);
+  }
+  to {
+    transform: translateX(-50%) scale(1);
+  }
+}
+
+/* Sparklines: the line wipes in left to right (a draw for a line that only
+   moves forward in time), the area fades under it, the end dot pops, then
+   the delta chip and matched-effort line rise. Compact sparks (tails,
+   roster) draw too but have no dot or area to pop. */
+.analytics-page .st-sparkline-line {
+  animation: ax-wipe var(--mx-draw) var(--mx-ease-draw) both;
+  animation-delay: var(--ax-row-delay);
+}
+
+@keyframes ax-wipe {
+  from {
+    clip-path: inset(-20% 100% -20% 0);
+  }
+  to {
+    clip-path: inset(-20% 0 -20% 0);
+  }
+}
+
+.analytics-page .st-sparkline-area {
+  animation: mx-fade 420ms ease-out both;
+  animation-delay: calc(var(--ax-row-delay) + var(--mx-draw) - 120ms);
+}
+
+.analytics-page .st-sparkline:not(.st-sparkline--compact) .st-sparkline-dot {
+  animation: ax-dot 420ms var(--mx-ease-spring) both;
+  animation-delay: calc(var(--ax-row-delay) + var(--mx-draw) - 60ms);
+}
+
+.analytics-page .st-sparkline:not(.st-sparkline--compact) .st-sparkline-dot-ring {
+  animation: ax-dot-ring 420ms var(--mx-ease-spring) both;
+  animation-delay: calc(var(--ax-row-delay) + var(--mx-draw) - 60ms);
+}
+
+@keyframes ax-dot {
+  from {
+    stroke-width: 0;
+  }
+  to {
+    stroke-width: 9;
+  }
+}
+
+@keyframes ax-dot-ring {
+  from {
+    stroke-width: 0;
+  }
+  to {
+    stroke-width: 13;
+  }
+}
+
+/* End dot wears the meaning token, not the accent. */
+.analytics-page .st-sparkline--up .st-sparkline-dot {
+  stroke: var(--chart-up);
+}
+
+.analytics-page .st-sparkline--down .st-sparkline-dot {
+  stroke: var(--chart-down);
+}
+
+.analytics-page .st-row .st-delta,
+.analytics-page .st-row .st-matched {
+  animation: mx-rise var(--mx-reveal) var(--mx-ease-out-expo) both;
+  animation-delay: calc(var(--ax-row-delay) + var(--mx-draw) + 100ms);
+}
+
+/* The sparkline's first/last value labels fade in with the line. */
+.analytics-page .st-sparkline-val {
+  animation: mx-fade 300ms ease-out both;
+  animation-delay: var(--ax-row-delay);
+}
+
+.analytics-page .st-sparkline-val--last {
+  animation-delay: calc(var(--ax-row-delay) + var(--mx-draw) - 200ms);
+}
+
+/* ======================================================================
+   MX4 - empty states breathe; Exercises rows carry one hero number. -- */
+
+/* Ghosts breathe (index.css .mx-ghost). The dashed frame around the empty
+   surface stays still - only the silhouette moves. */
+
+/* Exercises roster (critic #5): the row is name + one hero number (top
+   set) with its range delta beneath; best e1RM moves into the meta line;
+   names wrap to two lines instead of truncating. The sparkline column
+   returns on wide screens only. */
+.analytics-page .exercise-roster-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: "main hero";
+  align-items: center;
+  gap: 6px 12px;
+  padding: 10px 14px;
+  min-height: 56px;
+}
+
+.analytics-page .exercise-roster-main {
+  grid-area: main;
+}
+
+.analytics-page .exercise-roster-name {
+  white-space: normal;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  font-size: 14px;
+}
+
+.analytics-page .exercise-roster-spark {
+  grid-area: spark;
+  display: none;
+}
+
+.analytics-page .exercise-roster-hero {
+  grid-area: hero;
+  display: grid;
+  gap: 1px;
+  text-align: right;
+  justify-items: end;
+}
+
+.analytics-page .exercise-roster-hero__value {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--color-text);
+  line-height: 1.15;
+}
+
+.analytics-page .exercise-roster-hero__delta {
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--color-text-secondary);
+}
+
+.analytics-page .exercise-roster-hero__delta.is-up {
+  color: var(--chart-up-text);
+}
+
+.analytics-page .exercise-roster-hero__delta.is-down {
+  color: var(--chart-down-text);
+}
+
+@media (min-width: 720px) {
+  .analytics-page .exercise-roster-row {
+    grid-template-columns: minmax(0, 1fr) 120px auto;
+    grid-template-areas: "main spark hero";
+    gap: 6px 16px;
+  }
+
+  .analytics-page .exercise-roster-spark {
+    display: block;
+  }
+}
+
+/* ======================================================================
+   Reduced motion: the page title, stripe and arrow print; bars, meters,
+   lines, dots, pins and chips render at their final state; the pill snaps
+   (motion.css); cascades fade (index.css); ghosts hold still. -- */
+
+@media (prefers-reduced-motion: reduce) {
+  .analytics-page .page-title,
+  .analytics-kpis .stat-tile::before,
+  .analytics-kpis .stat-tile-value--up::after,
+  .analytics-page .mv-bar,
+  .analytics-page .meter-fill,
+  .analytics-page .ex-rep-target-bar,
+  .analytics-page .ex-weekly-volume-bar,
+  .analytics-page .mv-bar--stimulating::after,
+  .analytics-page .balance-fill,
+  .analytics-page .balance-marker,
+  .analytics-page .st-sparkline-line,
+  .analytics-page .st-sparkline-area,
+  .analytics-page .st-sparkline-dot,
+  .analytics-page .st-sparkline-dot-ring,
+  .analytics-page .st-row .st-delta,
+  .analytics-page .st-row .st-matched,
+  .analytics-page .st-sparkline-val {
+    animation: none;
+    transition: none;
+  }
+
+  .analytics-page .mv-bar--stimulating::after {
+    display: none;
+  }
+}
