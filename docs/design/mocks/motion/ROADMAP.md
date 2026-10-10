@@ -1,6 +1,6 @@
 # MX wave roadmap - motion + visuals for LogChamp
 
-**Last checkpoint:** MXC1 DONE (Oct 10, 2026), after MXF2. Seth's smoke round 1 is fixed: Finish above the nav, rest on leaving the set, crimson rose charts, Strength draws; the coach keeps working when you leave (a working/answered bar), coach history lives on History. Next code unit: MX7 (logger floor - also owns the first-set focus drop found in the MXF2 audit) - or MX5b / MX10 if Seth picks scenes first. IDEAS 16 (fling-away bars) is HELD for Seth after the wave. MX1-MX6, MX-S, MXF1 and MXF2 stay DONE.
+**Last checkpoint:** MXF3 DONE (Oct 10, 2026), after MXC1. Seth's smoke round 2: the coach field sits above the keyboard, the coach icon is a plain chat bubble, and a test keyboard lives in `scripts/virtual-keyboard-shim.js`. Next code unit: MX7 (logger floor - also owns the first-set focus drop found in the MXF2 audit) - or MX5b / MX10 if Seth picks scenes first. IDEAS 16 (fling-away bars) is HELD for Seth after the wave. MX1-MX6, MX-S, MXF1, MXF2 and MXC1 stay DONE.
 
 This file is the wave's state. It stands on its own next to
 `MOTION-DIRECTION.md` (the design) and needs no chat history. Whoever picks
@@ -316,7 +316,7 @@ Conventions for every unit below:
   (typing surfaces / icons and alignment / coach flow and app sweep) are
   fixed, and Seth re-smokes.
 - **Depends on:** MXF2, MXC1. **Packages:** none.
-- **Status:** TODO.
+- **Status:** DONE (Oct 10, 2026). `/coach` keeps the composer 0-4 px above the keyboard while a field is focused (Chrome `virtualKeyboard` when it reports a rect, otherwise visualViewport against a no-keyboard baseline; a one-frame self-check). `?kbdebug=1` shows the readings. `CoachMarkIcon` is a plain chat bubble. `scripts/virtual-keyboard-shim.js` fakes chrome / edge / ios / content for the critic.
 
 ## MX7 - Logger quiet confirm + rest dock
 

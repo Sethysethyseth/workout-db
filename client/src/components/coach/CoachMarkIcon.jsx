@@ -1,16 +1,18 @@
-/** Coach mark: a bubble with the crown inside. No dots, so it never reads as a loading ellipsis. */
+/** Coach mark: a plain chat bubble. Outline only - nothing inside the bubble. */
 export function CoachMarkIcon({ size = 22 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      {/* Body is the rounded rectangle x 3.6..20.4, y 5.28..17.76 (centre 12,
+          11.52), sized to sit with the bottom nav icons. The tail drops to
+          y 19.92 and stays inside the viewBox; the 1.8 stroke stays off the
+          box edge. */}
       <path
-        d="M7 16.2 4.8 20l3.6-1.4A8.2 8.2 0 1 0 7 16.2Z"
+        d="M6.72 5.28H17.28A3.12 3.12 0 0 1 20.4 8.4V14.64A3.12 3.12 0 0 1 17.28 17.76H11.04L8.88 19.92 6.72 17.76A3.12 3.12 0 0 1 3.6 14.64V8.4A3.12 3.12 0 0 1 6.72 5.28Z"
         stroke="currentColor"
-        strokeWidth="1.7"
+        strokeWidth="1.8"
+        strokeLinecap="round"
         strokeLinejoin="round"
       />
-      {/* Filled, the same silhouette as the app's crown (AiWait mask): an
-          open zigzag read as an "M" at 22px. */}
-      <path d="M8.6 14.2V9.9l2 1.5L12 8.7l1.4 2.7 2-1.5v4.3Z" fill="currentColor" />
     </svg>
   );
 }
