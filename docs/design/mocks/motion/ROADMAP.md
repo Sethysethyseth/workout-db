@@ -318,6 +318,25 @@ Conventions for every unit below:
 - **Depends on:** MXF2, MXC1. **Packages:** none.
 - **Status:** DONE (Oct 10, 2026). `/coach` keeps the composer 0-4 px above the keyboard while a field is focused (Chrome `virtualKeyboard` when it reports a rect, otherwise visualViewport against a no-keyboard baseline; a one-frame self-check). `?kbdebug=1` shows the readings. `CoachMarkIcon` is a plain chat bubble. `scripts/virtual-keyboard-shim.js` fakes chrome / edge / ios / content for the critic.
 
+## MXF4 - Critic round 1 after MXF3 (typing surfaces)
+
+- **Goal:** fixes from critic round 1 (keyboard up on every typing surface,
+  3/10). (1) Resuming a quick workout opens every suggestion list, and a tap
+  renames the exercise. (2) The set field you type in unmounts when its
+  draft saves, losing digits (moved here from MX7). (3) Quick-logger search
+  opens under the keyboard. (4) The builder picker list ignores the
+  keyboard. (5) The coach chip covers the sticky exercise heading. (6) "Add
+  a workout note" needs two taps. (7) kbdebug placement, and the coach
+  cards under the scrollbar.
+- **Surface:** quick logger, block builder picker, coach chip, `/coach`.
+- **Variant:** n/a (fixes).
+- **Files:** block `docs/tasks/mxf4-critic-r1-typing-fixes.md`; findings
+  `docs/tasks/mxf3-critic-round-1-FINDINGS.md`.
+- **Done when:** the block's acceptance criteria pass and the seat re-runs
+  round 1's repros clean.
+- **Depends on:** MXF3. **Packages:** none.
+- **Status:** TODO.
+
 ## MX7 - Logger quiet confirm + rest dock
 
 - **Goal:** the floor stays quiet: logging a set scales the number out and

@@ -327,7 +327,8 @@
       se.scrollTop = Math.min(se.scrollHeight - se.clientHeight, before + need);
       need -= se.scrollTop - before;
     }
-    state.offsetTop = Math.max(0, Math.min(need, state.K));
+    /* Sub-pixel leftovers from the document scroll are not a pan. */
+    state.offsetTop = need < 0.5 ? 0 : Math.min(need, state.K);
   }
 
   function emit() {
