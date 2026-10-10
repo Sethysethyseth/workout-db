@@ -1,6 +1,6 @@
 # HANDOFF — current state
 
-> **WHERE WE ARE (Oct 9, late night): MOTION WAVE (MX) OPEN on
+> **WHERE WE ARE (Oct 10): MOTION WAVE (MX) OPEN on
 > `motion-wave`.** Seth's direction: "wicked" motion and graphics,
 > analytics first; Fable 5.1 in Cursor (`claude-fable-5-1-thinking-high`,
 > Cursor Pro) is the designer and its suggestions win; the Claude Code seat
@@ -10,10 +10,15 @@
 >   (Seth's rulings at the top win: PR celebration RARE, milestones at
 >   100/1,000/10,000 workouts, per-palette scenes) + `ROADMAP.md` (the
 >   wave's state: MX1-MX16 + MX-S + SRV-1/2, "Last checkpoint" line) +
->   `IDEAS.md` (14 PARKED ideas for Seth to pick from).
+>   `IDEAS.md` (15 PARKED ideas + IDEAS 16 HELD by Seth: fling-away bars).
 > - LANDED: MX0 `f651c21` (direction + previews), MX1-4 `2cdeee0`, MX5-6 `d309919`, MXF1 `97d028d`
 >   (motion primitives + Analytics in motion + per-palette scene
->   previews), MX5-6 (shell transitions + History FLIP). Next: ONE critic round on Analytics + shell (Seth, Oct 9), then MX7 (logger floor) per ROADMAP. Fable + Opus are capped in Cursor until Oct 18 - Seth chose Cursor auto + a harder Opus-seat audit meanwhile.
+>   previews), MX5-6 (shell transitions + History FLIP), MXF1 (critic
+>   round 1). Seth smoked all of it Oct 10 (below). QUEUED: MXF2 (his
+>   smoke fixes) + MXC1 (coach keeps working, history to History), in
+>   parallel; then MX7 (logger floor) per ROADMAP. Fable + Opus are capped
+>   in Cursor until Oct 18 - Seth chose Cursor auto + a harder Opus-seat
+>   audit meanwhile.
 > - Previews (private Artifacts): analytics X52VRgnoGLer3gGgphQnBU, PR
 >   2kWaZboR6dtMGXgwJqhPSN, navigation T5WpDyvFkAX5rdex1Y5k67, session
 >   flow 7dk9zTUhc2nxAbjDLS9i2S, scenes PTk4q9Gww5xhBy5cHkgQBx
@@ -28,62 +33,34 @@
 > - `main` = `b82ad8c` (QOL wave, live on prod). `quality-of-life-updates`
 >   = main + docs; `motion-wave` was cut from it.
 
-**Next action (human):** smoke `motion-wave` on the staging Vercel deploy
-(`origin/motion-wave` = `97d028d`) with the 21 "MX smoke items" below, and
-call the tab-slide speed (item 21).
+**Next action (human):** nothing is blocked on Seth - MXF2 and MXC1 are
+with Cursor; re-smoke them on staging when the landing posts its checklist.
 
-## MX smoke items (carry forward - Seth smokes once at wave end)
+## Seth's mid-wave smoke (Oct 10, phone) - MX1-6 + MXF1
 
-From MX1-4 (`2cdeee0`), on a phone, two palettes, both modes:
-1. Cold load `/analytics`: skeleton at once (no blank scene), title
-   wipes in, KPI tiles rise in order, numbers roll up from 0 (no flash of
-   the final number first), top hairline charges.
-2. Range chips: the selected pill slides; KPIs roll from old to new
-   values; the page does not replay its entrance.
-3. View tabs: the pill slides; the new view slides in from the tab's
-   side; Muscles bars charge with a glowing head, Strength sparklines draw
-   then dot pops, Execution meters charge.
-4. Exercises view at 390: full names wrap (no "..."), one big top-set
-   number plus a delta line; tapping a row still opens the detail.
-5. Crimson dark and forest dark: gains read in the success color, never
-   danger red or the accent green.
-6. All card titles one size; only the page title is bigger.
-7. Empty state (fresh account / tiny range): ghosts breathe slowly.
-8. OS reduce-motion on: everything prints at its final state, pills jump.
+Everything he did not name PASSED; the 420ms tab slide STAYS (item 21 -
+not flagged). Findings, all now in blocks:
+- Finish dock hidden under the bottom nav on a live workout (screenshot:
+  crimson dark, its top edge peeks above the nav) -> MXF2.
+- Rest timer fires between weight and reps -> MXF2; Seth's ruling: rest
+  starts when you LEAVE the set.
+- Crimson chart marks are green (MXF1 built crimson `--chart-accent` from
+  the success token) -> MXF2.
+- Strength trends do not animate, colour reads off -> MXF2.
+- "Double check appearance for glitches" -> the Opus seat runs a 10-combo
+  screenshot pass of the touched surfaces at each landing.
+- Coach: a tab change resets the conversation (CoachPanel aborts on
+  unmount; the server aborts and saves nothing); wants a first-open note, a
+  "working" bar like resume-workout, a "finished" state; coach history
+  moves Library -> History (ruling: Workouts | Coach switch); the masthead
+  chat glyph's "..." reads as a glitch -> MXC1.
+- HELD (Seth): fling-away resume/coach bars, omni-directional, fade with
+  distance, a couple of cm max, dismiss only on release out of range ->
+  IDEAS 16; decide after this wave whether it joins it or the next.
 
-From MX5-6 (`d309919`):
-9. Analytics on a cold load: the range chips, view tabs and chart/table
-   toggle each SHOW a selected pill (it was missing until the d309919
-   reviewer fix).
-10. Bottom tabs: the accent bar + halo glide to the tapped tab, the icon
-    pops once; pages slide left/right in tab order; the masthead, tab bar
-    and workout bar never get covered or move mid-slide.
-11. Tap a second tab mid-slide: the second page wins at once.
-12. Desktop (wide window): top bar reads Home / Analytics / History /
-    Library / Profile, the pill sits on the active tab.
-13. Cold load Home, Library, History, a block run page: a page-shaped
-    skeleton on first paint; Library tab counts are a ghost pill, not "0".
-14. History: tap a finished workout - its row grows into the summary
-    header; Back shrinks it into the row. Open an in-progress workout:
-    no fly-in, logging a set is instant.
+## Smoke for the next round (carry forward - fill at each landing)
 
-From MXF1 (`97d028d`, critic round 1 fixes):
-15. History: the grow is a card SURFACE from the row into the header, no
-    squashed text; Back fades and shrinks into the row as one motion; the
-    row is never left invisible.
-16. Analytics: full entrance on the first visit, then a quick fade on
-    returns; a range change keeps the old numbers dimmed until the new ones
-    land, then plays the entrance.
-17. Loading: no barbell caption under skeletons; a workout opens on a
-    skeleton, not "Loading workout..."; Home and Analytics do not jump.
-18. Crimson: Muscles bars and trend lines are not alarm red; forest gains
-    are teal, not the accent green.
-19. Workout summary: no "Tracked" pills, untracked shows "Track this
-    exercise", no empty stat cell.
-20. Desktop: the masthead does not shift between pages and the wordmark
-    lines up with the page; one wordmark on the boot splash; History month
-    headings sit on a surface.
-21. TAB SLIDE SPEED (Seth decides now): 420ms as built - keep or trim?
+- (MXF2 and MXC1 add their items when they land.)
 
 ## PICK UP HERE (next session)
 
@@ -183,8 +160,9 @@ Covers the F-wave AND the still-open E-wave prod smoke. Staging passed Aug 4.
 - **Stale `.git/worktrees/merge-main`, `merge-main-0927`, `merge-main-1007` admin dirs**
   (OneDrive lock): git prints `failed to delete ... Permission denied` on
   fetch/commit. Harmless; `git worktree prune` once the lock clears.
-- **`claudefiledrop/` (untracked, keep):** `image0.jpg` = Seth's discard
-  ask screenshot; `smoke-r3-add-exercise-first-open.png` = smoke round 3.
+- **`claudefiledrop/` (untracked, keep):** Seth cleared it Oct 10; it holds
+  his two Oct 10 smoke screenshots (masthead chat glyph; Finish dock under
+  the nav). Three older tracked PNGs show as deleted - his call, unstaged.
 - **Pre-wave migration drift** found in the Sept 26 prod-vs-staging diff, NOT
   from any recent wave and not blocking (prod's build never runs `migrate
   deploy`): checksums differ on `20260325143000_block_weeks` and
@@ -261,50 +239,26 @@ Covers the F-wave AND the still-open E-wave prod smoke. Staging passed Aug 4.
 > explicitly. Dogfoods the shell repo's decision-10 no-dangling-next-
 > action requirement; `land-unit` section 5 keeps it maintained.
 
-**Updated:** October 9, 2026, night (Opus seat). Session log:
-- Seth's smoke finding: the setup strip becomes a hotbar. Authored qolf9
-  (no critic round, his call), dispatched on auto in lane 1, landed
-  `2d4cb0e` after reviewer fixes (the block's own app-guide copy broke the
-  12,000-char guide cap - Cursor stopped correctly; dead pill CSS; chip
-  gap). 24/24. Seth smoked and signed off.
-- **Pre-main gate (`pre-main-review`) over `b5c6777..HEAD`, 61 commits,
-  105 code files.** Read in seat: the migration (3 new tables, cascade FKs,
-  no DROP, LF per `.gitattributes`), the key vault (AES-256-GCM, random
-  12-byte IV, userId as AAD, 16-byte tag enforced; status returns last4
-  only), every new coach/exercise/session handler (all owner-scoped), the
-  ask path caps (question 1000, history 12 x 4000, weekly cap covers help),
-  and the auth-epoch fix (no stuck loader).
-- Gate fuel, three Cursor report lanes (auto, lanes 1-3, ~7-12 min each,
-  porcelain-clean), preserved as `qol-gate-r{1,2,3}-*-FINDINGS.md`:
-  - r1: unit 578/578, build and hex clean, 23 new tokens all defined, no
-    raw colours, schema vs SQL clean, no dead classes; cross-doc drift
-    (spec still said N = 15 and the Home strip).
-  - r2: every new/changed route SCOPED (none unscoped); vault never logs or
-    returns key material; no conversation storage cap (follow-up).
-  - r3: 208 criteria re-run on HEAD - 96 hold, 99 reviewer-only, 11
-    process-only, 2 "broken", both by qolf9's contract (notes pill removed
-    on purpose; the Logging release bullet grew to 29 words).
-- **Verdict: PASS WITH FIXES**, both fixed in seat: the What's New Logging
-  bullet trimmed to 24 words; the wave spec got a dated amendment (N = 24,
-  strip moved and made a hotbar). r1's "does prod's build migrate"
-  contradiction is not one - RUNBOOK 10a's "V2 RESULT" already says it
-  does not.
-- **Rule change (Seth, Oct 9):** prod migrations moved to the staging
-  tier - "migrate prod", Claude Code runs them, Seth approves each command
-  (AGENTS.md gate 3, RUNBOOK section 9, `b82ad8c`). Seth created
-  `C:\dev\secrets\prod-db.env`; the seat generated the prod
-  `COACH_KEY_SECRET` into `coach-key-secret.txt` (never shown).
-- **"migrate prod"** (4 steps, each approved): staging checksum read
-  (matches the file's sha256) -> prod precheck (no row, no tables, User.id
-  text; found the blocks_v2/per_side history-row drift) -> apply in one
-  transaction (COMMITTED 2026-10-10T00:11:41Z) -> verify (row, 3 tables,
-  3 cascade FKs).
-- **"push to main":** temp worktree `C:\dev\worktrees\merge-main-1009` on
-  `main`, `merge --ff-only origin/quality-of-life-updates`, push
-  (`b5c6777..b82ad8c`), worktree removed. Prod API live ~40 s after the
-  push; Vercel bundle confirmed. State commit `768f646` kept on the wave
-  branch (no docs-only prod redeploy). Seth then set `COACH_KEY_SECRET`,
-  repointed staging Render to `main`, and smoked prod: good.
+**Updated:** October 10, 2026 (Opus seat). Session log:
+- Seth smoked `motion-wave` (`97d028d`) on his phone: results above. Read
+  his two screenshots (`claudefiledrop/Screenshot_20261009-202409.png` =
+  the masthead chat glyph; `Screenshot_20261010-122250.png` = the Finish
+  dock under the nav). He removed the older claudefiledrop files himself
+  (the three tracked PNG deletions are his, left unstaged).
+- Asked his three calls (rest trigger, History layout, where the "..."
+  is); rulings recorded in the blocks.
+- In-seat grounding (targeted greps, no recon lanes - two-block fix
+  round): crimson `--chart-accent` from `--color-success-accent`
+  (index.css ~6826); `.mx-route` carries `view-transition-name` at all
+  times (stacking context) vs `.bottom-nav` z-index 5 and the dock's 40;
+  quick-logger rest fires on core-logged (SessionDetailPage ~3035), block
+  logger on `onRestLoggedChange`; CoachPanel `abortRef` unmount abort +
+  server `res.on("close")` abort; app guide 11,923 / 12,000 chars.
+- Authored MXF2 (`mxf2-smoke-round-1-fixes.md`) and MXC1
+  (`mxc1-coach-keeps-working.md`), both MODEL auto (Fable + Opus capped
+  until Oct 18), FILES TO TOUCH disjoint so they may run in parallel
+  (lanes 1 + 2). ROADMAP gained MXF2 + MXC1 entries; IDEAS 16 = the held
+  swipe idea.
 
 **Rule:** rewritten in place at the end of every working session; kept CAPPED
 (~300 lines). Aged session logs move VERBATIM - never summarized - to

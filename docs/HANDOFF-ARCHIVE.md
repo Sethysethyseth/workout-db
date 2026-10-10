@@ -1,3 +1,105 @@
+## ARCHIVED October 10, 2026 (Opus session) - the mid-wave MX smoke list
+## (smoked by Seth on his phone Oct 10, results in HANDOFF) and the Oct 9
+## night QOL pre-main gate session log, moved verbatim.
+
+## MX smoke items (carry forward - Seth smokes once at wave end)
+
+From MX1-4 (`2cdeee0`), on a phone, two palettes, both modes:
+1. Cold load `/analytics`: skeleton at once (no blank scene), title
+   wipes in, KPI tiles rise in order, numbers roll up from 0 (no flash of
+   the final number first), top hairline charges.
+2. Range chips: the selected pill slides; KPIs roll from old to new
+   values; the page does not replay its entrance.
+3. View tabs: the pill slides; the new view slides in from the tab's
+   side; Muscles bars charge with a glowing head, Strength sparklines draw
+   then dot pops, Execution meters charge.
+4. Exercises view at 390: full names wrap (no "..."), one big top-set
+   number plus a delta line; tapping a row still opens the detail.
+5. Crimson dark and forest dark: gains read in the success color, never
+   danger red or the accent green.
+6. All card titles one size; only the page title is bigger.
+7. Empty state (fresh account / tiny range): ghosts breathe slowly.
+8. OS reduce-motion on: everything prints at its final state, pills jump.
+
+From MX5-6 (`d309919`):
+9. Analytics on a cold load: the range chips, view tabs and chart/table
+   toggle each SHOW a selected pill (it was missing until the d309919
+   reviewer fix).
+10. Bottom tabs: the accent bar + halo glide to the tapped tab, the icon
+    pops once; pages slide left/right in tab order; the masthead, tab bar
+    and workout bar never get covered or move mid-slide.
+11. Tap a second tab mid-slide: the second page wins at once.
+12. Desktop (wide window): top bar reads Home / Analytics / History /
+    Library / Profile, the pill sits on the active tab.
+13. Cold load Home, Library, History, a block run page: a page-shaped
+    skeleton on first paint; Library tab counts are a ghost pill, not "0".
+14. History: tap a finished workout - its row grows into the summary
+    header; Back shrinks it into the row. Open an in-progress workout:
+    no fly-in, logging a set is instant.
+
+From MXF1 (`97d028d`, critic round 1 fixes):
+15. History: the grow is a card SURFACE from the row into the header, no
+    squashed text; Back fades and shrinks into the row as one motion; the
+    row is never left invisible.
+16. Analytics: full entrance on the first visit, then a quick fade on
+    returns; a range change keeps the old numbers dimmed until the new ones
+    land, then plays the entrance.
+17. Loading: no barbell caption under skeletons; a workout opens on a
+    skeleton, not "Loading workout..."; Home and Analytics do not jump.
+18. Crimson: Muscles bars and trend lines are not alarm red; forest gains
+    are teal, not the accent green.
+19. Workout summary: no "Tracked" pills, untracked shows "Track this
+    exercise", no empty stat cell.
+20. Desktop: the masthead does not shift between pages and the wordmark
+    lines up with the page; one wordmark on the boot splash; History month
+    headings sit on a surface.
+21. TAB SLIDE SPEED (Seth decides now): 420ms as built - keep or trim?
+
+**Updated:** October 9, 2026, night (Opus seat). Session log:
+- Seth's smoke finding: the setup strip becomes a hotbar. Authored qolf9
+  (no critic round, his call), dispatched on auto in lane 1, landed
+  `2d4cb0e` after reviewer fixes (the block's own app-guide copy broke the
+  12,000-char guide cap - Cursor stopped correctly; dead pill CSS; chip
+  gap). 24/24. Seth smoked and signed off.
+- **Pre-main gate (`pre-main-review`) over `b5c6777..HEAD`, 61 commits,
+  105 code files.** Read in seat: the migration (3 new tables, cascade FKs,
+  no DROP, LF per `.gitattributes`), the key vault (AES-256-GCM, random
+  12-byte IV, userId as AAD, 16-byte tag enforced; status returns last4
+  only), every new coach/exercise/session handler (all owner-scoped), the
+  ask path caps (question 1000, history 12 x 4000, weekly cap covers help),
+  and the auth-epoch fix (no stuck loader).
+- Gate fuel, three Cursor report lanes (auto, lanes 1-3, ~7-12 min each,
+  porcelain-clean), preserved as `qol-gate-r{1,2,3}-*-FINDINGS.md`:
+  - r1: unit 578/578, build and hex clean, 23 new tokens all defined, no
+    raw colours, schema vs SQL clean, no dead classes; cross-doc drift
+    (spec still said N = 15 and the Home strip).
+  - r2: every new/changed route SCOPED (none unscoped); vault never logs or
+    returns key material; no conversation storage cap (follow-up).
+  - r3: 208 criteria re-run on HEAD - 96 hold, 99 reviewer-only, 11
+    process-only, 2 "broken", both by qolf9's contract (notes pill removed
+    on purpose; the Logging release bullet grew to 29 words).
+- **Verdict: PASS WITH FIXES**, both fixed in seat: the What's New Logging
+  bullet trimmed to 24 words; the wave spec got a dated amendment (N = 24,
+  strip moved and made a hotbar). r1's "does prod's build migrate"
+  contradiction is not one - RUNBOOK 10a's "V2 RESULT" already says it
+  does not.
+- **Rule change (Seth, Oct 9):** prod migrations moved to the staging
+  tier - "migrate prod", Claude Code runs them, Seth approves each command
+  (AGENTS.md gate 3, RUNBOOK section 9, `b82ad8c`). Seth created
+  `C:\dev\secrets\prod-db.env`; the seat generated the prod
+  `COACH_KEY_SECRET` into `coach-key-secret.txt` (never shown).
+- **"migrate prod"** (4 steps, each approved): staging checksum read
+  (matches the file's sha256) -> prod precheck (no row, no tables, User.id
+  text; found the blocks_v2/per_side history-row drift) -> apply in one
+  transaction (COMMITTED 2026-10-10T00:11:41Z) -> verify (row, 3 tables,
+  3 cascade FKs).
+- **"push to main":** temp worktree `C:\dev\worktrees\merge-main-1009` on
+  `main`, `merge --ff-only origin/quality-of-life-updates`, push
+  (`b5c6777..b82ad8c`), worktree removed. Prod API live ~40 s after the
+  push; Vercel bundle confirmed. State commit `768f646` kept on the wave
+  branch (no docs-only prod redeploy). Seth then set `COACH_KEY_SECRET`,
+  repointed staging Render to `main`, and smoked prod: good.
+
 ## ARCHIVED October 9, 2026, night (Opus session) - the QOL wave smoke
 ## checklist, signed off by Seth on staging, moved verbatim at the merge.
 

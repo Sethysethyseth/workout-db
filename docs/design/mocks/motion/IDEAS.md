@@ -195,3 +195,24 @@ Fields: idea, why it's cool for a lifter, what it needs, rough size, status.
   state as if it were still editable.
 - **Size:** M.
 - **Status:** PARKED.
+
+### 16. Fling away the resume-workout and coach cards (Seth, Oct 10 - HELD)
+
+- **Idea:** the resume-workout bar and the "Coach is working" bar (MXC1)
+  can be grabbed and flung away in ANY direction, like moving days and
+  weeks in the block builder. While dragged the card follows the finger and
+  fades as it gets further from where it started. It travels at most a
+  couple of centimetres; let go out of range and it disappears, let go in
+  range and it springs back. Dismissed, the workout lives only on Home's
+  resume card and the coach answer only in the coach chat on Home - nothing
+  is discarded.
+- **Why it's cool:** a bar you can flick off when you want the screen back,
+  without losing the workout or the answer.
+- **Needs:** client only. Pointer events + transform/opacity, zero deps;
+  look at open-source swipe-to-dismiss patterns (toast and card-stack
+  libraries) for feel, build our own. Must never fire from a scroll, never
+  discard data, and honour reduced motion (no drag-follow, a plain dismiss
+  control instead).
+- **Size:** S-M.
+- **Status:** HELD by Seth - decide after this wave closes whether it joins
+  the wave or the next one.

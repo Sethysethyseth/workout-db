@@ -1,6 +1,6 @@
 # MX wave roadmap - motion + visuals for LogChamp
 
-**Last checkpoint:** MXF1 DONE (Oct 9, 2026). Critic round 1, Seth's rulings applied: route stay 420ms and the surface stay 460ms; Analytics replays in full on the first view of a session and on a range change, and fades on a return. History grows an empty card surface (no scaled type) from the tap. Next code unit: MX7 (logger floor) - or MX5b (one shell column) / MX10 if Seth picks scenes first. MX1-MX6 and MX-S stay DONE.
+**Last checkpoint:** MXF1 DONE (Oct 9, 2026). Critic round 1, Seth's rulings applied: route stay 420ms and the surface stay 460ms; Analytics replays in full on the first view of a session and on a range change, and fades on a return. History grows an empty card surface (no scaled type) from the tap. Seth smoked MX1-6 + MXF1 on Oct 10 (420ms tab slide kept): next code units are MXF2 (his smoke fixes) and MXC1 (coach keeps working + history in History), then MX7 (logger floor) - or MX5b / MX10 if Seth picks scenes first. MX1-MX6 and MX-S stay DONE.
 
 This file is the wave's state. It stands on its own next to
 `MOTION-DIRECTION.md` (the design) and needs no chat history. Whoever picks
@@ -262,6 +262,39 @@ Conventions for every unit below:
   (left/top/width/height), started from the tapped row's own data. Back
   fades and shrinks together. Skeleton captions wait 2.5s. Analytics keeps
   a session cache per range.
+
+## MXF2 - Seth's smoke round 1 (logger, chart colour, Strength draw)
+
+- **Goal:** Seth's Oct 10 phone smoke of MX1-6 + MXF1. Everything he did not
+  name passed; the 420ms tab slide stays. Fix: (1) the Finish dock hidden
+  under the bottom nav on a live workout; (2) rest starts when you LEAVE the
+  set, never between weight and reps (Seth's ruling); (3) crimson's chart
+  marks are green (MXF1 built crimson `--chart-accent` from the success
+  token) - on-palette, non-alarm instead; (4) the Strength draw does not
+  play and its colour reads off.
+- **Surface:** both loggers (Finish dock + rest trigger only), Analytics.
+- **Variant:** n/a (fixes).
+- **Files:** block `docs/tasks/mxf2-smoke-round-1-fixes.md`.
+- **Done when:** the block's acceptance criteria pass and Seth re-smokes.
+- **Depends on:** MXF1. **Packages:** none.
+- **Status:** TODO.
+
+## MXC1 - Coach keeps working + coach history in History (Seth, Oct 10)
+
+- **Goal:** the coach conversation survives leaving `/coach` (app-level
+  provider; a "Coach is working" bar like the resume-workout bar, flipping
+  to "answered" when done; a once-per-device note on first open); coach
+  history moves from Library to a Workouts | Coach switch on History; the
+  masthead coach glyph loses the "..." Seth read as a glitch. Not a motion
+  unit - smoke findings Seth put in this wave. Swipe-to-dismiss for the
+  resume/coach cards is HELD (IDEAS 16).
+- **Surface:** `/coach`, History, Library, Home masthead, a global bar.
+- **Variant:** n/a.
+- **Files:** block `docs/tasks/mxc1-coach-keeps-working.md`.
+- **Done when:** the block's acceptance criteria pass and Seth re-smokes.
+- **Depends on:** nothing in this wave. **Packages:** none.
+- **Status:** TODO. (The reviewer keeps this entry current - the block may
+  run in parallel with MXF2, which owns this file during its run.)
 
 ## MX7 - Logger quiet confirm + rest dock
 
