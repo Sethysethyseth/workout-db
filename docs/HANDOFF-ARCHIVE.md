@@ -1,3 +1,75 @@
+## ARCHIVED October 9, 2026, night (Opus session) - the QOL wave smoke
+## checklist, signed off by Seth on staging, moved verbatim at the merge.
+
+## Wave smoke checklist (staging Vercel, on the phone) - SIGNED OFF by Seth, Oct 9
+
+- **Logging setup bar (qolf8 moved it, qolf9 made it a hotbar):**
+  - Home has no bar any more.
+  - Every live workout has a one-line bar under its title: RIR | RPE,
+    Exercise notes, Repeat last, Edit. What is on glows.
+  - Quick workout: tap RPE -> RPE glows and the sets ask for RPE. Tap
+    Exercise notes or Repeat last -> they turn off and on, and a typed
+    but unlogged weight stays.
+  - Log a set with RIR, then tap RPE: the sheet opens with a note that
+    this workout stays RIR. A block day glows the plan's scale, and
+    tapping the other one shows the plan note.
+  - Edit opens the full sheet (kg updates live); Profile > Training is
+    the same form.
+- **The logger:**
+  - No unit or RIR toggles inside a workout.
+  - Only the exercise name stays pinned. Its trash icon removes the
+    exercise after a confirm that counts the logged sets.
+  - Builder view / Table view are in sentence case.
+- **Repeat last time (on):**
+  - Empty sets show grey numbers, including last time's RIR/RPE, and
+    "Last time: <date>".
+  - The effort hint stays after you log the set, until you type today's.
+  - The Sets count matches the rows; picking fewer hides extra grey rows.
+  - The set number is outlined with a check, and tapping it logs those
+    numbers with no effort.
+- **Rest timer:**
+  - It starts after a logged set and sits above Finish: -15s, +15s, Skip.
+  - It keeps counting when you leave and come back.
+  - The Finish dock hides while the phone keypad is up.
+- **Finish without effort:**
+  - Finish with some RIR missing shows "N sets have no RIR". Add RIR lands
+    on the first missing field, highlighted. Finish anyway also works.
+  - RIR 0 counts as filled.
+- **Discard:**
+  - The x on the Home card, or on the In progress bar, asks "Discard this
+    workout?".
+  - Then a "Workout discarded" notice with a dismiss x.
+  - The bar says "Resume" on the phone and lines up with the page on a
+    laptop.
+- **Coach:**
+  - During a workout, the In progress bar no longer covers the text box.
+  - The Home chat bubble opens /coach: suggestion rows, and answers come
+    into view on their own. Stop is readable.
+  - Help questions work with AI access off.
+  - Library > Coach lists conversations. Reopening one fills the screen;
+    the trash icon and Delete all both confirm first.
+- **Own key:** Profile > AI access stacks the form. Save shows "Key ending
+  in ...", and Remove confirms.
+- **Builder:**
+  - Hold an exercise: the list collapses, the card lifts with a glow, and
+    a drop reorders it.
+  - The selected week, day and Edit tab share one accent look.
+  - Recent shows in an empty search. Per side shows only on one-sided lifts.
+- **Library > Exercises:** edit your own exercise, rename it, and past
+  workouts show the new name.
+- **Import:** history with 8+ workout titles keeps 7 and names the
+  skipped. A huge AI paste says "too large".
+- **Small fixes:**
+  - Crimson "good" is green, and Execution shows whole numbers.
+  - Analytics > Strength doesn't slide sideways.
+  - Opening the app while signed in shows no Login flash.
+- **What's New:** read both releases at `/profile/whats-new?preview=1`. The
+  Latest update card shows at `/profile?preview=1`.
+- **Known, not regressions:**
+  - the bottom nav sits under the Finish dock on a live workout (qol12)
+  - Last 7 days still counts an unfinished workout (stowed: the summary
+    endpoint should exclude it)
+
 ## ARCHIVED October 9, 2026, late (Opus session) - the Oct 9 critic and
 ## fix-round relay log, moved verbatim at the pre-main gate.
 

@@ -1,53 +1,41 @@
 # HANDOFF — current state
 
-> **WHERE WE ARE (Oct 9, night): the quality-of-life wave is MERGED and on
-> PROD.** 24/24 landed, Seth smoked and signed off, the pre-main gate passed
-> with fixes. Prod migration `20261008120000_coach_key_and_history`
-> applied under "migrate prod" (the new rule: Claude Code runs it, Seth
-> approves each command - AGENTS.md gate 3) at 2026-10-10T00:11:41Z;
-> verified: `_prisma_migrations` row with staging's checksum
-> `e7370e9e...dc64e`, all three tables, all three FKs cascade. Then
-> **`main` fast-forwarded `b5c6777..b82ad8c` (64 commits)** and pushed
-> under "push to main"; `origin/main` = `b82ad8c`. The wave:
-> - qol1-qol15
-> - critic round-1 fixes qolf1-qolf4
-> - Seth's repeat-last effort hint qolf5
-> - critic round-2 fixes qolf6-qolf7
-> - Seth's strip move qolf8
-> - Seth's smoke finding qolf9 (the strip becomes a hotbar)
-> - plus the direct auth fix `33cd671` (not a numbered unit)
->
-> Next-wave look-and-feel input: `docs/tasks/qol-critic-round-2-FINDINGS.md`
-> Part B.
+> **WHERE WE ARE (Oct 9, night): BETWEEN WAVES.** The quality-of-life
+> wave (24 units) is MERGED to `main` and LIVE on prod; Seth smoked prod
+> and signed off. No wave is open, nothing is queued or in flight, and
+> nothing is blocked on an agent.
+> - `main` = `b82ad8c` (`b5c6777..b82ad8c`, 64 commits), served by prod
+>   Render `workout-db-l3gc` and prod Vercel.
+> - `quality-of-life-updates` = `main` + docs-only state commits (this
+>   file, QUEUE). Cut the next wave from it so the docs come along.
+> - Staging Render tracks `main` again (Seth, Oct 9).
+> - `COACH_KEY_SECRET` is set on prod Render (Seth, Oct 9).
 
-**Next action (human):** set `COACH_KEY_SECRET` on prod Render (paste
-`C:devsecretscoach-key-secret.txt`), repoint staging Render back to
-`main`, then smoke prod (What's New modal, the setup bar, the coach page).
+**Next action (human):** nothing is blocked on Seth - when ready, pick the
+next wave's direction (inputs listed in PICK UP HERE item 1).
 
 ## PICK UP HERE (next session)
 
-1. **After the merge (Seth):**
-   - `COACH_KEY_SECRET` on prod Render `workout-db-l3gc` - the value is
-     in `C:devsecretscoach-key-secret.txt` (32 bytes, base64; never
-     rotate it once keys are saved). Unset: saving a key returns 503
-     "byo_unavailable"; the hosted coach still works.
-   - repoint staging Render (`workout-db-staging`) from
-     `quality-of-life-updates` back to `main` (RUNBOOK section 2 step 7).
-   - smoke prod: the What's New modal fires once
-     (`2026-10-quality-of-life`), a live workout shows the setup bar, the
-     coach page and Library > Coach history load.
-   - this HANDOFF commit sits on `quality-of-life-updates` one docs-only
-     commit past `main`; carry it into the next wave's branch (cut the next
-     wave from `quality-of-life-updates` or merge it in) - no prod redeploy
-     was spent on docs.
-2. **Prod migration-history drift (found at "migrate prod", Oct 9, not
-   blocking):** prod HAS the schema for `20260929120000_blocks_v2` and
-   `20261006200000_block_exercise_per_side` (`BlockRun` exists,
-   `perSide` exists) but has NO `_prisma_migrations` rows for them -
-   the Oct 7 note that their checksums were copied is wrong. Plus the older
-   Sept 26 drift (Housekeeping). Reconcile all of it (insert the two rows
-   with staging's checksums under "migrate prod") before anyone points
-   `prisma migrate deploy` at prod.
+1. **Opening the next wave** (Opus seat, `author-task-block` after recon):
+   - branch from `quality-of-life-updates` (main + docs), then repoint
+     staging Render to the new branch (RUNBOOK section 2).
+   - inputs: `docs/tasks/qol-critic-round-2-FINDINGS.md` Part B (next-wave
+     look and feel), the stowed list below, the gate follow-ups (item 3),
+     and Seth items at the bottom.
+   - every wave ends with a What's New unit (`_WHATS_NEW.md`); release
+     bullets stay at 25 words or fewer.
+2. **Prod migration-history drift - reconcile under "migrate prod"
+   before anyone points `prisma migrate deploy` at prod** (found Oct 9):
+   - prod HAS the schema for `20260929120000_blocks_v2` and
+     `20261006200000_block_exercise_per_side` (`BlockRun` exists,
+     `perSide` exists) but NO `_prisma_migrations` rows for them; the
+     Oct 7 note that their checksums were copied was wrong. Fix: insert the
+     two rows with staging's checksums.
+   - plus the older Sept 26 drift (Housekeeping).
+   - the helper used for the coach migration (staging-checksum,
+     prod-precheck, prod-apply, prod-verify, all through `pg` with the
+     creds file) was session scratch; rebuild it the same way - the
+     RUNBOOK section 3 ritual, one transaction, never print the URL.
 3. **Gate follow-ups (not blockers, none authored):**
    - saved coach conversations have no per-user cap (bounded by the 40 per
      15 min coach limit and the hosted weekly cap)
@@ -60,78 +48,10 @@
      qolf1 bar column matched by pathname; qolf1 ConfirmPanel focus ring on
      tap; qol11 `scripts/smoke-coach.mjs --key` inert; no rate limiter on
      `/block-templates/import*` or `/block-runs`; STOWED summary endpoint
-     should exclude unfinished sessions (qolf7)
+     should exclude unfinished sessions (qolf7); the bottom nav sits under
+     the Finish dock on a live workout (qol12, known)
 
-## Wave smoke checklist (staging Vercel, on the phone) - SIGNED OFF by Seth, Oct 9
-
-- **Logging setup bar (qolf8 moved it, qolf9 made it a hotbar):**
-  - Home has no bar any more.
-  - Every live workout has a one-line bar under its title: RIR | RPE,
-    Exercise notes, Repeat last, Edit. What is on glows.
-  - Quick workout: tap RPE -> RPE glows and the sets ask for RPE. Tap
-    Exercise notes or Repeat last -> they turn off and on, and a typed
-    but unlogged weight stays.
-  - Log a set with RIR, then tap RPE: the sheet opens with a note that
-    this workout stays RIR. A block day glows the plan's scale, and
-    tapping the other one shows the plan note.
-  - Edit opens the full sheet (kg updates live); Profile > Training is
-    the same form.
-- **The logger:**
-  - No unit or RIR toggles inside a workout.
-  - Only the exercise name stays pinned. Its trash icon removes the
-    exercise after a confirm that counts the logged sets.
-  - Builder view / Table view are in sentence case.
-- **Repeat last time (on):**
-  - Empty sets show grey numbers, including last time's RIR/RPE, and
-    "Last time: <date>".
-  - The effort hint stays after you log the set, until you type today's.
-  - The Sets count matches the rows; picking fewer hides extra grey rows.
-  - The set number is outlined with a check, and tapping it logs those
-    numbers with no effort.
-- **Rest timer:**
-  - It starts after a logged set and sits above Finish: -15s, +15s, Skip.
-  - It keeps counting when you leave and come back.
-  - The Finish dock hides while the phone keypad is up.
-- **Finish without effort:**
-  - Finish with some RIR missing shows "N sets have no RIR". Add RIR lands
-    on the first missing field, highlighted. Finish anyway also works.
-  - RIR 0 counts as filled.
-- **Discard:**
-  - The x on the Home card, or on the In progress bar, asks "Discard this
-    workout?".
-  - Then a "Workout discarded" notice with a dismiss x.
-  - The bar says "Resume" on the phone and lines up with the page on a
-    laptop.
-- **Coach:**
-  - During a workout, the In progress bar no longer covers the text box.
-  - The Home chat bubble opens /coach: suggestion rows, and answers come
-    into view on their own. Stop is readable.
-  - Help questions work with AI access off.
-  - Library > Coach lists conversations. Reopening one fills the screen;
-    the trash icon and Delete all both confirm first.
-- **Own key:** Profile > AI access stacks the form. Save shows "Key ending
-  in ...", and Remove confirms.
-- **Builder:**
-  - Hold an exercise: the list collapses, the card lifts with a glow, and
-    a drop reorders it.
-  - The selected week, day and Edit tab share one accent look.
-  - Recent shows in an empty search. Per side shows only on one-sided lifts.
-- **Library > Exercises:** edit your own exercise, rename it, and past
-  workouts show the new name.
-- **Import:** history with 8+ workout titles keeps 7 and names the
-  skipped. A huge AI paste says "too large".
-- **Small fixes:**
-  - Crimson "good" is green, and Execution shows whole numbers.
-  - Analytics > Strength doesn't slide sideways.
-  - Opening the app while signed in shows no Login flash.
-- **What's New:** read both releases at `/profile/whats-new?preview=1`. The
-  Latest update card shows at `/profile?preview=1`.
-- **Known, not regressions:**
-  - the bottom nav sits under the Finish dock on a live workout (qol12)
-  - Last 7 days still counts an unfinished workout (stowed: the summary
-    endpoint should exclude it)
-
-## Not in this wave (stowed; none authored)
+## Stowed (none authored)
 
 - **Exercise search synonyms - HELD for Seth's own planned change (Oct 7).**
   The pure `searchCatalog` already AND-matches words. "single leg calf"
@@ -152,6 +72,7 @@
 
 ## Open on prod - Seth's checks, none blocking
 
+- The QOL merge: smoked on prod by Seth Oct 9 ("all done and good"). Done.
 - The BK / bkr / sr3 merge: smoked on prod by Seth Oct 7 ("looks
   beautiful"). Done.
 - **F/E-wave PROD smoke** - still open:
@@ -169,20 +90,19 @@ Covers the F-wave AND the still-open E-wave prod smoke. Staging passed Aug 4.
 
 ## Housekeeping
 
-- **M2 - SUPERSEDED Oct 8: repoint staging Render to
-  `quality-of-life-updates`** (the Next action above). It still tracks
-  `ai-connector-wave`. The STAGING WorkOS
+- **Staging Render tracks `main`** (Seth repointed it Oct 9, after the
+  QOL merge). Repoint it to each new wave branch. The STAGING WorkOS
   External Sign-in URI is pinned to the `ai-connector-wave` Vercel PREVIEW
   host - never delete `ai-connector-wave` (or its preview) while that URI
   points at it. If staging ever looks stale, check Render -> Settings ->
   Branch FIRST (Sept 29 lesson).
-- **`ai-connector-wave` = `main` + post-merge docs-only commits** until they
-  land on `main` (Seth's "push to main" - same pattern as past waves).
+- **`quality-of-life-updates` = `main` + docs-only state commits** until
+  they reach `main` with the next merge.
 - **Git cleanup done Oct 7 (Seth's OK):** 112 merged local `cursor/*` and
   `gate/*` branches deleted (`git branch -d`, none refused); the merge
   worktree `merge-main-0927` removed. Old wave branches, `recon/*`,
   `parked/*`, `stash-preserve/*` and all REMOTE branches untouched.
-- **Stale `.git/worktrees/merge-main` + `merge-main-0927` admin dirs**
+- **Stale `.git/worktrees/merge-main`, `merge-main-0927`, `merge-main-1007` admin dirs**
   (OneDrive lock): git prints `failed to delete ... Permission denied` on
   fetch/commit. Harmless; `git worktree prune` once the lock clears.
 - **`claudefiledrop/` (untracked, keep):** `image0.jpg` = Seth's discard
@@ -195,30 +115,41 @@ Covers the F-wave AND the still-open E-wave prod smoke. Staging passed Aug 4.
   `20260707120000_add_exercise_catalog` row. Reconcile before anyone ever
   points `migrate deploy` at prod.
 
-## Repo / deploy state (Oct 7, late - verify from the services)
+## Repo / deploy state (Oct 9, night - verify from the services)
 
-- **`main` = `ef5e908`** (+ any post-merge docs). Prod Render
-  `workout-db-l3gc` and prod Vercel `https://workout-db-psi.vercel.app` serve
-  it - probed Oct 7: `/block-templates/format` 200 (Block Format v1),
-  `/block-runs/active` 401, bundle `index-DMK9TWHq.js` holds sr3 code. Any
+- **`main` = `b82ad8c`.** Prod Render `workout-db-l3gc` and prod Vercel
+  `https://workout-db-psi.vercel.app` serve it - probed Oct 9:
+  `/coach/conversations`, `/coach/status`,
+  `/sessions/:id/last-performance` and `/block-runs/active` all 401;
+  bundle `index-d4dwyLkk.js` holds the QOL release and the setup bar. Any
   push to `main` is prod-bound (gate 2).
-- **Prod DB migrations, all hand-applied by Seth:** `add_ai_consent` (Sept
-  26), `CoachUsage` + `WorkoutSession.reopenedAt` (Sept 27), `blocks_v2` +
-  `block_exercise_per_side` (Oct 7, `_prisma_migrations` checksums copied
-  from staging, verify queries matched). Prod's build never migrates.
+- **Prod DB migrations:** `add_ai_consent` (Sept 26), `CoachUsage` +
+  `WorkoutSession.reopenedAt` (Sept 27), `blocks_v2` +
+  `block_exercise_per_side` (Oct 7, by Seth - schema present, history rows
+  MISSING, see PICK UP HERE item 2), `coach_key_and_history` (Oct 9, by
+  Claude Code under "migrate prod": SQL + `_prisma_migrations` row with
+  staging's checksum `e7370e9e...dc64e` in one transaction, verified).
+  Prod's build never migrates.
+- **Prod migrations are trigger-phrase tier since Oct 9** (AGENTS.md gate
+  3): "migrate prod", one command at a time, Seth approves each. The
+  write-capable URL is in `C:\dev\secrets\prod-db.env` (bare URL, owner
+  role, pooled host - strip `-pooler` for the direct host); the prod
+  `COACH_KEY_SECRET` value is `C:\dev\secrets\coach-key-secret.txt`.
+  Read both only at run time; never print them.
 - **Staging DB** has the same plus everything via Render's `migrate deploy`
   (a staging Render DEPLOY is also a staging MIGRATION).
 - Stable topology (prod env, WorkOS, verify-from-services, branch-deletion
   cautions): REFERENCE -> "Deploy topology".
 
-## Lanes + verification (Oct 8)
+## Lanes + verification (Oct 9)
 
-- `cursor-lane`, `-2`, `-3` (Oct 8): on `recon/qol-r1|r-2|r-3` at `8090b10`,
-  porcelain clean, each holding a STALE recon DELIVERY.md (gitignored) -
-  delete them before the first QOL dispatch. Lane 2's `server` has its own install WITH
-  `@cursor/sdk` (live coach calls); lane 3's `node_modules` are junctions
-  into lane 1; lane 3 holds three untracked mock PNGs in
-  `client/src/assets/scenes/` - never stage them. Lessons: REFERENCE.
+- `cursor-lane`, `-2`, `-3` (Oct 9): on `cursor/qol-gate-r1|r2|r3` at
+  `ac40874`, porcelain clean, no DELIVERY.md (moved to session scratch).
+  Before a dispatch: `git checkout -B cursor/<unit> <wave-branch>`. Lane 2's
+  `server` has its own install WITH `@cursor/sdk` (live coach calls); lane
+  3's `node_modules` are junctions into lane 1; lane 3 holds three
+  untracked mock PNGs in `client/src/assets/scenes/` - never stage them.
+  Lessons: REFERENCE.
 - **Real-app check recipe** (used for every sr3 landing): local API on the
   STAGING DB from the main tree's `server/` (`COACH_PROVIDER=mock PORT=3000
   node src/server.js`; run `npx prisma generate` there first after a schema
@@ -252,7 +183,7 @@ Covers the F-wave AND the still-open E-wave prod smoke. Staging passed Aug 4.
 > explicitly. Dogfoods the shell repo's decision-10 no-dangling-next-
 > action requirement; `land-unit` section 5 keeps it maintained.
 
-**Updated:** October 9, 2026, late (Opus seat). Session log:
+**Updated:** October 9, 2026, night (Opus seat). Session log:
 - Seth's smoke finding: the setup strip becomes a hotbar. Authored qolf9
   (no critic round, his call), dispatched on auto in lane 1, landed
   `2d4cb0e` after reviewer fixes (the block's own app-guide copy broke the
@@ -280,6 +211,22 @@ Covers the F-wave AND the still-open E-wave prod smoke. Staging passed Aug 4.
   strip moved and made a hotbar). r1's "does prod's build migrate"
   contradiction is not one - RUNBOOK 10a's "V2 RESULT" already says it
   does not.
+- **Rule change (Seth, Oct 9):** prod migrations moved to the staging
+  tier - "migrate prod", Claude Code runs them, Seth approves each command
+  (AGENTS.md gate 3, RUNBOOK section 9, `b82ad8c`). Seth created
+  `C:\dev\secrets\prod-db.env`; the seat generated the prod
+  `COACH_KEY_SECRET` into `coach-key-secret.txt` (never shown).
+- **"migrate prod"** (4 steps, each approved): staging checksum read
+  (matches the file's sha256) -> prod precheck (no row, no tables, User.id
+  text; found the blocks_v2/per_side history-row drift) -> apply in one
+  transaction (COMMITTED 2026-10-10T00:11:41Z) -> verify (row, 3 tables,
+  3 cascade FKs).
+- **"push to main":** temp worktree `C:\dev\worktrees\merge-main-1009` on
+  `main`, `merge --ff-only origin/quality-of-life-updates`, push
+  (`b5c6777..b82ad8c`), worktree removed. Prod API live ~40 s after the
+  push; Vercel bundle confirmed. State commit `768f646` kept on the wave
+  branch (no docs-only prod redeploy). Seth then set `COACH_KEY_SECRET`,
+  repointed staging Render to `main`, and smoked prod: good.
 
 **Rule:** rewritten in place at the end of every working session; kept CAPPED
 (~300 lines). Aged session logs move VERBATIM - never summarized - to
