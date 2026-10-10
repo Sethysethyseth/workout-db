@@ -1,0 +1,180 @@
+/* Coach working / finished bar. Own view-transition group so a route slide
+   leaves it still, the same way shell-motion.css holds the workout bar.
+   Tokens only.
+
+   Placement (data-place on the wrap, set by CoachWorkingBar):
+   - bottom: phone, nothing else owns the bottom. Sits above the nav.
+   - top: under the masthead on desktop (sticky, in flow). On a phone, fixed
+     at the top when a live workout, the workout bar, or a focused field
+     already owns the bottom. A live workout uses the compact chip. */
+
+.coach-working-bar {
+  view-transition-name: mx-coach-bar;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-align: left;
+  border-color: color-mix(in srgb, var(--color-interactive) 42%, var(--color-border));
+  padding: 8px 10px 8px 12px;
+  min-height: 52px;
+  border-radius: 14px;
+  color: inherit;
+}
+
+::view-transition-group(mx-coach-bar),
+::view-transition-new(mx-coach-bar) {
+  animation: none;
+}
+
+::view-transition-old(mx-coach-bar) {
+  display: none;
+}
+
+.coach-working-bar__main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.coach-working-bar__copy {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.coach-working-bar__title {
+  font-weight: 800;
+  font-size: 0.95rem;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.coach-working-bar__snippet {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.coach-working-bar__cta {
+  flex-shrink: 0;
+  font-weight: 800;
+  font-size: 0.92rem;
+  color: var(--color-interactive);
+}
+
+.coach-working-bar__dismiss {
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.coach-working-bar__main:focus-visible,
+.coach-working-bar__dismiss:focus-visible {
+  outline: 2px solid var(--color-interactive);
+  outline-offset: 2px;
+}
+
+.coach-working-bar--beat .coach-msg__crown {
+  animation: coach-bar-beat 480ms var(--ease-standard, ease);
+}
+
+@keyframes coach-bar-beat {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.18);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .coach-working-bar--beat .coach-msg__crown {
+    animation: none;
+  }
+}
+
+.coach-working-bar-wrap[data-place="top"] {
+  position: sticky;
+  top: 64px;
+  z-index: 4;
+  padding-top: 8px;
+  padding-bottom: 4px;
+}
+
+.app:has(.session-detail-page--live) .coach-working-bar--chip .coach-working-bar__snippet,
+.app:has(.persistent-workout-bar) .coach-working-bar--chip .coach-working-bar__snippet {
+  display: none;
+}
+
+.app:has(.session-detail-page--live) .coach-working-bar--chip,
+.app:has(.persistent-workout-bar) .coach-working-bar--chip {
+  min-height: 44px;
+  padding-block: 6px;
+}
+
+@media (max-width: 719px) {
+  .coach-working-bar-wrap[data-place="bottom"] {
+    position: fixed;
+    top: auto;
+    bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px));
+    left: 0;
+    right: 0;
+    z-index: 5;
+    padding: 0 10px 8px;
+  }
+
+  .coach-working-bar-wrap[data-place="bottom"] .coach-working-bar {
+    background: color-mix(in srgb, var(--color-surface-1) 72%, transparent);
+    backdrop-filter: saturate(1.1) blur(10px);
+  }
+
+  .app:has(.coach-working-bar-wrap[data-place="bottom"]) .main {
+    padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px) + 16px + 76px);
+  }
+
+  .coach-working-bar-wrap[data-place="top"] {
+    position: sticky;
+    top: 0;
+    z-index: 4;
+    padding: 8px 10px 0;
+  }
+}
+
+@media (min-width: 720px) {
+  .coach-working-bar {
+    max-width: 720px;
+    margin-inline: auto;
+  }
+
+  /* The workout bar also sticks at 64px. Drop it below this bar so the two
+     never share a rect. Mobile keeps the workout bar on the bottom. */
+  .app:has(.coach-working-bar) .persistent-workout-bar-wrap {
+    top: 136px;
+  }
+}

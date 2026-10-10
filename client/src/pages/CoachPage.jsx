@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { CoachPanel } from "../components/coach/CoachPanel.jsx";
+import { useCoachSession } from "../context/CoachSessionContext.jsx";
 import "../styles/coach-page.css";
 
 function parseConversationParam(raw) {
@@ -10,12 +11,41 @@ function parseConversationParam(raw) {
   return id;
 }
 
+/* The route layer keeps this page mounted until the next one commits, but
+   the URL has already moved on - writing ?c= then lands on the NEW page's
+   URL (seen in review: /sessions/503?c=7). */
+function stillOnCoach() {
+  try {
+    return window.location.pathname === "/coach";
+  } catch {
+    return false;
+  }
+}
+
 export function CoachPage() {
   const pageRef = useRef(null);
+  const session = useCoachSession();
   const [searchParams, setSearchParams] = useSearchParams();
   const resumeConversationId = parseConversationParam(searchParams.get("c"));
 
+  /* Reload and a return to /coach with no ?c= reopen the active conversation.
+     A ?c= already in the URL wins, so History can open a different thread. */
+  useEffect(() => {
+    if (resumeConversationId != null) return;
+    if (session.conversationId == null) return;
+    if (!stillOnCoach()) return;
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.set("c", String(session.conversationId));
+        return next;
+      },
+      { replace: true }
+    );
+  }, [resumeConversationId, session.conversationId, setSearchParams]);
+
   function onConversationId(id) {
+    if (!stillOnCoach()) return;
     setSearchParams(
       (prev) => {
         const next = new URLSearchParams(prev);

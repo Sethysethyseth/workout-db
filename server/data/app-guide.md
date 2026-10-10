@@ -123,7 +123,7 @@ The coach explains your training and how to use LogChamp. Open it from Home (Ask
 
 Ask about your training, or how to do something in LogChamp. With AI access on, questions can use your numbers for the recent window. With AI access off, ask how to do something in the app. Those answers come from this guide only, and the coach does not see your training. Turn on AI access under Profile, then AI access, to ask about your own numbers.
 
-New conversation starts a fresh thread. Earlier ones stay under Library, then Coach. A question can take a moment. The first answer shows progress while it thinks. On the hosted coach there is a weekly limit of seven questions; the panel says how many are left.
+New conversation starts a fresh thread. Earlier ones stay under History, then Coach, and the coach keeps working if you leave. The first answer shows progress while it thinks. On the hosted coach there is a weekly limit of seven questions; the panel says how many are left.
 
 The coach will not invent a screen or a button. If this guide does not cover it, the coach should say it is not sure.
 

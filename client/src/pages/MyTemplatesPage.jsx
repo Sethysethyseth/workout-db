@@ -15,7 +15,6 @@ import {
   LibraryRunningStrip,
   LibraryWorkoutCard,
 } from "../components/library/index.js";
-import { CoachConversationList } from "../components/library/CoachConversationList.jsx";
 import { pickLatestActiveSession } from "../lib/activeSession.js";
 import { readCurrentProgram, writeCurrentProgram } from "../lib/currentProgramStorage.js";
 import { sessionDisplayTitle } from "../lib/sessionDisplay.js";
@@ -485,7 +484,7 @@ export function MyTemplatesPage() {
             { value: "community", label: "Community" },
           ]}
         />
-        {area === "yours" && tab !== "exercises" && tab !== "coach" ? (
+        {area === "yours" && tab !== "exercises" ? (
           <div className="bk-lib-filter-wrap">
             <button
               type="button"
@@ -500,7 +499,7 @@ export function MyTemplatesPage() {
         ) : null}
       </div>
 
-      {area === "yours" && tab !== "exercises" && tab !== "coach" && filterOpen ? (
+      {area === "yours" && tab !== "exercises" && filterOpen ? (
         <div
           id="bk-lib-filter-panel"
           className="bk-lib-filters"
@@ -584,15 +583,6 @@ export function MyTemplatesPage() {
                 )}
               </span>
             </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={tab === "coach"}
-              className={`bk-lib-type-tab${tab === "coach" ? " bk-lib-type-tab--active" : ""}`}
-              onClick={() => setTab("coach")}
-            >
-              <span className="bk-lib-type-tab__title">Coach</span>
-            </button>
           </div>
 
           <ErrorMessage error={error} />
@@ -603,7 +593,7 @@ export function MyTemplatesPage() {
             </Card>
           ) : null}
 
-          {tabLoading && tab !== "coach" ? (
+          {tabLoading ? (
             <LoadingState tone="skeleton" variant="library" rows={3} slowLabel="Taking longer than usual…" />
           ) : null}
 
@@ -679,14 +669,10 @@ export function MyTemplatesPage() {
                 ? "Workouts"
                 : tab === "blocks"
                   ? "Blocks"
-                  : tab === "coach"
-                    ? "Coach"
-                    : "Custom exercises"
+                  : "Custom exercises"
             }
           >
-            {tab === "coach" ? (
-              <CoachConversationList />
-            ) : tabLoading ? null : tab === "exercises" ? (
+            {tabLoading ? null : tab === "exercises" ? (
               items.map((x) => {
                   const k = keyFor("exercise", x.id);
                   return (

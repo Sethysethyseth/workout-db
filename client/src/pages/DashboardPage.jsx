@@ -12,6 +12,7 @@ import { StartWorkoutPicker } from "../components/workout/StartWorkoutPicker.jsx
 import { WeekStrip } from "../components/workout/WeekStrip.jsx";
 import { UpNextCard } from "../components/blocks/run/UpNextCard.jsx";
 import { isRunFinished } from "../components/blocks/run/dayStatusTiles.js";
+import { CoachMarkIcon } from "../components/coach/CoachMarkIcon.jsx";
 import { useActiveSession } from "../context/ActiveSessionContext.jsx";
 import { readCurrentProgram } from "../lib/currentProgramStorage.js";
 import { ACTIVE_WORKOUT_ERROR, startAdHocWorkoutAndNavigate } from "../lib/startAdHocWorkoutFlow.js";
@@ -336,17 +337,7 @@ export function DashboardPage() {
             <h1 className="home-masthead__wordmark">LogChamp</h1>
           </div>
           <Link className="coach-masthead-btn" to="/coach" aria-label="Ask the coach">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path
-                d="M7 16.2 4.8 20l3.6-1.4A8.2 8.2 0 1 0 7 16.2Z"
-                stroke="currentColor"
-                strokeWidth="1.7"
-                strokeLinejoin="round"
-              />
-              <circle cx="9" cy="11" r="1" fill="currentColor" />
-              <circle cx="12" cy="11" r="1" fill="currentColor" />
-              <circle cx="15" cy="11" r="1" fill="currentColor" />
-            </svg>
+            <CoachMarkIcon />
           </Link>
         </div>
         <p className="home-masthead__date">{mastheadDate}</p>

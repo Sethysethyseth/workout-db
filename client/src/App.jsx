@@ -28,6 +28,7 @@ import { WhatsNewPage } from "./pages/profile/WhatsNewPage.jsx";
 import { DevFeedbackPage } from "./pages/DevFeedbackPage.jsx";
 import { HelloPage } from "./pages/HelloPage.jsx";
 import { RouteTransition } from "./components/motion/RouteTransition.jsx";
+import { CoachSessionProvider } from "./context/CoachSessionContext.jsx";
 
 function HomeRoute() {
   const location = useLocation();
@@ -44,6 +45,7 @@ function HomeRoute() {
 
 export default function App() {
   return (
+    <CoachSessionProvider>
     <Routes>
       <Route element={<AuthLayout />}>
         <Route path="/login" element={<LoginPage />} />
@@ -231,5 +233,6 @@ export default function App() {
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </CoachSessionProvider>
   );
 }

@@ -1,5 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
+import { CoachConversationList } from "../components/library/CoachConversationList.jsx";
+import { SlidingIndicator } from "../components/motion/SlidingIndicator.jsx";
 import { captureFlip, peekFlip, playCapturedSurface } from "../components/motion/useFlip.js";
 import { peekHistorySessions, putHistorySessions } from "../lib/historySessionCache.js";
 import * as sessionApi from "../api/sessionApi.js";
@@ -19,6 +21,25 @@ import {
 } from "../lib/sessionFacts.js";
 import { formatWeight } from "../lib/weightDisplay.js";
 import { loadWeightUnit } from "../lib/weightUnitPref.js";
+import "../styles/coach-history.css";
+
+const HISTORY_SIDE_KEY = "workoutdb-history-side";
+
+function readHistorySide() {
+  try {
+    return sessionStorage.getItem(HISTORY_SIDE_KEY) === "coach" ? "coach" : "workouts";
+  } catch {
+    return "workouts";
+  }
+}
+
+function writeHistorySide(side) {
+  try {
+    sessionStorage.setItem(HISTORY_SIDE_KEY, side);
+  } catch {
+    /* ignore */
+  }
+}
 
 function dateParts(value) {
   const d = new Date(value);
@@ -37,6 +58,45 @@ function monthKey(value) {
 }
 
 export function SessionsPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const sideHostRef = useRef(null);
+  const paramSide = searchParams.get("view");
+  const view = paramSide === "coach" ? "coach" : "workouts";
+
+  useEffect(() => {
+    if (paramSide === "coach" || paramSide === "workouts") {
+      writeHistorySide(paramSide);
+      return;
+    }
+    // The route layer keeps this page mounted until the next page commits,
+    // while the URL has already moved on - without this check, leaving
+    // History wrote view=coach onto /coach?c=7 (seen in review).
+    if (window.location.pathname !== "/sessions") return;
+    if (readHistorySide() === "coach") {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          next.set("view", "coach");
+          return next;
+        },
+        { replace: true }
+      );
+    }
+  }, [paramSide, setSearchParams]);
+
+  function setView(next) {
+    writeHistorySide(next);
+    setSearchParams(
+      (prev) => {
+        const nextParams = new URLSearchParams(prev);
+        if (next === "coach") nextParams.set("view", "coach");
+        else nextParams.delete("view");
+        return nextParams;
+      },
+      { replace: true }
+    );
+  }
+
   const cached = peekHistorySessions();
   const [sessions, setSessions] = useState(cached || []);
   const [loading, setLoading] = useState(!cached);
@@ -101,24 +161,55 @@ export function SessionsPage() {
         <div>
           <h1 className="page-title">History</h1>
           <p className="muted sessions-intro" aria-live="polite">
-            {!loadedOnce
-              ? " "
-              : completedCount === 0
-                ? "Nothing finished yet."
-                : `${completedCount} finished ${completedCount === 1 ? "workout" : "workouts"} · ${totalSets} sets logged`}
+            {view === "coach"
+              ? "Conversations with the coach."
+              : !loadedOnce
+                ? " "
+                : completedCount === 0
+                  ? "Nothing finished yet."
+                  : `${completedCount} finished ${completedCount === 1 ? "workout" : "workouts"} · ${totalSets} sets logged`}
           </p>
         </div>
-        <button className="btn btn-secondary btn--toolbar" type="button" onClick={load} disabled={loading}>
-          Refresh
+        {view === "workouts" ? (
+          <button className="btn btn-secondary btn--toolbar" type="button" onClick={load} disabled={loading}>
+            Refresh
+          </button>
+        ) : null}
+      </div>
+
+      <div
+        ref={sideHostRef}
+        className="history-view-tabs mx-slide-host"
+        role="group"
+        aria-label="History"
+      >
+        <SlidingIndicator containerRef={sideHostRef} activeKey={view} />
+        <button
+          type="button"
+          className={`history-view-tab${view === "workouts" ? " is-active" : ""}`}
+          aria-pressed={view === "workouts"}
+          onClick={() => setView("workouts")}
+        >
+          Workouts
+        </button>
+        <button
+          type="button"
+          className={`history-view-tab${view === "coach" ? " is-active" : ""}`}
+          aria-pressed={view === "coach"}
+          onClick={() => setView("coach")}
+        >
+          Coach
         </button>
       </div>
 
-      <ErrorMessage error={error} />
-      {loading && sessions.length === 0 ? (
+      {view === "coach" ? <CoachConversationList /> : null}
+
+      {view === "workouts" ? <ErrorMessage error={error} /> : null}
+      {view === "workouts" && loading && sessions.length === 0 ? (
         <LoadingState tone="skeleton" variant="history" rows={5} slowLabel="Taking longer than usual…" />
       ) : null}
 
-      {!loading && sessions.length === 0 ? (
+      {view === "workouts" && !loading && sessions.length === 0 ? (
         <div className="card stack">
           <p className="muted" style={{ margin: 0 }}>
             Nothing yet. Open <Link to="/">Workout</Link> to start, or pick a saved program.
@@ -126,7 +217,8 @@ export function SessionsPage() {
         </div>
       ) : null}
 
-      {groups.map((group) => (
+      {view === "workouts"
+        ? groups.map((group) => (
         <section key={group.key} className="history-group" aria-label={group.key}>
           <h2 className="history-group__label">
             <span>{group.key}</span>
@@ -241,7 +333,8 @@ export function SessionsPage() {
             })}
           </div>
         </section>
-      ))}
+      ))
+        : null}
     </div>
   );
 }

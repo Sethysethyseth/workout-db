@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   deleteAllCoachConversations,
   deleteCoachConversation,
   listCoachConversations,
 } from "../../api/coachApi.js";
+import { useCoachSession } from "../../context/CoachSessionContext.jsx";
 import { ConfirmPanel } from "../ConfirmPanel.jsx";
 import "../../styles/coach-history.css";
 
@@ -16,15 +17,20 @@ const FOCUS_LABELS = {
   general: "General",
 };
 
-function formatRelativeDate(value) {
+function dateParts(value) {
   const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return "";
-  const startOf = (x) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
-  const days = Math.round((startOf(new Date()) - startOf(d)) / 86400000);
-  if (days <= 0) return "today";
-  if (days === 1) return "yesterday";
-  if (days < 7) return `${days} days ago`;
-  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  if (Number.isNaN(d.getTime())) return { day: "-", weekday: "", time: "" };
+  return {
+    day: String(d.getDate()),
+    weekday: d.toLocaleDateString(undefined, { weekday: "short" }),
+    time: d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" }),
+  };
+}
+
+function monthKey(value) {
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "Undated";
+  return d.toLocaleDateString(undefined, { month: "long", year: "numeric" });
 }
 
 function contextLabel(focusType) {
@@ -47,6 +53,7 @@ function DeleteIcon() {
 }
 
 export function CoachConversationList() {
+  const session = useCoachSession();
   const [items, setItems] = useState([]);
   const [nextBefore, setNextBefore] = useState(null);
   const [status, setStatus] = useState("loading");
@@ -126,6 +133,9 @@ export function CoachConversationList() {
     setError(null);
     try {
       await deleteCoachConversation(pendingDelete.id);
+      if (Number(session.conversationId) === Number(pendingDelete.id)) {
+        session.clearSession();
+      }
       setItems((prev) => prev.filter((row) => row.id !== pendingDelete.id));
       setPendingDelete(null);
     } catch (err) {
@@ -141,6 +151,7 @@ export function CoachConversationList() {
     setError(null);
     try {
       await deleteAllCoachConversations();
+      session.clearSession();
       setItems([]);
       setNextBefore(null);
       setConfirmAll(false);
@@ -150,6 +161,17 @@ export function CoachConversationList() {
       setBusy(false);
     }
   }
+
+  const groups = useMemo(() => {
+    const out = [];
+    for (const row of items) {
+      const key = monthKey(row.updatedAt || row.createdAt);
+      const last = out[out.length - 1];
+      if (last && last.key === key) last.items.push(row);
+      else out.push({ key, items: [row] });
+    }
+    return out;
+  }, [items]);
 
   if (status === "loading") {
     return <p className="coach-history__status">Loading conversations…</p>;
@@ -168,7 +190,7 @@ export function CoachConversationList() {
 
   if (items.length === 0) {
     return (
-      <div className="coach-history__empty">
+      <div className="card stack coach-history__empty">
         <p className="coach-history__empty-copy">Your coach conversations show up here.</p>
         <Link className="btn" to="/coach">
           Ask the coach
@@ -178,32 +200,60 @@ export function CoachConversationList() {
   }
 
   return (
-    <div className="coach-history">
+    <div className="coach-history stack">
       {error ? <p className="coach-history__status">Couldn&apos;t update the list. Try again.</p> : null}
-      <ul className="coach-history__list">
-        {items.map((row) => {
-          const label = contextLabel(row.focusType);
-          const when = formatRelativeDate(row.updatedAt);
-          const meta = [label, when].filter(Boolean).join(", ");
-          return (
-            <li key={row.id} className="coach-history__row">
-              <Link className="coach-history__open" to={`/coach?c=${row.id}`}>
-                <span className="coach-history__title">{row.title}</span>
-                {meta ? <span className="coach-history__meta">{meta}</span> : null}
-              </Link>
-              <button
-                type="button"
-                className="coach-history__delete"
-                aria-label="Delete conversation"
-                onClick={() => setPendingDelete(row)}
-              >
-                <DeleteIcon />
-              </button>
-            </li>
-          );
-        })}
-      </ul>
-      {nextBefore ? <div ref={sentinelRef} className="coach-history__sentinel" aria-hidden="true" /> : null}
+      {groups.map((group) => (
+        <section key={group.key} className="history-group" aria-label={group.key}>
+          <h2 className="history-group__label">
+            <span>{group.key}</span>
+            <span className="history-group__count">
+              {group.items.length} {group.items.length === 1 ? "conversation" : "conversations"}
+            </span>
+          </h2>
+          <div className="card history-list">
+            {group.items.map((row) => {
+              const label = contextLabel(row.focusType);
+              const when = dateParts(row.updatedAt || row.createdAt);
+              return (
+                <div key={row.id} className="history-row coach-history-row">
+                  <span className="history-row__date" aria-hidden="true">
+                    <span className="history-row__weekday">{when.weekday}</span>
+                    <span className="history-row__day">{when.day}</span>
+                  </span>
+                  <Link className="history-row__main coach-history-row__open" to={`/coach?c=${row.id}`}>
+                    <span className="history-row__title">{row.title}</span>
+                    <span className="history-row__meta muted small">
+                      {when.time}
+                      {label ? (
+                        <>
+                          <span aria-hidden="true"> · </span>
+                          {label}
+                        </>
+                      ) : null}
+                    </span>
+                  </Link>
+                  <button
+                    type="button"
+                    className="coach-history__delete"
+                    aria-label="Delete conversation"
+                    onClick={() => setPendingDelete(row)}
+                  >
+                    <DeleteIcon />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      ))}
+      {nextBefore ? (
+        <div className="coach-history__more">
+          <div ref={sentinelRef} className="coach-history__sentinel" aria-hidden="true" />
+          <button type="button" className="btn btn-secondary" onClick={loadMore}>
+            Load more
+          </button>
+        </div>
+      ) : null}
       <div className="coach-history__footer">
         <button type="button" className="coach-history__delete-all" onClick={() => setConfirmAll(true)}>
           Delete all conversations

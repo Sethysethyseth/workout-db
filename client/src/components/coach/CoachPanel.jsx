@@ -7,11 +7,14 @@ import {
   getCoachConversation,
   getCoachStatus,
 } from "../../api/coachApi.js";
+import { useCoachSession } from "../../context/CoachSessionContext.jsx";
 import { purgeLegacyCoachKey } from "../../lib/coachKeyPref.js";
 import { HELP_CHIPS, buildSuggestedQuestions } from "../../lib/coachSuggestions.js";
 import { loadWeightUnit } from "../../lib/weightUnitPref.js";
 import { AiWait } from "./AiWait.jsx";
+import { CoachLeaveNote } from "./CoachLeaveNote.jsx";
 import { CoachMarkdown } from "./CoachMarkdown.jsx";
+import { CoachMarkIcon } from "./CoachMarkIcon.jsx";
 
 /**
  * The in-app coach (ai-layer.md Lane B). Starts as one quiet row so it never
@@ -82,22 +85,6 @@ function weeklyCapUsedCopy(weeklyCap) {
   const when = formatNextQuestionTime(weeklyCap.nextAvailableAt);
   if (when) return `You've used this week's questions. Your next question frees up ${when}.`;
   return "You've used this week's questions.";
-}
-
-function ChatBubbleIcon() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path
-        d="M7 16.2 4.8 20l3.6-1.4A8.2 8.2 0 1 0 7 16.2Z"
-        stroke="currentColor"
-        strokeWidth="1.7"
-        strokeLinejoin="round"
-      />
-      <circle cx="9" cy="11" r="1" fill="currentColor" />
-      <circle cx="12" cy="11" r="1" fill="currentColor" />
-      <circle cx="15" cy="11" r="1" fill="currentColor" />
-    </svg>
-  );
 }
 
 function SendIcon() {
@@ -210,27 +197,55 @@ export function CoachPanel({
 }) {
   const headingId = useId();
   const pageLayout = layout === "page";
+  const session = useCoachSession();
   const [open, setOpen] = useState(defaultOpen || pageLayout);
-  const [status, setStatus] = useState(null);
+  const [localStatus, setLocalStatus] = useState(null);
   const [statusError, setStatusError] = useState(null);
-  const [thread, setThread] = useState([]);
+  const [localThread, setLocalThread] = useState([]);
   const [input, setInput] = useState("");
-  const [streaming, setStreaming] = useState(false);
-  const [coverage, setCoverage] = useState(null);
-  const [historyLoading, setHistoryLoading] = useState(resumeConversationId != null);
-  const [historyError, setHistoryError] = useState(null);
-  const abortRef = useRef(null);
+  const [localStreaming, setLocalStreaming] = useState(false);
+  const [localCoverage, setLocalCoverage] = useState(null);
+  const [localHistoryLoading, setLocalHistoryLoading] = useState(false);
+  const [localHistoryError, setLocalHistoryError] = useState(null);
+  const localAbortRef = useRef(null);
+  const localConversationIdRef = useRef(null);
+  const localLoadedIdRef = useRef(null);
+  const localLoadGenRef = useRef(0);
   const autoAskedRef = useRef(false);
   const threadRef = useRef(null);
   const inputRef = useRef(null);
   const pendingQuestionRef = useRef(null);
-  const conversationIdRef = useRef(null);
-  const loadedIdRef = useRef(null);
-  const loadGenRef = useRef(0);
+  const pageAliveRef = useRef(true);
   const followRef = useRef(true);
   const prevCountRef = useRef(0);
   const prevTailRef = useRef("");
   const coldEndPinRef = useRef(null);
+
+  const thread = pageLayout ? session.thread : localThread;
+  const setThread = pageLayout ? session.setThread : setLocalThread;
+  const streaming = pageLayout ? session.streaming : localStreaming;
+  const setStreaming = pageLayout ? session.setStreaming : setLocalStreaming;
+  const status = pageLayout ? session.status : localStatus;
+  const setStatus = pageLayout ? session.setStatus : setLocalStatus;
+  const coverage = pageLayout ? session.coverage : localCoverage;
+  const setCoverage = pageLayout ? session.setCoverage : setLocalCoverage;
+  const historyLoading = pageLayout ? session.historyLoading : localHistoryLoading;
+  const setHistoryLoading = pageLayout ? session.setHistoryLoading : setLocalHistoryLoading;
+  const historyError = pageLayout ? session.historyError : localHistoryError;
+  const setHistoryError = pageLayout ? session.setHistoryError : setLocalHistoryError;
+  const abortRef = pageLayout ? session.abortRef : localAbortRef;
+  const conversationIdRef = pageLayout ? session.conversationIdRef : localConversationIdRef;
+  const loadedIdRef = pageLayout ? session.loadedIdRef : localLoadedIdRef;
+  const loadGenRef = pageLayout ? session.loadGenRef : localLoadGenRef;
+
+  const historyBusy =
+    pageLayout &&
+    (historyLoading ||
+      (resumeConversationId != null &&
+        loadedIdRef.current !== resumeConversationId &&
+        !historyError &&
+        thread.length === 0 &&
+        !streaming));
 
   useEffect(() => {
     purgeLegacyCoachKey();
@@ -252,9 +267,25 @@ export function CoachPanel({
     };
   }, [open, status]);
 
-  useEffect(() => () => abortRef.current?.abort(), []);
+  useEffect(() => {
+    pageAliveRef.current = true;
+    return () => {
+      pageAliveRef.current = false;
+    };
+  }, []);
+
+  /* Sheet layouts still stop the stream when they unmount. The page layout
+     keeps the controller in CoachSessionProvider so leaving /coach does not. */
+  useEffect(() => {
+    if (pageLayout) return undefined;
+    const ref = localAbortRef;
+    return () => {
+      ref.current?.abort();
+    };
+  }, [pageLayout]);
 
   useEffect(() => {
+    if (!pageLayout) return undefined;
     if (resumeConversationId == null) {
       setHistoryLoading(false);
       return undefined;
@@ -262,6 +293,13 @@ export function CoachPanel({
     if (loadedIdRef.current === resumeConversationId) {
       setHistoryLoading(false);
       return undefined;
+    }
+    if (abortRef.current) {
+      session.askGenRef.current += 1;
+      abortRef.current.abort();
+      abortRef.current = null;
+      setStreaming(false);
+      session.noteAskFinished("clear");
     }
     const gen = loadGenRef.current;
     let cancelled = false;
@@ -271,7 +309,7 @@ export function CoachPanel({
       .then((data) => {
         if (cancelled || gen !== loadGenRef.current) return;
         loadedIdRef.current = data.id;
-        conversationIdRef.current = data.id;
+        session.commitConversationId(data.id);
         setThread(
           (Array.isArray(data.messages) ? data.messages : []).map((message) =>
             makeMessage(message.role === "coach" ? "assistant" : "user", message.content)
@@ -282,7 +320,6 @@ export function CoachPanel({
       .catch((err) => {
         if (cancelled || gen !== loadGenRef.current) return;
         loadedIdRef.current = null;
-        conversationIdRef.current = null;
         setThread([]);
         setHistoryError(err);
       })
@@ -292,7 +329,7 @@ export function CoachPanel({
     return () => {
       cancelled = true;
     };
-  }, [resumeConversationId]);
+  }, [resumeConversationId, pageLayout]);
 
   const effectiveFocus = useMemo(() => {
     if (!pageLayout) return focus;
@@ -333,7 +370,7 @@ export function CoachPanel({
   const ask = useCallback(
     async (questionRaw) => {
       const question = String(questionRaw ?? "").trim();
-      if (!question || streaming || historyLoading) return;
+      if (!question || streaming || historyBusy) return;
       if (status?.weeklyCap && status.weeklyCap.remaining <= 0) return;
       const history = thread
         .filter((m) => !m.error && !m.pending && m.content)
@@ -350,6 +387,9 @@ export function CoachPanel({
 
       const controller = new AbortController();
       abortRef.current = controller;
+      const gen = pageLayout ? (session.askGenRef.current += 1) : 0;
+      if (pageLayout) session.noteAskStarted(question);
+      let outcome = "clear";
       try {
         const result = await askCoachStream({
           question,
@@ -364,9 +404,10 @@ export function CoachPanel({
             if (meta && meta.conversationId != null) {
               const id = Number(meta.conversationId);
               if (Number.isInteger(id) && id > 0) {
-                conversationIdRef.current = id;
                 loadedIdRef.current = id;
-                onConversationId?.(id);
+                if (pageLayout) session.commitConversationId(id);
+                else conversationIdRef.current = id;
+                if (pageAliveRef.current) onConversationId?.(id);
               }
             }
           },
@@ -399,9 +440,11 @@ export function CoachPanel({
             });
           }
         }
+        outcome = "ok";
       } catch (err) {
         if (err && err.name === "AbortError") return;
         if (err instanceof CoachError && err.code === "weekly_limit") {
+          outcome = "drop";
           setStatus((prev) => ({
             ...(prev || {}),
             weeklyCap: {
@@ -419,12 +462,19 @@ export function CoachPanel({
         setThread((prev) =>
           prev.map((m) => (m.id === pending.id ? { ...m, pending: false, error: message } : m))
         );
+        outcome = "error";
       } finally {
-        if (abortRef.current === controller) abortRef.current = null;
-        setStreaming(false);
+        const stale = pageLayout && session.askGenRef.current !== gen;
+        if (!stale) {
+          if (abortRef.current === controller) abortRef.current = null;
+          setStreaming(false);
+          if (pageLayout && outcome === "ok") session.noteAskFinished("ok");
+          else if (pageLayout && outcome === "error") session.noteAskFinished("error");
+          else if (pageLayout && outcome === "drop") session.noteAskFinished("clear");
+        }
       }
     },
-    [streaming, historyLoading, thread, mode, range, effectiveFocus, status, onConversationId]
+    [streaming, historyBusy, thread, mode, range, effectiveFocus, status, onConversationId, pageLayout, session]
   );
 
   useEffect(() => {
@@ -563,12 +613,21 @@ export function CoachPanel({
   }
 
   function stop() {
+    if (pageLayout) session.askGenRef.current += 1;
     abortRef.current?.abort();
     setThread((prev) => prev.map((m) => (m.pending ? { ...m, pending: false } : m)));
     setStreaming(false);
+    if (pageLayout) session.noteAskFinished("clear");
   }
 
   function reset() {
+    autoAskedRef.current = false;
+    if (pageLayout) {
+      session.clearSession();
+      onConversationId?.(null);
+      inputRef.current?.focus();
+      return;
+    }
     loadGenRef.current += 1;
     stop();
     setThread([]);
@@ -577,7 +636,6 @@ export function CoachPanel({
     setHistoryLoading(false);
     conversationIdRef.current = null;
     loadedIdRef.current = null;
-    autoAskedRef.current = false;
     onConversationId?.(null);
     inputRef.current?.focus();
   }
@@ -628,7 +686,7 @@ export function CoachPanel({
   const remainingCopy = weeklyCapRemainingCopy(weeklyCap);
   const usedCopy = weeklyCapUsedCopy(weeklyCap);
   const showComposer =
-    Boolean(status) && !unavailable && !statusError && !historyLoading && !historyError;
+    Boolean(status) && !unavailable && !statusError && !historyBusy && !historyError;
 
   function renderWait() {
     if (pageLayout) {
@@ -698,9 +756,10 @@ export function CoachPanel({
             <NewConversationIcon />
           </button>
         </header>
+        <CoachLeaveNote />
 
         <div className="coach-page__scroll" ref={threadRef} onScroll={onPageScroll}>
-          {historyLoading ? (
+          {historyBusy ? (
             <div className="coach-panel__notice muted small coach-panel__notice--loading">
               <span className="barbell barbell--inline" aria-hidden="true">
                 <span className="barbell__bar" />
@@ -745,7 +804,7 @@ export function CoachPanel({
           ) : (
             <div className="coach-page__intro">
               <div className="coach-page__mark" aria-hidden="true">
-                <ChatBubbleIcon />
+                <CoachMarkIcon />
               </div>
               <p className="coach-page__lead">
                 Ask about your training, or how to do something in LogChamp.
