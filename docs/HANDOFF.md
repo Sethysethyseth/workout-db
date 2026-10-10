@@ -63,6 +63,7 @@ From MX5-6 (`d309919`):
     Library / Profile, the pill sits on the active tab.
 13. Cold load Home, Library, History, a block run page: a page-shaped
     skeleton on first paint; Library tab counts are a ghost pill, not "0".
+15. TAB SLIDE SPEED is Seth's call after this smoke: 420ms as built (critic wanted 260ms, measured against the old restraint rule). Tell the seat keep / trim.
 14. History: tap a finished workout - its row grows into the summary
     header; Back shrinks it into the row. Open an in-progress workout:
     no fly-in, logging a set is instant.
