@@ -1,6 +1,6 @@
 # MX wave roadmap - motion + visuals for LogChamp
 
-**Last checkpoint:** MXF3 DONE (Oct 10, 2026), after MXC1. Seth's smoke round 2: the coach field sits above the keyboard, the coach icon is a plain chat bubble, and a test keyboard lives in `scripts/virtual-keyboard-shim.js`. Next code unit: MX7 (logger floor - also owns the first-set focus drop found in the MXF2 audit) - or MX5b / MX10 if Seth picks scenes first. IDEAS 16 (fling-away bars) is HELD for Seth after the wave. MX1-MX6, MX-S, MXF1, MXF2 and MXC1 stay DONE.
+**Last checkpoint:** MXF4 DONE (Oct 10, 2026), after MXF3. Critic round 1 typing surfaces: suggestion lists stay closed on resume, a set field stays the same node when its draft saves (that focus drop moved here from MX7 and is handled), quick-logger search and the builder picker clear the keyboard, the coach chip no longer covers sticky exercise headings, one tap focuses the workout note, and the coach debug readout plus suggestion cards clear the title, composer, and scrollbar. Next code unit: MX7 (logger floor) - or MX5b / MX10 if Seth picks scenes first. IDEAS 16 (fling-away bars) is HELD for Seth after the wave. MX1-MX6, MX-S, MXF1, MXF2, MXC1 and MXF3 stay DONE.
 
 This file is the wave's state. It stands on its own next to
 `MOTION-DIRECTION.md` (the design) and needs no chat history. Whoever picks
@@ -335,7 +335,7 @@ Conventions for every unit below:
 - **Done when:** the block's acceptance criteria pass and the seat re-runs
   round 1's repros clean.
 - **Depends on:** MXF3. **Packages:** none.
-- **Status:** TODO.
+- **Status:** DONE (Oct 10, 2026). Resume no longer opens suggestion lists. A promoted quick-log row keeps its slot and its input node until focus leaves that exercise's sets, then saved order applies. Search scrolls the name field up when the list opens (flips above only if three rows still will not fit). The builder list ends at the keyboard. The coach chip publishes `--coach-working-chip-h` and sticky headings sit below it. "Add a workout note" focuses in the same tap. `?kbdebug=1` follows the visual viewport off the title, and coach cards clear the overlay scrollbar.
 
 ## MX7 - Logger quiet confirm + rest dock
 
@@ -355,6 +355,7 @@ Conventions for every unit below:
   without layout shift under the thumb; build passes; Seth's smoke confirms
   the keypad never covers the active input.
 - **Depends on:** MX1. **Packages:** none.
+- **Note (MXF4):** the first-set focus drop (draft promotion unmounting the input the lifter is typing in) was moved to MXF4 and is handled there. This unit does not own it.
 - **Status:** TODO.
 
 ## MX8 - PR moment (Crown stamp A) + milestone takeover

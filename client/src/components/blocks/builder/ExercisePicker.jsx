@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { getExerciseIndex } from "../../../api/analyticsApi.js";
 import { listCustomExercises, searchExercises } from "../../../api/exerciseApi.js";
+import { keyboardCap, nextKeyboardBaseline, readViewportReading, visibleBandFromReading } from "../../../lib/visibleBand.js";
 import { BuilderSheet } from "./BuilderSheet.jsx";
 import { Chip } from "../ui/Chip.jsx";
 import { createEmptyExercise } from "./blockBuilderState.js";
@@ -45,6 +46,8 @@ export function ExercisePicker({
   const [yourExercises, setYourExercises] = useState([]);
   const [rosterReady, setRosterReady] = useState(false);
   const searchRef = useRef(null);
+  const listRef = useRef(null);
+  const bandBaseRef = useRef(null);
   const wide =
     typeof window !== "undefined" ? window.matchMedia("(min-width: 720px)").matches : false;
 
@@ -64,6 +67,48 @@ export function ExercisePicker({
     }, 30);
     return () => window.clearTimeout(t);
   }, [open]);
+
+  useLayoutEffect(() => {
+    if (!open) return undefined;
+    const list = listRef.current;
+    if (!list) return undefined;
+    const vv = window.visualViewport;
+
+    function fit() {
+      const focused = Boolean(
+        document.activeElement &&
+          (document.activeElement === searchRef.current ||
+            document.activeElement.closest?.(".bk-sheet--picker"))
+      );
+      const reading = readViewportReading(focused);
+      bandBaseRef.current = nextKeyboardBaseline(bandBaseRef.current, reading);
+      const band = visibleBandFromReading(reading, bandBaseRef.current?.baseline);
+      if (!band.keyboardOpen) {
+        list.style.maxHeight = "";
+        list.style.minHeight = "";
+        return;
+      }
+      const top = list.getBoundingClientRect().top;
+      const maxH = Math.max(0, Math.floor(keyboardCap(band, reading) - top));
+      list.style.maxHeight = `${maxH}px`;
+      list.style.minHeight = "0px";
+    }
+
+    fit();
+    window.addEventListener("resize", fit);
+    vv?.addEventListener("resize", fit);
+    vv?.addEventListener("scroll", fit);
+    const vk = navigator.virtualKeyboard;
+    vk?.addEventListener("geometrychange", fit);
+    return () => {
+      window.removeEventListener("resize", fit);
+      vv?.removeEventListener("resize", fit);
+      vv?.removeEventListener("scroll", fit);
+      vk?.removeEventListener("geometrychange", fit);
+      list.style.maxHeight = "";
+      list.style.minHeight = "";
+    };
+  }, [open, query, results.length]);
 
   useEffect(() => {
     let cancelled = false;
@@ -212,7 +257,7 @@ export function ExercisePicker({
             autoFocus={open}
           />
         </label>
-        <ul className="bk-picker__list">
+        <ul className="bk-picker__list" ref={listRef}>
           {showResults ? (
             <>
               {searching ? (

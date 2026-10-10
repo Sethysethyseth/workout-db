@@ -133,6 +133,34 @@ export function CoachPage() {
       nudgeForTop = null;
     }
 
+    function overlaps(a, b) {
+      if (!a || !b || a.width === 0 || a.height === 0 || b.width === 0 || b.height === 0) return false;
+      return a.left < b.right && a.right > b.left && a.top < b.bottom && b.top < a.bottom;
+    }
+
+    function placeKbDebug() {
+      const el = page.querySelector(".coach-kbdebug");
+      if (!el) return;
+      const vvTop = vv.offsetTop;
+      el.style.right = "8px";
+      el.style.left = "auto";
+      el.style.top = `${Math.round(vvTop + 8)}px`;
+      const title = page.querySelector(".coach-page__title");
+      const composer = page.querySelector(".coach-page__composer");
+      let rect = el.getBoundingClientRect();
+      const titleRect = title ? title.getBoundingClientRect() : null;
+      if (overlaps(rect, titleRect)) {
+        el.style.top = `${Math.round(Math.max(vvTop, titleRect.bottom) + 8)}px`;
+        rect = el.getBoundingClientRect();
+      }
+      const composerRect = composer ? composer.getBoundingClientRect() : null;
+      if (overlaps(rect, composerRect)) {
+        el.style.top = `${Math.round(composerRect.top - rect.height - 8)}px`;
+        rect = el.getBoundingClientRect();
+      }
+      if (rect.top < vvTop) el.style.top = `${Math.round(vvTop + 8)}px`;
+    }
+
     function writeDebug(reading) {
       const node = debugTextRef.current;
       if (!node) return;
@@ -153,6 +181,7 @@ export function CoachPage() {
         `source ${reading.source}`,
       ];
       node.textContent = lines.join("\n");
+      placeKbDebug();
     }
 
     function fit() {

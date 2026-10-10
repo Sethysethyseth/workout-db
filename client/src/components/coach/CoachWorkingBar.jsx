@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useCoachSession } from "../../context/CoachSessionContext.jsx";
 import "../../styles/coach-working-bar.css";
@@ -82,6 +82,30 @@ export function CoachWorkingBar() {
       document.removeEventListener("focusout", fit);
     };
   }, [visible, location.pathname]);
+
+  useLayoutEffect(() => {
+    const root = document.documentElement;
+    if (!visible || place !== "top") {
+      root.style.removeProperty("--coach-working-chip-h");
+      return undefined;
+    }
+    const wrap = document.querySelector('.coach-working-bar-wrap[data-place="top"]');
+    if (!wrap) {
+      root.style.removeProperty("--coach-working-chip-h");
+      return undefined;
+    }
+    const write = () => {
+      const h = Math.ceil(wrap.getBoundingClientRect().height);
+      if (h > 0) root.style.setProperty("--coach-working-chip-h", `${h}px`);
+    };
+    write();
+    const observer = new ResizeObserver(write);
+    observer.observe(wrap);
+    return () => {
+      observer.disconnect();
+      root.style.removeProperty("--coach-working-chip-h");
+    };
+  }, [visible, place, bar.phase, bar.snippet, bar.beat]);
 
   if (!visible) return null;
 

@@ -7,6 +7,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { flushSync } from "react-dom";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import * as analyticsApi from "../api/analyticsApi.js";
 import * as exerciseApi from "../api/exerciseApi.js";
@@ -34,7 +35,9 @@ import { sessionDisplayTitle } from "../lib/sessionDisplay.js";
 import { smartWorkoutNameFromSessionExercises } from "../lib/smartWorkoutName.js";
 import { getTrainingPrefs, useTrainingPrefs } from "../lib/trainingPrefs.js";
 import { TrainingPrefsStrip } from "../components/prefs/TrainingPrefsStrip.jsx";
+import { applyQuickHold, buildCanonicalQuickSlots, cloneQuickRows } from "../lib/quickSetSlots.js";
 import { keyboardLooksOpen, restLeaveDecision } from "../lib/restLeave.js";
+import { keyboardCap, nextKeyboardBaseline, readViewportReading, visibleBandFromReading } from "../lib/visibleBand.js";
 import { restDurationFor, startRestRun } from "../lib/restTimer.js";
 import { RestTimerBar } from "../components/workout/RestTimerBar.jsx";
 import { loadWeightUnit } from "../lib/weightUnitPref.js";
@@ -593,6 +596,10 @@ function SessionExerciseFields({
   const skipBlurCommitRef = useRef(false);
   const searchSeqRef = useRef(0);
   const resolveSeqRef = useRef(0);
+  const nameFocusedRef = useRef(false);
+  const nameEditedSinceFocusRef = useRef(false);
+  const bandBaseRef = useRef(null);
+  const listScrollKeyRef = useRef(null);
 
   const [name, setName] = useState(() =>
     sessionExerciseNameForInput(sessionExercise.exerciseName)
@@ -658,8 +665,9 @@ function SessionExerciseFields({
     if (disabled) return undefined;
 
     const trimmed = String(name ?? "").trim();
-    if (trimmed.length < 2) {
-      /* eslint-disable react-hooks/set-state-in-effect -- clear stale suggestions when query is too short */
+    const allowList = nameFocusedRef.current && nameEditedSinceFocusRef.current;
+    if (!allowList || trimmed.length < 2) {
+      /* eslint-disable react-hooks/set-state-in-effect -- clear stale suggestions when the query is too short or the user has not edited since focus */
       setSuggestions([]);
       setSuggestionsOpen(false);
       setActiveIndex(-1);
@@ -673,6 +681,7 @@ function SessionExerciseFields({
       try {
         const data = await exerciseApi.searchExercises(trimmed, { limit: 10 });
         if (seq !== searchSeqRef.current) return;
+        if (!nameFocusedRef.current || !nameEditedSinceFocusRef.current) return;
         const results = Array.isArray(data?.results) ? data.results : [];
         setSuggestions(results);
         setSuggestionsOpen(results.length > 0);
@@ -689,39 +698,82 @@ function SessionExerciseFields({
   }, [disabled, name]);
 
   useLayoutEffect(() => {
-    if (disabled || !suggestionsOpen) return undefined;
+    if (disabled || !suggestionsOpen) {
+      listScrollKeyRef.current = null;
+      return undefined;
+    }
 
-    function measure() {
+    function measure(allowScroll) {
       const wrap = nameWrapRef.current;
       if (!wrap) return;
-      // The list sits 4px under the wrap (index.css top: calc(100% + 4px)).
-      const listTop = wrap.getBoundingClientRect().bottom + 4;
+      const input = wrap.querySelector("input");
+      const focused = Boolean(input && document.activeElement === input);
+      const reading = readViewportReading(focused);
+      bandBaseRef.current = nextKeyboardBaseline(bandBaseRef.current, reading);
+      const band = visibleBandFromReading(reading, bandBaseRef.current?.baseline);
+      const capBottom = keyboardCap(band, reading);
+      const list = wrap.querySelector(".exercise-picker-suggestions");
+      const sticky = wrap.closest(".session-exercise-block")?.querySelector(".session-exercise-heading-sticky");
+      const stickyH = sticky ? sticky.getBoundingClientRect().height : 0;
+      const visibleRows = Math.min(3, suggestions.length);
+      const needed = visibleRows > 0 ? visibleRows * 44 + 12 : 0;
+
+      // Once, when the list opens: move the field up in the visible band so
+      // the downward list clears the keyboard. Later keystrokes no-op once
+      // the field already fits. minFieldTop is the stuck heading, not the
+      // heading's current rect (that rect scrolls with the field). Only the
+      // open, a new row count, or a keyboard change may scroll - never the
+      // lifter's own scrolling (scroll events pass allowScroll = false).
+      const scrollKey = `${visibleRows}:${Math.round(capBottom / 40)}`;
+      const mayScroll = allowScroll && listScrollKeyRef.current !== scrollKey;
+      if (allowScroll) listScrollKeyRef.current = scrollKey;
+      if (mayScroll && focused && needed > 0 && input) {
+        const minFieldTop = band.top + stickyH + 4;
+        const field = input.getBoundingClientRect();
+        const maxFieldBottom = capBottom - 4 - needed;
+        if (field.bottom > maxFieldBottom + 1) {
+          const delta = Math.min(field.bottom - maxFieldBottom, Math.max(0, field.top - minFieldTop));
+          if (delta > 1) window.scrollBy(0, delta);
+        }
+      }
+
+      const wrapRect = wrap.getBoundingClientRect();
+      const listTop = wrapRect.bottom + 4;
+      const stickyBottom = sticky ? Math.max(sticky.getBoundingClientRect().bottom, band.top + stickyH) : band.top;
+      const below = capBottom - listTop;
+      const above = wrapRect.top - stickyBottom - 4;
+      const placeAbove = needed > 0 && below < needed && above > below;
+      if (list) list.classList.toggle("exercise-picker-suggestions--above", placeAbove);
+
+      let limit = placeAbove ? wrapRect.top - 4 : capBottom;
       const dock = document.querySelector(".session-finish-dock");
-      const vv = window.visualViewport;
-      const viewportBottom = vv ? vv.offsetTop + vv.height : window.innerHeight;
-      let limit = viewportBottom;
-      if (dock && !document.documentElement.classList.contains("bk-log-kbd")) {
+      if (!placeAbove && dock && !document.documentElement.classList.contains("bk-log-kbd")) {
         const cs = window.getComputedStyle(dock);
         const hidden = cs.visibility === "hidden" || cs.display === "none";
-        if (!hidden) limit = dock.getBoundingClientRect().top;
+        if (!hidden) limit = Math.min(limit, dock.getBoundingClientRect().top);
       }
-      // Stay strictly above the dock (or the viewport when the dock is hidden).
-      const next = Math.max(0, Math.floor(limit - listTop) - 1);
-      const list = wrap.querySelector(".exercise-picker-suggestions");
+      const next = placeAbove
+        ? Math.max(0, Math.floor(wrapRect.top - 4 - stickyBottom) - 1)
+        : Math.max(0, Math.floor(limit - listTop) - 1);
       if (list) list.style.maxHeight = `${next}px`;
     }
 
-    measure();
-    window.addEventListener("resize", measure);
-    window.addEventListener("scroll", measure, true);
+    const refit = () => measure(true);
+    const follow = () => measure(false);
+    measure(true);
+    window.addEventListener("resize", refit);
+    window.addEventListener("scroll", follow, true);
     const vv = window.visualViewport;
-    vv?.addEventListener("resize", measure);
-    vv?.addEventListener("scroll", measure);
+    vv?.addEventListener("resize", refit);
+    vv?.addEventListener("scroll", follow);
+    const vk = navigator.virtualKeyboard;
+    vk?.addEventListener("geometrychange", refit);
     return () => {
-      window.removeEventListener("resize", measure);
-      window.removeEventListener("scroll", measure, true);
-      vv?.removeEventListener("resize", measure);
-      vv?.removeEventListener("scroll", measure);
+      window.removeEventListener("resize", refit);
+      window.removeEventListener("scroll", follow, true);
+      vv?.removeEventListener("resize", refit);
+      vv?.removeEventListener("scroll", follow);
+      vk?.removeEventListener("geometrychange", refit);
     };
   }, [disabled, suggestionsOpen, suggestions.length]);
 
@@ -759,6 +811,7 @@ function SessionExerciseFields({
   }
 
   function applySuggestion(row) {
+    nameEditedSinceFocusRef.current = false;
     setName(row.name);
     pendingIdentityRef.current = {
       exerciseId: row.exerciseId ?? undefined,
@@ -918,15 +971,16 @@ function SessionExerciseFields({
           aria-autocomplete="list"
           onChange={(e) => {
             pendingIdentityRef.current = null;
+            nameEditedSinceFocusRef.current = true;
             setName(e.target.value);
-            setSuggestionsOpen(true);
           }}
           onFocus={() => {
-            if (suggestions.length > 0) {
-              setSuggestionsOpen(true);
-            }
+            nameFocusedRef.current = true;
+            nameEditedSinceFocusRef.current = false;
           }}
           onBlur={() => {
+            nameFocusedRef.current = false;
+            nameEditedSinceFocusRef.current = false;
             void commitName();
           }}
           onKeyDown={handleNameKeyDown}
@@ -1507,7 +1561,7 @@ const SessionSetRow = memo(function SessionSetRow({
 
   return (
     <div
-      ref={isDraft ? undefined : rootRef}
+      ref={rootRef}
       className={lastTimeMode ? "session-set-row-root bk" : "session-set-row-root"}
       data-session-set-id={isDraft ? undefined : set.id}
       onFocusCapture={
@@ -1561,7 +1615,7 @@ const SessionSetRow = memo(function SessionSetRow({
             <AsPlannedControl onFill={applyAsPlanned} disabled={disabled} />
           </div>
         ) : null}
-        <div className="session-set-field-groups">
+        <div key="set-fields" className="session-set-field-groups">
           <div className="session-set-core-row grid-set-row" style={{ "--set-cols": 2 }}>
             <label
               className={[
@@ -1795,6 +1849,9 @@ function SessionExerciseBlock({
   const [ghostCap, setGhostCap] = useState(null);
   const [pairRemoveIds, setPairRemoveIds] = useState(null);
   const [pairRemoveBusy, setPairRemoveBusy] = useState(false);
+  const quickHoldRef = useRef(null);
+  const quickBindRef = useRef(new Map());
+  const [quickHoldEpoch, setQuickHoldEpoch] = useState(0);
 
   useEffect(() => {
     setPerSideOverride(null);
@@ -1856,6 +1913,28 @@ function SessionExerciseBlock({
     () => [...sets].sort((a, b) => a.order - b.order),
     [sets]
   );
+  const quickLive = !isCompleted && plan == null;
+  const quickModel = useMemo(() => {
+    if (!quickLive) return null;
+    const plainGhostIndexes = [];
+    for (let i = 0; i < lastSets.length; i += 1) {
+      if (lastTimeFieldsForRow(lastSets, i, null)) plainGhostIndexes.push(i);
+    }
+    const canonical = buildCanonicalQuickSlots({
+      seId: se.id,
+      sortedSets,
+      perSideMode,
+      plainGhostIndexes,
+      sideGhostPairs: Math.max(
+        lastTimeRowsForSide(lastSets, "L").length,
+        lastTimeRowsForSide(lastSets, "R").length
+      ),
+    });
+    if (quickHoldRef.current) {
+      return applyQuickHold(quickHoldRef.current, sortedSets, quickBindRef.current);
+    }
+    return canonical;
+  }, [quickLive, se.id, sortedSets, lastSets, perSideMode, quickHoldEpoch]);
   const renderUnits = useMemo(
     () => groupSetsIntoRenderUnits(sortedSets, perSideMode),
     [sortedSets, perSideMode]
@@ -1982,6 +2061,89 @@ function SessionExerciseBlock({
 
   const isLiveCollapsible = collapsible && !isCompleted;
 
+  async function promoteQuickSlot(slotKey, side, draft) {
+    const payload = side === "L" || side === "R" ? { ...draft, side } : draft;
+    const created = await onPromoteDraftSet(se.id, payload);
+    if (created?.id != null && quickHoldRef.current) {
+      quickBindRef.current.set(slotKey, created.id);
+      setQuickHoldEpoch((n) => n + 1);
+    }
+    return created;
+  }
+
+  function renderQuickSlot(slot, pair) {
+    const set = slot.setId != null ? sortedSets.find((s) => s.id === slot.setId) : null;
+    const ghost =
+      slot.ghostIndex != null ? lastTimeFieldsForRow(lastSets, slot.ghostIndex, slot.side) : null;
+    const partnerSet =
+      pair && slot.side === "L"
+        ? sortedSets.find((s) => s.id === pair.sides[1]?.setId) ?? null
+        : null;
+    const ghostProps = ghost
+      ? {
+          planSet: ghost.planSet,
+          timedMode: ghost.timedMode,
+          lastTimeSetNumber: ghost.lastTimeSetNumber,
+        }
+      : {};
+    if (!set) {
+      return (
+        <SessionSetRow
+          key={slot.key}
+          isDraft
+          draftSlot={slot.draftSlot}
+          resumeVersion={draftResumeVersion}
+          sessionExerciseId={se.id}
+          setLabelOverride={slot.labelOverride ?? undefined}
+          sideBadgeLetter={slot.side}
+          useRIR={useRIR}
+          useRPE={useRPE}
+          useSetNotes={useSetNotes}
+          onInteractStart={onActivateExercise}
+          onPromoteDraft={(d) => promoteQuickSlot(slot.key, slot.side, d)}
+          onUpdateSet={onUpdateSet}
+          writesFrozenRef={writesFrozenRef}
+          disabled={writesFrozen}
+          {...ghostProps}
+        />
+      );
+    }
+    const pairSets = pair
+      ? pair.sides
+          .map((side) => sortedSets.find((s) => s.id === side.setId))
+          .filter(Boolean)
+      : null;
+    return (
+      <SessionSetRow
+        key={slot.key}
+        set={set}
+        setOrdinal={slot.ordinal ?? undefined}
+        setLabelOverride={
+          slot.labelOverride ??
+          (perSideMode ? perSideSetLabel(set, slot.pairOrdinal, slot.ordinal) : undefined)
+        }
+        sideBadgeLetter={slot.side}
+        partnerSet={partnerSet}
+        onAutofillPartnerWeight={partnerSet ? onAutofillPartnerWeight : undefined}
+        lockSetOrder
+        disabled={writesFrozen}
+        useRIR={useRIR}
+        useRPE={useRPE}
+        useSetNotes={useSetNotes || String(set.notes ?? "").trim() !== ""}
+        isNext={!isCompleted && nextIncompleteSetId != null && set.id === nextIncompleteSetId}
+        onInteractStart={!writesFrozen ? onActivateExercise : undefined}
+        onUpdateSet={onUpdateSet}
+        onDeleteSet={() =>
+          handleDeleteSet(set.id, pairSets ? { type: "pair", sets: pairSets } : { type: "single", sets: [set] })
+        }
+        hasPR={false}
+        highlightMissingEffort={highlightMissingEffort}
+        writesFrozenRef={writesFrozenRef}
+        {...ghostProps}
+      />
+    );
+  }
+
   return (
     <div className={blockClass}>
       <div
@@ -2069,9 +2231,33 @@ function SessionExerciseBlock({
 
           <div
             className="stack session-exercise-sets-stack"
-            onFocusCapture={
-              !isCompleted && onActivateExercise ? () => onActivateExercise() : undefined
-            }
+            onFocusCapture={() => {
+              if (!isCompleted && onActivateExercise) onActivateExercise();
+              if (!quickLive || quickHoldRef.current) return;
+              const plainGhostIndexes = [];
+              for (let i = 0; i < lastSets.length; i += 1) {
+                if (lastTimeFieldsForRow(lastSets, i, null)) plainGhostIndexes.push(i);
+              }
+              const canonical = buildCanonicalQuickSlots({
+                seId: se.id,
+                sortedSets,
+                perSideMode,
+                plainGhostIndexes,
+                sideGhostPairs: Math.max(
+                  lastTimeRowsForSide(lastSets, "L").length,
+                  lastTimeRowsForSide(lastSets, "R").length
+                ),
+              });
+              quickHoldRef.current = cloneQuickRows(canonical.rows);
+            }}
+            onBlurCapture={(e) => {
+              if (!quickLive) return;
+              if (e.currentTarget.contains(e.relatedTarget)) return;
+              if (!quickHoldRef.current && quickBindRef.current.size === 0) return;
+              quickHoldRef.current = null;
+              quickBindRef.current.clear();
+              setQuickHoldEpoch((n) => n + 1);
+            }}
           >
             <div className="exercise-editor-set-toolbar row session-set-toolbar">
               {!isCompleted ? (
@@ -2116,7 +2302,23 @@ function SessionExerciseBlock({
 
             <>
               <div className="stack session-set-rows">
-                {sets.length === 0 ? (
+                {quickLive ? (
+                  quickModel?.kind === "message" ? (
+                    <div className="muted small session-empty-sets">
+                      Tap "+ Add set" below to log your first left/right pair.
+                    </div>
+                  ) : (
+                    (quickModel?.rows || []).map((row) =>
+                      row.type === "pair" ? (
+                        <div key={row.key} className="session-set-pair stack">
+                          {row.sides.map((side) => renderQuickSlot(side, row))}
+                        </div>
+                      ) : (
+                        renderQuickSlot(row, null)
+                      )
+                    )
+                  )
+                ) : sets.length === 0 ? (
                   isCompleted ? (
                     <div className="muted small session-empty-sets">No sets logged.</div>
                   ) : perSideMode && lastSets.length === 0 ? (
@@ -2329,7 +2531,7 @@ function SessionExerciseBlock({
                     );
                   })
                 )}
-                {sets.length > 0 && plan == null && lastSets.length > 0
+                {!quickLive && sets.length > 0 && plan == null && lastSets.length > 0
                   ? perSideMode
                     ? Array.from(
                         {
@@ -2484,6 +2686,7 @@ export function SessionDetailPage() {
   const [seededUseRIR, setSeededUseRIR] = useState(false);
   const [seededUseRPE, setSeededUseRPE] = useState(false);
   const [workoutNoteOpen, setWorkoutNoteOpen] = useState(false);
+  const quickNoteRef = useRef(null);
   const trainingPrefs = useTrainingPrefs();
   const weightUnit = loadWeightUnit();
   const [quickTitleDraft, setQuickTitleDraft] = useState("");
@@ -4327,6 +4530,7 @@ export function SessionDetailPage() {
             <label>
               Workout note
               <textarea
+                ref={quickNoteRef}
                 value={sessionNotesDraft}
                 onChange={(e) => setSessionNotesDraft(e.target.value)}
                 onBlur={() => void commitSessionNotes()}
@@ -4338,7 +4542,10 @@ export function SessionDetailPage() {
             <button
               type="button"
               className="training-prefs-note-reveal"
-              onClick={() => setWorkoutNoteOpen(true)}
+              onClick={() => {
+                flushSync(() => setWorkoutNoteOpen(true));
+                quickNoteRef.current?.focus();
+              }}
             >
               Add a workout note
             </button>

@@ -4022,14 +4022,14 @@ html[data-theme="dark"] .checkbox-inline:hover {
 }
 
 .session-detail-page {
-  --session-sticky-top: 64px;
+  --session-sticky-top: calc(64px + var(--coach-working-chip-h, 0px));
 }
 
 /* No top bar on mobile - sticky exercise headings pin to the viewport top.
    Must follow the base rule above: same specificity, source order decides. */
 @media (max-width: 719px) {
   .session-detail-page {
-    --session-sticky-top: env(safe-area-inset-top, 0px);
+    --session-sticky-top: calc(env(safe-area-inset-top, 0px) + var(--coach-working-chip-h, 0px));
   }
 }
 
@@ -4862,6 +4862,11 @@ html[data-theme="dark"] .exercise-name-suggestions {
   opacity: 1;
   transform: translateY(0);
   pointer-events: auto;
+}
+
+.exercise-picker-suggestions--above {
+  top: auto;
+  bottom: calc(100% + 4px);
 }
 
 @media (prefers-reduced-motion: no-preference) {

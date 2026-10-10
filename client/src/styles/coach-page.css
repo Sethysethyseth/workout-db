@@ -288,6 +288,17 @@
   }
 }
 
+/* Overlay scrollbars paint on the scrollport edge. On phone the scroller
+   runs out into the page gutter (like the composer backing), so the bar
+   sits at the screen edge and the cards keep the 16px gutters on both
+   sides, lined up with the composer input. */
+@media (max-width: 719px) {
+  .coach-page__scroll {
+    margin-inline: -16px;
+    padding-inline: 16px;
+  }
+}
+
 .coach-page__cap {
   margin: 0;
   line-height: 1.35;
@@ -415,7 +426,8 @@ html[data-theme="dark"] .coach-page__send--stop {
   position: fixed;
   z-index: 40;
   top: calc(8px + env(safe-area-inset-top, 0px));
-  left: 8px;
+  right: 8px;
+  left: auto;
   max-width: min(240px, 70vw);
   margin: 0;
   padding: 6px 8px;
