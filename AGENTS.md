@@ -17,8 +17,15 @@ dev: Seth. Claude = planning/review partner, Cursor = code-execution agent,
 Claude Code = mechanical jobs + DB inspection + repo hygiene.
 
 Anti-goals worth knowing before adding scope: no max-data-for-its-own-sake, no
-out-featuring Strong/Hevy on logging UX, no over-built motion (~150-250ms,
-ease-out, restraint - flashy reads as amateur).
+out-featuring Strong/Hevy on logging UX.
+
+Motion stance (Seth, Oct 9, 2026 - REPLACES the old "no over-built motion,
+~150-250ms, restraint" anti-goal): push it. Motion, graphics and transitions
+should feel wicked where they earn it - analytics first. Bounds: never
+overbearing, never delays input on logging surfaces, smooth on a mid-range
+phone, and `prefers-reduced-motion` always honored. The motion direction of
+record is whatever the MX wave's design doc settles
+(`docs/design/mocks/motion/`).
 
 **Rename boundary (WorkoutDB -> LogChamp is DISPLAY-LAYER ONLY):** never rename
 for a rebrand - repo/remote, Render/Neon/Vercel service names, env var names,
