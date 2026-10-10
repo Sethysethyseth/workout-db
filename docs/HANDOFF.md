@@ -60,7 +60,20 @@ not flagged). Findings, all now in blocks:
 
 ## Smoke for the next round (carry forward - fill at each landing)
 
-- (MXF2 and MXC1 add their items when they land.)
+From MXF2 (`20daef5`), on the phone:
+1. Live quick workout AND a block day: Finish sits fully above the tab
+   bar and taps; the tab bar still works (block days now show it too).
+2. Rest: weight -> reps -> effort in one set never starts it; moving to
+   the next set (or tapping away / closing the keyboard) starts it once;
+   a block "log as planned" tap starts it right away.
+3. Crimson dark + light: Muscles bars and trend lines are rose/blush, not
+   green. Gains (end dot, "up" text) are still green - keep or change?
+4. Strength draws (line wipes, dot pops, text rises) on first open, on
+   switching to Strength, and on a range change; leaving and coming back
+   to Analytics stays a quiet fade.
+5. Known, not fixed here (MX7): the first set of a brand-new exercise
+   drops the keyboard once when it first saves.
+(MXC1 adds its items when it lands.)
 
 ## PICK UP HERE (next session)
 
@@ -259,6 +272,14 @@ Covers the F-wave AND the still-open E-wave prod smoke. Staging passed Aug 4.
   until Oct 18), FILES TO TOUCH disjoint so they may run in parallel
   (lanes 1 + 2). ROADMAP gained MXF2 + MXC1 entries; IDEAS 16 = the held
   swipe idea.
+- Dispatched both on auto, parallel (lane 1 resumed chat eb56cfff, lane
+  2 fresh). Seth (mid-run): the first-open coach note must be once for
+  real, not every login - amended MXC1 (`9eb652e`), audit enforces it.
+- MXF2 landed `20daef5` after a harder audit + real-app check (QUEUE has
+  the detail). Reviewer fixes: rest never started for a set saved after
+  focus left it (draft rows save on blur) - both loggers fixed; block
+  log-as-planned tap counts as leaving. Found pre-existing: first set of a
+  new exercise drops focus on its first save (MX7).
 
 **Rule:** rewritten in place at the end of every working session; kept CAPPED
 (~300 lines). Aged session logs move VERBATIM - never summarized - to
