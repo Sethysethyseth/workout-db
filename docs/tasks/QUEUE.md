@@ -6,6 +6,19 @@ Statuses: DRAFT / QUEUED / DISPATCHED / AWAITING-REVIEW / LANDED <sha> / BOUNCED
 
 ## Active
 
+**Motion wave (MX), opened October 9, 2026 (Opus seat; Fable 5.1 via Cursor is the designer).**
+Branch `motion-wave` (cut from `quality-of-life-updates` at `a681217`).
+Design of record: `docs/design/mocks/motion/MOTION-DIRECTION.md` (Seth's
+rulings at the top override the rest) + `ROADMAP.md` beside it (written by
+MX1-4). Seth's division of labor: the Claude Code seat writes broad briefs,
+Fable 5.1 (`claude-fable-5-1-thinking-high`, Cursor Pro) does the design
+thinking and its suggestions win. Cursor usage is capped this month: every
+Fable run leaves ROADMAP.md current so a later run (or a cheaper model) can
+pick up. N is open until ROADMAP.md lands (Fable's breakdown is MX1-MX12).
+
+LANDED f651c21 | mx0-motion-previews.md | direction doc + 4 zero-dep clickable previews (analytics, PR moment, navigation, session flow) | Report lane + preview files, no app change. Dispatched Oct 9: Channel B, `claude-fable-5-1-thinking-high`, lane `cursor-lane` on `cursor/mx0` @ a681217, 75-min kill. Run: 53 min, exit 0, session `eb56cfff-dfbb-4abc-99f2-6d794c36b307`. Audited Oct 9 (Opus seat): scope exact (5 files under docs/design/mocks/motion/); fresh check of every preview: title first, 0 forbidden tags, 0 external scripts, Google Fonts only, reduced-motion present, all under 84 KB; all four read in full before publishing as Artifacts (analytics X52VRgnoGLer3gGgphQnBU, PR 2kWaZboR6dtMGXgwJqhPSN, navigation T5WpDyvFkAX5rdex1Y5k67, session flow 7dk9zTUhc2nxAbjDLS9i2S). Known gap (fixed by MX1-4): previews draw one code skyline for every palette.
+DISPATCHED | mx1-4-analytics-motion.md | ROADMAP + IDEAS first, then MX1 motion tokens/primitives and Analytics MX2-MX4 (Cascade A), critic input, per-palette scene previews | Dispatched Oct 9 21:35: Channel B, `claude-fable-5-1-thinking-high`, RESUME of the MX0 chat (`--resume eb56cfff...`, new `-Resume` flag in run-lane.ps1), lane `cursor-lane` on `cursor/mx1-4` @ c0f4e86, 120-min kill. Critic screenshots copied into the lane's gitignored `.playwright-mcp/qol-critic/round-2/`.
+
 **Quality-of-life wave (QOL), opened October 8, 2026 (Opus frontier seat).** **MERGED to `main` Oct 9, 2026 (`b5c6777..b82ad8c`) after smoke sign-off and a gate PASS WITH FIXES; prod migrated first under "migrate prod".**
 Branch `quality-of-life-updates` (cut from `main` at `b5c6777`). Design of
 record: `docs/specs/quality-of-life-wave.md`:

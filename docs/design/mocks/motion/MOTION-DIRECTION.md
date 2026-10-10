@@ -19,6 +19,27 @@ Everything in the previews is zero-dependency: CSS transitions/keyframes, the
 Web Animations API, requestAnimationFrame, SVG, and a tiny `<canvas>`. The
 only external load is Google Fonts.
 
+## Seth's rulings (Oct 9, 2026 - these override anything below)
+
+- **Variants:** Fable's recommendations stand (Seth: "we will ultimately go
+  with fable's suggestions") - Analytics Cascade A, shell Shared axis A, PR
+  Crown stamp A, start Go live then push A - unless Seth overrides one.
+- **The PR celebration is RARE.** Not every PR - "or it will be every
+  update." An ordinary PR gets the quiet floor plus a small, static PR mark
+  (the crown on the set cell / summary line) - no burst, no banner, no
+  haptic pattern. The loud celebration (MX8) fires only on criteria that
+  clear a high bar: big milestones or lifts that genuinely fit. MX8's block
+  defines the exact criteria and must justify them against "rare enough to
+  still mean something" (think a few times a year for a regular lifter,
+  not a few times a week). Chart PR markers in Analytics are data, not
+  celebration - they stay.
+- **The milestone takeover stays.** Workout-count thresholds are powers of
+  ten from 100: 100, 1,000, 10,000, ... Each fires once, ever.
+- **Scenes are per palette.** Each palette is its own environment (city,
+  forest, misty pines, iron, crimson - the art in
+  `client/src/assets/scenes/`), not one skyline recoloured. MX10 is
+  per-palette scene life.
+
 ---
 
 ## 1. Motion language
