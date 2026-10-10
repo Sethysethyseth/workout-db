@@ -3,6 +3,7 @@ import { NumField } from "../ui/NumField.jsx";
 import { EffortCapWarn } from "./EffortCapWarn.jsx";
 import { parseSeconds } from "./parseSeconds.js";
 import { isOverEffortCap } from "./planHelpers.js";
+import { isRestLogTap } from "../../../lib/restLeave.js";
 import {
   doseGhostFromPlan,
   effortPlaceholderWithLastTime,
@@ -123,6 +124,7 @@ export const BlockSetRow = memo(function BlockSetRow({
   writesFrozenRef,
   /** (setId, logged) on a persisted false -> true or true -> false. Not on mount. */
   onRestLoggedChange = null,
+  onRestRowLeave = null,
 }) {
   const rootRef = useRef(null);
   const noteInputRef = useRef(null);
@@ -157,6 +159,20 @@ export const BlockSetRow = memo(function BlockSetRow({
     if (prev === undefined || prev === persistedLogged) return;
     onRestLoggedChange?.(set?.id, persistedLogged);
   }, [persistedLogged, set?.id, onRestLoggedChange]);
+
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root || !onRestRowLeave) return undefined;
+    function onFocusOut() {
+      requestAnimationFrame(() => {
+        if (!root.isConnected) return;
+        const active = document.activeElement;
+        onRestRowLeave(set?.id, root.contains(active) && !isRestLogTap(active));
+      });
+    }
+    root.addEventListener("focusout", onFocusOut);
+    return () => root.removeEventListener("focusout", onFocusOut);
+  }, [onRestRowLeave, set?.id]);
 
   canLogRef.current = canLogAsPlanned;
 

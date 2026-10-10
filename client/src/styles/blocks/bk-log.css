@@ -556,8 +556,8 @@
   margin: 0;
 }
 
-/* Live block-day focus mode: hide global bars so Finish is not over the nav. */
-html.bk-log-focus .bottom-nav,
+/* Live block day: hide the resume bar. The Finish dock sits above the
+   bottom nav (index.css), so the nav stays reachable. */
 html.bk-log-focus .persistent-workout-bar-wrap {
   display: none !important;
 }

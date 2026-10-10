@@ -15,9 +15,16 @@ html {
   scrollbar-gutter: stable;
 }
 
+/* The name is a stacking context. Left on permanently, fixed descendants
+   (the Finish dock, sheets) cannot paint above the bottom nav, which lives
+   outside this wrapper. It is applied only while a route transition is
+   running, which is when the snapshot needs it. */
 .mx-route {
-  view-transition-name: mx-page;
   min-width: 0;
+}
+
+html[data-mx-dir] .mx-route {
+  view-transition-name: mx-page;
 }
 
 ::view-transition {

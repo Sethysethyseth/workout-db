@@ -274,7 +274,8 @@
 }
 
 .analytics-page .st-row .st-delta,
-.analytics-page .st-row .st-matched {
+.analytics-page .st-row .st-matched,
+.analytics-page .st-row .st-meta {
   animation: mx-rise var(--mx-reveal) var(--mx-ease-out-expo) both;
   animation-delay: calc(var(--ax-row-delay) + var(--mx-draw) + 100ms);
 }
@@ -395,23 +396,29 @@
   color: var(--chart-down);
 }
 
-/* A return visit fades once. Draws and charges stay off; a range change
-   drops this class so the full entrance runs again. */
+/* A return visit fades the page. Chart draws stay off only for the view
+   that was already on screen (mx-hold-draw). Switching to a view, or
+   changing range, remounts without that class so the draw plays. */
 .analytics-page.mx-quiet .page-title,
-.analytics-page.mx-quiet .mx-cascade > * {
+.analytics-page.mx-quiet .analytics-content.mx-cascade > * {
   animation: mx-fade 200ms ease-out both;
   animation-delay: 0ms;
 }
 
-.analytics-page.mx-quiet .analytics-kpis .stat-tile::before,
-.analytics-page.mx-quiet .st-sparkline-line,
-.analytics-page.mx-quiet .st-sparkline-area,
-.analytics-page.mx-quiet .st-sparkline-dot,
-.analytics-page.mx-quiet .st-sparkline-dot-ring,
-.analytics-page.mx-quiet .st-row .st-delta,
-.analytics-page.mx-quiet .st-row .st-matched,
-.analytics-page.mx-quiet .mv-bar--stimulating::after,
-.analytics-page.mx-quiet .meter-fill {
+.analytics-page.mx-quiet .analytics-kpis .stat-tile::before {
+  animation: none;
+}
+
+.analytics-page .mx-hold-draw .st-sparkline-line,
+.analytics-page .mx-hold-draw .st-sparkline-area,
+.analytics-page .mx-hold-draw .st-sparkline .st-sparkline-dot,
+.analytics-page .mx-hold-draw .st-sparkline .st-sparkline-dot-ring,
+.analytics-page .mx-hold-draw .st-row .st-meta,
+.analytics-page .mx-hold-draw .st-row .st-delta,
+.analytics-page .mx-hold-draw .st-row .st-matched,
+.analytics-page .mx-hold-draw .mv-bar,
+.analytics-page .mx-hold-draw .mv-bar--stimulating::after,
+.analytics-page .mx-hold-draw .meter-fill {
   animation: none;
 }
 

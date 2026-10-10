@@ -1,6 +1,6 @@
 # MX wave roadmap - motion + visuals for LogChamp
 
-**Last checkpoint:** MXF1 DONE (Oct 9, 2026). Critic round 1, Seth's rulings applied: route stay 420ms and the surface stay 460ms; Analytics replays in full on the first view of a session and on a range change, and fades on a return. History grows an empty card surface (no scaled type) from the tap. Seth smoked MX1-6 + MXF1 on Oct 10 (420ms tab slide kept): next code units are MXF2 (his smoke fixes) and MXC1 (coach keeps working + history in History), then MX7 (logger floor) - or MX5b / MX10 if Seth picks scenes first. MX1-MX6 and MX-S stay DONE.
+**Last checkpoint:** MXF2 DONE (Oct 10, 2026). Seth's smoke: Finish sits above the bottom nav, rest starts when the set is left, crimson chart marks are rose not green, Strength draws on first view, on a switch to Strength, and on a range change. Next code units: MXC1 (coach keeps working + history in History), then MX7 (logger floor) - or MX5b / MX10 if Seth picks scenes first. MX1-MX6, MX-S and MXF1 stay DONE.
 
 This file is the wave's state. It stands on its own next to
 `MOTION-DIRECTION.md` (the design) and needs no chat history. Whoever picks
@@ -277,7 +277,7 @@ Conventions for every unit below:
 - **Files:** block `docs/tasks/mxf2-smoke-round-1-fixes.md`.
 - **Done when:** the block's acceptance criteria pass and Seth re-smokes.
 - **Depends on:** MXF1. **Packages:** none.
-- **Status:** TODO.
+- **Status:** DONE (Oct 10, 2026). Finish dock is offset above the bottom nav on phone; the page view-transition name is only on during a transition so fixed page chrome is not trapped under the nav. Rest arms on core-logged and starts from `restLeaveDecision`. Crimson `--chart-accent` is `--color-chart-mark` (rose / blush). Strength's quiet hold applies only to the view already on screen.
 
 ## MXC1 - Coach keeps working + coach history in History (Seth, Oct 10)
 

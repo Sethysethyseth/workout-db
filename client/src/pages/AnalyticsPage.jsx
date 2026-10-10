@@ -724,6 +724,16 @@ export function AnalyticsPage() {
   const quiet = visitQuiet && epoch === 0;
   setAnalyticsQuiet(quiet);
   const view = parseAnalyticsView(searchParams);
+  /* Quiet return fades the view that is already showing. The first change
+     of view (and every one after) drops the hold so Strength, Muscles and
+     Execution draw again. A range change clears `quiet` on its own. */
+  const [drawEpoch, setDrawEpoch] = useState(0);
+  const lastViewRef = useRef(view);
+  if (lastViewRef.current !== view) {
+    lastViewRef.current = view;
+    setDrawEpoch((n) => n + 1);
+  }
+  const holdDraw = quiet && drawEpoch === 0;
 
   /* Shared-axis direction for the view switch: the incoming view slides in
      from the side of the tab the user moved toward. Remembered across the
@@ -936,7 +946,11 @@ export function AnalyticsPage() {
             {/* Re-keyed per view: the incoming view slides in along the tab
                 order (shared axis) and its cards cascade, then each chart
                 runs its own data draw. */}
-            <Cascade key={view} axis={axis} className="stack analytics-view">
+            <Cascade
+              key={view}
+              axis={axis}
+              className={`stack analytics-view${holdDraw ? " mx-hold-draw" : ""}`}
+            >
               {view === "muscles" ? (
                 <>
                   <PerMuscleSection

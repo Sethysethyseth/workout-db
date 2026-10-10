@@ -243,6 +243,8 @@ html[data-theme="dark"][data-palette="forest"] {
 html[data-palette="crimson"] {
   --color-interactive: #b91c1c;
   --color-interactive-hover: #991b1b;
+  /* Chart marks: dusty rose. Not the alarm interactive red, not a green. */
+  --color-chart-mark: #c56b76;
 
   --color-bg: #fbf3f3;
   --color-surface-1: #fffcfc;
@@ -255,6 +257,8 @@ html[data-palette="crimson"] {
 html[data-theme="dark"][data-palette="crimson"] {
   --color-interactive: #f87171;
   --color-interactive-hover: #fca5a5;
+  /* Blush, lighter than the alarm red, still in the crimson family. */
+  --color-chart-mark: #f0a8b0;
   --color-btn-primary-bg: #b91c1c;
   --color-btn-primary-fg: #ffffff;
   --color-btn-primary-hover-bg: #dc2626;
@@ -4046,6 +4050,15 @@ html[data-theme="dark"] .checkbox-inline:hover {
   box-shadow: 0 -10px 28px rgba(15, 23, 42, 0.12);
 }
 
+/* Phone: the dock sits on top of the bottom nav, not under it. Quick and
+   block loggers share this. Keyboard mode slides the dock off screen. */
+@media (max-width: 719px) {
+  .session-finish-dock {
+    bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px));
+    padding-bottom: 10px;
+  }
+}
+
 html[data-theme="dark"] .session-finish-dock {
   box-shadow: 0 -12px 32px rgba(0, 0, 0, 0.35);
 }
@@ -6813,17 +6826,17 @@ html[data-theme="dark"] .auth-page .auth-form.card {
 
 .analytics-page {
   --chart-accent: var(--color-interactive);
-  --chart-line: color-mix(in srgb, var(--color-text) 55%, transparent);
+  /* Trend line: the chart hue, quieter than the bars (mixed toward the card). */
+  --chart-line: color-mix(in srgb, var(--chart-accent) 70%, var(--color-surface-1));
   --chart-context: color-mix(in srgb, var(--color-text-secondary) 46%, var(--color-surface-3));
   --chart-track: color-mix(in srgb, var(--color-text-secondary) 14%, var(--color-surface-2));
   --chart-hairline: color-mix(in srgb, var(--color-text) 14%, transparent);
 }
 
-/* Crimson's accent is alarm red. Non-directional marks (muscle bars, the
-   heatmap, stimulating heads) use a green mixed toward the text so they
-   stay in the palette without reading as a warning. */
+/* Crimson's interactive red reads as an alarm on a bar. Non-directional
+   marks use the palette's rose / blush instead. */
 html[data-palette="crimson"] .analytics-page {
-  --chart-accent: color-mix(in srgb, var(--color-success-accent) 68%, var(--color-text));
+  --chart-accent: var(--color-chart-mark);
 }
 
 /* Forest's success green is the same hue as its accent. "Up" shifts to

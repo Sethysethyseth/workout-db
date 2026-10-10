@@ -34,6 +34,7 @@ import { sessionDisplayTitle } from "../lib/sessionDisplay.js";
 import { smartWorkoutNameFromSessionExercises } from "../lib/smartWorkoutName.js";
 import { getTrainingPrefs, useTrainingPrefs } from "../lib/trainingPrefs.js";
 import { TrainingPrefsStrip } from "../components/prefs/TrainingPrefsStrip.jsx";
+import { keyboardLooksOpen, restLeaveDecision } from "../lib/restLeave.js";
 import { restDurationFor, startRestRun } from "../lib/restTimer.js";
 import { RestTimerBar } from "../components/workout/RestTimerBar.jsx";
 import { loadWeightUnit } from "../lib/weightUnitPref.js";
@@ -2626,6 +2627,10 @@ export function SessionDetailPage() {
   const writesFrozenRef = useRef(false);
   /** Quick-log only: set id -> core-logged. Null map means "not seeded yet". */
   const quickLoggedRef = useRef({ sessionId: null, map: null });
+  const restPendingRef = useRef(new Set());
+  const restStartedRef = useRef(new Set());
+  const restFocusRef = useRef(null);
+  const restKbdRef = useRef(false);
   const discardLeavingRef = useRef(false);
   const discardBtnRef = useRef(null);
   const keepLoggingBtnRef = useRef(null);
@@ -3012,21 +3017,20 @@ export function SessionDetailPage() {
     };
   }, [liveLogging]);
 
-  // Quick-log sets: start rest on the first false -> true of sessionSetHasCoreLogged.
-  // Block days use blockSetIsLogged inside the block row instead. Seed on open
-  // so sets that are already logged do not start a timer.
+  // Quick-log sets: a false -> true of sessionSetHasCoreLogged only ARMS rest.
+  // It starts once focus has left that set's row (see restLeaveDecision).
+  // Block days arm inside the block card. Seed on open so sets that are
+  // already logged do not start a timer.
   useEffect(() => {
     if (!session || session.completedAt || session.blockContext) {
       quickLoggedRef.current = { sessionId: session?.id ?? null, map: null };
+      restPendingRef.current = new Set();
       return;
     }
     if (quickLoggedRef.current.sessionId !== session.id) {
       quickLoggedRef.current = { sessionId: session.id, map: null };
-    }
-    const names = new Map();
-    for (const se of session.sessionExercises || []) {
-      const n = String(se.exerciseName ?? "").trim();
-      names.set(se.id, n || "Exercise");
+      restPendingRef.current = new Set();
+      restStartedRef.current = new Set();
     }
     const next = new Map();
     for (const s of session.sets || []) {
@@ -3036,19 +3040,111 @@ export function SessionDetailPage() {
     const prev = quickLoggedRef.current.map;
     quickLoggedRef.current = { sessionId: session.id, map: next };
     if (prev == null) return;
-    const prefs = getTrainingPrefs();
-    if (!prefs.restTimer.enabled) return;
     for (const [id, logged] of next) {
-      if (!logged || prev.get(id) === true) continue;
-      const set = (session.sets || []).find((s) => s.id === id);
+      const key = String(id);
+      if (!logged) {
+        restPendingRef.current.delete(key);
+        restStartedRef.current.delete(key);
+        continue;
+      }
+      if (prev.get(id) === true || restStartedRef.current.has(key)) continue;
+      restPendingRef.current.add(key);
+    }
+  }, [session, sessionId]);
+
+  useEffect(() => {
+    if (!session || session.completedAt || session.blockContext) return undefined;
+
+    function keyboardOpenNow() {
+      const vv = window.visualViewport;
+      const active = document.activeElement;
+      const focused =
+        active instanceof HTMLElement &&
+        (active.tagName === "INPUT" || active.tagName === "TEXTAREA");
+      return keyboardLooksOpen({
+        innerHeight: window.innerHeight,
+        visualViewportHeight: vv ? vv.height : null,
+        focused,
+      });
+    }
+
+    function startFor(id) {
+      const prefs = getTrainingPrefs();
+      if (!prefs.restTimer.enabled) return;
+      const set = (session.sets || []).find((s) => String(s.id) === String(id));
+      const names = new Map();
+      for (const se of session.sessionExercises || []) {
+        const n = String(se.exerciseName ?? "").trim();
+        names.set(se.id, n || "Exercise");
+      }
       const seconds = restDurationFor({
         planRestSec: null,
         prefSeconds: prefs.restTimer.seconds,
       });
       const exerciseName = names.get(set?.sessionExerciseId) || "Exercise";
+      const active = document.activeElement;
       startRestRun(sessionId, { durationSec: seconds, exerciseName });
-      break;
+      if (active instanceof HTMLElement && document.activeElement !== active) {
+        active.focus({ preventScroll: true });
+      }
     }
+
+    function consider(id, focusedId, keyboardOpen, keyboardWasOpen) {
+      if (id == null) return;
+      const key = String(id);
+      const decision = restLeaveDecision({
+        coreLogged: restPendingRef.current.has(key),
+        alreadyStarted: restStartedRef.current.has(key),
+        focusInsideRow: focusedId != null && String(focusedId) === key,
+        keyboardOpen,
+        keyboardWasOpen,
+      });
+      if (decision !== "start") return;
+      restPendingRef.current.delete(key);
+      restStartedRef.current.add(key);
+      startFor(key);
+    }
+
+    function typingSetId() {
+      const active = document.activeElement;
+      if (!(active instanceof Element)) return null;
+      const row = active.closest("[data-session-set-id]");
+      const inPage = row instanceof Element && row.closest(".session-detail-page");
+      return inPage ? row.getAttribute("data-session-set-id") : null;
+    }
+
+    function sample() {
+      const focusedId = typingSetId();
+      const keyboardOpen = keyboardOpenNow();
+      const keyboardWasOpen = restKbdRef.current;
+      const prevFocus = restFocusRef.current;
+      restKbdRef.current = keyboardOpen;
+      restFocusRef.current = focusedId;
+      if (prevFocus != null && String(prevFocus) !== String(focusedId)) {
+        consider(prevFocus, focusedId, keyboardOpen, keyboardWasOpen);
+      }
+      if (focusedId != null) consider(focusedId, focusedId, keyboardOpen, keyboardWasOpen);
+    }
+
+    function onFocusOut() {
+      requestAnimationFrame(sample);
+    }
+
+    // A set can turn core-logged AFTER focus already left it: a draft row is
+    // promoted on blur, so its save lands once the user is in the next set.
+    // No later focusout names that row again, so check new arms right away.
+    const nowId = typingSetId();
+    for (const key of [...restPendingRef.current]) {
+      if (nowId != null && String(nowId) === key) continue;
+      consider(key, nowId, keyboardOpenNow(), restKbdRef.current);
+    }
+
+    document.addEventListener("focusout", onFocusOut);
+    window.visualViewport?.addEventListener("resize", sample);
+    return () => {
+      document.removeEventListener("focusout", onFocusOut);
+      window.visualViewport?.removeEventListener("resize", sample);
+    };
   }, [session, sessionId]);
 
   useEffect(() => {

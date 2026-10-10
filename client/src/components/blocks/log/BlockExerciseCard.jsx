@@ -21,6 +21,7 @@ import {
 import { nextLoggableSlotIndex } from "./nextLoggableSlot.js";
 import { parseLeadSide, splitPlanNotes } from "./splitPlanNotes.js";
 import { derivePerSideMode } from "./perSideMode.js";
+import { isRestLogTap, keyboardLooksOpen, restLeaveDecision } from "../../../lib/restLeave.js";
 import { getTrainingPrefs } from "../../../lib/trainingPrefs.js";
 import { restDurationFor, startRestRun } from "../../../lib/restTimer.js";
 import "../../../styles/blocks/bk-ui.css";
@@ -171,6 +172,7 @@ function PlannedSetGrid({
   onActivateExercise,
   onAddSet,
   onRestLoggedChange,
+  onRestRowLeave,
   seId,
   writesFrozenRef,
 }) {
@@ -258,6 +260,7 @@ function PlannedSetGrid({
               onInteractStart={() => onActivateExercise?.(seId)}
               writesFrozenRef={writesFrozenRef}
               onRestLoggedChange={onRestLoggedChange}
+              onRestRowLeave={onRestRowLeave}
             />
           );
         })}
@@ -321,6 +324,9 @@ export function BlockExerciseCard({
   const [noteError, setNoteError] = useState(null);
   const [perSideConfirm, setPerSideConfirm] = useState(null);
   const restArmedRef = useRef(new Set());
+  const restPendingRef = useRef(new Set());
+  const restKbdRef = useRef(false);
+  const cardRef = useRef(null);
 
   const perSideMode = derivePerSideMode(
     perSideOverride ?? plan?.perSide ?? null,
@@ -330,6 +336,7 @@ export function BlockExerciseCard({
 
   useEffect(() => {
     restArmedRef.current = new Set();
+    restPendingRef.current = new Set();
     setPerSideOverride(null);
     setHiddenBySide({
       bilat: loadHiddenPlannedIndices(sessionId, se.id),
@@ -412,25 +419,95 @@ export function BlockExerciseCard({
       ? String(se.exerciseName).trim()
       : `Exercise ${se.order}`;
 
-  const onRestLoggedChange = useCallback(
-    (setId, logged) => {
-      if (setId == null || isCompleted) return;
-      if (!logged) {
-        restArmedRef.current.delete(setId);
-        return;
-      }
-      if (restArmedRef.current.has(setId)) return;
-      restArmedRef.current.add(setId);
+  const beginRest = useCallback(
+    (setId) => {
+      const key = String(setId);
+      if (restArmedRef.current.has(key) || !restPendingRef.current.has(key)) return;
+      restPendingRef.current.delete(key);
+      restArmedRef.current.add(key);
       const prefs = getTrainingPrefs();
       if (!prefs.restTimer.enabled) return;
       const seconds = restDurationFor({
         planRestSec: plan?.restSec,
         prefSeconds: prefs.restTimer.seconds,
       });
+      const active = document.activeElement;
       startRestRun(sessionId, { durationSec: seconds, exerciseName: namePart });
+      if (active instanceof HTMLElement && document.activeElement !== active) {
+        active.focus({ preventScroll: true });
+      }
     },
-    [isCompleted, plan, sessionId, namePart]
+    [plan, sessionId, namePart]
   );
+
+  const onRestLoggedChange = useCallback(
+    (setId, logged) => {
+      if (setId == null || isCompleted) return;
+      const key = String(setId);
+      if (!logged) {
+        restArmedRef.current.delete(key);
+        restPendingRef.current.delete(key);
+        return;
+      }
+      if (restArmedRef.current.has(key) || restPendingRef.current.has(key)) return;
+      restPendingRef.current.add(key);
+      // The persisted flip can land AFTER focus already left the row (a
+      // draft row saves on blur), and no later focusout names it again -
+      // so if focus is not inside this set right now, it has been left.
+      const active = document.activeElement;
+      const row =
+        active instanceof Element && !isRestLogTap(active)
+          ? active.closest("[data-session-set-id]")
+          : null;
+      if (row?.getAttribute("data-session-set-id") !== key) beginRest(key);
+    },
+    [isCompleted, beginRest]
+  );
+
+  const onRestRowLeave = useCallback(
+    (setId, focusInsideRow) => {
+      if (setId == null) return;
+      const key = String(setId);
+      const vv = window.visualViewport;
+      const keyboardOpen = keyboardLooksOpen({
+        innerHeight: window.innerHeight,
+        visualViewportHeight: vv ? vv.height : null,
+        focused: Boolean(focusInsideRow),
+      });
+      const decision = restLeaveDecision({
+        coreLogged: restPendingRef.current.has(key),
+        alreadyStarted: restArmedRef.current.has(key),
+        focusInsideRow: Boolean(focusInsideRow),
+        keyboardOpen,
+        keyboardWasOpen: restKbdRef.current,
+      });
+      restKbdRef.current = keyboardOpen;
+      if (decision === "start") beginRest(key);
+    },
+    [beginRest]
+  );
+
+  useEffect(() => {
+    if (isCompleted) return undefined;
+    function onViewport() {
+      const root = cardRef.current;
+      const active = document.activeElement;
+      if (!(root instanceof Element) || !(active instanceof Element) || !root.contains(active)) {
+        restKbdRef.current = keyboardLooksOpen({
+          innerHeight: window.innerHeight,
+          visualViewportHeight: window.visualViewport ? window.visualViewport.height : null,
+          focused: false,
+        });
+        return;
+      }
+      const row = active.closest("[data-session-set-id]");
+      const id = row?.getAttribute("data-session-set-id");
+      if (id == null) return;
+      onRestRowLeave(id, true);
+    }
+    window.visualViewport?.addEventListener("resize", onViewport);
+    return () => window.visualViewport?.removeEventListener("resize", onViewport);
+  }, [isCompleted, onRestRowLeave]);
 
   const useRIR = effortSignal === "rir";
   const useRPE = effortSignal === "rpe";
@@ -559,7 +636,7 @@ export function BlockExerciseCard({
   const disabled = isCompleted || writesFrozen;
 
   return (
-    <Card className="bk-ex bk-log-ex">
+    <Card ref={cardRef} className="bk-ex bk-log-ex">
       <div className="bk-ex__top">
         <span
           className={`bk-ex__count${complete ? " bk-ex__count--full" : ""}`}
@@ -597,6 +674,7 @@ export function BlockExerciseCard({
           onActivateExercise={onActivateExercise}
           onAddSet={handleAddSet}
           onRestLoggedChange={isCompleted ? undefined : onRestLoggedChange}
+          onRestRowLeave={isCompleted ? undefined : onRestRowLeave}
           seId={se.id}
           writesFrozenRef={writesFrozenRef}
         />
