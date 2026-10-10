@@ -11,7 +11,7 @@
 >   100/1,000/10,000 workouts, per-palette scenes) + `ROADMAP.md` (the
 >   wave's state: MX1-MX16 + MX-S + SRV-1/2, "Last checkpoint" line) +
 >   `IDEAS.md` (14 PARKED ideas for Seth to pick from).
-> - LANDED: MX0 `f651c21` (direction + previews), MX1-4 `2cdeee0`, MX5-6 `d309919`
+> - LANDED: MX0 `f651c21` (direction + previews), MX1-4 `2cdeee0`, MX5-6 `d309919`, MXF1 `97d028d`
 >   (motion primitives + Analytics in motion + per-palette scene
 >   previews), MX5-6 (shell transitions + History FLIP). Next: ONE critic round on Analytics + shell (Seth, Oct 9), then MX7 (logger floor) per ROADMAP. Fable + Opus are capped in Cursor until Oct 18 - Seth chose Cursor auto + a harder Opus-seat audit meanwhile.
 > - Previews (private Artifacts): analytics X52VRgnoGLer3gGgphQnBU, PR
@@ -28,9 +28,9 @@
 > - `main` = `b82ad8c` (QOL wave, live on prod). `quality-of-life-updates`
 >   = main + docs; `motion-wave` was cut from it.
 
-**Next action (human):** smoke the Analytics page on the staging Vercel
-deploy of `motion-wave` (list in "MX smoke items" below) and pick any
-IDEAS.md entries you want - nothing else is blocked on you.
+**Next action (human):** smoke `motion-wave` on the staging Vercel deploy
+(`origin/motion-wave` = `97d028d`) with the 21 "MX smoke items" below, and
+call the tab-slide speed (item 21).
 
 ## MX smoke items (carry forward - Seth smokes once at wave end)
 
@@ -63,10 +63,27 @@ From MX5-6 (`d309919`):
     Library / Profile, the pill sits on the active tab.
 13. Cold load Home, Library, History, a block run page: a page-shaped
     skeleton on first paint; Library tab counts are a ghost pill, not "0".
-15. TAB SLIDE SPEED is Seth's call after this smoke: 420ms as built (critic wanted 260ms, measured against the old restraint rule). Tell the seat keep / trim.
 14. History: tap a finished workout - its row grows into the summary
     header; Back shrinks it into the row. Open an in-progress workout:
     no fly-in, logging a set is instant.
+
+From MXF1 (`97d028d`, critic round 1 fixes):
+15. History: the grow is a card SURFACE from the row into the header, no
+    squashed text; Back fades and shrinks into the row as one motion; the
+    row is never left invisible.
+16. Analytics: full entrance on the first visit, then a quick fade on
+    returns; a range change keeps the old numbers dimmed until the new ones
+    land, then plays the entrance.
+17. Loading: no barbell caption under skeletons; a workout opens on a
+    skeleton, not "Loading workout..."; Home and Analytics do not jump.
+18. Crimson: Muscles bars and trend lines are not alarm red; forest gains
+    are teal, not the accent green.
+19. Workout summary: no "Tracked" pills, untracked shows "Track this
+    exercise", no empty stat cell.
+20. Desktop: the masthead does not shift between pages and the wordmark
+    lines up with the page; one wordmark on the boot splash; History month
+    headings sit on a surface.
+21. TAB SLIDE SPEED (Seth decides now): 420ms as built - keep or trim?
 
 ## PICK UP HERE (next session)
 
