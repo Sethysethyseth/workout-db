@@ -14,9 +14,10 @@
 > - LANDED: MX0 `f651c21` (direction + previews), MX1-4 `2cdeee0`, MX5-6 `d309919`, MXF1 `97d028d`
 >   (motion primitives + Analytics in motion + per-palette scene
 >   previews), MX5-6 (shell transitions + History FLIP), MXF1 (critic
->   round 1). Seth smoked all of it Oct 10 (below). QUEUED: MXF2 (his
->   smoke fixes) + MXC1 (coach keeps working, history to History), in
->   parallel; then MX7 (logger floor) per ROADMAP. Fable + Opus are capped
+>   round 1), MXF2 `20daef5` + MXC1 `266554f` (Seth's Oct 10 smoke fixes:
+>   Finish dock, rest timing, crimson charts, Strength draw; the coach keeps
+>   working when you leave, coach history on History). Next: MX7 (logger
+>   floor) per ROADMAP. Fable + Opus are capped
 >   in Cursor until Oct 18 - Seth chose Cursor auto + a harder Opus-seat
 >   audit meanwhile.
 > - Previews (private Artifacts): analytics X52VRgnoGLer3gGgphQnBU, PR
@@ -33,8 +34,9 @@
 > - `main` = `b82ad8c` (QOL wave, live on prod). `quality-of-life-updates`
 >   = main + docs; `motion-wave` was cut from it.
 
-**Next action (human):** nothing is blocked on Seth - MXF2 and MXC1 are
-with Cursor; re-smoke them on staging when the landing posts its checklist.
+**Next action (human):** re-smoke the 11 items under "Smoke for the next
+round" on the staging Vercel deploy (`origin/motion-wave`), and answer the
+two questions in it (crimson gains colour, History remembering Coach).
 
 ## Seth's mid-wave smoke (Oct 10, phone) - MX1-6 + MXF1
 
@@ -73,7 +75,21 @@ From MXF2 (`20daef5`), on the phone:
    to Analytics stays a quiet fade.
 5. Known, not fixed here (MX7): the first set of a brand-new exercise
    drops the keyboard once when it first saves.
-(MXC1 adds its items when it lands.)
+From MXC1 (`266554f`):
+6. Coach (Home, top right): the icon is a bubble with a small crown, no
+   dots. First open shows a note once - never again, even after logging
+   out and in.
+7. Ask, then switch tabs: a "Coach is working on it" bar, then "Coach
+   answered" - tap Read and the full answer is there.
+8. Ask, leave, come straight back: the answer is still writing.
+9. Coach working while you log a workout: the bar is a small chip at the
+   top, never over Finish, the tab bar or the field you're typing in.
+10. History: Workouts | Coach switch; your chats sit in month groups;
+    open, delete one, delete all; Library no longer has a Coach tab.
+11. History remembers the Coach side until you close the app - keep that,
+    or always open on Workouts?
+Staging Render must be on `motion-wave` for the coach's help answer to say
+"History, then Coach" (server/data/app-guide.md).
 
 ## PICK UP HERE (next session)
 
@@ -280,6 +296,14 @@ Covers the F-wave AND the still-open E-wave prod smoke. Staging passed Aug 4.
   focus left it (draft rows save on blur) - both loggers fixed; block
   log-as-planned tap counts as leaving. Found pre-existing: first set of a
   new exercise drops focus on its first save (MX7).
+- MXC1 landed `266554f` after a harder audit + real-app check on top of
+  MXF2 (mock coach; QUEUE has the detail). Reviewer fixes: once-means-once
+  (mark on show); bar placement stale after a route change (re-fits on
+  page-tree changes); ?c= / ?view= written onto the NEXT page's URL in the
+  route-transition window (guarded); finished copy fits at 390; masthead
+  crown filled. Test data removed. Known pre-existing: the route layer's
+  flushSync-in-lifecycle console warning.
+- Mid-wave fix round complete (2/2 landed). The wave stays open: MX7 next.
 
 **Rule:** rewritten in place at the end of every working session; kept CAPPED
 (~300 lines). Aged session logs move VERBATIM - never summarized - to

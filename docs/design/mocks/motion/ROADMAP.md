@@ -1,6 +1,6 @@
 # MX wave roadmap - motion + visuals for LogChamp
 
-**Last checkpoint:** MXF2 DONE (Oct 10, 2026). Seth's smoke: Finish sits above the bottom nav, rest starts when the set is left, crimson chart marks are rose not green, Strength draws on first view, on a switch to Strength, and on a range change. Next code units: MXC1 (coach keeps working + history in History), then MX7 (logger floor) - or MX5b / MX10 if Seth picks scenes first. MX1-MX6, MX-S and MXF1 stay DONE.
+**Last checkpoint:** MXC1 DONE (Oct 10, 2026), after MXF2. Seth's smoke round 1 is fixed: Finish above the nav, rest on leaving the set, crimson rose charts, Strength draws; the coach keeps working when you leave (a working/answered bar), coach history lives on History. Next code unit: MX7 (logger floor - also owns the first-set focus drop found in the MXF2 audit) - or MX5b / MX10 if Seth picks scenes first. IDEAS 16 (fling-away bars) is HELD for Seth after the wave. MX1-MX6, MX-S, MXF1 and MXF2 stay DONE.
 
 This file is the wave's state. It stands on its own next to
 `MOTION-DIRECTION.md` (the design) and needs no chat history. Whoever picks
@@ -293,8 +293,11 @@ Conventions for every unit below:
 - **Files:** block `docs/tasks/mxc1-coach-keeps-working.md`.
 - **Done when:** the block's acceptance criteria pass and Seth re-smokes.
 - **Depends on:** nothing in this wave. **Packages:** none.
-- **Status:** TODO. (The reviewer keeps this entry current - the block may
-  run in parallel with MXF2, which owns this file during its run.)
+- **Status:** DONE (Oct 10, 2026). `CoachSessionProvider` holds the page
+  conversation; `CoachWorkingBar` sits bottom (phone, free) or as a top chip
+  (live workout, workout bar, focused field) and re-fits on route commits;
+  the first-open note is a device-local marker written on show; History has
+  a `SlidingIndicator` Workouts / Coach switch (`?view=coach`).
 
 ## MX7 - Logger quiet confirm + rest dock
 
