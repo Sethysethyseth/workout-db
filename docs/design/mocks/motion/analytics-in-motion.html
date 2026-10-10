@@ -1,0 +1,1094 @@
+<title>Analytics in Motion</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow+Condensed:wght@500;600;700&display=swap">
+<style>
+/* ======================================================================
+   TOKENS - copied from client/src/index.css (lines 1-282 + the scene glow
+   tokens at 300-362). Scene image URLs are omitted: the preview draws its
+   skyline in code from these same tokens. Do not edit values here.
+   ====================================================================== */
+:root {
+  --color-bg: #f1f5f9;
+  --color-surface-1: #ffffff;
+  --color-surface-2: #f8fafc;
+  --color-surface-3: #eef2f7;
+  --color-border: #e2e8f0;
+  --color-input-border: #cbd5e1;
+  --color-text: #0f172a;
+  --color-text-secondary: #64748b;
+  --color-interactive: #5566c4;
+  --color-interactive-hover: #4453ad;
+  --color-btn-primary-bg: var(--color-interactive-hover);
+  --color-btn-primary-fg: #ffffff;
+  --color-btn-primary-hover-bg: var(--color-interactive);
+  --color-btn-primary-active-bg: color-mix(in srgb, var(--color-interactive-hover) 82%, black);
+  --radius-control: 12px;
+  --radius-card: 14px;
+  --notch-size: 8px;
+  --notch-stroke: 2.5px;
+  --notch-glow: color-mix(in srgb, var(--color-interactive) 70%, transparent);
+  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --shadow-card-hover: 0 6px 18px rgba(15, 23, 42, 0.08);
+  --shadow-ring-accent: 0 0 0 1px color-mix(in srgb, var(--color-interactive) 12%, transparent);
+  --shadow-ring-accent-strong: 0 0 0 1px color-mix(in srgb, var(--color-interactive) 35%, transparent);
+  --color-success-accent: rgb(34 197 94);
+  --color-success-text: color-mix(in srgb, #166534 88%, var(--color-text));
+  --color-success-bg: color-mix(in srgb, var(--color-success-accent) 12%, var(--color-surface-2));
+  --color-success-border: color-mix(in srgb, var(--color-success-accent) 28%, var(--color-border));
+  --color-success-flash-border: rgba(34, 197, 94, 0.55);
+  --color-success-flash-bg: rgba(34, 197, 94, 0.1);
+  --color-error-text: #b91c1c;
+  --color-error-hover-bg: #fef2f2;
+  --color-warn-text: #b45309;
+  --color-warn-accent: #f59e0b;
+  --color-overlay: rgba(0, 0, 0, 0.72);
+  --color-backdrop: rgba(15, 23, 42, 0.42);
+  --color-scrim: rgb(15 23 42 / 0.45);
+  --color-skeleton-base: var(--color-surface-3);
+  --color-skeleton-highlight: var(--color-surface-2);
+  --motion-fast: 120ms;
+  --motion-base: 180ms;
+  --motion-slow: 240ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --accent: var(--color-interactive);
+  --color-surface: var(--color-surface-1);
+  --color-muted: var(--color-text-secondary);
+  --color-nav-active-bg: color-mix(in srgb, var(--color-interactive) 10%, var(--color-surface-1));
+  --color-pill-bg: var(--color-surface-2);
+  --palette-swatch-champ: #5566c4;
+  --palette-swatch-iron: #f59e0b;
+  --palette-swatch-forest: #15803d;
+  --palette-swatch-crimson: #b91c1c;
+  --palette-swatch-chill: #5878b0;
+  --color-error-border: #fecaca;
+  --color-error-bg: #fff1f2;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial,
+    "Apple Color Emoji", "Segoe UI Emoji";
+  --font-display: "Chakra Petch", ui-sans-serif, system-ui, -apple-system, Segoe UI,
+    Roboto, Arial, sans-serif;
+  --font-block: "Barlow Condensed", "Arial Narrow", var(--font-display), sans-serif;
+  --scene-glow: color-mix(in srgb, var(--color-interactive) 11%, transparent);
+  --scene-glow-shape: ellipse 120% 50% at 50% -10%;
+  --scene-band-h: clamp(300px, 44vh, 520px);
+  --scene-backdrop-opacity: 0.94;
+}
+html[data-theme="dark"] {
+  --color-bg: #060913;
+  --color-surface-1: #0f1628;
+  --color-surface-2: #141f35;
+  --color-surface-3: #192744;
+  --color-border: #34465f;
+  --color-input-border: #4a6282;
+  --color-text: #f1f5f9;
+  --color-text-secondary: #94a3b8;
+  --color-interactive: #8b9bff;
+  --color-interactive-hover: #aab4ff;
+  --color-btn-primary-bg: #5b6ee8;
+  --color-btn-primary-fg: #ffffff;
+  --color-btn-primary-hover-bg: #6e7ff0;
+  --color-btn-primary-active-bg: #4453ad;
+  --color-nav-active-bg: color-mix(in srgb, var(--color-interactive) 20%, transparent);
+  --color-pill-bg: var(--color-surface-2);
+  --palette-swatch-champ: #8b9bff;
+  --palette-swatch-iron: #fbbf24;
+  --palette-swatch-forest: #4ade80;
+  --palette-swatch-crimson: #f87171;
+  --palette-swatch-chill: #7c9fd4;
+  --color-error-border: #dc2626;
+  --color-error-bg: #3f1515;
+  --shadow-card: 0 2px 14px rgba(0, 0, 0, 0.28);
+  --shadow-card-hover: 0 12px 34px rgba(0, 0, 0, 0.42);
+  --color-success-text: #86efac;
+  --color-success-bg: color-mix(in srgb, rgb(22 101 52) 35%, var(--color-surface-2));
+  --color-success-border: color-mix(in srgb, var(--color-success-accent) 25%, var(--color-border));
+  --color-success-flash-border: rgba(74, 222, 128, 0.55);
+  --color-success-flash-bg: rgba(34, 197, 94, 0.12);
+  --color-error-text: #fca5a5;
+  --color-error-hover-bg: #450a0a;
+  --color-warn-text: #fbbf24;
+  --color-overlay: rgba(0, 0, 0, 0.72);
+  --color-backdrop: rgba(0, 0, 0, 0.55);
+  --color-scrim: rgb(2 6 23 / 0.6);
+  --color-skeleton-base: var(--color-surface-2);
+  --color-skeleton-highlight: var(--color-surface-3);
+  --scene-glow: color-mix(in srgb, var(--color-interactive) 22%, transparent);
+}
+html[data-palette="champ"] { --color-interactive: #5566c4; --color-interactive-hover: #4453ad; }
+html[data-theme="dark"][data-palette="champ"] {
+  --color-interactive: #8b9bff; --color-interactive-hover: #aab4ff;
+  --color-btn-primary-bg: #5b6ee8; --color-btn-primary-fg: #ffffff;
+  --color-btn-primary-hover-bg: #6e7ff0; --color-btn-primary-active-bg: #4453ad;
+}
+html[data-palette="iron"] {
+  --color-interactive: #f59e0b; --color-interactive-hover: #d97706; --color-btn-primary-fg: #1c1917;
+  --color-bg: #f9f5f0; --color-surface-1: #fffdfa; --color-surface-2: #faf6f1; --color-surface-3: #f2ece4;
+  --color-border: #e7ded2; --color-input-border: #d3c6b6;
+  --scene-glow: color-mix(in srgb, var(--color-interactive) 7%, transparent);
+  --scene-glow-shape: ellipse 140% 45% at 52% 92%;
+}
+html[data-theme="dark"][data-palette="iron"] {
+  --color-interactive: #fbbf24; --color-interactive-hover: #fcd34d;
+  --color-btn-primary-bg: #f59e0b; --color-btn-primary-fg: #1c1917;
+  --color-btn-primary-hover-bg: #fbbf24; --color-btn-primary-active-bg: #d97706;
+  --color-bg: #171310; --color-surface-1: #211c17; --color-surface-2: #2b241e; --color-surface-3: #352c24;
+  --color-border: #43382e; --color-input-border: #4f4236;
+  --scene-glow: color-mix(in srgb, var(--color-interactive) 18%, transparent);
+}
+html[data-palette="forest"] {
+  --color-interactive: #15803d; --color-interactive-hover: #166534;
+  --color-bg: #f3f8f4; --color-surface-1: #fcfefc; --color-surface-2: #f5faf6; --color-surface-3: #eaf3ec;
+  --color-border: #d9e7dc; --color-input-border: #c0d5c6;
+  --scene-glow: color-mix(in srgb, var(--color-interactive) 5%, transparent);
+  --scene-glow-shape: ellipse 120% 40% at 50% -10%;
+}
+html[data-theme="dark"][data-palette="forest"] {
+  --color-interactive: #4ade80; --color-interactive-hover: #86efac;
+  --color-btn-primary-bg: #15803d; --color-btn-primary-fg: #ffffff;
+  --color-btn-primary-hover-bg: #16a34a; --color-btn-primary-active-bg: #166534;
+  --color-bg: #0a140f; --color-surface-1: #102019; --color-surface-2: #152a21; --color-surface-3: #1b3429;
+  --color-border: #27483a; --color-input-border: #305747;
+  --scene-glow: color-mix(in srgb, var(--color-interactive) 10%, transparent);
+}
+html[data-palette="crimson"] {
+  --color-interactive: #b91c1c; --color-interactive-hover: #991b1b;
+  --color-bg: #fbf3f3; --color-surface-1: #fffcfc; --color-surface-2: #fbf5f5; --color-surface-3: #f5eaea;
+  --color-border: #ecd9d9; --color-input-border: #d8c2c2;
+  --scene-glow: color-mix(in srgb, var(--color-interactive) 12%, transparent);
+  --scene-glow-shape: circle 26vmin at 82% 12%;
+}
+html[data-theme="dark"][data-palette="crimson"] {
+  --color-interactive: #f87171; --color-interactive-hover: #fca5a5;
+  --color-btn-primary-bg: #b91c1c; --color-btn-primary-fg: #ffffff;
+  --color-btn-primary-hover-bg: #dc2626; --color-btn-primary-active-bg: #991b1b;
+  --color-bg: #190c0e; --color-surface-1: #241114; --color-surface-2: #2f171a; --color-surface-3: #3a1c20;
+  --color-border: #50292e; --color-input-border: #613239;
+  --scene-glow: color-mix(in srgb, var(--color-interactive) 30%, transparent);
+}
+html[data-palette="chill"] {
+  --color-interactive: #5878b0; --color-interactive-hover: #496699;
+  --color-bg: #f2f4f8; --color-surface-1: #fcfdff; --color-surface-2: #f5f7fb; --color-surface-3: #e9edf4;
+  --color-border: #d8dfeb; --color-input-border: #c2cbdc;
+  --scene-glow: color-mix(in srgb, var(--color-interactive) 7%, transparent);
+  --scene-glow-shape: circle 30vmin at 56% 14%;
+}
+html[data-theme="dark"][data-palette="chill"] {
+  --color-interactive: #7c9fd4; --color-interactive-hover: #9fbce6;
+  --color-btn-primary-bg: #5878b0; --color-btn-primary-fg: #ffffff;
+  --color-btn-primary-hover-bg: #6a8ac2; --color-btn-primary-active-bg: #496699;
+  --color-bg: #0d0f1a; --color-surface-1: #141826; --color-surface-2: #1a1f30; --color-surface-3: #21273b;
+  --color-border: #313a52; --color-input-border: #3b4661;
+  --scene-glow: color-mix(in srgb, var(--color-interactive) 16%, transparent);
+}
+
+/* ======================================================================
+   MX MOTION TOKENS (proposed additions - see MOTION-DIRECTION.md)
+   ====================================================================== */
+:root {
+  --mx-quick: 90ms;        /* press feedback */
+  --mx-reveal: 420ms;      /* card / row entrance */
+  --mx-draw: 1000ms;       /* chart line draw */
+  --mx-count: 1100ms;      /* number roll */
+  --mx-stagger: 55ms;      /* cascade step */
+  --mx-ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --mx-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --mx-ease-draw: cubic-bezier(0.65, 0, 0.35, 1);
+  --chart-accent: var(--color-interactive);
+}
+
+/* ======================================================================
+   PREVIEW BASE + CHROME
+   ====================================================================== */
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; min-height: 100dvh; overflow-x: hidden;
+  color: var(--color-text); background: var(--color-bg);
+  font-family: var(--font-sans); line-height: 1.4;
+}
+a { color: inherit; text-decoration: none; }
+button { font: inherit; color: inherit; -webkit-tap-highlight-color: transparent; }
+[hidden] { display: none !important; }
+.mx-probe { position: absolute; width: 0; height: 0; overflow: hidden; }
+.mx-scene {
+  position: fixed; inset: 0; z-index: 0; width: 100%; height: 100%;
+  pointer-events: none; image-rendering: pixelated; opacity: 0.9;
+  -webkit-mask-image: linear-gradient(to top, rgba(0,0,0,1) 0, rgba(0,0,0,1) 22%, rgba(0,0,0,0) 62%);
+  mask-image: linear-gradient(to top, rgba(0,0,0,1) 0, rgba(0,0,0,1) 22%, rgba(0,0,0,0) 62%);
+}
+html:not([data-theme="dark"]) .mx-scene { opacity: 0.5; }
+.mx-glow {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: radial-gradient(var(--scene-glow-shape), var(--scene-glow), transparent 68%);
+  background-repeat: no-repeat;
+}
+html:not(.mx-reduce) .mx-glow { animation: mx-breathe 9s ease-in-out infinite; }
+@keyframes mx-breathe { 0%, 100% { opacity: .78; } 50% { opacity: 1; } }
+
+.mx-bar {
+  position: sticky; top: 0; z-index: 10;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px;
+  padding: 10px 16px;
+  background: color-mix(in srgb, var(--color-bg) 74%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-border) 40%, transparent);
+  -webkit-backdrop-filter: saturate(1.1) blur(12px); backdrop-filter: saturate(1.1) blur(12px);
+}
+.mx-bar__title {
+  font-family: var(--font-block); font-weight: 600; letter-spacing: .1em; text-transform: uppercase;
+  font-size: 12px; color: var(--color-text-secondary); margin-right: auto;
+}
+.mx-pals { display: flex; gap: 6px; }
+.mx-pal {
+  width: 24px; height: 24px; border-radius: 50%; padding: 0; cursor: pointer;
+  border: 2px solid transparent; background: var(--sw);
+  transition: transform var(--mx-quick) var(--ease-standard);
+}
+.mx-pal:active { transform: scale(.9); }
+.mx-pal.is-on { border-color: var(--color-text); box-shadow: inset 0 0 0 2px var(--color-bg); }
+.mx-pal[data-pal="champ"] { --sw: var(--palette-swatch-champ); }
+.mx-pal[data-pal="iron"] { --sw: var(--palette-swatch-iron); }
+.mx-pal[data-pal="chill"] { --sw: var(--palette-swatch-chill); }
+.mx-pal[data-pal="forest"] { --sw: var(--palette-swatch-forest); }
+.mx-pal[data-pal="crimson"] { --sw: var(--palette-swatch-crimson); }
+.mx-tog {
+  min-height: 30px; padding: 0 10px; border-radius: 999px; cursor: pointer;
+  border: 1px solid var(--color-border); background: var(--color-surface-2);
+  font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;
+  transition: transform var(--mx-quick) var(--ease-standard), border-color var(--motion-fast), background var(--motion-fast);
+}
+.mx-tog:active { transform: scale(.96); }
+.mx-tog[aria-pressed="true"] { border-color: var(--color-interactive); background: var(--color-nav-active-bg); box-shadow: var(--shadow-ring-accent); }
+.mx-tog--primary { background: var(--color-btn-primary-bg); color: var(--color-btn-primary-fg); border-color: transparent; }
+.mx-tog--primary:active { background: var(--color-btn-primary-active-bg); }
+
+.mx-app { position: relative; z-index: 1; width: 100%; max-width: 520px; margin: 0 auto; padding: 14px 16px 56px; }
+.mx-note { font-size: 12px; color: var(--color-text-secondary); margin: 0 0 10px; }
+
+/* Segmented control with a sliding indicator (one "selected" token) */
+.mx-seg { position: relative; display: inline-grid; grid-auto-flow: column; gap: 2px; padding: 2px; border-radius: 999px; background: var(--color-surface-2); border: 1px solid var(--color-border); }
+.mx-seg > button { position: relative; z-index: 1; border: 0; background: transparent; padding: 6px 12px; border-radius: 999px; font-size: 12px; font-weight: 600; color: var(--color-text-secondary); cursor: pointer; white-space: nowrap; transition: color var(--motion-fast) var(--ease-standard); }
+.mx-seg > button[aria-pressed="true"] { color: var(--color-text); }
+.mx-seg__ind { position: absolute; top: 2px; bottom: 2px; left: 0; width: 0; border-radius: 999px; background: var(--color-nav-active-bg); box-shadow: var(--shadow-ring-accent-strong); transition: left 380ms var(--mx-ease-spring), width 380ms var(--mx-ease-spring); }
+.mx-seg--full { display: grid; grid-auto-flow: unset; grid-template-columns: repeat(var(--n, 4), minmax(0, 1fr)); width: 100%; }
+.mx-seg--full > button { padding: 8px 4px; font-family: var(--font-display); letter-spacing: .01em; }
+
+/* Reveal primitives */
+html.mx-ready .mx-in { opacity: 0; }
+html.mx-ready .mx-in.is-in, .mx-in.is-in { opacity: 1; animation: mx-rise var(--mx-reveal) var(--mx-ease-out-expo) var(--d, 0ms) both; }
+@keyframes mx-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes mx-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes mx-fade-out { to { opacity: 0; } }
+@keyframes mx-pop { 0% { transform: scale(0); } 100% { transform: scale(1); } }
+.card.is-energized { animation: mx-energize 800ms ease-out var(--d, 0ms) both; }
+@keyframes mx-energize {
+  0% { box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-interactive) 80%, transparent), 0 0 26px color-mix(in srgb, var(--color-interactive) 45%, transparent); }
+  100% { box-shadow: var(--shadow-card); }
+}
+
+/* Card (copied shape from index.css .card) */
+.card {
+  position: relative;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--color-surface-2) 22%, transparent), transparent 45%), var(--color-surface-1);
+  border: 1px solid color-mix(in srgb, var(--color-border) 55%, transparent);
+  border-radius: var(--radius-card); padding: 14px; box-shadow: var(--shadow-card);
+}
+html[data-theme="dark"] .card { background: linear-gradient(180deg, color-mix(in srgb, var(--color-surface-3) 18%, transparent), transparent 52%), var(--color-surface-1); }
+.card-body { display: grid; gap: 10px; }
+
+/* Skeleton overlay (one skeleton language: reserves the final layout) */
+.mx-skel { position: absolute; inset: 0; z-index: 3; border-radius: inherit; background: var(--color-surface-1); padding: 14px; display: grid; gap: 10px; align-content: start; overflow: hidden; }
+.mx-skel i { display: block; height: 12px; border-radius: 6px; background: linear-gradient(90deg, var(--color-skeleton-base) 0 30%, var(--color-skeleton-highlight) 50%, var(--color-skeleton-base) 70% 100%); background-size: 200% 100%; }
+.mx-skel i.h24 { height: 24px; } .mx-skel i.h40 { height: 40px; } .mx-skel i.h90 { height: 90px; border-radius: 10px; }
+html:not(.mx-reduce) .mx-skel i { animation: mx-shimmer 1.3s linear infinite; }
+@keyframes mx-shimmer { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+.mx-skel.is-out { animation: mx-fade-out 260ms var(--ease-standard) forwards; pointer-events: none; }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 40px; padding: 0 14px; border-radius: var(--radius-control); border: 1px solid transparent; font-weight: 700; cursor: pointer; transition: transform var(--mx-quick) var(--ease-standard), background var(--motion-fast); }
+.btn:active { transform: scale(.97); }
+.btn-primary { background: var(--color-btn-primary-bg); color: var(--color-btn-primary-fg); }
+.btn-primary:active { background: var(--color-btn-primary-active-bg); }
+.btn-secondary { background: var(--color-surface-2); border-color: var(--color-border); color: var(--color-text); }
+
+.eyebrow { margin: 0; font-family: var(--font-block); font-weight: 600; letter-spacing: .08em; text-transform: uppercase; font-size: 11px; color: var(--color-text-secondary); }
+.muted { color: var(--color-text-secondary); }
+.small { font-size: 12px; }
+.num { font-variant-numeric: tabular-nums; }
+
+/* ======================================================================
+   ANALYTICS
+   ====================================================================== */
+.ax-options { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 14px; }
+.ax-scan { position: absolute; left: 0; right: 0; top: 0; height: 2px; z-index: 4; pointer-events: none; opacity: 0;
+  background: linear-gradient(90deg, transparent, var(--color-interactive) 20%, color-mix(in srgb, white 70%, var(--color-interactive)) 50%, var(--color-interactive) 80%, transparent);
+  box-shadow: 0 0 18px 3px var(--notch-glow); }
+
+.ax-head { margin-bottom: 12px; }
+.page-title { margin: 0 0 4px; font-family: var(--font-display); font-size: clamp(1.6rem, 5vw, 1.9rem); font-weight: 700; letter-spacing: -.01em; line-height: 1.15; }
+.ax-head.is-in .page-title { animation: mx-wipe 650ms var(--mx-ease-out-expo) var(--d, 0ms) both; }
+@keyframes mx-wipe { from { clip-path: inset(0 100% 0 0); transform: translateX(-8px); } to { clip-path: inset(0 0 0 0); transform: none; } }
+.ax-intro { margin: 0; font-size: 14px; color: var(--color-text-secondary); }
+
+.range { position: relative; display: inline-flex; gap: 4px; padding: 3px; margin-bottom: 12px; border-radius: 999px; background: color-mix(in srgb, var(--color-surface-1) 70%, transparent); border: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent); }
+.range-chip { position: relative; z-index: 1; min-height: 34px; padding: 0 13px; border-radius: 999px; border: 0; background: transparent; font-family: var(--font-display); font-size: 13px; font-weight: 600; letter-spacing: .02em; color: var(--color-text-secondary); cursor: pointer; transition: color var(--motion-fast) var(--ease-standard); }
+.range-chip[aria-pressed="true"] { color: var(--color-text); }
+.range__ind { position: absolute; top: 3px; bottom: 3px; left: 3px; width: 0; border-radius: 999px; background: var(--color-nav-active-bg); border: 1px solid var(--color-interactive); box-shadow: var(--shadow-ring-accent); transition: left 380ms var(--mx-ease-spring), width 380ms var(--mx-ease-spring); }
+
+.kpis { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 12px; }
+.stat-tile { display: grid; gap: 2px; align-content: start; padding: 14px 14px 12px; overflow: hidden; min-height: 92px; }
+.stat-tile::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 2px; transform: scaleX(0); transform-origin: left center;
+  background: linear-gradient(90deg, var(--color-interactive), color-mix(in srgb, var(--color-interactive) 20%, transparent)); }
+.stat-tile.is-charged::before { animation: mx-charge 760ms var(--mx-ease-out-expo) forwards; }
+@keyframes mx-charge { to { transform: scaleX(1); } }
+.stat-tile-label { font-family: var(--font-block); font-weight: 600; letter-spacing: .08em; text-transform: uppercase; font-size: 11px; color: var(--color-text-secondary); }
+.stat-tile-value { font-family: var(--font-display); font-size: 27px; font-weight: 700; line-height: 1.1; letter-spacing: -.01em; display: flex; align-items: baseline; gap: 4px; flex-wrap: wrap; }
+.stat-tile-value.is-rolling .cnt { font-variant-numeric: tabular-nums; }
+.stat-tile-value small { font-size: 14px; font-weight: 600; color: var(--color-text-secondary); font-family: var(--font-sans); }
+.stat-tile-value--up { color: var(--color-success-text); }
+.stat-tile-sub { font-size: 12px; color: var(--color-text-secondary); min-height: 1.2em; }
+.up-arrow { width: .6em; height: .6em; align-self: center; transform: scale(0); }
+.stat-tile.is-charged .up-arrow { animation: mx-pop 420ms var(--mx-ease-spring) 900ms forwards; }
+.up-arrow path { stroke: currentColor; stroke-width: 3; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+
+.tabs-wrap { margin-bottom: 12px; }
+.ax-views { position: relative; display: grid; gap: 12px; }
+.ax-views > section { display: grid; gap: 12px; }
+
+.card-head { display: grid; gap: 2px; }
+.card-head h2 { margin: 0; font-family: var(--font-display); font-size: 17px; font-weight: 700; letter-spacing: -.005em; }
+.card-sub { margin: 0; font-size: 12px; color: var(--color-text-secondary); }
+
+/* Muscles: nested bars */
+.legend { display: flex; gap: 14px; font-size: 11px; color: var(--color-text-secondary); font-family: var(--font-block); letter-spacing: .06em; text-transform: uppercase; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; vertical-align: -1px; margin-right: 5px; }
+.legend .ctx { background: color-mix(in srgb, var(--chart-accent) 14%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--chart-accent) 45%, transparent); }
+.legend .acc { background: var(--chart-accent); }
+.mv-rows { display: grid; gap: 4px; }
+.mv-wrap { border-radius: 8px; }
+.mv-row { display: grid; grid-template-columns: 84px minmax(0, 1fr) 56px; align-items: center; gap: 8px; min-height: 32px; padding: 2px 4px; border-radius: 8px; cursor: pointer; border: 0; width: 100%; background: transparent; text-align: left; }
+.mv-row:active { background: var(--color-surface-2); }
+.mv-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 4px; }
+.mv-chev { width: 10px; height: 10px; flex: 0 0 auto; color: var(--color-text-secondary); transition: transform 320ms var(--mx-ease-out-expo); }
+.mv-wrap.is-open .mv-chev { transform: rotate(90deg); }
+.mv-chev path { stroke: currentColor; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.mv-track { position: relative; height: 18px; }
+.mv-bar { position: absolute; left: 0; border-radius: 0 4px 4px 0; min-width: 2px; transform-origin: left center; }
+.mv-wrap.is-live .mv-bar { transition: width 640ms var(--mx-ease-out-expo); }
+.mv-bar--effective { top: 0; height: 18px; background: color-mix(in srgb, var(--chart-accent) 14%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--chart-accent) 45%, transparent); }
+.mv-bar--stimulating { top: 5px; height: 8px; background: var(--chart-accent); box-shadow: 0 0 10px color-mix(in srgb, var(--chart-accent) 35%, transparent); }
+.mv-bar--stimulating::after { content: ""; position: absolute; right: -1px; top: -3px; width: 3px; height: 14px; border-radius: 1px; opacity: 0;
+  background: color-mix(in srgb, white 80%, var(--chart-accent)); box-shadow: 0 0 12px 3px color-mix(in srgb, white 55%, var(--chart-accent)); }
+.mv-wrap.is-charged .mv-bar--stimulating::after { animation: mx-head 1200ms ease-out var(--d, 0ms) forwards; }
+@keyframes mx-head { 0% { opacity: 0; } 20% { opacity: 1; } 100% { opacity: 0; } }
+.mv-val { font-size: 12px; text-align: right; color: var(--color-text-secondary); font-variant-numeric: tabular-nums; line-height: 1.15; }
+.mv-val b { display: block; font-size: 13px; color: var(--color-text); }
+.mv-val .lock { font-size: 11px; }
+.mv-detail { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 340ms var(--mx-ease-out-expo); }
+.mv-detail > div { overflow: hidden; min-height: 0; }
+.mv-wrap.is-open .mv-detail { grid-template-rows: 1fr; }
+.mv-detail-inner { display: grid; gap: 6px; padding: 6px 4px 10px 92px; }
+.mini { display: grid; grid-template-columns: minmax(0, 1fr) 70px 34px; gap: 8px; align-items: center; font-size: 12px; color: var(--color-text-secondary); }
+.mini span:first-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--color-text); }
+.mini-track { height: 6px; border-radius: 3px; background: var(--color-surface-3); overflow: hidden; }
+.mini-fill { display: block; height: 100%; background: var(--chart-accent); transform: scaleX(0); transform-origin: left; transition: transform 500ms var(--mx-ease-out-expo) calc(var(--i) * 60ms + 80ms); }
+.mv-wrap.is-open .mini-fill { transform: scaleX(1); }
+.mv-axis { display: grid; grid-template-columns: 84px minmax(0, 1fr) 56px; gap: 8px; }
+.mv-axis__ticks { position: relative; height: 14px; font-size: 10px; color: var(--color-text-secondary); font-family: var(--font-block); }
+.mv-axis__tick { position: absolute; transform: translateX(-50%); }
+.mv-axis__tick:first-child { transform: none; } .mv-axis__tick:last-child { transform: translateX(-100%); }
+.chart-note { margin: 0; font-size: 12px; color: var(--color-text-secondary); }
+
+/* Balance */
+.bal { display: grid; gap: 5px; padding: 4px 0; }
+.bal__head { display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; }
+.bal__head b { font-family: var(--font-display); font-variant-numeric: tabular-nums; }
+.bal__track { position: relative; height: 10px; border-radius: 999px; background: var(--color-surface-3); }
+.bal__band { position: absolute; top: 0; bottom: 0; left: 33.9%; width: 32.2%; border-radius: 999px; background: color-mix(in srgb, var(--color-interactive) 18%, transparent); }
+.bal__mid { position: absolute; top: -2px; bottom: -2px; left: 50%; width: 1px; background: color-mix(in srgb, var(--color-text-secondary) 50%, transparent); }
+.bal__pin { position: absolute; top: -4px; left: 50%; width: 5px; height: 18px; border-radius: 2px; background: var(--color-interactive); box-shadow: 0 0 10px var(--notch-glow); transform: translateX(-50%); }
+.bal__caps { display: flex; justify-content: space-between; font-size: 11px; color: var(--color-text-secondary); font-family: var(--font-block); text-transform: uppercase; letter-spacing: .06em; }
+
+/* Strength */
+.mx-sub { opacity: 0; }
+.mx-sub.is-in { opacity: 1; animation: mx-rise 380ms var(--mx-ease-out-expo) var(--d, 0ms) both; }
+.st-row { display: grid; gap: 4px; padding: 10px 0; border-top: 1px solid color-mix(in srgb, var(--color-border) 55%, transparent); }
+.st-row:first-child { border-top: 0; padding-top: 2px; }
+.st-head { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; align-items: baseline; }
+.st-name { font-weight: 700; font-size: 15px; }
+.st-delta { font-size: 12px; color: var(--color-text-secondary); opacity: 0; }
+.st-delta.is-in { animation: mx-rise 320ms var(--mx-ease-out-expo) both; opacity: 1; }
+.st-delta--up { color: var(--color-success-text); }
+.st-matched { font-size: 12px; color: var(--color-text-secondary); }
+.st-matched--up { color: var(--color-success-text); }
+.st-spark { display: grid; grid-template-columns: 34px minmax(0, 1fr) 34px; align-items: center; gap: 6px; }
+.st-val { font-size: 12px; color: var(--color-text-secondary); font-variant-numeric: tabular-nums; }
+.st-val--first { text-align: right; }
+.st-plot { position: relative; height: 44px; }
+.st-plot svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; display: block; }
+.st-line { fill: none; stroke: var(--chart-accent); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.st-area { fill: color-mix(in srgb, var(--chart-accent) 12%, transparent); opacity: 0; }
+.st-area.is-in { animation: mx-fade 500ms ease-out forwards; }
+.st-dot { position: absolute; width: 9px; height: 9px; border-radius: 50%; background: var(--chart-accent); box-shadow: 0 0 0 2px var(--color-surface-1); transform: translate(-50%, -50%) scale(0); }
+.st-dot.is-in { animation: mx-dot 360ms var(--mx-ease-spring) forwards; }
+.st-ping { position: absolute; width: 9px; height: 9px; border-radius: 50%; border: 2px solid var(--chart-accent); transform: translate(-50%, -50%) scale(.6); opacity: 0; }
+.st-ping.is-in { animation: mx-ping 800ms ease-out forwards; }
+@keyframes mx-dot { from { transform: translate(-50%, -50%) scale(0); } to { transform: translate(-50%, -50%) scale(1); } }
+@keyframes mx-ping { 0% { transform: translate(-50%, -50%) scale(.6); opacity: .9; } 100% { transform: translate(-50%, -50%) scale(3.4); opacity: 0; } }
+.st-compact { display: grid; gap: 2px; border-top: 1px solid color-mix(in srgb, var(--color-border) 55%, transparent); padding-top: 8px; }
+.st-compact__label { margin: 0 0 4px; }
+.st-compact-row { display: grid; grid-template-columns: minmax(0, 1fr) 72px 68px; align-items: center; gap: 8px; min-height: 30px; font-size: 13px; }
+.st-compact-row .st-plot { height: 22px; }
+.st-compact-delta { text-align: right; font-size: 12px; color: var(--color-text-secondary); font-variant-numeric: tabular-nums; }
+.st-compact-delta--up { color: var(--color-success-text); }
+.st-compact-delta--down { color: var(--color-warn-text); }
+
+/* Exercises: hero e1RM chart */
+.hero-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; flex-wrap: wrap; }
+.hero-ex { margin: 2px 0 0; font-family: var(--font-display); font-size: 19px; font-weight: 700; }
+.hero-num { text-align: right; display: grid; justify-items: end; gap: 0; }
+.hero-val { font-family: var(--font-display); font-size: 36px; font-weight: 700; line-height: 1; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.hero-val small { font-size: 14px; font-weight: 600; color: var(--color-text-secondary); margin-left: 4px; letter-spacing: 0; font-family: var(--font-sans); }
+.hero-delta { font-size: 12px; color: var(--color-success-text); font-weight: 600; }
+.hero-plot { position: relative; height: 176px; }
+.hero-plot svg { display: block; overflow: visible; }
+.hg { stroke: color-mix(in srgb, var(--color-border) 70%, transparent); stroke-width: 1; transform-origin: left; transform: scaleX(0); }
+.hero-plot.is-drawn .hg { animation: mx-charge 600ms var(--mx-ease-out-expo) calc(var(--i) * 50ms) forwards; }
+.hl { font-family: var(--font-block); font-size: 10.5px; fill: var(--color-text-secondary); letter-spacing: .04em; opacity: 0; }
+.hero-plot.is-drawn .hl { animation: mx-fade 400ms ease-out 250ms forwards; }
+.hline { fill: none; stroke: var(--chart-accent); stroke-width: 2.25; stroke-linejoin: round; stroke-linecap: round; filter: drop-shadow(0 0 6px color-mix(in srgb, var(--chart-accent) 45%, transparent)); }
+.harea { fill: url(#heroGrad); opacity: 0; }
+.hero-plot.is-filled .harea { animation: mx-fade 600ms ease-out forwards; }
+.hdot { fill: var(--chart-accent); stroke: var(--color-surface-1); stroke-width: 1.5; opacity: 0; }
+.hdot.is-on { opacity: 1; }
+.hpr { opacity: 0; transform-box: fill-box; transform-origin: center; }
+.hpr.is-on { opacity: 1; animation: mx-stamp 520ms var(--mx-ease-spring) both; }
+@keyframes mx-stamp { 0% { transform: scale(2.2); opacity: 0; } 40% { opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+.hpr-ring { fill: var(--color-surface-1); stroke: var(--chart-accent); stroke-width: 2; }
+.hpr-crown { fill: var(--chart-accent); }
+.hero-foot { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--color-text-secondary); }
+.hero-foot b { color: var(--color-text); font-weight: 600; }
+.ex-list { display: grid; }
+.ex-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 10px; align-items: baseline; padding: 9px 0; border-top: 1px solid color-mix(in srgb, var(--color-border) 55%, transparent); font-size: 13px; }
+.ex-row:first-child { border-top: 0; }
+.ex-row b { font-family: var(--font-display); font-size: 15px; font-variant-numeric: tabular-nums; }
+.ex-row .d { font-size: 12px; color: var(--color-success-text); min-width: 42px; text-align: right; }
+.ex-row .d.flat { color: var(--color-text-secondary); }
+
+/* Execution */
+.exec-row { display: grid; gap: 6px; padding: 10px 0; border-top: 1px solid color-mix(in srgb, var(--color-border) 55%, transparent); }
+.exec-row:first-child { border-top: 0; padding-top: 2px; }
+.exec-head { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; align-items: baseline; }
+.exec-name { font-weight: 700; font-size: 15px; }
+.exec-verdict { font-size: 12px; color: var(--color-text-secondary); }
+.exec-plan { margin: 0; font-size: 13px; }
+.exec-plan .arrow { color: var(--color-text-secondary); margin: 0 4px; }
+.exec-metrics { display: grid; gap: 5px; }
+.meter-row { display: grid; grid-template-columns: 56px minmax(0, 1fr) 44px; align-items: center; gap: 8px; font-size: 12px; color: var(--color-text-secondary); }
+.meter { position: relative; height: 8px; border-radius: 4px; background: var(--color-surface-3); overflow: visible; }
+.meter-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; background: var(--chart-accent); transform: scaleX(0); transform-origin: left; }
+.meter-row.is-charged .meter-fill { animation: mx-charge 700ms var(--mx-ease-out-expo) forwards; }
+.meter-target { position: absolute; top: -3px; bottom: -3px; left: 83.33%; width: 2px; background: var(--color-text-secondary); opacity: .6; }
+.meter-val { text-align: right; font-weight: 700; color: var(--color-text); font-variant-numeric: tabular-nums; }
+.exec-drift { grid-column: 2 / -1; }
+.exec-drift--on { color: var(--color-success-text); }
+.exec-drift--off { color: var(--color-warn-text); }
+
+/* Data quality */
+.dq-row { display: grid; grid-template-columns: minmax(0, 1fr) 120px; gap: 12px; align-items: center; }
+.dq-row p { margin: 0; font-size: 13px; }
+.dq-meter { display: grid; grid-template-columns: minmax(0, 1fr) 36px; gap: 6px; align-items: center; }
+.dq-meter .meter-val { font-family: var(--font-display); font-size: 15px; }
+
+/* Empty state */
+.ax-empty-card { display: grid; gap: 12px; justify-items: center; text-align: center; padding: 22px 16px; }
+.ghost { width: 100%; max-width: 280px; height: 92px; }
+.ghost rect { fill: none; stroke: color-mix(in srgb, var(--color-interactive) 55%, transparent); stroke-width: 1.5; stroke-dasharray: 4 3; transform-origin: bottom; }
+html:not(.mx-reduce) .ghost rect { animation: mx-ghost 3.6s ease-in-out calc(var(--i) * 260ms) infinite; }
+@keyframes mx-ghost { 0%, 100% { transform: scaleY(.55); opacity: .55; } 50% { transform: scaleY(1); opacity: .95; } }
+.unlock { margin: 0; font-weight: 600; font-size: 15px; }
+.ring { display: grid; grid-template-columns: 44px auto; gap: 10px; align-items: center; font-size: 13px; color: var(--color-text-secondary); }
+.ring svg { transform: rotate(-90deg); }
+.ring .track { fill: none; stroke: var(--color-surface-3); stroke-width: 4; }
+.ring .fill { fill: none; stroke: var(--color-interactive); stroke-width: 4; stroke-linecap: round; stroke-dasharray: 113; stroke-dashoffset: 113; transition: stroke-dashoffset 900ms var(--mx-ease-out-expo) 300ms; }
+.ax-empty-card.is-in .ring .fill { stroke-dashoffset: 75; }
+.ring b { color: var(--color-text); font-family: var(--font-display); }
+
+/* ======================================================================
+   REDUCED MOTION - movement becomes a short opacity crossfade; draws and
+   counts print their final state; decorative loops stop.
+   ====================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  html { --mx-reveal: 200ms; --mx-draw: 1ms; --mx-count: 1ms; --mx-stagger: 0ms; }
+  .mx-in.is-in, .mx-sub.is-in, .st-delta.is-in { animation-name: mx-fade; animation-duration: 200ms; }
+  .ax-head.is-in .page-title { animation: mx-fade 200ms ease-out both; }
+  .mx-glow, .mx-skel i, .ghost rect, .mv-wrap.is-charged .mv-bar--stimulating::after { animation: none !important; }
+  .card.is-energized, .stat-tile.is-charged .up-arrow, .st-ping.is-in, .hpr.is-on { animation: none !important; }
+  .stat-tile.is-charged::before, .meter-row.is-charged .meter-fill, .hero-plot.is-drawn .hg { animation: none !important; transform: scaleX(1); }
+  .stat-tile .up-arrow, .st-dot.is-in { animation: none !important; transform: translate(-50%, -50%) scale(1); }
+  .stat-tile .up-arrow { transform: scale(1); }
+  .hero-plot.is-drawn .hl { animation: none !important; opacity: 1; }
+  .st-area.is-in, .hero-plot.is-filled .harea { animation: none !important; opacity: 1; }
+  .mx-seg__ind, .range__ind, .mv-detail, .mini-fill, .mv-chev, .ring .fill { transition-duration: 1ms !important; }
+  .hpr.is-on { opacity: 1; }
+}
+html.mx-reduce { --mx-reveal: 200ms; --mx-draw: 1ms; --mx-count: 1ms; --mx-stagger: 0ms; }
+html.mx-reduce .mx-in.is-in, html.mx-reduce .mx-sub.is-in, html.mx-reduce .st-delta.is-in { animation-name: mx-fade; animation-duration: 200ms; }
+html.mx-reduce .ax-head.is-in .page-title { animation: mx-fade 200ms ease-out both; }
+html.mx-reduce .mx-glow, html.mx-reduce .mx-skel i, html.mx-reduce .ghost rect, html.mx-reduce .mv-wrap.is-charged .mv-bar--stimulating::after,
+html.mx-reduce .card.is-energized, html.mx-reduce .stat-tile.is-charged .up-arrow, html.mx-reduce .st-ping.is-in, html.mx-reduce .hpr.is-on { animation: none !important; }
+html.mx-reduce .stat-tile.is-charged::before, html.mx-reduce .meter-row.is-charged .meter-fill, html.mx-reduce .hero-plot.is-drawn .hg { animation: none !important; transform: scaleX(1); }
+html.mx-reduce .st-dot.is-in { animation: none !important; transform: translate(-50%, -50%) scale(1); }
+html.mx-reduce .stat-tile .up-arrow { transform: scale(1); }
+html.mx-reduce .hero-plot.is-drawn .hl { animation: none !important; opacity: 1; }
+html.mx-reduce .st-area.is-in, html.mx-reduce .hero-plot.is-filled .harea { animation: none !important; opacity: 1; }
+html.mx-reduce .mx-seg__ind, html.mx-reduce .range__ind, html.mx-reduce .mv-detail, html.mx-reduce .mini-fill, html.mx-reduce .mv-chev, html.mx-reduce .ring .fill { transition-duration: 1ms !important; }
+html.mx-reduce .hpr.is-on { opacity: 1; }
+</style>
+
+<span class="mx-probe" id="probe" aria-hidden="true"></span>
+<canvas class="mx-scene" id="scene" aria-hidden="true"></canvas>
+<div class="mx-glow" aria-hidden="true"></div>
+
+<header class="mx-bar" role="toolbar" aria-label="Preview controls">
+  <span class="mx-bar__title">MX · Analytics</span>
+  <div class="mx-pals" role="group" aria-label="Palette">
+    <button class="mx-pal is-on" data-pal="champ" aria-label="Champ palette"></button>
+    <button class="mx-pal" data-pal="iron" aria-label="Iron palette"></button>
+    <button class="mx-pal" data-pal="chill" aria-label="Chill palette"></button>
+    <button class="mx-pal" data-pal="forest" aria-label="Forest palette"></button>
+    <button class="mx-pal" data-pal="crimson" aria-label="Crimson palette"></button>
+  </div>
+  <button class="mx-tog" id="themeTog" aria-pressed="false">Dark</button>
+  <button class="mx-tog" id="rmTog" aria-pressed="false" title="Simulate prefers-reduced-motion">Reduced</button>
+  <button class="mx-tog mx-tog--primary" id="replay">Replay</button>
+</header>
+
+<main class="mx-app ax" id="app">
+  <div class="ax-scan" id="scanline" aria-hidden="true"></div>
+  <div class="ax-options">
+    <div class="mx-seg" id="choreo" role="group" aria-label="Entrance choreography">
+      <span class="mx-seg__ind"></span>
+      <button aria-pressed="true" data-v="cascade">A · Cascade</button>
+      <button aria-pressed="false" data-v="scan">B · Scan</button>
+    </div>
+    <button class="mx-tog" id="emptyTog" aria-pressed="false">Empty state</button>
+  </div>
+
+  <div class="ax-live" id="live">
+    <header class="ax-head mx-in">
+      <h1 class="page-title">Analytics</h1>
+      <p class="ax-intro">Volume, strength trends, and balance from your logged sets.</p>
+    </header>
+
+    <div class="range mx-in" id="range" role="group" aria-label="Date range">
+      <span class="range__ind"></span>
+      <button class="range-chip" data-w="2" aria-pressed="false">2 wk</button>
+      <button class="range-chip" data-w="4" aria-pressed="false">4 wk</button>
+      <button class="range-chip" data-w="8" aria-pressed="false">8 wk</button>
+      <button class="range-chip" data-w="12" aria-pressed="true">12 wk</button>
+    </div>
+
+    <div class="kpis" id="kpis">
+      <div class="card stat-tile" data-skel="tile" data-anim="tile">
+        <div class="card-body mx-in">
+          <span class="stat-tile-label">Sets / week</span>
+          <span class="stat-tile-value"><span class="cnt" data-key="sets" data-dec="1">0</span></span>
+          <span class="stat-tile-sub">effective sets across 10 muscles</span>
+        </div>
+      </div>
+      <div class="card stat-tile" data-skel="tile" data-anim="tile">
+        <div class="card-body mx-in">
+          <span class="stat-tile-label">Stimulating / week</span>
+          <span class="stat-tile-value"><span class="cnt" data-key="stim" data-dec="1">0</span></span>
+          <span class="stat-tile-sub">effort-weighted sets (RIR or RPE)</span>
+        </div>
+      </div>
+      <div class="card stat-tile" data-skel="tile" data-anim="tile">
+        <div class="card-body mx-in">
+          <span class="stat-tile-label">Top set</span>
+          <span class="stat-tile-value"><span class="cnt" data-key="top">0</span><small>lbs × 3</small></span>
+          <span class="stat-tile-sub">Deadlift</span>
+        </div>
+      </div>
+      <div class="card stat-tile" data-skel="tile" data-anim="tile">
+        <div class="card-body mx-in">
+          <span class="stat-tile-label">Top gain</span>
+          <span class="stat-tile-value stat-tile-value--up"><span class="cnt" data-key="gain" data-prefix="+">+0</span><small>lbs</small>
+            <svg class="up-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19L19 5M8 5h11v11"/></svg></span>
+          <span class="stat-tile-sub">Bench Press @ RIR 2</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="tabs-wrap mx-in">
+      <div class="mx-seg mx-seg--full" id="tabs" style="--n:4" role="tablist" aria-label="Analytics view">
+        <span class="mx-seg__ind"></span>
+        <button role="tab" aria-pressed="true" data-v="muscles">Muscles</button>
+        <button role="tab" aria-pressed="false" data-v="strength">Strength</button>
+        <button role="tab" aria-pressed="false" data-v="exercises">Exercises</button>
+        <button role="tab" aria-pressed="false" data-v="execution">Execution</button>
+      </div>
+    </div>
+
+    <div class="ax-views" id="views">
+      <!-- MUSCLES -->
+      <section data-view="muscles">
+        <div class="card" data-skel="chart" data-anim="bars">
+          <div class="card-body mx-in">
+            <div class="card-head">
+              <h2>Weekly volume by muscle</h2>
+              <p class="card-sub">Effective vs. stimulating sets per week over the selected range. Tap a muscle for what fed it.</p>
+            </div>
+            <div class="legend" aria-hidden="true"><span><i class="ctx"></i>Effective</span><span><i class="acc"></i>Stimulating</span></div>
+            <div class="mv-rows" id="mvRows"></div>
+            <div class="mv-axis" aria-hidden="true"><span></span><div class="mv-axis__ticks" id="mvTicks"></div><span></span></div>
+            <p class="chart-note">Muscles without RIR or RPE logged show effective sets only.</p>
+          </div>
+        </div>
+        <div class="card" data-skel="list" data-anim="balance">
+          <div class="card-body mx-in">
+            <div class="card-head"><h2>Balance</h2><p class="card-sub">Push vs. pull and quad vs. hamstring ratios from effective sets. The band is a rough 0.8–1.25 guide.</p></div>
+            <div class="bal" data-ratio="1.08">
+              <div class="bal__head"><span>Push : Pull</span><b class="bal-val">1.00</b></div>
+              <div class="bal__track"><span class="bal__band"></span><span class="bal__mid"></span><span class="bal__pin"></span></div>
+              <div class="bal__caps"><span>pull-heavy</span><span>push-heavy</span></div>
+            </div>
+            <div class="bal" data-ratio="1.39">
+              <div class="bal__head"><span>Quad : Hamstring</span><b class="bal-val">1.00</b></div>
+              <div class="bal__track"><span class="bal__band"></span><span class="bal__mid"></span><span class="bal__pin"></span></div>
+              <div class="bal__caps"><span>ham-heavy</span><span>quad-heavy</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- STRENGTH -->
+      <section data-view="strength" hidden>
+        <div class="card" data-skel="chart" data-anim="spark">
+          <div class="card-body mx-in">
+            <div class="card-head">
+              <h2>Strength trends</h2>
+              <p class="card-sub">Matched-effort trend per exercise, with each session's top set - the weight you actually lifted - as the evidence.</p>
+            </div>
+            <div id="stFeatured"></div>
+            <div class="st-compact" id="stCompact"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- EXERCISES -->
+      <section data-view="exercises" hidden>
+        <div class="card" data-skel="chart" data-anim="hero">
+          <div class="card-body mx-in">
+            <div class="hero-head">
+              <div><p class="eyebrow">Estimated 1RM</p><h2 class="hero-ex">Bench Press</h2></div>
+              <div class="hero-num"><span class="hero-val"><span class="cnt" id="heroVal">0</span><small>lbs</small></span><span class="hero-delta" id="heroDelta"></span></div>
+            </div>
+            <div class="hero-plot" id="heroPlot"></div>
+            <div class="hero-foot" id="heroFoot"></div>
+          </div>
+        </div>
+        <div class="card" data-skel="list" data-anim="exlist">
+          <div class="card-body mx-in">
+            <div class="card-head"><h2>Other lifts</h2><p class="card-sub">Current estimated 1RM and the change over the range.</p></div>
+            <div class="ex-list" id="exList"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- EXECUTION -->
+      <section data-view="execution" hidden>
+        <div class="card" data-skel="list" data-anim="exec">
+          <div class="card-body mx-in">
+            <div class="card-head"><h2>Execution</h2><p class="card-sub">Planned vs. logged for sets from a saved workout or a block.</p></div>
+            <div id="execRows"></div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div style="height:12px"></div>
+    <section class="card" data-skel="tile" data-anim="dq">
+      <div class="card-body mx-in">
+        <h2 style="margin:0;font-family:var(--font-display);font-size:17px">Data quality</h2>
+        <div class="dq-row">
+          <p>Effort (RIR or RPE) logged on <b class="cnt" data-key="cov" data-suffix="%">0%</b> of sets</p>
+          <div class="dq-meter meter-row"><div class="meter"><i class="meter-fill" style="--pct:.78"></i></div><b class="meter-val cnt" data-key="cov" data-suffix="%">0%</b></div>
+        </div>
+        <p class="chart-note">Two sets of 10 can be worlds apart - one at the limit, one with five reps left. Effort is how LogChamp tells them apart.</p>
+      </div>
+    </section>
+  </div>
+
+  <div class="ax-empty" id="empty" hidden>
+    <header class="ax-head mx-in">
+      <h1 class="page-title">Analytics</h1>
+      <p class="ax-intro">Volume, strength trends, and balance from your logged sets.</p>
+    </header>
+    <section class="card ax-empty-card mx-in">
+      <svg class="ghost" viewBox="0 0 280 92" aria-hidden="true">
+        <rect style="--i:0" x="10" y="20" width="36" height="72"/>
+        <rect style="--i:1" x="62" y="8" width="36" height="84"/>
+        <rect style="--i:2" x="114" y="30" width="36" height="62"/>
+        <rect style="--i:3" x="166" y="14" width="36" height="78"/>
+        <rect style="--i:4" x="218" y="40" width="36" height="52"/>
+      </svg>
+      <p class="unlock">Log 3 workouts and this becomes your volume trend.</p>
+      <div class="ring"><svg width="44" height="44" viewBox="0 0 44 44"><circle class="track" cx="22" cy="22" r="18"/><circle class="fill" cx="22" cy="22" r="18"/></svg><span><b>1 of 3</b> workouts logged</span></div>
+      <button class="btn btn-primary" type="button">Log a workout</button>
+    </section>
+  </div>
+</main>
+
+<script>
+(() => {
+  'use strict';
+  const html = document.documentElement;
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+
+  /* ---------- theme / palette boot (same mechanism as the app) ---------- */
+  if (!html.getAttribute('data-theme')) {
+    html.setAttribute('data-theme', matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  }
+  if (!html.getAttribute('data-palette')) html.setAttribute('data-palette', 'champ');
+  const rmQuery = matchMedia('(prefers-reduced-motion: reduce)');
+  const syncRM = () => html.classList.toggle('mx-reduce', rmQuery.matches || html.dataset.rm === '1');
+  rmQuery.addEventListener('change', syncRM); syncRM();
+  const RM = () => html.classList.contains('mx-reduce');
+  html.classList.add('mx-ready');
+
+  /* ---------- shared helpers ---------- */
+  const EASE_SPRING = 'cubic-bezier(0.34, 1.56, 0.64, 1)';
+  const EASE_OUT_EXPO = 'cubic-bezier(0.16, 1, 0.3, 1)';
+  const easeOutExpo = t => (t >= 1 ? 1 : 1 - Math.pow(2, -10 * t));
+  const easeInOutCubic = t => (t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+  let gen = 0; let timers = [];
+  const later = (fn, ms) => { const id = setTimeout(fn, ms); timers.push(id); return id; };
+  const clearTimers = () => { timers.forEach(clearTimeout); timers = []; };
+  const fmt = (v, d = 0) => Number(v).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
+  function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+
+  /* Number roll: ease-out-expo so the last digits settle, tabular while rolling */
+  function countUp(el, to, { dur = 1100, dec = 0, prefix = '', suffix = '', delay = 0 } = {}) {
+    const from = Number(el.dataset.cur || 0);
+    el.dataset.cur = String(to);
+    const parent = el.closest('.stat-tile-value') || el;
+    const done = () => { el.textContent = prefix + fmt(to, dec) + suffix; parent.classList.remove('is-rolling'); };
+    if (RM()) { done(); return; }
+    const myGen = gen; const t0 = performance.now() + delay;
+    parent.classList.add('is-rolling');
+    const tick = now => {
+      if (myGen !== gen) return;
+      const p = Math.min(1, Math.max(0, (now - t0) / dur));
+      el.textContent = prefix + fmt(from + (to - from) * easeOutExpo(p), dec) + suffix;
+      if (p < 1) requestAnimationFrame(tick); else done();
+    };
+    requestAnimationFrame(tick);
+  }
+
+  /* Stroke draw driven by rAF so marks can key off real progress */
+  function drawLine(line, { dur = 1000, delay = 0, onProgress, onDone } = {}) {
+    const len = line.getTotalLength();
+    if (RM()) { line.style.strokeDasharray = 'none'; onProgress && onProgress(1); onDone && onDone(); return; }
+    line.style.strokeDasharray = `${len}`; line.style.strokeDashoffset = `${len}`;
+    const myGen = gen; const t0 = performance.now() + delay;
+    const tick = now => {
+      if (myGen !== gen) return;
+      const p = Math.min(1, Math.max(0, (now - t0) / dur)); const e = easeInOutCubic(p);
+      line.style.strokeDashoffset = `${len * (1 - e)}`;
+      onProgress && onProgress(e);
+      if (p < 1) requestAnimationFrame(tick); else onDone && onDone();
+    };
+    requestAnimationFrame(tick);
+  }
+
+  function wireSeg(seg, onChange) {
+    const ind = $('.mx-seg__ind, .range__ind', seg);
+    const btns = $$('button', seg);
+    const place = () => { const b = btns.find(x => x.getAttribute('aria-pressed') === 'true'); if (!b) return; ind.style.left = b.offsetLeft + 'px'; ind.style.width = b.offsetWidth + 'px'; };
+    btns.forEach(b => b.addEventListener('click', () => {
+      if (b.getAttribute('aria-pressed') === 'true') return;
+      btns.forEach(x => x.setAttribute('aria-pressed', x === b ? 'true' : 'false')); place(); onChange(b.dataset.v || b.dataset.w, b);
+    }));
+    place(); return place;
+  }
+
+  /* ---------- pixel skyline (drawn from tokens, no literals) ---------- */
+  const probe = $('#probe');
+  const token = name => { probe.style.color = `var(${name})`; return getComputedStyle(probe).color; };
+  const rgb = s => { const m = s.match(/[\d.]+/g) || [0, 0, 0]; return [+m[0], +m[1], +m[2]]; };
+  const mix = (a, b, t) => `rgb(${a.map((v, i) => Math.round(v + (b[i] - v) * t)).join(',')})`;
+  const scene = $('#scene'); let windows = []; let stars = []; let sceneCols = null;
+  function drawScene() {
+    const W = Math.ceil(innerWidth / 3), H = Math.ceil(innerHeight / 3);
+    scene.width = W; scene.height = H;
+    const ctx = scene.getContext('2d'); ctx.clearRect(0, 0, W, H);
+    const dark = html.dataset.theme === 'dark';
+    const acc = rgb(token('--color-interactive')), bg = rgb(token('--color-bg')), txt = rgb(token('--color-text'));
+    sceneCols = { far: mix(bg, acc, dark ? .14 : .10), near: mix(bg, acc, dark ? .26 : .16), win: dark ? mix(acc, txt, .55) : mix(bg, acc, .42), winOff: mix(bg, acc, dark ? .26 : .16), star: mix(acc, txt, .6) };
+    const rnd = mulberry32(2026); windows = []; stars = [];
+    if (dark) { for (let i = 0; i < 46; i++) { const s = { x: Math.floor(rnd() * W), y: Math.floor(rnd() * H * .5), a: .2 + rnd() * .6 }; stars.push(s); ctx.globalAlpha = s.a; ctx.fillStyle = sceneCols.star; ctx.fillRect(s.x, s.y, 1, 1); } }
+    ctx.globalAlpha = 1;
+    const skyline = (base, maxFrac, col, winCol, minW, maxW, step) => {
+      let x = 0;
+      while (x < W) { const w = minW + Math.floor(rnd() * (maxW - minW)); const h = Math.floor(H * maxFrac * (.35 + rnd() * .65)); ctx.fillStyle = col; ctx.fillRect(x, base - h, w, H - (base - h));
+        if (rnd() < .3) { ctx.fillRect(x + Math.floor(w / 2) - 1, base - h - 3, 2, 3); }
+        if (winCol) { for (let wy = base - h + 3; wy < base - 2; wy += step) for (let wx = x + 2; wx < x + w - 2; wx += step) { const on = rnd() < .55; windows.push({ x: wx, y: wy, on }); if (on) { ctx.fillStyle = winCol; ctx.fillRect(wx, wy, 1, 1); } } }
+        x += w + 1 + Math.floor(rnd() * 2); }
+    };
+    skyline(H - Math.floor(H * .04), .30, sceneCols.far, null, 5, 12, 3);
+    skyline(H, .22, sceneCols.near, sceneCols.win, 6, 14, 3);
+  }
+  function flicker() {
+    if (RM() || !sceneCols || html.dataset.theme !== 'dark') return;
+    const ctx = scene.getContext('2d');
+    for (let i = 0; i < 3 && windows.length; i++) { const w = windows[Math.floor(Math.random() * windows.length)]; w.on = !w.on; ctx.fillStyle = w.on ? sceneCols.win : sceneCols.winOff; ctx.fillRect(w.x, w.y, 1, 1); }
+    for (let i = 0; i < 4 && stars.length; i++) { const s = stars[Math.floor(Math.random() * stars.length)]; ctx.clearRect(s.x, s.y, 1, 1); ctx.globalAlpha = .15 + Math.random() * .7; ctx.fillStyle = sceneCols.star; ctx.fillRect(s.x, s.y, 1, 1); ctx.globalAlpha = 1; }
+  }
+  setInterval(flicker, 420);
+
+  /* ---------- preview bar wiring ---------- */
+  function wireChrome({ replay, onRM } = {}) {
+    const themeBtn = $('#themeTog'); const syncTheme = () => { const dark = html.dataset.theme === 'dark'; themeBtn.setAttribute('aria-pressed', String(dark)); themeBtn.textContent = dark ? 'Dark' : 'Light'; };
+    themeBtn.addEventListener('click', () => { html.dataset.theme = html.dataset.theme === 'dark' ? 'light' : 'dark'; syncTheme(); drawScene(); }); syncTheme();
+    const rmBtn = $('#rmTog'); rmBtn.addEventListener('click', () => { html.dataset.rm = html.dataset.rm === '1' ? '0' : '1'; rmBtn.setAttribute('aria-pressed', String(html.dataset.rm === '1')); syncRM(); onRM && onRM(); });
+    $$('.mx-pal').forEach(b => { b.classList.toggle('is-on', b.dataset.pal === html.dataset.palette); b.addEventListener('click', () => { $$('.mx-pal').forEach(x => x.classList.toggle('is-on', x === b)); html.dataset.palette = b.dataset.pal; drawScene(); }); });
+    const rp = $('#replay'); if (rp && replay) rp.addEventListener('click', replay);
+  }
+
+  /* ---------- fake data ---------- */
+  const MUSCLES = [
+    ['Chest', 16.5, 11.2, [['Bench Press', 9], ['Incline DB Press', 5], ['Cable Fly', 2.5]]],
+    ['Lats', 14.0, 9.8, [['Weighted Pull-up', 6], ['Barbell Row', 5], ['Lat Pulldown', 3]]],
+    ['Quads', 12.5, 8.1, [['Back Squat', 8], ['Leg Press', 3], ['Walking Lunge', 1.5]]],
+    ['Shoulders', 11.5, 7.0, [['Overhead Press', 6], ['Lateral Raise', 4], ['Bench Press', 1.5]]],
+    ['Triceps', 10.0, 6.2, [['Bench Press', 4.5], ['Skullcrusher', 3], ['Pushdown', 2.5]]],
+    ['Upper back', 9.5, null, [['Barbell Row', 5], ['Face Pull', 3], ['Rack Pull', 1.5]]],
+    ['Hamstrings', 9.0, 6.4, [['Romanian Deadlift', 5], ['Deadlift', 3], ['Leg Curl', 1]]],
+    ['Biceps', 8.5, 5.9, [['Barbell Curl', 4], ['Weighted Pull-up', 3], ['Hammer Curl', 1.5]]],
+    ['Glutes', 7.5, 5.1, [['Back Squat', 3], ['Romanian Deadlift', 3], ['Hip Thrust', 1.5]]],
+    ['Calves', 6.0, 3.2, [['Standing Calf Raise', 4], ['Seated Calf Raise', 2]]],
+  ];
+  const RANGE_FACTOR = { 2: 1.14, 4: 1, 8: 0.93, 12: 0.88 };
+  const POINTS = { 2: 3, 4: 5, 8: 9, 12: 13 };
+  const LIFTS = [
+    ['Back Squat', 285, 315, 5, 18, 2, 11],
+    ['Bench Press', 205, 225, 5, 24, 2, 12],
+    ['Deadlift', 365, 405, 3, 20, 3, 13],
+    ['Overhead Press', 125, 135, 5, 6, 2, 14],
+  ];
+  const TAIL = [['Barbell Row', 185, 10, 21], ['Incline DB Press', 80, 5, 22], ['Romanian Deadlift', 275, 20, 23], ['Weighted Pull-up', 45, 5, 24], ['Leg Press', 450, 0, 25], ['Lateral Raise', 25, null, 26]];
+  const EX_OTHER = [['Back Squat', 356, 20], ['Deadlift', 441, 22], ['Overhead Press', 152, 7], ['Barbell Row', 232, 12], ['Weighted Pull-up', 274, 6], ['Romanian Deadlift', 329, 0]];
+  const EXEC = [
+    ['Bench Press', 'heavier than planned, full volume', '4 × 5 @ 215 · RIR 2', '4 × 5 @ 220 · RIR 1', 102, 100, 'pushed ~1 rep past plan', 'off'],
+    ['Back Squat', 'on target, one set short', '5 × 3 @ 295 · RIR 2', '4 × 3 @ 295 · RIR 2', 100, 80, 'on target', 'on'],
+    ['Barbell Row', 'as planned, stopped early', '3 × 8 @ 185 · RIR 2', '3 × 8 @ 185 · RIR 3', 100, 100, 'stopped ~1 rep early', 'off'],
+  ];
+  const state = { weeks: 12, view: 'muscles', choreo: 'cascade', empty: false };
+  const VIEWS = ['muscles', 'strength', 'exercises', 'execution'];
+
+  function series(start, end, n, seed, step) {
+    const rnd = mulberry32(seed); const out = [];
+    for (let i = 0; i < n; i++) { const t = n === 1 ? 1 : i / (n - 1); const base = start + (end - start) * Math.pow(t, .9); const noise = (i === 0 || i === n - 1) ? 0 : (rnd() - .5) * step * 2.2; out.push(Math.round((base + noise) / step) * step); }
+    return out;
+  }
+  function dateLabel(daysAgo) { const d = new Date(); d.setDate(d.getDate() - daysAgo); return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); }
+  function data(weeks) {
+    const rnd = mulberry32(weeks * 31); const f = RANGE_FACTOR[weeks]; const n = POINTS[weeks]; const scale = weeks / 12;
+    const muscles = MUSCLES.map(([name, eff, stim, ex]) => { const j = f * (.93 + rnd() * .14); return { name, eff: eff * j, stim: stim == null ? null : stim * j, ex }; });
+    const lifts = LIFTS.map(([name, s, e, reps, md, rir, seed]) => { const start = e - (e - s) * scale; return { name, reps, rir, matched: Math.round(md * Math.max(scale, .3)), pts: series(start, e, n, seed + weeks, 5), sessions: n }; });
+    const tail = TAIL.map(([name, w, d, seed]) => ({ name, delta: d == null ? null : Math.round(d * Math.max(scale, .4) / 5) * 5, pts: d == null ? [w] : series(w - d * scale, w, Math.max(2, n - 2), seed + weeks, 5) }));
+    // e1RM: progress curve with a wobble, so PRs land every few sessions instead of every point
+    const hStart = 262 - 24 * scale; const hero = Array.from({ length: n }, (_, i) => { const t = n === 1 ? 1 : i / (n - 1); const base = hStart + (262 - hStart) * Math.pow(t, .85); const wob = (i === 0 || i === n - 1) ? 0 : Math.sin(i * 2.1 + weeks) * 5; return Math.round(base + wob); });
+    let max = -Infinity; const heroPts = hero.map((v, i) => { const pr = i > 0 && v >= max + 3; if (v > max) max = v; return { v, pr, label: dateLabel(Math.round((n - 1 - i) * (weeks * 7) / Math.max(1, n - 1))) }; });
+    const sets = muscles.reduce((a, m) => a + m.eff, 0); const stim = muscles.reduce((a, m) => a + (m.stim || 0), 0);
+    return { muscles, lifts, tail, heroPts, sets, stim, top: 405, gain: Math.round(24 * Math.max(scale, .3)), cov: Math.round(74 + 6 * scale), prs: heroPts.filter(p => p.pr).length, n };
+  }
+  let D = data(state.weeks);
+
+  /* ---------- renderers ---------- */
+  const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  function renderMuscles() {
+    const rows = [...D.muscles].sort((a, b) => b.eff - a.eff); const rawMax = Math.max(...rows.map(m => m.eff)); const max = Math.ceil(rawMax / 4) * 4;
+    const host = $('#mvRows');
+    const existing = $$('.mv-wrap', host);
+    if (existing.length === rows.length) {
+      rows.forEach((m, i) => { const w = existing[i]; w.classList.add('is-live'); $('.mv-bar--effective', w).style.width = (m.eff / max * 100) + '%'; const sb = $('.mv-bar--stimulating', w); if (sb) sb.style.width = (m.stim / max * 100) + '%';
+        const v = $('.mv-val', w); countUp($('.eff', v), m.eff, { dur: 700, dec: 1 }); const st = $('.stim', v); if (st) countUp(st, m.stim, { dur: 700, dec: 1 }); });
+    } else {
+      host.innerHTML = rows.map((m, i) => `
+        <div class="mv-wrap" style="--d:${i * 45}ms">
+          <button class="mv-row" type="button" aria-expanded="false" aria-label="${esc(m.name)}: ${fmt(m.eff, 1)} effective${m.stim == null ? '' : `, ${fmt(m.stim, 1)} stimulating`} sets per week">
+            <span class="mv-name"><svg class="mv-chev" viewBox="0 0 10 10" aria-hidden="true"><path d="M3 1.5 6.5 5 3 8.5"/></svg>${esc(m.name)}</span>
+            <span class="mv-track"><span class="mv-bar mv-bar--effective" style="width:${m.eff / max * 100}%"></span>${m.stim == null ? '' : `<span class="mv-bar mv-bar--stimulating" style="width:${m.stim / max * 100}%"></span>`}</span>
+            <span class="mv-val">${m.stim == null ? `<b class="eff" data-dec="1">0</b><span class="lock">no RIR</span>` : `<b class="stim">0</b><span class="eff">0</span>`}</span>
+          </button>
+          <div class="mv-detail"><div><div class="mv-detail-inner">${m.ex.map(([n, s], j) => `<div class="mini"><span>${esc(n)}</span><span class="mini-track"><i class="mini-fill" style="--i:${j};width:${Math.min(100, s / m.ex[0][1] * 100)}%"></i></span><span>${fmt(s * RANGE_FACTOR[state.weeks], 1)}</span></div>`).join('')}</div></div></div>
+        </div>`).join('');
+      $$('.mv-row', host).forEach(b => b.addEventListener('click', () => { const w = b.parentElement; const open = w.classList.toggle('is-open'); b.setAttribute('aria-expanded', open ? 'true' : 'false'); }));
+    }
+    $('#mvTicks').innerHTML = [0, 1, 2, 3, 4].map(i => `<span class="mv-axis__tick" style="left:${i * 25}%">${fmt(max * i / 4)}</span>`).join('');
+  }
+  function sparkHTML(pts, host, compact) {
+    const W = host.clientWidth || 200, H = host.clientHeight || 44; const padX = compact ? 2 : 5, padY = compact ? 3 : 7;
+    const min = Math.min(...pts), max = Math.max(...pts); const span = (max - min) || Math.max(Math.abs(min) * .1, 5); const lo = min - span * .12, hi = max + span * .12;
+    const x = i => pts.length === 1 ? W / 2 : padX + i * (W - padX * 2) / (pts.length - 1); const y = v => padY + (1 - (v - lo) / (hi - lo)) * (H - padY * 2);
+    const P = pts.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`);
+    const ex = x(pts.length - 1), ey = y(pts[pts.length - 1]);
+    return `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" aria-hidden="true">${pts.length > 1 ? `<polygon class="st-area" points="${P.join(' ')} ${ex.toFixed(1)},${H - padY} ${x(0).toFixed(1)},${H - padY}"/><polyline class="st-line" points="${P.join(' ')}"/>` : ''}</svg>` +
+      `<span class="st-ping" style="left:${ex / W * 100}%;top:${ey / H * 100}%"></span><span class="st-dot" style="left:${ex / W * 100}%;top:${ey / H * 100}%"></span>`;
+  }
+  function renderStrength() {
+    $('#stFeatured').innerHTML = D.lifts.map((l, i) => { const first = l.pts[0], last = l.pts[l.pts.length - 1], d = last - first; return `
+      <div class="st-row mx-sub" style="--d:${i * 70}ms">
+        <div class="st-head"><span class="st-name">${esc(l.name)}</span><span class="st-delta${d > 0 ? ' st-delta--up' : ''}">top set ${d > 0 ? '+' : d < 0 ? '−' : ''}${d === 0 ? 'no change' : fmt(Math.abs(d)) + ' lbs'} · ${fmt(last)} × ${l.reps}</span></div>
+        <span class="st-matched${l.matched > 0 ? ' st-matched--up' : ''}">matched effort +${fmt(l.matched)} lbs @ RIR ${l.rir} · ${l.sessions} sessions</span>
+        <div class="st-spark"><span class="st-val st-val--first">${fmt(first)}</span><div class="st-plot" data-pts="${l.pts.join(',')}"></div><span class="st-val">${fmt(last)}</span></div>
+      </div>`; }).join('');
+    $('#stCompact').innerHTML = `<p class="eyebrow st-compact__label mx-sub" style="--d:300ms">Everything else in range</p>` + D.tail.map((t, i) => `
+      <div class="st-compact-row mx-sub" style="--d:${320 + i * 50}ms"><span>${esc(t.name)}</span><div class="st-plot" data-pts="${t.pts.join(',')}" data-compact="1"></div>
+      <span class="st-compact-delta${t.delta > 0 ? ' st-compact-delta--up' : t.delta < 0 ? ' st-compact-delta--down' : ''}">${t.delta == null ? '1 session' : t.delta === 0 ? 'no change' : (t.delta > 0 ? '+' : '−') + fmt(Math.abs(t.delta)) + ' lbs'}</span></div>`).join('');
+    $$('.st-plot').forEach(p => { p.innerHTML = sparkHTML(p.dataset.pts.split(',').map(Number), p, !!p.dataset.compact); });
+  }
+  function renderHero() {
+    const host = $('#heroPlot'); const W = host.clientWidth || 340, H = 176; const pts = D.heroPts, n = pts.length;
+    const L = 34, R = 12, T = 18, B = 26; const vals = pts.map(p => p.v); let min = Math.min(...vals), max = Math.max(...vals); const pad = Math.max((max - min) * .3, 6); min = Math.floor((min - pad) / 5) * 5; max = Math.ceil((max + pad) / 5) * 5;
+    const x = i => L + (n === 1 ? (W - L - R) / 2 : i * (W - L - R) / (n - 1)); const y = v => T + (1 - (v - min) / (max - min)) * (H - T - B);
+    let g = ''; for (let k = 0; k <= 4; k++) { const v = min + (max - min) * k / 4, yy = y(v).toFixed(1); g += `<line class="hg" style="--i:${k}" x1="${L}" x2="${W - R}" y1="${yy}" y2="${yy}"/><text class="hl" x="${L - 7}" y="${+yy + 3.5}" text-anchor="end">${Math.round(v)}</text>`; }
+    const d = pts.map((p, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(p.v).toFixed(1)}`).join(' ');
+    const area = `${d} L${x(n - 1).toFixed(1)},${H - B} L${x(0).toFixed(1)},${H - B} Z`;
+    const marks = pts.map((p, i) => p.pr ? `<g class="hpr" data-t="${i / (n - 1)}" transform="translate(${x(i).toFixed(1)},${y(p.v).toFixed(1)})"><circle class="hpr-ring" r="6.5"/><path class="hpr-crown" transform="translate(-6,-21) scale(.5)" d="M3,19L3,8L8,12L12,5L16,12L21,8L21,19Z"/></g>` : `<circle class="hdot" data-t="${i / (n - 1)}" cx="${x(i).toFixed(1)}" cy="${y(p.v).toFixed(1)}" r="2.6"/>`).join('');
+    const xl = [0, Math.floor((n - 1) / 2), n - 1].map(i => `<text class="hl" x="${x(i).toFixed(1)}" y="${H - 7}" text-anchor="${i === 0 ? 'start' : i === n - 1 ? 'end' : 'middle'}">${pts[i].label}</text>`).join('');
+    host.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" aria-label="Estimated 1RM over ${state.weeks} weeks"><defs><linearGradient id="heroGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--chart-accent)" stop-opacity=".28"/><stop offset="1" stop-color="var(--chart-accent)" stop-opacity="0"/></linearGradient></defs>${g}<path class="harea" d="${area}"/><path class="hline" d="${d}"/>${marks}${xl}</svg>`;
+    host.classList.remove('is-drawn', 'is-filled');
+    const last = pts[n - 1].v, first = pts[0].v;
+    $('#heroDelta').textContent = `+${fmt(last - first)} lbs over ${state.weeks} weeks`;
+    $('#heroFoot').innerHTML = `<span><b>${D.prs}</b> PRs</span><span><b>${n}</b> sessions</span><span>best set <b>${fmt(last - 32)} × 5</b> @ RIR 1</span>`;
+    $('#exList').innerHTML = EX_OTHER.map(([name, v, dl], i) => { const dd = Math.round(dl * Math.max(state.weeks / 12, .3)); return `<div class="ex-row mx-sub" style="--d:${i * 55}ms"><span>${esc(name)}</span><b>${fmt(v)} <span class="small muted" style="font-family:var(--font-sans);font-weight:500">lbs</span></b><span class="d${dd ? '' : ' flat'}">${dd ? '+' + dd : 'flat'}</span></div>`; }).join('');
+  }
+  function renderExec() {
+    $('#execRows').innerHTML = EXEC.map(([name, verdict, plan, did, load, vol, drift, tone], i) => `
+      <div class="exec-row mx-sub" style="--d:${i * 80}ms">
+        <div class="exec-head"><span class="exec-name">${esc(name)}</span><span class="exec-verdict">${verdict}</span></div>
+        <p class="exec-plan">Planned ${plan}<span class="arrow">→</span>Did ${did}</p>
+        <div class="exec-metrics">
+          <div class="meter-row"><span>Load</span><div class="meter"><i class="meter-fill" style="--pct:${load / 120}"></i><i class="meter-target"></i></div><b class="meter-val cnt" data-to="${load}">0%</b></div>
+          <div class="meter-row"><span>Volume</span><div class="meter"><i class="meter-fill" style="--pct:${vol / 120}"></i><i class="meter-target"></i></div><b class="meter-val cnt" data-to="${vol}">0%</b></div>
+          <div class="meter-row"><span>Effort</span><span class="exec-drift exec-drift--${tone}">${drift}</span></div>
+        </div>
+      </div>`).join('');
+  }
+
+  /* ---------- animators (run when a card's content arrives) ---------- */
+  const animators = {
+    tile(card) { card.classList.add('is-charged'); const c = $('.cnt', card); const key = c.dataset.key; countUp(c, D[key], { dur: 1100, dec: +(c.dataset.dec || 0), prefix: c.dataset.prefix || '', suffix: c.dataset.suffix || '' }); },
+    bars(card) {
+      $$('.mv-wrap', card).forEach((w, i) => { const d = i * 45; w.classList.remove('is-live'); w.style.setProperty('--d', d + 'ms');
+        $$('.mv-bar', w).forEach(b => { b.getAnimations().forEach(a => a.cancel()); if (RM()) return; b.animate([{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)' }], { duration: 760, delay: d, easing: EASE_OUT_EXPO, fill: 'backwards' }); });
+        w.classList.add('is-charged');
+        const m = [...D.muscles].sort((a, b) => b.eff - a.eff)[i]; countUp($('.eff', w), m.eff, { dur: 760, dec: 1, delay: d }); const st = $('.stim', w); if (st) countUp(st, m.stim, { dur: 760, dec: 1, delay: d });
+        later(() => w.classList.add('is-live'), d + 800); });
+    },
+    balance(card) {
+      $$('.bal', card).forEach((b, i) => { const r = +b.dataset.ratio; const pos = 50 + Math.log2(r) * 50; const pin = $('.bal__pin', b); pin.getAnimations().forEach(a => a.cancel());
+        if (RM()) { pin.style.left = pos + '%'; } else { pin.animate([{ left: '50%' }, { left: pos + '%' }], { duration: 900, delay: 120 + i * 120, easing: EASE_SPRING, fill: 'forwards' }); }
+        const v = $('.bal-val', b); v.dataset.cur = '1'; countUp(v, r, { dur: 900, dec: 2, delay: 120 + i * 120 }); });
+    },
+    spark(card) {
+      renderStrength();
+      $$('.mx-sub', card).forEach(s => s.classList.add('is-in'));
+      $$('.st-plot', card).forEach((p, i) => { const line = $('.st-line', p); const compact = !!p.dataset.compact; const delay = compact ? 320 + (i - 4) * 50 : 90 + i * 110;
+        const finish = () => { $('.st-area', p)?.classList.add('is-in'); $('.st-dot', p).classList.add('is-in'); if (!compact) { $('.st-ping', p).classList.add('is-in'); $('.st-delta', p.closest('.st-row'))?.classList.add('is-in'); } };
+        if (!line) { later(finish, delay); return; }
+        drawLine(line, { dur: compact ? 500 : 800, delay, onDone: finish }); });
+    },
+    hero(card) {
+      renderHero(); const host = $('#heroPlot'); const line = $('.hline', host); const marks = $$('.hdot, .hpr', host);
+      host.classList.add('is-drawn');
+      countUp($('#heroVal'), D.heroPts[D.heroPts.length - 1].v, { dur: 1300, delay: 200 });
+      drawLine(line, { dur: 1300, delay: 200, onProgress: e => marks.forEach(m => { if (+m.dataset.t <= e + .001) m.classList.add('is-on'); }), onDone: () => host.classList.add('is-filled') });
+    },
+    exlist(card) { $$('.mx-sub', card).forEach(s => s.classList.add('is-in')); },
+    exec(card) {
+      renderExec(); $$('.mx-sub', card).forEach(s => s.classList.add('is-in'));
+      $$('.meter-row', card).forEach((r, i) => { const f = $('.meter-fill', r); if (!f) return; f.style.transform = ''; later(() => { r.classList.add('is-charged'); f.style.setProperty('--w', f.style.getPropertyValue('--pct')); f.style.width = `calc(${f.style.getPropertyValue('--pct')} * 100%)`; const v = $('.meter-val', r); if (v) countUp(v, +v.dataset.to, { dur: 700, suffix: '%' }); }, 120 + i * 90); });
+    },
+    dq(card) { const r = $('.meter-row', card); const f = $('.meter-fill', r); f.style.width = 'calc(.78 * 100%)'; r.classList.add('is-charged'); $$('.cnt', card).forEach(c => countUp(c, D.cov, { dur: 1000, suffix: '%' })); },
+  };
+
+  /* ---------- skeletons ---------- */
+  const SKEL = { tile: '<i style="width:40%"></i><i class="h24" style="width:55%"></i><i style="width:70%"></i>', chart: '<i class="h24" style="width:50%"></i><i style="width:85%"></i><i class="h90"></i><i style="width:40%"></i>', list: '<i class="h24" style="width:40%"></i><i style="width:90%"></i><i style="width:75%"></i><i style="width:85%"></i>' };
+  function showSkeletons(root) { $$('.card[data-skel]', root).forEach(c => { $('.mx-skel', c)?.remove(); const s = document.createElement('div'); s.className = 'mx-skel'; s.setAttribute('aria-hidden', 'true'); s.innerHTML = SKEL[c.dataset.skel]; c.appendChild(s); }); }
+  function hideSkeletons(root) { $$('.mx-skel', root).forEach(s => { s.classList.add('is-out'); later(() => s.remove(), 300); }); }
+
+  /* ---------- choreography ---------- */
+  const STEP = 55, SCAN_MS = 950;
+  function resetReveals(root) {
+    $$('.mx-in, .mx-sub, .st-delta, .st-area, .st-dot, .st-ping', root).forEach(el => { el.classList.remove('is-in'); el.style.removeProperty('--d'); });
+    $$('.is-charged, .is-energized, .is-live, .is-drawn, .is-filled', root).forEach(el => el.classList.remove('is-charged', 'is-energized', 'is-live', 'is-drawn', 'is-filled'));
+    $$('.cnt', root).forEach(c => { c.dataset.cur = '0'; });
+    $$('.mv-bar, .bal__pin', root).forEach(el => el.getAnimations().forEach(a => a.cancel()));
+  }
+  function visible(el) { return !el.closest('[hidden]'); }
+  function reveal(root, { mode = state.choreo, base = 0, withAnimators = true } = {}) {
+    const items = $$('.mx-in', root).filter(visible);
+    const app = $('#app'); const appTop = app.getBoundingClientRect().top + scrollY; const contentH = Math.max(1, app.offsetHeight);
+    void app.offsetHeight;
+    items.forEach((el, i) => {
+      let d = base + (mode === 'cascade' ? i * STEP : Math.max(0, (el.getBoundingClientRect().top + scrollY - appTop) / contentH * SCAN_MS));
+      if (RM()) d = Math.min(d, 60);
+      el.style.setProperty('--d', d + 'ms'); el.classList.add('is-in');
+      const card = el.closest('.card[data-anim]');
+      if (card) { if (mode === 'scan' && !RM()) { card.style.setProperty('--d', d + 'ms'); card.classList.add('is-energized'); } if (withAnimators) later(() => animators[card.dataset.anim](card), d + 140); }
+    });
+    if (mode === 'scan' && !RM() && items.length > 2) { const s = $('#scanline'); s.getAnimations().forEach(a => a.cancel()); s.animate([{ transform: 'translateY(0)', opacity: 1 }, { transform: `translateY(${contentH}px)`, opacity: 1, offset: .96 }, { transform: `translateY(${contentH}px)`, opacity: 0 }], { duration: SCAN_MS + 120, delay: base, easing: 'linear' }); }
+  }
+  function firstLoad() {
+    gen++; clearTimers();
+    const root = state.empty ? $('#empty') : $('#live');
+    resetReveals(root);
+    if (state.empty) { reveal(root); return; }
+    // chrome (title, chips, tabs) arrives at once; data cards show skeletons that reserve layout, then morph into content
+    $$('.mx-in', root).filter(el => visible(el) && !el.closest('.card')).forEach((el, i) => { el.style.setProperty('--d', i * STEP + 'ms'); el.classList.add('is-in'); });
+    showSkeletons(root);
+    later(() => { hideSkeletons(root); const cards = $$('.card[data-skel]', root).filter(visible); const tmp = document.createElement('div');
+      // reveal only card bodies, in page order
+      const bodies = cards.map(c => $('.card-body', c)); const app = $('#app'); const appTop = app.getBoundingClientRect().top + scrollY; const contentH = Math.max(1, app.offsetHeight);
+      bodies.forEach((el, i) => { let d = state.choreo === 'cascade' ? i * STEP : Math.max(0, (el.getBoundingClientRect().top + scrollY - appTop) / contentH * SCAN_MS); if (RM()) d = Math.min(d, 60); el.style.setProperty('--d', d + 'ms'); el.classList.add('is-in');
+        const card = el.closest('.card'); if (state.choreo === 'scan' && !RM()) { card.style.setProperty('--d', d + 'ms'); card.classList.add('is-energized'); } later(() => animators[card.dataset.anim](card), d + 140); });
+      if (state.choreo === 'scan' && !RM()) { const s = $('#scanline'); s.getAnimations().forEach(a => a.cancel()); s.animate([{ transform: 'translateY(0)', opacity: 1 }, { transform: `translateY(${contentH}px)`, opacity: 1, offset: .96 }, { transform: `translateY(${contentH}px)`, opacity: 0 }], { duration: SCAN_MS + 120, easing: 'linear' }); }
+    }, RM() ? 300 : 560);
+  }
+
+  function switchView(next) {
+    if (next === state.view) return;
+    const dir = VIEWS.indexOf(next) > VIEWS.indexOf(state.view) ? 1 : -1;
+    const cur = $(`#views > section[data-view="${state.view}"]`), nxt = $(`#views > section[data-view="${next}"]`);
+    state.view = next; gen++; clearTimers();
+    const show = () => { cur.hidden = true; nxt.hidden = false; resetReveals(nxt); reveal(nxt, { mode: 'cascade' }); };
+    if (RM()) { show(); return; }
+    cur.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: `translateX(${-16 * dir}px)` }], { duration: 130, easing: 'ease-in', fill: 'forwards' });
+    later(() => { cur.getAnimations().forEach(a => a.cancel()); show(); nxt.animate([{ opacity: 0, transform: `translateX(${22 * dir}px)` }, { opacity: 1, transform: 'none' }], { duration: 320, easing: EASE_OUT_EXPO }); }, 135);
+  }
+
+  function applyRange(weeks) {
+    state.weeks = weeks; D = data(weeks); gen++; clearTimers();
+    // tiles roll from current to new; bars glide; lines redraw fast
+    $$('#kpis .cnt').forEach(c => countUp(c, D[c.dataset.key], { dur: 800, dec: +(c.dataset.dec || 0), prefix: c.dataset.prefix || '', suffix: c.dataset.suffix || '' }));
+    if (state.view === 'muscles') renderMuscles();
+    if (state.view === 'strength') { const card = $('[data-anim="spark"]'); animators.spark(card); }
+    if (state.view === 'exercises') { const card = $('[data-anim="hero"]'); const h = $('#heroVal'); const keep = h.dataset.cur; animators.hero(card); h.dataset.cur = keep; }
+    $$('.dq-row .cnt').forEach(c => countUp(c, D.cov, { dur: 800, suffix: '%' }));
+  }
+
+  /* ---------- wiring ---------- */
+  renderMuscles(); renderStrength(); renderExec(); renderHero();
+  const placeRange = wireSeg($('#range'), w => applyRange(+w));
+  const placeTabs = wireSeg($('#tabs'), v => switchView(v));
+  const placeChoreo = wireSeg($('#choreo'), v => { state.choreo = v; $('#app').classList.toggle('ax--scan', v === 'scan'); firstLoad(); });
+  $('#emptyTog').addEventListener('click', e => { state.empty = !state.empty; e.currentTarget.setAttribute('aria-pressed', String(state.empty)); $('#live').hidden = state.empty; $('#empty').hidden = !state.empty; firstLoad(); });
+  wireChrome({ replay: firstLoad, onRM: firstLoad });
+  let rz; addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { drawScene(); placeRange(); placeTabs(); placeChoreo(); if (state.view === 'strength') { renderStrength(); $$('.st-plot .st-line').forEach(l => l.style.strokeDasharray = 'none'); $$('.mx-sub, .st-area, .st-dot, .st-delta').forEach(e => e.classList.add('is-in')); } if (state.view === 'exercises') { const h = $('#heroVal'); const keep = h.dataset.cur; renderHero(); h.dataset.cur = keep; $('#heroPlot').classList.add('is-drawn', 'is-filled'); $$('.hdot, .hpr, .mx-sub').forEach(e => { e.classList.add('is-on'); e.classList.add('is-in'); }); } }, 160); });
+
+  drawScene();
+  (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(() => { placeRange(); placeTabs(); placeChoreo(); firstLoad(); });
+})();
+</script>

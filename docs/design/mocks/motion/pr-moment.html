@@ -1,0 +1,752 @@
+<title>PR Moment</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Barlow+Condensed:wght@500;600;700&display=swap">
+<style>
+/* shared: tokens + preview chrome (identical in every preview) - begin */
+/* ======================================================================
+   TOKENS - copied from client/src/index.css (lines 1-282 + the scene glow
+   tokens at 300-362). Scene image URLs are omitted: the preview draws its
+   skyline in code from these same tokens. Do not edit values here.
+   ====================================================================== */
+:root {
+  --color-bg: #f1f5f9;
+  --color-surface-1: #ffffff;
+  --color-surface-2: #f8fafc;
+  --color-surface-3: #eef2f7;
+  --color-border: #e2e8f0;
+  --color-input-border: #cbd5e1;
+  --color-text: #0f172a;
+  --color-text-secondary: #64748b;
+  --color-interactive: #5566c4;
+  --color-interactive-hover: #4453ad;
+  --color-btn-primary-bg: var(--color-interactive-hover);
+  --color-btn-primary-fg: #ffffff;
+  --color-btn-primary-hover-bg: var(--color-interactive);
+  --color-btn-primary-active-bg: color-mix(in srgb, var(--color-interactive-hover) 82%, black);
+  --radius-control: 12px;
+  --radius-card: 14px;
+  --notch-size: 8px;
+  --notch-stroke: 2.5px;
+  --notch-glow: color-mix(in srgb, var(--color-interactive) 70%, transparent);
+  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --shadow-card-hover: 0 6px 18px rgba(15, 23, 42, 0.08);
+  --shadow-ring-accent: 0 0 0 1px color-mix(in srgb, var(--color-interactive) 12%, transparent);
+  --shadow-ring-accent-strong: 0 0 0 1px color-mix(in srgb, var(--color-interactive) 35%, transparent);
+  --color-success-accent: rgb(34 197 94);
+  --color-success-text: color-mix(in srgb, #166534 88%, var(--color-text));
+  --color-success-bg: color-mix(in srgb, var(--color-success-accent) 12%, var(--color-surface-2));
+  --color-success-border: color-mix(in srgb, var(--color-success-accent) 28%, var(--color-border));
+  --color-success-flash-border: rgba(34, 197, 94, 0.55);
+  --color-success-flash-bg: rgba(34, 197, 94, 0.1);
+  --color-error-text: #b91c1c;
+  --color-error-hover-bg: #fef2f2;
+  --color-warn-text: #b45309;
+  --color-warn-accent: #f59e0b;
+  --color-overlay: rgba(0, 0, 0, 0.72);
+  --color-backdrop: rgba(15, 23, 42, 0.42);
+  --color-scrim: rgb(15 23 42 / 0.45);
+  --color-skeleton-base: var(--color-surface-3);
+  --color-skeleton-highlight: var(--color-surface-2);
+  --motion-fast: 120ms;
+  --motion-base: 180ms;
+  --motion-slow: 240ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --accent: var(--color-interactive);
+  --color-surface: var(--color-surface-1);
+  --color-muted: var(--color-text-secondary);
+  --color-nav-active-bg: color-mix(in srgb, var(--color-interactive) 10%, var(--color-surface-1));
+  --color-pill-bg: var(--color-surface-2);
+  --palette-swatch-champ: #5566c4;
+  --palette-swatch-iron: #f59e0b;
+  --palette-swatch-forest: #15803d;
+  --palette-swatch-crimson: #b91c1c;
+  --palette-swatch-chill: #5878b0;
+  --color-error-border: #fecaca;
+  --color-error-bg: #fff1f2;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial,
+    "Apple Color Emoji", "Segoe UI Emoji";
+  --font-display: "Chakra Petch", ui-sans-serif, system-ui, -apple-system, Segoe UI,
+    Roboto, Arial, sans-serif;
+  --font-block: "Barlow Condensed", "Arial Narrow", var(--font-display), sans-serif;
+  --scene-glow: color-mix(in srgb, var(--color-interactive) 11%, transparent);
+  --scene-glow-shape: ellipse 120% 50% at 50% -10%;
+  --scene-band-h: clamp(300px, 44vh, 520px);
+  --scene-backdrop-opacity: 0.94;
+}
+html[data-theme="dark"] {
+  --color-bg: #060913;
+  --color-surface-1: #0f1628;
+  --color-surface-2: #141f35;
+  --color-surface-3: #192744;
+  --color-border: #34465f;
+  --color-input-border: #4a6282;
+  --color-text: #f1f5f9;
+  --color-text-secondary: #94a3b8;
+  --color-interactive: #8b9bff;
+  --color-interactive-hover: #aab4ff;
+  --color-btn-primary-bg: #5b6ee8;
+  --color-btn-primary-fg: #ffffff;
+  --color-btn-primary-hover-bg: #6e7ff0;
+  --color-btn-primary-active-bg: #4453ad;
+  --color-nav-active-bg: color-mix(in srgb, var(--color-interactive) 20%, transparent);
+  --color-pill-bg: var(--color-surface-2);
+  --palette-swatch-champ: #8b9bff;
+  --palette-swatch-iron: #fbbf24;
+  --palette-swatch-forest: #4ade80;
+  --palette-swatch-crimson: #f87171;
+  --palette-swatch-chill: #7c9fd4;
+  --color-error-border: #dc2626;
+  --color-error-bg: #3f1515;
+  --shadow-card: 0 2px 14px rgba(0, 0, 0, 0.28);
+  --shadow-card-hover: 0 12px 34px rgba(0, 0, 0, 0.42);
+  --color-success-text: #86efac;
+  --color-success-bg: color-mix(in srgb, rgb(22 101 52) 35%, var(--color-surface-2));
+  --color-success-border: color-mix(in srgb, var(--color-success-accent) 25%, var(--color-border));
+  --color-success-flash-border: rgba(74, 222, 128, 0.55);
+  --color-success-flash-bg: rgba(34, 197, 94, 0.12);
+  --color-error-text: #fca5a5;
+  --color-error-hover-bg: #450a0a;
+  --color-warn-text: #fbbf24;
+  --color-overlay: rgba(0, 0, 0, 0.72);
+  --color-backdrop: rgba(0, 0, 0, 0.55);
+  --color-scrim: rgb(2 6 23 / 0.6);
+  --color-skeleton-base: var(--color-surface-2);
+  --color-skeleton-highlight: var(--color-surface-3);
+  --scene-glow: color-mix(in srgb, var(--color-interactive) 22%, transparent);
+}
+html[data-palette="champ"] { --color-interactive: #5566c4; --color-interactive-hover: #4453ad; }
+html[data-theme="dark"][data-palette="champ"] {
+  --color-interactive: #8b9bff; --color-interactive-hover: #aab4ff;
+  --color-btn-primary-bg: #5b6ee8; --color-btn-primary-fg: #ffffff;
+  --color-btn-primary-hover-bg: #6e7ff0; --color-btn-primary-active-bg: #4453ad;
+}
+html[data-palette="iron"] {
+  --color-interactive: #f59e0b; --color-interactive-hover: #d97706; --color-btn-primary-fg: #1c1917;
+  --color-bg: #f9f5f0; --color-surface-1: #fffdfa; --color-surface-2: #faf6f1; --color-surface-3: #f2ece4;
+  --color-border: #e7ded2; --color-input-border: #d3c6b6;
+  --scene-glow: color-mix(in srgb, var(--color-interactive) 7%, transparent);
+  --scene-glow-shape: ellipse 140% 45% at 52% 92%;
+}
+html[data-theme="dark"][data-palette="iron"] {
+  --color-interactive: #fbbf24; --color-interactive-hover: #fcd34d;
+  --color-btn-primary-bg: #f59e0b; --color-btn-primary-fg: #1c1917;
+  --color-btn-primary-hover-bg: #fbbf24; --color-btn-primary-active-bg: #d97706;
+  --color-bg: #171310; --color-surface-1: #211c17; --color-surface-2: #2b241e; --color-surface-3: #352c24;
+  --color-border: #43382e; --color-input-border: #4f4236;
+  --scene-glow: color-mix(in srgb, var(--color-interactive) 18%, transparent);
+}
+html[data-palette="forest"] {
+  --color-interactive: #15803d; --color-interactive-hover: #166534;
+  --color-bg: #f3f8f4; --color-surface-1: #fcfefc; --color-surface-2: #f5faf6; --color-surface-3: #eaf3ec;
+  --color-border: #d9e7dc; --color-input-border: #c0d5c6;
+  --scene-glow: color-mix(in srgb, var(--color-interactive) 5%, transparent);
+  --scene-glow-shape: ellipse 120% 40% at 50% -10%;
+}
+html[data-theme="dark"][data-palette="forest"] {
+  --color-interactive: #4ade80; --color-interactive-hover: #86efac;
+  --color-btn-primary-bg: #15803d; --color-btn-primary-fg: #ffffff;
+  --color-btn-primary-hover-bg: #16a34a; --color-btn-primary-active-bg: #166534;
+  --color-bg: #0a140f; --color-surface-1: #102019; --color-surface-2: #152a21; --color-surface-3: #1b3429;
+  --color-border: #27483a; --color-input-border: #305747;
+  --scene-glow: color-mix(in srgb, var(--color-interactive) 10%, transparent);
+}
+html[data-palette="crimson"] {
+  --color-interactive: #b91c1c; --color-interactive-hover: #991b1b;
+  --color-bg: #fbf3f3; --color-surface-1: #fffcfc; --color-surface-2: #fbf5f5; --color-surface-3: #f5eaea;
+  --color-border: #ecd9d9; --color-input-border: #d8c2c2;
+  --scene-glow: color-mix(in srgb, var(--color-interactive) 12%, transparent);
+  --scene-glow-shape: circle 26vmin at 82% 12%;
+}
+html[data-theme="dark"][data-palette="crimson"] {
+  --color-interactive: #f87171; --color-interactive-hover: #fca5a5;
+  --color-btn-primary-bg: #b91c1c; --color-btn-primary-fg: #ffffff;
+  --color-btn-primary-hover-bg: #dc2626; --color-btn-primary-active-bg: #991b1b;
+  --color-bg: #190c0e; --color-surface-1: #241114; --color-surface-2: #2f171a; --color-surface-3: #3a1c20;
+  --color-border: #50292e; --color-input-border: #613239;
+  --scene-glow: color-mix(in srgb, var(--color-interactive) 30%, transparent);
+}
+html[data-palette="chill"] {
+  --color-interactive: #5878b0; --color-interactive-hover: #496699;
+  --color-bg: #f2f4f8; --color-surface-1: #fcfdff; --color-surface-2: #f5f7fb; --color-surface-3: #e9edf4;
+  --color-border: #d8dfeb; --color-input-border: #c2cbdc;
+  --scene-glow: color-mix(in srgb, var(--color-interactive) 7%, transparent);
+  --scene-glow-shape: circle 30vmin at 56% 14%;
+}
+html[data-theme="dark"][data-palette="chill"] {
+  --color-interactive: #7c9fd4; --color-interactive-hover: #9fbce6;
+  --color-btn-primary-bg: #5878b0; --color-btn-primary-fg: #ffffff;
+  --color-btn-primary-hover-bg: #6a8ac2; --color-btn-primary-active-bg: #496699;
+  --color-bg: #0d0f1a; --color-surface-1: #141826; --color-surface-2: #1a1f30; --color-surface-3: #21273b;
+  --color-border: #313a52; --color-input-border: #3b4661;
+  --scene-glow: color-mix(in srgb, var(--color-interactive) 16%, transparent);
+}
+
+/* ======================================================================
+   MX MOTION TOKENS (proposed additions - see MOTION-DIRECTION.md)
+   ====================================================================== */
+:root {
+  --mx-quick: 90ms;        /* press feedback */
+  --mx-reveal: 420ms;      /* card / row entrance */
+  --mx-draw: 1000ms;       /* chart line draw */
+  --mx-count: 1100ms;      /* number roll */
+  --mx-stagger: 55ms;      /* cascade step */
+  --mx-ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --mx-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --mx-ease-draw: cubic-bezier(0.65, 0, 0.35, 1);
+  --chart-accent: var(--color-interactive);
+}
+
+/* ======================================================================
+   PREVIEW BASE + CHROME
+   ====================================================================== */
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; min-height: 100dvh; overflow-x: hidden;
+  color: var(--color-text); background: var(--color-bg);
+  font-family: var(--font-sans); line-height: 1.4;
+}
+a { color: inherit; text-decoration: none; }
+button { font: inherit; color: inherit; -webkit-tap-highlight-color: transparent; }
+[hidden] { display: none !important; }
+.mx-probe { position: absolute; width: 0; height: 0; overflow: hidden; }
+.mx-scene {
+  position: fixed; inset: 0; z-index: 0; width: 100%; height: 100%;
+  pointer-events: none; image-rendering: pixelated; opacity: 0.9;
+  -webkit-mask-image: linear-gradient(to top, rgba(0,0,0,1) 0, rgba(0,0,0,1) 22%, rgba(0,0,0,0) 62%);
+  mask-image: linear-gradient(to top, rgba(0,0,0,1) 0, rgba(0,0,0,1) 22%, rgba(0,0,0,0) 62%);
+}
+html:not([data-theme="dark"]) .mx-scene { opacity: 0.5; }
+.mx-glow {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: radial-gradient(var(--scene-glow-shape), var(--scene-glow), transparent 68%);
+  background-repeat: no-repeat;
+}
+html:not(.mx-reduce) .mx-glow { animation: mx-breathe 9s ease-in-out infinite; }
+@keyframes mx-breathe { 0%, 100% { opacity: .78; } 50% { opacity: 1; } }
+
+.mx-bar {
+  position: sticky; top: 0; z-index: 10;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px;
+  padding: 10px 16px;
+  background: color-mix(in srgb, var(--color-bg) 74%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-border) 40%, transparent);
+  -webkit-backdrop-filter: saturate(1.1) blur(12px); backdrop-filter: saturate(1.1) blur(12px);
+}
+.mx-bar__title {
+  font-family: var(--font-block); font-weight: 600; letter-spacing: .1em; text-transform: uppercase;
+  font-size: 12px; color: var(--color-text-secondary); margin-right: auto;
+}
+.mx-pals { display: flex; gap: 6px; }
+.mx-pal {
+  width: 24px; height: 24px; border-radius: 50%; padding: 0; cursor: pointer;
+  border: 2px solid transparent; background: var(--sw);
+  transition: transform var(--mx-quick) var(--ease-standard);
+}
+.mx-pal:active { transform: scale(.9); }
+.mx-pal.is-on { border-color: var(--color-text); box-shadow: inset 0 0 0 2px var(--color-bg); }
+.mx-pal[data-pal="champ"] { --sw: var(--palette-swatch-champ); }
+.mx-pal[data-pal="iron"] { --sw: var(--palette-swatch-iron); }
+.mx-pal[data-pal="chill"] { --sw: var(--palette-swatch-chill); }
+.mx-pal[data-pal="forest"] { --sw: var(--palette-swatch-forest); }
+.mx-pal[data-pal="crimson"] { --sw: var(--palette-swatch-crimson); }
+.mx-tog {
+  min-height: 30px; padding: 0 10px; border-radius: 999px; cursor: pointer;
+  border: 1px solid var(--color-border); background: var(--color-surface-2);
+  font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;
+  transition: transform var(--mx-quick) var(--ease-standard), border-color var(--motion-fast), background var(--motion-fast);
+}
+.mx-tog:active { transform: scale(.96); }
+.mx-tog[aria-pressed="true"] { border-color: var(--color-interactive); background: var(--color-nav-active-bg); box-shadow: var(--shadow-ring-accent); }
+.mx-tog--primary { background: var(--color-btn-primary-bg); color: var(--color-btn-primary-fg); border-color: transparent; }
+.mx-tog--primary:active { background: var(--color-btn-primary-active-bg); }
+
+.mx-app { position: relative; z-index: 1; width: 100%; max-width: 520px; margin: 0 auto; padding: 14px 16px 56px; }
+.mx-note { font-size: 12px; color: var(--color-text-secondary); margin: 0 0 10px; }
+
+/* Segmented control with a sliding indicator (one "selected" token) */
+.mx-seg { position: relative; display: inline-grid; grid-auto-flow: column; gap: 2px; padding: 2px; border-radius: 999px; background: var(--color-surface-2); border: 1px solid var(--color-border); }
+.mx-seg > button { position: relative; z-index: 1; border: 0; background: transparent; padding: 6px 12px; border-radius: 999px; font-size: 12px; font-weight: 600; color: var(--color-text-secondary); cursor: pointer; white-space: nowrap; transition: color var(--motion-fast) var(--ease-standard); }
+.mx-seg > button[aria-pressed="true"] { color: var(--color-text); }
+.mx-seg__ind { position: absolute; top: 2px; bottom: 2px; left: 0; width: 0; border-radius: 999px; background: var(--color-nav-active-bg); box-shadow: var(--shadow-ring-accent-strong); transition: left 380ms var(--mx-ease-spring), width 380ms var(--mx-ease-spring); }
+.mx-seg--full { display: grid; grid-auto-flow: unset; grid-template-columns: repeat(var(--n, 4), minmax(0, 1fr)); width: 100%; }
+.mx-seg--full > button { padding: 8px 4px; font-family: var(--font-display); letter-spacing: .01em; }
+
+/* Reveal primitives */
+html.mx-ready .mx-in { opacity: 0; }
+html.mx-ready .mx-in.is-in, .mx-in.is-in { opacity: 1; animation: mx-rise var(--mx-reveal) var(--mx-ease-out-expo) var(--d, 0ms) both; }
+@keyframes mx-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes mx-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes mx-fade-out { to { opacity: 0; } }
+@keyframes mx-pop { 0% { transform: scale(0); } 100% { transform: scale(1); } }
+.card.is-energized { animation: mx-energize 800ms ease-out var(--d, 0ms) both; }
+@keyframes mx-energize {
+  0% { box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-interactive) 80%, transparent), 0 0 26px color-mix(in srgb, var(--color-interactive) 45%, transparent); }
+  100% { box-shadow: var(--shadow-card); }
+}
+
+/* Card (copied shape from index.css .card) */
+.card {
+  position: relative;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--color-surface-2) 22%, transparent), transparent 45%), var(--color-surface-1);
+  border: 1px solid color-mix(in srgb, var(--color-border) 55%, transparent);
+  border-radius: var(--radius-card); padding: 14px; box-shadow: var(--shadow-card);
+}
+html[data-theme="dark"] .card { background: linear-gradient(180deg, color-mix(in srgb, var(--color-surface-3) 18%, transparent), transparent 52%), var(--color-surface-1); }
+.card-body { display: grid; gap: 10px; }
+
+/* Skeleton overlay (one skeleton language: reserves the final layout) */
+.mx-skel { position: absolute; inset: 0; z-index: 3; border-radius: inherit; background: var(--color-surface-1); padding: 14px; display: grid; gap: 10px; align-content: start; overflow: hidden; }
+.mx-skel i { display: block; height: 12px; border-radius: 6px; background: linear-gradient(90deg, var(--color-skeleton-base) 0 30%, var(--color-skeleton-highlight) 50%, var(--color-skeleton-base) 70% 100%); background-size: 200% 100%; }
+.mx-skel i.h24 { height: 24px; } .mx-skel i.h40 { height: 40px; } .mx-skel i.h90 { height: 90px; border-radius: 10px; }
+html:not(.mx-reduce) .mx-skel i { animation: mx-shimmer 1.3s linear infinite; }
+@keyframes mx-shimmer { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+.mx-skel.is-out { animation: mx-fade-out 260ms var(--ease-standard) forwards; pointer-events: none; }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 40px; padding: 0 14px; border-radius: var(--radius-control); border: 1px solid transparent; font-weight: 700; cursor: pointer; transition: transform var(--mx-quick) var(--ease-standard), background var(--motion-fast); }
+.btn:active { transform: scale(.97); }
+.btn-primary { background: var(--color-btn-primary-bg); color: var(--color-btn-primary-fg); }
+.btn-primary:active { background: var(--color-btn-primary-active-bg); }
+.btn-secondary { background: var(--color-surface-2); border-color: var(--color-border); color: var(--color-text); }
+
+.eyebrow { margin: 0; font-family: var(--font-block); font-weight: 600; letter-spacing: .08em; text-transform: uppercase; font-size: 11px; color: var(--color-text-secondary); }
+.muted { color: var(--color-text-secondary); }
+.small { font-size: 12px; }
+.num { font-variant-numeric: tabular-nums; }
+
+/* shared: tokens + preview chrome - end */
+/* ======================================================================
+   PR MOMENT - the loud end of the motion language, next to the quiet
+   confirm it grows out of. Logger chrome follows the block logger's
+   table grid (the critic's "right base for all logging").
+   ====================================================================== */
+.pr-options { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.pr-hint { margin: 0 0 12px; font-size: 13px; color: var(--color-text-secondary); }
+.pr-hint b { color: var(--color-text); }
+
+/* Logger: sticky name line + table grid (SET / LBS / REPS / RIR) */
+.lg-sticky { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 6px 2px 10px; }
+.lg-ex-name { font-family: var(--font-display); font-size: 19px; font-weight: 700; }
+.lg-ex-meta { font-size: 12px; color: var(--color-text-secondary); white-space: nowrap; }
+.lg-card { padding: 10px 10px 12px; }
+.lg-grid { display: grid; gap: 6px; }
+.lg-head, .lg-row { display: grid; grid-template-columns: 48px minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr); gap: 8px; align-items: center; }
+.lg-head span { font-family: var(--font-block); font-weight: 600; letter-spacing: .08em; text-transform: uppercase; font-size: 11px; color: var(--color-text-secondary); text-align: center; }
+.lg-head span:first-child { text-align: left; padding-left: 4px; }
+.lg-row { position: relative; min-height: 48px; border-radius: 10px; padding: 2px; }
+.lg-row.is-flash { animation: lg-flash 1000ms ease-out; }
+@keyframes lg-flash { 0% { background: var(--color-success-flash-bg); box-shadow: inset 0 0 0 1px var(--color-success-flash-border); } 100% { background: transparent; box-shadow: inset 0 0 0 1px transparent; } }
+.lg-set { position: relative; width: 44px; height: 44px; border-radius: 10px; border: 1.5px solid var(--color-input-border); background: var(--color-surface-2); font-family: var(--font-display); font-weight: 700; font-size: 16px; color: var(--color-text); cursor: pointer; display: grid; place-items: center; transition: transform var(--mx-quick) var(--ease-standard), border-color var(--motion-fast), background var(--motion-fast), box-shadow var(--motion-fast); }
+.lg-set:active { transform: scale(.92); }
+.lg-set.is-next { border-color: var(--color-interactive); box-shadow: var(--shadow-ring-accent-strong); }
+.lg-set > * { grid-area: 1 / 1; }
+.lg-set .n { transition: transform 220ms var(--ease-standard), opacity 220ms; }
+.lg-set .ck, .lg-set .cr { width: 20px; height: 20px; transform: scale(0); opacity: 0; }
+.lg-set .ck path { fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.lg-set .cr path { fill: currentColor; }
+.lg-set.is-logged { background: var(--color-success-bg); border-color: var(--color-success-accent); color: var(--color-success-text); }
+.lg-set.is-logged .n { transform: scale(.4); opacity: 0; }
+.lg-set.is-logged:not(.is-pr) .ck { animation: lg-check 420ms var(--mx-ease-spring) 60ms forwards; }
+@keyframes lg-check { to { transform: scale(1); opacity: 1; } }
+.lg-set.is-pr { background: color-mix(in srgb, var(--color-interactive) 18%, var(--color-surface-1)); border-color: var(--color-interactive); color: var(--color-interactive); box-shadow: 0 0 14px var(--notch-glow); }
+.lg-set.is-pr .cr { animation: pr-stamp 620ms var(--mx-ease-spring) 80ms forwards; filter: drop-shadow(0 0 6px var(--notch-glow)); }
+@keyframes pr-stamp { 0% { transform: scale(3.2); opacity: 0; } 30% { opacity: 1; } 100% { transform: scale(1.15); opacity: 1; } }
+.lg-set.is-ghost { border-style: dashed; color: var(--color-text-secondary); background: transparent; }
+.lg-in { width: 100%; min-height: 44px; border-radius: 10px; border: 1px solid var(--color-input-border); background: var(--color-surface-1); color: var(--color-text); font: inherit; font-weight: 600; font-size: 16px; text-align: center; padding: 0 6px; font-variant-numeric: tabular-nums; transition: border-color var(--motion-fast), box-shadow var(--motion-fast); }
+.lg-in:focus { outline: none; border-color: var(--color-interactive); box-shadow: var(--shadow-ring-accent-strong); }
+.lg-in.is-hint { color: var(--color-text-secondary); font-weight: 500; }
+.lg-row.is-logged .lg-in { background: color-mix(in srgb, var(--color-surface-2) 60%, transparent); }
+.lg-add { margin-top: 8px; width: 100%; min-height: 40px; border-radius: 10px; border: 1px dashed var(--color-input-border); background: transparent; color: var(--color-text-secondary); font-weight: 600; font-size: 13px; cursor: pointer; }
+.pr-tag { position: absolute; right: 6px; top: 50%; transform: translateY(-50%) scale(0); padding: 3px 7px 2px; font-family: var(--font-block); font-weight: 700; letter-spacing: .12em; font-size: 12px; color: var(--color-btn-primary-fg); background: var(--color-btn-primary-bg); pointer-events: none;
+  clip-path: polygon(0 3px, 3px 3px, 3px 0, calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px, 100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%, 3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px)); }
+.pr-tag.is-in { animation: pr-tag-in 520ms var(--mx-ease-spring) 420ms forwards; }
+@keyframes pr-tag-in { to { transform: translateY(-50%) scale(1); } }
+.lg-card.is-thump { animation: pr-thump 460ms var(--mx-ease-spring); }
+@keyframes pr-thump { 0% { transform: none; } 30% { transform: translateY(3px) scale(.995); } 100% { transform: none; } }
+
+/* Controls */
+.pr-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; }
+.pr-controls .btn { min-height: 44px; font-size: 14px; }
+.pr-controls .btn-primary { grid-column: 1 / -1; }
+
+/* Banner (A) - slides down under the preview bar; e1RM rolls */
+.pr-banner { position: fixed; left: 50%; top: calc(var(--bar-h, 72px) + 8px); z-index: 25; width: min(480px, calc(100% - 32px)); transform: translate(-50%, -140%); opacity: 0; pointer-events: none;
+  display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 12px;
+  background: color-mix(in srgb, var(--color-surface-1) 92%, var(--color-interactive)); border: 1px solid color-mix(in srgb, var(--color-interactive) 45%, var(--color-border)); border-radius: var(--radius-card); box-shadow: var(--shadow-card-hover), 0 0 0 1px color-mix(in srgb, var(--color-interactive) 25%, transparent), 0 0 30px color-mix(in srgb, var(--color-interactive) 25%, transparent); }
+.pr-banner.is-in { pointer-events: auto; animation: pr-banner-in 560ms var(--mx-ease-spring) forwards; }
+.pr-banner.is-out { animation: pr-banner-out 320ms var(--ease-standard) forwards; }
+@keyframes pr-banner-in { to { transform: translate(-50%, 0); opacity: 1; } }
+@keyframes pr-banner-out { from { transform: translate(-50%, 0); opacity: 1; } to { transform: translate(-50%, -140%); opacity: 0; } }
+.pr-banner__crown { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 10px; background: color-mix(in srgb, var(--color-interactive) 18%, transparent); color: var(--color-interactive); }
+.pr-banner__crown svg { width: 24px; height: 24px; } .pr-banner__crown path { fill: currentColor; }
+.pr-banner__eyebrow { margin: 0; font-family: var(--font-block); font-weight: 700; letter-spacing: .14em; text-transform: uppercase; font-size: 11px; color: var(--color-interactive); }
+.pr-banner__title { margin: 0; font-weight: 700; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pr-banner__num { text-align: right; display: grid; justify-items: end; }
+.pr-banner__val { font-family: var(--font-display); font-size: 26px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+.pr-banner__val small { font-size: 12px; font-weight: 600; color: var(--color-text-secondary); margin-left: 3px; font-family: var(--font-sans); }
+.pr-banner__delta { font-size: 12px; font-weight: 700; color: var(--color-success-text); }
+
+/* Toast (B) - slimmer, bottom, above the rest bar */
+.pr-toast { position: fixed; left: 50%; bottom: 92px; z-index: 25; transform: translate(-50%, 24px); opacity: 0; pointer-events: none; display: flex; align-items: center; gap: 10px; padding: 8px 14px 8px 10px; border-radius: 999px;
+  background: var(--color-btn-primary-bg); color: var(--color-btn-primary-fg); box-shadow: var(--shadow-card-hover), 0 0 24px var(--notch-glow); font-weight: 700; font-size: 14px; white-space: nowrap; }
+.pr-toast.is-in { animation: pr-toast-in 480ms var(--mx-ease-spring) 500ms forwards; }
+.pr-toast.is-out { animation: pr-toast-out 260ms var(--ease-standard) forwards; }
+@keyframes pr-toast-in { to { transform: translate(-50%, 0); opacity: 1; } }
+@keyframes pr-toast-out { from { transform: translate(-50%, 0); opacity: 1; } to { transform: translate(-50%, 24px); opacity: 0; } }
+.pr-toast b { font-family: var(--font-display); font-size: 18px; font-variant-numeric: tabular-nums; }
+.pr-toast .tag { font-family: var(--font-block); letter-spacing: .14em; font-size: 11px; padding: 3px 7px 2px; border-radius: 6px; background: color-mix(in srgb, var(--color-btn-primary-fg) 22%, transparent); }
+
+/* Shockwave layers */
+.pr-ring { position: fixed; z-index: 22; width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--color-interactive); box-shadow: 0 0 24px 4px var(--notch-glow), inset 0 0 18px var(--notch-glow); pointer-events: none; transform: translate(-50%, -50%) scale(0); }
+.pr-flash { position: fixed; inset: 0; z-index: 2; pointer-events: none; opacity: 0; background: radial-gradient(circle at var(--x, 50%) var(--y, 50%), color-mix(in srgb, var(--color-interactive) 45%, transparent), transparent 60%); }
+.pr-burst { position: fixed; inset: 0; z-index: 30; width: 100%; height: 100%; pointer-events: none; }
+
+/* Rest bar (same depleting-line idea the app already has, lifted a notch) */
+.rest { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; transform: translateY(110%); padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px)); background: color-mix(in srgb, var(--color-surface-1) 88%, transparent); border-top: 1px solid color-mix(in srgb, var(--color-border) 50%, transparent); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); transition: transform 360ms var(--mx-ease-out-expo); }
+.rest.is-in { transform: none; }
+.rest__inner { max-width: 488px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.rest__track { position: absolute; top: 0; left: 0; right: 0; height: 2px; overflow: hidden; }
+.rest__line { height: 100%; width: 100%; background: var(--color-interactive); box-shadow: 0 0 10px var(--color-interactive); transform-origin: left center; }
+.rest__time { font-family: var(--font-display); font-variant-numeric: tabular-nums; font-size: 26px; font-weight: 700; line-height: 1; letter-spacing: -.02em; }
+.rest__kicker { font-size: 12px; color: var(--color-text-secondary); font-weight: 600; margin-left: 8px; }
+.rest__btn { min-width: 44px; min-height: 40px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--color-border); background: var(--color-surface-2); font-weight: 600; cursor: pointer; }
+
+/* Milestone takeover */
+.ms { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; padding: 24px; background: var(--color-scrim); -webkit-backdrop-filter: blur(10px) saturate(1.2); backdrop-filter: blur(10px) saturate(1.2); opacity: 0; animation: mx-fade 360ms ease-out forwards; }
+.ms.is-out { animation: mx-fade-out 260ms ease-in forwards; }
+.ms__card { display: grid; justify-items: center; gap: 6px; text-align: center; width: 100%; max-width: 360px; padding: 28px 20px 22px; color: var(--color-text); }
+.ms__crown { width: 132px; height: 96px; }
+.ms__crown rect { fill: var(--color-interactive); opacity: 0; animation: ms-px 1ms linear calc(var(--i) * 14ms) forwards; }
+.ms__crown rect.j { fill: color-mix(in srgb, white 70%, var(--color-interactive)); }
+@keyframes ms-px { to { opacity: 1; } }
+.ms__num { font-family: var(--font-display); font-size: clamp(72px, 24vw, 104px); font-weight: 700; line-height: .95; letter-spacing: -.03em; font-variant-numeric: tabular-nums; text-shadow: 0 0 40px var(--notch-glow); }
+.ms__eyebrow { margin: 0; font-family: var(--font-block); font-weight: 700; letter-spacing: .22em; text-transform: uppercase; font-size: 14px; color: var(--color-interactive); }
+.ms__sub { margin: 6px 0 14px; font-size: 14px; color: var(--color-text-secondary); }
+.ms__card .btn { min-width: 160px; min-height: 46px; }
+.ms__card > * { opacity: 0; animation: mx-rise 520ms var(--mx-ease-out-expo) forwards; }
+.ms__card > :nth-child(1) { animation-delay: 60ms; } .ms__card > :nth-child(2) { animation-delay: 700ms; } .ms__card > :nth-child(3) { animation-delay: 820ms; } .ms__card > :nth-child(4) { animation-delay: 980ms; } .ms__card > :nth-child(5) { animation-delay: 1200ms; }
+
+/* ======================================================================
+   REDUCED MOTION - no particles, ring, flash or thump (JS also checks);
+   crown and banner fade in; numbers print; rest bar fades.
+   ====================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  .mx-glow, .lg-card.is-thump { animation: none !important; }
+  .lg-row.is-flash { animation: none !important; }
+  .lg-set.is-logged:not(.is-pr) .ck, .lg-set.is-pr .cr, .pr-tag.is-in { animation: mx-fade 200ms ease-out forwards !important; transform: scale(1); }
+  .pr-tag.is-in { transform: translateY(-50%) scale(1); }
+  .pr-banner.is-in, .pr-toast.is-in { animation: mx-fade 220ms ease-out forwards !important; transform: translate(-50%, 0); }
+  .pr-banner.is-out, .pr-toast.is-out { animation: mx-fade-out 200ms ease-out forwards !important; }
+  .rest { transition: opacity 200ms; transform: none; opacity: 0; } .rest.is-in { opacity: 1; }
+  .ms__crown rect { animation-delay: 0ms !important; }
+  .ms__card > * { animation: mx-fade 220ms ease-out forwards !important; animation-delay: 0ms !important; }
+  .mx-seg__ind { transition-duration: 1ms !important; }
+}
+html.mx-reduce .mx-glow, html.mx-reduce .lg-card.is-thump, html.mx-reduce .lg-row.is-flash { animation: none !important; }
+html.mx-reduce .lg-set.is-logged:not(.is-pr) .ck, html.mx-reduce .lg-set.is-pr .cr { animation: mx-fade 200ms ease-out forwards !important; transform: scale(1); }
+html.mx-reduce .pr-tag.is-in { animation: mx-fade 200ms ease-out forwards !important; transform: translateY(-50%) scale(1); }
+html.mx-reduce .pr-banner.is-in, html.mx-reduce .pr-toast.is-in { animation: mx-fade 220ms ease-out forwards !important; transform: translate(-50%, 0); }
+html.mx-reduce .pr-banner.is-out, html.mx-reduce .pr-toast.is-out { animation: mx-fade-out 200ms ease-out forwards !important; }
+html.mx-reduce .rest { transition: opacity 200ms; transform: none; opacity: 0; } html.mx-reduce .rest.is-in { opacity: 1; }
+html.mx-reduce .ms__crown rect { animation-delay: 0ms !important; }
+html.mx-reduce .ms__card > * { animation: mx-fade 220ms ease-out forwards !important; animation-delay: 0ms !important; }
+html.mx-reduce .mx-seg__ind { transition-duration: 1ms !important; }
+</style>
+
+<span class="mx-probe" id="probe" aria-hidden="true"></span>
+<canvas class="mx-scene" id="scene" aria-hidden="true"></canvas>
+<div class="mx-glow" aria-hidden="true"></div>
+<div class="pr-flash" id="flash" aria-hidden="true"></div>
+<canvas class="pr-burst" id="burst" aria-hidden="true"></canvas>
+
+<header class="mx-bar" id="bar" role="toolbar" aria-label="Preview controls">
+  <span class="mx-bar__title">MX · PR moment</span>
+  <div class="mx-pals" role="group" aria-label="Palette">
+    <button class="mx-pal is-on" data-pal="champ" aria-label="Champ palette"></button>
+    <button class="mx-pal" data-pal="iron" aria-label="Iron palette"></button>
+    <button class="mx-pal" data-pal="chill" aria-label="Chill palette"></button>
+    <button class="mx-pal" data-pal="forest" aria-label="Forest palette"></button>
+    <button class="mx-pal" data-pal="crimson" aria-label="Crimson palette"></button>
+  </div>
+  <button class="mx-tog" id="themeTog" aria-pressed="false">Dark</button>
+  <button class="mx-tog" id="rmTog" aria-pressed="false" title="Simulate prefers-reduced-motion">Reduced</button>
+  <button class="mx-tog mx-tog--primary" id="replay">Reset</button>
+</header>
+
+<div class="pr-banner" id="banner" role="status" aria-live="polite">
+  <span class="pr-banner__crown"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3,19L3,8L8,12L12,5L16,12L21,8L21,19Z"/></svg></span>
+  <div><p class="pr-banner__eyebrow">New PR</p><p class="pr-banner__title">Bench Press · 225 × 5 @ RIR 2</p></div>
+  <div class="pr-banner__num"><span class="pr-banner__val"><span id="bannerVal">253</span><small>e1RM</small></span><span class="pr-banner__delta">+9 lbs</span></div>
+</div>
+<div class="pr-toast" id="toast" role="status" aria-live="polite"><span class="tag">PR</span><span>e1RM <b id="toastVal">253</b></span><span>+9</span></div>
+
+<main class="mx-app pr" id="app">
+  <div class="pr-options">
+    <div class="mx-seg" id="variant" role="group" aria-label="Celebration variant">
+      <span class="mx-seg__ind"></span>
+      <button aria-pressed="true" data-v="crown">A · Crown stamp</button>
+      <button aria-pressed="false" data-v="shock">B · Shockwave</button>
+    </div>
+  </div>
+  <p class="pr-hint">Tap <b>3</b> to log set 3. At <b>225 × 5</b> it beats your best e1RM (253). The buttons below trigger the same thing, plus the quiet no-PR confirm for comparison.</p>
+
+  <div class="lg-sticky"><span class="lg-ex-name">Bench Press</span><span class="lg-ex-meta">Last time 220 × 5 @ RIR 2</span></div>
+  <section class="card lg-card" id="lgCard">
+    <div class="lg-grid">
+      <div class="lg-head"><span>Set</span><span>lbs</span><span>Reps</span><span>RIR</span></div>
+      <div class="lg-row is-logged"><button class="lg-set is-logged" type="button" aria-label="Set 1 logged"><span class="n">1</span><svg class="ck" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></button><input class="lg-in" inputmode="decimal" value="205" aria-label="Set 1 weight"><input class="lg-in" inputmode="numeric" value="5" aria-label="Set 1 reps"><input class="lg-in" inputmode="numeric" value="3" aria-label="Set 1 RIR"></div>
+      <div class="lg-row is-logged"><button class="lg-set is-logged" type="button" aria-label="Set 2 logged"><span class="n">2</span><svg class="ck" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></button><input class="lg-in" inputmode="decimal" value="215" aria-label="Set 2 weight"><input class="lg-in" inputmode="numeric" value="5" aria-label="Set 2 reps"><input class="lg-in" inputmode="numeric" value="2" aria-label="Set 2 RIR"></div>
+      <div class="lg-row" id="row3"><button class="lg-set is-next" id="set3" type="button" aria-label="Log set 3"><span class="n">3</span><svg class="ck" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><svg class="cr" viewBox="0 0 24 24" aria-hidden="true"><path d="M3,19L3,8L8,12L12,5L16,12L21,8L21,19Z"/></svg></button><input class="lg-in" inputmode="decimal" value="225" aria-label="Set 3 weight"><input class="lg-in" inputmode="numeric" value="5" aria-label="Set 3 reps"><input class="lg-in" inputmode="numeric" value="2" aria-label="Set 3 RIR"><span class="pr-tag" id="prTag" aria-hidden="true">PR</span></div>
+      <div class="lg-row"><button class="lg-set is-ghost" type="button" aria-label="Set 4"><span class="n">4</span></button><input class="lg-in is-hint" inputmode="decimal" value="225" aria-label="Set 4 weight hint"><input class="lg-in is-hint" inputmode="numeric" value="5" aria-label="Set 4 reps hint"><input class="lg-in is-hint" inputmode="numeric" value="2" aria-label="Set 4 RIR hint"></div>
+    </div>
+    <button class="lg-add" type="button">+ Add set</button>
+  </section>
+
+  <div class="pr-controls">
+    <button class="btn btn-primary" id="logPR">Log set 3 · it is a PR</button>
+    <button class="btn btn-secondary" id="logQuiet">Log set 3 · no PR</button>
+    <button class="btn btn-secondary" id="milestoneBtn">Milestone (100 workouts)</button>
+  </div>
+</main>
+
+<div class="rest" id="rest" aria-live="polite">
+  <div class="rest__track"><div class="rest__line" id="restLine"></div></div>
+  <div class="rest__inner"><div><span class="rest__time" id="restTime">2:00</span><span class="rest__kicker">rest · set 4 next</span></div><div><button class="rest__btn" type="button" id="restSkip">Skip</button></div></div>
+</div>
+
+<script>
+(() => {
+  /* shared: helpers + pixel skyline + preview bar (identical in every preview) - begin */
+  'use strict';
+  const html = document.documentElement;
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+
+  /* ---------- theme / palette boot (same mechanism as the app) ---------- */
+  if (!html.getAttribute('data-theme')) {
+    html.setAttribute('data-theme', matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  }
+  if (!html.getAttribute('data-palette')) html.setAttribute('data-palette', 'champ');
+  const rmQuery = matchMedia('(prefers-reduced-motion: reduce)');
+  const syncRM = () => html.classList.toggle('mx-reduce', rmQuery.matches || html.dataset.rm === '1');
+  rmQuery.addEventListener('change', syncRM); syncRM();
+  const RM = () => html.classList.contains('mx-reduce');
+  html.classList.add('mx-ready');
+
+  /* ---------- shared helpers ---------- */
+  const EASE_SPRING = 'cubic-bezier(0.34, 1.56, 0.64, 1)';
+  const EASE_OUT_EXPO = 'cubic-bezier(0.16, 1, 0.3, 1)';
+  const easeOutExpo = t => (t >= 1 ? 1 : 1 - Math.pow(2, -10 * t));
+  const easeInOutCubic = t => (t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+  let gen = 0; let timers = [];
+  const later = (fn, ms) => { const id = setTimeout(fn, ms); timers.push(id); return id; };
+  const clearTimers = () => { timers.forEach(clearTimeout); timers = []; };
+  const fmt = (v, d = 0) => Number(v).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
+  function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+
+  /* Number roll: ease-out-expo so the last digits settle, tabular while rolling */
+  function countUp(el, to, { dur = 1100, dec = 0, prefix = '', suffix = '', delay = 0 } = {}) {
+    const from = Number(el.dataset.cur || 0);
+    el.dataset.cur = String(to);
+    const parent = el.closest('.stat-tile-value') || el;
+    const done = () => { el.textContent = prefix + fmt(to, dec) + suffix; parent.classList.remove('is-rolling'); };
+    if (RM()) { done(); return; }
+    const myGen = gen; const t0 = performance.now() + delay;
+    parent.classList.add('is-rolling');
+    const tick = now => {
+      if (myGen !== gen) return;
+      const p = Math.min(1, Math.max(0, (now - t0) / dur));
+      el.textContent = prefix + fmt(from + (to - from) * easeOutExpo(p), dec) + suffix;
+      if (p < 1) requestAnimationFrame(tick); else done();
+    };
+    requestAnimationFrame(tick);
+  }
+
+  /* Stroke draw driven by rAF so marks can key off real progress */
+  function drawLine(line, { dur = 1000, delay = 0, onProgress, onDone } = {}) {
+    const len = line.getTotalLength();
+    if (RM()) { line.style.strokeDasharray = 'none'; onProgress && onProgress(1); onDone && onDone(); return; }
+    line.style.strokeDasharray = `${len}`; line.style.strokeDashoffset = `${len}`;
+    const myGen = gen; const t0 = performance.now() + delay;
+    const tick = now => {
+      if (myGen !== gen) return;
+      const p = Math.min(1, Math.max(0, (now - t0) / dur)); const e = easeInOutCubic(p);
+      line.style.strokeDashoffset = `${len * (1 - e)}`;
+      onProgress && onProgress(e);
+      if (p < 1) requestAnimationFrame(tick); else onDone && onDone();
+    };
+    requestAnimationFrame(tick);
+  }
+
+  function wireSeg(seg, onChange) {
+    const ind = $('.mx-seg__ind, .range__ind', seg);
+    const btns = $$('button', seg);
+    const place = () => { const b = btns.find(x => x.getAttribute('aria-pressed') === 'true'); if (!b) return; ind.style.left = b.offsetLeft + 'px'; ind.style.width = b.offsetWidth + 'px'; };
+    btns.forEach(b => b.addEventListener('click', () => {
+      if (b.getAttribute('aria-pressed') === 'true') return;
+      btns.forEach(x => x.setAttribute('aria-pressed', x === b ? 'true' : 'false')); place(); onChange(b.dataset.v || b.dataset.w, b);
+    }));
+    place(); return place;
+  }
+
+  /* ---------- pixel skyline (drawn from tokens, no literals) ---------- */
+  const probe = $('#probe');
+  const token = name => { probe.style.color = `var(${name})`; return getComputedStyle(probe).color; };
+  const rgb = s => { const m = s.match(/[\d.]+/g) || [0, 0, 0]; return [+m[0], +m[1], +m[2]]; };
+  const mix = (a, b, t) => `rgb(${a.map((v, i) => Math.round(v + (b[i] - v) * t)).join(',')})`;
+  const scene = $('#scene'); let windows = []; let stars = []; let sceneCols = null;
+  function drawScene() {
+    const W = Math.ceil(innerWidth / 3), H = Math.ceil(innerHeight / 3);
+    scene.width = W; scene.height = H;
+    const ctx = scene.getContext('2d'); ctx.clearRect(0, 0, W, H);
+    const dark = html.dataset.theme === 'dark';
+    const acc = rgb(token('--color-interactive')), bg = rgb(token('--color-bg')), txt = rgb(token('--color-text'));
+    sceneCols = { far: mix(bg, acc, dark ? .14 : .10), near: mix(bg, acc, dark ? .26 : .16), win: dark ? mix(acc, txt, .55) : mix(bg, acc, .42), winOff: mix(bg, acc, dark ? .26 : .16), star: mix(acc, txt, .6) };
+    const rnd = mulberry32(2026); windows = []; stars = [];
+    if (dark) { for (let i = 0; i < 46; i++) { const s = { x: Math.floor(rnd() * W), y: Math.floor(rnd() * H * .5), a: .2 + rnd() * .6 }; stars.push(s); ctx.globalAlpha = s.a; ctx.fillStyle = sceneCols.star; ctx.fillRect(s.x, s.y, 1, 1); } }
+    ctx.globalAlpha = 1;
+    const skyline = (base, maxFrac, col, winCol, minW, maxW, step) => {
+      let x = 0;
+      while (x < W) { const w = minW + Math.floor(rnd() * (maxW - minW)); const h = Math.floor(H * maxFrac * (.35 + rnd() * .65)); ctx.fillStyle = col; ctx.fillRect(x, base - h, w, H - (base - h));
+        if (rnd() < .3) { ctx.fillRect(x + Math.floor(w / 2) - 1, base - h - 3, 2, 3); }
+        if (winCol) { for (let wy = base - h + 3; wy < base - 2; wy += step) for (let wx = x + 2; wx < x + w - 2; wx += step) { const on = rnd() < .55; windows.push({ x: wx, y: wy, on }); if (on) { ctx.fillStyle = winCol; ctx.fillRect(wx, wy, 1, 1); } } }
+        x += w + 1 + Math.floor(rnd() * 2); }
+    };
+    skyline(H - Math.floor(H * .04), .30, sceneCols.far, null, 5, 12, 3);
+    skyline(H, .22, sceneCols.near, sceneCols.win, 6, 14, 3);
+  }
+  function flicker() {
+    if (RM() || !sceneCols || html.dataset.theme !== 'dark') return;
+    const ctx = scene.getContext('2d');
+    for (let i = 0; i < 3 && windows.length; i++) { const w = windows[Math.floor(Math.random() * windows.length)]; w.on = !w.on; ctx.fillStyle = w.on ? sceneCols.win : sceneCols.winOff; ctx.fillRect(w.x, w.y, 1, 1); }
+    for (let i = 0; i < 4 && stars.length; i++) { const s = stars[Math.floor(Math.random() * stars.length)]; ctx.clearRect(s.x, s.y, 1, 1); ctx.globalAlpha = .15 + Math.random() * .7; ctx.fillStyle = sceneCols.star; ctx.fillRect(s.x, s.y, 1, 1); ctx.globalAlpha = 1; }
+  }
+  setInterval(flicker, 420);
+
+  /* ---------- preview bar wiring ---------- */
+  function wireChrome({ replay, onRM } = {}) {
+    const themeBtn = $('#themeTog'); const syncTheme = () => { const dark = html.dataset.theme === 'dark'; themeBtn.setAttribute('aria-pressed', String(dark)); themeBtn.textContent = dark ? 'Dark' : 'Light'; };
+    themeBtn.addEventListener('click', () => { html.dataset.theme = html.dataset.theme === 'dark' ? 'light' : 'dark'; syncTheme(); drawScene(); }); syncTheme();
+    const rmBtn = $('#rmTog'); rmBtn.addEventListener('click', () => { html.dataset.rm = html.dataset.rm === '1' ? '0' : '1'; rmBtn.setAttribute('aria-pressed', String(html.dataset.rm === '1')); syncRM(); onRM && onRM(); });
+    $$('.mx-pal').forEach(b => { b.classList.toggle('is-on', b.dataset.pal === html.dataset.palette); b.addEventListener('click', () => { $$('.mx-pal').forEach(x => x.classList.toggle('is-on', x === b)); html.dataset.palette = b.dataset.pal; drawScene(); }); });
+    const rp = $('#replay'); if (rp && replay) rp.addEventListener('click', replay);
+  }
+
+  /* shared helpers - end */
+  /* ---------- PR moment ---------- */
+  const EASE_OUT_EXPO2 = 'cubic-bezier(0.16, 1, 0.3, 1)';
+  const state = { variant: 'crown', logged: false, restTimer: 0, restRaf: 0 };
+  const bar = $('#bar'); const setBarH = () => html.style.setProperty('--bar-h', bar.offsetHeight + 'px'); setBarH();
+
+  /* pixel burst (canvas overlay) - squares, not confetti strips: it is pixel art */
+  const burst = $('#burst'); const bctx = burst.getContext('2d'); let parts = []; let braf = 0; let dpr = 1;
+  function sizeBurst() { dpr = Math.min(2, devicePixelRatio || 1); burst.width = Math.floor(innerWidth * dpr); burst.height = Math.floor(innerHeight * dpr); bctx.setTransform(dpr, 0, 0, dpr, 0, 0); }
+  sizeBurst();
+  function spawn(x, y, n = 70, speed = 1) {
+    if (RM()) return;
+    const acc = rgb(token('--color-interactive')), txt = rgb(token('--color-text')), bg = rgb(token('--color-bg'));
+    const cols = [mix(acc, acc, 0), mix(acc, txt, .5), mix(acc, txt, .85), mix(acc, bg, .35)];
+    for (let i = 0; i < n; i++) { const a = Math.random() * Math.PI * 2; const v = (2.5 + Math.random() * 6.5) * speed; parts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 5 * speed, s: 3 + Math.floor(Math.random() * 4), c: cols[Math.floor(Math.random() * cols.length)], life: 1, decay: .011 + Math.random() * .012 }); }
+    if (!braf) braf = requestAnimationFrame(stepBurst);
+  }
+  function stepBurst() {
+    bctx.clearRect(0, 0, innerWidth, innerHeight); parts = parts.filter(p => p.life > 0);
+    for (const p of parts) { p.vy += .26; p.vx *= .985; p.x += p.vx; p.y += p.vy; p.life -= p.decay; bctx.globalAlpha = Math.min(1, p.life * 1.7); bctx.fillStyle = p.c; bctx.fillRect(Math.round(p.x / 2) * 2, Math.round(p.y / 2) * 2, p.s, p.s); }
+    bctx.globalAlpha = 1; braf = parts.length ? requestAnimationFrame(stepBurst) : 0;
+  }
+
+  const set3 = $('#set3'), row3 = $('#row3'), card = $('#lgCard'), banner = $('#banner'), toast = $('#toast'), tag = $('#prTag');
+  const center = el => { const r = el.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; };
+
+  /* The quiet confirm: every logged set gets exactly this and nothing more */
+  function quietConfirm() {
+    set3.classList.remove('is-next'); set3.classList.add('is-logged'); set3.setAttribute('aria-label', 'Set 3 logged');
+    row3.classList.add('is-logged', 'is-flash');
+    $('.lg-row:last-child .lg-set', card).classList.add('is-next');
+    if (navigator.vibrate) { try { navigator.vibrate(8); } catch (e) {} }
+    showRest();
+  }
+  function showBanner() {
+    banner.classList.remove('is-out'); banner.classList.add('is-in');
+    const v = $('#bannerVal'); v.dataset.cur = '253'; countUp(v, 262, { dur: 900, delay: 350 });
+    later(() => { banner.classList.remove('is-in'); banner.classList.add('is-out'); }, 4200);
+  }
+  function showToast() {
+    toast.classList.remove('is-out'); toast.classList.add('is-in');
+    const v = $('#toastVal'); v.dataset.cur = '253'; countUp(v, 262, { dur: 800, delay: 650 });
+    later(() => { toast.classList.remove('is-in'); toast.classList.add('is-out'); }, 3800);
+  }
+
+  function celebrateCrown() {
+    set3.classList.add('is-pr');
+    const c = center(set3);
+    later(() => { spawn(c.x, c.y, 80, 1); if (navigator.vibrate) { try { navigator.vibrate([12, 40, 18]); } catch (e) {} } }, 140);
+    later(() => spawn(c.x, c.y, 30, .6), 420);
+    showBanner();
+  }
+  function celebrateShock() {
+    set3.classList.add('is-pr');
+    const c = center(row3);
+    if (!RM()) {
+      const ring = document.createElement('div'); ring.className = 'pr-ring'; ring.style.left = c.x + 'px'; ring.style.top = c.y + 'px'; document.body.appendChild(ring);
+      const scale = Math.ceil(Math.hypot(innerWidth, innerHeight) / 20);
+      ring.animate([{ transform: 'translate(-50%,-50%) scale(0)', opacity: 1 }, { transform: `translate(-50%,-50%) scale(${scale})`, opacity: 0 }], { duration: 1000, easing: EASE_OUT_EXPO2, fill: 'forwards' }); setTimeout(() => ring.remove(), 1050);
+      const flash = $('#flash'); flash.style.setProperty('--x', (c.x / innerWidth * 100) + '%'); flash.style.setProperty('--y', (c.y / innerHeight * 100) + '%');
+      flash.animate([{ opacity: 0 }, { opacity: .9, offset: .18 }, { opacity: 0 }], { duration: 900, easing: 'ease-out' });
+      card.classList.remove('is-thump'); void card.offsetWidth; card.classList.add('is-thump');
+      if (navigator.vibrate) { try { navigator.vibrate([30]); } catch (e) {} }
+    }
+    tag.classList.add('is-in');
+    showToast();
+  }
+  function logSet(pr) {
+    if (state.logged) return; state.logged = true; gen++;
+    quietConfirm();
+    if (!pr) return;
+    later(() => (state.variant === 'crown' ? celebrateCrown() : celebrateShock()), 160);
+  }
+
+  /* rest bar: depleting line + countdown (shortened to 20s for the preview) */
+  const rest = $('#rest'), restLine = $('#restLine'), restTime = $('#restTime');
+  function showRest() {
+    rest.classList.add('is-in'); const total = 20; const t0 = performance.now(); const myGen = gen;
+    const tick = now => { if (myGen !== gen) return; const el = (now - t0) / 1000; const left = Math.max(0, total - el); restTime.textContent = `${Math.floor(left / 60)}:${String(Math.ceil(left % 60)).padStart(2, '0')}`; restLine.style.transform = `scaleX(${left / total})`; if (left > 0) state.restRaf = requestAnimationFrame(tick); else hideRest(); };
+    state.restRaf = requestAnimationFrame(tick);
+  }
+  function hideRest() { rest.classList.remove('is-in'); cancelAnimationFrame(state.restRaf); }
+  $('#restSkip').addEventListener('click', hideRest);
+
+  /* milestone takeover */
+  const CROWN = ['.....X.....', 'X...XXX...X', 'XX..XXX..XX', 'XXX.XXX.XXX', 'XXXXXXXXXXX', 'XXXXXXXXXXX', 'X.X.X.X.X.X', 'XXXXXXXXXXX'];
+  function openMilestone() {
+    gen++;
+    const ms = document.createElement('div'); ms.className = 'ms'; ms.id = 'ms'; ms.setAttribute('role', 'dialog'); ms.setAttribute('aria-label', '100 workouts logged');
+    let rects = ''; let i = 0; CROWN.forEach((row, y) => [...row].forEach((ch, x) => { if (ch === 'X') { rects += `<rect class="${y === 6 ? 'j' : ''}" style="--i:${i++}" x="${x * 12}" y="${y * 12}" width="11" height="11"/>`; } }));
+    ms.innerHTML = `<div class="ms__card"><svg class="ms__crown" viewBox="0 0 132 96" aria-hidden="true">${rects}</svg><div class="ms__num" id="msNum">0</div><p class="ms__eyebrow">Workouts logged</p><p class="ms__sub">Since Mar 2026 · 1.4M lbs moved · 23 PRs</p><button class="btn btn-primary" type="button" id="msClose">Keep going</button></div>`;
+    document.body.appendChild(ms);
+    const num = $('#msNum'); num.dataset.cur = '0'; countUp(num, 100, { dur: 1400, delay: RM() ? 0 : 700 });
+    const c = { x: innerWidth / 2, y: innerHeight / 2 - 40 };
+    later(() => spawn(c.x, c.y - 60, 90, 1.3), 650); later(() => spawn(c.x - 80, c.y + 40, 40, .9), 1300); later(() => spawn(c.x + 80, c.y + 40, 40, .9), 1550);
+    if (navigator.vibrate) { try { navigator.vibrate([10, 60, 10, 60, 30]); } catch (e) {} }
+    const close = () => { ms.classList.add('is-out'); later(() => ms.remove(), 300); };
+    $('#msClose', ms).addEventListener('click', close); ms.addEventListener('click', e => { if (e.target === ms) close(); });
+  }
+
+  function reset() {
+    gen++; clearTimers(); state.logged = false; hideRest();
+    set3.className = 'lg-set is-next'; set3.setAttribute('aria-label', 'Log set 3'); row3.classList.remove('is-logged', 'is-flash');
+    $('.lg-row:last-child .lg-set', card).classList.remove('is-next');
+    tag.classList.remove('is-in'); banner.classList.remove('is-in', 'is-out'); toast.classList.remove('is-in', 'is-out'); card.classList.remove('is-thump');
+    $('#ms')?.remove(); parts = [];
+  }
+
+  set3.addEventListener('click', () => logSet(true));
+  $('#logPR').addEventListener('click', () => { reset(); later(() => logSet(true), 30); });
+  $('#logQuiet').addEventListener('click', () => { reset(); later(() => logSet(false), 30); });
+  $('#milestoneBtn').addEventListener('click', openMilestone);
+  const placeVariant = wireSeg($('#variant'), v => { state.variant = v; reset(); });
+  wireChrome({ replay: reset });
+  addEventListener('resize', () => { sizeBurst(); setBarH(); drawScene(); placeVariant(); });
+  drawScene();
+  (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(() => { setBarH(); placeVariant(); });
+})();
+</script>
