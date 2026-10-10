@@ -1,6 +1,6 @@
 # MX wave roadmap - motion + visuals for LogChamp
 
-**Last checkpoint:** MX1-MX4 DONE (Oct 9, 2026) - Analytics is on the MX cascade, sliding indicators, rolling KPIs, data draws, breathing ghosts, the 17px card-title scale, name + hero-number Exercises rows and `--chart-up/--chart-down` meaning tokens. MX-S DONE (every preview's environment switches with the palette; `scenes.html` shows five living environments). `npm run build` green. Next code unit: MX5 (shell) - or MX10 if Seth signs off on the scenes.html motion first.
+**Last checkpoint:** MX5 and MX6 DONE (Oct 9, 2026). MX5: shared-axis route transitions, one sliding nav indicator on phone and desktop, one skeleton language shown at once. MX6: History row grows into the completed-session header and Back reverses it; a live session does not flip. `npm run build` green. Next code unit: MX7 (logger floor) - or MX5b (one shell column) / MX10 if Seth picks scenes first. MX1-MX4 and MX-S stay DONE.
 
 This file is the wave's state. It stands on its own next to
 `MOTION-DIRECTION.md` (the design) and needs no chat history. Whoever picks
@@ -181,6 +181,36 @@ Conventions for every unit below:
   reduce); a page change slides along nav order and never blocks input;
   masthead stays fixed; build passes.
 - **Depends on:** MX1. **Packages:** none.
+- **Status:** DONE (Oct 9, 2026). Notes: direction comes from `navOrder.js`
+  (the five sections, then depth inside a section; off-axis routes fade).
+  View Transitions when the browser has them, WAAPI enter-slide otherwise;
+  `::view-transition` is `pointer-events: none` and a second tap calls
+  `skipTransition()`, so a tap mid-transition wins and navigation itself is
+  never delayed. Desktop nav is the same five names in the same order as
+  the phone nav, Profile included with an active state, one sliding
+  indicator. Skeletons render immediately (`tone="skeleton"` no longer waits
+  400 ms); Library counts are ghost pills until loaded and the Running strip
+  reserves its slot from Home's run hint; Home's block-card slot and recent
+  list, the block run page, and the "starting workout" page use the same
+  skeleton language. Not in this unit: revisits skipping the skeleton
+  (there is no page-data cache, and this block forbids data-layer changes);
+  one content-column width (MX5b); the Finish dock covering the bottom nav
+  (qol12, MX7).
+
+## MX5b - One shell column (critic B8, carried)
+
+- **Goal:** Library, the builder, Import, the block shell and Training use
+  the same content width as Home / Analytics / History, so the desktop shell
+  is one grid. MX5 already aligned the wordmark with the content column and
+  unified the nav names and order.
+- **Surface:** desktop layout.
+- **Variant:** n/a.
+- **Files:** `client/src/styles/blocks/bk-library.css`, `bk-ui.css`,
+  `bk-builder.css`, `bk-import.css`, `client/src/styles/workout-bar.css`,
+  `client/src/index.css` (`.settings-page`). These were outside MX5's files.
+- **Done when:** those pages share one max-width at desktop and the
+  persistent workout bar matches it.
+- **Depends on:** MX5. **Packages:** none.
 - **Status:** TODO.
 
 ## MX6 - List -> detail container transform
@@ -196,7 +226,15 @@ Conventions for every unit below:
 - **Done when:** tapping a History row animates its header to the detail
   header position; Back reverses; crossfade under reduce; build passes.
 - **Depends on:** MX1, MX5. **Packages:** none.
-- **Status:** TODO.
+- **Status:** DONE (Oct 9, 2026). Notes: WAAPI FLIP (`useFlip.js`), not
+  `view-transition-name` - the header does not exist until the session
+  payload loads, which is after a View Transition would have finished. The
+  route layer fades (instead of sliding) while a capture is pending so the
+  two motions do not stack. Only completed sessions participate: a live row
+  does not capture, and the live header never takes the ref. Back captures
+  on unmount of a completed session and the History row flies home once the
+  list has loaded. Reduced motion skips the FLIP; the route crossfade
+  remains.
 
 ## MX7 - Logger quiet confirm + rest dock
 

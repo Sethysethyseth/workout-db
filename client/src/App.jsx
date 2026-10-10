@@ -27,6 +27,7 @@ import { FeedbackPage } from "./pages/profile/FeedbackPage.jsx";
 import { WhatsNewPage } from "./pages/profile/WhatsNewPage.jsx";
 import { DevFeedbackPage } from "./pages/DevFeedbackPage.jsx";
 import { HelloPage } from "./pages/HelloPage.jsx";
+import { RouteTransition } from "./components/motion/RouteTransition.jsx";
 
 function HomeRoute() {
   const location = useLocation();
@@ -51,6 +52,10 @@ export default function App() {
       </Route>
 
       <Route element={<Layout />}>
+        {/* MX5: the route-transition wrapper sits around the page outlet only -
+            Layout's masthead, workout bar and bottom nav are outside it.
+            (Children keep their indentation so this diff stays reviewable.) */}
+        <Route element={<RouteTransition />}>
         <Route path="/" element={<HomeRoute />} />
         <Route
           path="/templates"
@@ -221,6 +226,7 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+        </Route>
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

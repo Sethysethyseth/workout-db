@@ -15,6 +15,7 @@ import {
   mapProgressToTiles,
   resolveBlockEffort,
 } from "../components/blocks/run/index.js";
+import { LoadingState } from "../components/LoadingState.jsx";
 import "../styles/blocks/bk-run.css";
 import "../styles/blocks/bk-library.css";
 
@@ -190,12 +191,12 @@ export function BlockRunPage() {
     return (
       <div className="bk bk-run">
         <div className="bk-shell">
-          <div className="bk-run-skel" aria-busy="true" aria-label="Loading block">
-            <div className="bk-run-skel__header" />
-            <div className="bk-run-skel__weeks" />
-            <div className="bk-run-skel__days" />
-            <div className="bk-run-skel__card" />
-          </div>
+          <LoadingState
+            tone="skeleton"
+            variant="blockrun"
+            caption={false}
+            label="Loading block"
+          />
         </div>
       </div>
     );

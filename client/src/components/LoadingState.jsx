@@ -101,17 +101,61 @@ const SKELETON_VARIANTS = {
       <div className="skeleton__row" />
     </div>
   ),
+  /* Library: the action row, the type tabs, then row cards - the same
+     silhouette the loaded tab has, so nothing pops in lower. */
+  library: ({ rows }) => (
+    <div className="skeleton skeleton--library">
+      {Array.from({ length: rows }, (_, i) => (
+        <div key={i} className="skeleton__row skeleton__row--card" />
+      ))}
+    </div>
+  ),
+  /* Block run page: the sticky header, the week pills, the day strip, then
+     the day card - geometry copied from the loaded page. */
+  blockrun: () => (
+    <div className="skeleton skeleton--blockrun">
+      <div className="skeleton__title skeleton__title--bar" />
+      <div className="skeleton__pills" aria-hidden="true">
+        <span className="skeleton__pill" />
+        <span className="skeleton__pill" />
+        <span className="skeleton__pill" />
+        <span className="skeleton__pill" />
+      </div>
+      <div className="skeleton__pills skeleton__pills--days" aria-hidden="true">
+        <span className="skeleton__pill skeleton__pill--day" />
+        <span className="skeleton__pill skeleton__pill--day" />
+        <span className="skeleton__pill skeleton__pill--day" />
+      </div>
+      <div className="skeleton__block skeleton__block--day" />
+    </div>
+  ),
+  /* A single card-sized slot (Home's "next in your block" card while the
+     run fetch is pending). */
+  card: () => (
+    <div className="skeleton skeleton--card">
+      <div className="skeleton__block skeleton__block--card" />
+    </div>
+  ),
 };
 
+/**
+ * The one loading language (MX5 / critic B6). Skeletons reserve the final
+ * layout and show AT ONCE - the 400 ms hold-back only applies to the
+ * text/barbell tones, where a flash of "Loading..." on a fast load is the
+ * thing to avoid. The skeleton's caption still waits (CSS), so an instant
+ * load shows ghost geometry for a frame, never a caption.
+ */
 export function LoadingState({
   label = "Loading…",
   slowLabel,
   tone = "soft",
-  delayed = true,
+  delayed,
   variant = "list",
   rows = 3,
+  caption = true,
 }) {
-  const { visible, slow } = useDelayedReveal(delayed, SHOW_DELAY_MS, SLOW_DELAY_MS);
+  const holdBack = delayed ?? tone !== "skeleton";
+  const { visible, slow } = useDelayedReveal(holdBack, SHOW_DELAY_MS, SLOW_DELAY_MS);
   if (!visible) return null;
 
   const text = slow && slowLabel ? slowLabel : label;
@@ -150,10 +194,12 @@ export function LoadingState({
     return (
       <div className="skeleton-wrap" role="status" aria-live="polite" aria-label={text}>
         {render({ rows })}
-        <div className="skeleton__caption">
-          <Barbell plates={2} inline />
-          <span className="skeleton__caption-text">{text}</span>
-        </div>
+        {caption ? (
+          <div className="skeleton__caption">
+            <Barbell plates={2} inline />
+            <span className="skeleton__caption-text">{text}</span>
+          </div>
+        ) : null}
       </div>
     );
   }

@@ -4,6 +4,7 @@ import * as sessionApi from "../api/sessionApi.js";
 import * as templateApi from "../api/templateApi.js";
 import * as blockRunApi from "../api/blockRunApi.js";
 import { ErrorMessage } from "../components/ErrorMessage.jsx";
+import { LoadingState } from "../components/LoadingState.jsx";
 import { WeeklyReport, weeklyReportWindows } from "../components/analytics/WeeklyReport.jsx";
 import { ActiveWorkoutHero } from "../components/workout/ActiveWorkoutHero.jsx";
 import { StartWorkoutHero } from "../components/workout/StartWorkoutHero.jsx";
@@ -433,7 +434,7 @@ export function DashboardPage() {
           />
         ) : showBlockCardPlaceholder ? (
           <section
-            className="card bk-up-next bk-up-next--placeholder"
+            className="card bk-up-next bk-up-next--placeholder skeleton__block"
             aria-hidden="true"
           />
         ) : null}
@@ -476,9 +477,13 @@ export function DashboardPage() {
           </Link>
         </div>
         {sessionsLoading && completedRecent.length === 0 ? (
-          <p className="muted small workout-tab-recent__empty" style={{ margin: 0 }}>
-            Loading…
-          </p>
+          <LoadingState
+            tone="skeleton"
+            variant="list"
+            rows={3}
+            caption={false}
+            label="Loading recent workouts…"
+          />
         ) : completedRecent.length === 0 ? (
           <p className="muted small workout-tab-recent__empty" style={{ margin: 0 }}>
             Completed workouts show up here.

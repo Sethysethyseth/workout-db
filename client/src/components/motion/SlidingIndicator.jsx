@@ -15,12 +15,16 @@ import { useReducedMotion } from "../../lib/useReducedMotion.js";
  */
 export function SlidingIndicator({ containerRef, activeKey, selector = '[aria-pressed="true"]' }) {
   const reduced = useReducedMotion();
+  const selfRef = useRef(null);
   const [box, setBox] = useState(null);
   const [ready, setReady] = useState(false);
   const readyTimer = useRef(0);
 
   useLayoutEffect(() => {
-    const host = containerRef.current;
+    /* On first mount this child's layout effect runs BEFORE React attaches
+       the parent's ref, so containerRef is still null here. The indicator's
+       own element is always attached by now - its parent is the host. */
+    const host = containerRef?.current ?? selfRef.current?.parentElement ?? null;
     if (!host) return undefined;
 
     const measure = () => {
@@ -57,16 +61,21 @@ export function SlidingIndicator({ containerRef, activeKey, selector = '[aria-pr
     return () => cancelAnimationFrame(readyTimer.current);
   }, [box, ready]);
 
-  if (!box) return null;
+  /* Always rendered (hidden until measured) so selfRef exists on mount. */
   return (
     <span
+      ref={selfRef}
       className={`mx-slide-ind${ready && !reduced ? " is-ready" : ""}`}
       aria-hidden="true"
-      style={{
-        transform: `translate(${box.x}px, ${box.y}px)`,
-        width: `${box.w}px`,
-        height: `${box.h}px`,
-      }}
+      style={
+        box
+          ? {
+              transform: `translate(${box.x}px, ${box.y}px)`,
+              width: `${box.w}px`,
+              height: `${box.h}px`,
+            }
+          : { visibility: "hidden" }
+      }
     />
   );
 }

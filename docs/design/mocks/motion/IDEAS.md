@@ -180,3 +180,18 @@ Fields: idea, why it's cool for a lifter, what it needs, rough size, status.
 - **Needs:** client only (sessions list); builds on MX10.
 - **Size:** S (after MX10).
 - **Status:** PARKED.
+
+### 15. Keep the last page on screen while the next one loads
+
+- **Idea:** the shell remembers the last rendered page per route (a small
+  in-memory cache of the React tree, or of the last fetch) so Back shows the
+  History list immediately and the shared-axis slide plays over real
+  content instead of a skeleton.
+- **Why it's cool:** the transition you just watched is the page you
+  remember, not a shimmer standing in for it. Going back to a workout you
+  just left feels instant.
+- **Needs:** client only. A data cache, which MX5 deliberately did not add
+  (its block forbids data-layer changes). Must not show stale live-session
+  state as if it were still editable.
+- **Size:** M.
+- **Status:** PARKED.

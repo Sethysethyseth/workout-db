@@ -23,6 +23,7 @@ import { AddExerciseToLibrarySheet } from "../components/workout/AddExerciseToLi
 import { ConfirmPanel } from "../components/ConfirmPanel.jsx";
 import { CoachPanel } from "../components/coach/CoachPanel.jsx";
 import { CompletedSessionSummary } from "../components/workout/CompletedSessionSummary.jsx";
+import { useFlipIn, useFlipOutOnUnmount } from "../components/motion/useFlip.js";
 import { getAdHocSessionTitle, setAdHocSessionTitle } from "../lib/adHocSessionTitle.js";
 import { sessionDisplayTitle } from "../lib/sessionDisplay.js";
 import { smartWorkoutNameFromSessionExercises } from "../lib/smartWorkoutName.js";
@@ -2503,6 +2504,19 @@ export function SessionDetailPage() {
 
   const isCompleted = Boolean(session?.completedAt);
 
+  /* MX6: the completed-session header flies from the History row. The ref
+     and both hooks stay inert while the session is live, so set entry never
+     waits on a transition. */
+  const flipHeadRef = useRef(null);
+  const flipRefs = useRef({ head: flipHeadRef });
+  useFlipIn(String(sessionId), flipRefs.current, {
+    enabled: !loading && isCompleted,
+    scaleNames: ["head"],
+  });
+  useFlipOutOnUnmount(String(sessionId), flipRefs.current, {
+    enabled: !loading && isCompleted,
+  });
+
   const setsByExercise = useMemo(() => {
     const sets = Array.isArray(session?.sets) ? session.sets : [];
     const map = new Map();
@@ -3927,7 +3941,7 @@ export function SessionDetailPage() {
           </button>
         </div>
       ) : (
-        <div className="row session-detail-head">
+        <div className="row session-detail-head" ref={isCompleted ? flipHeadRef : undefined}>
           <div className="session-detail-head__text">
             {blockContext ? (
               <div className="bk bk-log-eyebrow-wrap">
@@ -4284,6 +4298,7 @@ export function SessionDetailPage() {
         )
       ) : (
         <div className="stack session-completed">
+          <div className="stack mx-cascade">
           <CompletedSessionSummary
             session={session}
             exercises={sessionExercises}
@@ -4312,6 +4327,7 @@ export function SessionDetailPage() {
             collapsedLabel="Debrief this workout"
             autoAsk="Debrief this workout."
           />
+          </div>
 
           {confirmReopen ? (
             <div className="stack" style={{ gap: 8 }}>

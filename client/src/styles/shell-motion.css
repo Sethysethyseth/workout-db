@@ -1,0 +1,157 @@
+/* Shell motion (MX5): route transitions along the nav axis.
+   Imported by components/motion/RouteTransition.jsx. Tokens-only.
+
+   Two paths share these rules:
+   - View Transitions (progressive enhancement): `.mx-route` is the one named
+     group; `root` keeps still so the masthead, bottom nav and the fixed scene
+     (body::before, under #root) never move. The pseudo-tree never swallows
+     input: a tap mid-transition lands on the live page.
+   - WAAPI fallback runs on the wrapper itself (RouteTransition.jsx); only the
+     base rule below applies to it. */
+
+.mx-route {
+  view-transition-name: mx-page;
+  min-width: 0;
+}
+
+::view-transition {
+  pointer-events: none;
+}
+
+/* The fixed chrome gets its own groups so it stays ABOVE the moving page:
+   named groups paint over the unnamed root, so without these names the
+   sliding page drew over the masthead, bottom nav and workout bar for the
+   length of the transition (MX5-6 audit). Only the live new image shows -
+   the static old snapshot is hidden - so the nav indicator's own slide
+   stays visible and nothing ghosts. The groups never move. */
+.nav {
+  view-transition-name: mx-masthead;
+}
+
+.bottom-nav {
+  view-transition-name: mx-bottom-nav;
+}
+
+.persistent-workout-bar {
+  view-transition-name: mx-workout-bar;
+}
+
+::view-transition-group(mx-masthead),
+::view-transition-group(mx-bottom-nav),
+::view-transition-group(mx-workout-bar),
+::view-transition-new(mx-masthead),
+::view-transition-new(mx-bottom-nav),
+::view-transition-new(mx-workout-bar) {
+  animation: none;
+}
+
+::view-transition-old(mx-masthead),
+::view-transition-old(mx-bottom-nav),
+::view-transition-old(mx-workout-bar) {
+  display: none;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-group(mx-page) {
+  animation-duration: var(--mx-reveal);
+  animation-timing-function: var(--mx-ease-out-expo);
+}
+
+::view-transition-image-pair(mx-page) {
+  isolation: auto;
+}
+
+::view-transition-old(mx-page),
+::view-transition-new(mx-page) {
+  mix-blend-mode: normal;
+  animation-duration: var(--mx-reveal);
+  animation-timing-function: var(--mx-ease-out-expo);
+  animation-fill-mode: both;
+}
+
+/* Default (fade): off-axis routes and list -> detail while a FLIP runs. */
+::view-transition-old(mx-page) {
+  animation-name: mx-vt-fade-out;
+}
+
+::view-transition-new(mx-page) {
+  animation-name: mx-vt-fade-in;
+}
+
+html[data-mx-dir="forward"]::view-transition-old(mx-page) {
+  animation-name: mx-vt-out-left;
+}
+
+html[data-mx-dir="forward"]::view-transition-new(mx-page) {
+  animation-name: mx-vt-in-right;
+}
+
+html[data-mx-dir="back"]::view-transition-old(mx-page) {
+  animation-name: mx-vt-out-right;
+}
+
+html[data-mx-dir="back"]::view-transition-new(mx-page) {
+  animation-name: mx-vt-in-left;
+}
+
+@keyframes mx-vt-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes mx-vt-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes mx-vt-out-left {
+  to {
+    opacity: 0;
+    transform: translateX(-28px);
+  }
+}
+
+@keyframes mx-vt-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(28px);
+  }
+}
+
+@keyframes mx-vt-out-right {
+  to {
+    opacity: 0;
+    transform: translateX(28px);
+  }
+}
+
+@keyframes mx-vt-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-28px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(mx-page),
+  ::view-transition-old(mx-page),
+  ::view-transition-new(mx-page) {
+    animation-duration: 160ms;
+    animation-timing-function: ease-out;
+  }
+
+  ::view-transition-old(mx-page) {
+    animation-name: mx-vt-fade-out !important;
+  }
+
+  ::view-transition-new(mx-page) {
+    animation-name: mx-vt-fade-in !important;
+  }
+}

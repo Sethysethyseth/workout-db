@@ -50,5 +50,13 @@ export function StartLogWorkoutPage() {
     );
   }
 
-  return <LoadingState label="Starting workout…" slowLabel="Taking longer than usual…" />;
+  return (
+    <LoadingState
+      tone="skeleton"
+      variant="session"
+      rows={3}
+      label="Starting workout…"
+      slowLabel="Taking longer than usual…"
+    />
+  );
 }

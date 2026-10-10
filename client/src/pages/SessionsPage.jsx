@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { captureFlip, peekFlip, useFlipIn } from "../components/motion/useFlip.js";
 import * as sessionApi from "../api/sessionApi.js";
 import { ErrorMessage } from "../components/ErrorMessage.jsx";
 import { LoadingState } from "../components/LoadingState.jsx";
@@ -40,6 +41,20 @@ export function SessionsPage() {
   const [loadedOnce, setLoadedOnce] = useState(false);
   const [error, setError] = useState(null);
   const unit = loadWeightUnit();
+  /* The capture is written by the detail page's unmount, which runs after
+     this page's first render, so the key is picked up in layout. */
+  const [flipKey, setFlipKey] = useState(null);
+  const flipRowRef = useRef(null);
+  useLayoutEffect(() => {
+    if (!loadedOnce || flipKey) return;
+    const key = peekFlip();
+    if (key == null) return;
+    if (sessions.some((s) => String(s.id) === String(key) && s.completedAt)) setFlipKey(String(key));
+  }, [loadedOnce, sessions, flipKey]);
+  useFlipIn(flipKey, { head: flipRowRef }, {
+    enabled: flipKey != null,
+    scaleNames: ["head"],
+  });
 
   async function load() {
     setLoading(true);
@@ -130,7 +145,12 @@ export function SessionsPage() {
                 <Link
                   key={s.id}
                   to={`/sessions/${s.id}`}
+                  ref={!live && flipKey != null && String(s.id) === String(flipKey) ? flipRowRef : undefined}
                   className={`history-row${live ? " history-row--live" : ""}`}
+                  onClick={(e) => {
+                    if (live) return;
+                    captureFlip(String(s.id), { head: e.currentTarget });
+                  }}
                 >
                   <span className="history-row__date" aria-hidden="true">
                     <span className="history-row__weekday">{when.weekday}</span>

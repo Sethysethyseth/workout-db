@@ -21,6 +21,15 @@ import { readCurrentProgram, writeCurrentProgram } from "../lib/currentProgramSt
 import { sessionDisplayTitle } from "../lib/sessionDisplay.js";
 import "../styles/blocks/bk-library.css";
 
+/** Same hint Home writes, so Library can reserve the Running strip before the run fetch lands. */
+function readRunHint() {
+  try {
+    return sessionStorage.getItem("workoutdb-home-has-run") === "1";
+  } catch {
+    return false;
+  }
+}
+
 function libraryBlockSortRank(block, activeTemplateId, leftOffByBlockId) {
   if (activeTemplateId != null && block.id === activeTemplateId) return 0;
   if (leftOffByBlockId[block.id] && !block.isDraft) return 1;
@@ -65,6 +74,7 @@ export function MyTemplatesPage() {
   const [blocksStatus, setBlocksStatus] = useState("loading");
   const [exercisesStatus, setExercisesStatus] = useState("loading");
   const [activeRun, setActiveRun] = useState(null);
+  const [runsReady, setRunsReady] = useState(false);
   const [leftOffByBlockId, setLeftOffByBlockId] = useState({});
   const [confirmStartBlock, setConfirmStartBlock] = useState(null);
 
@@ -224,14 +234,19 @@ export function MyTemplatesPage() {
   }, []);
 
   useEffect(() => {
-    if (area === "community") return undefined;
+    if (area === "community") {
+      setRunsReady(true);
+      return undefined;
+    }
     let cancelled = false;
+    setRunsReady(false);
     Promise.all([
       blockRunApi.getActiveBlockRun().catch(() => ({ run: null })),
       blockRunApi.getLeftOffRuns().catch(() => ({ runs: [] })),
     ]).then(([runData, leftOffData]) => {
       if (cancelled) return;
       applyRunPayload(runData, leftOffData);
+      setRunsReady(true);
     });
     return () => {
       cancelled = true;
@@ -449,7 +464,9 @@ export function MyTemplatesPage() {
         </span>
       </div>
 
-      {activeRun ? (
+      {area !== "community" && !runsReady && readRunHint() ? (
+        <div className="skeleton__bar" aria-hidden="true" />
+      ) : activeRun ? (
         <LibraryRunningStrip
           name={activeRun.name}
           currentWeek={activeRun.currentWeek}
@@ -527,7 +544,13 @@ export function MyTemplatesPage() {
               onClick={() => setTab("blocks")}
             >
               <span className="bk-lib-type-tab__title">Blocks</span>
-              <span className="bk-lib-type-tab__count">{blocks.length}</span>
+              <span className="bk-lib-type-tab__count">
+                {blocksStatus === "loading" ? (
+                  <span className="skeleton__count" aria-label="loading" />
+                ) : (
+                  blocks.length
+                )}
+              </span>
             </button>
             <button
               type="button"
@@ -537,7 +560,13 @@ export function MyTemplatesPage() {
               onClick={() => setTab("workouts")}
             >
               <span className="bk-lib-type-tab__title">Workouts</span>
-              <span className="bk-lib-type-tab__count">{workouts.length}</span>
+              <span className="bk-lib-type-tab__count">
+                {workoutsStatus === "loading" ? (
+                  <span className="skeleton__count" aria-label="loading" />
+                ) : (
+                  workouts.length
+                )}
+              </span>
             </button>
             <button
               type="button"
@@ -547,7 +576,13 @@ export function MyTemplatesPage() {
               onClick={() => setTab("exercises")}
             >
               <span className="bk-lib-type-tab__title">Exercises</span>
-              <span className="bk-lib-type-tab__count">{customExercises.length}</span>
+              <span className="bk-lib-type-tab__count">
+                {exercisesStatus === "loading" ? (
+                  <span className="skeleton__count" aria-label="loading" />
+                ) : (
+                  customExercises.length
+                )}
+              </span>
             </button>
             <button
               type="button"
@@ -569,7 +604,7 @@ export function MyTemplatesPage() {
           ) : null}
 
           {tabLoading && tab !== "coach" ? (
-            <LoadingState tone="skeleton" variant="list" rows={3} slowLabel="Taking longer than usual…" />
+            <LoadingState tone="skeleton" variant="library" rows={3} slowLabel="Taking longer than usual…" />
           ) : null}
 
           {tab === "blocks" && emptyRawTab ? (
