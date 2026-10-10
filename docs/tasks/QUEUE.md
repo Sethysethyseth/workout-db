@@ -6,7 +6,7 @@ Statuses: DRAFT / QUEUED / DISPATCHED / AWAITING-REVIEW / LANDED <sha> / BOUNCED
 
 ## Active
 
-**Quality-of-life wave (QOL), opened October 8, 2026 (Opus frontier seat).**
+**Quality-of-life wave (QOL), opened October 8, 2026 (Opus frontier seat).** **MERGED to `main` Oct 9, 2026 (`b5c6777..b82ad8c`) after smoke sign-off and a gate PASS WITH FIXES; prod migrated first under "migrate prod".**
 Branch `quality-of-life-updates` (cut from `main` at `b5c6777`). Design of
 record: `docs/specs/quality-of-life-wave.md`:
 - section 1: Seth's Oct 8 rulings

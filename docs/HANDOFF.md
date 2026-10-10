@@ -1,9 +1,14 @@
 # HANDOFF — current state
 
-> **WHERE WE ARE (Oct 9, late night):** the **quality-of-life wave is
-> COMPLETE, 24/24 LANDED** on `quality-of-life-updates`, **smoke SIGNED OFF
-> by Seth**, and the **pre-main gate PASSED WITH FIXES** (both fixes done in
-> seat). Ready for the merge ritual. The wave:
+> **WHERE WE ARE (Oct 9, night): the quality-of-life wave is MERGED and on
+> PROD.** 24/24 landed, Seth smoked and signed off, the pre-main gate passed
+> with fixes. Prod migration `20261008120000_coach_key_and_history`
+> applied under "migrate prod" (the new rule: Claude Code runs it, Seth
+> approves each command - AGENTS.md gate 3) at 2026-10-10T00:11:41Z;
+> verified: `_prisma_migrations` row with staging's checksum
+> `e7370e9e...dc64e`, all three tables, all three FKs cascade. Then
+> **`main` fast-forwarded `b5c6777..b82ad8c` (64 commits)** and pushed
+> under "push to main"; `origin/main` = `b82ad8c`. The wave:
 > - qol1-qol15
 > - critic round-1 fixes qolf1-qolf4
 > - Seth's repeat-last effort hint qolf5
@@ -12,28 +17,37 @@
 > - Seth's smoke finding qolf9 (the strip becomes a hotbar)
 > - plus the direct auth fix `33cd671` (not a numbered unit)
 >
-> `main` = `b5c6777` (unchanged). Next-wave look-and-feel input:
-> `docs/tasks/qol-critic-round-2-FINDINGS.md` Part B.
+> Next-wave look-and-feel input: `docs/tasks/qol-critic-round-2-FINDINGS.md`
+> Part B.
 
-**Next action (human):** do the two prod prep steps in PICK UP HERE item 1
-(hand-apply the qol1 migration on prod Neon, set `COACH_KEY_SECRET` on prod
-Render), then say "push to main" to start the merge.
+**Next action (human):** set `COACH_KEY_SECRET` on prod Render (paste
+`C:devsecretscoach-key-secret.txt`), repoint staging Render back to
+`main`, then smoke prod (What's New modal, the setup bar, the coach page).
 
 ## PICK UP HERE (next session)
 
-1. **Before the merge (prod, Seth - in this order):**
-   - apply migration `20261008120000_coach_key_and_history` to PROD by
-     hand (RUNBOOK section 3 + the `_prisma_migrations` row template;
-     checksum copied from staging). Prod's build never migrates (RUNBOOK
-     10a "V2 RESULT"). Without it the coach breaks on prod (status, ask,
-     history all read the new tables); login does not.
-   - set `COACH_KEY_SECRET` on prod Render (32 random bytes, base64 -
-     generator in `server/.env.example`). Unset is not an outage: saving a
-     key returns 503 "byo_unavailable" and the hosted coach still works.
-   - the What's New `2026-10-quality-of-life` date is 2026-10-09; bump it
-     in `client/src/data/whatsNew.js` if the merge lands later.
-2. **Merge:** Seth's verbatim "push to main", RUNBOOK section 2, one
-   command at a time; report merged SHAs and `origin/main` HEAD after.
+1. **After the merge (Seth):**
+   - `COACH_KEY_SECRET` on prod Render `workout-db-l3gc` - the value is
+     in `C:devsecretscoach-key-secret.txt` (32 bytes, base64; never
+     rotate it once keys are saved). Unset: saving a key returns 503
+     "byo_unavailable"; the hosted coach still works.
+   - repoint staging Render (`workout-db-staging`) from
+     `quality-of-life-updates` back to `main` (RUNBOOK section 2 step 7).
+   - smoke prod: the What's New modal fires once
+     (`2026-10-quality-of-life`), a live workout shows the setup bar, the
+     coach page and Library > Coach history load.
+   - this HANDOFF commit sits on `quality-of-life-updates` one docs-only
+     commit past `main`; carry it into the next wave's branch (cut the next
+     wave from `quality-of-life-updates` or merge it in) - no prod redeploy
+     was spent on docs.
+2. **Prod migration-history drift (found at "migrate prod", Oct 9, not
+   blocking):** prod HAS the schema for `20260929120000_blocks_v2` and
+   `20261006200000_block_exercise_per_side` (`BlockRun` exists,
+   `perSide` exists) but has NO `_prisma_migrations` rows for them -
+   the Oct 7 note that their checksums were copied is wrong. Plus the older
+   Sept 26 drift (Housekeeping). Reconcile all of it (insert the two rows
+   with staging's checksums under "migrate prod") before anyone points
+   `prisma migrate deploy` at prod.
 3. **Gate follow-ups (not blockers, none authored):**
    - saved coach conversations have no per-user cap (bounded by the 40 per
      15 min coach limit and the hosted weekly cap)
