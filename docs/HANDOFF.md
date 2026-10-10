@@ -16,7 +16,12 @@
 >   previews), MX5-6 (shell transitions + History FLIP), MXF1 (critic
 >   round 1), MXF2 `20daef5` + MXC1 `266554f` (Seth's Oct 10 smoke fixes:
 >   Finish dock, rest timing, crimson charts, Strength draw; the coach keeps
->   working when you leave, coach history on History). Next: MX7 (logger
+>   working when you leave, coach history on History), MXF3 `ff2c4e0`
+>   (Seth smoke round 2: coach field above the keyboard, plain chat-bubble
+>   icon, test keyboard `scripts/virtual-keyboard-shim.js`). IN FLIGHT:
+>   three critic rounds after MXF3 (Seth, Oct 10; split by failure type:
+>   R1 typing surfaces, R2 icons/alignment, R3 coach flow + app sweep),
+>   briefs in `.playwright-mcp/mxf3-critic/`. Next: MX7 (logger
 >   floor) per ROADMAP. Fable + Opus are capped
 >   in Cursor until Oct 18 - Seth chose Cursor auto + a harder Opus-seat
 >   audit meanwhile.
@@ -34,9 +39,8 @@
 > - `main` = `b82ad8c` (QOL wave, live on prod). `quality-of-life-updates`
 >   = main + docs; `motion-wave` was cut from it.
 
-**Next action (human):** re-smoke the 11 items under "Smoke for the next
-round" on the staging Vercel deploy (`origin/motion-wave`), and answer the
-two questions in it (crimson gains colour, History remembering Coach).
+**Next action (human):** nothing yet - wait for the consolidated smoke list,
+which comes after critic round 3 (rounds in progress, Oct 10).
 
 ## Seth's mid-wave smoke (Oct 10, phone) - MX1-6 + MXF1
 
