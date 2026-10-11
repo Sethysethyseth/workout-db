@@ -353,6 +353,26 @@ Conventions for every unit below:
 - **Depends on:** MXF4. **Packages:** none.
 - **Status:** DONE (Oct 10, 2026). On-accent foreground token, iron-light ink, chart-head inset scoped to the padded card, SVG glyphs, centred Stop, one coach mark at 1.8px stroke, and the listed alignment, ring, pill, color-scheme and 429 copy fixes.
 
+## MXF6 - Coach reliability (critic round 3)
+
+- **Goal:** answers survive leaving, reload and switching conversation (the server finishes and saves; Stop really stops), status and ask failures recover with retry, plus coach bar and wait-pill polish.
+- **Surface:** `/coach`, the coach bar, History > Coach, Profile > AI access, server `/coach/ask` + `/coach/stop`.
+- **Variant:** n/a (fixes).
+- **Files:** block `docs/tasks/mxf6-coach-reliability.md`; findings `docs/tasks/mxf3-critic-round-3-FINDINGS.md`.
+- **Done when:** the block acceptance criteria pass and the seat re-runs round 3 clean.
+- **Depends on:** MXF5. **Packages:** none.
+- **Status:** TODO.
+
+## MXF7 - Critic round 3 app fixes
+
+- **Goal:** no native confirm leaving a live workout (nav works like Back, drafts saved first), the History-to-workout header no longer jumps, builder menu icons, copy, tap targets, Library skeleton height, summary index, builder name field.
+- **Surface:** nav guard, session detail header, block builder, Library, Analytics, Home, Profile.
+- **Variant:** n/a (fixes).
+- **Files:** block `docs/tasks/mxf7-critic-r3-app-fixes.md`; findings `docs/tasks/mxf3-critic-round-3-FINDINGS.md`.
+- **Done when:** the block acceptance criteria pass and the seat re-runs round 3 clean.
+- **Depends on:** MXF5. **Packages:** none.
+- **Status:** TODO.
+
 ## MX7 - Logger quiet confirm + rest dock
 
 - **Goal:** the floor stays quiet: logging a set scales the number out and
