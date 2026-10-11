@@ -18,10 +18,11 @@
 >   Finish dock, rest timing, crimson charts, Strength draw; the coach keeps
 >   working when you leave, coach history on History), MXF3 `ff2c4e0`
 >   (Seth smoke round 2: coach field above the keyboard, plain chat-bubble
->   icon, test keyboard `scripts/virtual-keyboard-shim.js`). IN FLIGHT:
->   three critic rounds after MXF3 (Seth, Oct 10; split by failure type:
->   R1 typing surfaces, R2 icons/alignment, R3 coach flow + app sweep),
->   briefs in `.playwright-mcp/mxf3-critic/`. Next: MX7 (logger
+>   icon, test keyboard `scripts/virtual-keyboard-shim.js`), MXF4 `d6ae69b`
+>   (critic R1 typing fixes), MXF5 `3378250` (critic R2 visual fixes).
+>   Critic R1 (3/10) and R2 (5/10) done + fixed; findings in
+>   `docs/tasks/mxf3-critic-round-{1,2}-FINDINGS.md`. CRITIC R3 NOT RUN
+>   (usage limit hit Oct 10, run stopped at launch) - see PICK UP HERE 0. Next: MX7 (logger
 >   floor) per ROADMAP. Fable + Opus are capped
 >   in Cursor until Oct 18 - Seth chose Cursor auto + a harder Opus-seat
 >   audit meanwhile.
@@ -39,8 +40,8 @@
 > - `main` = `b82ad8c` (QOL wave, live on prod). `quality-of-life-updates`
 >   = main + docs; `motion-wave` was cut from it.
 
-**Next action (human):** nothing yet - wait for the consolidated smoke list,
-which comes after critic round 3 (rounds in progress, Oct 10).
+**Next action (human):** nothing yet - the next session runs critic round 3,
+fixes it, then hands you the smoke list below (MXF3-5 items 12-24).
 
 ## Seth's mid-wave smoke (Oct 10, phone) - MX1-6 + MXF1
 
@@ -92,10 +93,47 @@ From MXC1 (`266554f`):
     open, delete one, delete all; Library no longer has a Coach tab.
 11. History remembers the Coach side until you close the app - keep that,
     or always open on Workouts?
+From MXF3-MXF5 (`ff2c4e0`, `d6ae69b`, `3378250`) - items 1-11 were
+smoked Oct 10 (only the coach keyboard + glyph failed; 3 = keep green,
+11 = keep remembering):
+12. Home top right: the coach button is a plain centred chat bubble.
+13. Coach: tap the box - it sits right above the keyboard, send fully
+    visible, still true for a long multi-line question; closing the
+    keyboard brings the tab bar back. If a gap remains: open
+    `/coach?kbdebug=1`, tap the box, screenshot the readout.
+14. Quick workout: type weight then reps fast - nothing lost, keyboard
+    stays up; typing in a 3rd "last time" row keeps it in place.
+15. Leave and Resume a workout: no search lists pop open; tapping Weight
+    never renames the exercise.
+16. Exercise search with the keyboard up shows 3+ results above it.
+17. Builder > + Add exercise > type: "Add ... to your library" reachable.
+18. Coach working + live workout: the chip sits above the exercise name.
+19. "Add a workout note" opens the keyboard in one tap.
+20. Dark mode: send arrow / Stop readable, Stop centred (send and stop
+    are now one 72 px pill - OK?).
+21. Analytics chart cards have even margins; no repeated axis numbers.
+22. Small x / arrow / -+ icons sit centred (logger, Home, Profile).
+23. Iron light: amber text is readable.
+24. A rate-limited coach says it is taking a breather, not "check your
+    connection".
+Questions for Seth: keep the crown on coach answers + the Analytics coach
+card, or the bubble everywhere? `/coach/status` counts against the coach
+limit (server; not changed).
 Staging Render must be on `motion-wave` for the coach's help answer to say
 "History, then Coach" (server/data/app-guide.md).
 
 ## PICK UP HERE (next session)
+
+0. **Finish the MXF3 critic loop (Seth, Oct 10):** run critic ROUND 3
+   (brief ready: `.playwright-mcp/mxf3-critic/BRIEF-common.md` +
+   `BRIEF-r3.md`; separate Opus Agent with Playwright, phone context;
+   local API 3000 mock coach + main-tree client 5173). Fix what it finds
+   (Cursor block MXF6 or direct), then hand Seth the smoke list (items
+   12-24 + R3 fixes) and STOP. Verify scripts for MXF4/5 were session
+   scratch (headless Chromium via the npx playwright-core cache +
+   `ms-playwright/chromium-1243`, second API on 3001 with
+   CLIENT_ORIGIN=http://localhost:5174). The previous session log below
+   was not yet moved to the archive (HANDOFF is a little over cap).
 
 1. **Continue the MX wave** (opened Oct 9, see the top block):
    - next unit = the first non-DONE unit in `ROADMAP.md` (MX7 logger
