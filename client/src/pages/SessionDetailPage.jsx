@@ -13,6 +13,7 @@ import * as analyticsApi from "../api/analyticsApi.js";
 import * as exerciseApi from "../api/exerciseApi.js";
 import * as sessionApi from "../api/sessionApi.js";
 import { ErrorMessage } from "../components/ErrorMessage.jsx";
+import { GlyphIcon } from "../components/GlyphIcon.jsx";
 import { LoadingState } from "../components/LoadingState.jsx";
 import { ExercisePickerSuggestions } from "../components/workout/ExercisePickerSuggestions.jsx";
 import { PlanningSetCountControl } from "../components/templates/PlanningSetCountControl.jsx";
@@ -4285,7 +4286,7 @@ export function SessionDetailPage() {
               aria-busy={discardBusy || undefined}
               onClick={() => requestDiscard()}
             >
-              <span aria-hidden="true">×</span>
+              <GlyphIcon name="close" />
             </button>
           ) : null}
           <button
@@ -4338,7 +4339,7 @@ export function SessionDetailPage() {
                 aria-busy={discardBusy || undefined}
                 onClick={() => requestDiscard()}
               >
-                <span aria-hidden="true">×</span>
+                <GlyphIcon name="close" />
               </button>
             ) : null}
             <button

@@ -1,6 +1,6 @@
 # MX wave roadmap - motion + visuals for LogChamp
 
-**Last checkpoint:** MXF4 DONE (Oct 10, 2026), after MXF3. Critic round 1 typing surfaces: suggestion lists stay closed on resume, a set field stays the same node when its draft saves (that focus drop moved here from MX7 and is handled), quick-logger search and the builder picker clear the keyboard, the coach chip no longer covers sticky exercise headings, one tap focuses the workout note, and the coach debug readout plus suggestion cards clear the title, composer, and scrollbar. Next code unit: MX7 (logger floor) - or MX5b / MX10 if Seth picks scenes first. IDEAS 16 (fling-away bars) is HELD for Seth after the wave. MX1-MX6, MX-S, MXF1, MXF2, MXC1 and MXF3 stay DONE.
+**Last checkpoint:** MXF5 DONE (Oct 10, 2026), after MXF4. Critic round 2 icons, alignment and contrast: on-accent text clears 4.5:1, Analytics chart heads keep their side inset, text-glyph icons are nav-weight SVGs, Stop is centred, iron light text uses a darker amber ink, one coach mark, and the small alignment and copy fixes in the block. Next code unit: MX7 (logger floor) - or MX5b / MX10 if Seth picks scenes first. IDEAS 16 (fling-away bars) is HELD for Seth after the wave. MX1-MX6, MX-S, MXF1, MXF2, MXC1, MXF3 and MXF4 stay DONE.
 
 This file is the wave's state. It stands on its own next to
 `MOTION-DIRECTION.md` (the design) and needs no chat history. Whoever picks
@@ -351,7 +351,7 @@ Conventions for every unit below:
 - **Done when:** the block acceptance criteria pass and the seat re-measures
   round 2 clean.
 - **Depends on:** MXF4. **Packages:** none.
-- **Status:** TODO.
+- **Status:** DONE (Oct 10, 2026). On-accent foreground token, iron-light ink, chart-head inset scoped to the padded card, SVG glyphs, centred Stop, one coach mark at 1.8px stroke, and the listed alignment, ring, pill, color-scheme and 429 copy fixes.
 
 ## MX7 - Logger quiet confirm + rest dock
 

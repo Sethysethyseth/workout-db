@@ -88,10 +88,16 @@
   box-shadow: none;
 }
 
+.bk-run .bk-day--selected .bk-progress-ring__track {
+  stroke: var(--bk-ring-on-selected);
+}
+
 /* NEXT hangs on bottom: -8px in bk-ui and crosses the pill border.
    Keep it inside the border box, with room under the day name. */
 .bk-run .bk-day:has(.bk-day__tag) {
-  padding-bottom: 18px;
+  /* Tag is 9px type + 6px padding, sitting 4px off the bottom (19px).
+     18px of padding left the name overlapping the tag by 1px. */
+  padding-bottom: 24px;
 }
 
 .bk-run .bk-day__tag {
@@ -527,7 +533,7 @@
   font: 700 11px/1 var(--font-sans);
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--color-interactive);
+  color: var(--color-interactive-ink);
 }
 
 /* Visual size stays ~12px; 44px tall hit via padding + negative margin (P3-4). */

@@ -13,6 +13,7 @@ import { WeekStrip } from "../components/workout/WeekStrip.jsx";
 import { UpNextCard } from "../components/blocks/run/UpNextCard.jsx";
 import { isRunFinished } from "../components/blocks/run/dayStatusTiles.js";
 import { CoachMarkIcon } from "../components/coach/CoachMarkIcon.jsx";
+import { GlyphIcon } from "../components/GlyphIcon.jsx";
 import { useActiveSession } from "../context/ActiveSessionContext.jsx";
 import { readCurrentProgram } from "../lib/currentProgramStorage.js";
 import { ACTIVE_WORKOUT_ERROR, startAdHocWorkoutAndNavigate } from "../lib/startAdHocWorkoutFlow.js";
@@ -361,7 +362,7 @@ export function DashboardPage() {
             aria-label="Dismiss"
             onClick={() => setWorkoutDiscardedFlash(false)}
           >
-            <span aria-hidden="true">×</span>
+            <GlyphIcon name="close" />
           </button>
         </div>
       ) : null}

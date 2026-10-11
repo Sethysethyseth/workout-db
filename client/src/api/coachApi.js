@@ -28,7 +28,8 @@ export class CoachError extends Error {
 export function coachErrorMessage(code, fallback) {
   switch (code) {
     case "rate_limited":
-      return "The coach is taking a breather. Try again in a few minutes.";
+      return (fallback && String(fallback).trim()) ||
+        "The coach is taking a breather - try again in a few minutes.";
     case "invalid_key":
       return "Anthropic rejected that key. Check it under Profile, AI access.";
     case "bad_key_format":
@@ -71,8 +72,30 @@ export function coachErrorMessage(code, fallback) {
  * `help.available` is true when a provider key resolves, whether or not AI access is on.
  * `available` stays consent plus a resolved key.
  */
-export function getCoachStatus() {
-  return http("/coach/status");
+const COACH_BREATHER =
+  "The coach is taking a breather - try again in a few minutes.";
+
+/** Server copy on a 429, or the calm breather line when the body has none. */
+export function messageFrom429(body) {
+  const message = body && typeof body.message === "string" ? body.message.trim() : "";
+  return message || COACH_BREATHER;
+}
+
+export async function getCoachStatus() {
+  try {
+    return await http("/coach/status");
+  } catch (err) {
+    if (err && err.status === 429) {
+      const body = err.body || null;
+      throw new CoachError("rate_limited", messageFrom429(body), {
+        status: 429,
+        limit: body && body.limit,
+        used: body && body.used,
+        nextAvailableAt: body && body.nextAvailableAt,
+      });
+    }
+    throw err;
+  }
 }
 
 /** Store the user's Anthropic key. The server encrypts it and returns { saved, last4 }. */
@@ -223,9 +246,17 @@ export async function askCoachStream({
     if (res.status === 401 && typeof window !== "undefined") {
       window.dispatchEvent(new Event("auth:unauthorized"));
     }
+    if (res.status === 429) {
+      const code = (data && (data.reason || data.error)) || "rate_limited";
+      throw new CoachError(code, messageFrom429(data), {
+        status: 429,
+        limit: data && data.limit,
+        used: data && data.used,
+        nextAvailableAt: data && data.nextAvailableAt,
+      });
+    }
     const code =
-      (data && (data.reason || data.error)) ||
-      (res.status === 429 ? "rate_limited" : "provider_error");
+      (data && (data.reason || data.error)) || "provider_error";
     throw new CoachError(code, coachErrorMessage(code, data && data.message), {
       status: res.status,
       limit: data && data.limit,

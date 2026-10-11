@@ -12,10 +12,33 @@ function fmt1(n) {
   return Number(n).toFixed(1);
 }
 
+/** Axis labels for the five ticks at 0, 1/4, 1/2, 3/4, max. Precision follows
+    the step, then bumps until no two ticks share a label. */
+export function muscleAxisLabels(max) {
+  const values = [0, 1, 2, 3, 4].map((i) => (Number(max) * i) / 4);
+  const step = Math.abs(Number(max)) / 4;
+  let decimals = 0;
+  if (step > 0 && step < 1) {
+    decimals = Math.min(6, Math.ceil(-Math.log10(step) - 1e-12));
+  }
+  const format = (value, places) => {
+    const text = Number(value).toFixed(places);
+    return text.replace(/(\.\d*?)0+$/, "$1").replace(/\.$/, "");
+  };
+  let labels = values.map((value) => format(value, decimals));
+  while (new Set(labels).size < labels.length && decimals < 6) {
+    decimals += 1;
+    labels = values.map((value) => format(value, decimals));
+  }
+  return labels;
+}
+
 export function MuscleVolumeChart({ perMuscle }) {
   const rows = [...perMuscle].sort((a, b) => b.effectiveSets - a.effectiveSets);
   const { max } = niceScale(Math.max(...rows.map((m) => m.effectiveSets)));
   const anyLocked = rows.some((m) => m.stimulatingSets === null);
+
+  const axisLabels = muscleAxisLabels(max);
 
   return (
     <div className="mv-chart stack">
@@ -74,9 +97,9 @@ export function MuscleVolumeChart({ perMuscle }) {
       <div className="mv-axis" aria-hidden="true">
         <span />
         <div className="mv-axis__ticks">
-          {[0, 1, 2, 3, 4].map((i) => (
+          {axisLabels.map((label, i) => (
             <span key={i} className="mv-axis__tick" style={{ left: `${i * 25}%` }}>
-              {fmt1((max * i) / 4).replace(/\.0$/, "")}
+              {label}
             </span>
           ))}
         </div>

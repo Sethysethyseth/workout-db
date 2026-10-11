@@ -80,6 +80,13 @@ function weeklyCapRemainingCopy(weeklyCap) {
   return `${weeklyCap.remaining} of ${weeklyCap.limit} questions left this week`;
 }
 
+function statusErrorCopy(err) {
+  if (err && (err.status === 429 || err.code === "rate_limited")) {
+    return err.message;
+  }
+  return coachErrorMessage("network");
+}
+
 function weeklyCapUsedCopy(weeklyCap) {
   if (!weeklyCap || weeklyCap.remaining > 0) return null;
   const when = formatNextQuestionTime(weeklyCap.nextAvailableAt);
@@ -89,7 +96,7 @@ function weeklyCapUsedCopy(weeklyCap) {
 
 function SendIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <path
         d="M5 12h14M13 6l6 6-6 6"
         stroke="currentColor"
@@ -109,19 +116,6 @@ function NewConversationIcon() {
         stroke="currentColor"
         strokeWidth="1.8"
         strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-function SuggestMark() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path
-        d="M7 16.2 4.8 20l3.6-1.4A8.2 8.2 0 1 0 7 16.2Z"
-        stroke="currentColor"
-        strokeWidth="1.7"
-        strokeLinejoin="round"
       />
     </svg>
   );
@@ -782,7 +776,7 @@ export function CoachPanel({
               {renderThread()}
             </div>
           ) : statusError ? (
-            <p className="coach-panel__notice muted small">{coachErrorMessage("network")}</p>
+            <p className="coach-panel__notice muted small">{statusErrorCopy(statusError)}</p>
           ) : !status ? (
             <div className="coach-panel__notice muted small coach-panel__notice--loading">
               <span className="barbell barbell--inline" aria-hidden="true">
@@ -819,7 +813,7 @@ export function CoachPanel({
                       onClick={() => void ask(q)}
                     >
                       <span className="coach-page-suggest__mark" aria-hidden="true">
-                        <SuggestMark />
+                        <CoachMarkIcon size={22} />
                       </span>
                       <span>{q}</span>
                     </button>
@@ -915,7 +909,7 @@ export function CoachPanel({
 
       {statusError ? (
         <p className="coach-panel__notice muted small">
-          {coachErrorMessage("network")}
+          {statusErrorCopy(statusError)}
         </p>
       ) : !status ? (
         <div className="coach-panel__notice muted small coach-panel__notice--loading">

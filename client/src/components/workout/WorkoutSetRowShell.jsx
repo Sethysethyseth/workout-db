@@ -1,3 +1,5 @@
+import { GlyphIcon } from "../GlyphIcon.jsx";
+
 /**
  * Shared chrome for set rows in template/block editing and session logging.
  * Keeps card, header, and remove-set control consistent across flows.
@@ -32,7 +34,7 @@ export function WorkoutSetRowShell({
           >
             {removeButtonMode === "icon" ? (
               <span aria-hidden="true" className="set-row-remove-icon">
-                ×
+                <GlyphIcon name="close" />
               </span>
             ) : (
               "Remove set"

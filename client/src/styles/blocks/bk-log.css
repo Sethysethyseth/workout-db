@@ -23,7 +23,7 @@
   appearance: none;
   border: 1px solid var(--color-border);
   background: color-mix(in srgb, var(--color-interactive) 10%, var(--color-surface-1));
-  color: var(--color-interactive);
+  color: var(--color-interactive-ink);
   font: 600 12px/1.2 var(--font-sans);
   letter-spacing: 0.02em;
   padding: 10px 12px;

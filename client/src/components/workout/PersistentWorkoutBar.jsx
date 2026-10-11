@@ -4,6 +4,7 @@ import * as sessionApi from "../../api/sessionApi.js";
 import { useActiveSession } from "../../context/ActiveSessionContext.jsx";
 import { sessionDisplayTitle, sessionQuickExerciseLabel } from "../../lib/sessionDisplay.js";
 import { ConfirmPanel } from "../ConfirmPanel.jsx";
+import { GlyphIcon } from "../GlyphIcon.jsx";
 import "../../styles/workout-bar.css";
 
 const DISCARD_ERROR = "Couldn't discard. Check your connection and try again.";
@@ -155,7 +156,7 @@ export function PersistentWorkoutBar() {
               setDiscardOpen(true);
             }}
           >
-            <span aria-hidden="true">×</span>
+            <GlyphIcon name="close" />
           </button>
         ) : null}
       </div>

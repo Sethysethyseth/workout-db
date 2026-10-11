@@ -188,8 +188,8 @@
   min-height: 44px;
   padding: 0 12px;
   border-radius: 10px;
-  border: 1px solid var(--bk-accent);
-  background: var(--bk-accent);
+  border: 1px solid var(--color-accent-fill);
+  background: var(--color-accent-fill);
   color: var(--bk-on-accent);
   font: 700 12px/1 var(--font-sans);
   letter-spacing: 0.04em;

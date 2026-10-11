@@ -52,7 +52,7 @@
   cursor: pointer;
   font-weight: 600;
   font-size: 0.95rem;
-  color: var(--color-interactive);
+  color: var(--color-interactive-ink);
   list-style: none;
 }
 
@@ -182,7 +182,7 @@
   min-height: 44px;
   margin-top: 4px;
   font-weight: 600;
-  color: var(--color-interactive);
+  color: var(--color-interactive-ink);
   text-decoration: none;
 }
 

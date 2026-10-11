@@ -14,6 +14,15 @@
   /* Links, focus rings, selected borders (champ palette = default) */
   --color-interactive: #5566c4;
   --color-interactive-hover: #4453ad;
+  /* Text and icons painted in the accent. Same as --color-interactive except
+     where that accent is too light to read on the page (iron light). */
+  --color-interactive-ink: var(--color-interactive);
+  /* Foreground that sits ON a --color-interactive fill. */
+  --color-on-interactive: #ffffff;
+  /* Fill behind that foreground. Same as the accent, except chill light,
+     where #5878b0 with white is 4.44:1. */
+  --color-accent-fill: var(--color-interactive);
+  color-scheme: light;
 
   /* Primary button (filled CTA) - the accent, so light mode keeps the
      palette's voice instead of dropping to a near-black slab. */
@@ -119,6 +128,8 @@ html[data-theme="dark"] {
 
   --color-interactive: #8b9bff;
   --color-interactive-hover: #aab4ff;
+  --color-on-interactive: #0f172a;
+  color-scheme: dark;
 
   --color-btn-primary-bg: #5b6ee8;
   --color-btn-primary-fg: #ffffff;
@@ -174,6 +185,14 @@ html[data-palette="champ"] {
   --color-interactive-hover: #4453ad;
 }
 
+/* A custom (AI) palette ships a server-validated primary-button pair for
+   dark mode. Accent-filled controls use that pair instead of assuming the
+   generated accent is light enough for the default dark foreground. */
+html[data-theme="dark"][data-palette="custom"] {
+  --color-accent-fill: var(--color-btn-primary-bg);
+  --color-on-interactive: var(--color-btn-primary-fg);
+}
+
 html[data-theme="dark"][data-palette="champ"] {
   --color-interactive: #8b9bff;
   --color-interactive-hover: #aab4ff;
@@ -186,6 +205,9 @@ html[data-theme="dark"][data-palette="champ"] {
 html[data-palette="iron"] {
   --color-interactive: #f59e0b;
   --color-interactive-hover: #d97706;
+  /* Amber-800: fills stay #f59e0b; this is the ink for text and icons. */
+  --color-interactive-ink: #92400e;
+  --color-on-interactive: #1c1917;
   --color-btn-primary-fg: #1c1917;
 
   --color-bg: #f9f5f0;
@@ -199,6 +221,8 @@ html[data-palette="iron"] {
 html[data-theme="dark"][data-palette="iron"] {
   --color-interactive: #fbbf24;
   --color-interactive-hover: #fcd34d;
+  --color-interactive-ink: var(--color-interactive);
+  --color-on-interactive: #1c1917;
   --color-btn-primary-bg: #f59e0b;
   --color-btn-primary-fg: #1c1917;
   --color-btn-primary-hover-bg: #fbbf24;
@@ -275,6 +299,9 @@ html[data-theme="dark"][data-palette="crimson"] {
 html[data-palette="chill"] {
   --color-interactive: #5878b0;
   --color-interactive-hover: #496699;
+  /* White on #5878b0 is 4.44:1. This fill is one step darker (4.50:1)
+     and is used only behind on-accent text. */
+  --color-accent-fill: #5777af;
 
   --color-bg: #f2f4f8;
   --color-surface-1: #fcfdff;
@@ -287,6 +314,7 @@ html[data-palette="chill"] {
 html[data-theme="dark"][data-palette="chill"] {
   --color-interactive: #7c9fd4;
   --color-interactive-hover: #9fbce6;
+  --color-accent-fill: var(--color-interactive);
   --color-btn-primary-bg: #5878b0;
   --color-btn-primary-fg: #ffffff;
   --color-btn-primary-hover-bg: #6a8ac2;
@@ -768,7 +796,7 @@ a {
 }
 
 .bottom-nav__item.active {
-  color: var(--color-interactive);
+  color: var(--color-interactive-ink);
   font-weight: 700;
 }
 
@@ -1740,7 +1768,7 @@ html[data-theme="dark"] .loading-state {
   height: 56px;
   border-radius: 999px;
   background: color-mix(in srgb, var(--color-interactive) 18%, var(--color-surface-1));
-  color: var(--color-interactive);
+  color: var(--color-interactive-ink);
   font-size: 18px;
   font-weight: 800;
   letter-spacing: 0.02em;
@@ -1878,9 +1906,12 @@ html[data-theme="dark"] .profile-hub-stat-tile {
 }
 
 .settings-row__chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
-  font-size: 1.1rem;
-  line-height: 1;
+  width: 24px;
+  height: 24px;
   color: var(--color-text-secondary);
   opacity: 0.72;
 }
@@ -2137,7 +2168,7 @@ html[data-theme="dark"] .settings-group {
   padding: 1px 6px;
   border-radius: 999px;
   background: color-mix(in srgb, var(--color-interactive) 16%, transparent);
-  color: var(--color-interactive);
+  color: var(--color-interactive-ink);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -2368,7 +2399,7 @@ html[data-theme="dark"] .settings-group {
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--color-interactive);
+  color: var(--color-interactive-ink);
 }
 
 .palette-studio__result-hint {
@@ -3354,7 +3385,7 @@ html[data-theme="dark"] .workout-builder .workout-builder-insert .btn.btn-second
 .home-resume-card__cta {
   margin-top: 4px;
   font-weight: 700;
-  color: var(--color-interactive);
+  color: var(--color-interactive-ink);
 }
 
 .workout-builder-append {
@@ -4010,7 +4041,7 @@ html[data-theme="dark"] .checkbox-inline:hover {
 }
 
 .session-summary-footnote {
-  padding: 0 2px;
+  padding: 0;
 }
 
 .session-section-heading {
@@ -4254,7 +4285,7 @@ button.session-exercise-tracked-pill--action:focus-visible {
   font-size: 0.85em;
   font-weight: 800;
   line-height: 1;
-  color: var(--color-interactive);
+  color: var(--color-interactive-ink);
 }
 
 .session-exercise-heading-summary {
@@ -4316,7 +4347,7 @@ html[data-theme="dark"] .session-detail-page .session-exercise-block--live.sessi
 }
 
 .session-detail-page .session-set-toolbar.row {
-  align-items: center;
+  align-items: flex-end;
 }
 
 .session-detail-page .session-set-rows {
@@ -4402,7 +4433,7 @@ html[data-theme="dark"] .session-set-field--needs-value input {
   font-size: 0.8rem;
   font-weight: 800;
   line-height: 1;
-  color: color-mix(in srgb, var(--color-text) 65%, var(--color-interactive));
+  color: color-mix(in srgb, var(--color-text) 65%, var(--color-interactive-ink));
   background: color-mix(in srgb, var(--color-nav-active-bg) 92%, transparent);
   border: 1px solid color-mix(in srgb, var(--color-interactive) 28%, var(--color-border));
 }
@@ -4419,7 +4450,7 @@ html[data-theme="dark"] .session-set-field--needs-value input {
   font-weight: 800;
   line-height: 1;
   letter-spacing: 0.02em;
-  color: color-mix(in srgb, var(--color-text) 58%, var(--color-interactive));
+  color: color-mix(in srgb, var(--color-text) 58%, var(--color-interactive-ink));
   background: color-mix(in srgb, var(--color-nav-active-bg) 88%, transparent);
   border: 1px solid color-mix(in srgb, var(--color-interactive) 22%, var(--color-border));
 }
@@ -4428,8 +4459,9 @@ html[data-theme="dark"] .session-set-field--needs-value input {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 1.75rem;
-  padding: 0 10px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0 12px;
   border-radius: 999px;
   font-size: 0.78rem;
   font-weight: 700;
@@ -4445,7 +4477,7 @@ html[data-theme="dark"] .session-set-field--needs-value input {
 }
 
 .session-side-mode-chip--on {
-  color: color-mix(in srgb, var(--color-text) 72%, var(--color-interactive));
+  color: color-mix(in srgb, var(--color-text) 72%, var(--color-interactive-ink));
   background: color-mix(in srgb, var(--color-nav-active-bg) 92%, transparent);
   border-color: color-mix(in srgb, var(--color-interactive) 32%, var(--color-border));
 }
@@ -4462,18 +4494,19 @@ html[data-theme="dark"] .session-set-field--needs-value input {
 }
 
 .set-row-remove--icon {
-  min-width: 2.5rem;
-  min-height: 2.5rem;
-  padding: 0 6px;
-  font-size: 1.35rem;
-  line-height: 1;
-  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
   border-radius: 10px;
 }
 
 .set-row-remove-icon {
-  display: block;
-  margin-top: -1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .session-set-field-groups {
@@ -5065,7 +5098,7 @@ html[data-theme="dark"] .exercise-name-suggestions {
 .quick-log-toggle--on {
   border-color: var(--color-interactive);
   background: var(--color-nav-active-bg);
-  color: var(--color-interactive);
+  color: var(--color-interactive-ink);
   box-shadow: var(--shadow-ring-accent-strong);
 }
 
@@ -5086,7 +5119,7 @@ html[data-theme="dark"] .exercise-name-suggestions {
 
 .programs-current-pill {
   border-color: var(--color-interactive);
-  color: var(--color-interactive);
+  color: var(--color-interactive-ink);
   background: var(--color-nav-active-bg);
 }
 
@@ -5100,7 +5133,7 @@ html[data-theme="dark"] .exercise-name-suggestions {
   display: inline-block;
   margin-top: 4px;
   font-weight: 700;
-  color: var(--color-interactive);
+  color: var(--color-interactive-ink);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
@@ -5374,7 +5407,7 @@ html[data-theme="dark"] .workout-hero.card--notched::before {
 }
 
 .workout-tab-recent__view-all:hover {
-  color: var(--color-interactive);
+  color: var(--color-interactive-ink);
 }
 
 .workout-tab-recent__empty {
@@ -5390,7 +5423,7 @@ html[data-theme="dark"] .workout-hero.card--notched::before {
 }
 
 .workout-tab-recent__row-title:hover {
-  color: var(--color-interactive);
+  color: var(--color-interactive-ink);
 }
 
 .workout-tab-recent__row-when {
@@ -5559,7 +5592,7 @@ html[data-theme="dark"] .secondary-actions {
 
 .secondary-actions__footnote a {
   font-weight: 600;
-  color: var(--color-interactive);
+  color: var(--color-interactive-ink);
   text-decoration: underline;
   text-underline-offset: 2px;
 }
@@ -5572,7 +5605,7 @@ html[data-theme="dark"] .secondary-actions {
 
 .workout-tab__community-link {
   font-weight: 600;
-  color: var(--color-interactive);
+  color: var(--color-interactive-ink);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
@@ -5887,7 +5920,7 @@ html[data-theme="dark"] .start-workout-picker__sheet {
   padding: 2px 7px;
   border-radius: 999px;
   background: color-mix(in srgb, var(--color-interactive) 14%, var(--color-surface-2));
-  color: var(--color-interactive);
+  color: var(--color-interactive-ink);
 }
 
 .add-exercise-library-sheet__match-meta {
@@ -5902,7 +5935,7 @@ html[data-theme="dark"] .start-workout-picker__sheet {
   padding: 10px 4px;
   border: none;
   background: none;
-  color: var(--color-interactive);
+  color: var(--color-interactive-ink);
   font-weight: 600;
   font-size: 0.9rem;
   text-align: center;
@@ -6187,7 +6220,7 @@ html[data-theme="dark"] .start-workout-picker__sheet {
   flex-shrink: 0;
   font-weight: 800;
   font-size: 0.92rem;
-  color: var(--color-interactive);
+  color: var(--color-interactive-ink);
   padding-left: 8px;
 }
 
@@ -6419,8 +6452,8 @@ html[data-theme="dark"] .auth-page .auth-form.card {
 /* Primary button: filled accent, readable text, matching radius. */
 .auth-form .btn {
   width: 100%;
-  background: var(--color-interactive);
-  color: #fff;
+  background: var(--color-accent-fill);
+  color: var(--color-on-interactive);
   border-radius: var(--radius-control);
   /* Subtle lift, not a halo — tight spread + low alpha so hot palettes
      (crimson/gold) don't bloom. */
@@ -6526,7 +6559,7 @@ html[data-theme="dark"] .auth-page .auth-form.card {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: var(--color-interactive);
+  color: var(--color-interactive-ink);
 }
 
 .whats-new-release__date {
@@ -6565,7 +6598,7 @@ html[data-theme="dark"] .auth-page .auth-form.card {
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.09em;
-  color: var(--color-interactive);
+  color: var(--color-interactive-ink);
 }
 
 .whats-new-section__heading::before {
@@ -6624,7 +6657,7 @@ html[data-theme="dark"] .auth-page .auth-form.card {
 }
 
 .whats-new-all-link:hover {
-  color: var(--color-interactive);
+  color: var(--color-interactive-ink);
 }
 
 .whats-new-archive-entry {
@@ -6774,7 +6807,7 @@ html[data-theme="dark"] .auth-page .auth-form.card {
 }
 
 .analytics-card-footlink a {
-  color: var(--color-interactive);
+  color: var(--color-interactive-ink);
 }
 
 .analytics-muscle-name {
@@ -6967,7 +7000,7 @@ html[data-palette="forest"] .analytics-page {
 }
 
 .weekly-report__link:hover {
-  color: var(--color-interactive);
+  color: var(--color-interactive-ink);
 }
 
 .weekly-report__stats {
@@ -8301,7 +8334,7 @@ html[data-theme="dark"][data-palette="iron"] .analytics-page {
   text-transform: uppercase;
   border-radius: 4px;
   background: color-mix(in srgb, var(--color-interactive) 15%, transparent);
-  color: var(--color-interactive);
+  color: var(--color-interactive-ink);
   min-width: 50px;
 }
 
@@ -8335,7 +8368,7 @@ html[data-theme="dark"][data-palette="iron"] .analytics-page {
   letter-spacing: 0.02em;
   border-radius: 4px;
   background: color-mix(in srgb, var(--color-interactive) 18%, transparent);
-  color: var(--color-interactive);
+  color: var(--color-interactive-ink);
   border: 1px solid color-mix(in srgb, var(--color-interactive) 30%, transparent);
 }
 
@@ -8403,7 +8436,7 @@ html[data-theme="dark"][data-palette="iron"] .analytics-page {
   width: 100%;
   height: 100%;
   overflow: visible;
-  color: color-mix(in srgb, var(--color-interactive) 32%, var(--color-border));
+  color: color-mix(in srgb, var(--color-interactive-ink) 32%, var(--color-border));
 }
 
 .analytics-ghost-sparkline-line {
@@ -8674,7 +8707,7 @@ html[data-theme="dark"][data-palette="iron"] .analytics-page {
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--color-interactive);
+  color: var(--color-interactive-ink);
 }
 
 .coach-launch__label {
@@ -8794,7 +8827,7 @@ html[data-theme="dark"][data-palette="iron"] .analytics-page {
   padding: 2px 6px;
   border-radius: 4px;
   background: color-mix(in srgb, var(--color-interactive) 16%, transparent);
-  color: var(--color-interactive);
+  color: var(--color-interactive-ink);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -8867,7 +8900,7 @@ html[data-theme="dark"][data-palette="iron"] .analytics-page {
 }
 
 .coach-panel__notice a {
-  color: var(--color-interactive);
+  color: var(--color-interactive-ink);
   font-weight: 600;
 }
 
@@ -9254,7 +9287,7 @@ html[data-theme="dark"][data-palette="iron"] .analytics-page {
 .history-row__status--live {
   border-color: color-mix(in srgb, var(--color-interactive) 45%, var(--color-border));
   background: var(--color-nav-active-bg);
-  color: var(--color-interactive);
+  color: var(--color-interactive-ink);
 }
 
 .history-row__chevron {
@@ -9526,7 +9559,7 @@ html:not([data-theme="dark"])[data-palette="chill"] {
 }
 
 .session-summary__stat--pr .session-summary__stat-value {
-  color: var(--color-interactive);
+  color: var(--color-interactive-ink);
 }
 
 .session-summary__notes {
@@ -9564,8 +9597,9 @@ html:not([data-theme="dark"])[data-palette="chill"] {
   font-family: var(--font-display);
   font-size: 0.8rem;
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
   letter-spacing: 0.04em;
-  color: var(--color-interactive);
+  color: var(--color-interactive-ink);
   opacity: 0.9;
 }
 
@@ -9801,7 +9835,7 @@ html:not([data-theme="dark"])[data-palette="chill"] {
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--color-interactive);
+  color: var(--color-interactive-ink);
   line-height: 1;
 }
 

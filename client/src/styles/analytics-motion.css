@@ -8,8 +8,9 @@
    card titles ONE step below in the body face; eyebrows 11px caps. -- */
 
 /* Balance sits in a padded card, so its head must not add a second inset.
-   Other card titles live in a zero-padding card plus this head's padding. */
-.analytics-page section.card > .analytics-card-head {
+   Table cards (Muscles, Strength, Execution) are zero-padding and need the
+   head's own 14px inset, matching the rows under them. */
+.analytics-page section.card:not(.analytics-table-card) > .analytics-card-head {
   padding-left: 0;
   padding-right: 0;
 }

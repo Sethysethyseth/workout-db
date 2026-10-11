@@ -12,7 +12,10 @@
   --bk-line-2: color-mix(in srgb, var(--color-border) 55%, transparent);
   --bk-accent: var(--color-interactive);
   --bk-accent-soft: color-mix(in srgb, var(--color-interactive) 14%, var(--color-surface-1));
-  --bk-on-accent: var(--color-btn-primary-fg);
+  --bk-on-accent: var(--color-on-interactive);
+  /* Empty progress ring on a selected day: track must clear 3:1 on the
+     selected fill (a 28% accent mix). 70% text toward the surface does. */
+  --bk-ring-on-selected: color-mix(in srgb, var(--color-text) 70%, var(--color-surface-1));
   --bk-good: var(--color-success-accent);
   --bk-good-soft: var(--color-success-bg);
   --bk-warn: var(--color-warn-accent);
@@ -146,6 +149,13 @@
   background: var(--bk-good-soft);
   border-color: transparent;
   color: var(--bk-good);
+}
+
+/* Light mode: each palette's success hue on its own soft chip is 2-4:1
+   (forest 1.96, iron 2.56). Darken that same hue with the text ink so the
+   chip keeps its family (lime on iron, teal on chill) and reads >= 4.5:1. */
+html:not([data-theme="dark"]) .bk-chip--good {
+  color: color-mix(in srgb, var(--bk-good) 45%, var(--color-text));
 }
 
 .bk-chip--warn {
@@ -373,7 +383,7 @@
   font: 700 9px/1 var(--font-sans);
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  background: var(--bk-accent);
+  background: var(--color-accent-fill);
   color: var(--bk-on-accent);
   padding: 3px 5px;
   border-radius: 4px;

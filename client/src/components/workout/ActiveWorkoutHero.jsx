@@ -1,6 +1,7 @@
 import { useState } from "react";
 import * as sessionApi from "../../api/sessionApi.js";
 import { ConfirmPanel } from "../ConfirmPanel.jsx";
+import { GlyphIcon } from "../GlyphIcon.jsx";
 import "../../styles/workout-bar.css";
 import {
   blockDayPrimaryTitle,
@@ -112,7 +113,7 @@ export function ActiveWorkoutHero({ session, nowMs, onResume, setsProgress = nul
             setDiscardOpen(true);
           }}
         >
-          <span aria-hidden="true">×</span>
+          <GlyphIcon name="close" />
         </button>
       ) : null}
       <p className="workout-hero__eyebrow muted small">In progress</p>

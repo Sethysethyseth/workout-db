@@ -164,6 +164,6 @@ html[data-theme="dark"] .session-detail-page .session-set-field--needs-value inp
   font-size: 9px;
   font-weight: 700;
   line-height: 1;
-  color: var(--color-interactive);
+  color: var(--color-interactive-ink);
   pointer-events: none;
 }

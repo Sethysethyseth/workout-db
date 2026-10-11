@@ -1,3 +1,4 @@
+import { GlyphIcon } from "../GlyphIcon.jsx";
 import { Segmented } from "../blocks/ui/Segmented.jsx";
 import { setTrainingPref, useTrainingPrefs } from "../../lib/trainingPrefs.js";
 import "../../styles/training-prefs.css";
@@ -137,7 +138,7 @@ export function TrainingPrefsForm({ variant = "page", effortNote }) {
                   setTrainingPref("restTimer", { enabled: true, seconds: rest.seconds - 15 })
                 }
               >
-                -
+                <GlyphIcon name="minus" />
               </button>
               <span className="training-prefs-stepper__value" aria-live="polite">
                 {formatRest(rest.seconds)}
@@ -151,7 +152,7 @@ export function TrainingPrefsForm({ variant = "page", effortNote }) {
                   setTrainingPref("restTimer", { enabled: true, seconds: rest.seconds + 15 })
                 }
               >
-                +
+                <GlyphIcon name="plus" />
               </button>
             </div>
           </div>

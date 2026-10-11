@@ -739,7 +739,7 @@ html.bk-builder-kbd .bk-builder__weeks {
 .bk-ex-card__chip[aria-pressed="true"] {
   background: color-mix(in srgb, var(--color-interactive) 22%, var(--color-surface-1));
   border-color: color-mix(in srgb, var(--color-interactive) 55%, var(--color-border));
-  color: var(--color-interactive);
+  color: var(--color-interactive-ink);
 }
 
 .bk-ex-card__chip-icon {

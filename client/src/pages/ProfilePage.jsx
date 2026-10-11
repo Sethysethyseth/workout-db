@@ -7,6 +7,7 @@ import { ErrorMessage } from "../components/ErrorMessage.jsx";
 import { canReviewFeedback } from "../lib/reviewerEmails.js";
 import { isProdEnv, isWhatsNewPreview } from "../lib/appEnv.js";
 import { LatestUpdateCard } from "../components/whatsnew/LatestUpdateCard.jsx";
+import { GlyphIcon } from "../components/GlyphIcon.jsx";
 import { countCompleted, countThisWeek, weekStreak } from "../lib/profileStats.js";
 
 function getInitials(user) {
@@ -114,7 +115,7 @@ export function ProfilePage() {
               <span className="muted small">Units, effort, notes, rest timer</span>
             </span>
             <span className="settings-row__chevron" aria-hidden="true">
-              ›
+              <GlyphIcon name="chevron" />
             </span>
           </Link>
           <Link className="settings-row settings-row--link" to="/profile/appearance">
@@ -122,7 +123,7 @@ export function ProfilePage() {
               <span className="settings-row__value">Appearance</span>
             </span>
             <span className="settings-row__chevron" aria-hidden="true">
-              ›
+              <GlyphIcon name="chevron" />
             </span>
           </Link>
           <Link className="settings-row settings-row--link" to="/profile/security">
@@ -130,7 +131,7 @@ export function ProfilePage() {
               <span className="settings-row__value">Security</span>
             </span>
             <span className="settings-row__chevron" aria-hidden="true">
-              ›
+              <GlyphIcon name="chevron" />
             </span>
           </Link>
           <Link className="settings-row settings-row--link" to="/profile/ai">
@@ -138,7 +139,7 @@ export function ProfilePage() {
               <span className="settings-row__value">AI access</span>
             </span>
             <span className="settings-row__chevron" aria-hidden="true">
-              ›
+              <GlyphIcon name="chevron" />
             </span>
           </Link>
           <Link className="settings-row settings-row--link" to="/coach">
@@ -147,7 +148,7 @@ export function ProfilePage() {
               <span className="muted small">Ask about training or how to use the app</span>
             </span>
             <span className="settings-row__chevron" aria-hidden="true">
-              ›
+              <GlyphIcon name="chevron" />
             </span>
           </Link>
           <Link className="settings-row settings-row--link" to="/profile/feedback">
@@ -155,7 +156,7 @@ export function ProfilePage() {
               <span className="settings-row__value">Send feedback</span>
             </span>
             <span className="settings-row__chevron" aria-hidden="true">
-              ›
+              <GlyphIcon name="chevron" />
             </span>
           </Link>
           {showDevFeedback ? (
@@ -164,7 +165,7 @@ export function ProfilePage() {
                 <span className="settings-row__value">Dev feedback</span>
               </span>
               <span className="settings-row__chevron" aria-hidden="true">
-                ›
+                <GlyphIcon name="chevron" />
               </span>
             </Link>
           ) : null}
