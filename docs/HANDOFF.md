@@ -39,14 +39,18 @@
 > - `main` = `b82ad8c` (QOL wave, live on prod). `quality-of-life-updates`
 >   = main + docs; `motion-wave` was cut from it.
 
-**Next action (human):** smoke items 12-39 below on your phone against the
-staging Vercel deploy of `motion-wave` (`fec6d06`), then send findings or
-"signed off".
+**Next action (human):** on the staging deploy, open `/coach?kbdebug=1`, tap the
+question box so the keyboard is up, and drop one screenshot (readout and
+keyboard both in view) into `claudefiledrop/`.
 
 ## Smoke for the next round (carry forward - fill at each landing)
 
 Items 1-11 (MXF2 + MXC1) were smoked Oct 10; that list and the Oct 10
 mid-wave smoke findings are in the archive (ARCHIVED Oct 11).
+**Oct 11: Seth smoked 12-39 - all PASSED except two:** the coach box is
+still cut off under the keyboard (OPEN, needs the kbdebug screenshot), and
+Analytics bars slid only on the first visit (FIXED `9a500e8` - slow the first
+time, faster every return; re-check that one).
 From MXF3-MXF5 (`ff2c4e0`, `d6ae69b`, `3378250`) - items 1-11 were
 smoked Oct 10 (only the coach keyboard + glyph failed; 3 = keep green,
 11 = keep remembering):
@@ -116,10 +120,20 @@ waiting?
 
 ## PICK UP HERE (next session)
 
-0. **Seth's smoke of items 12-39** (the critic loop is done: R3 ran Oct
-   11, MXF6 + MXF7 landed). Fold his findings into a fix block (Cursor
-   auto, or direct when trivial), re-smoke, then continue the wave at MX7.
-
+0. **Coach box under the keyboard, third pass - diagnose from data.**
+   Seth's smoke (Oct 11) says it is still cut off. MXF3's fit
+   (`CoachPage.jsx` + `lib/coachKeyboardFit.js`) sets
+   `virtualKeyboard.overlaysContent` on /coach and trusts
+   `boundingRect.top` when it has a height, else `vv.offsetTop +
+   vv.height` vs a no-keyboard baseline; one rAF correction lands the
+   composer bottom on that top. If the chosen top is wrong, the
+   correction lands on the wrong line. The ~20-25 CSS px miss matches the
+   gesture-bar inset, and `index.html` opts into edge-to-edge
+   (`viewport-fit=cover`), but which reading lies is unproven. With his
+   screenshot: keyboard top in CSS px = screenshot px / dpr; compare it
+   with `keyboardTop` / `source` / `virtualKeyboard` in the readout, fix
+   the wrong reading (likely a bottom-inset term), and only then re-smoke.
+   Do not ship a third guess without that screenshot.
 1. **Continue the MX wave** (opened Oct 9, see the top block):
    - next unit = the first non-DONE unit in `ROADMAP.md` (MX7 logger
      floor); write a broad brief (MX0/MX1-4/MX5-6 briefs are the
@@ -312,6 +326,11 @@ part before a mid-session /clear is rebuilt from QUEUE and the commits):
 - ROADMAP (MXF6/7 DONE + checkpoint), What's New (mxf6, mxf7), staging
   Render probed on `motion-wave`. Test chats and workout 524 removed.
 - Critic loop complete; handed Seth smoke items 12-39 and stopped.
+- Seth's smoke (same day): 12-39 pass except the coach box under the
+  keyboard (open, asked for the kbdebug screenshot) and Analytics
+  replay. MXF8 `9a500e8` (direct): returns replay at ~0.55x instead of
+  fading - his ruling, recorded in MOTION-DIRECTION; checked 1000 ms
+  first visit vs 550 ms on returns. kbdebug readout prints dpr + width.
 
 **Rule:** rewritten in place at the end of every working session; kept CAPPED
 (~300 lines). Aged session logs move VERBATIM - never summarized - to

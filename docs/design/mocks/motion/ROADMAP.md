@@ -1,6 +1,6 @@
 # MX wave roadmap - motion + visuals for LogChamp
 
-**Last checkpoint:** MXF7 DONE (Oct 11, 2026), after MXF6. Critic round 3 (5/10) fixed: coach answers survive leaving, reload and switching (server finishes and saves; Stop really stops), status and ask failures recover, coach bar polish; no native dialog leaving a live workout, the History header no longer jumps, builder icons, copy, tap targets. Seth smokes items 12-39 next. Next code unit after his smoke: MX7 (logger floor) - or MX5b / MX10 if Seth picks scenes first. IDEAS 16 (fling-away bars) is HELD for Seth after the wave. MX1-MX6, MX-S, MXF1-MXF7 and MXC1 stay DONE.
+**Last checkpoint:** MXF8 (Oct 11, 2026): Seth smoked items 12-39 - all passed but two. Analytics now replays faster on every return (DONE, `9a500e8`). The coach box is still cut off under his keyboard: waiting on his `/coach?kbdebug=1` screenshot, then a fix. Next code unit after that: MX7 (logger floor) - or MX5b / MX10 if Seth picks scenes first. IDEAS 16 (fling-away bars) is HELD for Seth after the wave. MX1-MX6, MX-S, MXF1-MXF7 and MXC1 stay DONE.
 
 This file is the wave's state. It stands on its own next to
 `MOTION-DIRECTION.md` (the design) and needs no chat history. Whoever picks
@@ -372,6 +372,18 @@ Conventions for every unit below:
 - **Done when:** the block acceptance criteria pass and the seat re-runs round 3 clean.
 - **Depends on:** MXF5. **Packages:** none.
 - **Status:** DONE (Oct 11, 2026, `fec6d06`). Nav leaves a live workout like Back (drafts flushed first, no dialog); History-to-workout header still and named; builder SVG dots; fixed-width summary index; Library strip placeholder at strip height with the list held for run order; copy and plurals; 44 px hit areas; builder name padding, no autofocus on touch.
+
+## MXF8 - Seth smoke Oct 11 (direct fix)
+
+- **Goal:** Analytics replays its entrance on every visit - full pace the
+  first time in a browser session, ~0.55x on every return (Seth's ruling,
+  MOTION-DIRECTION). Coach keyboard cut-off: diagnosis pending Seth's
+  `/coach?kbdebug=1` screenshot.
+- **Surface:** Analytics (all views); /coach debug readout.
+- **Variant:** n/a (fix).
+- **Files:** `client/src/styles/analytics-motion.css`, `client/src/components/motion/CountUp.jsx`, `client/src/pages/AnalyticsPage.jsx`.
+- **Depends on:** MXF7. **Packages:** none.
+- **Status:** Analytics DONE (Oct 11, 2026, `9a500e8`); coach keyboard OPEN.
 
 ## MX7 - Logger quiet confirm + rest dock
 
