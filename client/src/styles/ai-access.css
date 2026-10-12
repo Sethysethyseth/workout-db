@@ -22,6 +22,13 @@
   min-height: 44px;
 }
 
+/* The status line is 66px once it arrives. Keep that slot from the first
+   paint so Profile > AI access does not jump when the fetch resolves. */
+.ai-coach-status {
+  min-height: 66px;
+  box-sizing: border-box;
+}
+
 /* Off state, same pair as the Training switches. On stays .ai-switch--on.
    Knob and track mix text into surface-1 so they separate in champ dark
    (both surfaces are navy) and in crimson light. */

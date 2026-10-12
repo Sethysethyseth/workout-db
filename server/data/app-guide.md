@@ -50,11 +50,11 @@ A template here is a saved single workout, not a multi-week block. Library's Wor
 
 From Home, Start a workout can also open Start workout, where Empty workout and your Saved workouts are listed. Making a saved workout public is Make public on its card. Make private takes it back.
 
-# Library (Blocks, Workouts, Exercises, Coach)
+# Library (Blocks, Workouts, Exercises)
 
 Open Library from the bottom bar, or from the top bar on a wide screen. The title is Library.
 
-Yours is your own stuff. Community browses public workouts and blocks from other people. Under Yours, four tabs: Blocks, Workouts, Exercises, and Coach. Each tab shows as soon as it is ready.
+Yours is your own stuff. Community browses public workouts and blocks from other people. Under Yours, three tabs: Blocks, Workouts, and Exercises. Each tab shows as soon as it is ready.
 
 Blocks are the multi-week plans. New block and Import sit at the top. A card offers Start or Resume, Edit, and Delete. Delete block removes the plan. Logged workouts stay in History.
 
@@ -64,11 +64,11 @@ Exercises lists movements you added yourself. Tap the card, or tap Edit, to open
 
 To add one: in the block builder, or while logging, choose Add to your library, name the exercise, pick at least one Main muscle, then Add exercise. It shows up under Library, Exercises.
 
-Coach lists conversations with the coach. Open one to continue it. Delete removes one. Delete all conversations clears the list.
-
 # History
 
 History is every finished workout, newest first. Open History from the bottom bar (or the top bar on a wide screen), then tap a workout to open it. You can look back at what you logged. An old completed workout does not ask you to fill in effort after the fact.
+
+Coach conversations are on History, under Coach. Open one to continue it. Delete removes one. Delete all conversations clears the list.
 
 # Analytics and Exercises
 

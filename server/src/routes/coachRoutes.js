@@ -5,6 +5,7 @@ const { aiRateLimitKey } = require("../ai/rateLimitKeys");
 const {
   getCoachStatus,
   askCoach,
+  stopCoach,
   generatePalette,
   draftBlock,
   importMap,
@@ -41,6 +42,7 @@ router.get("/conversations/:id", authRequired, getCoachConversation);
 router.delete("/conversations", authRequired, deleteAllCoachConversations);
 router.delete("/conversations/:id", authRequired, deleteCoachConversation);
 router.post("/ask", authRequired, askCoach);
+router.post("/stop", authRequired, stopCoach);
 router.post("/palette", authRequired, generatePalette);
 router.post("/block-draft", authRequired, draftBlock);
 router.post("/import-map", authRequired, importMap);

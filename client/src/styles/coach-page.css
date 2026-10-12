@@ -260,11 +260,47 @@
 }
 
 .coach-page-wait .ai-wait--status {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  padding: 0;
   min-height: 0;
+  line-height: 1;
 }
 
 .coach-page-wait .ai-wait__copy {
+  display: block;
+  margin: 0;
   font-size: 13px;
+  line-height: 1;
+}
+
+.coach-page__pending {
+  margin: 0 0 12px;
+}
+
+.coach-page__status-fail {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  flex: 0 0 auto;
+  padding: 8px 0 4px;
+}
+
+.coach-question-count {
+  margin: 0;
+  text-align: right;
+}
+
+.coach-msg__retry {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-interactive-ink);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
 }
 
 .coach-page__composer {

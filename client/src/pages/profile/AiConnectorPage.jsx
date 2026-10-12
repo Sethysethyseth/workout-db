@@ -409,14 +409,15 @@ export function AiConnectorPage() {
             </p>
             <p>
               Your coach conversations are saved to your account. Find or delete them in
-              Library, under Coach.
+              History, under Coach.
             </p>
-            {coachStatus ? (
-              <p className={`ai-coach-status${coachStatus.available ? " ai-coach-status--ready" : ""}`}>
-                <span className="ai-coach-status__dot" aria-hidden="true" />
-                {coachStatusLine(coachStatus)}
-              </p>
-            ) : null}
+            <p
+              className={`ai-coach-status${coachStatus?.available ? " ai-coach-status--ready" : ""}`}
+              aria-busy={coachStatus ? undefined : true}
+            >
+              <span className="ai-coach-status__dot" aria-hidden="true" />
+              {coachStatus ? coachStatusLine(coachStatus) : "Checking the coach…"}
+            </p>
 
             <details className="ai-key-details">
               <summary className="ai-key-details__summary">

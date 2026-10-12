@@ -7,6 +7,7 @@ import { peekHistorySessions, putHistorySessions } from "../lib/historySessionCa
 import * as sessionApi from "../api/sessionApi.js";
 import { ErrorMessage } from "../components/ErrorMessage.jsx";
 import { LoadingState } from "../components/LoadingState.jsx";
+import { useCoachSession } from "../context/CoachSessionContext.jsx";
 import { formatRepsValue } from "../lib/repsDisplay.js";
 import {
   compareSessionsByRecentActivity,
@@ -62,6 +63,26 @@ export function SessionsPage() {
   const sideHostRef = useRef(null);
   const paramSide = searchParams.get("view");
   const view = paramSide === "coach" ? "coach" : "workouts";
+  const coachSession = useCoachSession();
+  const [coachRefresh, setCoachRefresh] = useState(0);
+  const seenBeatRef = useRef(coachSession.bar.beat);
+
+  useEffect(() => {
+    if (coachSession.bar.phase !== "finished") return;
+    if (coachSession.bar.beat === seenBeatRef.current) return;
+    seenBeatRef.current = coachSession.bar.beat;
+    if (view === "coach") setCoachRefresh((n) => n + 1);
+  }, [view, coachSession.bar.phase, coachSession.bar.beat]);
+
+  useEffect(() => {
+    function onVisible() {
+      if (document.visibilityState !== "visible") return;
+      if (view !== "coach") return;
+      setCoachRefresh((n) => n + 1);
+    }
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [view]);
 
   useEffect(() => {
     if (paramSide === "coach" || paramSide === "workouts") {
@@ -202,7 +223,7 @@ export function SessionsPage() {
         </button>
       </div>
 
-      {view === "coach" ? <CoachConversationList /> : null}
+      {view === "coach" ? <CoachConversationList key={coachRefresh} /> : null}
 
       {view === "workouts" ? <ErrorMessage error={error} /> : null}
       {view === "workouts" && loading && sessions.length === 0 ? (

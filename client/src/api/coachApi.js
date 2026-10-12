@@ -200,6 +200,16 @@ async function readErrorBody(res) {
   }
 }
 
+/** Ask the server to abort one in-flight answer. Unknown ids are a silent 204. */
+export async function stopCoachStream(streamId) {
+  if (!streamId) return;
+  try {
+    await http("/coach/stop", { method: "POST", body: { streamId } });
+  } catch {
+    /* The local read still ends. A missed stop may finish and save. */
+  }
+}
+
 /**
  * Stream one coach answer. Resolves with { text, meta, stopReason }; rejects
  * with a CoachError whose `code` maps to copy via coachErrorMessage.
@@ -211,6 +221,7 @@ export async function askCoachStream({
   focus,
   history,
   conversationId,
+  streamId,
   signal,
   onMeta,
   onDelta,
@@ -233,6 +244,7 @@ export async function askCoachStream({
         focus,
         history,
         ...(conversationId != null ? { conversationId } : {}),
+        ...(streamId ? { streamId } : {}),
       }),
       signal,
     });
@@ -254,6 +266,16 @@ export async function askCoachStream({
         used: data && data.used,
         nextAvailableAt: data && data.nextAvailableAt,
       });
+    }
+    if (res.status === 400 && data && typeof data.error === "string") {
+      const limitMatch = data.error.match(/at most (\d+) characters/);
+      if (limitMatch) {
+        throw new CoachError(
+          "question_too_long",
+          `Questions can be up to ${limitMatch[1]} characters.`,
+          { status: 400 }
+        );
+      }
     }
     const code =
       (data && (data.reason || data.error)) || "provider_error";

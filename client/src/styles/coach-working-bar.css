@@ -17,9 +17,27 @@
   text-align: left;
   border-color: color-mix(in srgb, var(--color-interactive) 42%, var(--color-border));
   padding: 8px 10px 8px 12px;
-  min-height: 52px;
+  height: 62px;
+  min-height: 62px;
+  max-height: 62px;
+  box-sizing: border-box;
   border-radius: 14px;
   color: inherit;
+  opacity: 1;
+  transform: translateY(0);
+  transition:
+    opacity var(--motion-slow) var(--ease-standard),
+    transform var(--motion-slow) var(--ease-standard);
+}
+
+.coach-working-bar[data-motion="closed"] {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+
+.coach-working-bar[data-motion="open"] {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 ::view-transition-group(mx-coach-bar),
@@ -86,9 +104,12 @@
   border-radius: 10px;
   background: transparent;
   color: var(--color-text-secondary);
-  font-size: 1.35rem;
-  line-height: 1;
+  padding: 0;
   cursor: pointer;
+}
+
+.coach-working-bar__dismiss svg {
+  display: block;
 }
 
 .coach-working-bar__main:focus-visible,
@@ -117,6 +138,15 @@
   .coach-working-bar--beat .coach-msg__crown {
     animation: none;
   }
+
+  .coach-working-bar {
+    transition: none;
+  }
+
+  .coach-working-bar[data-motion="closed"],
+  .coach-working-bar[data-motion="open"] {
+    transform: none;
+  }
 }
 
 .coach-working-bar-wrap[data-place="top"] {
@@ -134,7 +164,9 @@
 
 .app:has(.session-detail-page--live) .coach-working-bar--chip,
 .app:has(.persistent-workout-bar) .coach-working-bar--chip {
-  min-height: 44px;
+  height: 62px;
+  min-height: 62px;
+  max-height: 62px;
   padding-block: 6px;
 }
 

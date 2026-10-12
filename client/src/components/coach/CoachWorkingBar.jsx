@@ -1,6 +1,7 @@
-import { useEffect, useLayoutEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useCoachSession } from "../../context/CoachSessionContext.jsx";
+import { GlyphIcon } from "../GlyphIcon.jsx";
 import "../../styles/coach-working-bar.css";
 
 function fieldIsFocused(root) {
@@ -29,12 +30,55 @@ export function CoachWorkingBar() {
   const navigate = useNavigate();
   const location = useLocation();
   const session = useCoachSession();
-  const { bar, conversationId, dismissBar, noteAskFinished } = session;
+  const { bar, conversationId, dismissBar, noteAskFinished, armAnswerStart } = session;
   const onCoach = location.pathname === "/coach";
   const [place, setPlace] = useState("bottom");
+  const [present, setPresent] = useState(false);
+  const [motion, setMotion] = useState("closed");
+  const presentRef = useRef(false);
+  const visibleRef = useRef(false);
 
   const visible =
     !onCoach && bar.phase && !bar.dismissed && (bar.phase === "working" || bar.phase === "finished" || bar.phase === "error");
+  visibleRef.current = visible;
+
+  useEffect(() => {
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (visible) {
+      presentRef.current = true;
+      setPresent(true);
+      if (reduce) {
+        setMotion("open");
+        return undefined;
+      }
+      setMotion("closed");
+      let frame2 = 0;
+      const frame1 = requestAnimationFrame(() => {
+        frame2 = requestAnimationFrame(() => {
+          if (visibleRef.current) setMotion("open");
+        });
+      });
+      return () => {
+        cancelAnimationFrame(frame1);
+        if (frame2) cancelAnimationFrame(frame2);
+      };
+    }
+    if (!presentRef.current) return undefined;
+    if (reduce) {
+      presentRef.current = false;
+      setPresent(false);
+      setMotion("closed");
+      return undefined;
+    }
+    setMotion("closed");
+    const timer = window.setTimeout(() => {
+      if (!visibleRef.current) {
+        presentRef.current = false;
+        setPresent(false);
+      }
+    }, 260);
+    return () => window.clearTimeout(timer);
+  }, [visible]);
 
   useEffect(() => {
     if (!onCoach) return;
@@ -44,7 +88,7 @@ export function CoachWorkingBar() {
   }, [onCoach, bar.phase, noteAskFinished]);
 
   useEffect(() => {
-    if (!visible) return undefined;
+    if (!present) return undefined;
     function fit() {
       setPlace(preferredPlace());
       const barEl = document.querySelector(".coach-working-bar");
@@ -81,11 +125,11 @@ export function CoachWorkingBar() {
       document.removeEventListener("focusin", fit);
       document.removeEventListener("focusout", fit);
     };
-  }, [visible, location.pathname]);
+  }, [present, location.pathname]);
 
   useLayoutEffect(() => {
     const root = document.documentElement;
-    if (!visible || place !== "top") {
+    if (!present || place !== "top") {
       root.style.removeProperty("--coach-working-chip-h");
       return undefined;
     }
@@ -105,39 +149,45 @@ export function CoachWorkingBar() {
       observer.disconnect();
       root.style.removeProperty("--coach-working-chip-h");
     };
-  }, [visible, place, bar.phase, bar.snippet, bar.beat]);
+  }, [present, place, bar.phase, bar.snippet, bar.beat]);
 
-  if (!visible) return null;
+  const frozenBarRef = useRef(bar);
+  if (visible) frozenBarRef.current = bar;
+  const viewBar = visible ? bar : frozenBarRef.current;
 
-  const finished = bar.phase === "finished";
-  const errored = bar.phase === "error";
+  if (!present) return null;
+
+  const finished = viewBar.phase === "finished";
+  const errored = viewBar.phase === "error";
   // Short enough to fit beside the action and the dismiss at 390px.
   const title = errored ? "Coach could not answer" : finished ? "Coach answered" : "Coach is working on it";
   const cta = errored ? "Open" : finished ? "Read" : "View";
 
   function openCoach() {
+    if (finished && conversationId) armAnswerStart(conversationId);
     navigate(conversationId ? `/coach?c=${conversationId}` : "/coach");
   }
 
   return (
     <div className="coach-working-bar-wrap container" data-place={place}>
       <div
-        className={`coach-working-bar card${finished && bar.beat > 0 ? " coach-working-bar--beat" : ""}${place === "top" ? " coach-working-bar--chip" : ""}`}
-        data-coach-bar={bar.phase}
+        className={`coach-working-bar card${finished && viewBar.beat > 0 ? " coach-working-bar--beat" : ""}${place === "top" ? " coach-working-bar--chip" : ""}`}
+        data-coach-bar={viewBar.phase}
+        data-motion={motion}
       >
         <button type="button" className="coach-working-bar__main" onClick={openCoach}>
-          <span className="coach-msg__crown" aria-hidden="true" key={bar.beat} />
+          <span className="coach-msg__crown" aria-hidden="true" key={viewBar.beat} />
           <span className="coach-working-bar__copy">
             <span className="coach-working-bar__title">{title}</span>
-            {bar.snippet && bar.phase === "working" ? (
-              <span className="coach-working-bar__snippet muted small">{bar.snippet}</span>
+            {viewBar.snippet && viewBar.phase === "working" ? (
+              <span className="coach-working-bar__snippet muted small">{viewBar.snippet}</span>
             ) : null}
           </span>
           <span className="coach-working-bar__cta">{cta}</span>
         </button>
         {finished || errored ? (
           <button type="button" className="coach-working-bar__dismiss" aria-label="Dismiss" onClick={dismissBar}>
-            <span aria-hidden="true">×</span>
+            <GlyphIcon name="close" size={20} />
           </button>
         ) : null}
       </div>

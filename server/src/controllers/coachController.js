@@ -33,6 +33,7 @@ const {
   formatProblemsForPrompt,
 } = require("../coach/importFix");
 const { reserveUses, settleUses, refundUses } = require("../coach/usageLedger");
+const streamRegistry = require("../coach/streamRegistry");
 const { CoachProviderError, completeAnthropic } = require("../coach/provider");
 const { completeCursor, extractFirstJsonText } = require("../coach/cursorProvider");
 const {
@@ -320,8 +321,30 @@ async function getCoachStatus(req, res, next) {
   }
 }
 
+function responseOpen(res) {
+  if (!res) return false;
+  if (res.writableEnded || res.destroyed) return false;
+  if (res.writable === false) return false;
+  return true;
+}
+
+/** Skip writes once the phone has gone. Never throw: the answer still finishes. */
 function writeSse(res, event, data) {
-  res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+  if (!responseOpen(res)) return;
+  try {
+    res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+  } catch {
+    /* client disconnected */
+  }
+}
+
+function endSse(res) {
+  if (!responseOpen(res)) return;
+  try {
+    res.end();
+  } catch {
+    /* client disconnected */
+  }
 }
 
 /**
@@ -339,6 +362,7 @@ async function askCoach(req, res, next, deps = {}) {
   let deliveredAnswer = false;
   let offTopicDecline = false;
   let declineChars = 0;
+  let registeredStreamId = null;
   const prismaClient = deps.prisma || prisma;
   const reserve = deps.reserveUses || reserveUses;
   const settle = deps.settleUses || settleUses;
@@ -406,15 +430,26 @@ async function askCoach(req, res, next, deps = {}) {
     const { system, messages } = buildCoachPrompt({ request, data });
 
     const controller = new AbortController();
-    res.on("close", () => controller.abort());
+    // A dropped connection does not abort. Stop is POST /coach/stop, which
+    // aborts this controller through the registry. Off-topic, refusal, and
+    // provider-error saves stay on the branches below.
+    const streamId = streamRegistry.normalizeStreamId(req.body && req.body.streamId);
+    if (streamId) {
+      streamRegistry.register(req.authUserId, streamId, controller);
+      registeredStreamId = streamId;
+    }
 
-    res.status(200).set({
-      "Content-Type": "text/event-stream; charset=utf-8",
-      "Cache-Control": "no-cache, no-transform",
-      Connection: "keep-alive",
-      "X-Accel-Buffering": "no",
-    });
-    res.flushHeaders();
+    try {
+      res.status(200).set({
+        "Content-Type": "text/event-stream; charset=utf-8",
+        "Cache-Control": "no-cache, no-transform",
+        Connection: "keep-alive",
+        "X-Accel-Buffering": "no",
+      });
+      if (typeof res.flushHeaders === "function") res.flushHeaders();
+    } catch {
+      /* The client already left. Generation and the save still run. */
+    }
 
     writeSse(res, "meta", {
       model: resolved.config.provider === "mock" ? "mock" : resolved.config.model,
@@ -457,7 +492,8 @@ async function askCoach(req, res, next, deps = {}) {
           stopReason = item.stopReason ?? null;
         } else if (item.type === "error") {
           writeSse(res, "error", { code: item.code, message: item.message });
-          return res.end();
+          endSse(res);
+          return;
         }
       }
       const flushed = filter.flush();
@@ -469,7 +505,8 @@ async function askCoach(req, res, next, deps = {}) {
           code: "refusal",
           message: "The coach can't answer that one.",
         });
-        return res.end();
+        endSse(res);
+        return;
       }
       if (!controller.signal.aborted) {
         try {
@@ -488,25 +525,37 @@ async function askCoach(req, res, next, deps = {}) {
           console.error("[coach] failed to save conversation", err && err.message);
         }
       }
-      if (controller.signal.aborted) return res.end();
+      if (controller.signal.aborted) {
+        endSse(res);
+        return;
+      }
       writeSse(res, "done", { stopReason });
-      return res.end();
+      endSse(res);
+      return;
     } catch (err) {
-      if (controller.signal.aborted) return res.end();
+      if (controller.signal.aborted) {
+        endSse(res);
+        return;
+      }
       const code = err instanceof CoachProviderError ? err.code : "provider_error";
       const message =
         err instanceof CoachProviderError ? err.message : "The coach could not reach its model.";
       console.error("[coach] stream failed", code, err && err.message);
       writeSse(res, "error", { code, message });
-      return res.end();
+      endSse(res);
+      return;
     }
   } catch (err) {
     if (res.headersSent) {
       console.error("[coach] failed after headers were sent", err);
-      return res.end();
+      endSse(res);
+      return;
     }
     return next(err);
   } finally {
+    if (registeredStreamId) {
+      streamRegistry.finish(req.authUserId, registeredStreamId);
+    }
     if (reservedIds) {
       const shortDecline = offTopicDecline && declineChars <= OFF_TOPIC_DECLINE_MAX_CHARS;
       if (!deliveredAnswer || shortDecline) {
@@ -1311,6 +1360,18 @@ async function deleteCoachConversation(req, res, next) {
   }
 }
 
+/**
+ * POST /coach/stop { streamId } - abort the caller's in-flight ask.
+ * Unknown ids and other users' streams are the same silent 204.
+ */
+function stopCoach(req, res) {
+  const streamId = streamRegistry.normalizeStreamId(req.body && req.body.streamId);
+  if (streamId && req.authUserId != null && req.authUserId !== "") {
+    streamRegistry.stop(req.authUserId, streamId);
+  }
+  return res.status(204).end();
+}
+
 /** DELETE /coach/conversations - every conversation this user owns. */
 async function deleteAllCoachConversations(req, res, next) {
   try {
@@ -1324,6 +1385,7 @@ async function deleteAllCoachConversations(req, res, next) {
 module.exports = {
   getCoachStatus,
   askCoach,
+  stopCoach,
   generatePalette,
   draftBlock,
   importMap,

@@ -6,7 +6,10 @@ import {
   coachErrorMessage,
   getCoachConversation,
   getCoachStatus,
+  listCoachConversations,
+  stopCoachStream,
 } from "../../api/coachApi.js";
+import { ConfirmPanel } from "../ConfirmPanel.jsx";
 import { useCoachSession } from "../../context/CoachSessionContext.jsx";
 import { purgeLegacyCoachKey } from "../../lib/coachKeyPref.js";
 import { HELP_CHIPS, buildSuggestedQuestions } from "../../lib/coachSuggestions.js";
@@ -121,6 +124,10 @@ function NewConversationIcon() {
   );
 }
 
+/** Matches server/src/coach/coachRequest.js MAX_QUESTION_CHARS. */
+const COACH_QUESTION_MAX = 1000;
+const COACH_QUESTION_COUNT_FROM = 900;
+
 const PAGE_FOLLOW_PX = 64;
 
 function nearPageBottom(el) {
@@ -202,6 +209,7 @@ export function CoachPanel({
   const [localHistoryLoading, setLocalHistoryLoading] = useState(false);
   const [localHistoryError, setLocalHistoryError] = useState(null);
   const localAbortRef = useRef(null);
+  const localStreamIdRef = useRef(null);
   const localConversationIdRef = useRef(null);
   const localLoadedIdRef = useRef(null);
   const localLoadGenRef = useRef(0);
@@ -209,11 +217,18 @@ export function CoachPanel({
   const threadRef = useRef(null);
   const inputRef = useRef(null);
   const pendingQuestionRef = useRef(null);
+  const pendingPollRef = useRef({ startedAt: 0, attempt: 0 });
   const pageAliveRef = useRef(true);
   const followRef = useRef(true);
   const prevCountRef = useRef(0);
   const prevTailRef = useRef("");
   const coldEndPinRef = useRef(null);
+  const landedOnStartRef = useRef(false);
+  const focusComposerOnPaint = useRef(false);
+  const allowSwitchRef = useRef(null);
+  const statusReqRef = useRef(0);
+  const [historyNonce, setHistoryNonce] = useState(0);
+  const [pendingLeave, setPendingLeave] = useState(null);
 
   const thread = pageLayout ? session.thread : localThread;
   const setThread = pageLayout ? session.setThread : setLocalThread;
@@ -228,6 +243,7 @@ export function CoachPanel({
   const historyError = pageLayout ? session.historyError : localHistoryError;
   const setHistoryError = pageLayout ? session.setHistoryError : setLocalHistoryError;
   const abortRef = pageLayout ? session.abortRef : localAbortRef;
+  const streamIdRef = pageLayout ? session.streamIdRef : localStreamIdRef;
   const conversationIdRef = pageLayout ? session.conversationIdRef : localConversationIdRef;
   const loadedIdRef = pageLayout ? session.loadedIdRef : localLoadedIdRef;
   const loadGenRef = pageLayout ? session.loadGenRef : localLoadGenRef;
@@ -245,21 +261,55 @@ export function CoachPanel({
     purgeLegacyCoachKey();
   }, []);
 
+  const refreshStatus = useCallback(async () => {
+    const gen = (statusReqRef.current += 1);
+    try {
+      const data = await getCoachStatus();
+      if (statusReqRef.current !== gen) return;
+      setStatus(data);
+      setStatusError(null);
+    } catch (err) {
+      if (statusReqRef.current !== gen) return;
+      setStatusError(err);
+    }
+  }, [setStatus]);
+
   useEffect(() => {
-    if (!open || status) return;
+    if (!open || status) return undefined;
     let cancelled = false;
+    const gen = (statusReqRef.current += 1);
     (async () => {
       try {
         const data = await getCoachStatus();
-        if (!cancelled) setStatus(data);
+        if (cancelled || statusReqRef.current !== gen) return;
+        setStatus(data);
+        setStatusError(null);
       } catch (err) {
-        if (!cancelled) setStatusError(err);
+        if (cancelled || statusReqRef.current !== gen) return;
+        setStatusError(err);
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [open, status]);
+  }, [open, status, setStatus]);
+
+  useEffect(() => {
+    if (!open || status || !statusError) return undefined;
+    function retryIfBack() {
+      if (document.visibilityState === "hidden") return;
+      void refreshStatus();
+    }
+    function onVisible() {
+      if (document.visibilityState === "visible") retryIfBack();
+    }
+    window.addEventListener("online", retryIfBack);
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.removeEventListener("online", retryIfBack);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [open, status, statusError, refreshStatus]);
 
   useEffect(() => {
     pageAliveRef.current = true;
@@ -268,8 +318,9 @@ export function CoachPanel({
     };
   }, []);
 
-  /* Sheet layouts still stop the stream when they unmount. The page layout
-     keeps the controller in CoachSessionProvider so leaving /coach does not. */
+  /* Sheet layouts abort the local read on unmount. That is a disconnect, so
+     the server still finishes and saves. The page layout keeps the controller
+     in CoachSessionProvider so leaving /coach does not drop the read either. */
   useEffect(() => {
     if (pageLayout) return undefined;
     const ref = localAbortRef;
@@ -284,16 +335,23 @@ export function CoachPanel({
       setHistoryLoading(false);
       return undefined;
     }
-    if (loadedIdRef.current === resumeConversationId) {
+    if (loadedIdRef.current === resumeConversationId && allowSwitchRef.current == null) {
       setHistoryLoading(false);
       return undefined;
     }
+    if (abortRef.current && allowSwitchRef.current !== resumeConversationId) {
+      setPendingLeave({ type: "switch", id: resumeConversationId });
+      return undefined;
+    }
+    allowSwitchRef.current = null;
+    setPendingLeave(null);
     if (abortRef.current) {
       session.askGenRef.current += 1;
       abortRef.current.abort();
       abortRef.current = null;
+      streamIdRef.current = null;
       setStreaming(false);
-      session.noteAskFinished("clear");
+      session.noteAskDetached();
     }
     const gen = loadGenRef.current;
     let cancelled = false;
@@ -323,7 +381,7 @@ export function CoachPanel({
     return () => {
       cancelled = true;
     };
-  }, [resumeConversationId, pageLayout]);
+  }, [resumeConversationId, pageLayout, historyNonce]);
 
   const effectiveFocus = useMemo(() => {
     if (!pageLayout) return focus;
@@ -363,8 +421,9 @@ export function CoachPanel({
 
   const ask = useCallback(
     async (questionRaw) => {
-      const question = String(questionRaw ?? "").trim();
+      const question = String(questionRaw ?? "").trim().slice(0, COACH_QUESTION_MAX);
       if (!question || streaming || historyBusy) return;
+      if (question.length > COACH_QUESTION_MAX) return;
       if (status?.weeklyCap && status.weeklyCap.remaining <= 0) return;
       const history = thread
         .filter((m) => !m.error && !m.pending && m.content)
@@ -373,6 +432,7 @@ export function CoachPanel({
           role: m.role === "coach" ? "assistant" : m.role,
           content: m.content,
         }));
+      const priorCount = thread.length;
       const userMsg = makeMessage("user", question);
       const pending = makeMessage("assistant", "", { pending: true });
       setThread((prev) => [...prev, userMsg, pending]);
@@ -381,9 +441,22 @@ export function CoachPanel({
 
       const controller = new AbortController();
       abortRef.current = controller;
+      const streamId =
+        typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+          ? crypto.randomUUID()
+          : `s${Date.now().toString(36)}${Math.random().toString(36).slice(2, 12)}`;
+      streamIdRef.current = streamId;
       const gen = pageLayout ? (session.askGenRef.current += 1) : 0;
-      if (pageLayout) session.noteAskStarted(question);
+      if (pageLayout) {
+        session.noteAskStarted(question);
+        session.markPending({
+          conversationId: conversationIdRef.current,
+          messageCount: priorCount,
+          question,
+        });
+      }
       let outcome = "clear";
+      let streamStarted = false;
       try {
         const result = await askCoachStream({
           question,
@@ -392,8 +465,10 @@ export function CoachPanel({
           focus: effectiveFocus,
           history,
           conversationId: conversationIdRef.current,
+          streamId,
           signal: controller.signal,
           onMeta: (meta) => {
+            streamStarted = true;
             if (meta && meta.effortCoverage !== undefined) setCoverage(meta.effortCoverage);
             if (meta && meta.conversationId != null) {
               const id = Number(meta.conversationId);
@@ -406,6 +481,7 @@ export function CoachPanel({
             }
           },
           onDelta: (_piece, full) => {
+            streamStarted = true;
             setThread((prev) =>
               prev.map((m) => (m.id === pending.id ? { ...m, content: full } : m))
             );
@@ -439,6 +515,8 @@ export function CoachPanel({
         if (err && err.name === "AbortError") return;
         if (err instanceof CoachError && err.code === "weekly_limit") {
           outcome = "drop";
+          setInput(question);
+          if (pageLayout) session.clearPending();
           setStatus((prev) => ({
             ...(prev || {}),
             weeklyCap: {
@@ -453,17 +531,27 @@ export function CoachPanel({
         }
         const message =
           err instanceof CoachError ? err.message : coachErrorMessage("provider_error");
+        const stillSaving =
+          pageLayout && streamStarted && err instanceof CoachError && err.code === "network";
+        setInput(question);
+        if (pageLayout && !stillSaving) session.clearPending();
         setThread((prev) =>
-          prev.map((m) => (m.id === pending.id ? { ...m, pending: false, error: message } : m))
+          prev.map((m) =>
+            m.id === pending.id ? { ...m, pending: false, error: message, retryQuestion: question } : m
+          )
         );
-        outcome = "error";
+        outcome = stillSaving ? "pending" : "error";
       } finally {
         const stale = pageLayout && session.askGenRef.current !== gen;
         if (!stale) {
           if (abortRef.current === controller) abortRef.current = null;
+          if (streamIdRef.current === streamId) streamIdRef.current = null;
           setStreaming(false);
-          if (pageLayout && outcome === "ok") session.noteAskFinished("ok");
-          else if (pageLayout && outcome === "error") session.noteAskFinished("error");
+          if (pageLayout && outcome === "ok") {
+            session.clearPending();
+            session.noteAskFinished("ok");
+          } else if (pageLayout && outcome === "error") session.noteAskFinished("error");
+          else if (pageLayout && outcome === "pending") session.noteAskDetached();
           else if (pageLayout && outcome === "drop") session.noteAskFinished("clear");
         }
       }
@@ -507,8 +595,15 @@ export function CoachPanel({
     const answerStarted = prev > 0 && !sent && added.some((m) => m.role !== "user");
 
     if (prev === 0) {
-      pinPageBottom(el);
-      followRef.current = nearPageBottom(el);
+      if (pageLayout && session.consumeAnswerStart(conversationIdRef.current ?? resumeConversationId)) {
+        placeAnswerStart(el);
+        followRef.current = false;
+        landedOnStartRef.current = true;
+      } else {
+        pinPageBottom(el);
+        followRef.current = nearPageBottom(el);
+        landedOnStartRef.current = false;
+      }
       return;
     }
     if (sent) {
@@ -544,6 +639,11 @@ export function CoachPanel({
       if (cancelled) return;
       const node = threadRef.current;
       if (!node) return;
+      if (landedOnStartRef.current) {
+        placeAnswerStart(node);
+        followRef.current = false;
+        return;
+      }
       pinPageBottom(node);
       followRef.current = nearPageBottom(node);
     }
@@ -564,6 +664,97 @@ export function CoachPanel({
       if (fontsFrame) cancelAnimationFrame(fontsFrame);
     };
   }, [pageLayout, historyLoading, resumeConversationId, thread]);
+
+  useLayoutEffect(() => {
+    if (!focusComposerOnPaint.current) return;
+    focusComposerOnPaint.current = false;
+    const el = inputRef.current;
+    if (!el) return;
+    el.disabled = false;
+    try {
+      el.focus({ preventScroll: true });
+    } catch {
+      el.focus();
+    }
+  });
+
+  useEffect(() => {
+    if (!pageLayout || streaming || !session.pendingNote) return undefined;
+    const note = session.pendingNote;
+    if (pendingPollRef.current.startedAt !== note.startedAt) {
+      pendingPollRef.current = { startedAt: note.startedAt, attempt: 0 };
+    }
+    /* Every look is a coach request, and the coach allows 40 per 15 minutes:
+       back off (about 4 minutes in all), never look while the page is
+       hidden, and give up quietly - the answer still lands in History. */
+    const DELAYS = [2500, 5000, 10000, 15000, 25000, 40000, 60000, 90000];
+    const titleHead = String(note.question || "").slice(0, 24).toLowerCase();
+    let cancelled = false;
+    let timer = 0;
+
+    function schedule() {
+      const st = pendingPollRef.current;
+      if (st.attempt >= DELAYS.length) {
+        session.clearPending();
+        return;
+      }
+      timer = window.setTimeout(() => {
+        if (cancelled) return;
+        if (document.visibilityState === "hidden") {
+          schedule();
+          return;
+        }
+        st.attempt += 1;
+        void look().then((found) => {
+          if (!cancelled && !found) schedule();
+        });
+      }, DELAYS[st.attempt]);
+    }
+
+    async function look() {
+      if (Date.now() - note.startedAt > 10 * 60 * 1000) {
+        session.clearPending();
+        return true;
+      }
+      try {
+        if (note.conversationId) {
+          const data = await getCoachConversation(note.conversationId);
+          const count = Array.isArray(data.messages) ? data.messages.length : 0;
+          if (cancelled || count < (note.messageCount || 0) + 2) return false;
+          session.clearPending();
+          session.armAnswerStart(note.conversationId);
+          loadedIdRef.current = null;
+          if (resumeConversationId !== note.conversationId) onConversationId?.(note.conversationId);
+          setHistoryNonce((n) => n + 1);
+          return true;
+        }
+        const page = await listCoachConversations();
+        const items = Array.isArray(page?.items) ? page.items : [];
+        /* Server time vs this phone's clock can disagree, so allow two
+           minutes either way and match the title the server derives from
+           the question. */
+        const hit = items.find((row) => {
+          const t = new Date(row.updatedAt || row.createdAt).getTime();
+          if (!Number.isFinite(t) || t < note.startedAt - 120000) return false;
+          if (!titleHead) return true;
+          return String(row.title || "").toLowerCase().startsWith(titleHead);
+        });
+        if (cancelled || !hit) return false;
+        session.clearPending();
+        session.armAnswerStart(hit.id);
+        onConversationId?.(hit.id);
+        return true;
+      } catch {
+        /* The line stays until the conversation shows up or the marker expires. */
+        return false;
+      }
+    }
+    schedule();
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [pageLayout, streaming, session, resumeConversationId, onConversationId]);
 
   function onPageScroll() {
     const el = threadRef.current;
@@ -600,26 +791,52 @@ export function CoachPanel({
   }
 
   function onInputChange(e) {
-    setInput(e.target.value);
+    const next = e.target.value.slice(0, COACH_QUESTION_MAX);
+    setInput(next);
     const el = e.target;
     el.style.height = "auto";
     el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
   }
 
+  function focusComposer() {
+    const el = inputRef.current;
+    if (!el) return;
+    el.disabled = false;
+    try {
+      el.focus({ preventScroll: true });
+    } catch {
+      el.focus();
+    }
+  }
+
+  function requestComposerFocus() {
+    focusComposer();
+    focusComposerOnPaint.current = true;
+  }
+
   function stop() {
-    if (pageLayout) session.askGenRef.current += 1;
+    const id = streamIdRef.current;
+    streamIdRef.current = null;
+    if (pageLayout) {
+      session.askGenRef.current += 1;
+      session.clearPending();
+    }
+    if (id) void stopCoachStream(id);
     abortRef.current?.abort();
+    /* The page layout's ask skips its own cleanup once stopped (stale gen),
+       so clear the controller here: "+" must not think an answer is live. */
+    abortRef.current = null;
     setThread((prev) => prev.map((m) => (m.pending ? { ...m, pending: false } : m)));
     setStreaming(false);
     if (pageLayout) session.noteAskFinished("clear");
   }
 
-  function reset() {
+  function doReset() {
     autoAskedRef.current = false;
     if (pageLayout) {
       session.clearSession();
       onConversationId?.(null);
-      inputRef.current?.focus();
+      requestComposerFocus();
       return;
     }
     loadGenRef.current += 1;
@@ -631,8 +848,85 @@ export function CoachPanel({
     conversationIdRef.current = null;
     loadedIdRef.current = null;
     onConversationId?.(null);
-    inputRef.current?.focus();
+    requestComposerFocus();
   }
+
+  function reset() {
+    if (pageLayout && (streaming || abortRef.current)) {
+      setPendingLeave({ type: "new" });
+      return;
+    }
+    doReset();
+  }
+
+  function keepWaiting() {
+    const current = conversationIdRef.current;
+    setPendingLeave(null);
+    if (pendingLeave && pendingLeave.type === "switch") {
+      onConversationId?.(current);
+    }
+  }
+
+  function openAnyway() {
+    const leave = pendingLeave;
+    setPendingLeave(null);
+    if (!leave) return;
+    /* The lifter chose to leave this answer: it saves to History > Coach.
+       Drop the reload marker so its poll never pulls them back to it. */
+    if (pageLayout) session.clearPending();
+    if (leave.type === "new") {
+      doReset();
+      return;
+    }
+    allowSwitchRef.current = leave.id;
+    setHistoryNonce((n) => n + 1);
+  }
+
+  function renderFailure(m) {
+    if (!m.error) return null;
+    return (
+      <p className="coach-msg__error">
+        {m.error}
+        {m.retryQuestion ? (
+          <>
+            {" "}
+            <button type="button" className="coach-msg__retry" onClick={() => void ask(m.retryQuestion)}>
+              Try again
+            </button>
+          </>
+        ) : null}
+      </p>
+    );
+  }
+
+  function renderQuestionCount() {
+    if (input.length < COACH_QUESTION_COUNT_FROM) return null;
+    return (
+      <p className="coach-question-count muted small">
+        {input.length} / {COACH_QUESTION_MAX}
+      </p>
+    );
+  }
+
+  function renderStatusFailure() {
+    return (
+      <div className="coach-page__status-fail">
+        <p className="coach-panel__notice muted small" style={{ margin: 0 }}>
+          {statusErrorCopy(statusError)}
+        </p>
+        <button type="button" className="btn btn-secondary" onClick={() => void refreshStatus()}>
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  const showPendingNote =
+    pageLayout &&
+    Boolean(session.pendingNote) &&
+    !streaming &&
+    session.bar.phase !== "working" &&
+    session.bar.phase !== "finished";
 
   if (!pageLayout && !open) {
     return (
@@ -718,7 +1012,7 @@ export function CoachPanel({
             {coachTruncationNotice(m.stopReason) ? (
               <p className="coach-msg__truncated">{coachTruncationNotice(m.stopReason)}</p>
             ) : null}
-            {m.error ? <p className="coach-msg__error">{m.error}</p> : null}
+            {m.error ? renderFailure(m) : null}
           </div>
         </div>
       ) : (
@@ -732,7 +1026,7 @@ export function CoachPanel({
             {coachTruncationNotice(m.stopReason) ? (
               <p className="coach-msg__truncated">{coachTruncationNotice(m.stopReason)}</p>
             ) : null}
-            {m.error ? <p className="coach-msg__error">{m.error}</p> : null}
+            {m.error ? renderFailure(m) : null}
           </div>
         </div>
       )
@@ -746,7 +1040,17 @@ export function CoachPanel({
           <h1 id={headingId} className="coach-page__title">
             Coach
           </h1>
-          <button type="button" className="coach-page__new" aria-label="New conversation" onClick={reset}>
+          <button
+            type="button"
+            className="coach-page__new"
+            aria-label="New conversation"
+            onPointerDown={(event) => {
+              if (event.pointerType === "mouse" || event.pointerType === "touch" || event.pointerType === "pen") {
+                event.preventDefault();
+              }
+            }}
+            onClick={reset}
+          >
             <NewConversationIcon />
           </button>
         </header>
@@ -773,10 +1077,15 @@ export function CoachPanel({
             </div>
           ) : thread.length > 0 ? (
             <div className="coach-thread coach-page__thread" role="log" aria-live="polite">
+              {showPendingNote ? (
+                <p className="coach-page__pending muted small" role="status">
+                  Your last question is still being answered. It will be in History &gt; Coach.
+                </p>
+              ) : null}
               {renderThread()}
             </div>
           ) : statusError ? (
-            <p className="coach-panel__notice muted small">{statusErrorCopy(statusError)}</p>
+            renderStatusFailure()
           ) : !status ? (
             <div className="coach-panel__notice muted small coach-panel__notice--loading">
               <span className="barbell barbell--inline" aria-hidden="true">
@@ -797,6 +1106,11 @@ export function CoachPanel({
             </div>
           ) : (
             <div className="coach-page__intro">
+              {showPendingNote ? (
+                <p className="coach-page__pending muted small" role="status">
+                  Your last question is still being answered. It will be in History &gt; Coach.
+                </p>
+              ) : null}
               <div className="coach-page__mark" aria-hidden="true">
                 <CoachMarkIcon />
               </div>
@@ -834,15 +1148,19 @@ export function CoachPanel({
           ) : null}
         </div>
 
+        {statusError && thread.length > 0 ? renderStatusFailure() : null}
+
         {showComposer ? (
           <form className="coach-page__composer" onSubmit={onSubmit}>
             {remainingCopy ? <p className="coach-page__cap muted small">{remainingCopy}</p> : null}
             {usedCopy ? <p className="coach-page__cap muted small">{usedCopy}</p> : null}
+            {renderQuestionCount()}
             <div className="coach-page__composer-row">
               <textarea
                 ref={inputRef}
                 className="coach-page__input"
                 rows={1}
+                maxLength={COACH_QUESTION_MAX}
                 value={input}
                 placeholder="Ask the coach"
                 aria-label="Ask the coach"
@@ -872,6 +1190,15 @@ export function CoachPanel({
             </div>
           </form>
         ) : null}
+        <ConfirmPanel
+          open={pendingLeave != null}
+          title="The coach is still answering."
+          body="Open anyway and the answer will be saved to History > Coach."
+          confirmLabel="Keep waiting"
+          cancelLabel="Open anyway"
+          onConfirm={keepWaiting}
+          onCancel={openAnyway}
+        />
       </section>
     );
   }
@@ -908,9 +1235,14 @@ export function CoachPanel({
       </header>
 
       {statusError ? (
-        <p className="coach-panel__notice muted small">
-          {statusErrorCopy(statusError)}
-        </p>
+        <div className="coach-panel__notice">
+          <p className="muted small" style={{ margin: 0 }}>
+            {statusErrorCopy(statusError)}
+          </p>
+          <button type="button" className="btn btn-secondary" onClick={() => void refreshStatus()}>
+            Retry
+          </button>
+        </div>
       ) : !status ? (
         <div className="coach-panel__notice muted small coach-panel__notice--loading">
           <span className="barbell barbell--inline" aria-hidden="true">
@@ -952,7 +1284,7 @@ export function CoachPanel({
                       {coachTruncationNotice(m.stopReason) ? (
                         <p className="coach-msg__truncated">{coachTruncationNotice(m.stopReason)}</p>
                       ) : null}
-                      {m.error ? <p className="coach-msg__error">{m.error}</p> : null}
+                      {m.error ? renderFailure(m) : null}
                     </div>
                   </div>
                 )
@@ -972,12 +1304,14 @@ export function CoachPanel({
             <p className="coach-panel__cap muted small">{remainingCopy}</p>
           ) : null}
           {usedCopy ? <p className="coach-panel__cap muted small">{usedCopy}</p> : null}
+          {renderQuestionCount()}
 
           <form className="coach-composer" onSubmit={onSubmit}>
             <textarea
               ref={inputRef}
               className="coach-composer__input"
               rows={1}
+              maxLength={COACH_QUESTION_MAX}
               value={input}
               placeholder={mode === "debrief" ? "Ask a follow-up…" : "Ask about these numbers…"}
               aria-label="Ask the coach"
