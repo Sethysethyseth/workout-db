@@ -1,30 +1,28 @@
 # HANDOFF — current state
 
-> **WHERE WE ARE (Oct 10): MOTION WAVE (MX) OPEN on
-> `motion-wave`.** Seth's direction: "wicked" motion and graphics,
-> analytics first; Fable 5.1 in Cursor (`claude-fable-5-1-thinking-high`,
-> Cursor Pro) is the designer and its suggestions win; the Claude Code seat
-> writes broad briefs and audits. The old restraint anti-goal is replaced
-> by the motion stance in AGENTS.md.
+> **WHERE WE ARE (Oct 11): MOTION WAVE (MX) OPEN on
+> `motion-wave` - critic loop DONE, Seth's smoke next.** Seth's direction:
+> "wicked" motion and graphics, analytics first; Fable 5.1 in Cursor
+> (`claude-fable-5-1-thinking-high`, Cursor Pro) is the designer and its
+> suggestions win; the Claude Code seat writes broad briefs and audits.
+> The old restraint anti-goal is replaced by the motion stance in AGENTS.md.
 > - Design of record: `docs/design/mocks/motion/MOTION-DIRECTION.md`
 >   (Seth's rulings at the top win: PR celebration RARE, milestones at
 >   100/1,000/10,000 workouts, per-palette scenes) + `ROADMAP.md` (the
 >   wave's state: MX1-MX16 + MX-S + SRV-1/2, "Last checkpoint" line) +
 >   `IDEAS.md` (15 PARKED ideas + IDEAS 16 HELD by Seth: fling-away bars).
-> - LANDED: MX0 `f651c21` (direction + previews), MX1-4 `2cdeee0`, MX5-6 `d309919`, MXF1 `97d028d`
->   (motion primitives + Analytics in motion + per-palette scene
->   previews), MX5-6 (shell transitions + History FLIP), MXF1 (critic
->   round 1), MXF2 `20daef5` + MXC1 `266554f` (Seth's Oct 10 smoke fixes:
->   Finish dock, rest timing, crimson charts, Strength draw; the coach keeps
->   working when you leave, coach history on History), MXF3 `ff2c4e0`
->   (Seth smoke round 2: coach field above the keyboard, plain chat-bubble
->   icon, test keyboard `scripts/virtual-keyboard-shim.js`), MXF4 `d6ae69b`
->   (critic R1 typing fixes), MXF5 `3378250` (critic R2 visual fixes).
->   Critic R1 (3/10) and R2 (5/10) done + fixed; findings in
->   `docs/tasks/mxf3-critic-round-{1,2}-FINDINGS.md`. CRITIC R3 NOT RUN
->   (usage limit hit Oct 10, run stopped at launch) - see PICK UP HERE 0. Next: MX7 (logger
->   floor) per ROADMAP. Fable + Opus are capped
->   in Cursor until Oct 18 - Seth chose Cursor auto + a harder Opus-seat
+> - LANDED: MX0 `f651c21` (direction + previews), MX1-4 `2cdeee0`, MX5-6
+>   `d309919`, MXF1 `97d028d` (critic round 1), MXF2 `20daef5` + MXC1
+>   `266554f` (Seth's Oct 10 smoke fixes), MXF3 `ff2c4e0` (coach field
+>   above the keyboard, test keyboard `scripts/virtual-keyboard-shim.js`),
+>   MXF4 `d6ae69b` (critic R1 typing), MXF5 `3378250` (critic R2 visual),
+>   MXF6 `f14762d` (critic R3 coach reliability, SERVER-touching: finish +
+>   save on disconnect, user-scoped `POST /coach/stop`), MXF7 `fec6d06`
+>   (critic R3 app fixes: no native dialog leaving a live workout).
+>   Critic R1 3/10, R2 5/10, R3 5/10 - all fixed; findings in
+>   `docs/tasks/mxf3-critic-round-{1,2,3}-FINDINGS.md`. After Seth's
+>   smoke: MX7 (logger floor) per ROADMAP. Fable + Opus are capped in
+>   Cursor until Oct 18 - Seth chose Cursor auto + a harder Opus-seat
 >   audit meanwhile.
 > - Previews (private Artifacts): analytics X52VRgnoGLer3gGgphQnBU, PR
 >   2kWaZboR6dtMGXgwJqhPSN, navigation T5WpDyvFkAX5rdex1Y5k67, session
@@ -35,64 +33,20 @@
 >   `eb56cfff-dfbb-4abc-99f2-6d794c36b307` (`run-lane.ps1 -Resume`) to
 >   keep its context. Seth: never dispatch the next unit until the
 >   current Fable run has fully delivered; never stop a run mid-flight.
-> - Staging Render: Seth was repointing it to `motion-wave` (Oct 9) - no
->   migrations on this branch, so the deploy does not migrate.
+> - Staging Render serves `motion-wave` (probed Oct 11: `POST
+>   /coach/stop` -> 401, a bogus path -> 404). No migrations on this
+>   branch, so the deploy does not migrate.
 > - `main` = `b82ad8c` (QOL wave, live on prod). `quality-of-life-updates`
 >   = main + docs; `motion-wave` was cut from it.
 
-**Next action (human):** nothing yet - the next session runs critic round 3,
-fixes it, then hands you the smoke list below (MXF3-5 items 12-24).
-
-## Seth's mid-wave smoke (Oct 10, phone) - MX1-6 + MXF1
-
-Everything he did not name PASSED; the 420ms tab slide STAYS (item 21 -
-not flagged). Findings, all now in blocks:
-- Finish dock hidden under the bottom nav on a live workout (screenshot:
-  crimson dark, its top edge peeks above the nav) -> MXF2.
-- Rest timer fires between weight and reps -> MXF2; Seth's ruling: rest
-  starts when you LEAVE the set.
-- Crimson chart marks are green (MXF1 built crimson `--chart-accent` from
-  the success token) -> MXF2.
-- Strength trends do not animate, colour reads off -> MXF2.
-- "Double check appearance for glitches" -> the Opus seat runs a 10-combo
-  screenshot pass of the touched surfaces at each landing.
-- Coach: a tab change resets the conversation (CoachPanel aborts on
-  unmount; the server aborts and saves nothing); wants a first-open note, a
-  "working" bar like resume-workout, a "finished" state; coach history
-  moves Library -> History (ruling: Workouts | Coach switch); the masthead
-  chat glyph's "..." reads as a glitch -> MXC1.
-- HELD (Seth): fling-away resume/coach bars, omni-directional, fade with
-  distance, a couple of cm max, dismiss only on release out of range ->
-  IDEAS 16; decide after this wave whether it joins it or the next.
+**Next action (human):** smoke items 12-39 below on your phone against the
+staging Vercel deploy of `motion-wave` (`fec6d06`), then send findings or
+"signed off".
 
 ## Smoke for the next round (carry forward - fill at each landing)
 
-From MXF2 (`20daef5`), on the phone:
-1. Live quick workout AND a block day: Finish sits fully above the tab
-   bar and taps; the tab bar still works (block days now show it too).
-2. Rest: weight -> reps -> effort in one set never starts it; moving to
-   the next set (or tapping away / closing the keyboard) starts it once;
-   a block "log as planned" tap starts it right away.
-3. Crimson dark + light: Muscles bars and trend lines are rose/blush, not
-   green. Gains (end dot, "up" text) are still green - keep or change?
-4. Strength draws (line wipes, dot pops, text rises) on first open, on
-   switching to Strength, and on a range change; leaving and coming back
-   to Analytics stays a quiet fade.
-5. Known, not fixed here (MX7): the first set of a brand-new exercise
-   drops the keyboard once when it first saves.
-From MXC1 (`266554f`):
-6. Coach (Home, top right): the icon is a bubble with a small crown, no
-   dots. First open shows a note once - never again, even after logging
-   out and in.
-7. Ask, then switch tabs: a "Coach is working on it" bar, then "Coach
-   answered" - tap Read and the full answer is there.
-8. Ask, leave, come straight back: the answer is still writing.
-9. Coach working while you log a workout: the bar is a small chip at the
-   top, never over Finish, the tab bar or the field you're typing in.
-10. History: Workouts | Coach switch; your chats sit in month groups;
-    open, delete one, delete all; Library no longer has a Coach tab.
-11. History remembers the Coach side until you close the app - keep that,
-    or always open on Workouts?
+Items 1-11 (MXF2 + MXC1) were smoked Oct 10; that list and the Oct 10
+mid-wave smoke findings are in the archive (ARCHIVED Oct 11).
 From MXF3-MXF5 (`ff2c4e0`, `d6ae69b`, `3378250`) - items 1-11 were
 smoked Oct 10 (only the coach keyboard + glyph failed; 3 = keep green,
 11 = keep remembering):
@@ -121,27 +75,55 @@ card, or the bubble everywhere? `/coach/status` counts against the coach
 limit (server; not changed).
 Staging Render must be on `motion-wave` for the coach's help answer to say
 "History, then Coach" (server/data/app-guide.md).
+From MXF6 (`f14762d`) - coach:
+25. Ask, then tap + while it answers: a sheet offers Keep waiting / Open
+    anyway. Open anyway gives a fresh chat and you STAY there; the answer
+    still shows up in History > Coach.
+26. Ask, then open another chat from History > Coach while it answers:
+    the same sheet; Keep waiting puts you back on the live one.
+27. Ask, then Stop at once (even in the first second): nothing lands in
+    History > Coach. Tap + after Stop: no sheet, the cursor is in the box.
+28. Ask, then reload (or lock the phone mid-answer and come back): one
+    calm "still being answered" line, then the answer opens by itself.
+29. Airplane mode, open Coach: the reason plus Retry. Back online: the
+    box returns on its own (or with Retry).
+30. A failed question stays in the box with Try again; a very long
+    question stops at 1000 characters, with a counter from 900.
+31. Coach bar (ask, then switch tab): slides in and out, the same height
+    working and answered, the x centred; Read on a long answer lands at
+    the start of the answer.
+32. History > Coach left open while an answer finishes: the new chat
+    appears without leaving the page.
+33. Profile > AI access says History, under Coach, and does not jump when
+    its status line loads.
+From MXF7 (`fec6d06`):
+34. Live quick workout: type a weight and tap any tab at once - no
+    pop-up; Resume - the weight is there (also on a block day).
+35. History > open a workout: nothing jumps; the title is the workout's
+    own name, not "Workout summary".
+36. Block builder: the ... buttons are centred dots; New block does not
+    pop the keyboard; the name field has inner padding.
+37. Library: the "Create workout / Parked" button is gone; the running
+    strip does not push the tabs down when it loads.
+38. Wording: no em dashes on the live-workout or summary lines; the
+    in-progress bar reads "Workout, Oct 11"; "2 sets"; "Why have lats gone
+    quiet?"; Home says "you logged 2 workouts".
+39. Small links are easy to hit: Profile back, See analytics, View all,
+    the run page Library link, the Analytics range pills.
+New question for Seth: tapping outside the "still answering" sheet counts
+as Open anyway (the answer still saves) - fine, or should it mean Keep
+waiting?
 
 ## PICK UP HERE (next session)
 
-0. **Finish the MXF3 critic loop (Seth, Oct 10):** run critic ROUND 3
-   (brief ready: `.playwright-mcp/mxf3-critic/BRIEF-common.md` +
-   `BRIEF-r3.md`; separate Opus Agent with Playwright, phone context;
-   local API 3000 mock coach + main-tree client 5173). Fix what it finds
-   (Cursor block MXF6 or direct), then hand Seth the smoke list (items
-   12-24 + R3 fixes) and STOP. Verify scripts for MXF4/5 were session
-   scratch (headless Chromium via the npx playwright-core cache +
-   `ms-playwright/chromium-1243`, second API on 3001 with
-   CLIENT_ORIGIN=http://localhost:5174). The previous session log below
-   was not yet moved to the archive (HANDOFF is a little over cap).
+0. **Seth's smoke of items 12-39** (the critic loop is done: R3 ran Oct
+   11, MXF6 + MXF7 landed). Fold his findings into a fix block (Cursor
+   auto, or direct when trivial), re-smoke, then continue the wave at MX7.
 
 1. **Continue the MX wave** (opened Oct 9, see the top block):
    - next unit = the first non-DONE unit in `ROADMAP.md` (MX7 logger
      floor); write a broad brief (MX0/MX1-4/MX5-6 briefs are the
      pattern), dispatch as a RESUME of Fable's chat, land via `land-unit`.
-   - ONE critic round on Analytics + the new shell is owed NOW (Seth agreed
-     to run it after MX5-6) - fold its fixes into the
-     next brief.
    - every wave ends with a What's New unit (`_WHATS_NEW.md`); release
      bullets stay at 25 words or fewer. The ledger has the MX section.
    - known lint noise from MX1-4 (lint is not in CI): Cascade.jsx `Tag`
@@ -174,8 +156,10 @@ Staging Render must be on `motion-wave` for the coach's help answer to say
      qolf1 bar column matched by pathname; qolf1 ConfirmPanel focus ring on
      tap; qol11 `scripts/smoke-coach.mjs --key` inert; no rate limiter on
      `/block-templates/import*` or `/block-runs`; STOWED summary endpoint
-     should exclude unfinished sessions (qolf7); the bottom nav sits under
-     the Finish dock on a live workout (qol12, known)
+     should exclude unfinished sessions (qolf7)
+   - MXF6: `/coach/stop` counts against the app-level coach limiter; a
+     dropped connection no longer aborts a hung provider stream (provider
+     timeouts govern); early stops are held in memory (2 min, 1000 cap)
 
 ## Stowed (none authored)
 
@@ -198,10 +182,8 @@ Staging Render must be on `motion-wave` for the coach's help answer to say
 
 ## Open on prod - Seth's checks, none blocking
 
-- The QOL merge: smoked on prod by Seth Oct 9 ("all done and good"). Done.
-- The BK / bkr / sr3 merge: smoked on prod by Seth Oct 7 ("looks
-  beautiful"). Done.
-- **F/E-wave PROD smoke** - still open:
+- **F/E-wave PROD smoke** - still open (the QOL and BK merges were
+  smoked on prod Oct 9 / Oct 7 - done):
 
 Covers the F-wave AND the still-open E-wave prod smoke. Staging passed Aug 4.
 
@@ -216,8 +198,8 @@ Covers the F-wave AND the still-open E-wave prod smoke. Staging passed Aug 4.
 
 ## Housekeeping
 
-- **Staging Render tracks `main`** (Seth repointed it Oct 9, after the
-  QOL merge). Repoint it to each new wave branch. The STAGING WorkOS
+- **Staging Render tracks `motion-wave`** (probed Oct 11). Repoint it to
+  each new wave branch. The STAGING WorkOS
   External Sign-in URI is pinned to the `ai-connector-wave` Vercel PREVIEW
   host - never delete `ai-connector-wave` (or its preview) while that URI
   points at it. If staging ever looks stale, check Render -> Settings ->
@@ -231,9 +213,9 @@ Covers the F-wave AND the still-open E-wave prod smoke. Staging passed Aug 4.
 - **Stale `.git/worktrees/merge-main`, `merge-main-0927`, `merge-main-1007` admin dirs**
   (OneDrive lock): git prints `failed to delete ... Permission denied` on
   fetch/commit. Harmless; `git worktree prune` once the lock clears.
-- **`claudefiledrop/` (untracked, keep):** Seth cleared it Oct 10; it holds
-  his two Oct 10 smoke screenshots (masthead chat glyph; Finish dock under
-  the nav). Three older tracked PNGs show as deleted - his call, unstaged.
+- **`claudefiledrop/` (untracked, keep):** holds Seth's Oct 10 smoke
+  screenshots (`Screenshot_20261010-170614/-171027.png`). Three older
+  tracked PNGs show as deleted - his call, unstaged.
 - **Pre-wave migration drift** found in the Sept 26 prod-vs-staging diff, NOT
   from any recent wave and not blocking (prod's build never runs `migrate
   deploy`): checksums differ on `20260325143000_block_weeks` and
@@ -268,21 +250,24 @@ Covers the F-wave AND the still-open E-wave prod smoke. Staging passed Aug 4.
 - Stable topology (prod env, WorkOS, verify-from-services, branch-deletion
   cautions): REFERENCE -> "Deploy topology".
 
-## Lanes + verification (Oct 9)
+## Lanes + verification (Oct 11)
 
-- `cursor-lane`, `-2`, `-3` (Oct 9): on `cursor/qol-gate-r1|r2|r3` at
-  `ac40874`, porcelain clean, no DELIVERY.md (moved to session scratch).
+- `cursor-lane` on `cursor/mxf6` @ `f14762d`, `-2` on `cursor/mxf7` @
+  `fec6d06` (Oct 11), `-3` on `cursor/qol-gate-r3` @ `ac40874`; all
+  porcelain clean, no DELIVERY.md (moved to session scratch).
   Before a dispatch: `git checkout -B cursor/<unit> <wave-branch>`. Lane 2's
   `server` has its own install WITH `@cursor/sdk` (live coach calls); lane
   3's `node_modules` are junctions into lane 1; lane 3 holds three
   untracked mock PNGs in `client/src/assets/scenes/` - never stage them.
   Lessons: REFERENCE.
-- **Real-app check recipe** (used for every sr3 landing): local API on the
-  STAGING DB from the main tree's `server/` (`COACH_PROVIDER=mock PORT=3000
-  node src/server.js`; run `npx prisma generate` there first after a schema
-  change), the lane's client with `VITE_API_URL=http://localhost:3000 npx
-  vite --port 5173` (`client/.env` = PROD - never use it), Playwright MCP at
-  390x844. Stop both servers after.
+- **Real-app check recipe** (MXF6/7): the LANE's API on the STAGING DB -
+  from the lane's `server/`: `DOTENV_CONFIG_PATH=<main tree>/server/.env
+  COACH_PROVIDER=mock PORT=3001 CLIENT_ORIGIN=http://localhost:5174,
+  http://localhost:5175 node -r dotenv/config src/server.js`; lane clients
+  with `VITE_API_URL=http://localhost:3001 npx vite --port 5174`
+  (`client/.env` = PROD - never use it); Playwright MCP 390x844. The coach
+  limiter (40 / 15 min, ALL `/coach` paths, in memory) trips in testing -
+  restart the API. Stop all servers after.
 - **Staging accounts:** `test123` / `password` (Seth's smoke account -
   READ-ONLY for agents; running "Imported block" run 8 with W1 D1 in
   progress, "Upper/Lower Strength - 4wk" paused at W1 · Lower A) and
@@ -301,8 +286,8 @@ Covers the F-wave AND the still-open E-wave prod smoke. Staging passed Aug 4.
   - the `docs/parked/*` ruling
   - BK0's open facts (operator name, contact email, US state)
 - Settled Oct 8, recorded in the wave spec section 1: connector hardening
-  (in), BYO-key design (server-encrypted), coach history (Library tab,
-  kept until deleted).
+  (in), BYO-key design (server-encrypted), coach history (kept until
+  deleted; History > Coach since MXC1).
 
 > **Standing rule:** the Next action line is filled on EVERY rewrite and is
 > never empty or deferred - one sentence, the single thing SETH does
@@ -310,42 +295,23 @@ Covers the F-wave AND the still-open E-wave prod smoke. Staging passed Aug 4.
 > explicitly. Dogfoods the shell repo's decision-10 no-dangling-next-
 > action requirement; `land-unit` section 5 keeps it maintained.
 
-**Updated:** October 10, 2026 (Opus seat). Session log:
-- Seth smoked `motion-wave` (`97d028d`) on his phone: results above. Read
-  his two screenshots (`claudefiledrop/Screenshot_20261009-202409.png` =
-  the masthead chat glyph; `Screenshot_20261010-122250.png` = the Finish
-  dock under the nav). He removed the older claudefiledrop files himself
-  (the three tracked PNG deletions are his, left unstaged).
-- Asked his three calls (rest trigger, History layout, where the "..."
-  is); rulings recorded in the blocks.
-- In-seat grounding (targeted greps, no recon lanes - two-block fix
-  round): crimson `--chart-accent` from `--color-success-accent`
-  (index.css ~6826); `.mx-route` carries `view-transition-name` at all
-  times (stacking context) vs `.bottom-nav` z-index 5 and the dock's 40;
-  quick-logger rest fires on core-logged (SessionDetailPage ~3035), block
-  logger on `onRestLoggedChange`; CoachPanel `abortRef` unmount abort +
-  server `res.on("close")` abort; app guide 11,923 / 12,000 chars.
-- Authored MXF2 (`mxf2-smoke-round-1-fixes.md`) and MXC1
-  (`mxc1-coach-keeps-working.md`), both MODEL auto (Fable + Opus capped
-  until Oct 18), FILES TO TOUCH disjoint so they may run in parallel
-  (lanes 1 + 2). ROADMAP gained MXF2 + MXC1 entries; IDEAS 16 = the held
-  swipe idea.
-- Dispatched both on auto, parallel (lane 1 resumed chat eb56cfff, lane
-  2 fresh). Seth (mid-run): the first-open coach note must be once for
-  real, not every login - amended MXC1 (`9eb652e`), audit enforces it.
-- MXF2 landed `20daef5` after a harder audit + real-app check (QUEUE has
-  the detail). Reviewer fixes: rest never started for a set saved after
-  focus left it (draft rows save on blur) - both loggers fixed; block
-  log-as-planned tap counts as leaving. Found pre-existing: first set of a
-  new exercise drops focus on its first save (MX7).
-- MXC1 landed `266554f` after a harder audit + real-app check on top of
-  MXF2 (mock coach; QUEUE has the detail). Reviewer fixes: once-means-once
-  (mark on show); bar placement stale after a route change (re-fits on
-  page-tree changes); ?c= / ?view= written onto the NEXT page's URL in the
-  route-transition window (guarded); finished copy fits at 390; masthead
-  crown filled. Test data removed. Known pre-existing: the route layer's
-  flushSync-in-lifecycle console warning.
-- Mid-wave fix round complete (2/2 landed). The wave stays open: MX7 next.
+**Updated:** October 11, 2026 (Opus seat). Session log (Oct 10-11; the
+part before a mid-session /clear is rebuilt from QUEUE and the commits):
+- MXF3 authored from Seth's second smoke, landed `ff2c4e0` (QUEUE has the
+  audit). Three critic rounds by failure type (Seth): R1 typing 3/10 ->
+  MXF4 `d6ae69b`; R2 visual 5/10 -> MXF5 `3378250`; R3 coach flow + app
+  sweep 5/10 (2 P1 / 7 P2 / 11 P3) -> MXF6 + MXF7 authored (`cf3046b`),
+  dispatched in parallel on the auto rung (lanes 1 + 2).
+- Landed MXF6 `f14762d` and MXF7 `fec6d06` after harder audits and a
+  real-app check of every R3 repro (detail in QUEUE). Reviewer fixes:
+  MXF6 - Open anyway pulled you back to the chat you left (reload marker
+  poll); a Stop that beat the ask's registration still saved (registry
+  now holds early stops, +3 tests, 587); + after Stop claimed an answer
+  was live. MXF7 - Analytics lost its range-pref import (runtime crash,
+  build green).
+- ROADMAP (MXF6/7 DONE + checkpoint), What's New (mxf6, mxf7), staging
+  Render probed on `motion-wave`. Test chats and workout 524 removed.
+- Critic loop complete; handed Seth smoke items 12-39 and stopped.
 
 **Rule:** rewritten in place at the end of every working session; kept CAPPED
 (~300 lines). Aged session logs move VERBATIM - never summarized - to

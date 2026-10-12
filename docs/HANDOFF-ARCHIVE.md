@@ -1,3 +1,98 @@
+## ARCHIVED October 11, 2026 (Opus session, MXF6/7 landing) - the Oct 10
+## mid-wave smoke findings and smoke items 1-11 (MXF2 + MXC1, smoked by Seth
+## Oct 10), moved verbatim.
+
+## Seth's mid-wave smoke (Oct 10, phone) - MX1-6 + MXF1
+
+Everything he did not name PASSED; the 420ms tab slide STAYS (item 21 -
+not flagged). Findings, all now in blocks:
+- Finish dock hidden under the bottom nav on a live workout (screenshot:
+  crimson dark, its top edge peeks above the nav) -> MXF2.
+- Rest timer fires between weight and reps -> MXF2; Seth's ruling: rest
+  starts when you LEAVE the set.
+- Crimson chart marks are green (MXF1 built crimson `--chart-accent` from
+  the success token) -> MXF2.
+- Strength trends do not animate, colour reads off -> MXF2.
+- "Double check appearance for glitches" -> the Opus seat runs a 10-combo
+  screenshot pass of the touched surfaces at each landing.
+- Coach: a tab change resets the conversation (CoachPanel aborts on
+  unmount; the server aborts and saves nothing); wants a first-open note, a
+  "working" bar like resume-workout, a "finished" state; coach history
+  moves Library -> History (ruling: Workouts | Coach switch); the masthead
+  chat glyph's "..." reads as a glitch -> MXC1.
+- HELD (Seth): fling-away resume/coach bars, omni-directional, fade with
+  distance, a couple of cm max, dismiss only on release out of range ->
+  IDEAS 16; decide after this wave whether it joins it or the next.
+
+## Smoke for the next round (carry forward - fill at each landing)
+
+From MXF2 (`20daef5`), on the phone:
+1. Live quick workout AND a block day: Finish sits fully above the tab
+   bar and taps; the tab bar still works (block days now show it too).
+2. Rest: weight -> reps -> effort in one set never starts it; moving to
+   the next set (or tapping away / closing the keyboard) starts it once;
+   a block "log as planned" tap starts it right away.
+3. Crimson dark + light: Muscles bars and trend lines are rose/blush, not
+   green. Gains (end dot, "up" text) are still green - keep or change?
+4. Strength draws (line wipes, dot pops, text rises) on first open, on
+   switching to Strength, and on a range change; leaving and coming back
+   to Analytics stays a quiet fade.
+5. Known, not fixed here (MX7): the first set of a brand-new exercise
+   drops the keyboard once when it first saves.
+From MXC1 (`266554f`):
+6. Coach (Home, top right): the icon is a bubble with a small crown, no
+   dots. First open shows a note once - never again, even after logging
+   out and in.
+7. Ask, then switch tabs: a "Coach is working on it" bar, then "Coach
+   answered" - tap Read and the full answer is there.
+8. Ask, leave, come straight back: the answer is still writing.
+9. Coach working while you log a workout: the bar is a small chip at the
+   top, never over Finish, the tab bar or the field you're typing in.
+10. History: Workouts | Coach switch; your chats sit in month groups;
+    open, delete one, delete all; Library no longer has a Coach tab.
+11. History remembers the Coach side until you close the app - keep that,
+    or always open on Workouts?
+
+## ARCHIVED October 11, 2026 (Opus session) - the Oct 10 MXF2 + MXC1 session log,
+## moved verbatim.
+
+**Updated:** October 10, 2026 (Opus seat). Session log:
+- Seth smoked `motion-wave` (`97d028d`) on his phone: results above. Read
+  his two screenshots (`claudefiledrop/Screenshot_20261009-202409.png` =
+  the masthead chat glyph; `Screenshot_20261010-122250.png` = the Finish
+  dock under the nav). He removed the older claudefiledrop files himself
+  (the three tracked PNG deletions are his, left unstaged).
+- Asked his three calls (rest trigger, History layout, where the "..."
+  is); rulings recorded in the blocks.
+- In-seat grounding (targeted greps, no recon lanes - two-block fix
+  round): crimson `--chart-accent` from `--color-success-accent`
+  (index.css ~6826); `.mx-route` carries `view-transition-name` at all
+  times (stacking context) vs `.bottom-nav` z-index 5 and the dock's 40;
+  quick-logger rest fires on core-logged (SessionDetailPage ~3035), block
+  logger on `onRestLoggedChange`; CoachPanel `abortRef` unmount abort +
+  server `res.on("close")` abort; app guide 11,923 / 12,000 chars.
+- Authored MXF2 (`mxf2-smoke-round-1-fixes.md`) and MXC1
+  (`mxc1-coach-keeps-working.md`), both MODEL auto (Fable + Opus capped
+  until Oct 18), FILES TO TOUCH disjoint so they may run in parallel
+  (lanes 1 + 2). ROADMAP gained MXF2 + MXC1 entries; IDEAS 16 = the held
+  swipe idea.
+- Dispatched both on auto, parallel (lane 1 resumed chat eb56cfff, lane
+  2 fresh). Seth (mid-run): the first-open coach note must be once for
+  real, not every login - amended MXC1 (`9eb652e`), audit enforces it.
+- MXF2 landed `20daef5` after a harder audit + real-app check (QUEUE has
+  the detail). Reviewer fixes: rest never started for a set saved after
+  focus left it (draft rows save on blur) - both loggers fixed; block
+  log-as-planned tap counts as leaving. Found pre-existing: first set of a
+  new exercise drops focus on its first save (MX7).
+- MXC1 landed `266554f` after a harder audit + real-app check on top of
+  MXF2 (mock coach; QUEUE has the detail). Reviewer fixes: once-means-once
+  (mark on show); bar placement stale after a route change (re-fits on
+  page-tree changes); ?c= / ?view= written onto the NEXT page's URL in the
+  route-transition window (guarded); finished copy fits at 390; masthead
+  crown filled. Test data removed. Known pre-existing: the route layer's
+  flushSync-in-lifecycle console warning.
+- Mid-wave fix round complete (2/2 landed). The wave stays open: MX7 next.
+
 ## ARCHIVED October 10, 2026 (Opus session) - the mid-wave MX smoke list
 ## (smoked by Seth on his phone Oct 10, results in HANDOFF) and the Oct 9
 ## night QOL pre-main gate session log, moved verbatim.

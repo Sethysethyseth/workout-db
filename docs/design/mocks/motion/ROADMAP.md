@@ -1,6 +1,6 @@
 # MX wave roadmap - motion + visuals for LogChamp
 
-**Last checkpoint:** MXF5 DONE (Oct 10, 2026), after MXF4. Critic round 2 icons, alignment and contrast: on-accent text clears 4.5:1, Analytics chart heads keep their side inset, text-glyph icons are nav-weight SVGs, Stop is centred, iron light text uses a darker amber ink, one coach mark, and the small alignment and copy fixes in the block. Next code unit: MX7 (logger floor) - or MX5b / MX10 if Seth picks scenes first. IDEAS 16 (fling-away bars) is HELD for Seth after the wave. MX1-MX6, MX-S, MXF1, MXF2, MXC1, MXF3 and MXF4 stay DONE.
+**Last checkpoint:** MXF7 DONE (Oct 11, 2026), after MXF6. Critic round 3 (5/10) fixed: coach answers survive leaving, reload and switching (server finishes and saves; Stop really stops), status and ask failures recover, coach bar polish; no native dialog leaving a live workout, the History header no longer jumps, builder icons, copy, tap targets. Seth smokes items 12-39 next. Next code unit after his smoke: MX7 (logger floor) - or MX5b / MX10 if Seth picks scenes first. IDEAS 16 (fling-away bars) is HELD for Seth after the wave. MX1-MX6, MX-S, MXF1-MXF7 and MXC1 stay DONE.
 
 This file is the wave's state. It stands on its own next to
 `MOTION-DIRECTION.md` (the design) and needs no chat history. Whoever picks
@@ -361,7 +361,7 @@ Conventions for every unit below:
 - **Files:** block `docs/tasks/mxf6-coach-reliability.md`; findings `docs/tasks/mxf3-critic-round-3-FINDINGS.md`.
 - **Done when:** the block acceptance criteria pass and the seat re-runs round 3 clean.
 - **Depends on:** MXF5. **Packages:** none.
-- **Status:** TODO.
+- **Status:** DONE (Oct 11, 2026, `f14762d`). Server finishes and saves on disconnect; user-scoped POST /coach/stop (early stops remembered until the ask registers); in-app Keep waiting / Open anyway confirm; reload pending line; status Retry + auto-retry; failed ask keeps the question + Try again + 1000 cap; pill, bar x, bar motion at one 62 px height, Read at answer start, History > Coach refresh, AI access copy + no jump, + focus.
 
 ## MXF7 - Critic round 3 app fixes
 
@@ -371,7 +371,7 @@ Conventions for every unit below:
 - **Files:** block `docs/tasks/mxf7-critic-r3-app-fixes.md`; findings `docs/tasks/mxf3-critic-round-3-FINDINGS.md`.
 - **Done when:** the block acceptance criteria pass and the seat re-runs round 3 clean.
 - **Depends on:** MXF5. **Packages:** none.
-- **Status:** TODO.
+- **Status:** DONE (Oct 11, 2026, `fec6d06`). Nav leaves a live workout like Back (drafts flushed first, no dialog); History-to-workout header still and named; builder SVG dots; fixed-width summary index; Library strip placeholder at strip height with the list held for run order; copy and plurals; 44 px hit areas; builder name padding, no autofocus on touch.
 
 ## MX7 - Logger quiet confirm + rest dock
 
