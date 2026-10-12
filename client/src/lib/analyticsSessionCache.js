@@ -1,8 +1,9 @@
 /**
  * Analytics responses for this browser session, one per range, plus whether
  * the full entrance has already played. A return visit paints the cached
- * summary at once (stale-while-revalidate) and fades; the first view and a
- * range change play the full entrance. Dies on a full reload.
+ * summary at once (stale-while-revalidate) and replays the entrance faster;
+ * the first view and a range change play it at full pace. Dies on a full
+ * reload.
  */
 
 const byWeeks = new Map();

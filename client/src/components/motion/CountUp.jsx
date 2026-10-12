@@ -1,7 +1,11 @@
-import { useRef } from "react";
+import { useState } from "react";
 import { analyticsQuiet } from "../../lib/analyticsSessionCache.js";
-import { useCountUp } from "../../lib/useCountUp.js";
+import { COUNT_UP_MS, useCountUp } from "../../lib/useCountUp.js";
 import { formatRolling, splitLeadingNumber } from "../../lib/motionFormat.js";
+
+/* A return to Analytics in the same session replays faster: matches the
+   --mx-count / --mx-stagger scale in analytics-motion.css (.mx-quiet). */
+const RETURN_SCALE = 0.55;
 
 /**
  * Rolls the leading number of a display string and leaves the rest alone:
@@ -12,15 +16,16 @@ import { formatRolling, splitLeadingNumber } from "../../lib/motionFormat.js";
  * rolls); callers pass the cascade slot's data delay.
  */
 export function CountUp({ text, delay = 0, enabled = true, className = "" }) {
-  /* A quiet Analytics return prints the cached number. A later change
-     (stale-while-revalidate) rolls from that number and keeps rolling;
-     the flag is latched so a re-render does not cancel it. */
-  const initialText = useRef(text);
-  const quietMount = useRef(analyticsQuiet());
-  const roll = enabled && (!quietMount.current || text !== initialText.current);
+  /* Latched at mount so a later re-render (stale-while-revalidate) keeps
+     the same pace instead of switching speed mid-roll. */
+  const [scale] = useState(() => (analyticsQuiet() ? RETURN_SCALE : 1));
   const parts = splitLeadingNumber(text);
   const target = parts ? parts.value : NaN;
-  const { value, rolling } = useCountUp(target, { delay, enabled: roll && parts != null });
+  const { value, rolling } = useCountUp(target, {
+    delay: Math.round(delay * scale),
+    duration: Math.round(COUNT_UP_MS * scale),
+    enabled: enabled && parts != null,
+  });
 
   if (!parts) return <span className={className || undefined}>{text}</span>;
 

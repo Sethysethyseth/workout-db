@@ -170,6 +170,7 @@ export function CoachPage() {
         : "none";
       const safe = safeRef.current ? safeRef.current.getBoundingClientRect().height : 0;
       const lines = [
+        `dpr ${window.devicePixelRatio} innerWidth ${window.innerWidth}`,
         `innerHeight ${reading.innerHeight}`,
         `vv.height ${reading.vvHeight}`,
         `vv.offsetTop ${reading.vvOffsetTop}`,

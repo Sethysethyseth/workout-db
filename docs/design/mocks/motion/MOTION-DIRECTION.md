@@ -39,6 +39,11 @@ only external load is Google Fonts.
   forest, misty pines, iron, crimson - the art in
   `client/src/assets/scenes/`), not one skyline recoloured. MX10 is
   per-palette scene life.
+- **Analytics replays every visit (Oct 11, replaces the MXF1 "return
+  visit fades" ruling).** The first view in a browser session plays the
+  full entrance at full pace; every return in that session replays the
+  same entrance faster (timing tokens ~0.55x: draw 550 ms, reveal 230 ms,
+  stagger 30 ms, count 600 ms). A range change plays it at full pace.
 
 ---
 
