@@ -142,8 +142,7 @@ html.bk-builder-kbd .bk-builder__weeks {
   display: block;
   width: 100%;
   max-width: none;
-  min-height: 36px;
-  max-height: 36px;
+  min-height: 44px;
   border: 0;
   border-bottom: 1px solid var(--bk-line);
   background: transparent;
@@ -151,7 +150,7 @@ html.bk-builder-kbd .bk-builder__weeks {
   font: 600 16px/1.2 var(--font-sans);
   letter-spacing: 0.02em;
   text-transform: none;
-  padding: 4px 0;
+  padding: 10px 12px;
 }
 
 .bk-builder-name-input::placeholder {

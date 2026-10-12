@@ -1,4 +1,4 @@
-import { defaultWorkoutSessionName } from "./defaultWorkoutSessionName.js";
+import { defaultWorkoutSessionName, displayWorkoutAutoName } from "./defaultWorkoutSessionName.js";
 import { getAdHocSessionTitle } from "./adHocSessionTitle.js";
 import { isBlankSessionExerciseName } from "./sessionExerciseName.js";
 
@@ -70,7 +70,7 @@ export function sessionDisplayTitle(session) {
   const templateName = session?.workoutTemplate?.name?.trim();
   if (templateName) return templateName;
   const stored = session?.name != null ? String(session.name).trim() : "";
-  if (stored) return stored;
+  if (stored) return displayWorkoutAutoName(stored);
   const legacy = session?.id != null ? getAdHocSessionTitle(session.id) : null;
   if (legacy) return legacy;
   const when = session?.startedAt || session?.performedAt || session?.completedAt;

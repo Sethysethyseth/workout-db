@@ -96,6 +96,8 @@ export function MyTemplatesPage() {
           ? exercisesStatus
           : "ready";
   const tabLoading = tabStatus === "loading";
+  const blocksAwaitingRunOrder =
+    area !== "community" && tab === "blocks" && !runsReady;
   const emptyTab = useMemo(
     () => tabStatus === "ready" && items.length === 0,
     [tabStatus, items.length]
@@ -104,6 +106,8 @@ export function MyTemplatesPage() {
     () => tabStatus === "ready" && rawItems.length === 0,
     [tabStatus, rawItems.length]
   );
+  const holdBlockList =
+    tabLoading || (blocksAwaitingRunOrder && !emptyRawTab);
 
   function setArea(next) {
     setSearchParams(
@@ -451,20 +455,17 @@ export function MyTemplatesPage() {
         <Link className="bk-lib-btn bk-lib-btn--secondary" to="/blocks/import">
           Import
         </Link>
-        <span
-          className="bk-lib-btn bk-lib-btn--parked"
-          role="button"
-          aria-disabled="true"
-          title="Create workout is parked"
-          aria-label="Create workout (parked)"
-        >
-          Create workout
-          <span className="bk-lib-parked-tag">Parked</span>
-        </span>
       </div>
 
       {area !== "community" && !runsReady && readRunHint() ? (
-        <div className="skeleton__bar" aria-hidden="true" />
+        <div className="bk-lib-running bk-lib-running--pending" aria-hidden="true">
+          <div className="bk-lib-running__text">
+            <p className="bk-lib-running__label">Running</p>
+            <p className="bk-lib-running__name">Block</p>
+            <p className="bk-lib-running__week">Week 1 of 1</p>
+          </div>
+          <span className="bk-lib-running__go">Go</span>
+        </div>
       ) : activeRun ? (
         <LibraryRunningStrip
           name={activeRun.name}
@@ -593,7 +594,7 @@ export function MyTemplatesPage() {
             </Card>
           ) : null}
 
-          {tabLoading ? (
+          {holdBlockList ? (
             <LoadingState tone="skeleton" variant="library" rows={3} slowLabel="Taking longer than usual…" />
           ) : null}
 
@@ -618,8 +619,8 @@ export function MyTemplatesPage() {
             <Card className="bk-lib-empty">
               <p className="bk-lib-empty__title">No saved workouts</p>
               <p className="bk-lib-empty__body">
-                Saved workouts still work here. Create workout is parked - start from a block, or
-                save a live session afterwards.
+                Saved workouts still work here. Start from a block, or save a live session
+                afterwards.
               </p>
               <div className="bk-lib-empty__actions">
                 <button
@@ -672,7 +673,7 @@ export function MyTemplatesPage() {
                   : "Custom exercises"
             }
           >
-            {tabLoading ? null : tab === "exercises" ? (
+            {holdBlockList ? null : tab === "exercises" ? (
               items.map((x) => {
                   const k = keyFor("exercise", x.id);
                   return (

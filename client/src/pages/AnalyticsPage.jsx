@@ -38,6 +38,7 @@ import { formatEffort } from "../lib/effortDisplay.js";
 import { formatRepsValue } from "../lib/repsDisplay.js";
 import { loadWeightUnit } from "../lib/weightUnitPref.js";
 import { loadAnalyticsWeeks, saveAnalyticsWeeks } from "../lib/analyticsRangePref.js";
+import { formatHonestyNote } from "../lib/honestyNoteCopy.js";
 import { formatEstimate, formatWeight } from "../lib/weightDisplay.js";
 import { buildExecutionVerdict, formatPlanActual, formatPlannedSummary, formatActualSummary } from "../lib/executionVerdict.js";
 
@@ -693,9 +694,10 @@ function DataQualitySection({ meta }) {
       )}
       {Array.isArray(meta.honestyNotes) && meta.honestyNotes.length > 0 ? (
         <ul className="muted small analytics-honesty-notes">
-          {meta.honestyNotes.map((note) => (
-            <li key={note}>{note}</li>
-          ))}
+          {meta.honestyNotes.map((note) => {
+            const text = formatHonestyNote(note);
+            return <li key={note}>{text}</li>;
+          })}
         </ul>
       ) : null}
     </section>

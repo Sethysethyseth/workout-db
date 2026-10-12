@@ -9,6 +9,16 @@ const PATHS = {
   chevron: "M9 6.5 L15.5 12 L9 17.5",
 };
 
+function MoreDots() {
+  return (
+    <>
+      <circle cx="6" cy="12" r="1.35" fill="currentColor" stroke="none" />
+      <circle cx="12" cy="12" r="1.35" fill="currentColor" stroke="none" />
+      <circle cx="18" cy="12" r="1.35" fill="currentColor" stroke="none" />
+    </>
+  );
+}
+
 export function GlyphIcon({ name, size = 24 }) {
   const stroke = (1.8 * 24) / size;
   return (
@@ -22,8 +32,9 @@ export function GlyphIcon({ name, size = 24 }) {
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
+      style={{ display: "block" }}
     >
-      <path d={PATHS[name]} />
+      {name === "more" ? <MoreDots /> : <path d={PATHS[name]} />}
     </svg>
   );
 }

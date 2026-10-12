@@ -1724,6 +1724,7 @@ html[data-theme="dark"] .loading-state {
 }
 
 .settings-page-back {
+  position: relative;
   display: inline-flex;
   justify-self: start;
   align-items: center;
@@ -1739,6 +1740,16 @@ html[data-theme="dark"] .loading-state {
   line-height: 1;
   text-decoration: none;
   transition: color var(--motion-fast) var(--ease-standard), background var(--motion-fast) var(--ease-standard);
+}
+
+.settings-page-back::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: max(100%, 44px);
+  height: 44px;
+  transform: translate(-50%, -50%);
 }
 
 .settings-page-back:hover {
@@ -5398,12 +5409,23 @@ html[data-theme="dark"] .workout-hero.card--notched::before {
 }
 
 .workout-tab-recent__view-all {
+  position: relative;
   flex-shrink: 0;
   font-size: 12px;
   font-weight: 500;
   color: var(--color-text-secondary);
   text-decoration: none;
   transition: color var(--motion-fast) var(--ease-standard);
+}
+
+.workout-tab-recent__view-all::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: max(100%, 44px);
+  height: 44px;
+  transform: translate(-50%, -50%);
 }
 
 .workout-tab-recent__view-all:hover {
@@ -6991,12 +7013,23 @@ html[data-palette="forest"] .analytics-page {
 }
 
 .weekly-report__link {
+  position: relative;
   flex-shrink: 0;
   font-size: 12px;
   font-weight: 500;
   color: var(--color-text-secondary);
   text-decoration: none;
   transition: color var(--motion-fast) var(--ease-standard);
+}
+
+.weekly-report__link::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: max(100%, 44px);
+  height: 44px;
+  transform: translate(-50%, -50%);
 }
 
 .weekly-report__link:hover {
@@ -9181,6 +9214,7 @@ html[data-theme="dark"][data-palette="iron"] .analytics-page {
 }
 
 .range-chip {
+  position: relative;
   min-height: 36px;
   font-family: var(--font-display);
   letter-spacing: 0.02em;
@@ -9188,6 +9222,16 @@ html[data-theme="dark"][data-palette="iron"] .analytics-page {
     border-color var(--motion-fast) var(--ease-standard),
     background var(--motion-fast) var(--ease-standard),
     box-shadow var(--motion-fast) var(--ease-standard);
+}
+
+.analytics-range-chips .range-chip::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: max(100%, 44px);
+  height: 44px;
+  transform: translate(-50%, -50%);
 }
 
 /* Heatmap cells: a faint inset edge so the darkest bins keep their shape
@@ -9593,7 +9637,9 @@ html:not([data-theme="dark"])[data-palette="chill"] {
 }
 
 .session-summary__exercise-index {
-  flex: 0 0 auto;
+  flex: 0 0 2.75ch;
+  width: 2.75ch;
+  text-align: right;
   font-family: var(--font-display);
   font-size: 0.8rem;
   font-weight: 700;
@@ -9938,6 +9984,13 @@ html:not([data-theme="dark"])[data-palette="chill"] {
   justify-content: flex-end;
   gap: 8px;
   flex-shrink: 0;
+}
+
+.session-detail-head__sub {
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .session-discard-x {

@@ -33,6 +33,7 @@ import {
 } from "../components/motion/useFlip.js";
 import { getAdHocSessionTitle, setAdHocSessionTitle } from "../lib/adHocSessionTitle.js";
 import { sessionDisplayTitle } from "../lib/sessionDisplay.js";
+import { registerLiveSetDraftFlush } from "../lib/confirmLeaveLiveSession.js";
 import { smartWorkoutNameFromSessionExercises } from "../lib/smartWorkoutName.js";
 import { getTrainingPrefs, useTrainingPrefs } from "../lib/trainingPrefs.js";
 import { TrainingPrefsStrip } from "../components/prefs/TrainingPrefsStrip.jsx";
@@ -1379,6 +1380,13 @@ const SessionSetRow = memo(function SessionSetRow({
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draft, disabled, isDraft, tryPromote]);
+
+  const flushLeaveRef = useRef(null);
+  flushLeaveRef.current = () => {
+    if (isDraft) void tryPromote();
+    else flushNow();
+  };
+  useEffect(() => registerLiveSetDraftFlush(() => flushLeaveRef.current()), []);
 
   function focusNextField(from) {
     const chain = ["weight", timedMode ? "durationSec" : "reps"];
@@ -4028,17 +4036,15 @@ export function SessionDetailPage() {
           >
             <div className="session-detail-head__text">
               <h1 style={{ marginBottom: 6 }}>{rowPreview.title}</h1>
-              <p className="muted small" style={{ margin: 0 }}>
+              <p className="muted small session-detail-head__sub">
                 {rowPreview.when}
                 {rowPreview.time ? ` · ${rowPreview.time}` : ""}
               </p>
-              {rowPreview.top || rowPreview.volume ? (
-                <p className="muted small" style={{ margin: "4px 0 0" }}>
-                  {rowPreview.top ? `Top set ${rowPreview.top}` : null}
-                  {rowPreview.top && rowPreview.volume ? " · " : null}
-                  {rowPreview.volume || null}
-                </p>
-              ) : null}
+            </div>
+            <div className="session-detail-head__actions">
+              <button type="button" className="btn btn-secondary" onClick={goBackFromSession}>
+                Back
+              </button>
             </div>
           </div>
           <div className={holdHead ? "mx-flip-reveal" : undefined}>
@@ -4303,7 +4309,7 @@ export function SessionDetailPage() {
           ref={isCompleted ? flipHeadRef : undefined}
         >
           <div className="session-detail-head__text">
-            {blockContext ? (
+            {!isCompleted && blockContext ? (
               <div className="bk bk-log-eyebrow-wrap">
                 <Eyebrow>
                   {`${blockContext.blockName} · W${blockContext.weekOrder}${
@@ -4312,15 +4318,22 @@ export function SessionDetailPage() {
                 </Eyebrow>
               </div>
             ) : null}
-            <h1 style={{ marginBottom: 6 }}>{pageTitle}</h1>
-            <p className="muted small" style={{ margin: 0 }}>
+            <h1 style={{ marginBottom: 6 }}>
+              {isCompleted
+                ? previewMatches
+                  ? rowPreview.title
+                  : sessionDisplayTitle(session)
+                : pageTitle}
+            </h1>
+            <p className={`muted small${isCompleted ? " session-detail-head__sub" : ""}`} style={{ margin: 0 }}>
               {isCompleted ? (
                 <>
                   Finished {formatDate(session?.completedAt)} · {sourceSummary}
+                  {blockContext?.weekLabel ? ` · ${blockContext.weekLabel}` : ""}
                 </>
               ) : (
                 <>
-                  Live session — updates save as you go.{" "}
+                  Live session. Updates save as you go.{" "}
                   {isFromTemplate
                     ? `Started from ${session.workoutTemplate.name}.`
                     : "One-time session."}
@@ -4423,7 +4436,7 @@ export function SessionDetailPage() {
 
       {isCompleted && isQuickLog ? (
         <p className="muted small session-summary-footnote" style={{ margin: 0 }}>
-          One-time session—saved in History only, not as a reusable workout.
+          One-time session. Saved in History only, not as a reusable workout.
         </p>
       ) : null}
 

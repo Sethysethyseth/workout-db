@@ -1,10 +1,6 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { useSessionLiveLoggingGuard } from "../context/SessionLiveLoggingGuardContext.jsx";
-import { confirmLeaveLiveSession } from "./confirmLeaveLiveSession.js";
-
-function isSessionDetailPath(pathname) {
-  return /^\/sessions\/[^/]+$/.test(pathname);
-}
+import { flushLiveSessionDrafts } from "./confirmLeaveLiveSession.js";
 
 export function useGuardedNav() {
   const navigate = useNavigate();
@@ -12,14 +8,7 @@ export function useGuardedNav() {
   const { isActive: liveSessionGuard } = useSessionLiveLoggingGuard();
 
   function tryNavigate(to, { replace = false } = {}) {
-    if (liveSessionGuard) {
-      const from = location.pathname;
-      if (isSessionDetailPath(from) && isSessionDetailPath(to) && from !== to) {
-        navigate(to, { replace });
-        return;
-      }
-      if (!confirmLeaveLiveSession()) return;
-    }
+    if (liveSessionGuard) flushLiveSessionDrafts();
     navigate(to, { replace });
   }
 

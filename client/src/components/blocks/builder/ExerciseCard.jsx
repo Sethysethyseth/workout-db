@@ -12,6 +12,7 @@ import {
 } from "./blockBuilderState.js";
 import { exerciseNameImpliesPerSide } from "../log/perSideMode.js";
 import { BuilderSheet, useOverlayFocus } from "./BuilderSheet.jsx";
+import { GlyphIcon } from "../../GlyphIcon.jsx";
 import { ExerciseSettingSheet } from "./ExerciseSettingSheet.jsx";
 
 const REST_PRESETS = [
@@ -427,7 +428,7 @@ export function ExerciseCard({
           aria-expanded={actionsOpen}
           onClick={() => setActionsOpen(true)}
         >
-          …
+          <GlyphIcon name="more" size={18} />
         </button>
       </div>
 

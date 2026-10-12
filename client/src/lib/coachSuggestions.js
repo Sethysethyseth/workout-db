@@ -5,6 +5,25 @@
  */
 
 const STALE_DAYS = 14;
+
+/**
+ * Catalog names that are plural take "have" (lats, glutes, triceps).
+ * A name is plural when its last word ends in s (chest, neck, "middle back" stay singular).
+ */
+function muscleNameIsPlural(muscle) {
+  const last = String(muscle || "")
+    .trim()
+    .toLowerCase()
+    .split(/\s+/)
+    .pop();
+  if (!last) return false;
+  return last.endsWith("s");
+}
+
+function quietMuscleQuestion(muscle) {
+  const verb = muscleNameIsPlural(muscle) ? "have" : "has";
+  return `Why ${verb} ${muscle} gone quiet?`;
+}
 const LOW_COVERAGE = 0.6;
 const MAX_SUGGESTIONS = 3;
 
@@ -43,7 +62,7 @@ export function buildSuggestedQuestions(summary, { view = "muscles" } = {}) {
   const stale = perMuscle
     .filter((m) => m.daysSinceLast >= STALE_DAYS && m.effectiveSets > 0)
     .sort((a, b) => b.effectiveSets - a.effectiveSets)[0];
-  if (stale) push(`Why has ${stale.muscle} gone quiet?`);
+  if (stale) push(quietMuscleQuestion(stale.muscle));
 
   push(VIEW_QUESTIONS[view] || VIEW_QUESTIONS.muscles);
   push("What should I focus on next week?");

@@ -290,8 +290,19 @@
 }
 
 .bk-run-library-link a {
+  position: relative;
   color: var(--bk-muted);
   text-decoration: none;
+}
+
+.bk-run-library-link a::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: max(100%, 44px);
+  height: 44px;
+  transform: translate(-50%, -50%);
 }
 
 .bk-run-library-link a:hover {

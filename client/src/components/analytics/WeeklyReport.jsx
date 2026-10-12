@@ -371,7 +371,8 @@ export function WeeklyReport({ weekStrip = null }) {
         </div>
         {weekStrip ? <div className="weekly-report__strip">{weekStrip}</div> : null}
         <p className="weekly-report__nudge muted small">
-          No workouts yet in the last 7 days - the 7 days before you logged {priorWorkouts}.
+          No workouts yet in the last 7 days. The 7 days before, you logged {priorWorkouts}{" "}
+          {priorWorkouts === 1 ? "workout" : "workouts"}.
         </p>
       </section>
     );

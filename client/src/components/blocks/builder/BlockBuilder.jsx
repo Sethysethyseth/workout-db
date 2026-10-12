@@ -5,6 +5,7 @@ import * as blockTemplateApi from "../../../api/blockTemplateApi.js";
 import { getCoachStatus } from "../../../api/coachApi.js";
 import { loadWeightUnit } from "../../../lib/weightUnitPref.js";
 import { ErrorMessage } from "../../ErrorMessage.jsx";
+import { GlyphIcon } from "../../GlyphIcon.jsx";
 import { LoadingState } from "../../LoadingState.jsx";
 import { AiWait } from "../../coach/AiWait.jsx";
 import { CoachPanel } from "../../coach/CoachPanel.jsx";
@@ -166,6 +167,7 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
   const location = useLocation();
   const isCreate = mode === "create";
   const nameInputRef = useRef(null);
+  const nameFocusFromTap = useRef(false);
   const dayPanelRef = useRef(null);
   const savedSnapshotRef = useRef(null);
   const discardLeavingRef = useRef(false);
@@ -393,8 +395,14 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
   }, [isCreate, templateId]);
 
   // Focus name when the inline editor opens (create, or tap-to-edit).
+  // Touch (pointer: coarse) skips the create autofocus so New block does
+  // not raise the keyboard. A tap on the name still focuses.
   useEffect(() => {
-    if (!nameEditing || loading) return;
+    if (!nameEditing || loading) return undefined;
+    const coarse =
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(pointer: coarse)").matches;
+    if (coarse && !nameFocusFromTap.current) return undefined;
     const t = window.setTimeout(() => nameInputRef.current?.focus(), 50);
     return () => window.clearTimeout(t);
   }, [nameEditing, loading]);
@@ -938,7 +946,7 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
           aria-expanded={headerMenuOpen}
           onClick={() => setHeaderMenuOpen(true)}
         >
-          …
+          <GlyphIcon name="more" size={18} />
         </button>
       </div>
     </div>
@@ -972,10 +980,14 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
           tabIndex={0}
           className="bk-builder-name-tap"
           title={state.name || "Untitled block"}
-          onClick={() => setNameEditing(true)}
+          onClick={() => {
+            nameFocusFromTap.current = true;
+            setNameEditing(true);
+          }}
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " ") {
               e.preventDefault();
+              nameFocusFromTap.current = true;
               setNameEditing(true);
             }
           }}
@@ -1129,7 +1141,7 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
               aria-expanded={weekActionsOpen}
               onClick={openWeekActions}
             >
-              …
+              <GlyphIcon name="more" size={16} />
             </button>
           </div>
           <WeekStrip
@@ -1237,7 +1249,7 @@ export function BlockBuilder({ mode = "create", templateId, onBack }) {
                       aria-expanded={dayActionsOpen}
                       onClick={openDayActions}
                     >
-                      …
+                      <GlyphIcon name="more" size={16} />
                     </button>
                   </span>
                 }
