@@ -51,72 +51,15 @@ mid-wave smoke findings are in the archive (ARCHIVED Oct 11).
 still cut off under the keyboard (OPEN, needs the kbdebug screenshot), and
 Analytics bars slid only on the first visit (FIXED `9a500e8` - slow the first
 time, faster every return; re-check that one).
-From MXF3-MXF5 (`ff2c4e0`, `d6ae69b`, `3378250`) - items 1-11 were
-smoked Oct 10 (only the coach keyboard + glyph failed; 3 = keep green,
-11 = keep remembering):
-12. Home top right: the coach button is a plain centred chat bubble.
-13. Coach: tap the box - it sits right above the keyboard, send fully
-    visible, still true for a long multi-line question; closing the
-    keyboard brings the tab bar back. If a gap remains: open
-    `/coach?kbdebug=1`, tap the box, screenshot the readout.
-14. Quick workout: type weight then reps fast - nothing lost, keyboard
-    stays up; typing in a 3rd "last time" row keeps it in place.
-15. Leave and Resume a workout: no search lists pop open; tapping Weight
-    never renames the exercise.
-16. Exercise search with the keyboard up shows 3+ results above it.
-17. Builder > + Add exercise > type: "Add ... to your library" reachable.
-18. Coach working + live workout: the chip sits above the exercise name.
-19. "Add a workout note" opens the keyboard in one tap.
-20. Dark mode: send arrow / Stop readable, Stop centred (send and stop
-    are now one 72 px pill - OK?).
-21. Analytics chart cards have even margins; no repeated axis numbers.
-22. Small x / arrow / -+ icons sit centred (logger, Home, Profile).
-23. Iron light: amber text is readable.
-24. A rate-limited coach says it is taking a breather, not "check your
-    connection".
-Questions for Seth: keep the crown on coach answers + the Analytics coach
-card, or the bubble everywhere? `/coach/status` counts against the coach
-limit (server; not changed).
-Staging Render must be on `motion-wave` for the coach's help answer to say
-"History, then Coach" (server/data/app-guide.md).
-From MXF6 (`f14762d`) - coach:
-25. Ask, then tap + while it answers: a sheet offers Keep waiting / Open
-    anyway. Open anyway gives a fresh chat and you STAY there; the answer
-    still shows up in History > Coach.
-26. Ask, then open another chat from History > Coach while it answers:
-    the same sheet; Keep waiting puts you back on the live one.
-27. Ask, then Stop at once (even in the first second): nothing lands in
-    History > Coach. Tap + after Stop: no sheet, the cursor is in the box.
-28. Ask, then reload (or lock the phone mid-answer and come back): one
-    calm "still being answered" line, then the answer opens by itself.
-29. Airplane mode, open Coach: the reason plus Retry. Back online: the
-    box returns on its own (or with Retry).
-30. A failed question stays in the box with Try again; a very long
-    question stops at 1000 characters, with a counter from 900.
-31. Coach bar (ask, then switch tab): slides in and out, the same height
-    working and answered, the x centred; Read on a long answer lands at
-    the start of the answer.
-32. History > Coach left open while an answer finishes: the new chat
-    appears without leaving the page.
-33. Profile > AI access says History, under Coach, and does not jump when
-    its status line loads.
-From MXF7 (`fec6d06`):
-34. Live quick workout: type a weight and tap any tab at once - no
-    pop-up; Resume - the weight is there (also on a block day).
-35. History > open a workout: nothing jumps; the title is the workout's
-    own name, not "Workout summary".
-36. Block builder: the ... buttons are centred dots; New block does not
-    pop the keyboard; the name field has inner padding.
-37. Library: the "Create workout / Parked" button is gone; the running
-    strip does not push the tabs down when it loads.
-38. Wording: no em dashes on the live-workout or summary lines; the
-    in-progress bar reads "Workout, Oct 11"; "2 sets"; "Why have lats gone
-    quiet?"; Home says "you logged 2 workouts".
-39. Small links are easy to hit: Profile back, See analytics, View all,
-    the run page Library link, the Analytics range pills.
-New question for Seth: tapping outside the "still answering" sheet counts
-as Open anyway (the answer still saves) - fine, or should it mean Keep
-waiting?
+Still open from that list (carry forward):
+- 13. Coach box sits right above the keyboard, send fully visible - FAILS
+  on Seth's phone (see PICK UP HERE 0).
+- Analytics (MXF8 `9a500e8`): first visit in a session = full slow
+  entrance; leave and come back = the same bars/lines/numbers, quicker.
+Open questions for Seth: keep the crown on coach answers + the Analytics
+coach card, or the bubble everywhere? `/coach/status` and `/coach/stop`
+count against the coach limit - OK? Tapping outside the "still answering"
+sheet counts as Open anyway (the answer still saves) - fine?
 
 ## PICK UP HERE (next session)
 
