@@ -84,19 +84,18 @@ per unit is the crash/hand-relay fallback, not the design.
   agent), `WaitForExit` + `taskkill /T` on the timeout, and prints the
   run's PID. Pair it with a Monitor that exits when DELIVERY.md appears
   (the CLI can hang after writing it) and warns on ~12 min of log silence.
-- Pop the visual (added July 15, with CW1/CW2; ONE tab per boot since
-  Sept 29, Seth's ask): immediately after launching the run, check
-  `http://127.0.0.1:4646`. **Answering -> do nothing** - never
-  `Start-Process` the URL; Seth already has the tab (his login shortcut
-  opens it once at startup) and every extra open is a duplicate tab.
-  **Not answering -> start it detached from the MAIN tree**
-  (`node scripts/cursor-watch.mjs --open --notify`, all lanes by
-  default) - `--open` fires once after bind, so the first dispatch of
-  the session is the only one that opens a tab. Never pass
-  `--open-on-activity` (it re-arms on every lane branch change = a new
-  tab per dispatch - the behavior Seth asked to kill). Zero tokens:
-  it's a local fs/git watcher, no LLM anywhere in it. Skip gracefully
-  if the script doesn't exist on the branch yet.
+- Pop the visual (the Relay HUD since Oct 19, replacing cursor-watch;
+  ONE tab per boot, Seth's ask): a SessionStart hook in
+  `.claude/settings.local.json` already runs the hub's launcher on every
+  Claude launch, so it is normally up. Immediately after launching the
+  run, run that launcher again:
+  `node C:/Users/Sethy/OneDrive/Desktop/gui-hub/scripts/ensure-hub.mjs`.
+  It is silent and idempotent - hub answering on `127.0.0.1:4747` ->
+  does nothing; not answering -> starts it detached and opens one tab.
+  Never `Start-Process` the URL yourself - every extra open is a
+  duplicate tab. Zero tokens: a local fs/git/log watcher, no LLM in it.
+  Skip gracefully if gui-hub isn't on this machine.
+  `scripts/cursor-watch.mjs` is retired as the live view - don't start it.
 - On hang/timeout: kill, retry once, then descend or escalate.
 - On exit: delivery = uncommitted changes + DELIVERY.md in the
   worktree -> flip AWAITING-REVIEW, hand to `land-unit` (local-relay
@@ -172,8 +171,8 @@ duplicates, then create the full wave in ONE pass:
 The task list mirrors QUEUE.md; it never replaces it. QUEUE.md stays the
 durable ledger - the task list dies with the session.
 
-For the browser-side visual (Cursor actually typing), the cursor-watch
-dashboard in section 2 is the companion: task list = where the wave is,
+For the browser-side visual (Cursor actually typing), the Relay HUD
+in section 2 is the companion: task list = where the wave is,
 dashboard = what the agent is doing right now.
 
 ## 2c. Fan-out - parallel lanes (v5.2, July 18)
