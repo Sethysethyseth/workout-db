@@ -4438,6 +4438,7 @@ export function SessionDetailPage() {
             effortNote={liveEffortNote}
             edit={false}
             onEdit={() => setArenaSetupOpen(true)}
+            timer
           />
           <TrainingPrefsSheet
             open={arenaSetupOpen}
@@ -4958,6 +4959,7 @@ export function SessionDetailPage() {
           <RestTimerBar
             sessionId={sessionId}
             enabled={Boolean(trainingPrefs.restTimer?.enabled)}
+            onStrip={arenaLive}
           />
           <div className="session-finish-dock__inner stack">
             {!arenaLive && totalSetsLogged < 1 ? (

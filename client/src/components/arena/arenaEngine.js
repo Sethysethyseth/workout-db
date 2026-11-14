@@ -498,9 +498,9 @@ export function createArena(canvas, strip) {
 
     if (cy < 64) house(at, flashing);
     if (rail) {
-      /* Place name is already on the balcony from house(). REST / SAVED take the line. */
+      /* Place name is already on the balcony from house(). REST / SAVED / the live logger's clock take the line. */
       const input = faceInput(now);
-      if (input.rest || input.saved) {
+      if (input.rest || input.saved || input.logging) {
         const face = railFace(input);
         const m = cx + W / 2;
         px(cx, 56, RAMP[2], W, 7);

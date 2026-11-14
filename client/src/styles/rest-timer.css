@@ -119,3 +119,58 @@ html.bk-log-kbd .rest-timer {
     animation: none;
   }
 }
+
+/* Arena's live logger: the scoreboard strip is the readout; the controls sit
+   on it, either side of the board (RestTimerBar onStrip). The box matches
+   the strip (arena.css) and lets taps through everywhere but the buttons. */
+.rest-strip {
+  position: fixed;
+  top: var(--arena-top, 0px);
+  left: 0;
+  right: 0;
+  z-index: 4;
+  height: var(--arena-strip-h, 18svh);
+  display: grid;
+  grid-template-columns: 44px 1fr 44px;
+  grid-template-rows: 1fr 1fr;
+  gap: 4px;
+  padding: 10px 4px;
+  box-sizing: border-box;
+  pointer-events: none;
+}
+
+.rest-strip__btn {
+  pointer-events: auto;
+  align-self: center;
+  min-width: 44px;
+  min-height: 40px;
+  padding: 0;
+  border-radius: 0;
+  border: 1px solid color-mix(in srgb, var(--color-interactive) 45%, var(--color-border));
+  background: color-mix(in srgb, var(--color-bg) 82%, transparent);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1;
+}
+
+.rest-strip__btn:focus-visible {
+  outline: 2px solid var(--color-interactive);
+  outline-offset: 2px;
+}
+
+.rest-strip__btn--less {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+}
+
+.rest-strip__btn--more {
+  grid-column: 3;
+  grid-row: 1;
+}
+
+.rest-strip__btn--skip {
+  grid-column: 3;
+  grid-row: 2;
+}

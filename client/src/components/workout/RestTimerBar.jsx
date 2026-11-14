@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   REST_TIMER_EVENT,
   clearRestRun,
@@ -26,8 +27,12 @@ function vibrateOnce() {
 /**
  * Slim rest bar. Time comes from the stored timestamp, never a tick counter.
  * Hidden entirely when the pref is off or there is no live run.
+ *
+ * `onStrip` (Arena's live logger): the scoreboard strip at the top is the
+ * readout, so no bar is drawn; the three controls sit on the strip either
+ * side of the board instead (Seth, Nov 14: the timer shows at the top only).
  */
-export function RestTimerBar({ sessionId, enabled }) {
+export function RestTimerBar({ sessionId, enabled, onStrip = false }) {
   const [run, setRun] = useState(null);
   const [text, setText] = useState("");
   const [done, setDone] = useState(false);
@@ -119,6 +124,42 @@ export function RestTimerBar({ sessionId, enabled }) {
   }, [enabled, run, sessionId]);
 
   if (!enabled || !run || !text) return null;
+
+  if (onStrip) {
+    return createPortal(
+      <div className="rest-strip" role="timer" aria-label={done ? "Rest done" : `Rest ${text}`}>
+        {done ? null : (
+          <>
+            <button
+              type="button"
+              className="rest-strip__btn rest-strip__btn--less"
+              aria-label="15 seconds less rest"
+              onClick={() => nudgeRestRun(sessionId, -NUDGE_MS)}
+            >
+              -15s
+            </button>
+            <button
+              type="button"
+              className="rest-strip__btn rest-strip__btn--more"
+              aria-label="15 seconds more rest"
+              onClick={() => nudgeRestRun(sessionId, NUDGE_MS)}
+            >
+              +15s
+            </button>
+            <button
+              type="button"
+              className="rest-strip__btn rest-strip__btn--skip"
+              aria-label="Skip rest"
+              onClick={() => clearRestRun(sessionId)}
+            >
+              Skip
+            </button>
+          </>
+        )}
+      </div>,
+      document.body
+    );
+  }
 
   const name = run.exerciseName;
 

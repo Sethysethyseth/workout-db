@@ -240,6 +240,14 @@ errors, at both phone sizes, and the SAVED face is seen.
   side, empty seats dim, this week's row bright, the open workout's fan
   on its feet (the newest when none is open). Data: `roomFacts.crowd`
   and `arenaBoards.seatSpot`. The far stands and the Log are unchanged.
+- **AMENDED Nov 14 (Seth, ledger row 23): the logger's strip is its rest
+  timer.** Rest timer ON: strip as ruled, and it is the ONLY rest readout
+  - the bar over Finish is not drawn under Arena; -15s sits left of the
+  board, +15s and Skip right of it, on the strip, while a rest runs.
+  Rest timer OFF: the live logger folds to the rail, whose line reads
+  `m:ss · SET n` (a block day: `n OF total`). Live Home keeps the strip.
+  The quick row gets a `Timer` chip (rest timer on / off). Read this over
+  the state matrix's logger cells and item 10.
 - **AMENDED Nov 14 (frontier seat, Seth's phone smoke): the fold carries
   across a change of tab.** If the room was folded to the rail on the
   open page you leave, the next open page arrives folded (scrolled

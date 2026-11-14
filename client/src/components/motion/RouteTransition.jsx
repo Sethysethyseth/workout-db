@@ -84,7 +84,7 @@ export function RouteTransition() {
     const arenaLeavingStrip =
       typeof document !== "undefined" &&
       document.documentElement.hasAttribute("data-arena") &&
-      prevArenaModeRef.current === "strip" &&
+      prevArenaModeRef.current === "working" &&
       from !== pathname;
     const dir =
       fadeFlag || toHistoryShrink || arenaLeavingStrip ? "fade" : routeDirection(from, pathname);
@@ -181,7 +181,9 @@ export function RouteTransition() {
   /* After the effect above: remember this route's Arena mode for the next navigation. */
   useLayoutEffect(() => {
     prevArenaModeRef.current =
-      typeof document !== "undefined" ? document.documentElement.dataset.arenaMode || null : null;
+      typeof document !== "undefined" && document.documentElement.hasAttribute("data-arena-working")
+        ? "working"
+        : null;
   });
 
   return (

@@ -68,6 +68,12 @@
 >   naming; Home's button reads "Start workout", 5% a rare line
 >   (`lib/startLines.js`). Rig-proved, zero errors; unit 587/587, build,
 >   check-hex clean.
+> - **Nov 14, fourth look (row 23, built in-seat):** under Arena the rest
+>   bar over Finish is gone; the strip is the rest readout with -15s /
+>   +15s / Skip on it; rest timer off = the logger under the rail with
+>   its clock on the rail line; a Timer chip in the quick row.
+>   RouteTransition's "leaving the logger" fade now keys on
+>   `data-arena-working` (live Home / live logger), not strip mode.
 > - **Next action (human):** Seth looks at these on
 >   his phone and signs off round 1 or adds ledger rows. Rows 11-13 are
 >   still open. HANDOFF is over its cap and needs a trim to the archive.

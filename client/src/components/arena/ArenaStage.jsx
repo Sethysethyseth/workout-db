@@ -28,6 +28,7 @@ import {
   stripReveal,
 } from "../../lib/arenaSheet.js";
 import { noteArenaFold, setArenaFoldRoom } from "../../lib/arenaFold.js";
+import { useTrainingPrefs } from "../../lib/trainingPrefs.js";
 import { setArenaTour, useArenaTour } from "../../lib/arenaTour.js";
 import { REST_TIMER_EVENT, readRestRun } from "../../lib/restTimer.js";
 import { SCENE_SIGNAL_EVENT } from "../../lib/sceneSignal.js";
@@ -328,8 +329,12 @@ export function ArenaStage() {
   const activeId = activeSession?.id ?? null;
   const [place, facet] = placeFor(pathname, activeId);
   const live = activeId != null;
-  const size = arenaSize({ pathname, tour, live, activeId });
-  const toStrip = stripPlace({ pathname, live, activeId });
+  const restOn = useTrainingPrefs().restTimer?.enabled !== false;
+  const size = arenaSize({ pathname, tour, live, activeId, restOn });
+  const toStrip = stripPlace({ pathname, live, activeId, restOn });
+  /* The working pages (live Home, the live logger): leaving one fades and
+     opens the next page at the top (RouteTransition reads this). */
+  const working = live && (pathname === "/" || pathname === `/sessions/${activeId}`);
   const [cheer, setCheer] = useState(false);
   const cheerTimer = useRef(0);
 
@@ -432,6 +437,8 @@ export function ArenaStage() {
     const st = stageRef.current;
     document.documentElement.style.setProperty("--arena-h", height);
     document.documentElement.dataset.arenaMode = size.mode;
+    if (working) document.documentElement.dataset.arenaWorking = "";
+    else delete document.documentElement.dataset.arenaWorking;
     if (!st) return;
     st.foldStrip = toStrip;
     st.mode = size.mode;
@@ -442,7 +449,7 @@ export function ArenaStage() {
        already resizes on a foldMode change; this covers same-mode remounts
        and the first paint after --arena-strip-h flips to 18svh. */
     st.arena?.resize();
-  }, [height, toStrip, size.mode]);
+  }, [height, toStrip, size.mode, working]);
   useEffect(
     () => () => {
       document.documentElement.style.removeProperty("--arena-h");
@@ -451,6 +458,7 @@ export function ArenaStage() {
       document.documentElement.style.removeProperty("--arena-stage-h");
       document.documentElement.style.removeProperty("--arena-px");
       delete document.documentElement.dataset.arenaMode;
+      delete document.documentElement.dataset.arenaWorking;
     },
     []
   );

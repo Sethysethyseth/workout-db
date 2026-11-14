@@ -4,7 +4,8 @@
  *
  * - tour: the arena has the screen; the sheet keeps one line and the nav.
  * - open: arrival size on the browsing routes.
- * - strip: the scoreboard strip (18svh) - live logger and live Home only.
+ * - strip: the scoreboard strip (18svh) - live Home, and the live logger
+ *   while the rest timer is switched on.
  * - rail: 11 room rows - every other folded state (Coach, past workout,
  *   scrolled open routes, unlisted routes).
  */
@@ -23,10 +24,10 @@ const OPEN_SVH = {
 };
 
 /**
- * @param {{ pathname: string, tour?: boolean, live?: boolean, activeId?: string | number | null }} args
+ * @param {{ pathname: string, tour?: boolean, live?: boolean, activeId?: string | number | null, restOn?: boolean }} args
  * @returns {{ mode: "tour" | "open" | "strip" | "rail", svh?: number, rows?: number }}
  */
-export function arenaSize({ pathname, tour, live, activeId }) {
+export function arenaSize({ pathname, tour, live, activeId, restOn = true }) {
   if (tour) return { mode: "tour", svh: 100 };
   const path = String(pathname || "/").replace(/\/+$/, "") || "/";
   const liveOn = Boolean(live);
@@ -36,7 +37,10 @@ export function arenaSize({ pathname, tour, live, activeId }) {
   if (liveOn && path === "/") return { mode: "strip", svh: ARENA_STRIP_SVH };
   const session = path.match(/^\/sessions\/([^/]+)$/);
   if (session) {
-    if (liveOn && active != null && session[1] === active) {
+    /* The live logger: the scoreboard is its rest timer. With the rest timer
+       switched off the logger gets the whole screen under the rail (Seth,
+       Nov 14). */
+    if (liveOn && active != null && session[1] === active && restOn) {
       return { mode: "strip", svh: ARENA_STRIP_SVH };
     }
     return { mode: "rail", rows: ARENA_RAIL_ROWS };
@@ -48,8 +52,8 @@ export function arenaSize({ pathname, tour, live, activeId }) {
 }
 
 /** Whether this route folds to the strip (scoreboard) rather than the rail. */
-export function stripPlace({ pathname, live, activeId }) {
-  return arenaSize({ pathname, live, activeId }).mode === "strip";
+export function stripPlace({ pathname, live, activeId, restOn }) {
+  return arenaSize({ pathname, live, activeId, restOn }).mode === "strip";
 }
 
 /**

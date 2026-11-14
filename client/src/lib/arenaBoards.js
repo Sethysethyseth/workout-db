@@ -372,6 +372,16 @@ export function railFace(input = {}) {
   if (input.saved) {
     return { line: ledFit(`SAVED ${input.saved.name || ""}`, 22) || "SAVED" };
   }
+  /* The live logger under the rail (rest timer off): the rail is its only clock. */
+  if (input.logging) {
+    const log = input.logging;
+    const clock = mmss(log.elapsedSec);
+    return {
+      line: log.block
+        ? `${clock} \u00b7 ${log.block.done} OF ${log.block.total}`
+        : `${clock} \u00b7 SET ${(Number(log.setsDone) || 0) + 1}`,
+    };
+  }
   const place = input.place || "home";
   return { line: PLACE_BALCONY[place] || PLACE_BALCONY.home };
 }
