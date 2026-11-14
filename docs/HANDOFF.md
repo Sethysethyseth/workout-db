@@ -44,9 +44,23 @@
 >   (strip follows the typed name; short pages fold all the way to the
 >   rail). Three left open as ledger rows 11-13 (Reopen under the bar at
 >   360, no in-progress bar on Coach - both pre-existing - and a note).
-> - **Next action (human):** Seth smokes ARENA round 1 on his phone
->   (branch `ccr-ac9fe067-pc08f1`, head `868b801`) and signs off or
->   adds ledger rows. Not merged anywhere.
+> - Seth smoked ARENA round 1 on his phone (Nov 14): "look nice but had
+>   some missing features" - see the next bullet. Not merged anywhere.
+> - **Nov 14, Seth's phone smoke of round 1 - two findings, both ruled
+>   and built in-seat (Seth gave the frontier seat the final say and
+>   leave to edit directly), ledger rows 14-15:** (14) the logger's quick
+>   toggles are back under Arena as one slim chip row under the one row
+>   (RIR / RPE, Exercise notes, Repeat last, plus a Table chip); Setup
+>   still opens the sheet. (15) A folded room stays folded across a tab
+>   change (`lib/arenaFold.js`; RouteTransition starts the new page at
+>   its fold end, a cut with scroll anchoring off); leaving a page open
+>   arrives open; the logger's exit still opens Home at the top.
+>   ARENA-ROUND-1.md items 8 and 9 carry the amendments. Proved in the
+>   cloud rig at 412 + 360: every chip toggles the logger, the row fits
+>   at 360, fold carry across all five tabs, reduced motion, Arena OFF
+>   unchanged, zero console errors; unit 587/587, build, check-hex clean.
+> - **Next action (human):** Seth re-smokes those two on his phone and
+>   signs off round 1 or adds ledger rows. Rows 11-13 are still open.
 > - Not in this round, unchanged: AR6 light-mode arena, AR7 Arena as
 >   default, swipe-to-walk, What's New (bookmarked).
 

@@ -230,6 +230,17 @@ errors, at both phone sizes, and the SAVED face is seen.
 - The size never changes with the state. A rest that starts while you
   read Analytics changes the rail's line and moves nothing.
 
+- **AMENDED Nov 14 (frontier seat, Seth's phone smoke): the fold carries
+  across a change of tab.** If the room was folded to the rail on the
+  open page you leave, the next open page arrives folded (scrolled
+  exactly to its fold end, a cut, no ease); scroll up and the room is
+  there. Leave a page with the room open (or only part folded) and the
+  next arrives open, as before. Rail-only pages (Coach, a past workout,
+  unlisted routes) and the logger do not change what is remembered.
+  Leaving the logger (Finish, Discard) always opens Home at the top, so
+  the SAVED room is seen. Back / forward keep the browser's own scroll.
+  A reload starts open. Code: `lib/arenaFold.js`.
+
 **Why.** Seth: the banner "makes sense on the home screen but in other
 parts it feels kinda like a filler". Scrolled into Analytics, a fifth of
 the screen said TRICEPS 0 SETS above the same numbers. The board earns
@@ -289,7 +300,22 @@ the in-progress bar as today. A finished workout's page
 (`qolf9`) under Arena. Seth can reverse that at his one look. With Arena
 off the logger is exactly as today.
 
-**In the artifact.** State: Live workout. Then Setup sheet.
+**AMENDED Nov 14 (frontier seat, Seth's phone smoke: the quick logging
+features "were added and then removed"; he handed the seat the final
+say).** The hotbar's quick toggles are back under Arena, as ONE slim row
+(36px, squared, no box) directly under the one row: `RIR | RPE`,
+`Exercise notes`, `Repeat last`, and a new `Table` chip (the view
+switch, not shown on a block day). The hotbar's Edit is not repeated:
+Setup, in the one row, is the way into the sheet, and the sheet keeps
+every setting including Layout. Why: the toggles are used mid-workout
+(notes off to pull the weight boxes up, table view on), and a sheet is
+two taps and a context switch for a one-tap job; one 36px row costs less
+than the exercise-notes box it can hide. The title, the LIVE line, the
+name label, the note link's old position and the helper lines over
+Finish stay gone. Arena off: unchanged.
+
+**In the artifact.** State: Live workout. Then Setup sheet. (The
+artifact does not draw the chip row; this amendment is the spec for it.)
 
 **Build check.** Arena on, a new empty workout, 412 x 839, no scroll:
 the first exercise's name box and its first weight box are both on
