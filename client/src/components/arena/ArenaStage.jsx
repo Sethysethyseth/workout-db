@@ -25,6 +25,7 @@ import {
   stripPlace,
   stripReveal,
 } from "../../lib/arenaSheet.js";
+import { noteArenaFold, setArenaFoldRoom } from "../../lib/arenaFold.js";
 import { setArenaTour, useArenaTour } from "../../lib/arenaTour.js";
 import { REST_TIMER_EVENT, readRestRun } from "../../lib/restTimer.js";
 import { SCENE_SIGNAL_EVENT } from "../../lib/sceneSignal.js";
@@ -184,6 +185,7 @@ function measureStage(st) {
   root.setProperty("--arena-top", `${top}px`);
   /* Coach (and other rail-first pages) size against the stage's real height. */
   root.setProperty("--arena-stage-h", st.geom.openPx ? `${st.geom.openPx}px` : `var(--arena-h)`);
+  setArenaFoldRoom(st.mode === "open" ? Math.ceil(st.geom.openPx - st.geom.stripPx) : 0);
 }
 
 const HOLD_MS = 480;
@@ -339,6 +341,7 @@ export function ArenaStage() {
       stripProbe: stripProbeRef.current,
       geom: { openPx: 0, stripPx: 0, reveal: -1, covered: false, strip: false },
       foldStrip: true,
+      mode: null,
       coverTimer: 0,
       swallow: false, // the next click belongs to a closer-look gesture, not the full-view toggle
     };
@@ -409,12 +412,25 @@ export function ArenaStage() {
       : size.mode === "rail"
         ? `calc(${size.rows} * var(--arena-px, 4px))`
         : `${size.svh}svh`;
+  /* Leaving an open page: remember whether its room was folded, so the next
+     page arrives the same way (lib/arenaFold.js). Runs before the effect
+     below, while the geometry and the mode are still the old route's. */
+  const leftPathRef = useRef(pathname);
+  useLayoutEffect(() => {
+    const st = stageRef.current;
+    if (leftPathRef.current === pathname) return;
+    leftPathRef.current = pathname;
+    if (!st || st.mode !== "open") return;
+    const roomPx = st.geom.openPx - st.geom.stripPx;
+    noteArenaFold(roomPx > 0 && window.scrollY >= roomPx - 1);
+  }, [pathname]);
   useLayoutEffect(() => {
     const st = stageRef.current;
     document.documentElement.style.setProperty("--arena-h", height);
     document.documentElement.dataset.arenaMode = size.mode;
     if (!st) return;
     st.foldStrip = toStrip;
+    st.mode = size.mode;
     measureStage(st);
     applyStrip(st, true);
     st.arena?.set({ foldMode: toStrip ? "strip" : "rail" });

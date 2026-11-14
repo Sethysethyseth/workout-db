@@ -5,6 +5,7 @@ import "../../styles/shell-motion.css";
 import { prefersReducedMotion } from "../../lib/useReducedMotion.js";
 import { routeDirection } from "./navOrder.js";
 import { flipSourcePending, takeRouteFade } from "./useFlip.js";
+import { arenaArrivalScroll } from "../../lib/arenaFold.js";
 
 /**
  * MX5 shared-axis route transition. Mounted as a pathless layout route in
@@ -91,8 +92,29 @@ export function RouteTransition() {
     /* Leaving the live logger under Arena (Finish and Discard replace the
        route) also starts the next page at the top, so Home opens to the room
        and its SAVED board instead of inheriting the logger's scroll. */
+    /* Under Arena a tab change keeps the fold: if the room was folded to
+       the rail on the page you left, the new page starts folded too
+       (lib/arenaFold.js); otherwise, and always after the logger, the top. */
+    const arenaOn =
+      typeof document !== "undefined" && document.documentElement.hasAttribute("data-arena");
     const scrollTop = () => {
-      if ((push || arenaLeavingStrip) && typeof window !== "undefined") window.scrollTo(0, 0);
+      if (typeof window === "undefined") return;
+      if (arenaLeavingStrip) window.scrollTo(0, 0);
+      else if (push) {
+        const y = arenaOn ? arenaArrivalScroll() : 0;
+        if (y > 0) {
+          /* Folded to folded: the spacer's size change cuts instead of
+             easing, and scroll anchoring is off for the cut (arena.css), or
+             the page would be scrolled against a height that is still
+             moving, or pulled back to the old page's scroll, and miss the
+             fold. */
+          const root = document.documentElement;
+          root.dataset.arenaSnap = "";
+          void root.offsetHeight;
+          window.scrollTo(0, y);
+          requestAnimationFrame(() => requestAnimationFrame(() => delete root.dataset.arenaSnap));
+        } else window.scrollTo(0, 0);
+      }
     };
 
     /* A pending FLIP fades the live page instead of snapshotting it, so the

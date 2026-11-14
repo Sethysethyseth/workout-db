@@ -493,6 +493,32 @@ html[data-arena] #root .arena-logger-name .logger-name__label {
   display: none;
 }
 
+/* The quick toggles under the one row: squared, 36px, no box of their own.
+   Scrolls sideways if a narrow phone cannot fit them. */
+html[data-arena] #root .arena-logger-head .training-prefs-strip {
+  max-height: none;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+html[data-arena] #root .arena-logger-head .training-prefs-pair {
+  flex: 1 1 auto;
+}
+
+/* The chips share the row's width, so it fills at 412 and still fits at 360. */
+html[data-arena] #root .arena-logger-head .training-prefs-chip {
+  flex: 1 1 auto;
+  min-width: 40px;
+  min-height: 36px;
+  padding: 0 6px;
+  border-radius: 0;
+}
+
 /* ---------- item 6: skinned portaled sheets (outside #root) ---------- */
 
 html[data-arena] .start-workout-picker__sheet,

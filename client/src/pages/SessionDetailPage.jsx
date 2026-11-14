@@ -4427,6 +4427,14 @@ export function SessionDetailPage() {
               </button>
             ) : null}
           </div>
+          {/* The quick toggles, one slim row (Seth, Nov 14: they came back). */}
+          <TrainingPrefsStrip
+            effortSignal={liveEffortSignal}
+            effortNote={liveEffortNote}
+            edit={false}
+            onEdit={() => setArenaSetupOpen(true)}
+            layout={!isFromBlock ? { value: liveViewMode, onChange: setLiveViewMode } : null}
+          />
           <TrainingPrefsSheet
             open={arenaSetupOpen}
             onClose={() => setArenaSetupOpen(false)}

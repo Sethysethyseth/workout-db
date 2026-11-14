@@ -33,6 +33,17 @@ html[data-arena] {
     top 440ms var(--mx-ease-out-expo);
 }
 
+/* A tab change that arrives folded (lib/arenaFold.js) cuts to the new size. */
+/* ...and the browser must not "anchor" the new page to the old scroll. */
+html[data-arena-snap],
+html[data-arena-snap] body {
+  overflow-anchor: none;
+}
+
+html[data-arena-snap] .arena-spacer {
+  transition: none;
+}
+
 .arena-stage {
   position: absolute;
   left: 0;

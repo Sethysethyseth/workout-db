@@ -3,9 +3,11 @@ import { setTrainingPref, useTrainingPrefs } from "../../lib/trainingPrefs.js";
 import { TrainingPrefsSheet } from "./TrainingPrefsSheet.jsx";
 import "../../styles/training-prefs.css";
 
-/** Hotbar for logging setup. Under Arena the live logger does not render this
- *  (Setup opens TrainingPrefsSheet instead - ARENA-ROUND-1 item 9). */
-export function TrainingPrefsStrip({ effortSignal, effortNote } = {}) {
+/** Hotbar for logging setup. Under Arena the live logger renders it under its
+ *  one row with `edit={false}` (the row's Setup button opens the sheet) and a
+ *  `layout` chip for the table view (Seth, Nov 14: the quick toggles came
+ *  back; ARENA-ROUND-1 item 9 amended). */
+export function TrainingPrefsStrip({ effortSignal, effortNote, edit = true, onEdit = null, layout = null } = {}) {
   const prefs = useTrainingPrefs();
   const editRef = useRef(null);
   const [open, setOpen] = useState(false);
@@ -22,7 +24,8 @@ export function TrainingPrefsStrip({ effortSignal, effortNote } = {}) {
   function onScaleTap(next) {
     if (resolvedEffort === next) return;
     if (scaleLocked) {
-      setOpen(true);
+      if (onEdit) onEdit();
+      else setOpen(true);
       return;
     }
     setTrainingPref("effortSignal", next);
@@ -67,20 +70,34 @@ export function TrainingPrefsStrip({ effortSignal, effortNote } = {}) {
         >
           Repeat last
         </button>
-        <button
-          ref={editRef}
-          type="button"
-          className="training-prefs-strip__edit"
-          onClick={() => setOpen(true)}
-        >
-          Edit
-        </button>
+        {layout ? (
+          <button
+            type="button"
+            className={`training-prefs-chip${layout.value === "table" ? " training-prefs-chip--lit" : ""}`}
+            aria-pressed={layout.value === "table"}
+            onClick={() => layout.onChange(layout.value === "table" ? "builder" : "table")}
+          >
+            Table
+          </button>
+        ) : null}
+        {edit ? (
+          <button
+            ref={editRef}
+            type="button"
+            className="training-prefs-strip__edit"
+            onClick={() => setOpen(true)}
+          >
+            Edit
+          </button>
+        ) : null}
       </div>
-      <TrainingPrefsSheet
-        open={open}
-        onClose={() => setOpen(false)}
-        effortNote={effortNote}
-      />
+      {edit ? (
+        <TrainingPrefsSheet
+          open={open}
+          onClose={() => setOpen(false)}
+          effortNote={effortNote}
+        />
+      ) : null}
     </>
   );
 }
