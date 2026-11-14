@@ -59,8 +59,16 @@
 >   cloud rig at 412 + 360: every chip toggles the logger, the row fits
 >   at 360, fold carry across all five tabs, reduced motion, Arena OFF
 >   unchanged, zero console errors; unit 587/587, build, check-hex clean.
-> - **Next action (human):** Seth re-smokes those two on his phone and
->   signs off round 1 or adds ledger rows. Rows 11-13 are still open.
+> - **Nov 14, Seth's second look (ledger rows 16-19, built in-seat):**
+>   Table chip removed; History's place is now THE LOG PILE (a stack of
+>   log ends per week, replaces the near stands) and Library's is THE
+>   PLAYBOOK; the boot crown can be grabbed and thrown (easter egg,
+>   `crownIntroEngine.js` grab / drag / release); "Raw log" naming and
+>   rotating start lines (`lib/startLines.js`). Rig-proved at 412 + 360,
+>   zero errors; unit 587/587, build, check-hex clean.
+> - **Next action (human):** Seth looks at the log pile and the rest on
+>   his phone and signs off round 1 or adds ledger rows. Rows 11-13 are
+>   still open. HANDOFF is over its cap and needs a trim to the archive.
 > - Not in this round, unchanged: AR6 light-mode arena, AR7 Arena as
 >   default, swipe-to-walk, What's New (bookmarked).
 

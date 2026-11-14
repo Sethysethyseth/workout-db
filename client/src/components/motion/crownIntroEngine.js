@@ -473,6 +473,48 @@ export function startCrownIntro(o) {
     }
   }
 
+  /* The easter egg (Seth, Nov 14): while the crown spins you can grab it
+     and throw it around. It bounces off the sides, has no ceiling, and when
+     it falls under the screen a new one pops back in the middle. The wait
+     itself never ends early or late because of it: the app's "ready" is
+     held only until the crown is back home. */
+  let toy = null; // { held, x, y, vx, vy, turn, dx, dy, trail: [[t, x, y]], goneAt, last }
+  const TOY_GRAVITY = 2600; // px / s^2
+  const TOY_RESPAWN_MS = 420;
+
+  function crownAt(now) {
+    if (toy) return { x: toy.x, y: toy.y };
+    const t = clamp01((now - phaseStart) / T.spin);
+    return { x: G.cx, y: G.cy - Math.round(Math.sin(Math.PI * t) * G.cell * 3.2) };
+  }
+
+  function stepToy(now) {
+    const dt = Math.min(0.05, (now - toy.last) / 1000);
+    toy.last = now;
+    if (toy.held) return;
+    if (toy.goneAt) {
+      if (now - toy.goneAt >= TOY_RESPAWN_MS) {
+        toy = null; // a fresh crown, with its flash and rings
+        lockAt = now;
+        phaseStart = now;
+      }
+      return;
+    }
+    const halfW = (COLS * G.cell) / 2;
+    toy.vy += TOY_GRAVITY * dt;
+    toy.x += toy.vx * dt;
+    toy.y += toy.vy * dt;
+    toy.turn += (toy.vx / 90 + Math.sign(toy.vx || 1) * 4) * dt;
+    if (toy.x < halfW && toy.vx < 0) {
+      toy.x = halfW;
+      toy.vx *= -0.7;
+    } else if (toy.x > G.vw - halfW && toy.vx > 0) {
+      toy.x = G.vw - halfW;
+      toy.vx *= -0.7;
+    }
+    if (toy.y - ROWS * G.cell > G.vh) toy.goneAt = now;
+  }
+
   function setPhase(next, now) {
     phase = next;
     phaseStart = now;
@@ -495,7 +537,8 @@ export function startCrownIntro(o) {
       lockAt = now;
       setPhase("spin", now);
     }
-    if (phase === "spin" && now - phaseStart >= T.spin) {
+    if (toy) stepToy(now);
+    if (phase === "spin" && !toy && now - phaseStart >= T.spin) {
       if (isReady()) {
         landAt = now;
         burstSparks(now);
@@ -530,7 +573,12 @@ export function startCrownIntro(o) {
       const flash = now - lockAt < 90;
       drawGlow(G.cx, G.cy, 1);
       drawShock(now);
-      drawCrown(G.cx, G.cy - toss, G.cell, angle, flash ? colors.text : colors.accent);
+      if (toy) {
+        const step = (Math.PI * 2) / SPIN_STEPS;
+        if (!toy.goneAt) {
+          drawCrown(toy.x, toy.y, G.cell, Math.round(toy.turn / step) * step, toy.held ? colors.text : colors.accent);
+        }
+      } else drawCrown(G.cx, G.cy - toss, G.cell, angle, flash ? colors.text : colors.accent);
     } else {
       const t = phase === "settle" ? clamp01((now - phaseStart) / T.settle) : 1;
       const e = easeOutExpo(t);
@@ -594,6 +642,49 @@ export function startCrownIntro(o) {
       if (stopped || phase === "dissolve") return;
       dissolveMs = SKIP_DISSOLVE_MS;
       setPhase("dissolve", performance.now());
+    },
+    /* The easter egg. grab() answers whether the press took the crown;
+       if not, the host treats it as the usual skip. */
+    grab(x, y) {
+      if (stopped || phase !== "spin" || (toy && toy.goneAt)) return false;
+      const now = performance.now();
+      const at = crownAt(now);
+      const reachX = (COLS * G.cell) / 2 + 18;
+      const reachY = (ROWS * G.cell) / 2 + 18;
+      if (Math.abs(x - at.x) > reachX || Math.abs(y - at.y) > reachY) return false;
+      toy = {
+        held: true,
+        x: at.x,
+        y: at.y,
+        vx: 0,
+        vy: 0,
+        turn: 0,
+        dx: at.x - x,
+        dy: at.y - y,
+        trail: [[now, at.x, at.y]],
+        goneAt: 0,
+        last: now,
+      };
+      return true;
+    },
+    drag(x, y) {
+      if (!toy || !toy.held) return;
+      const now = performance.now();
+      toy.x = x + toy.dx;
+      toy.y = y + toy.dy;
+      toy.trail.push([now, toy.x, toy.y]);
+      while (toy.trail.length > 2 && now - toy.trail[0][0] > 90) toy.trail.shift();
+    },
+    release() {
+      if (!toy || !toy.held) return;
+      const now = performance.now();
+      const [t0, x0, y0] = toy.trail[0];
+      const dt = Math.max(0.016, (now - t0) / 1000);
+      const cap = (v) => Math.max(-4200, Math.min(4200, v));
+      toy.vx = cap((toy.x - x0) / dt);
+      toy.vy = cap((toy.y - y0) / dt);
+      toy.held = false;
+      toy.last = now;
     },
     /* Unmount: no callbacks, just stop. */
     stop() {

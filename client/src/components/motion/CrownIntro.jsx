@@ -51,6 +51,7 @@ export function CrownIntroHost() {
   const engineRef = useRef(null);
   const coveredRef = useRef(null);
   const readyRef = useRef(false);
+  const grabRef = useRef(null);
 
   useEffect(() => {
     readyRef.current = !authLoading;
@@ -105,12 +106,33 @@ export function CrownIntroHost() {
     };
   }, [intro]);
 
+  const letGo = (e) => {
+    if (grabRef.current !== e.pointerId) return;
+    grabRef.current = null;
+    engineRef.current?.release();
+  };
+
   if (!intro) return null;
   return (
     <div
       ref={rootRef}
       className={`crown-intro${intro.mode === "boot" ? " crown-intro--solid" : ""}`}
-      onPointerDown={() => engineRef.current?.skip()}
+      onPointerDown={(e) => {
+        /* On the spinning crown: pick it up (the easter egg). Anywhere else: skip. */
+        if (engineRef.current?.grab(e.clientX, e.clientY)) {
+          grabRef.current = e.pointerId;
+          try {
+            e.currentTarget.setPointerCapture(e.pointerId);
+          } catch {
+            /* capture is a nicety; the moves still arrive on the full-screen overlay */
+          }
+        } else engineRef.current?.skip();
+      }}
+      onPointerMove={(e) => {
+        if (grabRef.current === e.pointerId) engineRef.current?.drag(e.clientX, e.clientY);
+      }}
+      onPointerUp={letGo}
+      onPointerCancel={letGo}
       role="presentation"
     >
       <canvas ref={canvasRef} className="crown-intro__canvas" aria-hidden="true" />

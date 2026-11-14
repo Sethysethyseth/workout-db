@@ -13,6 +13,8 @@ import {
   historyStrip,
   libraryStrip,
   profileStrip,
+  PILE_WEEKS,
+  pileSpot,
   seatIndex,
   weekFaces,
 } from "../../lib/arenaBoards.js";
@@ -78,13 +80,14 @@ function subscribeStorage(onChange) {
   return () => window.removeEventListener("storage", onChange);
 }
 
-/** What the room shows from real training: the week, eight weeks of sets, one seat per workout. */
+/** What the room shows from real training: the week, eight weeks of sets, the log pile (workouts per week). */
 function roomFacts(sessions, midnight) {
   const days = [0, 0, 0, 0, 0, 0, 0];
   const bars = [0, 0, 0, 0, 0, 0, 0, 0];
   let weekSets = 0;
   let weekWorkouts = 0;
   let seats = 0;
+  const pile = Array(PILE_WEEKS).fill(0);
   for (const session of sessions || []) {
     const at = doneAt(session);
     if (at == null) continue;
@@ -97,8 +100,9 @@ function roomFacts(sessions, midnight) {
     }
     const weekAgo = Math.floor(dayAgo / 7);
     if (weekAgo >= 0 && weekAgo < 8) bars[7 - weekAgo] += setsOf(session);
+    if (weekAgo >= 0 && weekAgo < PILE_WEEKS) pile[PILE_WEEKS - 1 - weekAgo] += 1;
   }
-  return { week: { days, sets: weekSets, workouts: weekWorkouts }, bars, seats };
+  return { week: { days, sets: weekSets, workouts: weekWorkouts }, bars, seats, pile };
 }
 
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
@@ -121,7 +125,7 @@ function latestAnswer(thread) {
 function peekLine(place, facts, live, weeks, here) {
   if (live && place === "home") return `In progress · ${plural(live.sets, "set", "sets")} logged`;
   if (place === "history" && here.selected) {
-    return `${here.selected.title} · seat ${here.seat + 1} of ${facts.seats}`;
+    return `${here.selected.title} · log ${here.seat + 1} of ${facts.seats}`;
   }
   if (place === "library" && here.block) {
     return `${here.block.name || "Your block"} · week ${here.block.week} of ${here.block.weeks}`;
@@ -137,7 +141,7 @@ function peekLine(place, facts, live, weeks, here) {
     const n = Math.min(weeks, facts.bars.length);
     return `Last ${n} weeks: ${plural(facts.bars.slice(-n).reduce((a, b) => a + b, 0), "set", "sets")}`;
   }
-  if (place === "history") return `${plural(facts.seats, "workout", "workouts")} · one lit seat each`;
+  if (place === "history") return `${plural(facts.seats, "workout", "workouts")} · one log each, stacked by week`;
   if (place === "coach") return "Ask the coach anything";
   if (place === "library") return "Your workouts and blocks";
   return `${plural(facts.seats, "workout", "workouts")} logged`;
@@ -504,7 +508,7 @@ export function ArenaStage() {
     arenaRef.current?.set({ block });
   }, [block]);
 
-  /* History follows the workout you have open; with none, the newest seat. */
+  /* History follows the workout you have open; with none, the newest log. */
   const selectedId = selectedIdFor(pathname, activeId);
   const seat = useMemo(() => seatIndex(sessions, selectedId), [sessions, selectedId]);
   const selected = useMemo(() => {
@@ -512,9 +516,10 @@ export function ArenaStage() {
     const session = (sessions || []).find((x) => String(x?.id) === selectedId && doneAt(x) != null);
     return session ? { title: sessionDisplayTitle(session), completedAt: session.completedAt } : null;
   }, [sessions, selectedId]);
+  const spot = useMemo(() => pileSpot(sessions, selectedId, midnight), [sessions, selectedId, midnight]);
   useEffect(() => {
-    arenaRef.current?.set({ seat });
-  }, [seat]);
+    arenaRef.current?.set({ spot });
+  }, [spot]);
 
   const streak = useMemo(() => weekStreak(sessions, new Date(midnight - 1)), [sessions, midnight]);
   const workoutCount = useMemo(() => countCompleted(sessions), [sessions]);

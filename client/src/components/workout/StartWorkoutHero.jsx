@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { sceneSignal } from "../../lib/sceneSignal.js";
+import { pickRawLogLine } from "../../lib/startLines.js";
 import { PixelCrown } from "../motion/PixelCrown.jsx";
 import "../../styles/blocks/bk-run.css";
 import "../../styles/workout-saved.css";
@@ -54,6 +55,8 @@ export function StartWorkoutHero({
   const [shown, setShown] = useState(saved);
   if (saved && saved !== shown) setShown(saved);
   const liftHold = useLiftHold();
+  /* One line per visit to Home: it must not change under a finger. */
+  const [startLine] = useState(pickRawLogLine);
   if (loading) {
     return (
       <section
@@ -91,7 +94,7 @@ export function StartWorkoutHero({
             Start a workout
           </h1>
           <p className="workout-hero__lead muted small">
-            {lastSessionLabel ? `Last one: ${lastSessionLabel}.` : "Empty session or a saved workout."}
+            {lastSessionLabel ? `Last one: ${lastSessionLabel}.` : "A raw log or a saved workout."}
           </p>
         </div>
         {shown ? (
@@ -122,11 +125,12 @@ export function StartWorkoutHero({
       <button
         type="button"
         className="btn workout-hero__cta"
+        aria-label={startingEmpty ? undefined : `Start a raw log: ${startLine}`}
         disabled={startingEmpty}
         onClick={() => void onStartEmpty?.()}
         {...liftHold}
       >
-        {startingEmpty ? "Starting…" : "Start empty workout"}
+        {startingEmpty ? "Starting…" : startLine}
       </button>
       <button
         type="button"

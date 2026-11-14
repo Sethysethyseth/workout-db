@@ -19,7 +19,7 @@
  * - Reduced motion: the camera and the zoom cut, lights switch, nothing flickers.
  */
 
-import { banners, boardFace, PLACE_BALCONY, railFace } from "../../lib/arenaBoards.js";
+import { banners, boardFace, PILE_WEEKS, PLACE_BALCONY, railFace } from "../../lib/arenaBoards.js";
 import { ARENA_RAIL_ROWS, ARENA_ZOOM, clampFocus, ledFit, zoomView } from "../../lib/arenaSheet.js";
 import { prefersReducedMotion } from "../../lib/useReducedMotion.js";
 
@@ -91,14 +91,24 @@ const hash = (x, y) => {
   return n - Math.floor(n);
 };
 
-/* Seats in the near stands, front row of the stand first: workout k (oldest first) sits in seat k. */
-const SEATS = [];
-for (let tier = 0; tier < 22; tier += 1) {
-  const reach = Math.round(92 - tier * 2.6);
-  for (let x = reach - 3; x > 0; x -= 2) SEATS.push({ x, y: FLOOR - 2 - tier * 4 });
-}
-/* Front-row lamps on the floor edge at x 80 - i*4: as many as fit. */
-const FRONT_ROW = 21;
+/* The log pile (History): one column per week, the newest nearest the
+   platform; every workout that week is one log on its stack. */
+const PILE_HIGH = 7;
+const PILE_X = 2;
+const PILE_PITCH = 11;
+/* A log seen end-on: bark, wood, growth ring, heart. */
+const LOG_END = [
+  "..oooooo..",
+  ".owwwwwwo.",
+  "owwrrrrwwo",
+  "owrwwwwrwo",
+  "owrwhhwrwo",
+  "owrwhhwrwo",
+  "owrwwwwrwo",
+  "owwrrrrwwo",
+  ".owwwwwwo.",
+  "..oooooo..",
+];
 
 function readRamp() {
   const probe = document.createElement("span");
@@ -164,7 +174,8 @@ export function createArena(canvas, strip) {
     board: null, // the Analytics view's face (arenaBoards.analyticsFaces); null = the weekly sets chart
     block: null, // the program board (arenaBoards.blockBoard); null = PROGRAMS
     chalk: null, // { thinking, lines } - the coach's chalkboard; null = ASK ME / ANYTHING
-    seat: -1, // the selected workout's seat (arenaBoards.seatIndex); -1 = no workouts, no marker
+    pile: [], // workouts per week, oldest first, PILE_WEEKS long (ArenaStage roomFacts)
+    spot: null, // { col, row } the open workout's log in the pile (arenaBoards.pileSpot); null = none
     placeLines: null, // kept for callers; boardFace owns History/Library/Profile lines now
     streak: 0,
   };
@@ -530,23 +541,33 @@ export function createArena(canvas, strip) {
     px(96, FLOOR - 9, RAMP[3], 110, 1);
     logChamp(now, reduced);
 
-    // near stands (History): a fixed crowd; the front row lights one seat per workout this week, newest brightest
-    for (let tier = 0; tier < 22; tier += 1) {
-      const y = FLOOR - 4 - tier * 4;
-      const reach = Math.round(92 - tier * 2.6);
-      px(0, y, RAMP[1], reach, 4);
-      px(0, y, RAMP[3], reach, 1);
-      for (let x = 1; x < reach - 1; x += 2) {
-        const h = hash(x, tier);
-        px(x, y + 2, h < 0.05 ? RAMP[7] : h < 0.36 ? RAMP[5] : RAMP[2]);
+    // the log pile (History): a stack per week, this week's bright, the open workout's log lit, the count on top
+    const hiH = at("history");
+    const pileTop = FLOOR - PILE_HIGH * PILE_PITCH - 3;
+    px(0, pileTop, RAMP[3], 1, FLOOR - pileTop);
+    px(PILE_X + PILE_WEEKS * PILE_PITCH, pileTop, RAMP[3], 1, FLOOR - pileTop);
+    for (let col = 0; col < PILE_WEEKS; col += 1) {
+      const total = s.pile[col] || 0;
+      const n = Math.min(PILE_HIGH, total);
+      const now7 = col === PILE_WEEKS - 1;
+      const x = PILE_X + col * PILE_PITCH;
+      for (let row = 0; row < PILE_HIGH; row += 1) {
+        const y = FLOOR - (row + 1) * PILE_PITCH + 1;
+        if (row >= n) {
+          px(x + 4, y + 4, RAMP[2], 2, 2); // an empty slot: room for one more
+          continue;
+        }
+        const lit = s.spot && s.spot.col === col && row === Math.min(s.spot.row, PILE_HIGH - 1);
+        const ink = lit
+          ? { o: RAMP[8], w: RAMP[8], r: RAMP[5], h: RAMP[3] }
+          : now7
+            ? { o: RAMP[4], w: RAMP[7], r: RAMP[5], h: RAMP[4] }
+            : { o: RAMP[3], w: RAMP[hiH ? 5 : 4], r: RAMP[3], h: RAMP[2] };
+        LOG_END.forEach((line, j) => {
+          for (let i = 0; i < line.length; i += 1) if (line[i] !== ".") px(x + i, y + j, ink[line[i]]);
+        });
       }
-    }
-    const front = Math.min(s.week.workouts || 0, FRONT_ROW);
-    for (let i = 0; i < front; i += 1) px(80 - i * 4, FLOOR - 2, i === 0 ? RAMP[8] : RAMP[6], 2, 2);
-    // the selected workout's seat (the newest without one); steady
-    if (s.seat >= 0) {
-      const seat = SEATS[Math.min(s.seat, SEATS.length - 1)];
-      px(seat.x - 1, seat.y - 1, RAMP[8], 3, 3);
+      if (total > 0) mid(String(total), x + 5, FLOOR - n * PILE_PITCH - 6, now7 ? RAMP[8] : RAMP[hiH ? 6 : 4]);
     }
 
     px(-400, FLOOR, RAMP[4], 1400, 1);

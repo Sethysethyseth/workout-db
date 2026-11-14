@@ -4,10 +4,10 @@ import { TrainingPrefsSheet } from "./TrainingPrefsSheet.jsx";
 import "../../styles/training-prefs.css";
 
 /** Hotbar for logging setup. Under Arena the live logger renders it under its
- *  one row with `edit={false}` (the row's Setup button opens the sheet) and a
- *  `layout` chip for the table view (Seth, Nov 14: the quick toggles came
- *  back; ARENA-ROUND-1 item 9 amended). */
-export function TrainingPrefsStrip({ effortSignal, effortNote, edit = true, onEdit = null, layout = null } = {}) {
+ *  one row with `edit={false}` - the row's Setup button opens the sheet, which
+ *  also holds the layout switch (Seth, Nov 14: the quick toggles came back,
+ *  no Table chip; ARENA-ROUND-1 item 9 amended). */
+export function TrainingPrefsStrip({ effortSignal, effortNote, edit = true, onEdit = null } = {}) {
   const prefs = useTrainingPrefs();
   const editRef = useRef(null);
   const [open, setOpen] = useState(false);
@@ -70,16 +70,6 @@ export function TrainingPrefsStrip({ effortSignal, effortNote, edit = true, onEd
         >
           Repeat last
         </button>
-        {layout ? (
-          <button
-            type="button"
-            className={`training-prefs-chip${layout.value === "table" ? " training-prefs-chip--lit" : ""}`}
-            aria-pressed={layout.value === "table"}
-            onClick={() => layout.onChange(layout.value === "table" ? "builder" : "table")}
-          >
-            Table
-          </button>
-        ) : null}
         {edit ? (
           <button
             ref={editRef}

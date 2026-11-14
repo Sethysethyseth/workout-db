@@ -4184,7 +4184,12 @@ export function SessionDetailPage() {
       ? `Block: ${blockContext.blockName}`
       : "Quick log (one-time)";
 
-  const pageTitle = isCompleted ? "Workout summary" : "Log workout";
+  /* A workout with no template or block behind it is a "raw log" (Seth, Nov 14). */
+  const pageTitle = isCompleted
+    ? "Workout summary"
+    : isFromTemplate || isFromBlock
+      ? "Log workout"
+      : "Raw log";
 
   const sessionExercises = orderedSessionExercises;
   const totalSetsLogged = Array.isArray(session?.sets) ? session.sets.length : 0;
@@ -4433,7 +4438,6 @@ export function SessionDetailPage() {
             effortNote={liveEffortNote}
             edit={false}
             onEdit={() => setArenaSetupOpen(true)}
-            layout={!isFromBlock ? { value: liveViewMode, onChange: setLiveViewMode } : null}
           />
           <TrainingPrefsSheet
             open={arenaSetupOpen}

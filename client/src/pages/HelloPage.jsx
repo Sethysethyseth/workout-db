@@ -36,7 +36,7 @@ export function HelloPage() {
           Some things to try
         </h2>
         <ul className="stack" style={{ margin: 0, paddingLeft: 18 }}>
-          <li>Quick Log Workout</li>
+          <li>Raw log a workout</li>
           <li>Create Workout (from a program/template)</li>
           <li>Add exercises and sets</li>
           <li>Finish a workout</li>

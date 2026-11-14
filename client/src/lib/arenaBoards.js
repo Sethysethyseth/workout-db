@@ -206,6 +206,30 @@ export function seatIndex(sessions, selectedId) {
   return i >= 0 ? i : done.length - 1;
 }
 
+/** How many weeks the log pile shows (arenaEngine draws one column each). */
+export const PILE_WEEKS = 8;
+
+/**
+ * Where a workout's log sits in the pile: `col` the week (0 oldest, 7 this
+ * week, rolling 7 days back from `midnight`), `row` its place in that week's
+ * stack (0 = first that week). The selected workout, else the newest. Null
+ * when there is none, or it is older than the pile.
+ */
+export function pileSpot(sessions, selectedId, midnight) {
+  const done = list(sessions)
+    .filter((session) => finishedAt(session) != null)
+    .sort((a, b) => finishedAt(a) - finishedAt(b));
+  if (!done.length) return null;
+  const weekOf = (session) => Math.floor(Math.floor((midnight - finishedAt(session)) / 86400000) / 7);
+  const pick =
+    (selectedId == null ? null : done.find((session) => String(session?.id) === String(selectedId))) ||
+    done[done.length - 1];
+  const ago = weekOf(pick);
+  if (ago < 0 || ago >= PILE_WEEKS) return null;
+  const row = done.filter((session) => weekOf(session) === ago && finishedAt(session) < finishedAt(pick)).length;
+  return { col: PILE_WEEKS - 1 - ago, row };
+}
+
 /** History's strip: the selected workout's date and title, else the count. Line 2 is fitted by the strip. */
 export function historyStrip({ seats = 0, selected = null } = {}) {
   const d = selected ? new Date(selected.completedAt) : null;
@@ -238,11 +262,11 @@ export function banners(workouts) {
 
 /** Balcony lettering per place (arena-draft-3.html PLACES[].sign). */
 export const PLACE_BALCONY = {
-  history: "THE STANDS",
+  history: "THE LOG PILE",
   home: "THE PLATFORM",
   analytics: "THE SCOREBOARD",
   coach: "COACH'S CORNER",
-  library: "THE RACK",
+  library: "THE PLAYBOOK",
   profile: "LOCKER ROOM",
 };
 

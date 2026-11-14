@@ -47,7 +47,7 @@ export function StartWorkoutPicker({
           disabled={emptyBusy}
           onClick={() => void onEmptyWorkout()}
         >
-          {emptyBusy ? "Starting…" : "Empty workout"}
+          {emptyBusy ? "Starting…" : "Raw log"}
         </button>
         <p className="muted small start-workout-picker__hint" style={{ margin: 0 }}>
           One blank exercise—name it when you start lifting.

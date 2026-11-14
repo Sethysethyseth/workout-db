@@ -230,6 +230,16 @@ errors, at both phone sizes, and the SAVED face is seen.
 - The size never changes with the state. A rest that starts while you
   read Analytics changes the rail's line and moves nothing.
 
+- **RENAMED Nov 14 (Seth: the stands and the rack "don't make much
+  sense"):** History's place is **THE LOG PILE**, Library's is **THE
+  PLAYBOOK**; read those wherever this file or the artifact says THE
+  STANDS / THE RACK. The near stands' crowd is replaced by the log pile:
+  eight stacks (weeks, rolling 7 days, newest nearest the platform), one
+  log end per workout up to seven, the week's count above the stack,
+  this week's stack bright, the open workout's log lit (the newest when
+  none is open), a faint dot for each empty slot. Data: `roomFacts.pile`
+  and `arenaBoards.pileSpot`. The far stands behind the platform and the
+  Log stay. Proposal built for Seth's look - his to veto.
 - **AMENDED Nov 14 (frontier seat, Seth's phone smoke): the fold carries
   across a change of tab.** If the room was folded to the rail on the
   open page you leave, the next open page arrives folded (scrolled
@@ -304,8 +314,8 @@ off the logger is exactly as today.
 features "were added and then removed"; he handed the seat the final
 say).** The hotbar's quick toggles are back under Arena, as ONE slim row
 (36px, squared, no box) directly under the one row: `RIR | RPE`,
-`Exercise notes`, `Repeat last`, and a new `Table` chip (the view
-switch, not shown on a block day). The hotbar's Edit is not repeated:
+`Exercise notes`, `Repeat last` (a `Table` chip was tried and removed
+the same day at Seth's second look). The hotbar's Edit is not repeated:
 Setup, in the one row, is the way into the sheet, and the sheet keeps
 every setting including Layout. Why: the toggles are used mid-workout
 (notes off to pull the weight boxes up, table view on), and a sheet is
