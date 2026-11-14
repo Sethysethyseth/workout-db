@@ -181,6 +181,32 @@
   color: var(--color-interactive);
 }
 
+/* The easter egg (useCrownThrow.js): the coin can be picked up and thrown. */
+@media (prefers-reduced-motion: no-preference) {
+  .loading-coin {
+    touch-action: none;
+    cursor: grab;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  .loading-coin[data-thrown] {
+    cursor: grabbing;
+  }
+
+  .loading-coin[data-thrown] .loading-coin__crown {
+    position: relative;
+    z-index: 5;
+  }
+
+  .loading-coin[data-thrown] .loading-coin__shadow,
+  .loading-coin[data-thrown] > .crown-sparks {
+    animation: none;
+    opacity: 0.3;
+  }
+}
+
 .loading-coin__shadow {
   width: 76px;
   height: 4px;

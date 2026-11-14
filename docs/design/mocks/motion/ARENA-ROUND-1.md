@@ -231,15 +231,15 @@ errors, at both phone sizes, and the SAVED face is seen.
   read Analytics changes the rail's line and moves nothing.
 
 - **RENAMED Nov 14 (Seth: the stands and the rack "don't make much
-  sense"):** History's place is **THE LOG PILE**, Library's is **THE
-  PLAYBOOK**; read those wherever this file or the artifact says THE
-  STANDS / THE RACK. The near stands' crowd is replaced by the log pile:
-  eight stacks (weeks, rolling 7 days, newest nearest the platform), one
-  log end per workout up to seven, the week's count above the stack,
-  this week's stack bright, the open workout's log lit (the newest when
-  none is open), a faint dot for each empty slot. Data: `roomFacts.pile`
-  and `arenaBoards.pileSpot`. The far stands behind the platform and the
-  Log stay. Proposal built for Seth's look - his to veto.
+  sense" and the stands "don't serve a purpose"; a log pile was tried and
+  ruled off theme the same day):** History's place is **THE HOME CROWD**,
+  Library's is **THE PLAYBOOK**; read those wherever this file or the
+  artifact says THE STANDS / THE RACK. The near stands stay stands, but
+  the crowd is real: one row per week (front row this week, eleven
+  rows, rolling 7 days), one fan per workout seated from the platform
+  side, empty seats dim, this week's row bright, the open workout's fan
+  on its feet (the newest when none is open). Data: `roomFacts.crowd`
+  and `arenaBoards.seatSpot`. The far stands and the Log are unchanged.
 - **AMENDED Nov 14 (frontier seat, Seth's phone smoke): the fold carries
   across a change of tab.** If the room was folded to the rail on the
   open page you leave, the next open page arrives folded (scrolled

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { sceneSignal } from "../../lib/sceneSignal.js";
-import { pickRawLogLine } from "../../lib/startLines.js";
+import { pickStartLine } from "../../lib/startLines.js";
 import { PixelCrown } from "../motion/PixelCrown.jsx";
 import "../../styles/blocks/bk-run.css";
 import "../../styles/workout-saved.css";
@@ -56,7 +56,7 @@ export function StartWorkoutHero({
   if (saved && saved !== shown) setShown(saved);
   const liftHold = useLiftHold();
   /* One line per visit to Home: it must not change under a finger. */
-  const [startLine] = useState(pickRawLogLine);
+  const [startLine] = useState(pickStartLine);
   if (loading) {
     return (
       <section
@@ -125,7 +125,6 @@ export function StartWorkoutHero({
       <button
         type="button"
         className="btn workout-hero__cta"
-        aria-label={startingEmpty ? undefined : `Start a raw log: ${startLine}`}
         disabled={startingEmpty}
         onClick={() => void onStartEmpty?.()}
         {...liftHold}

@@ -206,16 +206,16 @@ export function seatIndex(sessions, selectedId) {
   return i >= 0 ? i : done.length - 1;
 }
 
-/** How many weeks the log pile shows (arenaEngine draws one column each). */
-export const PILE_WEEKS = 8;
+/** How many weeks the home crowd shows (arenaEngine draws one row of the stands each). */
+export const STAND_WEEKS = 11;
 
 /**
- * Where a workout's log sits in the pile: `col` the week (0 oldest, 7 this
- * week, rolling 7 days back from `midnight`), `row` its place in that week's
- * stack (0 = first that week). The selected workout, else the newest. Null
- * when there is none, or it is older than the pile.
+ * Where a workout's fan sits in the stands: `col` the week (0 oldest,
+ * STAND_WEEKS - 1 this week, rolling 7 days back from `midnight`), `row` its
+ * seat in that week's row (0 = first that week). The selected workout, else
+ * the newest. Null when there is none, or it is older than the stands.
  */
-export function pileSpot(sessions, selectedId, midnight) {
+export function seatSpot(sessions, selectedId, midnight) {
   const done = list(sessions)
     .filter((session) => finishedAt(session) != null)
     .sort((a, b) => finishedAt(a) - finishedAt(b));
@@ -225,9 +225,9 @@ export function pileSpot(sessions, selectedId, midnight) {
     (selectedId == null ? null : done.find((session) => String(session?.id) === String(selectedId))) ||
     done[done.length - 1];
   const ago = weekOf(pick);
-  if (ago < 0 || ago >= PILE_WEEKS) return null;
+  if (ago < 0 || ago >= STAND_WEEKS) return null;
   const row = done.filter((session) => weekOf(session) === ago && finishedAt(session) < finishedAt(pick)).length;
-  return { col: PILE_WEEKS - 1 - ago, row };
+  return { col: STAND_WEEKS - 1 - ago, row };
 }
 
 /** History's strip: the selected workout's date and title, else the count. Line 2 is fitted by the strip. */
@@ -262,7 +262,7 @@ export function banners(workouts) {
 
 /** Balcony lettering per place (arena-draft-3.html PLACES[].sign). */
 export const PLACE_BALCONY = {
-  history: "THE LOG PILE",
+  history: "THE HOME CROWD",
   home: "THE PLATFORM",
   analytics: "THE SCOREBOARD",
   coach: "COACH'S CORNER",

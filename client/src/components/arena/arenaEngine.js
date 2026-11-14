@@ -19,7 +19,7 @@
  * - Reduced motion: the camera and the zoom cut, lights switch, nothing flickers.
  */
 
-import { banners, boardFace, PILE_WEEKS, PLACE_BALCONY, railFace } from "../../lib/arenaBoards.js";
+import { banners, boardFace, STAND_WEEKS, PLACE_BALCONY, railFace } from "../../lib/arenaBoards.js";
 import { ARENA_RAIL_ROWS, ARENA_ZOOM, clampFocus, ledFit, zoomView } from "../../lib/arenaSheet.js";
 import { prefersReducedMotion } from "../../lib/useReducedMotion.js";
 
@@ -91,24 +91,12 @@ const hash = (x, y) => {
   return n - Math.floor(n);
 };
 
-/* The log pile (History): one column per week, the newest nearest the
-   platform; every workout that week is one log on its stack. */
-const PILE_HIGH = 7;
-const PILE_X = 2;
-const PILE_PITCH = 11;
-/* A log seen end-on: bark, wood, growth ring, heart. */
-const LOG_END = [
-  "..oooooo..",
-  ".owwwwwwo.",
-  "owwrrrrwwo",
-  "owrwwwwrwo",
-  "owrwhhwrwo",
-  "owrwhhwrwo",
-  "owrwwwwrwo",
-  "owwrrrrwwo",
-  ".owwwwwwo.",
-  "..oooooo..",
-];
+/* The home crowd (History): the near stands. One row per week, the front row
+   this week; every workout that week is one fan in that row, seated from the
+   platform side. Empty seats are just seats. */
+const STAND_TIER = 8;
+const STAND_SEAT = 5;
+const standReach = (tier) => Math.round(92 - tier * 5.2);
 
 function readRamp() {
   const probe = document.createElement("span");
@@ -174,8 +162,8 @@ export function createArena(canvas, strip) {
     board: null, // the Analytics view's face (arenaBoards.analyticsFaces); null = the weekly sets chart
     block: null, // the program board (arenaBoards.blockBoard); null = PROGRAMS
     chalk: null, // { thinking, lines } - the coach's chalkboard; null = ASK ME / ANYTHING
-    pile: [], // workouts per week, oldest first, PILE_WEEKS long (ArenaStage roomFacts)
-    spot: null, // { col, row } the open workout's log in the pile (arenaBoards.pileSpot); null = none
+    crowd: [], // workouts per week, oldest first, STAND_WEEKS long (ArenaStage roomFacts)
+    spot: null, // { col, row } the open workout's fan (arenaBoards.seatSpot): col = week, row = seat; null = none
     placeLines: null, // kept for callers; boardFace owns History/Library/Profile lines now
     streak: 0,
   };
@@ -541,33 +529,28 @@ export function createArena(canvas, strip) {
     px(96, FLOOR - 9, RAMP[3], 110, 1);
     logChamp(now, reduced);
 
-    // the log pile (History): a stack per week, this week's bright, the open workout's log lit, the count on top
+    // the home crowd (History): a row per week, a fan per workout; this week's row bright, the open workout's fan on its feet
     const hiH = at("history");
-    const pileTop = FLOOR - PILE_HIGH * PILE_PITCH - 3;
-    px(0, pileTop, RAMP[3], 1, FLOOR - pileTop);
-    px(PILE_X + PILE_WEEKS * PILE_PITCH, pileTop, RAMP[3], 1, FLOOR - pileTop);
-    for (let col = 0; col < PILE_WEEKS; col += 1) {
-      const total = s.pile[col] || 0;
-      const n = Math.min(PILE_HIGH, total);
-      const now7 = col === PILE_WEEKS - 1;
-      const x = PILE_X + col * PILE_PITCH;
-      for (let row = 0; row < PILE_HIGH; row += 1) {
-        const y = FLOOR - (row + 1) * PILE_PITCH + 1;
-        if (row >= n) {
-          px(x + 4, y + 4, RAMP[2], 2, 2); // an empty slot: room for one more
+    for (let tier = 0; tier < STAND_WEEKS; tier += 1) {
+      const y = FLOOR - (tier + 1) * STAND_TIER;
+      const reach = standReach(tier);
+      px(0, y, RAMP[1], reach, STAND_TIER);
+      px(0, y, RAMP[3], reach, 1);
+      const fans = s.crowd[STAND_WEEKS - 1 - tier] || 0;
+      const up = s.spot && s.spot.col === STAND_WEEKS - 1 - tier ? s.spot.row : -1;
+      let seat = 0;
+      for (let x = reach - STAND_SEAT; x > 0; x -= STAND_SEAT, seat += 1) {
+        if (seat >= fans) {
+          px(x, y + 5, RAMP[2], 3, 2); // an empty seat
           continue;
         }
-        const lit = s.spot && s.spot.col === col && row === Math.min(s.spot.row, PILE_HIGH - 1);
-        const ink = lit
-          ? { o: RAMP[8], w: RAMP[8], r: RAMP[5], h: RAMP[3] }
-          : now7
-            ? { o: RAMP[4], w: RAMP[7], r: RAMP[5], h: RAMP[4] }
-            : { o: RAMP[3], w: RAMP[hiH ? 5 : 4], r: RAMP[3], h: RAMP[2] };
-        LOG_END.forEach((line, j) => {
-          for (let i = 0; i < line.length; i += 1) if (line[i] !== ".") px(x + i, y + j, ink[line[i]]);
-        });
+        const stood = seat === up;
+        const head = stood || tier === 0 ? RAMP[8] : RAMP[hiH ? 6 : 5];
+        const body = stood ? RAMP[8] : tier === 0 ? RAMP[7] : RAMP[hiH ? 5 : 4];
+        const lift = stood ? 2 : 0;
+        px(x + 1, y + 2 - lift, head);
+        px(x, y + 3 - lift, body, 3, 4 + lift);
       }
-      if (total > 0) mid(String(total), x + 5, FLOOR - n * PILE_PITCH - 6, now7 ? RAMP[8] : RAMP[hiH ? 6 : 4]);
     }
 
     px(-400, FLOOR, RAMP[4], 1400, 1);

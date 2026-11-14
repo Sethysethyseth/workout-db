@@ -1,6 +1,7 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import { noteLoaderCrown, stampLoaderCrown } from "./motion/crownIntroStore.js";
 import { PixelCrown } from "./motion/PixelCrown.jsx";
+import { useCrownThrow } from "./motion/useCrownThrow.js";
 import "./motion/crown-play.css";
 
 const SHOW_DELAY_MS = 400;
@@ -198,8 +199,9 @@ export function LoadingState({
   }, [tone, caption]);
   /* Page tone: remember where the crown rests, so the login screen's crown
      can start from it (the loader -> login hand-off). */
-  const coinRef = useRef(null);
   const showCoin = visible && tone === "page";
+  /* The same node carries the easter egg: grab the crown and throw it. */
+  const coinRef = useCrownThrow(showCoin);
   useLayoutEffect(() => {
     if (!showCoin || !coinRef.current) return undefined;
     const r = coinRef.current.getBoundingClientRect();
